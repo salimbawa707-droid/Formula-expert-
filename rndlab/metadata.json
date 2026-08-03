@@ -1,0 +1,6 @@
+{
+  "name": "Detergent R&D Expert",
+  "description": "The ultimate formulation assistant, chemical database, manufacturing guide, and AI troubleshooter for detergents and cleaning products.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
