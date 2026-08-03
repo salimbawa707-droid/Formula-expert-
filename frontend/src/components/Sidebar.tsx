@@ -60,7 +60,7 @@ export function Sidebar({ onNavigate, variant = 'permanent' }: SidebarProps) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.sectionLabel, { color: colors.onSurfaceTertiary }]}>WORKSPACE</Text>
-        {NAV_ROUTES.slice(0, 4).map((route) => (
+        {NAV_ROUTES.slice(0, 5).map((route) => (
           <NavItem
             key={route.key}
             route={route}
@@ -72,7 +72,7 @@ export function Sidebar({ onNavigate, variant = 'permanent' }: SidebarProps) {
         <Text style={[styles.sectionLabel, { color: colors.onSurfaceTertiary, marginTop: spacing.lg }]}>
           LIBRARY
         </Text>
-        {NAV_ROUTES.slice(4, 7).map((route) => (
+        {NAV_ROUTES.slice(5, 7).map((route) => (
           <NavItem
             key={route.key}
             route={route}

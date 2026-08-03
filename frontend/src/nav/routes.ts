@@ -38,6 +38,13 @@ export const NAV_ROUTES: NavRoute[] = [
     description: 'Physical properties and cost breakdown',
   },
   {
+    key: 'ai-expert',
+    label: 'AI Formula Expert',
+    path: '/ai-expert',
+    icon: 'cpu',
+    description: 'Chat with your formulation assistant',
+  },
+  {
     key: 'ingredients',
     label: 'Ingredient Library',
     path: '/ingredients',
@@ -50,13 +57,6 @@ export const NAV_ROUTES: NavRoute[] = [
     path: '/library',
     icon: 'book-open',
     description: 'Saved recipes and templates',
-  },
-  {
-    key: 'ai-expert',
-    label: 'AI Formula Expert',
-    path: '/ai-expert',
-    icon: 'cpu',
-    description: 'Chat with your formulation assistant',
   },
   {
     key: 'reports',

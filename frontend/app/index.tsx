@@ -1,5 +1,12 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  TextInput,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -7,46 +14,67 @@ import { ScreenScaffold, Card } from '@/src/components/ScreenScaffold';
 import { useTheme } from '@/src/theme/ThemeContext';
 import { spacing, radius, fontSize } from '@/src/theme/tokens';
 
-interface QuickAction {
+interface Workflow {
   key: string;
   label: string;
   description: string;
   icon: keyof typeof Feather.glyphMap;
   path: string;
+  badge?: string;
 }
 
-const QUICK_ACTIONS: QuickAction[] = [
+const WORKFLOWS: Workflow[] = [
   {
-    key: 'new-formula',
-    label: 'New Formula',
-    description: 'Start a fresh composition from scratch',
-    icon: 'plus-circle',
+    key: 'builder',
+    label: 'Formula Builder',
+    description: 'Compose and iterate on chemical formulations with precise ratios.',
+    icon: 'edit-3',
     path: '/builder',
+    badge: 'Author',
   },
   {
-    key: 'check-formula',
-    label: 'Check Formula',
-    description: 'Run compliance & safety validation',
+    key: 'checker',
+    label: 'Formula Checker',
+    description: 'Run compliance, safety and stability validation on your formulas.',
     icon: 'check-circle',
     path: '/checker',
+    badge: 'Validate',
   },
   {
-    key: 'analyze',
-    label: 'Analyze',
-    description: 'Physical properties & cost breakdown',
+    key: 'analyzer',
+    label: 'Formula Analyzer',
+    description: 'Break down physical properties, cost per batch and composition.',
     icon: 'bar-chart-2',
     path: '/analyzer',
+    badge: 'Analyze',
   },
   {
-    key: 'ask-ai',
-    label: 'Ask AI Expert',
-    description: 'Get formulation troubleshooting help',
+    key: 'ai-expert',
+    label: 'AI Formula Expert',
+    description: 'Ask an AI assistant for substitutions and troubleshooting insights.',
     icon: 'cpu',
     path: '/ai-expert',
+    badge: 'Assist',
+  },
+  {
+    key: 'ingredients',
+    label: 'Ingredient Library',
+    description: 'Manage your raw materials, CAS numbers and user-entered prices.',
+    icon: 'droplet',
+    path: '/ingredients',
+    badge: 'Data',
+  },
+  {
+    key: 'library',
+    label: 'Formula Library',
+    description: 'Archive of saved recipes, favorites and reusable templates.',
+    icon: 'book-open',
+    path: '/library',
+    badge: 'Archive',
   },
 ];
 
-interface StatTile {
+interface LabStat {
   key: string;
   label: string;
   value: string;
@@ -55,119 +83,249 @@ interface StatTile {
   tone: 'brand' | 'info' | 'warning' | 'success';
 }
 
-const STATS: StatTile[] = [
-  { key: 'formulas', label: 'Formulas', value: '0', hint: 'None yet', icon: 'layers', tone: 'brand' },
-  { key: 'ingredients', label: 'Ingredients', value: '0', hint: 'Empty library', icon: 'droplet', tone: 'info' },
-  { key: 'reports', label: 'Reports', value: '0', hint: 'No PDFs generated', icon: 'file-text', tone: 'success' },
-  { key: 'checks', label: 'Checks Run', value: '0', hint: 'No analyses yet', icon: 'activity', tone: 'warning' },
+const LAB_STATS: LabStat[] = [
+  {
+    key: 'ingredients',
+    label: 'Total Ingredients',
+    value: '0',
+    hint: 'In your library',
+    icon: 'droplet',
+    tone: 'info',
+  },
+  {
+    key: 'formulas',
+    label: 'Saved Formulas',
+    value: '0',
+    hint: 'Across all projects',
+    icon: 'layers',
+    tone: 'brand',
+  },
+  {
+    key: 'alerts',
+    label: 'Inventory Alerts',
+    value: '0',
+    hint: 'Low-stock materials',
+    icon: 'alert-triangle',
+    tone: 'warning',
+  },
+  {
+    key: 'activity',
+    label: 'Recent Activity',
+    value: '0',
+    hint: 'Actions in last 24h',
+    icon: 'activity',
+    tone: 'success',
+  },
 ];
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const [query, setQuery] = useState('');
 
-  // Responsive columns for stat tiles + quick actions
+  // Responsive columns
+  const workflowCols = width >= 1200 ? 3 : width >= 780 ? 2 : 1;
   const statCols = width >= 900 ? 4 : width >= 560 ? 2 : 2;
-  const actionCols = width >= 1100 ? 4 : width >= 780 ? 3 : width >= 520 ? 2 : 1;
 
   return (
-    <ScreenScaffold
-      testID="screen-dashboard"
-      title="Welcome back"
-      subtitle="Your professional detergent formulation command center"
-      icon="grid"
-      actions={
-        <Pressable
-          testID="dashboard-new-formula-btn"
-          onPress={() => router.push('/builder')}
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            { backgroundColor: pressed ? colors.brandSecondary : colors.brandPrimary },
-          ]}
-        >
-          <Feather name="plus" size={16} color={colors.onBrandPrimary} />
-          <Text style={[styles.primaryBtnLabel, { color: colors.onBrandPrimary }]}>New Formula</Text>
-        </Pressable>
-      }
-    >
-      {/* Stat tiles */}
-      <View
-        testID="dashboard-stats"
-        style={[styles.grid, { gap: spacing.md }]}
-      >
-        {STATS.map((stat) => {
-          const tone =
-            stat.tone === 'brand'
-              ? { bg: colors.brandTertiary, fg: colors.onBrandTertiary }
-              : stat.tone === 'info'
-                ? { bg: colors.surfaceTertiary, fg: colors.info }
-                : stat.tone === 'warning'
-                  ? { bg: colors.surfaceTertiary, fg: colors.warning }
-                  : { bg: colors.surfaceTertiary, fg: colors.success };
-          return (
+    <ScreenScaffold testID="screen-dashboard" title="Dashboard" subtitle="R&D command center" icon="grid">
+      {/* Hero */}
+      <View testID="dashboard-hero" style={styles.heroWrap}>
+        <Card padding={0} testID="dashboard-hero-card">
+          <View
+            style={[
+              styles.hero,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             <View
-              key={stat.key}
-              testID={`stat-tile-${stat.key}`}
-              style={[
-                styles.statTile,
-                {
-                  width: `${100 / statCols}%`,
-                },
-              ]}
+              style={[styles.heroBadge, { backgroundColor: colors.brandTertiary }]}
+              testID="hero-badge"
             >
-              <Card>
-                <View style={styles.statHead}>
-                  <View style={[styles.statIcon, { backgroundColor: tone.bg }]}>
-                    <Feather name={stat.icon} size={16} color={tone.fg} />
-                  </View>
-                  <Text style={[styles.statLabel, { color: colors.onSurfaceTertiary }]}>
-                    {stat.label}
-                  </Text>
-                </View>
-                <Text style={[styles.statValue, { color: colors.onSurface }]}>{stat.value}</Text>
-                <Text style={[styles.statHint, { color: colors.onSurfaceTertiary }]}>{stat.hint}</Text>
-              </Card>
+              <View style={[styles.heroBadgeDot, { backgroundColor: colors.brandPrimary }]} />
+              <Text
+                style={[styles.heroBadgeText, { color: colors.onBrandTertiary }]}
+                numberOfLines={1}
+              >
+                R&D LABORATORY
+              </Text>
             </View>
-          );
-        })}
-      </View>
 
-      {/* Quick actions */}
-      <View style={{ gap: spacing.md }}>
-        <View style={styles.sectionHead}>
-          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Quick Actions</Text>
-          <Text style={[styles.sectionSub, { color: colors.onSurfaceTertiary }]}>
-            Jump into your most common workflows
-          </Text>
-        </View>
-
-        <View style={[styles.grid, { gap: spacing.md }]}>
-          {QUICK_ACTIONS.map((action) => (
-            <View
-              key={action.key}
-              style={[styles.actionTile, { width: `${100 / actionCols}%` }]}
+            <Text
+              testID="hero-title"
+              style={[styles.heroTitle, { color: colors.onSurface }]}
             >
+              Professional Detergent R&D Laboratory
+            </Text>
+            <Text
+              testID="hero-subtitle"
+              style={[styles.heroSubtitle, { color: colors.onSurfaceSecondary }]}
+            >
+              Design, analyze, validate and optimize detergent formulations.
+            </Text>
+
+            <View style={styles.heroActions}>
               <Pressable
-                testID={`quick-action-${action.key}`}
-                onPress={() => router.push(action.path as never)}
+                testID="dashboard-new-formula-btn"
+                onPress={() => router.push('/builder')}
                 style={({ pressed, hovered }: any) => [
-                  styles.actionInner,
+                  styles.primaryCta,
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: hovered || pressed ? colors.brandPrimary : colors.border,
+                    backgroundColor: pressed
+                      ? colors.brandSecondary
+                      : hovered
+                        ? colors.brandSecondary
+                        : colors.brandPrimary,
                   },
                 ]}
               >
-                <View style={[styles.actionIcon, { backgroundColor: colors.brandTertiary }]}>
-                  <Feather name={action.icon} size={20} color={colors.onBrandTertiary} />
+                <View
+                  style={[
+                    styles.primaryCtaIcon,
+                    { backgroundColor: 'rgba(255,255,255,0.14)' },
+                  ]}
+                >
+                  <Feather name="plus" size={22} color={colors.onBrandPrimary} />
                 </View>
-                <Text style={[styles.actionLabel, { color: colors.onSurface }]}>{action.label}</Text>
-                <Text style={[styles.actionDesc, { color: colors.onSurfaceTertiary }]}>
-                  {action.description}
+                <View style={styles.primaryCtaText}>
+                  <Text style={[styles.primaryCtaTitle, { color: colors.onBrandPrimary }]}>
+                    New Formula
+                  </Text>
+                  <Text
+                    style={[
+                      styles.primaryCtaSub,
+                      { color: colors.onBrandPrimary, opacity: 0.85 },
+                    ]}
+                  >
+                    Start a fresh formulation in the Builder
+                  </Text>
+                </View>
+                <Feather name="arrow-right" size={20} color={colors.onBrandPrimary} />
+              </Pressable>
+
+              <Pressable
+                testID="dashboard-open-library-btn"
+                onPress={() => router.push('/library')}
+                style={({ pressed }) => [
+                  styles.secondaryCta,
+                  {
+                    borderColor: colors.borderStrong,
+                    backgroundColor: pressed ? colors.surfaceSecondary : 'transparent',
+                  },
+                ]}
+              >
+                <Feather name="book-open" size={16} color={colors.onSurface} />
+                <Text style={[styles.secondaryCtaLabel, { color: colors.onSurface }]}>
+                  Open Library
                 </Text>
-                <View style={styles.actionArrow}>
-                  <Feather name="arrow-up-right" size={16} color={colors.onSurfaceTertiary} />
+              </Pressable>
+            </View>
+          </View>
+        </Card>
+      </View>
+
+      {/* Search */}
+      <View
+        testID="dashboard-search-wrap"
+        style={[
+          styles.searchWrap,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        <Feather name="search" size={18} color={colors.onSurfaceTertiary} />
+        <TextInput
+          testID="dashboard-search-input"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search ingredients, formulas, chemicals..."
+          placeholderTextColor={colors.onSurfaceTertiary}
+          style={[styles.searchInput, { color: colors.onSurface }]}
+          returnKeyType="search"
+        />
+        {query.length > 0 ? (
+          <Pressable
+            testID="dashboard-search-clear"
+            onPress={() => setQuery('')}
+            hitSlop={8}
+            style={styles.searchClear}
+          >
+            <Feather name="x" size={16} color={colors.onSurfaceTertiary} />
+          </Pressable>
+        ) : (
+          <View style={[styles.kbdHint, { borderColor: colors.border }]}>
+            <Text style={[styles.kbdHintText, { color: colors.onSurfaceTertiary }]}>⌘K</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Workflows */}
+      <View style={{ gap: spacing.md }}>
+        <View style={styles.sectionHead}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Workflows</Text>
+            <Text style={[styles.sectionSub, { color: colors.onSurfaceTertiary }]}>
+              Jump into any part of the formulation pipeline
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.grid} testID="dashboard-workflows">
+          {WORKFLOWS.map((wf) => (
+            <View
+              key={wf.key}
+              style={[styles.workflowTile, { width: `${100 / workflowCols}%` }]}
+            >
+              <Pressable
+                testID={`workflow-${wf.key}`}
+                onPress={() => router.push(wf.path as never)}
+                style={({ pressed, hovered }: any) => [
+                  styles.workflowInner,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor:
+                      hovered || pressed ? colors.brandPrimary : colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.workflowHead}>
+                  <View
+                    style={[styles.workflowIcon, { backgroundColor: colors.brandTertiary }]}
+                  >
+                    <Feather name={wf.icon} size={22} color={colors.onBrandTertiary} />
+                  </View>
+                  {wf.badge ? (
+                    <View
+                      style={[
+                        styles.workflowBadge,
+                        { backgroundColor: colors.surfaceSecondary },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.workflowBadgeText,
+                          { color: colors.onSurfaceSecondary },
+                        ]}
+                      >
+                        {wf.badge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={[styles.workflowLabel, { color: colors.onSurface }]}>
+                  {wf.label}
+                </Text>
+                <Text
+                  style={[styles.workflowDesc, { color: colors.onSurfaceTertiary }]}
+                  numberOfLines={3}
+                >
+                  {wf.description}
+                </Text>
+                <View style={styles.workflowFooter}>
+                  <Text style={[styles.workflowOpen, { color: colors.brandPrimary }]}>
+                    Open
+                  </Text>
+                  <Feather name="arrow-right" size={14} color={colors.brandPrimary} />
                 </View>
               </Pressable>
             </View>
@@ -175,67 +333,286 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Recent Activity */}
+      {/* Lab Status */}
       <View style={{ gap: spacing.md }}>
         <View style={styles.sectionHead}>
-          <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Recent Activity</Text>
-          <Text style={[styles.sectionSub, { color: colors.onSurfaceTertiary }]}>
-            Formulas you have recently worked on
-          </Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>Lab Status</Text>
+            <Text style={[styles.sectionSub, { color: colors.onSurfaceTertiary }]}>
+              A snapshot of your workspace
+            </Text>
+          </View>
+          <View style={[styles.livePill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.liveDot, { backgroundColor: colors.success }]} />
+            <Text style={[styles.livePillText, { color: colors.onSurfaceSecondary }]}>Live</Text>
+          </View>
         </View>
 
-        <Card testID="recent-activity-empty" padding={spacing['2xl']}>
-          <View style={styles.recentEmpty}>
-            <View style={[styles.recentEmptyIcon, { backgroundColor: colors.surfaceSecondary }]}>
-              <Feather name="clock" size={26} color={colors.onSurfaceTertiary} />
-            </View>
-            <Text style={[styles.recentEmptyTitle, { color: colors.onSurface }]}>
-              No recent formulas
-            </Text>
-            <Text style={[styles.recentEmptyDesc, { color: colors.onSurfaceTertiary }]}>
-              Once you start building formulas, they will appear here for quick access.
-            </Text>
-            <Pressable
-              testID="recent-activity-cta"
-              onPress={() => router.push('/builder')}
-              style={({ pressed }) => [
-                styles.secondaryBtn,
-                {
-                  backgroundColor: 'transparent',
-                  borderColor: colors.brandPrimary,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <Feather name="plus" size={14} color={colors.brandPrimary} />
-              <Text style={[styles.secondaryBtnLabel, { color: colors.brandPrimary }]}>
-                Build your first formula
-              </Text>
-            </Pressable>
-          </View>
-        </Card>
+        <View style={styles.grid} testID="lab-status">
+          {LAB_STATS.map((stat) => {
+            const tone =
+              stat.tone === 'brand'
+                ? { bg: colors.brandTertiary, fg: colors.onBrandTertiary }
+                : stat.tone === 'info'
+                  ? { bg: colors.surfaceTertiary, fg: colors.info }
+                  : stat.tone === 'warning'
+                    ? { bg: colors.surfaceTertiary, fg: colors.warning }
+                    : { bg: colors.surfaceTertiary, fg: colors.success };
+            return (
+              <View
+                key={stat.key}
+                testID={`lab-stat-${stat.key}`}
+                style={[styles.statTile, { width: `${100 / statCols}%` }]}
+              >
+                <Card>
+                  <View style={styles.statHead}>
+                    <View style={[styles.statIcon, { backgroundColor: tone.bg }]}>
+                      <Feather name={stat.icon} size={16} color={tone.fg} />
+                    </View>
+                    <Text style={[styles.statLabel, { color: colors.onSurfaceTertiary }]}>
+                      {stat.label}
+                    </Text>
+                  </View>
+                  <Text style={[styles.statValue, { color: colors.onSurface }]}>
+                    {stat.value}
+                  </Text>
+                  <Text style={[styles.statHint, { color: colors.onSurfaceTertiary }]}>
+                    {stat.hint}
+                  </Text>
+                </Card>
+              </View>
+            );
+          })}
+        </View>
       </View>
     </ScreenScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  primaryBtn: {
+  heroWrap: {
+    marginTop: -spacing.sm,
+  },
+  hero: {
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    gap: spacing.md,
+    overflow: 'hidden',
+  },
+  heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    marginBottom: spacing.xs,
+  },
+  heroBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: radius.pill,
+  },
+  heroBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.8,
+    lineHeight: 34,
+  },
+  heroSubtitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '500',
+    lineHeight: 22,
+    maxWidth: 620,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    alignItems: 'stretch',
+  },
+  primaryCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
+    minHeight: 72,
+    flexGrow: 1,
+    flexBasis: 280,
+    maxWidth: 480,
+  },
+  primaryCtaIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryCtaText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  primaryCtaTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  primaryCtaSub: {
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  secondaryCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
+    borderWidth: 1,
+    alignSelf: 'center',
   },
-  primaryBtnLabel: {
+  secondaryCtaLabel: {
     fontSize: fontSize.base,
     fontWeight: '600',
+  },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    minHeight: 48,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+    padding: 0,
+    outlineStyle: 'none' as any,
+  },
+  searchClear: {
+    padding: 4,
+  },
+  kbdHint: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+  },
+  kbdHintText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    flexWrap: 'wrap',
+  },
+  sectionTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  sectionSub: {
+    fontSize: fontSize.base,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: radius.pill,
+  },
+  livePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginHorizontal: -spacing.xs,
+  },
+  workflowTile: {
+    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  workflowInner: {
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    minHeight: 190,
+  },
+  workflowHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  workflowIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workflowBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  workflowBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  workflowLabel: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    marginTop: spacing.xs,
+  },
+  workflowDesc: {
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  workflowFooter: {
+    marginTop: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+  },
+  workflowOpen: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   statTile: {
     paddingHorizontal: spacing.xs,
@@ -259,9 +636,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
     textTransform: 'uppercase',
+    flex: 1,
+    minWidth: 0,
   },
   statValue: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '700',
     letterSpacing: -1,
   },
@@ -269,87 +648,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     marginTop: spacing.xs,
     fontWeight: '500',
-  },
-  sectionHead: {
-    gap: 2,
-  },
-  sectionTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  sectionSub: {
-    fontSize: fontSize.base,
-    fontWeight: '500',
-  },
-  actionTile: {
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  actionInner: {
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    minHeight: 140,
-  },
-  actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  actionLabel: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  actionDesc: {
-    fontSize: fontSize.sm,
-    lineHeight: 18,
-    fontWeight: '500',
-  },
-  actionArrow: {
-    position: 'absolute',
-    top: spacing.lg,
-    right: spacing.lg,
-  },
-  recentEmpty: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  recentEmptyIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  recentEmptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-  },
-  recentEmptyDesc: {
-    fontSize: fontSize.base,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 380,
-    marginBottom: spacing.sm,
-  },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
-  secondaryBtnLabel: {
-    fontSize: fontSize.base,
-    fontWeight: '600',
   },
 });
