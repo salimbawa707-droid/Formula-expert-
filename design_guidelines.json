@@ -1,0 +1,234 @@
+{
+  "app_name": "Detergent Formulator Pro",
+  "personality": "1 iOS-Native Clean (adapted for precise, clinical lab tool)",
+  "personality_one_liner": "A structured, clinical, and precise interface that prioritizes data density, workflow speed, and reliability at the bench.",
+  "color": {
+    "light": {
+      "surface": "#FFFFFF",
+      "onSurface": "#111827",
+      "surfaceSecondary": "#F3F4F6",
+      "onSurfaceSecondary": "#374151",
+      "surfaceTertiary": "#E5E7EB",
+      "onSurfaceTertiary": "#4B5563",
+      "surfaceInverse": "#1F2937",
+      "onSurfaceInverse": "#F9FAFB",
+      "brand": "#059669",
+      "brandPrimary": "#059669",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#34D399",
+      "onBrandSecondary": "#064E3B",
+      "brandTertiary": "#D1FAE5",
+      "onBrandTertiary": "#065F46",
+      "success": "#10B981",
+      "onSuccess": "#FFFFFF",
+      "warning": "#F59E0B",
+      "onWarning": "#FFFFFF",
+      "error": "#EF4444",
+      "onError": "#FFFFFF",
+      "info": "#0EA5E9",
+      "onInfo": "#FFFFFF",
+      "border": "#E5E7EB",
+      "borderStrong": "#D1D5DB",
+      "divider": "#F3F4F6"
+    },
+    "dark": {
+      "surface": "#111827",
+      "onSurface": "#F9FAFB",
+      "surfaceSecondary": "#1F2937",
+      "onSurfaceSecondary": "#D1D5DB",
+      "surfaceTertiary": "#374151",
+      "onSurfaceTertiary": "#9CA3AF",
+      "surfaceInverse": "#F3F4F6",
+      "onSurfaceInverse": "#111827",
+      "brand": "#10B981",
+      "brandPrimary": "#10B981",
+      "onBrandPrimary": "#064E3B",
+      "brandSecondary": "#059669",
+      "onBrandSecondary": "#D1FAE5",
+      "brandTertiary": "#064E3B",
+      "onBrandTertiary": "#A7F3D0",
+      "success": "#34D399",
+      "onSuccess": "#064E3B",
+      "warning": "#FBBF24",
+      "onWarning": "#78350F",
+      "error": "#F87171",
+      "onError": "#7F1D1D",
+      "info": "#38BDF8",
+      "onInfo": "#0C4A6E",
+      "border": "#374151",
+      "borderStrong": "#4B5563",
+      "divider": "#1F2937"
+    }
+  },
+  "typography": {
+    "displayFontFamily": "SpaceGrotesk",
+    "textFontFamily": "Geist",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous padding around content to allow deep focus. Never flush to screen edge; always minimum md margin. Stack related metrics close (sm/md), divide separate sections generously (lg/xl).",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": 1,
+  "navigation": "drawer (left navigation drawer on all platforms, hamburger toggle on mobile)",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use on the top app bar when scrolling content flows behind it.",
+      "Use for sticky summary sheets floating at the bottom during Formula Builder."
+    ],
+    "dont's": [
+      "Do not use on list rows, formula cards, or dense numeric dashboard panels."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Dashboard",
+      "purpose": "A command-center entry point showing quick actions and recent bench-work.",
+      "states": {
+        "loading": "Skeleton grids mapping to the tile layout.",
+        "empty": "No recent formulas. Central empty-state with primary CTA 'Build New Formula'.",
+        "error": "Failed to load dashboard metrics."
+      },
+      "layout": "Grid-based modular layout. Top header with search. A 'Quick Actions' section with 2-column or 3-column large tiles (Calculate, Builder, Lookup). Below, a 'Recent History' vertical list of last edited formulas with primary KPIs (e.g., pH, viscosity) visible in the list item."
+    },
+    {
+      "name": "Formula Builder",
+      "purpose": "A precision input environment to author and tweak chemical compositions.",
+      "states": {
+        "loading": "Spinner centered.",
+        "empty": "Start from scratch or select a template.",
+        "error": "Failed to sync formulation."
+      },
+      "layout": "Form-style input with labeled fields. Segmented controls for unit selection. List of added ingredients mapping to percent composition. Sticky 'Save / Analyze' primary CTA bottom bar inside KeyboardAvoidingView."
+    },
+    {
+      "name": "Formula Checker",
+      "purpose": "Validation and compliance review for a specific formulation.",
+      "states": {
+        "loading": "Simulated 'Analyzing...' progress state.",
+        "empty": "No formula selected to check.",
+        "error": "Analysis failed to run."
+      },
+      "layout": "Result cards showing calculated safety values prominently. Secondary details formatted as key-value pairs. Visual status badges (success/warning/error) next to compliance metrics."
+    },
+    {
+      "name": "Formula Analyzer",
+      "purpose": "Deep dive into the physical properties and cost of the formula.",
+      "states": {
+        "loading": "Loading charts and breakdown data.",
+        "empty": "Awaiting formula input.",
+        "error": "Data unavailable."
+      },
+      "layout": "Heavy use of surfaceSecondary panels wrapping metric groupings (Cost per batch, Expected Viscosity, Solvents ratio). Use progress-bar style composition visualizers."
+    },
+    {
+      "name": "Ingredient Library",
+      "purpose": "Searchable database of raw chemical materials.",
+      "states": {
+        "loading": "List skeleton.",
+        "empty": "Illustration of an empty folder. 'No ingredients match search'.",
+        "error": "Library sync error."
+      },
+      "layout": "Sticky search bar at the top. Segmented filters (Surfactants, Builders, Solvents) that pin under the header. Tappable list rows (min 56pt height) detailing name and CAS number."
+    },
+    {
+      "name": "Formula Library",
+      "purpose": "Archive of saved recipes and templates for easy retrieval.",
+      "states": {
+        "loading": "List skeleton.",
+        "empty": "Clean desk illustration. 'Your library is empty. Save a formula to see it here.'",
+        "error": "Failed to load library."
+      },
+      "layout": "Tabbed view (Favorites, All, Templates). Grid of cards or dense list depending on screen size. Each card highlights the formula name, creation date, and primary function."
+    },
+    {
+      "name": "AI Formula Expert",
+      "purpose": "Chat-based assistant to help troubleshoot formulation instability or suggest substitutions.",
+      "states": {
+        "loading": "Typing indicator.",
+        "empty": "Prompt suggestions: 'Suggest a milder surfactant', 'Why is my formula separating?'",
+        "error": "Connection lost to AI service."
+      },
+      "layout": "Chat interface. Messages sit in rounded surfaceTertiary (received) and brandTertiary (sent) bubbles. Sticky text input pinned to keyboard."
+    },
+    {
+      "name": "PDF Reports",
+      "purpose": "Export center for generating batch sheets and compliance documents.",
+      "states": {
+        "loading": "Generating PDF...",
+        "empty": "Select a formula to generate a report.",
+        "error": "PDF generation failed."
+      },
+      "layout": "List of available templates (Batch Sheet, Safety Data Sheet, Cost Breakdown). A preview pane and a sticky 'Export' primary CTA."
+    },
+    {
+      "name": "Settings",
+      "purpose": "App configuration and user preferences.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Standard iOS-style grouped list. Sections separated by generous spacing. Toggles for Dark Mode, Unit Preferences (Metric/Imperial)."
+    }
+  ],
+  "images": {
+    "hero_abstract_chemistry": {
+      "url": "https://images.unsplash.com/photo-1781708166347-898b7f09cd1b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGNoZW1pc3RyeSUyMGxhYm9yYXRvcnklMjBjbGVhbnxlbnwwfHx8fDE3ODU3ODA1MjB8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Abstract blue background with clear tubes and cubes representing modern chemistry"
+    },
+    "empty_library": {
+      "url": "https://images.unsplash.com/photo-1594304888440-48cd07c764cd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHwzfHxlbXB0eSUyMGZvbGRlciUyMGNsZWFuJTIwZGVza3xlbnwwfHx8fDE3ODU3ODA1MjB8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Clean wooden desk with a white notebook, representing an empty workspace"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the left navigation drawer requirement as requested. Build a persistent sidebar on Desktop and a Drawer/Hamburger approach on Mobile/Tablet.",
+    "Do NOT use bottom tabs. All primary navigation exists in the drawer.",
+    "The application theme strictly uses the Emerald/Viridian green palette provided. Do not revert to default Tailwind blues or purples.",
+    "Pages should initially be built as foundational layouts with placeholders (breadcrumbs, titles, and empty states). Refer to the 'screens' layout instructions to scaffold the structural empty views correctly.",
+    "Make use of standard React/Tailwind/Vite architecture (this is a PWA web application, despite native design patterns, we adapt iOS-Native clean concepts to Tailwind). Ensure the top app bar has a theme toggle and hamburger menu.",
+    "For the Dashboard empty state, build a realistic grid scaffold of cards (even if empty) to show the intended 'lab bench' layout."
+  ],
+  "haptics": {
+    "events": {
+      "menu_toggle": "light",
+      "tab_change": "light",
+      "primary_action": "medium",
+      "formula_save": "success",
+      "error_state": "error"
+    }
+  }
+}
