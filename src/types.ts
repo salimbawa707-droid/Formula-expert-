@@ -1,0 +1,142 @@
+export interface IngredientInput {
+  id?: string;
+  name: string;
+  type?: string;
+  rawKg?: number;
+  rawPercent?: number;
+  weightKg?: number;
+  activePercent?: number;
+  acidValue?: number;
+  costPerKg?: number;
+  category?: string;
+  function?: string;
+  hlb?: number;
+  density?: number;
+  pHEffect?: 'acid' | 'base' | 'neutral' | 'buffer';
+  pKa?: number;
+  purity?: number;
+}
+
+export interface FormulationIngredient {
+  id?: string;
+  name: string;
+  category?: string;
+  percent?: number;
+  percentage?: number;
+  percentageInFormula?: number;
+  activePercent?: number;
+  activeMatterPct?: number;
+  activeMatterPurity?: number;
+  costPerKg?: number;
+  hlb?: number;
+  hlbValue?: number;
+  function?: string;
+  role?: string;
+  casNumber?: string;
+  inciName?: string;
+  notes?: string;
+  phMin?: number;
+  phMax?: number;
+  density?: number;
+}
+
+export interface ActiveFormulaState {
+  id?: string;
+  name: string;
+  category?: string;
+  targetPH?: number;
+  batchSizeKg?: number;
+  batchSize?: number;
+  productType?: string;
+  grade?: string;
+  targetCost?: number;
+  description?: string;
+  isDraft?: boolean;
+  ingredients: FormulationIngredient[];
+  notes?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PHAdvancedResult {
+  pH: number;
+  finalPH?: number;
+  bufferCapacity: number;
+  totalBufferCapacity?: number;
+  ionicStrength: number;
+  solverConverged: boolean;
+  solverIterations: number;
+  excessStrongAcid?: number;
+  excessStrongBase?: number;
+  activeBuffers?: any;
+  enzymeWarning?: boolean;
+  enzymeWarningMsg?: string;
+  neutralizationSummary?: any;
+  details?: Record<string, any>;
+}
+
+export interface PHSimpleResult {
+  pH: number;
+  estimated: boolean;
+  method?: string;
+  note?: string;
+}
+
+export interface ChemicalItem {
+  id: string;
+  name: string;
+  commonName?: string;
+  chemicalName?: string;
+  tradeNames?: string[];
+  category: string;
+  subCategory?: string;
+  costPerKg?: number;
+  activeMatter?: number;
+  casNumber: string;
+  inciName: string;
+  function: string;
+  description: string;
+  phRange: string;
+  activeMatterDefault: number;
+  costRange: string;
+  hlb?: number;
+  sdsUrl?: string;
+  safetyRating: string;
+  molecularWeight?: number;
+  physicalProperties?: {
+    density?: number;
+    appearance?: string;
+    solubility?: string;
+    viscosity?: string;
+    activeMatter?: number;
+    pH?: number;
+  };
+  sustainability?: {
+    biodegradability?: number;
+    renewableCarbon?: number;
+  };
+  suppliers?: string[];
+}
+
+export type Chemical = ChemicalItem;
+export type Formulation = ActiveFormulaState;
+export type UniversalIngredient = ChemicalItem & {
+  subCategory?: string;
+  activeMatter?: number;
+  functionalInfo?: any;
+  keywords?: string[];
+  sustainability?: any;
+};
+
+export interface FormulaItem {
+  id: string;
+  name: string;
+  category: string;
+  targetPH: number;
+  batchSizeKg: number;
+  description: string;
+  ingredients: FormulationIngredient[];
+  instructions: string[];
+  notes?: string;
+}
