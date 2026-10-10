@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { db, FormulaRecord } from '../db/database';
 import { ActiveFormulaState, FormulationIngredient } from '../types';
+import { auth as firebaseAuth, saveUserFormula, deleteUserFormula } from '../services/firebaseClient';
 
 interface FormulaStore {
   activeFormula: ActiveFormulaState | null;
@@ -110,12 +111,32 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
     };
 
     await db.formulas.put(record);
+    
+    // Sync to Firestore if authenticated with Firebase
+    if (firebaseAuth.currentUser) {
+      try {
+        await saveUserFormula(firebaseAuth.currentUser.uid, record);
+      } catch (err) {
+        console.warn('Failed to persist formula to Firestore:', err);
+      }
+    }
+
     await get().loadFormulas();
     return record;
   },
 
   deleteFormula: async (id: string) => {
     await db.formulas.delete(id);
+
+    // Sync deletion to Firestore if authenticated with Firebase
+    if (firebaseAuth.currentUser) {
+      try {
+        await deleteUserFormula(firebaseAuth.currentUser.uid, id);
+      } catch (err) {
+        console.warn('Failed to delete formula from Firestore:', err);
+      }
+    }
+
     await get().loadFormulas();
   }
 }));

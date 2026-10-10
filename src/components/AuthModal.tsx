@@ -196,14 +196,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           /* Sign In / Sign Up Forms */
           <div>
             <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold mb-2">
-                <Sparkles className="w-3.5 h-3.5" /> Detergent R&D Account
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-2">
+                <Sparkles className="w-3.5 h-3.5" /> Firebase Auth & Cloud Firestore
               </div>
               <h3 className="text-xl font-bold text-white">
                 {mode === 'signin' ? 'Sign In to Your Account' : 'Create R&D Account'}
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Sync formulas, collaborate with team, and access cloud AI models.
+                Google Sign-in with Firebase Auth & persistent data storage in Firestore.
               </p>
             </div>
 

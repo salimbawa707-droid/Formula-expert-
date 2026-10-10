@@ -18,7 +18,8 @@ import {
   Award,
   Layers,
   Cpu,
-  Workflow
+  Workflow,
+  Atom
 } from 'lucide-react';
 
 import AIFormulator from './components/AIFormulator';
@@ -38,6 +39,7 @@ import { PlayBillingBridge } from './services/playBillingBridge';
 import PHEngineView from './components/PHEngineView';
 import LabAutomationDashboard from './components/LabAutomationDashboard';
 import ClosedLoopDashboard from './components/ClosedLoopDashboard';
+import { ScienceLabWorkbench } from './components/ScienceLabWorkbench';
 
 import { ActiveFormulaState } from './types';
 
@@ -65,6 +67,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     labNotebookDesc: "Trial observation journal & batch history",
     validation: "Math Test Suite",
     validationDesc: "Real-time scientific algorithm verification",
+    scienceLab: "Science Lab",
+    scienceLabDesc: "3D Macromolecules, PubChem & Literature",
     searchPlaceholder: "Search raw materials, formulas, CAS numbers, or INCI...",
     lblFormula: "Batch Name",
     voiceSearch: "Voice Search",
@@ -394,6 +398,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
 
 export type TabType = 
   | 'formula_expert' 
+  | 'science_lab'
   | 'formula_library' 
   | 'chemical_encyclopedia' 
   | 'ph_engine'
@@ -434,6 +439,15 @@ export default function App() {
   // Cross-component selected IDs & Single Source of Truth Active Formula State
   const [selectedChemicalId, setSelectedChemicalId] = useState<string | null>(null);
   const [selectedFormulaId, setSelectedFormulaId] = useState<string | null>(null);
+  const [scienceQuery, setScienceQuery] = useState<string>('');
+
+  const handleOpenScienceLab = (query?: string) => {
+    if (query) {
+      setScienceQuery(query);
+    }
+    setActiveTab('science_lab');
+  };
+
   const [activeFormula, setActiveFormula] = useState<ActiveFormulaState | null>(() => {
     try {
       const saved = localStorage.getItem("aiformulator_formulationResult");
@@ -523,7 +537,7 @@ export default function App() {
     recognition.start();
   };
 
-  // Primary 4 Core Workstations
+  // Primary Core Workstations
   const PRIMARY_NAV = [
     { 
       id: 'formula_expert' as TabType, 
@@ -533,6 +547,15 @@ export default function App() {
       glow: "from-blue-500/20 to-cyan-500/20",
       accent: "text-cyan-400",
       badge: "CORE"
+    },
+    { 
+      id: 'science_lab' as TabType, 
+      label: t.scienceLab || "Science Lab", 
+      desc: "3D Molecules & PubChem",
+      icon: Atom, 
+      glow: "from-blue-500/20 to-purple-500/20",
+      accent: "text-cyan-400",
+      badge: "SCIENCE"
     },
     { 
       id: 'formula_library' as TabType, 
@@ -565,6 +588,7 @@ export default function App() {
 
   // Secondary Scientific Tool Suites
   const SECONDARY_NAV = [
+    { id: 'science_lab' as TabType, label: t.scienceLab || "Science Lab", icon: Atom, accent: "text-cyan-400" },
     { id: 'calculators' as TabType, label: t.calculators, icon: Calculator, accent: "text-blue-400" },
     { id: 'qc_operations' as TabType, label: t.qcOperations, icon: ClipboardCheck, accent: "text-emerald-400" },
     { id: 'inventory' as TabType, label: t.inventory, icon: Package, accent: "text-cyan-400" },
@@ -797,12 +821,17 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'science_lab' && (
+            <ScienceLabWorkbench initialChemicalQuery={scienceQuery} />
+          )}
+
           {activeTab === 'chemical_encyclopedia' && (
             <ChemicalEncyclopedia 
               lang={lang as any} 
               translations={TRANSLATIONS} 
               selectedChemicalId={selectedChemicalId}
               onSelectChemical={(id: string) => setSelectedChemicalId(id)}
+              onInspectScience={(q: string) => handleOpenScienceLab(q)}
             />
           )}
 

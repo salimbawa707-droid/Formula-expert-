@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { db, LabNoteRecord } from '../db/database';
+import { auth as firebaseAuth, saveUserTrial } from '../services/firebaseClient';
 
 interface LabNotebookStore {
   notes: LabNoteRecord[];
@@ -43,6 +44,22 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
     };
 
     await db.labNotes.put(record);
+
+    if (firebaseAuth.currentUser) {
+      try {
+        await saveUserTrial(firebaseAuth.currentUser.uid, {
+          id,
+          title: record.title,
+          observations: record.text,
+          formulaId: record.formulaId,
+          updatedAt: now,
+          createdAt: now,
+        });
+      } catch (e) {
+        console.warn('Failed to sync lab note to Firestore:', e);
+      }
+    }
+
     await get().loadNotes();
     return record;
   },
@@ -52,6 +69,24 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
       ...updated,
       updatedAt: new Date().toISOString()
     });
+
+    if (firebaseAuth.currentUser) {
+      try {
+        const note = await db.labNotes.get(id);
+        if (note) {
+          await saveUserTrial(firebaseAuth.currentUser.uid, {
+            id,
+            title: note.title,
+            observations: note.text,
+            formulaId: note.formulaId,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to sync updated lab note to Firestore:', e);
+      }
+    }
+
     await get().loadNotes();
   },
 

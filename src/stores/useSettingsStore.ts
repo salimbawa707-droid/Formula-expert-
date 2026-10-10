@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { db } from '../db/database';
 import { CloudSyncService } from '../services/cloudSync';
 import { supabase, isSupabaseConfigured, AuthService } from '../services/supabaseClient';
+import { 
+  auth as firebaseAuth, 
+  signInWithGoogle as firebaseSignInWithGoogle, 
+  signOutUser as firebaseSignOutUser,
+  saveUserFormula,
+  getUserFormulas,
+  saveUserTrial,
+  getUserTrials,
+  syncUserProfile
+} from '../services/firebaseClient';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export type UserPlan = 'free' | 'pro_monthly' | 'pro_yearly' | 'team';
 
@@ -203,6 +214,58 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         }
       }
 
+      // Attach Firebase Auth state change listener once
+      if (!authListenerInitialized) {
+        authListenerInitialized = true;
+        onAuthStateChanged(firebaseAuth, async (fbUser) => {
+          if (fbUser) {
+            const updatedProf: Partial<UserProfile> = {
+              id: fbUser.uid,
+              email: fbUser.email || get().profile.email,
+              name: fbUser.displayName || get().profile.name,
+              isAuthenticated: true,
+            };
+            await get().updateProfile(updatedProf);
+            // Sync user profile & download cloud formulas/trials from Firestore
+            try {
+              await syncUserProfile(fbUser);
+              const userFormulas = await getUserFormulas(fbUser.uid);
+              if (userFormulas && userFormulas.length > 0) {
+                for (const f of userFormulas) {
+                  await db.formulas.put(f);
+                }
+              }
+              const userTrials = await getUserTrials(fbUser.uid);
+              if (userTrials && userTrials.length > 0) {
+                for (const t of userTrials) {
+                  await db.labNotes.put({
+                    id: t.id,
+                    title: t.title,
+                    text: t.observations,
+                    date: t.updatedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+                    formulaId: t.formulaId,
+                    tags: ['FirestoreSync', t.stabilityVerdict || 'Stable'],
+                    createdAt: t.createdAt,
+                    updatedAt: t.updatedAt
+                  });
+                }
+              }
+            } catch (syncErr) {
+              console.warn("Firestore sync during auth change:", syncErr);
+            }
+            set({
+              syncState: {
+                ...get().syncState,
+                isCloudConnected: true,
+                lastSyncedAt: new Date().toLocaleTimeString(),
+                isSyncing: false,
+                error: null,
+              }
+            });
+          }
+        });
+      }
+
       set({
         profile: currentProfile,
         aiSettings: aiRec?.value ? { ...DEFAULT_AI_SETTINGS, ...aiRec.value } : DEFAULT_AI_SETTINGS,
@@ -350,18 +413,40 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   },
 
   signInWithGoogle: async () => {
-    const authRes = await AuthService.signInWithGoogle();
-    if (!authRes.success) {
-      throw new Error(authRes.error || 'Google Sign-In failed.');
-    }
-    
-    if (!isSupabaseConfigured() && authRes.user) {
-      await get().signIn(authRes.user.email, undefined, authRes.user.user_metadata?.name);
+    try {
+      const user = await firebaseSignInWithGoogle();
+      if (user) {
+        const updated: Partial<UserProfile> = {
+          id: user.uid,
+          email: user.email || '',
+          name: user.displayName || 'Formulation Chemist',
+          isAuthenticated: true,
+        };
+        await get().updateProfile(updated);
+        await get().triggerCloudSync();
+      }
+    } catch (err: any) {
+      console.error('Firebase Google Sign-In error:', err);
+      if (isSupabaseConfigured()) {
+        const authRes = await AuthService.signInWithGoogle();
+        if (!authRes.success) {
+          throw new Error(authRes.error || 'Google Sign-In failed.');
+        }
+      } else {
+        throw new Error(err?.message || 'Google Sign-In failed via Firebase Auth.');
+      }
     }
   },
 
   signOut: async () => {
-    await AuthService.signOut();
+    try {
+      await firebaseSignOutUser();
+    } catch (e) {
+      console.warn('Firebase sign out error:', e);
+    }
+    if (isSupabaseConfigured()) {
+      await AuthService.signOut();
+    }
     const resetProf: UserProfile = {
       ...DEFAULT_PROFILE,
       isAuthenticated: false,
@@ -485,6 +570,47 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   triggerCloudSync: async () => {
     set({ syncState: { ...get().syncState, isSyncing: true, error: null } });
+    const currentUser = firebaseAuth.currentUser;
+
+    if (currentUser) {
+      try {
+        const allFormulas = await db.formulas.toArray();
+        for (const f of allFormulas) {
+          await saveUserFormula(currentUser.uid, f);
+        }
+        const allNotes = await db.labNotes.toArray();
+        for (const n of allNotes) {
+          await saveUserTrial(currentUser.uid, {
+            id: n.id,
+            title: n.title,
+            observations: n.text,
+            formulaId: n.formulaId,
+            updatedAt: n.updatedAt,
+            createdAt: n.createdAt,
+          });
+        }
+        set({
+          syncState: {
+            lastSyncedAt: new Date().toLocaleTimeString(),
+            isSyncing: false,
+            error: null,
+            isCloudConnected: true,
+          },
+        });
+        return;
+      } catch (e: any) {
+        console.error('Firestore cloud sync failed:', e);
+        set({
+          syncState: {
+            ...get().syncState,
+            isSyncing: false,
+            error: e.message || 'Firestore sync failed',
+          },
+        });
+        return;
+      }
+    }
+
     const res = await CloudSyncService.syncAll(get().profile.email, get().profile.id);
     set({
       syncState: {

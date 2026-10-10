@@ -513,17 +513,30 @@ export default function ChemicalEncyclopedia(_props?: any) {
                 </div>
 
                 {/* Chemical Structure & Molecular Intelligence Section */}
-                <div className="pt-2 border-t border-slate-800/80">
-                  <button
-                    onClick={() => toggleStructure(fam.key, fam.variants[0])}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-[#0c1426] hover:bg-[#121c33] border border-cyan-500/30 hover:border-cyan-500/60 rounded-xl text-xs font-bold text-cyan-300 transition"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Atom className="w-3.5 h-3.5 text-cyan-400" />
-                      Chemical Structure & Molecular Intelligence
-                    </span>
-                    {expandedStructures[fam.key] ? <ChevronUp className="w-4 h-4 text-cyan-400" /> : <ChevronDown className="w-4 h-4 text-cyan-400" />}
-                  </button>
+                <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleStructure(fam.key, fam.variants[0])}
+                      className="flex-1 flex items-center justify-between px-3 py-2 bg-[#0c1426] hover:bg-[#121c33] border border-cyan-500/30 hover:border-cyan-500/60 rounded-xl text-xs font-bold text-cyan-300 transition"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Atom className="w-3.5 h-3.5 text-cyan-400" />
+                        Chemical Structure & RDKit
+                      </span>
+                      {expandedStructures[fam.key] ? <ChevronUp className="w-4 h-4 text-cyan-400" /> : <ChevronDown className="w-4 h-4 text-cyan-400" />}
+                    </button>
+                    {_props?.onInspectScience && (
+                      <button
+                        type="button"
+                        onClick={() => _props.onInspectScience(fam.name || fam.inciName)}
+                        title="Open in Science Lab 3D Molecular Workbench & PubChem"
+                        className="px-3 py-2 bg-gradient-to-r from-blue-600/30 to-purple-600/30 hover:from-blue-600/50 hover:to-purple-600/50 border border-purple-500/40 rounded-xl text-xs font-bold text-purple-200 transition flex items-center gap-1.5 shrink-0"
+                      >
+                        <Atom className="w-3.5 h-3.5 text-purple-400" />
+                        <span>3D Science Lab</span>
+                      </button>
+                    )}
+                  </div>
 
                   {expandedStructures[fam.key] && (
                     <div className="mt-2.5 p-3.5 bg-[#070b14] border border-cyan-900/60 rounded-xl space-y-3 text-xs">
@@ -671,6 +684,17 @@ export default function ChemicalEncyclopedia(_props?: any) {
                                   <strong>Scientific Provenance:</strong> Calculated by RDKit WASM engine. Theoretical topological parameters. Does not replace supplier Certificate of Analysis (COA) or empirical wet-lab assay.
                                 </span>
                               </div>
+
+                              {_props?.onInspectScience && (
+                                <button
+                                  type="button"
+                                  onClick={() => _props.onInspectScience(fam.name || fam.inciName)}
+                                  className="w-full mt-2 py-2 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                                >
+                                  <Atom className="w-3.5 h-3.5 text-cyan-400" />
+                                  <span>Open 3D Conformer & Literature in Science Lab</span>
+                                </button>
+                              )}
                             </div>
                           );
                         })()

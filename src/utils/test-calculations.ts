@@ -114,6 +114,7 @@ import { runP5PropertyPipelinesTestSuite } from './__tests__/p5PropertyPipelines
 import { runP7ScientificAccuracyMasterTestSuite } from './__tests__/p7ScientificAccuracyMaster.regression.test';
 import { runP8ScientificDecisionTestSuite } from './__tests__/p8ScientificDecisionIntelligence.test';
 import { runPhase10ConsistencyTestSuite } from './__tests__/phase10Consistency.regression.test';
+import { runViscosityModelImprovementTestSuite } from './__tests__/viscosityModelImprovement.test';
 import { runTestIntegrityTestSuite, evaluateMasterTestHealth, TestExecutionRecord } from './__tests__/testIntegrity.regression.test';
 
 const phSummary = runRegressionTestSuite();
@@ -121,6 +122,9 @@ const phV2Summary = runPHEngineV2TestSuite();
 const hlbSummary = runHLBRegressionTestSuite();
 const activeMatterSummary = runActiveMatterRegressionTestSuite();
 const viscositySummary = runViscosityEngineTestSuite();
+const viscosityImprovementResults = runViscosityModelImprovementTestSuite();
+const viscosityImprovementPassed = viscosityImprovementResults.filter(r => r.passed).length;
+const viscosityImprovementFailed = viscosityImprovementResults.filter(r => !r.passed).length;
 const dilutionSummary = runDilutionRegressionTestSuite();
 const powderSummary = runPowderEngineTestSuite();
 const specSummary = runSpecificationEngineTestSuite();
@@ -471,6 +475,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'p8ScientificDecisionIntelligence.test.ts', moduleName: 'runP8ScientificDecisionTestSuite', executed: true, passedAssertions: p8ScientificDecisionSummary.passed, failedAssertions: p8ScientificDecisionSummary.failed, totalAssertions: p8ScientificDecisionSummary.total, skipped: false },
   { file: 'phase10Consistency.regression.test.ts', moduleName: 'runPhase10ConsistencyTestSuite', executed: true, passedAssertions: phase10ConsistencySummary.passed, failedAssertions: phase10ConsistencySummary.failed, totalAssertions: phase10ConsistencySummary.total, skipped: false },
   { file: 'p2Phase13FinalIntegrity.regression.test.ts', moduleName: 'runP2Phase13FinalIntegrityTestSuite', executed: true, passedAssertions: 12, failedAssertions: 0, totalAssertions: 12, skipped: false },
+  { file: 'viscosityModelImprovement.test.ts', moduleName: 'runViscosityModelImprovementTestSuite', executed: true, passedAssertions: viscosityImprovementPassed, failedAssertions: viscosityImprovementFailed, totalAssertions: viscosityImprovementResults.length, skipped: false },
   { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 11, failedAssertions: 0, totalAssertions: 11, skipped: false }
 ];
 

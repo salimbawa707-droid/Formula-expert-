@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Security Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email'])
+        && data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id == request.auth.uid && data.id.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024));
+    }
+
+    function isValidFormula(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'name'])
+        && data.keys().hasOnly(['id', 'userId', 'name', 'productType', 'grade', 'batchSizeKg', 'targetCost', 'targetPH', 'ingredients', 'notes', 'status', 'category', 'createdAt', 'updatedAt'])
+        && data.id is string && isValidId(data.id)
+        && data.userId is string && data.userId == userId && data.userId == request.auth.uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 256
+        && (!('productType' in data) || (data.productType is string && data.productType.size() <= 128))
+        && (!('grade' in data) || (data.grade is string && data.grade.size() <= 64))
+        && (!('batchSizeKg' in data) || data.batchSizeKg is number)
+        && (!('targetCost' in data) || data.targetCost is number)
+        && (!('targetPH' in data) || data.targetPH is number)
+        && (!('ingredients' in data) || (data.ingredients is list && data.ingredients.size() <= 100))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 4096))
+        && (!('status' in data) || (data.status is string && data.status.size() <= 64))
+        && (!('category' in data) || (data.category is string && data.category.size() <= 64));
+    }
+
+    function isValidTrial(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'title'])
+        && data.keys().hasOnly(['id', 'userId', 'title', 'formulaId', 'observations', 'measuredPH', 'measuredViscosityCp', 'stabilityVerdict', 'createdAt', 'updatedAt'])
+        && data.id is string && isValidId(data.id)
+        && data.userId is string && data.userId == userId && data.userId == request.auth.uid
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 256
+        && (!('formulaId' in data) || (data.formulaId is string && data.formulaId.size() <= 128))
+        && (!('observations' in data) || (data.observations is string && data.observations.size() <= 8192))
+        && (!('measuredPH' in data) || data.measuredPH is number)
+        && (!('measuredViscosityCp' in data) || data.measuredViscosityCp is number)
+        && (!('stabilityVerdict' in data) || (data.stabilityVerdict is string && data.stabilityVerdict.size() <= 64));
+    }
+
+    // 4. Match Blocks
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().id == existing().id;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /formulas/{formulaId} {
+        allow get, delete: if isOwner(userId) && isValidId(userId) && isValidId(formulaId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId) && incoming().userId == existing().userId;
+      }
+
+      match /trials/{trialId} {
+        allow get, delete: if isOwner(userId) && isValidId(userId) && isValidId(trialId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(trialId) && isValidTrial(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(trialId) && isValidTrial(incoming(), userId) && incoming().userId == existing().userId;
+      }
+    }
+  }
+}

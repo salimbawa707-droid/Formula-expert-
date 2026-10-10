@@ -14,6 +14,7 @@
     "build:android": "python3 scripts/build_release_apk.py"
   },
   "dependencies": {
+    "3dmol": "^2.5.5",
     "@capacitor/android": "^8.5.0",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
@@ -27,11 +28,13 @@
     "dexie": "^4.4.6",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
+    "firebase": "^13.0.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.460.0",
     "motion": "^11.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "smiles-drawer": "^2.4.1",
     "vite": "^6.0.0",
     "zustand": "^5.0.15"
   },
