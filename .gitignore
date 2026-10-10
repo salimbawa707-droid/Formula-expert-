@@ -86,3 +86,10 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Security & Signing Artifacts
+*.keystore
+*.jks
+*.p12
+*.pfx
+release-artifacts/

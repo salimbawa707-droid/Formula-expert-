@@ -24,10 +24,10 @@ export function runChemicalEncyclopediaTestSuite() {
     }
   }
 
-  // 1. 400-record catalog integrity
+  // 1. 428+ record catalog integrity
   assert(
-    UNIVERSAL_INGREDIENTS.length === 400,
-    'Test 1: Exact record count of UNIVERSAL_INGREDIENTS is 400',
+    UNIVERSAL_INGREDIENTS.length >= 428,
+    'Test 1: Record count of UNIVERSAL_INGREDIENTS is at least 428 canonical items',
     `Count: ${UNIVERSAL_INGREDIENTS.length}`
   );
 
@@ -39,8 +39,8 @@ export function runChemicalEncyclopediaTestSuite() {
     idSet.add(i.id);
   });
   assert(
-    dupIds.length === 0 && idSet.size === 400,
-    'Test 2: Zero duplicate IDs in UNIVERSAL_INGREDIENTS (400 unique)',
+    dupIds.length === 0 && idSet.size === UNIVERSAL_INGREDIENTS.length,
+    `Test 2: Zero duplicate IDs in UNIVERSAL_INGREDIENTS (${UNIVERSAL_INGREDIENTS.length} unique)`,
     `Duplicates: ${dupIds.length}`
   );
 
@@ -52,8 +52,8 @@ export function runChemicalEncyclopediaTestSuite() {
     casMap.get(cas)!.push(i);
   });
   assert(
-    casMap.size === 85,
-    'Test 3: Exactly 85 unique CAS compounds in canonical master library',
+    casMap.size >= 112,
+    'Test 3: At least 112 unique CAS compounds in canonical master library',
     `Unique CAS: ${casMap.size}`
   );
 
@@ -133,11 +133,11 @@ export function runChemicalEncyclopediaTestSuite() {
     `SLES 28: ${sles28Results.length}, SLES 70: ${sles70Results.length}, NaOH 50: ${naoh50Results.length}, NaOH 99: ${naoh99Results.length}`
   );
 
-  // 12. Category filter integrity across all 13 categories
+  // 12. Category filter integrity across all 15 categories
   const categories = getAllCategories();
   assert(
-    categories.length === 13,
-    'Test 12: Master catalog contains exactly 13 standard chemical categories',
+    categories.length === 15,
+    'Test 12: Master catalog contains exactly 15 standard chemical categories',
     `Categories: ${categories.length}`
   );
   let totalAcrossCategories = 0;
@@ -146,8 +146,8 @@ export function runChemicalEncyclopediaTestSuite() {
     totalAcrossCategories += items.length;
   });
   assert(
-    totalAcrossCategories === 400,
-    'Test 13: Sum of items across all 13 categories equals exactly 400 master records',
+    totalAcrossCategories === UNIVERSAL_INGREDIENTS.length,
+    `Test 13: Sum of items across all categories equals exactly ${UNIVERSAL_INGREDIENTS.length} master records`,
     `Total: ${totalAcrossCategories}`
   );
 

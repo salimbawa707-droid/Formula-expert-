@@ -148,7 +148,7 @@ export function runCostingEngineTestSuite() {
   const partiallyPricedFormula: FormulationIngredient[] = [
     { id: '1', name: 'LABSA 90%', percentage: 10, costPerKg: 140 },
     { id: '2', name: 'SLES 70%', percentage: 10, costPerKg: 110 },
-    { id: '3', name: 'CAPB 30%', percentage: 5, costPerKg: 0 }, // Unpriced
+    { id: '3', name: 'CAPB 30%', percentage: 5, costPerKg: null }, // Unpriced
     { id: '4', name: 'Water', percentage: 75, costPerKg: 1 }
   ];
   const report8 = calculateFormulaCost(partiallyPricedFormula, 100);

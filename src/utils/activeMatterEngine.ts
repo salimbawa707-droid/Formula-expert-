@@ -119,6 +119,7 @@ export interface ActiveMatterReport {
   waterBalance: WaterBalanceBreakdown;
   contributions: IngredientActiveContribution[];
   isFullyAuthoritative: boolean;
+  activeMatterStatus: 'COMPLETE' | 'INSUFFICIENT_DATA';
   ingredientsCount: number;
   ingredientsWithMissingActive: number;
   diagnostics: string[];
@@ -138,6 +139,7 @@ export interface StandardActiveReference {
  */
 export const AUTHORITATIVE_ACTIVE_BENCHMARKS: StandardActiveReference[] = [
   { name: "LABSA 96% (Acid Slurry)", activeDefault: 96, category: "Anionic Surfactant", surfactantType: "anionic", description: "Standard high-purity linear alkylbenzene sulfonic acid." },
+  { name: "LABSA 90% (Acid Slurry)", activeDefault: 90, category: "Anionic Surfactant", surfactantType: "anionic", description: "Standard commercial 90% active linear alkylbenzene sulfonic acid." },
   { name: "LABSA 90% (Commercial Grade)", activeDefault: 90, category: "Anionic Surfactant", surfactantType: "anionic", description: "Commercial alkylbenzene sulfonic acid grade." },
   { name: "SLES 70% (Sodium Lauryl Ether Sulfate Paste)", activeDefault: 70, category: "Anionic Surfactant", surfactantType: "anionic", description: "Concentrated 2EO sulfate paste." },
   { name: "SLES 28% (Sodium Lauryl Ether Sulfate Liquid)", activeDefault: 28, category: "Anionic Surfactant", surfactantType: "anionic", description: "Ready-to-pump dilute 2EO sulfate liquid." },
@@ -447,7 +449,8 @@ export class ActiveMatterEngine {
       const bLower = b.name.toLowerCase();
       const bFirst = bLower.split(' ')[0];
       const bParen = bLower.split('(')[0].trim();
-      return lowerName === bFirst || lowerName === bParen || bLower.startsWith(lowerName);
+      const hasParenthesesMatch = bLower.includes(`(${lowerName} `) || bLower.includes(` ${lowerName} `) || bLower.includes(`(${lowerName})`) || bLower.includes(` ${lowerName})`) || bLower.includes(`(${lowerName}%)`) || bLower.includes(`(${lowerName} 100%)`);
+      return lowerName === bFirst || lowerName === bParen || bLower.startsWith(lowerName) || hasParenthesesMatch;
     });
 
     if (benchMatch) {
@@ -505,9 +508,9 @@ export class ActiveMatterEngine {
       };
     }
 
-    // Missing / Unknown Active Specification
+    // Missing / Unknown Active Specification (Never assume 100% for unknown active specification)
     return {
-      activeMatterPct: 100, // Safe numerical fallback with explicit 'missing' provenance
+      activeMatterPct: 0,
       dataSource: 'missing',
       category: resolvedCategory,
       isSurfactant,
@@ -564,7 +567,8 @@ export class ActiveMatterEngine {
 
       if (resolution.dataSource === 'missing') {
         ingredientsWithMissingActive++;
-        diagnostics.push(`Ingredient "${ing.name || 'Unknown'}" lacks authoritative active assay data (assumed 100% active).`);
+        diagnostics.push(`Ingredient "${ing.name || 'Unknown'}" lacks authoritative active assay data (unresolved active specification; INSUFFICIENT_DATA).`);
+        warnings.push(`Ingredient "${ing.name || 'Unknown'}" lacks authoritative active assay specification (INSUFFICIENT_DATA).`);
       }
 
       if (resolution.isWater) {
@@ -665,6 +669,7 @@ export class ActiveMatterEngine {
       },
       contributions,
       isFullyAuthoritative: ingredientsWithMissingActive === 0,
+      activeMatterStatus: ingredientsWithMissingActive === 0 ? 'COMPLETE' : 'INSUFFICIENT_DATA',
       ingredientsCount: contributions.length,
       ingredientsWithMissingActive,
       diagnostics,

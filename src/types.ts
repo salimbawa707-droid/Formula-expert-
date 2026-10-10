@@ -1,3 +1,7 @@
+import { ProductCategoryId } from './domain/productTaxonomy';
+
+export type { ProductCategoryId };
+
 export interface IngredientInput {
   id?: string;
   name: string;
@@ -7,7 +11,7 @@ export interface IngredientInput {
   weightKg?: number;
   activePercent?: number;
   acidValue?: number;
-  costPerKg?: number;
+  costPerKg?: number | null;
   category?: string;
   function?: string;
   hlb?: number;
@@ -27,7 +31,7 @@ export interface FormulationIngredient {
   activePercent?: number;
   activeMatterPct?: number;
   activeMatterPurity?: number;
-  costPerKg?: number;
+  costPerKg?: number | null;
   hlb?: number;
   hlbValue?: number;
   function?: string;
@@ -38,12 +42,14 @@ export interface FormulationIngredient {
   phMin?: number;
   phMax?: number;
   density?: number;
+  nonVolatileFraction?: number;
 }
 
 export interface ActiveFormulaState {
   id?: string;
   name: string;
   category?: string;
+  categoryId?: ProductCategoryId;
   targetPH?: number;
   batchSizeKg?: number;
   batchSize?: number;
@@ -62,9 +68,23 @@ export interface ActiveFormulaState {
 export interface PHAdvancedResult {
   pH: number;
   finalPH?: number;
+  status?: string;
+  method?: string;
+  converged?: boolean;
+  iterations?: number;
+  residual?: number;
+  stepSize?: number;
   bufferCapacity: number;
   totalBufferCapacity?: number;
   ionicStrength: number;
+  activityModel?: string;
+  modelValidity?: string;
+  temperatureC?: number;
+  assumptions?: string[];
+  warnings?: string[];
+  confidence?: number;
+  measuredPH?: number | null;
+  predictionError?: number | null;
   solverConverged: boolean;
   solverIterations: number;
   excessStrongAcid?: number;
@@ -91,7 +111,7 @@ export interface ChemicalItem {
   tradeNames?: string[];
   category: string;
   subCategory?: string;
-  costPerKg?: number;
+  costPerKg?: number | null;
   activeMatter?: number;
   casNumber: string;
   inciName: string;
@@ -133,10 +153,13 @@ export interface FormulaItem {
   id: string;
   name: string;
   category: string;
+  categoryId?: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
   targetPH: number;
   batchSizeKg: number;
   description: string;
   ingredients: FormulationIngredient[];
   instructions: string[];
   notes?: string;
+  version?: string;
+  status?: string;
 }

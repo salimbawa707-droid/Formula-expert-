@@ -1,4 +1,9 @@
+/**
+ * @deprecated LEGACY / ORPHANED ENGINE. This file is not used in production and is isolated as non-production.
+ */
 import { FormulationIngredient } from '../types';
+import { calculateActiveSurfactants, calculateActiveMatter } from './activeMatterEngine';
+import { calculateCleaningPerformance } from './cleaningPerformanceEngine';
 
 export type MachineProfile = 'Front Load High-Efficiency (HE)' | 'Top Load Standard' | 'Commercial Heavy Duty' | 'Hand Washing / Manual Basin';
 
@@ -54,10 +59,17 @@ export function analyzeMachineProfile(
 ): any {
   const pStr = String(profile || 'Front Load High-Efficiency (HE)');
   const isFrontLoad = pStr.includes('Front Load');
+  const safeIngs = Array.isArray(_ingredients) ? _ingredients : [];
+  const hasIngs = safeIngs.length > 0;
+
+  const activeSurfactant = hasIngs ? calculateActiveSurfactants(safeIngs) : 0;
+  const rawSurfactant = hasIngs ? calculateActiveMatter(safeIngs) : 0;
+  const cleaningRes = hasIngs ? calculateCleaningPerformance(safeIngs) : null;
+
   return {
     foamSuitability: isFrontLoad ? 'Low Foaming Required' : 'High Foaming Compatible',
     recommendedDefoamerPct: isFrontLoad ? 0.2 : 0.0,
-    washEfficiencyScore: 92,
+    washEfficiencyScore: cleaningRes ? cleaningRes.cleaningScore : 'NOT_EVALUATED',
     advice: isFrontLoad ? 'Control foam height to prevent drum oversuds errors.' : 'High flash foam generates superior consumer satisfaction.',
     machineInfo: {
       name: pStr,
@@ -69,9 +81,9 @@ export function analyzeMachineProfile(
     },
     estimatedFoamHeightMm: isFrontLoad ? 45 : 120,
     foamCategoryMatch: isFrontLoad ? 'Controlled Low Suds' : 'Rich Flash Foam',
-    cleaningPerformance: { cleaningScore: 90, overallScore: 90, rating: 90 },
-    activeSurfactantPct: 14.5,
-    rawSurfactantPct: 22.0,
+    cleaningPerformance: cleaningRes ? { cleaningScore: cleaningRes.cleaningScore, overallScore: cleaningRes.overallScore, rating: cleaningRes.cleaningScore } : { status: 'NOT_EVALUATED' },
+    activeSurfactantPct: hasIngs ? activeSurfactant : 'NOT_EVALUATED',
+    rawSurfactantPct: hasIngs ? rawSurfactant : 'NOT_EVALUATED',
     isHighAnionicRisk: false,
     isDefoamerPresent: true,
     recommendations: [

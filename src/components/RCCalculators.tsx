@@ -10,8 +10,9 @@ import {
   calculateGreenChelators,
   getDefaultActiveMatter
 } from "../utils/calculators";
-import { HLBEngine, AUTHORITATIVE_HLB_BENCHMARKS } from "../utils/hlbEngine";
-import { ActiveMatterEngine, AUTHORITATIVE_ACTIVE_BENCHMARKS } from "../utils/activeMatterEngine";
+import { HLBEngine } from "../utils/hlbEngine";
+import { ActiveMatterEngine } from "../utils/activeMatterEngine";
+import { IngredientIdentitySSOT } from "../domain/ingredients/ingredientIdentitySSOT";
 import { Calculator, ArrowRight, ShieldAlert, Thermometer, RefreshCw, AlertCircle, Info, Beaker, Sparkles } from "lucide-react";
 import { ActiveFormulaState } from "../types";
 
@@ -60,17 +61,11 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
     alkaliType
   } as any);
 
-  // Standard HLB Surfactant Database from Authoritative HLB Engine
-  const STANDARD_HLB_OPTIONS = AUTHORITATIVE_HLB_BENCHMARKS.map(b => ({
-    name: b.name,
-    hlb: b.hlb
-  }));
+  // Standard HLB Surfactant Database from IngredientIdentitySSOT
+  const STANDARD_HLB_OPTIONS = IngredientIdentitySSOT.getHLBBenchmarks();
 
-  // Standard Active Matter Surfactant Database from Authoritative Active Matter Engine
-  const STANDARD_ACTIVE_OPTIONS = AUTHORITATIVE_ACTIVE_BENCHMARKS.map(b => ({
-    name: b.name,
-    purity: b.activeDefault
-  }));
+  // Standard Active Matter Surfactant Database from IngredientIdentitySSOT
+  const STANDARD_ACTIVE_OPTIONS = IngredientIdentitySSOT.getActiveMatterBenchmarks();
 
   // 2. HLB Calculator State
   const [hlbList, setHlbList] = useState<HLBSurfactant[]>([
@@ -205,19 +200,19 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
       setActiveList(newActiveList);
     }
 
-    // 2. Populate HLB List (for non-water ingredients with percentage > 0)
+    // 2. Populate HLB List (only for surfactants with authoritative HLB data)
     const newHlbList: HLBSurfactant[] = activeFormula.ingredients
-      .filter(ing => Number(ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? 0) > 0 && !(ing?.name || "").toLowerCase().includes('water') && !(ing?.name || "").toLowerCase().includes('aqua'))
+      .filter(ing => Number(ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? 0) > 0)
       .map((ing) => {
         const resolution = HLBEngine.resolveIngredientHLB(ing);
-        const resolvedHlb = resolution.hlb !== null && resolution.hlb >= 0 ? resolution.hlb : 12.0;
-
+        if (resolution.hlb === null || resolution.hlb < 0) return null;
         return {
           name: ing.name,
-          hlb: resolvedHlb,
+          hlb: resolution.hlb,
           proportion: Number(ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? 0),
         };
-      });
+      })
+      .filter((item): item is HLBSurfactant => item !== null);
     if (newHlbList.length > 0) {
       setHlbList(newHlbList);
     }
@@ -449,7 +444,9 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                     <Thermometer className="text-rose-400 shrink-0" size={16} />
                     <div>
                       <span className="text-slate-400 block">Exothermic Heat Release:</span>
-                      <span className="font-bold text-white font-mono">~ {neutResult.heatGeneratedKJ.toFixed(0)} kJ</span>
+                      <span className="font-bold text-white font-mono">
+                        {neutResult.heatGeneratedKJ !== null ? `~ ${neutResult.heatGeneratedKJ.toFixed(0)} kJ` : 'N/A'}
+                      </span>
                     </div>
                   </div>
 
@@ -470,7 +467,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                     )
                   ) : alkaliType === "NaOH Lye (48%)" ? (
                     <div className="bg-[#0b1020] p-2.5 rounded border border-cyan-500/30 text-[10px] text-slate-300 font-medium">
-                      💡 <span className="font-bold text-white">Liquid Caustic Handling:</span> 48% NaOH solution is supplied as an aqueous liquid (no dry flake dissolution step needed). However, neutralization with LABSA is strongly exothermic (~{neutResult.heatGeneratedKJ.toFixed(0)} kJ); maintain slow metered addition with continuous stirring, vessel cooling, and full PPE.
+                      💡 <span className="font-bold text-white">Liquid Caustic Handling:</span> 48% NaOH solution is supplied as an aqueous liquid (no dry flake dissolution step needed). However, neutralization with LABSA is strongly exothermic ({neutResult.heatGeneratedKJ !== null ? `~${neutResult.heatGeneratedKJ.toFixed(0)} kJ` : 'strongly exothermic'}); maintain slow metered addition with continuous stirring, vessel cooling, and full PPE.
                     </div>
                   ) : null}
                 </div>

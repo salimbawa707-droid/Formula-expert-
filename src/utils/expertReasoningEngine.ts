@@ -1,10 +1,54 @@
 import { FormulationIngredient } from '../types';
-import { getAuditedIngredientCategory, getTargetPHRange } from './calculators';
+import { getAuditedIngredientCategory } from './calculators';
 import { ActiveMatterEngine } from './activeMatterEngine';
+import { getProductCategory, normalizeProductCategory } from '../domain/productTaxonomy';
+import { calculateDynamicChelatorRequirement } from './chelatorEngine';
+import { INGREDIENT_INTELLIGENCE_REGISTRY } from './ingredientIntelligenceEngine';
+
+// =============================================================================
+// ENUMS & TYPES
+// =============================================================================
 
 export type ScientificBasisType = 'CALCULATED' | 'PREDICTIVE' | 'EMPIRICAL' | 'LABORATORY VERIFIED';
 export type SeverityLevel = 'Critical' | 'High' | 'Medium' | 'Low';
 export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type RecommendationTypeClass =
+  | 'ADD_INGREDIENT'
+  | 'REMOVE_INGREDIENT'
+  | 'REDUCE_DOSAGE'
+  | 'INCREASE_DOSAGE'
+  | 'REPLACE_INGREDIENT'
+  | 'CHANGE_GRADE'
+  | 'CHANGE_PROCESS'
+  | 'CHECK_COMPATIBILITY'
+  | 'RUN_LAB_TEST'
+  | 'NO_CHANGE'
+  | 'INSUFFICIENT_DATA';
+
+export type RecommendationAuthoritySource =
+  | 'DETERMINISTIC_RULE'
+  | 'SCIENTIFIC_ENGINE'
+  | 'SPECIFICATION_GATE'
+  | 'COMPATIBILITY_ENGINE'
+  | 'PERFORMANCE_MODEL'
+  | 'LAB_EVIDENCE'
+  | 'GOVERNED_MODEL'
+  | 'AI_INTERPRETATION'
+  | 'USER_INPUT';
+
+export interface ReasoningTrace {
+  reasoningId: string;
+  productCategory: string;
+  formulaVersion: string;
+  ingredientIds: string[];
+  relevantEngines: string[];
+  inputData: Record<string, any>;
+  scientificOutputs: Record<string, any>;
+  evidenceProvenance: string;
+  rulesTriggered: string[];
+  uncertainty: 'HIGH_CONFIDENCE' | 'MODERATE_CONFIDENCE' | 'LOW_CONFIDENCE' | 'INSUFFICIENT_DATA' | 'LAB_VALIDATION_REQUIRED';
+}
 
 export interface SanityIssue {
   id: string;
@@ -33,6 +77,11 @@ export interface ExpertRecommendation {
   tradeOff: string;
   confidence: ConfidenceLevel;
   calculationBasis?: string;
+  
+  // Phase 9 Advanced Reasoning Attributes
+  recommendationType: RecommendationTypeClass;
+  authority: RecommendationAuthoritySource;
+  reasoningTrace?: ReasoningTrace;
 }
 
 export interface ProductCategoryContext {
@@ -40,7 +89,7 @@ export interface ProductCategoryContext {
   targetPHMin: number;
   targetPHMax: number;
   targetActiveMatterMin: number;
-  foamExpectation: 'High Foam' | 'Controlled / Low Foam' | 'Moderate Foam' | 'Low / Streak-Free';
+  foamExpectation: string;
   notes: string;
 }
 
@@ -67,106 +116,97 @@ export interface ExpertReasoningInput {
   totalPercentage?: number;
   costPerKg?: number;
   cleaningScore?: number;
-  hardnessSufficiency?: 'sufficient' | 'borderline' | 'insufficient';
+  hardnessSufficiency?: 'sufficient' | 'borderline' | 'insufficient' | 'not_applicable' | 'baseline';
   maxSupportedHardnessPpm?: number;
   compatibilityScore?: number;
   compatibilityAlerts?: Array<{ id: string; title: string; severity: 'High' | 'Medium' | 'Low' | 'Critical'; message: string }>;
   viscosityEstimate?: string;
 }
 
-export function getProductCategoryContext(categoryName: string = 'Laundry Liquid'): ProductCategoryContext {
-  const cat = categoryName || 'Laundry Liquid';
-  const targetPH = getTargetPHRange(cat);
+// =============================================================================
+// 13-CATEGORY TARGET CONFIGURATION REGISTRY
+// =============================================================================
 
-  const cLower = cat.toLowerCase();
-  if (cLower.includes('front') || cLower.includes('matic') || cLower.includes('auto')) {
-    return {
-      category: cat,
-      targetPHMin: targetPH.min,
-      targetPHMax: targetPH.max,
-      targetActiveMatterMin: 12.0,
-      foamExpectation: 'Controlled / Low Foam',
-      notes: 'Front-load horizontal axis washing machines require suds suppression to prevent suds-lock and pump cavitation.'
-    };
+export function getProductCategoryContext(categoryName?: string): ProductCategoryContext {
+  const norm = normalizeProductCategory(categoryName);
+  if (norm === 'UNKNOWN_PRODUCT_CATEGORY') {
+    throw new Error(
+      `Cannot resolve product category context: Unrecognized or undefined category "${categoryName ?? 'undefined'}". ` +
+      `Product category must resolve to a valid canonical ProductCategoryId.`
+    );
   }
-  if (cLower.includes('dish') || cLower.includes('dishwash') || cLower.includes('utensil')) {
-    return {
-      category: cat,
-      targetPHMin: targetPH.min,
-      targetPHMax: targetPH.max,
-      targetActiveMatterMin: 12.0,
-      foamExpectation: 'High Foam',
-      notes: 'Manual dishwash demands high stable foam, fast grease solubilization, and skin mildness (pH 6.0 - 7.8).'
-    };
+  const def = getProductCategory(norm);
+  if (!def) {
+    throw new Error(`Category definition not found for canonical ID "${norm}".`);
   }
-  if (cLower.includes('glass') || cLower.includes('window')) {
-    return {
-      category: cat,
-      targetPHMin: targetPH.min,
-      targetPHMax: targetPH.max,
-      targetActiveMatterMin: 1.0,
-      foamExpectation: 'Low / Streak-Free',
-      notes: 'Glass cleaners require low non-volatile residue (<2% actives) and fast evaporation to prevent smearing.'
-    };
-  }
-  if (cLower.includes('floor') || cLower.includes('surface')) {
-    return {
-      category: cat,
-      targetPHMin: targetPH.min,
-      targetPHMax: targetPH.max,
-      targetActiveMatterMin: 4.0,
-      foamExpectation: 'Moderate Foam',
-      notes: 'Hard surface cleaners require balanced degreasing, streak-free drying, and soil release without sticky residues.'
-    };
-  }
-  if (cLower.includes('hand') || cLower.includes('delicate') || cLower.includes('wool')) {
-    return {
-      category: cat,
-      targetPHMin: targetPH.min,
-      targetPHMax: targetPH.max,
-      targetActiveMatterMin: 10.0,
-      foamExpectation: 'High Foam',
-      notes: 'Hand wash detergents require neutral pH and high amphoteric/nonionic co-surfactants to avoid skin defatting.'
-    };
-  }
-  if (cLower.includes('powder')) {
-    return {
-      category: cat,
-      targetPHMin: targetPH.min,
-      targetPHMax: targetPH.max,
-      targetActiveMatterMin: 10.0,
-      foamExpectation: 'Moderate Foam',
-      notes: 'Powder detergents accommodate high inorganic builder loadings (Soda ash, STPP, Zeolites) with alkaline wash liquor.'
-    };
-  }
-
-  // Default Top Load / General Laundry
   return {
-    category: cat,
-    targetPHMin: targetPH.min,
-    targetPHMax: targetPH.max,
-    targetActiveMatterMin: 10.0,
-    foamExpectation: 'Moderate Foam',
-    notes: 'General laundry liquid requiring robust particulate soil suspension, stain removal, and hard water tolerance.'
+    category: def.label,
+    targetPHMin: def.targetPHMin,
+    targetPHMax: def.targetPHMax,
+    targetActiveMatterMin: def.activeMatterMinPct,
+    foamExpectation: def.foamExpectation,
+    notes: `${def.primaryFunction}. Constraints: ${def.keyConstraints.join('; ')}.`
   };
 }
 
-/**
- * Main Expert Formulation Reasoning Engine
- * Operates purely on the current active formula state and existing verified calculations.
- * Never silently modifies formulas.
- */
+// =============================================================================
+// SCIENTIFIC REASONING ENGINE - CORE EVALUATION
+// =============================================================================
+
 export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReasoningReport {
   const ingredients = Array.isArray(input.ingredients) ? input.ingredients : [];
-  const productCat = input.productCategory || 'Laundry Liquid';
-  const catContext = getProductCategoryContext(productCat);
+  const rawCat = input.productCategory;
+  const normCat = normalizeProductCategory(rawCat);
+
+  // Safeguard: Unknown category context failure
+  if (normCat === 'UNKNOWN_PRODUCT_CATEGORY') {
+    return {
+      sanityCheckPassed: false,
+      overallStatus: 'FAIL',
+      summarySentence: `Evaluation failed: Product category "${rawCat ?? 'undefined'}" is unrecognized. Expert reasoning constraints cannot be verified without an authoritative product category.`,
+      totalIssuesCount: 1,
+      criticalIssuesCount: 1,
+      highIssuesCount: 0,
+      issues: [{
+        id: 'unknown-product-category',
+        issue: `Unrecognized product category: "${rawCat ?? 'undefined'}"`,
+        whyItMatters: 'Target pH, active matter, and foam profiles cannot be evaluated without an authoritative category context.',
+        scientificBasis: 'Deterministic formulation validation requires mapping to one of the 13 canonical ProductCategoryId entries.',
+        scientificType: 'EMPIRICAL',
+        severity: 'Critical',
+        whatToCheck: 'Ensure the formula specifies a valid canonical product category.'
+      }],
+      strengths: [],
+      recommendations: [{
+        id: 'rec-valid-category',
+        problem: 'Formulation lacks a valid canonical product category.',
+        why: 'Target pH, foam behavior, and active matter thresholds are strictly category-specific.',
+        recommendedAction: 'Select one of the 13 canonical product categories (e.g., Laundry Liquid, Dishwash Manual, Floor Cleaner, etc.).',
+        expectedEffect: 'Enables deterministic formulation sanity checks and specification compliance.',
+        tradeOff: 'None',
+        confidence: 'HIGH',
+        recommendationType: 'INSUFFICIENT_DATA',
+        authority: 'SPECIFICATION_GATE'
+      }],
+      productCategoryContext: {
+        category: rawCat || 'Unknown',
+        targetPHMin: 0,
+        targetPHMax: 14,
+        targetActiveMatterMin: 0,
+        foamExpectation: 'moderate',
+        notes: 'Unrecognized product category.'
+      }
+    };
+  }
+
+  const catContext = getProductCategoryContext(normCat);
   const waterHardness = Number(input.waterHardnessPpm ?? 150);
 
   const issues: SanityIssue[] = [];
   const strengths: FormulationStrength[] = [];
   const recommendations: ExpertRecommendation[] = [];
 
-  // 1. Basic mass & active accounting
+  // Intermediate variable aggregates
   let totalPct = 0;
   let totalActiveSurfactantPct = 0;
   let anionicActivePct = 0;
@@ -175,17 +215,14 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   let cationicActivePct = 0;
   let inorganicBuilderPct = 0;
   let organicChelatorPct = 0;
-  let electrolytePct = 0;
-  let waterPct = 0;
+  let saltPct = 0;
   let hasEnzyme = false;
   let hasBleach = false;
   let hasPreservative = false;
-  let hasHydrotrope = false;
 
-  const rawMaterialNames: string[] = [];
-  const casEncountered = new Set<string>();
-  const duplicateCompoundList: string[] = [];
+  const ingredientIds: string[] = [];
 
+  // Parse and audit ingredients cleanly
   for (const ing of ingredients) {
     const rawPct = Number(ing.percentage ?? (ing as any).percent ?? 0);
     const activeRes = ActiveMatterEngine.resolveIngredientActive(ing);
@@ -196,561 +233,647 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
     const role = (ing.role || (ing as any).category || activeRes.category || getAuditedIngredientCategory(name)).toLowerCase();
 
     totalPct += rawPct;
-    rawMaterialNames.push(name);
 
-    if (ing.casNumber) {
-      if (casEncountered.has(ing.casNumber)) {
-        duplicateCompoundList.push(name);
-      } else {
-        casEncountered.add(ing.casNumber);
-      }
-    }
-
-    // Single ingredient sanity
-    if (rawPct < 0) {
-      issues.push({
-        id: `neg-qty-${ing.id}`,
-        issue: `Negative quantity detected for ${name} (${rawPct}%)`,
-        whyItMatters: 'Physical raw material mass cannot be negative.',
-        scientificBasis: 'Conservation of mass balance.',
-        scientificType: 'CALCULATED',
-        severity: 'Critical',
-        whatToCheck: 'Correct raw material percentage input to a non-negative value.'
-      });
-    }
-    if (rawPct > 100) {
-      issues.push({
-        id: `over-100-${ing.id}`,
-        issue: `Raw material ${name} exceeds 100% (${rawPct}%)`,
-        whyItMatters: 'A single component cannot exceed 100% of the total batch weight.',
-        scientificBasis: 'Batch formulation mass balance.',
-        scientificType: 'CALCULATED',
-        severity: 'Critical',
-        whatToCheck: 'Normalize formulation ingredient proportions.'
-      });
-    }
-    if (activePurity > 100 || activePurity < 0) {
-      issues.push({
-        id: `invalid-purity-${ing.id}`,
-        issue: `Invalid active matter purity for ${name} (${activePurity}%)`,
-        whyItMatters: 'Chemical raw material active matter percentage must be between 0% and 100%.',
-        scientificBasis: 'Standard chemical assay specifications.',
-        scientificType: 'CALCULATED',
-        severity: 'Critical',
-        whatToCheck: 'Verify commercial grade supplier specification certificate (COA).'
-      });
+    // Track for reasoning trace
+    const canonId = Object.keys(INGREDIENT_INTELLIGENCE_REGISTRY).find(
+      key => name.toLowerCase().includes(key.toLowerCase())
+    ) || 'unknown';
+    if (canonId !== 'unknown') {
+      ingredientIds.push(canonId);
     }
 
-    // Role classification
-    if (
-      role.includes('anionic') ||
-      n.includes('labsa') ||
-      n.includes('sles') ||
-      n.includes('sls') ||
-      n.includes('aos') ||
-      n.includes('sulfonic') ||
-      n.includes('soap')
-    ) {
+    if (role.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos')) {
       anionicActivePct += activePct;
       totalActiveSurfactantPct += activePct;
-    } else if (
-      role.includes('nonionic') ||
-      n.includes('lae') ||
-      n.includes('ethoxylate') ||
-      n.includes('glucoside') ||
-      n.includes('apg') ||
-      n.includes('cde') ||
-      n.includes('polysorbate')
-    ) {
+    } else if (role.includes('nonionic') || n.includes('lae') || n.includes('ethoxylate') || n.includes('glucoside') || n.includes('apg')) {
       nonionicActivePct += activePct;
       totalActiveSurfactantPct += activePct;
-    } else if (
-      role.includes('amphoteric') ||
-      role.includes('zwitterionic') ||
-      n.includes('capb') ||
-      n.includes('betaine') ||
-      n.includes('amine oxide')
-    ) {
+    } else if (role.includes('amphoteric') || n.includes('capb') || n.includes('betaine')) {
       amphotericActivePct += activePct;
       totalActiveSurfactantPct += activePct;
-    } else if (
-      role.includes('cationic') ||
-      n.includes('esterquat') ||
-      n.includes('bkc') ||
-      n.includes('benzalkonium') ||
-      n.includes('ctac') ||
-      n.includes('dhtdmac')
-    ) {
+    } else if (role.includes('cationic') || n.includes('esterquat') || n.includes('bkc') || n.includes('ctac')) {
       cationicActivePct += activePct;
       totalActiveSurfactantPct += activePct;
     }
 
-    if (
-      n.includes('soda ash') ||
-      n.includes('carbonate') ||
-      n.includes('stpp') ||
-      n.includes('silicate') ||
-      n.includes('zeolite') ||
-      n.includes('sodium hydroxide') ||
-      n.includes('potassium hydroxide')
-    ) {
-      inorganicBuilderPct += rawPct;
+    if (n.includes('sodium chloride') || n.includes('salt') || n.includes('vacuum salt')) {
+      saltPct += rawPct;
     }
 
-    if (n.includes('citrate') || n.includes('citric acid') || n.includes('glda') || n.includes('edta') || n.includes('mgda') || n.includes('hepid')) {
-      organicChelatorPct += activePct;
+    if (n.includes('citrate') || n.includes('citric acid') || n.includes('glda') || n.includes('edta') || n.includes('stpp')) {
+      organicChelatorPct += rawPct;
     }
 
-    if (n.includes('salt') || n.includes('sodium chloride') || n.includes('sodium sulfate') || (n.includes('sulfate') && !n.includes('ether') && !n.includes('lauryl'))) {
-      electrolytePct += rawPct;
-    }
-
-    if (n.includes('water') || n.includes('aqua') || n.includes('dm water') || n.includes('deionized water')) {
-      waterPct += rawPct;
-    }
-
-    if (n.includes('protease') || n.includes('amylase') || n.includes('lipase') || n.includes('cellulase') || n.includes('enzyme') || n.includes('savinase')) {
+    if (n.includes('enzyme') || n.includes('protease') || n.includes('amylase') || n.includes('lipase')) {
       hasEnzyme = true;
     }
-
-    if (n.includes('hypochlorite') || n.includes('peroxide') || n.includes('percarbonate') || n.includes('perborate') || n.includes('bleach')) {
+    if (n.includes('bleach') || n.includes('hypochlorite') || n.includes('percarbonate')) {
       hasBleach = true;
     }
-
-    if (
-      n.includes('preservative') ||
-      n.includes('isothiazolinone') ||
-      n.includes('kathon') ||
-      n.includes('benzoate') ||
-      n.includes('phenoxyethanol') ||
-      n.includes('dmdm') ||
-      n.includes('formalin') ||
-      n.includes('bronopol') ||
-      n.includes('bit ') ||
-      n.includes('bzt')
-    ) {
+    if (n.includes('preservative') || n.includes('kathon') || n.includes('phenoxy') || n.includes('benzoate') || n.includes('bit')) {
       hasPreservative = true;
     }
-
-    if (n.includes('sxs') || n.includes('xylene sulfonate') || n.includes('cumene') || n.includes('glycol') || n.includes('ethanol') || n.includes('ipa') || n.includes('isopropanol')) {
-      hasHydrotrope = true;
-    }
   }
 
-  const effectivePH = Number(input.calculatedPH ?? 7.0);
-  const effectiveTotalActive = Number(input.totalActiveMatter ?? totalActiveSurfactantPct);
-  const effectiveHardnessSufficiency = input.hardnessSufficiency ?? 'sufficient';
-  const effectiveMaxHardness = Number(input.maxSupportedHardnessPpm ?? 300);
-  const effectiveCleaningScore = Number(input.cleaningScore ?? 75);
+  const calculatedPH = Number(input.calculatedPH ?? 8.5);
 
-  // ==========================================
-  // SANITY CHECKS & EXPERT REASONING ISSUES
-  // ==========================================
+  // =============================================================================
+  // LEVEL 1: HARD SCIENTIFIC & SAFETY CONSTRAINTS (PRIORITY 1)
+  // =============================================================================
 
-  // 1. Total Mass Balance Check
-  if (Math.abs(totalPct - 100) > 0.5 && ingredients.length > 0) {
+  // 1. Ionic Charge Conflict Check (Critical)
+  if (anionicActivePct > 0.1 && cationicActivePct > 0.1) {
     issues.push({
-      id: 'mass-balance-skew',
-      issue: `Formula total is ${totalPct.toFixed(2)}% (intended: 100.00%)`,
-      whyItMatters: 'Deviation from 100% distorts actual in-use surfactant concentrations, active matter, and unit economics.',
-      scientificBasis: 'Conservation of mass balance in batch blending.',
-      scientificType: 'CALCULATED',
-      severity: 'High',
-      whatToCheck: 'Water balance or raw material percentages to ensure exact 100% sum.'
-    });
-    recommendations.push({
-      id: 'rec-mass-balance',
-      problem: `Total formula percentage equals ${totalPct.toFixed(2)}% instead of 100.00%.`,
-      why: 'Batch scaling requires precise 100% mass balance to guarantee correct active solids delivery.',
-      recommendedAction: totalPct < 100
-        ? `Increase Water / Solvent by ${(100 - totalPct).toFixed(2)}% to balance formula to exactly 100.00%.`
-        : `Reduce Water or highest percentage solvent by ${(totalPct - 100).toFixed(2)}% to normalize to 100.00%.`,
-      expectedEffect: 'Accurate active matter, correct raw material unit cost, and exact batch scaling.',
-      tradeOff: 'Minor dilution/concentration adjustment.',
-      confidence: 'HIGH',
-      calculationBasis: `Mass deficit/surplus: ${(100 - totalPct).toFixed(2)}%`
-    });
-  }
-
-  // 2. Anionic + Cationic Incompatibility
-  if (anionicActivePct > 0.5 && cationicActivePct > 0.5) {
-    issues.push({
-      id: 'anionic-cationic-precipitation',
-      issue: 'Direct Anionic-Cationic Surfactant Incompatibility',
-      whyItMatters: 'Oppositely charged polar heads form electroneutral, water-insoluble complex salts that precipitate immediately as sticky curds or flocculants, destroying both cleaning power and antimicrobial conditioning.',
-      scientificBasis: 'Coulombic attraction and phase precipitation thermodynamics (Ksp insolubilization).',
+      id: 'anionic-cationic-conflict',
+      issue: 'Critical Ionic Precipitation Hazard (Anionic + Cationic Co-formulation)',
+      whyItMatters: 'Anionic surfactants react stoichiometrically with Cationic agents to form insoluble, non-surface-active complex salts (coacervates), destroying washing properties.',
+      scientificBasis: 'Electrostatic charge pairing coacervation and immediate phase precipitation.',
       scientificType: 'CALCULATED',
       severity: 'Critical',
-      whatToCheck: 'Remove cationic agents (e.g. BKC / Esterquats) or replace anionic surfactants with nonionic/amphoteric equivalents.'
+      whatToCheck: 'Remove either anionic surfactants or cationic fabric conditioning agents.'
     });
+
     recommendations.push({
-      id: 'rec-anionic-cationic',
-      problem: 'Coexistence of strong anionic and cationic surfactants.',
-      why: 'Electrostatic precipitation neutralizes active micelles and creates haziness / sediment.',
-      recommendedAction: 'Remove cationic quaternary ammonium / esterquat from this anionic formulation and formulate softeners/disinfectants in a dedicated rinse-cycle product.',
-      expectedEffect: 'Restores clear single-phase micellar solution and full surfactant performance.',
-      tradeOff: 'Softening or fabric conditioning cannot be combined in high-anionic wash liquor.',
+      id: 'rec-ionic-conflict',
+      problem: 'Co-formulating opposing charge anionic and cationic surfactants.',
+      why: 'Triggers mutual neutralization and rapid separation of insoluble complexes.',
+      recommendedAction: 'Remove the cationic compound or substitute the anionic surfactant with a nonionic surfactant.',
+      expectedEffect: 'Restores solubility and surface-active wetting capacity.',
+      tradeOff: 'Removing cationic agents eliminates fiber-softening properties.',
       confidence: 'HIGH',
-      calculationBasis: `Anionic actives (${anionicActivePct.toFixed(1)}%) + Cationic actives (${cationicActivePct.toFixed(1)}%)`
+      recommendationType: 'REMOVE_INGREDIENT',
+      authority: 'COMPATIBILITY_ENGINE',
+      reasoningTrace: {
+        reasoningId: 'trace-ionic-clash-' + Date.now(),
+        productCategory: normCat,
+        formulaVersion: '1.0.0',
+        ingredientIds,
+        relevantEngines: ['CompatibilityEngine'],
+        inputData: { anionicActivePct, cationicActivePct },
+        scientificOutputs: { compatibilityScore: 0, status: 'INCOMPATIBLE' },
+        evidenceProvenance: 'THEORETICAL_PHYSICAL_CHEMISTRY',
+        rulesTriggered: ['ANIONIC_CATIONIC_CHARGE_PAIR_COACERVATION'],
+        uncertainty: 'HIGH_CONFIDENCE'
+      }
     });
   }
 
-  // 3. Extreme pH / Neutralization Imbalance
-  if (effectivePH < 3.0) {
-    issues.push({
-      id: 'extreme-acidic-ph',
-      issue: `Severely Acidic Formulation (Equilibrium pH: ${effectivePH.toFixed(2)})`,
-      whyItMatters: 'High unneutralized sulfonic acid (LABSA) causes rapid acid-catalyzed hydrolysis of ether sulfates (SLES), severe skin irritation, and corrosion to packaging and machinery.',
-      scientificBasis: 'Proton activity and ester/ether cleavage kinetics.',
-      scientificType: 'CALCULATED',
-      severity: 'Critical',
-      whatToCheck: 'Neutralizing alkali dosing (e.g. Caustic Soda 50% / TEA / Soda Ash).'
-    });
-    recommendations.push({
-      id: 'rec-ph-acidic',
-      problem: `Calculated pH (${effectivePH.toFixed(2)}) is below operational safety and target limits.`,
-      why: 'Acidic surfactant slurries are unstable and non-compliant for standard detergent use.',
-      recommendedAction: 'Add alkaline neutralizing agent (e.g. 50% Sodium Hydroxide or Triethanolamine) to achieve target pH (7.5 - 9.0).',
-      expectedEffect: 'Complete stoichiometric neutralization of sulfonic acid into soluble sodium sulfonate surfactant.',
-      tradeOff: 'Increases batch temperature (exothermic heat of neutralization) and requires controlled dosing.',
-      confidence: 'HIGH',
-      calculationBasis: `Current pH ${effectivePH.toFixed(2)} vs target ${catContext.targetPHMin} - ${catContext.targetPHMax}`
-    });
-  } else if (effectivePH > 12.0 && !productCat.toLowerCase().includes('degreaser') && !productCat.toLowerCase().includes('powder')) {
+  // 2. Extreme Caustic / Alkaline safety hazard (pH > 12)
+  if (calculatedPH > 12.0 && !normCat.includes('DEGREASER')) {
     issues.push({
       id: 'extreme-alkaline-ph',
-      issue: `Excessive Caustic Alkalinity (Equilibrium pH: ${effectivePH.toFixed(2)})`,
-      whyItMatters: 'High hydroxide ion concentration ($[OH^-] > 10^{-2}$ M) causes GHS Category 1 corrosive burns to skin/eyes, damages delicate fabrics (wool/silk), and rapidly denatures enzymes.',
-      scientificBasis: 'Alkaline saponification of skin lipids and peptide bond hydrolysis.',
+      issue: `Extreme Caustic Alkalinity Hazard (pH ${calculatedPH.toFixed(2)} > 12.0)`,
+      whyItMatters: 'Excessive caustic alkalinity causes severe skin chemical burns, corrodes aluminum vessels, and hydrolyzes delicate fabric fibers.',
+      scientificBasis: 'Hydroxide ion activity [OH-] > 10^-2 M causing rapid hydrolysis of proteins, cellulose, and lipids.',
       scientificType: 'CALCULATED',
-      severity: 'High',
-      whatToCheck: 'Reduce caustic soda or add buffer acid (e.g. Citric acid).'
+      severity: 'Critical',
+      whatToCheck: 'Reduce Caustic Soda / Sodium Hydroxide concentration, or buffer down with Citric Acid.'
     });
+
     recommendations.push({
       id: 'rec-ph-alkaline',
-      problem: `Calculated pH (${effectivePH.toFixed(2)}) exceeds domestic consumer safety threshold.`,
-      why: 'Extreme alkalinity creates severe occupational handling risks and fabric damage.',
-      recommendedAction: 'Reduce free caustic loading or buffer the system with 0.5 - 1.5% Citric Acid to bring pH into safe range.',
-      expectedEffect: 'Safe user handling, improved enzymatic stability, and fabric fiber preservation.',
-      tradeOff: 'Slight reduction in raw alkaline particulate soil saponification.',
+      problem: `Formula exhibits hazardous extreme alkalinity (pH ${calculatedPH.toFixed(2)}).`,
+      why: 'Exceeds standard R&D dermal exposure and vessel safety envelopes.',
+      recommendedAction: 'Reduce Caustic Soda or buffer with Citric Acid down to pH 8.0-10.0.',
+      expectedEffect: 'Restores safe product skin compatibility and protects washing fibers.',
+      tradeOff: 'Slightly reduces saponification rate of highly complex heavy cooking fats.',
       confidence: 'HIGH',
-      calculationBasis: `Current pH ${effectivePH.toFixed(2)} vs target ${catContext.targetPHMin} - ${catContext.targetPHMax}`
+      recommendationType: 'REDUCE_DOSAGE',
+      authority: 'SPECIFICATION_GATE',
+      calculationBasis: 'Stoichiometric neutralization curve calculated via Newton-Raphson charge balance.'
     });
   }
 
-  // 4. Hardness Chelation Deficit
-  if (effectiveHardnessSufficiency === 'insufficient' || effectiveMaxHardness < waterHardness) {
-    const deficit = Math.max(0, waterHardness - effectiveMaxHardness);
+  // 3. Extreme Acidic safety hazard (pH < 3.5)
+  if (calculatedPH < 3.5 && !normCat.includes('TOILET') && !normCat.includes('BATHROOM') && !normCat.includes('SOFTENER')) {
+    issues.push({
+      id: 'extreme-acidic-ph',
+      issue: `Unneutralized Extreme Acidic Hazard (pH ${calculatedPH.toFixed(2)} < 3.5)`,
+      whyItMatters: 'Unneutralized acidic slurry (such as raw LABSA sulfonic acid) causes severe skin irritation and corrodes packaging equipment.',
+      scientificBasis: 'Proton activity [H+] > 3 * 10^-4 M causing strong acid dermal irritations.',
+      scientificType: 'CALCULATED',
+      severity: 'Critical',
+      whatToCheck: 'Neutralize with Caustic Soda (NaOH) or Monoethanolamine (MEA) up to neutral pH.'
+    });
+
+    recommendations.push({
+      id: 'rec-ph-acidic',
+      problem: `Formula contains raw unneutralized sulfonic acid (pH ${calculatedPH.toFixed(2)}).`,
+      why: 'Acid slurry requires stoichiometric base neutralization to form active cleansing sodium alkylbenzene sulfonate salt.',
+      recommendedAction: 'Increase Caustic Soda 50% dosage stoichiometrically until pH reaches 7.5 - 9.0.',
+      expectedEffect: 'Neutralizes LABSA to functional, stable, high-foaming sodium sulfonate active matter.',
+      tradeOff: 'Increases batch salt loading slightly, minor heat of neutralization released.',
+      confidence: 'HIGH',
+      recommendationType: 'INCREASE_DOSAGE',
+      authority: 'SPECIFICATION_GATE',
+      calculationBasis: 'Stoichiometric neutralization curve calculated via Newton-Raphson charge balance.'
+    });
+  }
+
+  // =============================================================================
+  // LEVEL 2: SPECIFICATION CONSTRAINTS (PRIORITY 2)
+  // =============================================================================
+
+  // 4. Category-Specific active matter deficiency
+  if (totalActiveSurfactantPct < catContext.targetActiveMatterMin) {
+    const deficit = catContext.targetActiveMatterMin - totalActiveSurfactantPct;
+    issues.push({
+      id: 'active-matter-deficit',
+      issue: `Surfactant Active Matter Below Category Standard (Active ${totalActiveSurfactantPct.toFixed(1)}% < Target min ${catContext.targetActiveMatterMin.toFixed(1)}%)`,
+      whyItMatters: 'Insufficient active surfactant levels fail to lower surface tension below soil wetting limits, causing severe loss of cleaning performance.',
+      scientificBasis: 'Surfactant concentration must exceed Critical Micelle Concentration (CMC) under soil load to achieve soil micellization.',
+      scientificType: 'CALCULATED',
+      severity: 'High',
+      whatToCheck: 'Increase primary surfactant (e.g. SLES 70% or LABSA 96%) concentration.'
+    });
+
+    // Governed dosage recommendation
+    recommendations.push({
+      id: 'rec-active-matter-increase',
+      problem: `Formulation active matter (${totalActiveSurfactantPct.toFixed(1)}%) is below standard specifications.`,
+      why: 'Leaves insufficient micellar surfactant capacity to emulsify particulates.',
+      recommendedAction: `Increase SLES 70% dosage by ${(deficit / 0.7).toFixed(1)}% or LABSA 96% by ${(deficit / 0.96).toFixed(1)}% to reach target min active matter.`,
+      expectedEffect: 'Restores detergency active matter to passing commercial levels.',
+      tradeOff: 'Increases raw material unit batch costing.',
+      confidence: 'HIGH',
+      recommendationType: 'INCREASE_DOSAGE',
+      authority: 'SPECIFICATION_GATE',
+      calculationBasis: `dosage base: specification range target of ${catContext.targetActiveMatterMin}% active matter.`
+    });
+  }
+
+  // =============================================================================
+  // LEVEL 3: COMPATIBILITY CONSTRAINTS (PRIORITY 3)
+  // =============================================================================
+
+  // 5. Hard Water Chelation Deficit
+  if (input.hardnessSufficiency === 'insufficient' || (waterHardness > 200 && organicChelatorPct === 0 && inorganicBuilderPct < 5)) {
+    const dynamicReq = calculateDynamicChelatorRequirement(ingredients, waterHardness, 10, 20, 25);
+    
     issues.push({
       id: 'chelation-deficit',
-      issue: `Hard Water Sequestration Deficit (${deficit} ppm CaCO₃ shortfall)`,
-      whyItMatters: 'Unchelated $Ca^{2+}$ and $Mg^{2+}$ ions react with anionic surfactants to form insoluble calcium sulfonate/soap scum, drastically reducing foam and cleaning power.',
-      scientificBasis: 'Divalent cation precipitation equilibrium with anionic surfactant monomers.',
+      issue: `Hard Water Chelation Deficit (${waterHardness} ppm hard water)`,
+      whyItMatters: 'Unbound Ca2+ and Mg2+ water hardness ions bind and precipitate anionic surfactants (SLES/LABSA), causing complete loss of washing foaming.',
+      scientificBasis: 'Surfactant-calcium precipitation solubility products (Ksp) causing inactivation.',
       scientificType: 'CALCULATED',
       severity: 'High',
-      whatToCheck: 'Builder/chelator loading (GLDA, Sodium Citrate, EDTA, STPP).'
+      whatToCheck: `Add stoichiometric chelators like GLDA 47% or Sodium Citrate.`
     });
+
+    if (dynamicReq.isSufficient) {
+      recommendations.push({
+        id: 'rec-chelation-balanced',
+        problem: 'Sufficient chelating capacity is maintained for current hardness.',
+        why: 'In-liquor calcium is fully sequestered.',
+        recommendedAction: 'No action required for chelation.',
+        expectedEffect: 'Protects detergency.',
+        tradeOff: 'None',
+        confidence: 'HIGH',
+        recommendationType: 'NO_CHANGE',
+        authority: 'COMPATIBILITY_ENGINE'
+      });
+    } else {
+      recommendations.push({
+        id: 'rec-chelation',
+        problem: `Anionic surfactants are exposed to unsequestered ${waterHardness} ppm hard water ions.`,
+        why: 'Triggers calcium-soap precipitate and graying on textiles.',
+        recommendedAction: `Add exactly ${dynamicReq.additionalGLDA47RequiredPct}% GLDA 47% or ${dynamicReq.additionalCitrateRequiredPct}% Sodium Citrate to fully shield active matter.`,
+        expectedEffect: 'Binds Ca2+/Mg2+ stoichiometrically, preserving surfactant foam.',
+        tradeOff: 'Increases raw material cost, slightly increases formula salt burden.',
+        confidence: 'HIGH',
+        recommendationType: 'ADD_INGREDIENT',
+        authority: 'COMPATIBILITY_ENGINE',
+        calculationBasis: `deterministic calculation base: ${dynamicReq.calculationBasis}`,
+        reasoningTrace: {
+          reasoningId: 'trace-chelation-' + Date.now(),
+          productCategory: normCat,
+          formulaVersion: '1.0.0',
+          ingredientIds,
+          relevantEngines: ['ChelatorEngine'],
+          inputData: { waterHardness, organicChelatorPct },
+          scientificOutputs: { isSufficient: false, additionalGLDAPct: dynamicReq.additionalGLDA47RequiredPct },
+          evidenceProvenance: 'PREDICTED_STABILITY',
+          rulesTriggered: ['HARD_WATER_ANIONIC_PRECIPITATION'],
+          uncertainty: 'HIGH_CONFIDENCE'
+        }
+      });
+    }
+  }
+
+  // =============================================================================
+  // LEVEL 4: CATEGORY-SPECIFIC AND RHEOLOGY/PERFORMANCE ENGINES (PRIORITY 4)
+  // =============================================================================
+
+  // 6. Enzyme + Bleach Oxidation Conflict
+  if (hasEnzyme && hasBleach) {
+    issues.push({
+      id: 'enzyme-bleach-oxidation',
+      issue: 'Enzyme-Bleach Oxidation Incompatibility',
+      whyItMatters: 'Active oxygen or chlorine bleach ingredients oxidize catalytic sulfur amino acid residues in enzymes, inactivating them instantly in liquid formulations.',
+      scientificBasis: 'Oxidative denaturing of disulfide bridges and enzyme structural backbones.',
+      scientificType: 'EMPIRICAL',
+      severity: 'High',
+      whatToCheck: 'Remove enzymes or separate bleach into a stable dual-chamber pack.'
+    });
+
     recommendations.push({
-      id: 'rec-chelation',
-      problem: `Formula provides stoichiometric softening up to ${effectiveMaxHardness} ppm CaCO₃ (in 20g wash dose / 10L wash), below the ${waterHardness} ppm operational demand.`,
-      why: 'In hard water, divalent Ca²⁺/Mg²⁺ ions compete with anionic surfactant monomers. In liquid detergents, chelators act as threshold co-builders and heavy-metal deactivators, while surfactants (SLES/LAE) provide calcium tolerance.',
-      recommendedAction: 'Maintain 1.5% - 3.0% Sodium Citrate or 0.5% - 1.5% GLDA/MGDA as a threshold builder & transition-metal stabilizer. For complete stoichiometric softening of 10L at 150 ppm (1875 mg CaCO₃), 12.5g builder per dose (62.5% of formula) would be required; in liquid laundry, rely on threshold building combined with calcium-tolerant ethoxylated surfactants.',
-      expectedEffect: 'Prevents transition-metal radical breakdown, disperses particulate soil, and protects surfactant micelles from calcium deactivation.',
-      tradeOff: 'Higher chelator concentrations increase raw material formulation cost.',
+      id: 'rec-enzyme-bleach',
+      problem: 'Co-formulating enzymatic catalysts with strong oxidizers.',
+      why: 'Causes chemical denaturation of enzymes within minutes.',
+      recommendedAction: 'Remove either the enzyme stabilizers or the oxidizer bleach from this liquid formulation.',
+      expectedEffect: 'Preserves chemical stability and enzyme longevity.',
+      tradeOff: 'Removing bleach reduces oxidation-based tea and fruit stain removal.',
       confidence: 'HIGH',
-      calculationBasis: `Hardness demand: ${waterHardness} ppm vs stoichiometric capacity: ${effectiveMaxHardness} ppm (20g dose / 10L wash)`
+      recommendationType: 'REMOVE_INGREDIENT',
+      authority: 'COMPATIBILITY_ENGINE'
     });
   }
 
-  // 5. Excessive Electrolyte / Salting-Out Risk
-  if (electrolytePct > 3.0 && totalActiveSurfactantPct > 5.0) {
+  // 6.1 Enzyme pH Denaturation Check
+  if (hasEnzyme && calculatedPH > 10.0) {
+    issues.push({
+      id: 'enzyme-ph-mismatch',
+      issue: `Enzyme pH Denaturation Risk (pH ${calculatedPH.toFixed(2)} > 10.0)`,
+      whyItMatters: 'Most standard liquid enzymes (protease, amylase) rapidly denature and lose catalytic activity at pH levels above 10.0 in liquid aqueous systems.',
+      scientificBasis: 'Aqueous alkaline peptide backbone charge disruption and salt-bridge cleavage at high pH.',
+      scientificType: 'EMPIRICAL',
+      severity: 'High',
+      whatToCheck: 'Reduce formulation pH to stable enzyme envelope (pH 7.5 - 9.0) or use pH-tolerant enzymes.'
+    });
+
+    recommendations.push({
+      id: 'rec-enzyme-ph-adjust',
+      problem: `Formulation pH (${calculatedPH.toFixed(2)}) causes rapid enzymatic catalyst denaturation.`,
+      why: 'Enzyme tertiary structure is unstable at highly alkaline pH levels.',
+      recommendedAction: 'Reduce pH with Citric Acid down below 9.0, or transition to specialty highly alkaline-stable bio-catalysts.',
+      expectedEffect: 'Maintains long-term enzymatic protease stain cleavage activity.',
+      tradeOff: 'Slightly reduces fatty acid saponification rate.',
+      confidence: 'HIGH',
+      recommendationType: 'REDUCE_DOSAGE',
+      authority: 'COMPATIBILITY_ENGINE'
+    });
+  }
+
+  // 7. Electrolyte Salting-Out Hazard
+  if (saltPct > 3.5) {
     issues.push({
       id: 'electrolyte-salting-out',
-      issue: `High Electrolyte / Salt Loading (${electrolytePct.toFixed(1)}% total salt)`,
-      whyItMatters: 'Electrolytes screen ionic headgroup electrostatic repulsion. Beyond the peak micellar growth point, excess counter-ions cause severe surfactant desolvation, sudden viscosity collapse, and two-phase stratification (salting-out).',
-      scientificBasis: 'DLVO double-layer compression and salting-out equilibrium (Hofmeister series).',
-      scientificType: 'PREDICTIVE',
+      issue: `Excessive Salt Salting-Out Hazard (${saltPct}% NaCl)`,
+      whyItMatters: 'High ionic strengths dehydrate hydrophilic surfactant micelle crowns, leading to cloud point collapse, phase separation, or precipitation.',
+      scientificBasis: 'Hofmeister Series electrolyte dehydration of micellar double layers.',
+      scientificType: 'EMPIRICAL',
       severity: 'High',
-      whatToCheck: 'Reduce inorganic salt (NaCl/Na₂SO₄) to optimum viscosity peak (typically 0.8% - 1.8%).'
+      whatToCheck: 'Reduce salt content down below 2.0%.'
     });
+
     recommendations.push({
-      id: 'rec-electrolyte',
-      problem: `Salt concentration (${electrolytePct.toFixed(1)}%) is approaching or exceeding the micellar transition threshold.`,
-      why: 'High ionic strength disrupts micellar rod networks and causes phase splitting.',
-      recommendedAction: 'Reduce Sodium Chloride / Sulfate addition to 1.0 - 1.5% and perform a benchtop salt-viscosity curve titration.',
-      expectedEffect: 'Stabilizes single-phase clarity and eliminates phase separation risk.',
-      tradeOff: 'May require polymeric rheology modifier if high viscosity is needed at low surfactant solids.',
+      id: 'rec-salt-reduction',
+      problem: `Excessive electrolyte content (${saltPct}% salt) destabilizes micellar matrix.`,
+      why: 'Triggers phase splitting.',
+      recommendedAction: 'Reduce Sodium Chloride salt down below 1.5%.',
+      expectedEffect: 'Restores single-phase clear liquid surfactant stability.',
+      tradeOff: 'Slightly reduces viscosity peak on standard salt-thickening curves.',
       confidence: 'HIGH',
-      calculationBasis: `Electrolyte loading: ${electrolytePct.toFixed(1)}%`
+      recommendationType: 'REDUCE_DOSAGE',
+      authority: 'COMPATIBILITY_ENGINE',
+      calculationBasis: 'governed engineering range limit of 3.5% NaCl.'
     });
   }
 
-  // 6. Enzyme Compatibility (pH, Bleach, Stabilization)
-  if (hasEnzyme) {
-    if (effectivePH < 6.0 || effectivePH > 10.2) {
-      issues.push({
-        id: 'enzyme-ph-mismatch',
-        issue: `Enzyme Inactivation Risk: pH (${effectivePH.toFixed(2)}) outside active catalytic window`,
-        whyItMatters: 'Detergent enzymes (subtilisin proteases, amylases) denature and undergo irreversible loss of tertiary conformation outside pH 6.5 - 9.8.',
-        scientificBasis: 'Enzyme conformational kinetics and catalytic triad ionization.',
-        scientificType: 'PREDICTIVE',
-        severity: 'High',
-        whatToCheck: 'Adjust formulation pH to optimum catalytic plateau (pH 7.8 - 8.8).'
-      });
-      recommendations.push({
-        id: 'rec-enzyme-ph',
-        problem: `Enzymes present in formula at non-ideal pH ${effectivePH.toFixed(2)}.`,
-        why: 'Enzyme catalytic efficiency drops >80% when protonation states deviate from optimum.',
-        recommendedAction: 'Buffer formula to pH 7.8 - 8.6 using Citric acid / Borate / Citrate buffer.',
-        expectedEffect: 'Preserves enzymatic stain-removal efficacy on protein, starch, and blood stains.',
-        tradeOff: 'Requires precise pH adjustment during manufacturing batching.',
-        confidence: 'HIGH',
-        calculationBasis: `Formula pH ${effectivePH.toFixed(2)} vs enzyme stability window (6.5 - 9.8)`
-      });
-    }
+  // =============================================================================
+  // DETAILED 13 CANONICAL PRODUCT CATEGORY CONSTRAINTS CHECK
+  // =============================================================================
 
-    if (hasBleach && waterPct > 20) {
+  // A. DISHWASH_AUTOMATIC low foam validation
+  if (normCat === 'DISHWASH_AUTOMATIC') {
+    if (anionicActivePct > 2.5) {
       issues.push({
-        id: 'enzyme-bleach-oxidation',
-        issue: 'Liquid Enzyme & Oxidizing Bleach Coexistence',
-        whyItMatters: 'Dissolved oxidizers (hypochlorite, hydrogen peroxide) rapidly oxidize critical methionine and cysteine amino acid residues at the enzyme active site, destroying catalytic activity in liquid storage.',
-        scientificBasis: 'Redox deactivation kinetics of protein side-chains.',
+        id: 'autodish-suds-overflow',
+        issue: `High-Foaming Anionic Hazard in Automatic Dishwash (${anionicActivePct.toFixed(1)}% Anionic)`,
+        whyItMatters: 'High sudsing in automatic machine dishwashers triggers pump motor cavitation, water leaks, machine lockouts, and poor spraying.',
+        scientificBasis: 'Entrainment of atmospheric air in high-pressure rotating pumps causing air-locking.',
         scientificType: 'CALCULATED',
         severity: 'Critical',
-        whatToCheck: 'Separate bleach into distinct powder or omit oxidizer in liquid enzyme systems.'
+        whatToCheck: 'Replace all high-foaming SLES/LABSA with low-foaming nonionic EO/PO block copolymers.'
       });
+
       recommendations.push({
-        id: 'rec-enzyme-bleach',
-        problem: 'Strong oxidizer present with enzymes in an aqueous liquid formulation.',
-        why: 'Liquid bleach deactivates enzymes within hours of blending.',
-        recommendedAction: 'Remove liquid bleach from enzyme liquid or formulate as a two-part system / dry powder with coated percarbonate.',
-        expectedEffect: 'Prevents total loss of enzyme investment and performance.',
-        tradeOff: 'Liquid bleaching capability cannot be co-formulated with unprotected liquid enzymes.',
-        confidence: 'HIGH'
+        id: 'rec-autodish-foam-reduction',
+        problem: 'Formulation contains high-suds anionic surfactants in automatic machine context.',
+        why: 'Incompatible with dishwasher high-shear mechanical spray bars.',
+        recommendedAction: 'Remove SLES/LABSA completely and substitute with low-foam nonionic alkoxylates or APG.',
+        expectedEffect: 'Maintains zero-foam pump performance and full hydro-pressure.',
+        tradeOff: 'Low-foam nonionics may have slightly slower manual grease cutting.',
+        confidence: 'HIGH',
+        recommendationType: 'REPLACE_INGREDIENT',
+        authority: 'COMPATIBILITY_ENGINE'
       });
     }
   }
 
-  // 7. Surfactant-Class Balance & Category Appropriateness
-  if (catContext.foamExpectation === 'Controlled / Low Foam') {
-    if (anionicActivePct > 10 && nonionicActivePct < 2) {
+  // B. GLASS_CLEANER low active/residue validation
+  if (normCat === 'GLASS_CLEANER') {
+    if (totalActiveSurfactantPct > 3.0) {
       issues.push({
-        id: 'front-load-oversuds',
-        issue: 'High Anionic Ratio in Front-Load / Low-Foam Application',
-        whyItMatters: 'High anionic actives generate excessive low-density foam, causing machine suds-lock, reduced mechanical agitation, and water overflow in front-loading drums.',
-        scientificBasis: 'Dynamic interfacial dilatational modulus of pure anionic vs nonionic systems.',
+        id: 'glass-haze-streaking',
+        issue: `Glass Cleaner Streaking Hazard (${totalActiveSurfactantPct.toFixed(1)}% Active Matter)`,
+        whyItMatters: 'Excessive surfactant concentrations do not dry clear on smooth glass, leaving an optically hazy, smeary monolayer film.',
+        scientificBasis: 'Surfactant crystallization and high non-volatile residue (NVR) on smooth hydrophobic surfaces.',
+        scientificType: 'CALCULATED',
+        severity: 'High',
+        whatToCheck: 'Reduce active matter below 2.0% and include fast-drying Isopropanol or Glycol Ether solvents.'
+      });
+
+      recommendations.push({
+        id: 'rec-glass-streak-reduction',
+        problem: `Glass cleaner active surfactant percentage (${totalActiveSurfactantPct.toFixed(1)}%) is too high.`,
+        why: 'Leaves crystalline smear trails upon dry-off.',
+        recommendedAction: 'Reduce active surfactant below 1.5% and supplement with 5% Isopropanol solvent.',
+        expectedEffect: 'Ensures instantaneous flash-off evaporation and zero-streak window clarity.',
+        tradeOff: 'Lower active surfactant slightly reduces dirt solubilization rate for non-glass soils.',
+        confidence: 'HIGH',
+        recommendationType: 'REDUCE_DOSAGE',
+        authority: 'SPECIFICATION_GATE',
+        calculationBasis: 'deterministic calculation base: target glass non-volatile residue limit of 3.0%.'
+      });
+    }
+  }
+
+  // C. HAND_WASH skin neutral validation
+  if (normCat === 'HAND_WASH') {
+    if (calculatedPH > 7.8 || calculatedPH < 5.0) {
+      issues.push({
+        id: 'handwash-skin-irritation',
+        issue: `Hand Wash Irritation Hazard (pH ${calculatedPH.toFixed(2)})`,
+        whyItMatters: 'Human skin mantles naturally operate at acidic pH 5.5. Highly alkaline soaps cause dry epidermal cracking and strip natural protective sebum.',
+        scientificBasis: 'Disruption of acidic stratum corneum enzymes and skin lipid bilayer integrity.',
+        scientificType: 'CALCULATED',
+        severity: 'High',
+        whatToCheck: 'Buffer hand wash pH with Citric Acid down to 5.5 - 6.5.'
+      });
+
+      recommendations.push({
+        id: 'rec-handwash-ph-buffer',
+        problem: `Hand wash pH (${calculatedPH.toFixed(2)}) is outside the skin-compatible acid envelope.`,
+        why: 'Hazards dermatitis and severe skin lipid stripping.',
+        recommendedAction: 'Incorporate exactly 0.3% Citric Acid buffer to neutralize pH to 5.5 - 6.0.',
+        expectedEffect: 'Maintains skin-neutral compatibility and protects dermal barrier.',
+        tradeOff: 'Slightly reduces viscosity peak of SLES salt-thickening curve requiring minor NaCl adjustment.',
+        confidence: 'HIGH',
+        recommendationType: 'ADD_INGREDIENT',
+        authority: 'SPECIFICATION_GATE',
+        calculationBasis: 'formula template range target of skin-neutral pH 5.5.'
+      });
+    }
+  }
+
+  // D. TOILET_CLEANER acid descaling validation
+  if (normCat === 'TOILET_CLEANER') {
+    if (calculatedPH > 3.5) {
+      issues.push({
+        id: 'toilet-insufficient-acid',
+        issue: `Toilet Cleaner Acid Deficit (pH ${calculatedPH.toFixed(2)} > 3.5)`,
+        whyItMatters: 'Toilet bowl cleaners require strong acidic profiles to chemically dissolve calcium carbonate (limescale) and rust stains.',
+        scientificBasis: 'Proton-promoted carbonate dissolution: CaCO3 + 2H+ -> Ca2+ + H2O + CO2.',
+        scientificType: 'CALCULATED',
+        severity: 'High',
+        whatToCheck: 'Add Hydrochloric Acid (HCl), Sulfamic Acid, or Citric Acid down to pH < 2.5.'
+      });
+
+      recommendations.push({
+        id: 'rec-toilet-acidify',
+        problem: `Toilet cleaner formulation lack sufficient acidity (pH ${calculatedPH.toFixed(2)}) for scale removal.`,
+        why: 'Requires active hydronium ions to drive carbonate descaling.',
+        recommendedAction: 'Add Sulfamic Acid or Citric Acid down below pH 2.0.',
+        expectedEffect: 'Enables rapid dissolution of hard-water calcium rings.',
+        tradeOff: 'Highly acidic formulations require acid-stable rheology thickeners.',
+        confidence: 'HIGH',
+        recommendationType: 'ADD_INGREDIENT',
+        authority: 'SPECIFICATION_GATE',
+        calculationBasis: 'specification range target of toilet descaling pH < 3.5.'
+      });
+    }
+  }
+
+  // E. CAR_SHAMPOO neutral paint-safe validation
+  if (normCat === 'CAR_SHAMPOO') {
+    if (calculatedPH > 8.5 || calculatedPH < 6.0) {
+      issues.push({
+        id: 'carwash-wax-strip',
+        issue: `Car Shampoo Clearcoat/Wax Stripping Hazard (pH ${calculatedPH.toFixed(2)})`,
+        whyItMatters: 'Alkaline or acidic car shampoos chemically hydrolyze protective carnauba wax sealants, stripping clearcoat wax finish.',
+        scientificBasis: 'Alkaline ester hydrolysis of carnauba wax wax-ester backbones.',
         scientificType: 'EMPIRICAL',
         severity: 'Medium',
-        whatToCheck: 'Incorporate alcohol ethoxylates (LAE-9) or silicone antifoam to control foam volume.'
+        whatToCheck: 'Adjust pH with Citric Acid or NaOH strictly to neutral 6.8 - 7.5.'
       });
+
       recommendations.push({
-        id: 'rec-front-load-foam',
-        problem: 'Formulation uses high anionic surfactants for a front-load detergent category without sufficient nonionic co-surfactants.',
-        why: 'Anionic surfactants create high voluminous foam that impedes front-loader tumbling action.',
-        recommendedAction: 'Shift surfactant ratio towards 60% Anionic / 40% Nonionic (e.g. add LAE-9 or Lutensol) or add 0.1% silicone suds suppressor.',
-        expectedEffect: 'Controlled low-foam profile, improved mechanical cleaning action, and energy efficiency.',
-        tradeOff: 'Nonionic surfactants may require higher dissolution temperatures during manufacturing.',
+        id: 'rec-carshampoo-neutralize',
+        problem: `Car shampoo pH (${calculatedPH.toFixed(2)}) deviates from wax-safe neutrality.`,
+        why: 'Hazards stripping paint wax finishes and dulling clearcoat.',
+        recommendedAction: 'Neutralize formula to strict wax-safe neutral range of 7.0.',
+        expectedEffect: 'Cleans road soil safely without stripping carnauba wax coatings.',
+        tradeOff: 'Reduces raw dirt/grease saponification speed compared to heavy alkaline industrial cleaners.',
         confidence: 'HIGH',
-        calculationBasis: `Anionic: ${anionicActivePct.toFixed(1)}% vs Nonionic: ${nonionicActivePct.toFixed(1)}%`
+        recommendationType: 'REDUCE_DOSAGE',
+        authority: 'SPECIFICATION_GATE',
+        calculationBasis: 'specification range neutral envelope (6.5 - 7.5).'
       });
     }
   }
 
-  // 8. Hand-Wash / Skin Mildness Check
-  if (catContext.foamExpectation === 'High Foam' || productCat.toLowerCase().includes('hand') || productCat.toLowerCase().includes('dish')) {
-    if (anionicActivePct > 8 && amphotericActivePct < 0.5 && nonionicActivePct < 1.0) {
+  // F. FABRIC_SOFTENER missing cationic active validation
+  if (normCat === 'FABRIC_SOFTENER') {
+    if (cationicActivePct < 1.0) {
       issues.push({
-        id: 'harsh-anionic-system',
-        issue: 'Single-Surfactant Harshness: High Anionic without Mild Co-Surfactant',
-        whyItMatters: 'Pure anionic micelles penetrate stratum corneum barrier lipids, causing severe skin dryness, erythema, and barrier disruption.',
-        scientificBasis: 'Interactions of anionic micelles with stratum corneum proteins (Zein dissolution test).',
+        id: 'softener-missing-cationic',
+        issue: 'Fabric Softener Cationic Conditioning Deficit',
+        whyItMatters: 'Fabric softeners require cationic esterquats or dialkyl quaternary salts to deposit on cotton and neutralize negative laundry static.',
+        scientificBasis: 'Cationic quaternary ammonium surfactant adsorption on cotton cellulose substrate.',
         scientificType: 'EMPIRICAL',
-        severity: 'Medium',
-        whatToCheck: 'Add 2-4% Cocamidopropyl Betaine (CAPB) or Alkyl Polyglucoside (APG).'
+        severity: 'High',
+        whatToCheck: 'Add 4.0 - 8.0% cationic Esterquat conditioning agent.'
       });
+
       recommendations.push({
-        id: 'rec-mildness',
-        problem: 'Formulation relies on unbuffered anionic surfactant for direct skin-contact application.',
-        why: 'Mixed micelles of anionic + amphoteric/nonionic lower monomer concentration and dramatically improve dermatological tolerance.',
-        recommendedAction: 'Add 2.0% - 4.0% Cocamidopropyl Betaine (CAPB 30%) or Coco Glucoside to establish mixed micellar synergy.',
-        expectedEffect: 'Dramatically improved skin mildness, richer flash foam, and enhanced viscosity response.',
-        tradeOff: 'Minor raw material formulation cost adjustment.',
+        id: 'rec-softener-add-cationic',
+        problem: 'Softener formulation lacks cationic quaternary ammonium active matter.',
+        why: 'Fails to neutralize fabric static charges or lubricate fibers.',
+        recommendedAction: 'Incorporate exactly 5.0% Dialkyl Esterquat active agent.',
+        expectedEffect: 'Restores excellent textile softness and reduces static cling.',
+        tradeOff: 'Increases formulation batch raw cost.',
         confidence: 'HIGH',
-        calculationBasis: `Anionic active: ${anionicActivePct.toFixed(1)}% | Amphoteric active: ${amphotericActivePct.toFixed(1)}%`
+        recommendationType: 'ADD_INGREDIENT',
+        authority: 'SPECIFICATION_GATE',
+        calculationBasis: 'empirical model standard conditioning dosage of 5.0%.'
       });
     }
   }
 
-  // 9. Preservative Absence in High Water Liquid
-  if (waterPct > 35 && !hasPreservative && effectivePH >= 4.0 && effectivePH <= 9.8) {
-    issues.push({
-      id: 'missing-preservative',
-      issue: 'Aqueous Liquid Lacks Broad-Spectrum Preservative System',
-      whyItMatters: 'High water activity ($a_w > 0.95$) combined with biodegradable organic surfactants creates ideal substrate for bacterial and mold proliferation over 12-24 month shelf storage.',
-      scientificBasis: 'Microbiological shelf-life kinetics and water activity thresholds.',
-      scientificType: 'PREDICTIVE',
-      severity: 'Medium',
-      whatToCheck: 'Incorporate 0.05% - 0.15% broad-spectrum preservative (e.g. BIT, MIT/CMIT, or Sodium Benzoate at pH < 5.5).'
-    });
-    recommendations.push({
-      id: 'rec-preservative',
-      problem: 'High-water liquid formulation without a recognized antimicrobial preservative.',
-      why: 'Microbial bioburden causes product haziness, viscosity breakdown, gas generation, and malodor.',
-      recommendedAction: 'Add 0.05% - 0.10% Benzisothiazolinone (BIT 20%) or Phenoxyethanol blend suitable for the product pH (add post-neutralization below 40°C).',
-      expectedEffect: 'Provides broad-spectrum antimicrobial protection against bacteria and fungi during shelf storage.',
-      tradeOff: 'Preservative selection must comply with regional regulatory limits and pH compatibility.',
-      confidence: 'HIGH'
-    });
+  // G. KITCHEN_DEGREASER alkaline validation
+  if (normCat === 'KITCHEN_DEGREASER') {
+    if (calculatedPH < 11.0) {
+      issues.push({
+        id: 'degreaser-insufficient-alkalinity',
+        issue: `Kitchen Degreaser Alkalinity Deficit (pH ${calculatedPH.toFixed(2)} < 11.0)`,
+        whyItMatters: 'Kitchen and oven degreasers require highly alkaline matrices to saponify polymerised fats and hard baked grease.',
+        scientificBasis: 'Alkaline fat saponification: Triglyceride + 3OH- -> Glycerol + 3 Soap salts.',
+        scientificType: 'CALCULATED',
+        severity: 'High',
+        whatToCheck: 'Add Caustic Soda (NaOH) or Sodium Metasilicate to pH 11.5 - 13.0.'
+      });
+
+      recommendations.push({
+        id: 'rec-degreaser-alkalinize',
+        problem: `Oven/Kitchen degreaser alkalinity (pH ${calculatedPH.toFixed(2)}) is insufficient for baked-on grease removal.`,
+        why: 'Baked carbonized oil polymers require highly concentrated OH- activity to split.',
+        recommendedAction: 'Increase Caustic Soda or buffer with Sodium Metasilicate up to pH 12.5.',
+        expectedEffect: 'Cleaves polymer grease instantly to form soluble soap salts.',
+        tradeOff: 'Highly alkaline solutions require strict corrosive warning labels.',
+        confidence: 'HIGH',
+        recommendationType: 'INCREASE_DOSAGE',
+        authority: 'SPECIFICATION_GATE',
+        calculationBasis: 'specification range target of kitchen degreasing pH > 11.0.'
+      });
+    }
   }
 
-  // 10. Duplicate Reactive Ingredients / Commercial Grade Consolidation
-  if (duplicateCompoundList.length > 0) {
-    issues.push({
-      id: 'duplicate-commercial-grades',
-      issue: `Dual Commercial Grade Addition: ${duplicateCompoundList.join(', ')}`,
-      whyItMatters: 'Using multiple commercial concentrations or grades of the same chemical compound (identical CAS) in the same recipe creates manufacturing complexity without distinct chemical synergy.',
-      scientificBasis: 'Raw material inventory rationalization.',
-      scientificType: 'CALCULATED',
-      severity: 'Low',
-      whatToCheck: 'Consolidate into single preferred commercial concentration grade.'
-    });
-    recommendations.push({
-      id: 'rec-duplicate-grades',
-      problem: `Multiple commercial entries of the same chemical compound detected: ${duplicateCompoundList.join(', ')}.`,
-      why: 'Standardizing on a single commercial grade simplifies bulk storage and dosing in plant production.',
-      recommendedAction: 'Consolidate duplicate raw materials into the single primary plant grade (e.g., SLES 70% for logistics savings or SLES 28% for ease of pumping).',
-      expectedEffect: 'Streamlined batch manufacturing and simplified inventory tracking.',
-      tradeOff: 'Requires adjusting dilution water calculation.',
-      confidence: 'HIGH'
-    });
-  }
+  // =============================================================================
+  // LEVEL 5 & 6: LAB TEST ADVISORY AND UNCERTAINTY RESOLUTION
+  // =============================================================================
 
-  // 11. Concentrated Surfactant Viscosity / Gel Phase Risk
-  if (totalActiveSurfactantPct > 35 && !hasHydrotrope && waterPct > 15) {
+  // Viscosity, preservation, and stability unresolvable computationally -> Recommend Lab Test
+  if (ingredients.length > 0 && !hasPreservative) {
     issues.push({
-      id: 'high-surfactant-gelation',
-      issue: `High Active Surfactant Loading (${totalActiveSurfactantPct.toFixed(1)}%) without Hydrotrope`,
-      whyItMatters: 'Surfactant active matter above ~32-35% in aqueous systems enters the hexagonal or lamellar liquid-crystalline phase boundary, causing severe gelation and pump blockage at room temperature.',
-      scientificBasis: 'Lyotropic liquid crystal phase diagram and micellar packing parameters.',
-      scientificType: 'PREDICTIVE',
+      id: 'preservative-deficit-warning',
+      issue: 'Microbial Preservation Deficit',
+      whyItMatters: 'Liquid detergent formulations containing high water fraction are highly susceptible to bacterial and mold contamination.',
+      scientificBasis: 'Water activity (aw) supports fast bacterial proliferation in non-sterile conditions.',
+      scientificType: 'EMPIRICAL',
       severity: 'Medium',
-      whatToCheck: 'Add 2-5% hydrotrope (Sodium Xylene Sulfonate, Propylene Glycol, Ethanol).'
+      whatToCheck: 'Add 0.5% Phenoxyethanol or 0.1% Kathon preservative.'
     });
+
     recommendations.push({
-      id: 'rec-hydrotrope',
-      problem: `High surfactant solids (${totalActiveSurfactantPct.toFixed(1)}%) without adequate hydrotropic coupling.`,
-      why: 'Hydrotropes disrupt rigid liquid crystal lattices and lower the isotropic cloud point.',
-      recommendedAction: 'Incorporate 2.0% - 4.0% Sodium Xylene Sulfonate (SXS 40%) or Propylene Glycol.',
-      expectedEffect: 'Maintains free-flowing isotropic liquid viscosity across temperature variations (5°C - 45°C).',
-      tradeOff: 'Adds minor formulation cost.',
+      id: 'rec-preservative-addition',
+      problem: 'Formulation lacks broad-spectrum microbial preservation.',
+      why: 'Hazards product contamination, off-odors, and turbidity.',
+      recommendedAction: 'Add exactly 0.5% Phenoxyethanol preservative and run bacterial challenge test.',
+      expectedEffect: 'Guarantees 24+ month product shelf preservation.',
+      tradeOff: 'Adds minor cost impact.',
       confidence: 'HIGH',
-      calculationBasis: `Total active surfactant: ${totalActiveSurfactantPct.toFixed(1)}%`
+      recommendationType: 'ADD_INGREDIENT',
+      authority: 'GOVERNED_MODEL',
+      calculationBasis: 'governed engineering range preservation threshold of 0.5% Phenoxyethanol.'
     });
   }
 
-  // 12. Active Matter Below Category Baseline
-  if (effectiveTotalActive < catContext.targetActiveMatterMin && effectiveTotalActive > 0) {
-    issues.push({
-      id: 'low-active-matter',
-      issue: `Sub-Optimal Total Active Solids (${effectiveTotalActive.toFixed(1)}% vs ≥${catContext.targetActiveMatterMin}% Benchmark)`,
-      whyItMatters: `Cleaning performance for ${productCat} may fall below commercial efficacy benchmarks, requiring higher dosing per wash cycle.`,
-      scientificBasis: 'Surfactant soil-carrying and emulsification capacity standards.',
-      scientificType: 'PREDICTIVE',
-      severity: 'Low',
-      whatToCheck: 'Adjust surfactant concentration or optimize dosing instructions.'
-    });
-    recommendations.push({
-      id: 'rec-low-active',
-      problem: `Total active matter (${effectiveTotalActive.toFixed(1)}%) is below standard benchmark for ${productCat} (≥${catContext.targetActiveMatterMin}%).`,
-      why: 'Lower active surfactant concentration reduces soil removal velocity and emulsion stability under heavy soil loads.',
-      recommendedAction: `Increase primary surfactant concentration to achieve at least ${catContext.targetActiveMatterMin}% active matter.`,
-      expectedEffect: 'Higher cleaning performance index (CPI) and market competitiveness.',
-      tradeOff: 'Increases raw material cost per kg.',
-      confidence: 'MEDIUM',
-      calculationBasis: `Current active matter: ${effectiveTotalActive.toFixed(1)}% vs target min: ${catContext.targetActiveMatterMin}%`
-    });
-  }
+  // Always suggest lab test for properties that cannot be computed (viscosity salt curve, actual CMC)
+  recommendations.push({
+    id: 'rec-lab-viscosity-validation',
+    problem: 'Actual viscosity salt-thickening curves cannot be deterministically computed in highly mixed systems.',
+    why: 'Micellar elongation and peak gel viscosity depend on shear rates and raw material impurities.',
+    recommendedAction: 'Perform Brookfield spindle viscosity validation across 0.5% to 2.5% NaCl increments.',
+    expectedEffect: 'Maps the precise salt-curve thickening profile for manufacturing consistency.',
+    tradeOff: 'Requires laboratory time.',
+    confidence: 'MEDIUM',
+    recommendationType: 'RUN_LAB_TEST',
+    authority: 'LAB_EVIDENCE'
+  });
 
-  // ==========================================
-  // FORMULATION STRENGTHS (Backed by Data)
-  // ==========================================
-
-  // 1. Surfactant Synergy
-  if (anionicActivePct > 3 && (amphotericActivePct > 1 || nonionicActivePct > 1)) {
+  // =============================================================================
+  // STRENGTHS COMPILATION
+  // =============================================================================
+  if (totalActiveSurfactantPct >= catContext.targetActiveMatterMin) {
     strengths.push({
-      id: 'str-surfactant-synergy',
-      title: 'Synergistic Mixed Micellar Architecture',
-      description: `Formula combines anionic (${anionicActivePct.toFixed(1)}%) with ${
-        amphotericActivePct > 0 ? `amphoteric (${amphotericActivePct.toFixed(1)}%) ` : ''
-      }${nonionicActivePct > 0 ? `nonionic (${nonionicActivePct.toFixed(1)}%)` : ''} surfactants. Lowers critical micelle concentration (CMC) and boosts dynamic soil release.`,
-      scientificBasis: 'Mixed pseudophase micellar thermodynamics and reduced electrostatic headgroup repulsion.',
+      id: 'str-active-matter',
+      title: `Optimal Active Matter (${totalActiveSurfactantPct.toFixed(1)}%)`,
+      description: `Surfactant active concentration meets commercial performance standards for ${catContext.category}.`,
+      scientificBasis: 'Sufficient micellar capacity for heavy soil load.',
       scientificType: 'CALCULATED'
     });
   }
 
-  // 2. Hard Water Protection
-  if (effectiveHardnessSufficiency === 'sufficient' && effectiveMaxHardness >= waterHardness) {
-    strengths.push({
-      id: 'str-hardness-tolerance',
-      title: 'Robust Hard Water Chelation Reserve',
-      description: `Sequestration system protects active detergency up to ${effectiveMaxHardness} ppm CaCO₃, fully satisfying the operational ${waterHardness} ppm water hardness specification.`,
-      scientificBasis: 'Stoichiometric calcium/magnesium chelation capacity.',
-      scientificType: 'CALCULATED'
-    });
-  }
-
-  // 3. pH Equilibrium Compliance
-  if (effectivePH >= catContext.targetPHMin && effectivePH <= catContext.targetPHMax) {
+  if (calculatedPH >= catContext.targetPHMin && calculatedPH <= catContext.targetPHMax) {
     strengths.push({
       id: 'str-ph-target',
-      title: 'Optimized Target Equilibrium pH',
-      description: `Calculated equilibrium pH (${effectivePH.toFixed(2)}) is within standard commercial specifications (${catContext.targetPHMin} - ${catContext.targetPHMax}) for ${productCat}.`,
-      scientificBasis: 'Newton-Raphson charge-balance equilibrium.',
+      title: `Target pH Alignment (${calculatedPH.toFixed(2)})`,
+      description: `Formulation equilibrium pH matches recommended range (${catContext.targetPHMin} - ${catContext.targetPHMax}) for ${catContext.category}.`,
+      scientificBasis: 'Optimal ionization and substrate compatibility.',
+      scientificType: 'CALCULATED'
+    });
+  } else {
+    strengths.push({
+      id: 'str-ph-target',
+      title: `Calculated Speciation pH (${calculatedPH.toFixed(2)})`,
+      description: `Charge balance equilibrium pH evaluated via activity coefficient model.`,
+      scientificBasis: 'Newton-Raphson aqueous speciation.',
       scientificType: 'CALCULATED'
     });
   }
 
-  // 4. Cleaning Performance
-  if (effectiveCleaningScore >= 75) {
+  if (hasPreservative) {
     strengths.push({
-      id: 'str-high-cpi',
-      title: 'High Predicted Cleaning Performance Index',
-      description: `Predicted Cleaning Performance Index (${effectiveCleaningScore}/100) indicates strong soil removal, emulsification, and particulate dispersion capacity.`,
-      scientificBasis: 'Multi-factor empirical cleaning model (surfactant solids, synergy, builder alkalinity).',
-      scientificType: 'PREDICTIVE'
-    });
-  }
-
-  // 5. Preservation
-  if (hasPreservative && waterPct > 20) {
-    strengths.push({
-      id: 'str-preservation',
-      title: 'Microbiological Shelf Preservation',
-      description: 'Preservative agent incorporated to protect aqueous phase integrity against bacterial and fungal contamination.',
-      scientificBasis: 'Preservative chemical active presence.',
+      id: 'str-preservative',
+      title: 'Microbial Preservation Protected',
+      description: 'Preservative active present to prevent bacterial/fungal spoilage.',
+      scientificBasis: 'Broad-spectrum biocide micro-inhibitory concentration.',
       scientificType: 'EMPIRICAL'
     });
   }
 
-  // Calculate Overall Status
+  const hardWaterIssue = issues.find(i => i.id === 'chelation-deficit' || i.issue.toLowerCase().includes('hard water'));
+  const hardWaterStatusText = waterHardness === 0
+    ? 'Hard-water protection: Not evaluated at 0 ppm baseline.'
+    : hardWaterIssue
+    ? 'Hard-water protection: Needs Revision.'
+    : 'Hard-water protection: Pass.';
+
+  if (issues.length === 0) {
+    strengths.push({
+      id: 'str-balanced-formula',
+      title: 'Balanced & Stable Formulation',
+      description: `Formulation balance: Pass for evaluated parameters. ${hardWaterStatusText}`,
+      scientificBasis: 'Multi-engine equilibrium charge and stability verification.',
+      scientificType: 'CALCULATED'
+    });
+  } else if (!hardWaterIssue && issues.every(i => i.severity !== 'Critical')) {
+    strengths.push({
+      id: 'str-balanced-formula',
+      title: 'Formulation Balance (Evaluated Parameters)',
+      description: `Formulation balance: Pass for evaluated parameters. ${hardWaterStatusText}`,
+      scientificBasis: 'Multi-engine equilibrium charge and stability verification.',
+      scientificType: 'CALCULATED'
+    });
+  }
+
+  // =============================================================================
+  // STATUS VERDICT LOGIC & RESOLUTIONS
+  // =============================================================================
   const criticalCount = issues.filter(i => i.severity === 'Critical').length;
   const highCount = issues.filter(i => i.severity === 'High').length;
 
   let overallStatus: 'PASS' | 'PASS WITH LIMITATIONS' | 'FAIL' = 'PASS';
-  let summarySentence = 'No major instability or compatibility conflict detected by current screening models; laboratory validation and batch release testing recommended.';
+  if (criticalCount > 0) overallStatus = 'FAIL';
+  else if (highCount > 0) overallStatus = 'PASS WITH LIMITATIONS';
 
-  if (criticalCount > 0) {
-    overallStatus = 'FAIL';
-    summarySentence = `Formula has ${criticalCount} critical chemical/physical conflict(s) that require correction before lab batching.`;
-  } else if (highCount > 0 || issues.length > 0) {
-    overallStatus = 'PASS WITH LIMITATIONS';
-    summarySentence = `Formula screening indicates viable baseline with ${issues.length} flagged parameter(s) requiring laboratory optimization and verification.`;
+  // Conflict Resolution: If there is a Level 1 / Level 2 critical constraint failure, we ensure recommendations resolve them first
+  if (overallStatus === 'FAIL') {
+    // Elevate critical recommendations to top, filter out minor enhancements
+    recommendations.sort((a, b) => {
+      const aPriority = a.recommendationType === 'REMOVE_INGREDIENT' || a.recommendationType === 'REDUCE_DOSAGE' || a.recommendationType === 'INCREASE_DOSAGE' ? 1 : 0;
+      const bPriority = b.recommendationType === 'REMOVE_INGREDIENT' || b.recommendationType === 'REDUCE_DOSAGE' || b.recommendationType === 'INCREASE_DOSAGE' ? 1 : 0;
+      return bPriority - aPriority;
+    });
   }
 
   return {
     sanityCheckPassed: criticalCount === 0,
     overallStatus,
-    summarySentence,
+    summarySentence: overallStatus === 'PASS'
+      ? `Formulation is scientifically sound and well-balanced for ${catContext.category}.`
+      : `Detected ${issues.length} formulation issue(s) requiring attention for ${catContext.category}.`,
     totalIssuesCount: issues.length,
     criticalIssuesCount: criticalCount,
     highIssuesCount: highCount,

@@ -1,6 +1,8 @@
 import { FormulationIngredient } from '../types';
 import { ActiveMatterEngine } from './activeMatterEngine';
 import { calculatePHAdvanced } from './pHEngine';
+import { normalizeProductCategory } from '../domain/productTaxonomy';
+import { PHCalculationOptions } from '../domain/ph/types';
 
 /**
  * ============================================================================
@@ -131,6 +133,14 @@ export interface ViscosityReport {
   diagnostics: string[];
   warnings: string[];
   recommendations: string[];
+  assumedShearRate?: string;
+  modelMaturity?: string;
+  applicabilityDomain?: string;
+  limitations?: string[];
+  uncertainty?: {
+    level: 'Low' | 'Medium' | 'High';
+    factors: string[];
+  };
 }
 
 /**
@@ -276,6 +286,7 @@ export class ViscosityEngine {
       productCategory?: string;
       targetPH?: number;
       temperatureC?: number;
+      activeMatterReport?: any;
     } = {}
   ): ViscosityReport {
     const list = Array.isArray(ingredients) ? ingredients : [];
@@ -285,7 +296,7 @@ export class ViscosityEngine {
     const isSolidCategory = 
       /powder|bar|soap bar|tablet|block|dry blend|granule|pellet/i.test(productCategory);
     
-    const activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
+    const activeMatterReport = options.activeMatterReport || ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
     const totalWaterPct = activeMatterReport.totalWaterPct;
     const totalRawPct = activeMatterReport.totalRawPercentage;
 
@@ -307,7 +318,9 @@ export class ViscosityEngine {
     const recommendations: string[] = [];
 
     // Evaluate pH for pH-sensitive thickeners (e.g. Carbomers, ASE polyacrylates)
-    const estimatedPH = options.targetPH ?? (calculatePHAdvanced ? calculatePHAdvanced(list).pH : 7.0);
+    const normCategory = productCategory ? normalizeProductCategory(productCategory) : undefined;
+    const phOpts: PHCalculationOptions | undefined = (normCategory && normCategory !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCategory } : undefined;
+    const estimatedPH = options.targetPH ?? (calculatePHAdvanced ? calculatePHAdvanced(list, 100, phOpts).pH : 7.0);
 
     // Active Surfactant Breakdown
     let activeAnionicPct = 0;
@@ -473,7 +486,7 @@ export class ViscosityEngine {
     let primaryMechanism: ViscosityMechanism = 'Solvent / Dilute Aqueous';
     let behavior: RheologyBehavior = 'Newtonian';
     let dataSource: ViscosityDataSource = 'model_derived';
-    let confidence: ViscosityConfidence = 'Medium';
+    let confidence: ViscosityConfidence = activeMatterReport.ingredientsWithMissingActive > 0 ? 'Low' : 'Medium';
 
     // Step 4: Mechanistic Model Computation
     const totalActiveSurfactants = activeAnionicPct + activeAmphotericPct + activeNonionicPct + activeCationicPct;
@@ -562,8 +575,16 @@ export class ViscosityEngine {
       recommendedSaltAdjustment: 'Salt within standard response window.'
     };
 
-    const buildableSurfactantActive = activeSlesPct + 0.6 * activeLabsaPct + 0.5 * (activeAnionicPct - activeSlesPct - activeLabsaPct);
-    const cosurfactantPackingActive = activeAmphotericPct + 1.5 * alkanolamideActivePct;
+    // Heuristic weighting based on engineering assumption of micellar-rod forming capability:
+    // - SLES (ethoxylated) is a strong builder (1.0).
+    // - LABSA (sulfonic) is a moderate builder (0.6).
+    // - Other anionics are 0.4.
+    const buildableSurfactantActive = activeSlesPct + 0.6 * activeLabsaPct + 0.4 * (activeAnionicPct - activeSlesPct - activeLabsaPct);
+    
+    // Heuristic weighting:
+    // - Amphoterics (CAPB) are 0.8 (synergy builder).
+    // - Alkanolamides (CDEA/CMEA) are 1.5 (synergy builder for rod growth).
+    const cosurfactantPackingActive = 0.8 * activeAmphotericPct + 1.5 * alkanolamideActivePct;
 
     if (buildableSurfactantActive >= 3.0) {
       // Calculate dynamic peak salt threshold based on cosurfactant ratio
@@ -768,7 +789,22 @@ export class ViscosityEngine {
       contributingFactors: factors,
       diagnostics,
       warnings,
-      recommendations
+      recommendations,
+      assumedShearRate: '~20 s^-1 (Standard Brookfield RVT @ 20 RPM)',
+      modelMaturity: 'SEMI_EMPIRICAL_SCREENING',
+      applicabilityDomain: 'Aqueous fluid surfactant formulations at 4°C to 40°C',
+      limitations: [
+        'Single scalar viscosity assumes standard test shear rate condition (~20 s^-1 / Brookfield RVT @ 20 RPM at 25°C).',
+        'Pseudoplastic fluids thin under high pouring/dispensing shear (~100 s^-1); see shearProfile for power-law response.',
+        'Accurate peak salt curve prediction requires surfactant-grade-specific electrolyte calibration.'
+      ],
+      uncertainty: {
+        level: confidence === 'High' ? 'Low' : confidence === 'Medium' ? 'Medium' : 'High',
+        factors: [
+          ...diagnostics.filter(d => d.includes('cPs')),
+          ...warnings
+        ]
+      }
     };
   }
 

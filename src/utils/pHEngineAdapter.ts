@@ -1,4 +1,13 @@
-import { FormulationIngredient, IngredientInput } from '../types';
+import { FormulationIngredient, IngredientInput, PHAdvancedResult, PHSimpleResult } from '../types';
+import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
+import { PHCalculationOptions } from '../domain/ph/types';
+import {
+  INGREDIENT_DATABASE,
+  calculatePHAdvanced as calculatePHAdvancedV2,
+  calculatePHSimple as calculatePHSimpleV2
+} from './pHEngine';
+
+export { INGREDIENT_DATABASE };
 
 /**
  * Standardized pure adapter that maps a single application FormulationIngredient
@@ -60,3 +69,52 @@ export function mapFormulationIngredientsToPHEngineInput(
   }
   return ings.map(mapFormulationIngredientToPHEngineInput);
 }
+
+/**
+ * Creates and normalizes PHCalculationOptions ensuring productCategory is canonical
+ * and survives application-to-science adapter boundaries without being dropped or defaulting.
+ */
+export function createPHCalculationOptions(
+  categoryOrId?: string,
+  extraOptions?: Partial<PHCalculationOptions>
+): PHCalculationOptions {
+  if (!categoryOrId) {
+    return { ...extraOptions };
+  }
+  const norm = normalizeProductCategory(categoryOrId);
+  return {
+    ...extraOptions,
+    productCategory: norm !== 'UNKNOWN_PRODUCT_CATEGORY' ? norm : undefined
+  };
+}
+
+/**
+ * Authoritative adapter for calculatePHAdvanced delegating through pHEngineAdapter.
+ */
+export function calculatePHAdvanced(
+  ingredients: IngredientInput[],
+  totalMassKg: number = 100,
+  options?: PHCalculationOptions | ProductCategoryId | string
+): PHAdvancedResult {
+  const opts: PHCalculationOptions =
+    typeof options === 'string'
+      ? createPHCalculationOptions(options)
+      : createPHCalculationOptions(options?.productCategory, options);
+  return calculatePHAdvancedV2(ingredients, totalMassKg, opts);
+}
+
+/**
+ * Authoritative adapter for calculatePHSimple delegating through pHEngineAdapter.
+ */
+export function calculatePHSimple(
+  ingredients: IngredientInput[],
+  totalMassKg: number = 100,
+  options?: PHCalculationOptions | ProductCategoryId | string
+): PHSimpleResult {
+  const opts: PHCalculationOptions =
+    typeof options === 'string'
+      ? createPHCalculationOptions(options)
+      : createPHCalculationOptions(options?.productCategory, options);
+  return calculatePHSimpleV2(ingredients, totalMassKg, opts);
+}
+

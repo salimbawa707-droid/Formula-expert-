@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { AiFallbackService } from "./src/services/aiFallbackService";
+import { IngredientResearchService } from "./src/services/ingredientResearchService";
+import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from "./src/domain/ph/acidBaseDataModel";
 
 dotenv.config();
 
@@ -111,6 +113,29 @@ Context available: ${JSON.stringify(context || {})}`;
   }
 });
 
+// Ingredient Research Workstations & Autonomous Data Acquisition
+app.post("/api/ai/research-ingredient", async (req, res) => {
+  const { nameOrAlias } = req.body;
+  try {
+    const result = await IngredientResearchService.researchIngredient(nameOrAlias, process.env.GEMINI_API_KEY);
+    res.json(result);
+  } catch (err: any) {
+    console.error("Failed to run ingredient research:", err);
+    res.status(500).json({ error: err.message || "Failed to run ingredient research" });
+  }
+});
+
+app.post("/api/ai/apply-verified-ingredient", async (req, res) => {
+  const { researchResult, previousRecord } = req.body;
+  try {
+    const result = await IngredientResearchService.applyVerifiedData(researchResult, previousRecord);
+    res.json(result);
+  } catch (err: any) {
+    console.error("Failed to apply verified ingredient data:", err);
+    res.status(500).json({ error: err.message || "Failed to apply verified ingredient data" });
+  }
+});
+
 // Hard constraint check: enforce preservative safety and pH compatibility BEFORE ingredients list is finalized
 function enforcePreservativeConstraints(formula: any) {
   if (!formula || !formula.ingredients || formula.ingredients.length === 0) return formula;
@@ -141,12 +166,12 @@ function enforcePreservativeConstraints(formula: any) {
     }
   }
 
-  // Define our safety-restricted, pH-compatible preservative alternatives
+  // Define our safety-restricted, pH-compatible preservative alternatives with null costPerKg (strictly no invented market prices)
   let safePreservative = {
     name: "Kathon CG (Safe Preservative)",
     percentage: 0.1,
     role: "Safe Preservative / pH compatible",
-    costPerKg: 180,
+    costPerKg: null,
     activeMatterPct: 0,
     hlbValue: null
   };
@@ -156,7 +181,7 @@ function enforcePreservativeConstraints(formula: any) {
       name: "Sodium Benzoate (Safe Eco Preservative)",
       percentage: 0.2,
       role: "Safe Eco Preservative / pH compatible",
-      costPerKg: 140,
+      costPerKg: null,
       activeMatterPct: 0,
       hlbValue: null
     };
@@ -165,7 +190,7 @@ function enforcePreservativeConstraints(formula: any) {
       name: "Phenoxyethanol (Safe Preservative)",
       percentage: 0.15,
       role: "High-pH Stable Safe Preservative",
-      costPerKg: 180,
+      costPerKg: null,
       activeMatterPct: 0,
       hlbValue: null
     };
@@ -175,7 +200,7 @@ function enforcePreservativeConstraints(formula: any) {
       name: "Kathon CG (Safe Preservative)",
       percentage: 0.1,
       role: "Safe Preservative / pH compatible",
-      costPerKg: 180,
+      costPerKg: null,
       activeMatterPct: 0,
       hlbValue: null
     };
@@ -486,7 +511,7 @@ function analyzeUserFormulaFallback(ingredients: any[], productType: string, gra
       name: "Demineralized Water (DM Water)",
       percentage: remPct,
       role: "Solvent Carrier",
-      costPerKg: 2,
+      costPerKg: null,
       activeMatterPct: 0,
       hlbValue: null
     });
@@ -515,20 +540,13 @@ function analyzeUserFormulaFallback(ingredients: any[], productType: string, gra
     list[waterIdx].percentage = Number((100 - nonWaterSum).toFixed(2));
   }
 
-  // Populate costs, roles, HLBs if they are missing
+  // Preserve user costs, roles, HLBs without inventing market rates
   list.forEach((ing: any) => {
     const n = (ing.name || "").toLowerCase();
-    if (!ing.costPerKg) {
-      if (n.includes("labsa")) ing.costPerKg = 135;
-      else if (n.includes("sles")) ing.costPerKg = 110;
-      else if (n.includes("capb")) ing.costPerKg = 95;
-      else if (n.includes("water") || n.includes("aqua")) ing.costPerKg = 2;
-      else if (n.includes("salt")) ing.costPerKg = 15;
-      else if (n.includes("soda ash")) ing.costPerKg = 35;
-      else if (n.includes("citric")) ing.costPerKg = 90;
-      else if (n.includes("fragrance")) ing.costPerKg = 1500;
-      else if (n.includes("preservative") || n.includes("kathon") || n.includes("phenoxy")) ing.costPerKg = 180;
-      else ing.costPerKg = 80;
+    if (ing.costPerKg === undefined || ing.costPerKg === null || ing.costPerKg === '' || isNaN(Number(ing.costPerKg))) {
+      ing.costPerKg = null;
+    } else {
+      ing.costPerKg = Number(ing.costPerKg);
     }
     if (!ing.role) {
       if (n.includes("labsa")) ing.role = "Anionic Surfactant / Primary Degreaser";
@@ -554,11 +572,18 @@ function analyzeUserFormulaFallback(ingredients: any[], productType: string, gra
     ing.percentage = Number(Number(ing.percentage || 0).toFixed(2));
   });
 
-  let actualCost = 0;
+  let actualCost: number | null = 0;
+  let allPriced = true;
   list.forEach((ing: any) => {
-    actualCost += (ing.percentage / 100) * (ing.costPerKg || 0);
+    if (typeof ing.costPerKg === 'number' && !isNaN(ing.costPerKg)) {
+      if (actualCost !== null) {
+        actualCost += (ing.percentage / 100) * ing.costPerKg;
+      }
+    } else {
+      allPriced = false;
+    }
   });
-  actualCost = Number(actualCost.toFixed(2));
+  actualCost = allPriced ? Number((actualCost ?? 0).toFixed(2)) : null;
 
   const activeMatterSum = calculateActiveMatterServer(list);
 
@@ -652,28 +677,28 @@ app.post("/api/ai/formulate", async (req, res) => {
   let builderPercentage = 0.5;
   let builderName = "Sodium Gluconate";
   let builderRole = "Eco Chelating Agent / Water Softener";
-  let builderCost = 120;
+  let builderCost: number | null = null;
 
   if (hardness < 100) {
     builderPercentage = 0.4;
     builderName = "Sodium Gluconate";
     builderRole = "Eco Chelating Agent (Balanced for Soft water: " + hardness + " ppm)";
-    builderCost = 120;
+    builderCost = null;
   } else if (hardness >= 100 && hardness < 250) {
     builderPercentage = 1.2;
     builderName = "GLDA (Dissolvine GL 47%)";
     builderRole = "Green Biodegradable Chelator / Water Softener (Adjusted for Medium hardness: " + hardness + " ppm)";
-    builderCost = 195;
+    builderCost = null;
   } else if (hardness >= 250 && hardness < 400) {
     builderPercentage = 2.2;
     builderName = "GLDA (Dissolvine GL 47%)";
     builderRole = "Green Biodegradable Chelator / Water Softener (Adjusted for Hard water: " + hardness + " ppm)";
-    builderCost = 195;
+    builderCost = null;
   } else {
     builderPercentage = 3.0; // capped at practical formulation limit
     builderName = "GLDA (Dissolvine GL 47%)";
     builderRole = "Green Biodegradable Chelator / Water Softener (Adjusted for Very Hard water: " + hardness + " ppm)";
-    builderCost = 195;
+    builderCost = null;
   }
 
   let calculatedHlb = "12.8";
@@ -696,16 +721,16 @@ app.post("/api/ai/formulate", async (req, res) => {
     
     if (isPureEco) {
       ingredients = [
-        { name: "Coco Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 14.0 : grade === "Standard" ? 9.0 : 5.0, role: "Non-ionic Plant Surfactant / Primary Degreaser", costPerKg: 160, activeMatterPct: 50, hlbValue: 13.6 },
-        { name: "Lauryl Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 6.0 : 3.0, role: "Non-ionic Plant Surfactant / Foam Stabilizer", costPerKg: 175, activeMatterPct: 50, hlbValue: 12.0 },
-        { name: "CAPB (30%)", percentage: grade === "Premium" ? 8.0 : grade === "Standard" ? 5.0 : 2.5, role: "Amphoteric Surfactant / Gentle Hand Mildness", costPerKg: 95, activeMatterPct: 30, hlbValue: 12.0 },
-        { name: "Sodium Gluconate", percentage: 1.0, role: "Eco Chelator / Water Softener", costPerKg: 120, activeMatterPct: 0, hlbValue: null },
-        { name: "Xanthan Gum (Natural Polymer)", percentage: 0.8, role: "Eco-friendly Thickener & Stabilizer", costPerKg: 350, activeMatterPct: 0, hlbValue: null },
-        { name: "Citric Acid (for skin-friendly pH adjustment)", percentage: 0.25, role: "pH Adjuster (Buffers pH to 7.2 - 7.5)", costPerKg: 90, activeMatterPct: 0, hlbValue: null },
-        { name: "Sodium Benzoate (Eco Preservative)", percentage: 0.2, role: "Eco Preservative / Prevents yeast & mold growth", costPerKg: 140, activeMatterPct: 0, hlbValue: null },
-        { name: "Lemon Essential Oil (Natural Fragrance)", percentage: 0.25, role: "Natural Citrus Scent", costPerKg: 1800, activeMatterPct: 0, hlbValue: null },
-        { name: "Natural Curcumin (Yellow Dye)", percentage: 0.01, role: "Natural Aesthetic Dye", costPerKg: 600, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Aqueous Solvent Carrier", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+        { name: "Coco Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 14.0 : grade === "Standard" ? 9.0 : 5.0, role: "Non-ionic Plant Surfactant / Primary Degreaser", costPerKg: null, activeMatterPct: 50, hlbValue: 13.6 },
+        { name: "Lauryl Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 6.0 : 3.0, role: "Non-ionic Plant Surfactant / Foam Stabilizer", costPerKg: null, activeMatterPct: 50, hlbValue: 12.0 },
+        { name: "CAPB (30%)", percentage: grade === "Premium" ? 8.0 : grade === "Standard" ? 5.0 : 2.5, role: "Amphoteric Surfactant / Gentle Hand Mildness", costPerKg: null, activeMatterPct: 30, hlbValue: 12.0 },
+        { name: "Sodium Gluconate", percentage: 1.0, role: "Eco Chelator / Water Softener", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Xanthan Gum (Natural Polymer)", percentage: 0.8, role: "Eco-friendly Thickener & Stabilizer", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Citric Acid (for skin-friendly pH adjustment)", percentage: 0.25, role: "pH Adjuster (Buffers pH to 7.2 - 7.5)", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Sodium Benzoate (Eco Preservative)", percentage: 0.2, role: "Eco Preservative / Prevents yeast & mold growth", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Lemon Essential Oil (Natural Fragrance)", percentage: 0.25, role: "Natural Citrus Scent", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Natural Curcumin (Yellow Dye)", percentage: 0.01, role: "Natural Aesthetic Dye", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Aqueous Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
       ];
 
       manufacturingMethod = [
@@ -728,16 +753,16 @@ app.post("/api/ai/formulate", async (req, res) => {
       ];
     } else {
       ingredients = [
-        { name: "LABSA (90%)", percentage: grade === "Premium" ? 9.0 : grade === "Standard" ? 6.0 : 3.5, role: "Anionic Surfactant / Primary Degreaser", costPerKg: 135, activeMatterPct: 90, hlbValue: 11.5 },
-        { name: "Sodium Hydroxide (NaOH, Caustic Soda) - for neutralization", percentage: grade === "Premium" ? 1.22 : grade === "Standard" ? 0.81 : 0.47, role: "Neutralizing Agent", costPerKg: 45, activeMatterPct: 0, hlbValue: null },
-        { name: "SLES (70%)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 6.5 : 3.0, role: "Anionic Surfactant / High Foam Generator", costPerKg: 110, activeMatterPct: 70, hlbValue: 13.0 },
-        { name: "CAPB (30%)", percentage: grade === "Premium" ? 4.0 : grade === "Standard" ? 2.5 : 1.5, role: "Amphoteric Surfactant / Foam Booster & Hand Mildness", costPerKg: 95, activeMatterPct: 30, hlbValue: 12.0 },
+        { name: "LABSA (90%)", percentage: grade === "Premium" ? 9.0 : grade === "Standard" ? 6.0 : 3.5, role: "Anionic Surfactant / Primary Degreaser", costPerKg: null, activeMatterPct: 90, hlbValue: 11.5 },
+        { name: "Sodium Hydroxide (NaOH, Caustic Soda) - for neutralization", percentage: grade === "Premium" ? 1.22 : grade === "Standard" ? 0.81 : 0.47, role: "Neutralizing Agent", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "SLES (70%)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 6.5 : 3.0, role: "Anionic Surfactant / High Foam Generator", costPerKg: null, activeMatterPct: 70, hlbValue: 13.0 },
+        { name: "CAPB (30%)", percentage: grade === "Premium" ? 4.0 : grade === "Standard" ? 2.5 : 1.5, role: "Amphoteric Surfactant / Foam Booster & Hand Mildness", costPerKg: null, activeMatterPct: 30, hlbValue: 12.0 },
         { name: builderName, percentage: builderPercentage, role: builderRole, costPerKg: builderCost, activeMatterPct: 0, hlbValue: null },
-        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Thickener", costPerKg: 15, activeMatterPct: 0, hlbValue: null },
-        { name: "Preservative (Formalin or Kathon CG)", percentage: 0.1, role: "Preservative / Prevents spoilage & rotting", costPerKg: 180, activeMatterPct: 0, hlbValue: null },
-        { name: "Fragrance (Lemon / Citrus)", percentage: 0.2, role: "Fresh Deodorizing Fragrance", costPerKg: 1500, activeMatterPct: 0, hlbValue: null },
-        { name: "Colorant (Acid Green or Lemon Yellow Dye)", percentage: 0.01, role: "Esthetics", costPerKg: 500, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Thickener", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Preservative (Formalin or Kathon CG)", percentage: 0.1, role: "Preservative / Prevents spoilage & rotting", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Fragrance (Lemon / Citrus)", percentage: 0.2, role: "Fresh Deodorizing Fragrance", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Colorant (Acid Green or Lemon Yellow Dye)", percentage: 0.01, role: "Esthetics", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
       ];
 
       manufacturingMethod = [
@@ -769,12 +794,12 @@ app.post("/api/ai/formulate", async (req, res) => {
     activeMatter = grade === "Premium" ? 22.0 : grade === "Standard" ? 15.0 : 9.0;
     hlbImportance = "For anti-foaming agents, a low HLB (1.0 - 3.0) is essential so the surfactant is completely insoluble in the continuous water phase. This allows it to migrate to the air-water interface, spreading as a thin film that destabilizes and collapses the liquid lamellae of the foam bubbles. If the HLB is too high, the defoamer would solubilize and boost foam rather than suppress it.";
     ingredients = [
-      { name: "Polydimethylsiloxane (Silicone Fluid)", percentage: grade === "Premium" ? 12.0 : grade === "Standard" ? 8.0 : 5.0, role: "De-foaming Active Component", costPerKg: 350, activeMatterPct: 100, hlbValue: 1.0 },
-      { name: "Sorbitan Oleate (Span 80)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 7.0 : 4.0, role: "Lipophilic Co-Emulsifier", costPerKg: 210, activeMatterPct: 100, hlbValue: 4.3 },
-      { name: "Light Mineral Oil (Carrier)", percentage: 20.0, role: "Hydrophobic Liquid Carrier", costPerKg: 140, activeMatterPct: 0, hlbValue: null },
-      { name: "Sodium Carboxymethyl Cellulose", percentage: 1.0, role: "Emulsion Stabilizer & Thickener", costPerKg: 280, activeMatterPct: 0, hlbValue: null },
-      { name: "Preservative (Kathon CG)", percentage: 0.1, role: "Preservative", costPerKg: 180, activeMatterPct: 0, hlbValue: null },
-      { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Continuous Solvent Phase", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+      { name: "Polydimethylsiloxane (Silicone Fluid)", percentage: grade === "Premium" ? 12.0 : grade === "Standard" ? 8.0 : 5.0, role: "De-foaming Active Component", costPerKg: null, activeMatterPct: 100, hlbValue: 1.0 },
+      { name: "Sorbitan Oleate (Span 80)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 7.0 : 4.0, role: "Lipophilic Co-Emulsifier", costPerKg: null, activeMatterPct: 100, hlbValue: 4.3 },
+      { name: "Light Mineral Oil (Carrier)", percentage: 20.0, role: "Hydrophobic Liquid Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Sodium Carboxymethyl Cellulose", percentage: 1.0, role: "Emulsion Stabilizer & Thickener", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Preservative (Kathon CG)", percentage: 0.1, role: "Preservative", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Continuous Solvent Phase", costPerKg: null, activeMatterPct: 0, hlbValue: null }
     ];
     manufacturingMethod = [
       { order: 1, action: "Blend Polydimethylsiloxane (Silicone Fluid) and Sorbitan Oleate (Span 80) together in Light Mineral Oil in a separate vessel until fully uniform.", mixingTime: "10 mins", mixingSpeed: "Medium", temperature: "Ambient" },
@@ -796,13 +821,13 @@ app.post("/api/ai/formulate", async (req, res) => {
     activeMatter = grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0;
     hlbImportance = "Fabric softeners utilize cationic surfactants at HLB 9.0 - 12.0. These positively charged molecules are drawn to the negatively charged textile fibers, adsorbing as a lubricant monolayer that reduces fiber-to-fiber friction, static build-up, and fabric stiffness. Mismatched HLB can lead to unstable separation or gelation in storage.";
     ingredients = [
-      { name: "DHTDMAC (Esterquat / Cationic Surfactant)", percentage: grade === "Premium" ? 12.0 : grade === "Standard" ? 8.0 : 5.0, role: "Cationic Softening Agent", costPerKg: 180, activeMatterPct: 80, hlbValue: 10.0 },
-      { name: "Linear Alcohol Ethoxylate (LAE-9)", percentage: 2.0, role: "Non-ionic Emulsifier & Re-wetting Agent", costPerKg: 185, activeMatterPct: 100, hlbValue: 13.3 },
-      { name: "Calcium Chloride (CaCl2 10% solution)", percentage: 0.5, role: "Viscosity Control / Electrolyte", costPerKg: 40, activeMatterPct: 0, hlbValue: null },
-      { name: "Preservative (Formalin)", percentage: 0.1, role: "Preservative", costPerKg: 180, activeMatterPct: 0, hlbValue: null },
-      { name: "Fragrance (Lavender Encapsulated)", percentage: 0.4, role: "Long-lasting Fragrance", costPerKg: 2200, activeMatterPct: 0, hlbValue: null },
-      { name: "Colorant (Blue Dye)", percentage: 0.01, role: "Esthetics", costPerKg: 500, activeMatterPct: 0, hlbValue: null },
-      { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Aqueous Carrier", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+      { name: "DHTDMAC (Esterquat / Cationic Surfactant)", percentage: grade === "Premium" ? 12.0 : grade === "Standard" ? 8.0 : 5.0, role: "Cationic Softening Agent", costPerKg: null, activeMatterPct: 80, hlbValue: 10.0 },
+      { name: "Linear Alcohol Ethoxylate (LAE-9)", percentage: 2.0, role: "Non-ionic Emulsifier & Re-wetting Agent", costPerKg: null, activeMatterPct: 100, hlbValue: 13.3 },
+      { name: "Calcium Chloride (CaCl2 10% solution)", percentage: 0.5, role: "Viscosity Control / Electrolyte", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Preservative (Formalin)", percentage: 0.1, role: "Preservative", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Fragrance (Lavender Encapsulated)", percentage: 0.4, role: "Long-lasting Fragrance", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Colorant (Blue Dye)", percentage: 0.01, role: "Esthetics", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Aqueous Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
     ];
     manufacturingMethod = [
       { order: 1, action: "Heat DM Water in the main vessel to 55°C - 60°C. Cationic esterquats must be dispersed above their melting point.", mixingTime: "5 mins", mixingSpeed: "Slow", temperature: "60°C" },
@@ -825,13 +850,13 @@ app.post("/api/ai/formulate", async (req, res) => {
     activeMatter = grade === "Premium" ? 20.0 : grade === "Standard" ? 14.0 : 8.0;
     hlbImportance = "Heavy-duty degreasers require an HLB range of 12.5 - 14.5 to efficiently penetrate, break up, and emulsify dense polymerized greases, lubricating oils, and motor carbon. Often coupled with strong alkaline builders like Sodium Metasilicate, these high-HLB non-ionic surfactants remain stable in electrolyte-dense environments and prevent soil re-deposition.";
     ingredients = [
-      { name: "Linear Alcohol Ethoxylate (LAE-9)", percentage: grade === "Premium" ? 14.0 : grade === "Standard" ? 10.0 : 6.0, role: "Non-ionic Emulsifier & Primary Detergent", costPerKg: 185, activeMatterPct: 100, hlbValue: 13.3 },
-      { name: "CAPB (30%)", percentage: grade === "Premium" ? 6.0 : grade === "Standard" ? 4.0 : 2.0, role: "Amphoteric Co-surfactant / Alkaline Coupling", costPerKg: 95, activeMatterPct: 30, hlbValue: 12.0 },
-      { name: "Potassium Hydroxide (KOH, 45% Sol)", percentage: 5.0, role: "Alkaline Saponification Agent", costPerKg: 85, activeMatterPct: 0, hlbValue: null },
-      { name: "Sodium Metasilicate Pentahydrate", percentage: 4.0, role: "Inorganic Builder & Corrosion Inhibitor", costPerKg: 75, activeMatterPct: 0, hlbValue: null },
-      { name: "Sodium Xylene Sulfonate (SXS 40%)", percentage: 5.0, role: "Hydrotrope / Coupling Agent", costPerKg: 90, activeMatterPct: 0, hlbValue: null },
-      { name: "Solvent (Butyl Carbitol)", percentage: 5.0, role: "Organic Co-Solvent / Grease Cutter", costPerKg: 160, activeMatterPct: 0, hlbValue: null },
-      { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Carrier Solvent", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+      { name: "Linear Alcohol Ethoxylate (LAE-9)", percentage: grade === "Premium" ? 14.0 : grade === "Standard" ? 10.0 : 6.0, role: "Non-ionic Emulsifier & Primary Detergent", costPerKg: null, activeMatterPct: 100, hlbValue: 13.3 },
+      { name: "CAPB (30%)", percentage: grade === "Premium" ? 6.0 : grade === "Standard" ? 4.0 : 2.0, role: "Amphoteric Co-surfactant / Alkaline Coupling", costPerKg: null, activeMatterPct: 30, hlbValue: 12.0 },
+      { name: "Potassium Hydroxide (KOH, 45% Sol)", percentage: 5.0, role: "Alkaline Saponification Agent", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Sodium Metasilicate Pentahydrate", percentage: 4.0, role: "Inorganic Builder & Corrosion Inhibitor", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Sodium Xylene Sulfonate (SXS 40%)", percentage: 5.0, role: "Hydrotrope / Coupling Agent", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Solvent (Butyl Carbitol)", percentage: 5.0, role: "Organic Co-Solvent / Grease Cutter", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+      { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Carrier Solvent", costPerKg: null, activeMatterPct: 0, hlbValue: null }
     ];
     manufacturingMethod = [
       { order: 1, action: "Charge full water quantity. Dissolve Sodium Metasilicate Pentahydrate completely under moderate agitation.", mixingTime: "10 mins", mixingSpeed: "Medium", temperature: "Ambient" },
@@ -851,15 +876,15 @@ app.post("/api/ai/formulate", async (req, res) => {
     // Default to Laundry Liquid Detergent
     if (isPureEco) {
       ingredients = [
-        { name: "Coco Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0, role: "Non-ionic Bio-surfactant / Greasy Soil Emulsifier", costPerKg: 160, activeMatterPct: 50, hlbValue: 13.6 },
-        { name: "Lauryl Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 8.0 : grade === "Standard" ? 5.0 : 3.0, role: "Non-ionic Bio-surfactant / Soil Suspender", costPerKg: 175, activeMatterPct: 50, hlbValue: 12.0 },
-        { name: "CAPB (30%)", percentage: grade === "Premium" ? 6.0 : grade === "Standard" ? 4.0 : 2.0, role: "Amphoteric Surfactant / Foam Stabilization & Mildness", costPerKg: 95, activeMatterPct: 30, hlbValue: 12.0 },
-        { name: "Sodium Gluconate", percentage: 1.5, role: "Eco-friendly Chelator / Heavy Metal Sequestering", costPerKg: 120, activeMatterPct: 0, hlbValue: null },
-        { name: "HEC (Hydroxyethyl Cellulose)", percentage: 0.8, role: "Natural Cellulosic Thickener & Anti-redeposition", costPerKg: 320, activeMatterPct: 0, hlbValue: null },
-        { name: "Sodium Benzoate (Eco Preservative)", percentage: 0.2, role: "Eco Preservative / Prevents yeast & mold growth", costPerKg: 140, activeMatterPct: 0, hlbValue: null },
-        { name: "Fragrance (Aqua Floral Natural Essential Blend)", percentage: 0.3, role: "Natural Therapeutic Scent", costPerKg: 1800, activeMatterPct: 0, hlbValue: null },
-        { name: "Natural Curcumin (D&C Dye equivalent)", percentage: 0.01, role: "Esthetics", costPerKg: 500, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+        { name: "Coco Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0, role: "Non-ionic Bio-surfactant / Greasy Soil Emulsifier", costPerKg: null, activeMatterPct: 50, hlbValue: 13.6 },
+        { name: "Lauryl Glucoside (50% Bio-surfactant)", percentage: grade === "Premium" ? 8.0 : grade === "Standard" ? 5.0 : 3.0, role: "Non-ionic Bio-surfactant / Soil Suspender", costPerKg: null, activeMatterPct: 50, hlbValue: 12.0 },
+        { name: "CAPB (30%)", percentage: grade === "Premium" ? 6.0 : grade === "Standard" ? 4.0 : 2.0, role: "Amphoteric Surfactant / Foam Stabilization & Mildness", costPerKg: null, activeMatterPct: 30, hlbValue: 12.0 },
+        { name: "Sodium Gluconate", percentage: 1.5, role: "Eco-friendly Chelator / Heavy Metal Sequestering", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "HEC (Hydroxyethyl Cellulose)", percentage: 0.8, role: "Natural Cellulosic Thickener & Anti-redeposition", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Sodium Benzoate (Eco Preservative)", percentage: 0.2, role: "Eco Preservative / Prevents yeast & mold growth", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Fragrance (Aqua Floral Natural Essential Blend)", percentage: 0.3, role: "Natural Therapeutic Scent", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Natural Curcumin (D&C Dye equivalent)", percentage: 0.01, role: "Esthetics", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
       ];
 
       manufacturingMethod = [
@@ -881,17 +906,17 @@ app.post("/api/ai/formulate", async (req, res) => {
       ];
     } else {
       ingredients = [
-        { name: "LABSA (90%)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 7.0 : 4.0, role: "Anionic Surfactant / Primary Cleaning", costPerKg: 135, activeMatterPct: 90, hlbValue: 11.5 },
-        { name: "Sodium Hydroxide (NaOH, Caustic Soda) - for neutralization", percentage: grade === "Premium" ? 1.35 : grade === "Standard" ? 0.95 : 0.54, role: "Neutralizing Agent", costPerKg: 45, activeMatterPct: 0, hlbValue: null },
-        { name: "SLES (70%)", percentage: grade === "Premium" ? 8.0 : grade === "Standard" ? 5.0 : 2.5, role: "Anionic Surfactant / Foam Booster", costPerKg: 110, activeMatterPct: 70, hlbValue: 13.0 },
-        { name: "CAPB (30%)", percentage: grade === "Premium" ? 3.0 : grade === "Standard" ? 2.0 : 1.0, role: "Amphoteric Surfactant / Mildness", costPerKg: 95, activeMatterPct: 30, hlbValue: 12.0 },
+        { name: "LABSA (90%)", percentage: grade === "Premium" ? 10.0 : grade === "Standard" ? 7.0 : 4.0, role: "Anionic Surfactant / Primary Cleaning", costPerKg: null, activeMatterPct: 90, hlbValue: 11.5 },
+        { name: "Sodium Hydroxide (NaOH, Caustic Soda) - for neutralization", percentage: grade === "Premium" ? 1.35 : grade === "Standard" ? 0.95 : 0.54, role: "Neutralizing Agent", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "SLES (70%)", percentage: grade === "Premium" ? 8.0 : grade === "Standard" ? 5.0 : 2.5, role: "Anionic Surfactant / Foam Booster", costPerKg: null, activeMatterPct: 70, hlbValue: 13.0 },
+        { name: "CAPB (30%)", percentage: grade === "Premium" ? 3.0 : grade === "Standard" ? 2.0 : 1.0, role: "Amphoteric Surfactant / Mildness", costPerKg: null, activeMatterPct: 30, hlbValue: 12.0 },
         { name: builderName, percentage: builderPercentage, role: builderRole, costPerKg: builderCost, activeMatterPct: 0, hlbValue: null },
-        { name: "CMC (Carboxymethyl Cellulose) / HEC", percentage: 0.6, role: "Thickener & Anti-redeposition", costPerKg: 280, activeMatterPct: 0, hlbValue: null },
-        { name: "Optical Brightener (CBS-X)", percentage: 0.1, role: "Optical Brightener", costPerKg: 1200, activeMatterPct: 0, hlbValue: null },
-        { name: "Preservative (Formalin or Kathon)", percentage: 0.1, role: "Preservative", costPerKg: 180, activeMatterPct: 0, hlbValue: null },
-        { name: "Fragrance (Aqua Floral / Lemon)", percentage: 0.25, role: "Fragrance", costPerKg: 1800, activeMatterPct: 0, hlbValue: null },
-        { name: "Colorant (D&C Dye)", percentage: 0.01, role: "Esthetics", costPerKg: 500, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+        { name: "CMC (Carboxymethyl Cellulose) / HEC", percentage: 0.6, role: "Thickener & Anti-redeposition", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Optical Brightener (CBS-X)", percentage: 0.1, role: "Optical Brightener", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Preservative (Formalin or Kathon)", percentage: 0.1, role: "Preservative", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Fragrance (Aqua Floral / Lemon)", percentage: 0.25, role: "Fragrance", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Colorant (D&C Dye)", percentage: 0.01, role: "Esthetics", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
       ];
 
       manufacturingMethod = [
@@ -945,9 +970,9 @@ app.post("/api/ai/formulate", async (req, res) => {
     // If too restrictive (e.g. 0 or 1 item left), populate a safe base with what they listed
     if (ingredients.length <= 1) {
       ingredients = [
-        { name: "SLES (70%)", percentage: grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0, role: "Primary Surfactant", costPerKg: 110, activeMatterPct: 70, hlbValue: 13.0 },
-        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Builder", costPerKg: 15, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: 2, activeMatterPct: 0, hlbValue: null }
+        { name: "SLES (70%)", percentage: grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0, role: "Primary Surfactant", costPerKg: null, activeMatterPct: 70, hlbValue: 13.0 },
+        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Builder", costPerKg: null, activeMatterPct: 0, hlbValue: null },
+        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
       ];
     }
   }
@@ -992,18 +1017,30 @@ app.post("/api/ai/formulate", async (req, res) => {
         return ing;
       });
 
-      // Scale neutralizers (NaOH or KOH) proportionally if there is LABSA
+      // Scale neutralizers (NaOH or KOH) stoichiometrically if there is LABSA
       const labsa = ingredients.find(i => i.name.includes("LABSA"));
       if (labsa) {
-        ingredients = ingredients.map(ing => {
-          if (ing.name.includes("NaOH") || ing.name.includes("Sodium Hydroxide") || ing.name.includes("Caustic Soda")) {
-            return {
-              ...ing,
-              percentage: Number((labsa.percentage * 0.135).toFixed(2))
-            };
-          }
-          return ing;
-        });
+        const labsaProfile = resolveScientificAcidBaseProfile({ name: labsa.name, activeMatterPct: labsa.activeMatterPct });
+        const labsaMassKg = (labsa.percentage || 0); // Mass in 100kg batch
+        const labsaEqRes = calculateReactiveEquivalents(labsaProfile, labsaMassKg);
+        const labsaEq = labsaEqRes.totalReactiveEquivalents;
+
+        if (labsaEq !== null && labsaEq > 0) {
+          ingredients = ingredients.map(ing => {
+            if (ing.name.includes("NaOH") || ing.name.includes("Sodium Hydroxide") || ing.name.includes("Caustic Soda") || ing.name.includes("KOH")) {
+              const baseProfile = resolveScientificAcidBaseProfile({ name: ing.name, activeMatterPct: ing.activeMatterPct });
+              const baseEqPerKg = baseProfile.equivalentBasis.reactiveEquivalentsPerKg ?? null;
+              if (baseEqPerKg !== null && baseEqPerKg > 0) {
+                const reqBaseMassKg = labsaEq / baseEqPerKg;
+                return {
+                  ...ing,
+                  percentage: Number(reqBaseMassKg.toFixed(2))
+                };
+              }
+            }
+            return ing;
+          });
+        }
       }
 
       // Now recalculate water/solvent percentage so total is exactly 100%
@@ -1045,8 +1082,8 @@ app.post("/api/ai/formulate", async (req, res) => {
     name: `Custom AI ${grade} ${productType}`,
     productType,
     grade,
-    targetCost,
-    actualCost: Math.round((targetCost * 0.9) * 10) / 10,
+    targetCost: targetCost ? Number(targetCost) : null,
+    actualCost: null,
     activeMatter,
     calculatedHlb: targetHlb ? String(targetHlb).split("-")[0].trim() : calculatedHlb,
     idealHlb: targetHlb ? `${targetHlb} (User Configured)` : idealHlb,
@@ -1116,7 +1153,7 @@ For this specific recipe, you MUST:
    - "idealHlb": Specify the ideal industry HLB range for this product category (e.g. "12.0 - 14.0 (for Laundry Liquid Detergency)").
    - "hlbImportance": Write an educational explanation of what HLB is, why the calculated HLB of their recipe is or is not aligned with the target, and how they can adjust their surfactant ratios to hit the ideal HLB.
 3. Keep the exact user's active% (activeMatterPct) as entered for each ingredient. Do not change them.
-4. Fill in standard cost per kg (INR/kg) for each ingredient if not provided or keep user's cost (or use industry standard rates, e.g., LABSA = 135 INR, SLES = 110 INR, CAPB = 95 INR, Water = 2 INR, Salt = 15 INR, etc.) and calculate total actualCost based on the raw percentages.
+4. Preserve the user's costPerKg for each ingredient if provided (or set to null if not provided). Do NOT invent market prices. If prices are missing, set actualCost to null.
 5. Provide a custom "manufacturingMethod" (step-by-step instructions to blend the user's specific ingredients).
 6. Provide "commonMistakes" specific to the user's ingredient choices (e.g. warnings about adding salt too fast, neutralization temperature, order of addition).
 7. Provide custom "troubleshootingNotes" and "packagingCompatibility" specific to this formulation.
@@ -1235,7 +1272,7 @@ Return ONLY a strictly valid JSON response that exactly matches this TypeScript 
   "packagingCompatibility": string
 }
 
-Ensure the ingredient percentages sum up exactly to 100.0%. Provide actual raw material cost per kg matching current market rates (e.g. LABSA 130-150 INR, SLES 100-120 INR, etc.) and calculate total actual cost based on percentages.
+Ensure the ingredient percentages sum up exactly to 100.0%. Do NOT invent ingredient prices; if not entered by user, set costPerKg to null.
 Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JSON text.`;
     }
 
@@ -1245,8 +1282,8 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
         name: { type: Type.STRING, description: "Name of the custom formula" },
         productType: { type: Type.STRING, description: "The category/type of the product" },
         grade: { type: Type.STRING, enum: ["Economy", "Standard", "Premium"], description: "The product grade" },
-        targetCost: { type: Type.NUMBER, description: "Target cost per kg in INR" },
-        actualCost: { type: Type.NUMBER, description: "Calculated actual raw material cost per kg in INR based on percentages" },
+        targetCost: { type: Type.NUMBER, description: "Target cost per kg in INR (if specified by user)" },
+        actualCost: { type: Type.NUMBER, description: "Calculated actual raw material cost per kg in INR based on percentages, or null" },
         activeMatter: { type: Type.NUMBER, description: "Total active surfactant matter percentage" },
         calculatedHlb: { type: Type.STRING, description: "Weighted HLB value of all surfactants, e.g., '12.8'" },
         idealHlb: { type: Type.STRING, description: "Ideal standard HLB range, e.g., '12.0 - 14.0 (for Laundry Liquid Detergency)'" },
@@ -1271,11 +1308,11 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
               name: { type: Type.STRING },
               percentage: { type: Type.NUMBER },
               role: { type: Type.STRING },
-              costPerKg: { type: Type.NUMBER },
+              costPerKg: { type: Type.NUMBER, description: "User cost per kg in INR, or null if unconfigured" },
               activeMatterPct: { type: Type.NUMBER },
               hlbValue: { type: Type.NUMBER, description: "HLB value if surfactant, otherwise omit or set to 0." }
             },
-            required: ["name", "percentage", "role", "costPerKg", "activeMatterPct"]
+            required: ["name", "percentage", "role", "activeMatterPct"]
           }
         },
         manufacturingMethod: {
@@ -1501,16 +1538,15 @@ app.post("/api/ai/analyze-recommend", async (req, res) => {
   const predefinedAnalyzerFallback = () => {
     const recs = [];
     const ingList = Array.isArray(ingredients) ? ingredients : [];
-    const totalCost = ingList.reduce((acc: number, ing: any) => acc + ((ing.percentage || 0) * (ing.costPerKg || 0)) / 100, 0);
     const hasSLES = ingList.some((i: any) => (i.name || "").toLowerCase().includes("sles"));
     const hasLabsa = ingList.some((i: any) => (i.name || "").toLowerCase().includes("labsa"));
     const hasChelator = ingList.some((i: any) => (i.name || "").toLowerCase().includes("gluconate") || (i.name || "").toLowerCase().includes("edta") || (i.name || "").toLowerCase().includes("citrate"));
 
-    if (hasSLES && totalCost > 25) {
+    if (hasSLES) {
       recs.push({
         type: "Cost Reduction",
-        recommendation: "Optimize SLES 70% fraction by pairing with 0.8% - 1.2% Sodium Chloride electrolyte bridge to retain high yield stress and viscosity while saving ~₹1.80/kg in active raw materials.",
-        trigger: "High active surfactant raw material expenditure detected.",
+        recommendation: "Optimize SLES 70% fraction by pairing with 0.8% - 1.2% Sodium Chloride electrolyte bridge to retain high yield stress and target viscosity while reducing surfactant loading.",
+        trigger: "Surfactant rheology optimization potential identified.",
         suggestedIngredient: "Sodium Chloride (Salt)"
       });
     }

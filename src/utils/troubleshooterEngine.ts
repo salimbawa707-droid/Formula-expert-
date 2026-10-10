@@ -1,4 +1,11 @@
+/**
+ * @deprecated LEGACY / ORPHANED ENGINE. This file is not used in production and is isolated as non-production.
+ */
 import { FormulationIngredient } from '../types';
+import { calculateActiveSurfactants } from './activeMatterEngine';
+import { calculateCleaningPerformance } from './cleaningPerformanceEngine';
+import { calculatePHAdvanced } from './pHEngine';
+import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 
 export type ProblemCategory = 'Phase Separation / Cloudiness' | 'Low Viscosity / Watery' | 'High Viscosity / Gelling' | 'Low Foam' | 'Skin Irritation' | 'Microbial Spoilage' | 'cleaning_issues' | string;
 
@@ -96,13 +103,20 @@ export function runRootCauseTroubleshooter(
     ];
   }
 
+  const safeIngs = Array.isArray(_ingredients) ? _ingredients : [];
+  const hasIngs = safeIngs.length > 0;
+  
+  const activeMatter = hasIngs ? calculateActiveSurfactants(safeIngs) : 0;
+  const cleaningRes = hasIngs ? calculateCleaningPerformance(safeIngs) : null;
+  const phRes = hasIngs ? calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput(safeIngs)) : null;
+
   const matchingDef = PROBLEM_DEFINITIONS[pStr] || Object.values(PROBLEM_DEFINITIONS).find((pd: ProblemDef) => pd.name === pStr) || { icon: '🧪', name: pStr, symptoms: ['Phase separation or cloudiness in solution'] };
   const res = [...actions] as any;
   res.selectedProblem = matchingDef;
   res.detectedWarnings = ['Monitor viscosity across 4°C, 25°C, and 45°C stability chambers.'];
-  res.cleaningPerformance = { cleaningScore: 88, overallScore: 88, rating: 88 };
-  res.estimatedPH = 7.5;
-  res.activeSurfactants = 12.0;
+  res.cleaningPerformance = cleaningRes ? { cleaningScore: cleaningRes.cleaningScore, overallScore: cleaningRes.overallScore, rating: cleaningRes.cleaningScore } : { status: 'NOT_EVALUATED' };
+  res.estimatedPH = phRes ? phRes.pH : 'NOT_EVALUATED';
+  res.activeSurfactants = hasIngs ? activeMatter : 'NOT_EVALUATED';
   res.actions = actions;
   res.industrialNotes = ['Ensure high-shear dispersion during hydrotrope addition.'];
   return res;

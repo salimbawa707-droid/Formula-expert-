@@ -53,6 +53,8 @@ export type EmulsionSystemType =
   | 'Extended Ionic Surfactant (Davies Scale)'
   | 'Non-Surfactant / Not Applicable';
 
+export type HLBMethodMetadata = 'GRIFFIN' | 'DAVIES' | 'SUPPLIER_REPORTED' | 'UNKNOWN' | 'NOT_APPLICABLE';
+
 export interface SurfactantHLBContribution {
   id?: string;
   name: string;
@@ -63,6 +65,7 @@ export interface SurfactantHLBContribution {
   hlb: number | null;
   dataSource: HLBDataSource;
   isIonicSurfactant: boolean;
+  methodMetadata: HLBMethodMetadata;
   notes?: string;
 }
 
@@ -76,6 +79,7 @@ export interface HLBCalculationResult {
   surfactantsWithMissingHLB: number;
   isFullyAuthoritative: boolean;
   hasIonicSurfactants: boolean;
+  methodMetadata: HLBMethodMetadata;
   emulsionRegion: EmulsionSystemType;
   interpretation: string;
   scientificNotes: string;
@@ -209,13 +213,20 @@ export class HLBEngine {
     // Case C: Benchmark reference lookup
     const benchMatch = AUTHORITATIVE_HLB_BENCHMARKS.find(b => {
       const bLower = b.name.toLowerCase();
-      const bFirst = bLower.split(' ')[0];
       const bParen = bLower.split('(')[0].trim();
       const bInParen = bLower.includes('(') ? bLower.split('(')[1].replace(')', '').trim() : '';
-      return lowerName.includes(bFirst) || 
-             lowerName.includes(bParen) || 
-             (bInParen && lowerName.includes(bInParen)) ||
-             bLower.includes(lowerName);
+
+      // Check full string inclusion or parenthesis token inclusion
+      if (lowerName === bLower || lowerName === bParen || (bInParen && lowerName === bInParen)) {
+        return true;
+      }
+      if (bParen && lowerName.includes(bParen)) {
+        return true;
+      }
+      if (bInParen && lowerName.includes(bInParen)) {
+        return true;
+      }
+      return bLower.includes(lowerName);
     });
 
     if (benchMatch && (isSurfactant || isSurfactantCategory || benchMatch.category.toLowerCase().includes('surfactant'))) {
@@ -341,6 +352,12 @@ export class HLBEngine {
           limitations.push(`Surfactant "${ing.name || 'Unknown'}" lacks authoritative HLB data.`);
         }
 
+        const methodMeta: HLBMethodMetadata = resolution.dataSource === 'missing'
+          ? 'UNKNOWN'
+          : (resolution.dataSource === 'explicit_override'
+            ? 'SUPPLIER_REPORTED'
+            : (resolution.isIonic ? 'DAVIES' : 'GRIFFIN'));
+
         contributions.push({
           id: ing.id,
           name: ing.name || 'Unnamed Surfactant',
@@ -351,6 +368,7 @@ export class HLBEngine {
           hlb: resolution.hlb,
           dataSource: resolution.dataSource,
           isIonicSurfactant: resolution.isIonic,
+          methodMetadata: methodMeta,
           notes: resolution.dataSource === 'missing' 
             ? 'Missing HLB in master database' 
             : `${resolution.dataSource} (${resolution.isIonic ? 'Davies / Ionic' : 'Griffin Scale'})`
@@ -371,6 +389,10 @@ export class HLBEngine {
 
     const isFullyAuthoritative = hasSurfactants && surfactantsWithMissingHLB === 0;
 
+    const overallMethodMeta: HLBMethodMetadata = !hasSurfactants
+      ? 'NOT_APPLICABLE'
+      : (hasIonicSurfactants ? 'DAVIES' : 'GRIFFIN');
+
     return {
       blendedHLB: finalBlendedHLB,
       hasSurfactants,
@@ -381,6 +403,7 @@ export class HLBEngine {
       surfactantsWithMissingHLB,
       isFullyAuthoritative,
       hasIonicSurfactants,
+      methodMetadata: overallMethodMeta,
       emulsionRegion: region,
       interpretation,
       scientificNotes: hasSurfactants

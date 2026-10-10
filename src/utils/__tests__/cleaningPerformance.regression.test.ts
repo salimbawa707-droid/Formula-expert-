@@ -64,8 +64,8 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   assertNear('Zero Preservation', 'Explicit zero active matter', calculateActiveMatter(formulaAlias as any), 7.68);
 
   // 4. CPI Baseline & Cleaning Score Baseline
-  const perfBaseline = calculateCleaningPerformance(formula1 as any);
-  const cpiBaseline = calculateCPI(formula1 as any);
+  const perfBaseline = calculateCleaningPerformance(formula1 as any, 8.0, 'LAUNDRY_LIQUID');
+  const cpiBaseline = calculateCPI(formula1 as any, 8.0, 'LAUNDRY_LIQUID');
   assertEqual('CPI & Cleaning Score Equality', 'calculateCPI matches cleaningScore', cpiBaseline, perfBaseline.cleaningScore);
 
   // 5. No-Enzyme vs Enzyme Formula
@@ -78,11 +78,11 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
     { name: 'Protease Enzyme', percentage: 0.5, activeMatterPct: 100, category: 'Enzymes' },
     { name: 'Water', percentage: 89.5, activeMatterPct: 0 }
   ];
-  const perfNoEnz = calculateCleaningPerformance(formulaNoEnzyme as any);
-  const perfWithEnz = calculateCleaningPerformance(formulaWithEnzyme as any);
+  const perfNoEnz = calculateCleaningPerformance(formulaNoEnzyme as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfWithEnz = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID');
   assertEqual('Enzyme Bonus', 'No enzyme bonus is 0', perfNoEnz.enzymeBonus, 0);
   assertNear('Enzyme Bonus', 'Enzyme bonus is applied (>0)', perfWithEnz.enzymeBonus > 0 ? 1 : 0, 1);
-  assertNear('Enzyme Bonus', 'Enzyme formula score higher than no-enzyme', perfWithEnz.cleaningScore > perfNoEnz.cleaningScore ? 1 : 0, 1);
+  assertNear('Enzyme Bonus', 'Enzyme formula score higher than no-enzyme', (perfWithEnz.cleaningScore ?? 0) > (perfNoEnz.cleaningScore ?? 0) ? 1 : 0, 1);
 
   // 6. Builder Contribution
   const formulaWithBuilder = [
@@ -90,9 +90,9 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
     { name: 'Sodium Citrate', percentage: 3, activeMatterPct: 100, category: 'Builder / Chelator' },
     { name: 'Water', percentage: 87, activeMatterPct: 0 }
   ];
-  const perfWithBuilder = calculateCleaningPerformance(formulaWithBuilder as any);
+  const perfWithBuilder = calculateCleaningPerformance(formulaWithBuilder as any, 8.0, 'LAUNDRY_LIQUID');
   assertNear('Builder Contribution', 'Builder contribution applied (>0)', perfWithBuilder.builderContribution > 0 ? 1 : 0, 1);
-  assertNear('Builder Contribution', 'Builder formula score higher than base', perfWithBuilder.cleaningScore > perfNoEnz.cleaningScore ? 1 : 0, 1);
+  assertNear('Builder Contribution', 'Builder formula score higher than base', (perfWithBuilder.cleaningScore ?? 0) > (perfNoEnz.cleaningScore ?? 0) ? 1 : 0, 1);
 
   // 7. Formula A -> B -> C -> A Switching Reactivity
   const formulaA = [
@@ -101,18 +101,18 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   const formulaB = [
     { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, category: 'Anionic Surfactant' }
   ];
-  const perfA = calculateCleaningPerformance(formulaA as any);
-  const perfB = calculateCleaningPerformance(formulaB as any);
-  assertNear('Formula Switching', 'Formula A score higher than Formula B', perfA.cleaningScore > perfB.cleaningScore ? 1 : 0, 1);
+  const perfA = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfB = calculateCleaningPerformance(formulaB as any, 8.0, 'LAUNDRY_LIQUID');
+  assertNear('Formula Switching', 'Formula A score higher than Formula B', (perfA.cleaningScore ?? 0) > (perfB.cleaningScore ?? 0) ? 1 : 0, 1);
   
   // Re-evaluation of Formula A produces identical result (Idempotency & No Stale State)
-  const perfA2 = calculateCleaningPerformance(formulaA as any);
+  const perfA2 = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID');
   assertEqual('Idempotency', 'Re-evaluation produces identical result', perfA2.cleaningScore, perfA.cleaningScore);
 
   // 8. AIFormulator vs SmartFormulaAnalyzerPro Determinism
   // Both components consuming calculateCleaningPerformance on formulaWithEnzyme obtain identical output
-  const cpiAIFormulator = calculateCPI(formulaWithEnzyme as any);
-  const cpiAnalyzer = calculateCleaningPerformance(formulaWithEnzyme as any).overallScore;
+  const cpiAIFormulator = calculateCPI(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID');
+  const cpiAnalyzer = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID').overallScore;
   assertEqual('Cross-Component Determinism', 'AIFormulator CPI equals SmartFormulaAnalyzerPro Overall CPI', cpiAIFormulator, cpiAnalyzer);
 
   const passed = results.filter(r => r.passed).length;

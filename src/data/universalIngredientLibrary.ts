@@ -30,7 +30,7 @@ export interface UniversalIngredient {
   function: string;
   activeDefault: number;
   activeMatter?: number;
-  costPerKg: number;
+  costPerKg: number | null;
   hlb?: number | null;
   phMin?: number;
   phMax?: number;
@@ -38,6 +38,17 @@ export interface UniversalIngredient {
   functionalInfo?: any;
   keywords?: string[];
   sustainability?: any;
+  manufacturer?: string;
+  productName?: string;
+  provenance?: {
+    sourceType: 'OFFICIAL_MANUFACTURER' | 'STANDARD_CHEMICAL' | 'ACADEMIC_LITERATURE' | 'USER_ENTERED';
+    source: string;
+    sourceUrl?: string;
+    verificationStatus: 'VERIFIED' | 'NEEDS_VERIFICATION' | 'UNVERIFIED';
+    verifiedAt?: string;
+    notes?: string;
+  };
+  unknownProperties?: string[];
 }
 
 export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
@@ -49,9 +60,59 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dodecylbenzene Sulfonic Acid",
     "function": "Primary Anionic Surfactant Acid",
     "activeDefault": 96,
-    "costPerKg": 2.1,
+    "costPerKg": null,
     "hlb": 11.5,
-    "description": "Workhorse raw material for liquid & powder detergents."
+    "description": "Workhorse raw material for liquid & powder detergents.",
+    "manufacturer": "Commercial Detergent Standard",
+    "productName": "LABSA 96% Acid Slurry",
+    "provenance": {
+      "sourceType": "STANDARD_CHEMICAL",
+      "source": "Commercial Detergent Raw Material Standard (96% Active Slurry)",
+      "verificationStatus": "VERIFIED"
+    }
+  },
+  {
+    "id": "labsa-90",
+    "name": "LABSA 90% (Acid Slurry)",
+    "category": "Anionic Surfactant",
+    "casNumber": "27176-87-0",
+    "inciName": "Dodecylbenzene Sulfonic Acid",
+    "function": "Primary Anionic Surfactant Acid (90% Commercial Grade)",
+    "activeDefault": 90,
+    "costPerKg": null,
+    "hlb": 11.5,
+    "description": "Standard commercial 90% active linear alkylbenzene sulfonic acid (Acid Slurry) for liquid and powder detergents.",
+    "manufacturer": "Commercial Detergent Standard",
+    "productName": "LABSA 90% Acid Slurry",
+    "provenance": {
+      "sourceType": "STANDARD_CHEMICAL",
+      "source": "Commercial Detergent Raw Material Standard (90% Active Slurry)",
+      "verificationStatus": "VERIFIED"
+    }
+  },
+  {
+    "id": "aristo-9",
+    "name": "Aristo 9 (Multipurpose Detergent Additive)",
+    "category": "Additive & Performance",
+    "casNumber": "PROPRIETARY-BLEND",
+    "inciName": "Proprietary Enzyme & Thickener Blend",
+    "function": "Multipurpose Detergent Additive & Viscosity/Enzyme Booster",
+    "activeDefault": 0,
+    "activeMatter": undefined,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Commercial liquid detergent chemical and enzyme booster blend manufactured by Blue Chem India (Ahmedabad, Gujarat). Chemical composition and active matter assay are proprietary/unspecified by the manufacturer; scientific properties must be treated as UNKNOWN / INSUFFICIENT_DATA.",
+    "manufacturer": "Blue Chem India",
+    "productName": "Aristo 9",
+    "provenance": {
+      "sourceType": "OFFICIAL_MANUFACTURER",
+      "source": "Blue Chem India",
+      "sourceUrl": "https://bluechemindia.co.in",
+      "verificationStatus": "NEEDS_VERIFICATION",
+      "verifiedAt": "2026-10-04",
+      "notes": "Manufacturer documentation identifies product as an enzyme & thickener blend for liquid detergent compounding. Quantitative active assay, pKa, CMC, and thermodynamic properties are proprietary/unverified and must not be fabricated."
+    },
+    "unknownProperties": ["activeMatter", "hlb", "cmc", "density", "nvr", "pKa", "chelatingCapacity"]
   },
   {
     "id": "sles-70",
@@ -61,7 +122,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Primary Foamer & Cleanser",
     "activeDefault": 70,
-    "costPerKg": 1.85,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "High-foaming anionic surfactant with 2 moles EO."
   },
@@ -73,7 +134,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Dilute Primary Cleanser",
     "activeDefault": 28,
-    "costPerKg": 0.85,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Ready-to-use liquid SLES formulation base."
   },
@@ -85,7 +146,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "High Flash Foam Surfactant",
     "activeDefault": 95,
-    "costPerKg": 2.6,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "High flash foam powder/needle anionic surfactant."
   },
@@ -97,7 +158,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "Liquid Primary Foamer",
     "activeDefault": 30,
-    "costPerKg": 1.1,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Liquid form sodium lauryl sulfate."
   },
@@ -109,7 +170,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Hard Water Tolerant Cleanser",
     "activeDefault": 38,
-    "costPerKg": 1.65,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Phosphate-free high foaming surfactant with acid/alkali stability."
   },
@@ -121,7 +182,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Concentrated Anionic Powder",
     "activeDefault": 92,
-    "costPerKg": 3.4,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Powdered alpha olefin sulfonate for detergent bars & powders."
   },
@@ -133,7 +194,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-17 Sec-Alkyl Sulfonate",
     "function": "Secondary Alkane Sulfonate",
     "activeDefault": 60,
-    "costPerKg": 2.4,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Highly soluble anionic surfactant with superior grease cutting."
   },
@@ -145,7 +206,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauroyl Sarcosinate",
     "function": "Mild Amino Acid Surfactant",
     "activeDefault": 30,
-    "costPerKg": 3.2,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "Corrosion inhibiting mild anionic surfactant for premium care."
   },
@@ -157,7 +218,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Laureth Sulfosuccinate",
     "function": "Ultra-Mild Anionic Foamer",
     "activeDefault": 40,
-    "costPerKg": 2.9,
+    "costPerKg": null,
     "hlb": 12.6,
     "description": "Very low irritation anionic surfactant for delicate fabrics & baby care."
   },
@@ -169,7 +230,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoyl Isethionate",
     "function": "Solid Syndet Cleanser",
     "activeDefault": 85,
-    "costPerKg": 4.2,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Mild sulfate-free noodle/powder surfactant."
   },
@@ -181,7 +242,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Methyl Cocoyl Taurate",
     "function": "Sulfate-Free Foaming Agent",
     "activeDefault": 30,
-    "costPerKg": 3.8,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Stable across wide pH range with soft foam feel."
   },
@@ -193,7 +254,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lignosulfonate",
     "function": "Anionic Dispersant & Binder",
     "activeDefault": 95,
-    "costPerKg": 0.95,
+    "costPerKg": null,
     "hlb": 10.0,
     "description": "Bio-based lignin dispersant for industrial powders."
   },
@@ -205,7 +266,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-3",
     "function": "Oil-Soluble Emulsifier",
     "activeDefault": 100,
-    "costPerKg": 2.65,
+    "costPerKg": null,
     "hlb": 8.0,
     "description": "Low HLB nonionic surfactant for oil soil emulsification."
   },
@@ -217,7 +278,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-7",
     "function": "Primary Detergent Nonionic",
     "activeDefault": 100,
-    "costPerKg": 2.75,
+    "costPerKg": null,
     "hlb": 12.1,
     "description": "Standard laundry detergent nonionic surfactant."
   },
@@ -229,7 +290,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-9",
     "function": "Nonionic Degreaser",
     "activeDefault": 100,
-    "costPerKg": 2.8,
+    "costPerKg": null,
     "hlb": 13.1,
     "description": "High performance degreaser and soil suspension agent."
   },
@@ -241,7 +302,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-12",
     "function": "High-Solubility Hydrophile",
     "activeDefault": 100,
-    "costPerKg": 2.95,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "High cloud-point nonionic for warm water washing."
   },
@@ -253,7 +314,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-6",
     "function": "Industrial Degreasing Solvent",
     "activeDefault": 100,
-    "costPerKg": 2.1,
+    "costPerKg": null,
     "hlb": 10.9,
     "description": "Industrial heavy duty degreasing nonionic surfactant."
   },
@@ -265,7 +326,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-9",
     "function": "Industrial Detergent Workhorse",
     "activeDefault": 100,
-    "costPerKg": 2.2,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Classic industrial hard surface cleanser."
   },
@@ -277,7 +338,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-10",
     "function": "High Water Soluble Cleanser",
     "activeDefault": 100,
-    "costPerKg": 2.3,
+    "costPerKg": null,
     "hlb": 13.3,
     "description": "Water soluble industrial cleanser."
   },
@@ -289,7 +350,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Caprylyl/Capryl Glucoside",
     "function": "Eco Nonionic Hydrotrope",
     "activeDefault": 50,
-    "costPerKg": 3.1,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Bio-based, plant-derived nonionic hydrotrope."
   },
@@ -301,7 +362,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Glucoside",
     "function": "Eco Detergent Nonionic",
     "activeDefault": 50,
-    "costPerKg": 3.25,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Plant-derived readily biodegradable nonionic surfactant."
   },
@@ -313,7 +374,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide DEA",
     "function": "Viscosity & Foam Booster",
     "activeDefault": 85,
-    "costPerKg": 2.5,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "Fatty acid alkanolamide foam booster and thickener."
   },
@@ -325,7 +386,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide MEA",
     "function": "Solid Foam Stabilizer",
     "activeDefault": 90,
-    "costPerKg": 2.7,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "Flake alkanolamide foam booster for liquid & solid formulations."
   },
@@ -337,7 +398,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauramine Oxide",
     "function": "Amine Oxide Foam Stabilizer",
     "activeDefault": 30,
-    "costPerKg": 2.6,
+    "costPerKg": null,
     "hlb": 14.2,
     "description": "High-foaming bleach-stable amine oxide surfactant."
   },
@@ -349,7 +410,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-40 Hydrogenated Castor Oil",
     "function": "Solubilizer for Fragrance/Oils",
     "activeDefault": 100,
-    "costPerKg": 4.1,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Nonionic solubilizer for essential oils and perfume."
   },
@@ -361,7 +422,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 20",
     "function": "Fragrance & Oil Solubilizer",
     "activeDefault": 100,
-    "costPerKg": 3.9,
+    "costPerKg": null,
     "hlb": 16.7,
     "description": "High HLB nonionic hydrophilic solubilizer."
   },
@@ -373,7 +434,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 80",
     "function": "Emulsifier for Oily Formulations",
     "activeDefault": 100,
-    "costPerKg": 4.0,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "High efficiency oleate nonionic emulsifier."
   },
@@ -385,7 +446,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Foam & Viscosity Booster",
     "activeDefault": 30,
-    "costPerKg": 2.3,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Mild secondary surfactant co-thickening with NaCl."
   },
@@ -397,7 +458,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Concentrated Betaine Base",
     "activeDefault": 45,
-    "costPerKg": 3.4,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "High concentration zwitterionic surfactant."
   },
@@ -409,7 +470,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Betaine",
     "function": "High Flash Foam Amphoteric",
     "activeDefault": 30,
-    "costPerKg": 2.8,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Strong flash foaming zwitterionic surfactant."
   },
@@ -421,7 +482,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Coco-Betaine",
     "function": "Natural Betaine Cleanser",
     "activeDefault": 30,
-    "costPerKg": 2.7,
+    "costPerKg": null,
     "hlb": 12.2,
     "description": "Alkyl betaine for mild cleansing formulations."
   },
@@ -433,7 +494,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoamphoacetate",
     "function": "Ultra-Mild Amphoteric",
     "activeDefault": 40,
-    "costPerKg": 3.6,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Low-irritation amphoacetate for sensitive washing."
   },
@@ -445,7 +506,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Cocoamphodiacetate",
     "function": "Gentle Secondary Surfactant",
     "activeDefault": 38,
-    "costPerKg": 3.85,
+    "costPerKg": null,
     "hlb": 13.2,
     "description": "High-mildness dicarboxylate amphoteric surfactant."
   },
@@ -457,7 +518,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Hydroxysultaine",
     "function": "Hard Water Stable Betaine",
     "activeDefault": 40,
-    "costPerKg": 3.9,
+    "costPerKg": null,
     "hlb": 12.8,
     "description": "Sultaine amphoteric stable in electrolyte & hard water."
   },
@@ -469,7 +530,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cetrimonium Chloride",
     "function": "Fabric Softener & Antistatic Agent",
     "activeDefault": 29,
-    "costPerKg": 2.2,
+    "costPerKg": null,
     "hlb": 15.8,
     "description": "Cationic quaternary ammonium antistatic conditioner."
   },
@@ -481,7 +542,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Behentrimonium Chloride",
     "function": "Concentrated Fabric Conditioner",
     "activeDefault": 80,
-    "costPerKg": 4.8,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "High long-chain cationic softener."
   },
@@ -493,7 +554,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dipalmitoylethyl Hydroxyethylmonium Methosulfate",
     "function": "Eco-Biodegradable Fabric Softener",
     "activeDefault": 90,
-    "costPerKg": 3.2,
+    "costPerKg": null,
     "hlb": 11.0,
     "description": "Readily biodegradable cationic fabric conditioning agent."
   },
@@ -505,7 +566,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "Disinfectant & Antimicrobial Cationic",
     "activeDefault": 50,
-    "costPerKg": 3.5,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Quaternary germicide and sanitizer."
   },
@@ -517,7 +578,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "High-Con Germicidal Cationic",
     "activeDefault": 80,
-    "costPerKg": 5.2,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Concentrated quaternary biocide."
   },
@@ -529,7 +590,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Saponification & Neutralization Base",
     "activeDefault": 50,
-    "costPerKg": 0.65,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid caustic soda neutralizer."
   },
@@ -541,7 +602,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Solid Neutralizing Caustic",
     "activeDefault": 99,
-    "costPerKg": 1.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Solid caustic soda for saponification & neutralization."
   },
@@ -553,7 +614,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "High Solubility Potassium Base",
     "activeDefault": 90,
-    "costPerKg": 1.85,
+    "costPerKg": null,
     "hlb": null,
     "description": "Potassium base for soft soaps and high-solubility liquid detergents."
   },
@@ -565,7 +626,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "Liquid Caustic Potash",
     "activeDefault": 45,
-    "costPerKg": 1.15,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid potassium hydroxide base."
   },
@@ -577,7 +638,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triethanolamine",
     "function": "Organic Base Neutralizer & Buffer",
     "activeDefault": 99,
-    "costPerKg": 2.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Mild organic amine neutralizer for LABSA & fatty acids."
   },
@@ -589,7 +650,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Ethanolamine",
     "function": "Heavy Duty Amine Base",
     "activeDefault": 99,
-    "costPerKg": 2.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Strong organic amine for heavy duty industrial degreasers."
   },
@@ -601,7 +662,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Aminomethyl Propanol",
     "function": "Multifunctional Amine Neutralizer",
     "activeDefault": 95,
-    "costPerKg": 6.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High efficiency neutralizer and pigment dispersant."
   },
@@ -613,7 +674,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Alkalinity Builder & Saponification Helper",
     "activeDefault": 100,
-    "costPerKg": 0.45,
+    "costPerKg": null,
     "hlb": null,
     "description": "Heavy duty alkaline builder."
   },
@@ -625,7 +686,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Rapid Dissolving Alkaline Builder",
     "activeDefault": 100,
-    "costPerKg": 0.48,
+    "costPerKg": null,
     "hlb": null,
     "description": "Low bulk density rapidly soluble soda ash."
   },
@@ -637,7 +698,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "Alkaline Builder & Anti-Corrosion Agent",
     "activeDefault": 100,
-    "costPerKg": 0.85,
+    "costPerKg": null,
     "hlb": null,
     "description": "Silicate builder protecting metal parts in washing machines."
   },
@@ -649,7 +710,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "High Active Anhydrous Silicate",
     "activeDefault": 100,
-    "costPerKg": 1.25,
+    "costPerKg": null,
     "hlb": null,
     "description": "Anhydrous heavy duty industrial builder."
   },
@@ -661,7 +722,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Silicate",
     "function": "Liquid Anti-Corrosion Builder",
     "activeDefault": 40,
-    "costPerKg": 0.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid silicate for slurry processing & metal protection."
   },
@@ -673,7 +734,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Bicarbonate",
     "function": "Mild Alkaline Buffer & Odor Neutralizer",
     "activeDefault": 100,
-    "costPerKg": 0.55,
+    "costPerKg": null,
     "hlb": null,
     "description": "Eco-friendly mild buffering builder."
   },
@@ -685,7 +746,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer",
     "activeDefault": 100,
-    "costPerKg": 0.65,
+    "costPerKg": null,
     "hlb": null,
     "description": "Free-flowing mild alkaline builder crystal."
   },
@@ -697,7 +758,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Citric Acid",
     "function": "Acidifier & Chelating Agent",
     "activeDefault": 100,
-    "costPerKg": 1.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Organic acid for pH control and metal ion sequestering."
   },
@@ -709,7 +770,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Citrate",
     "function": "Water Softener & Buffer",
     "activeDefault": 100,
-    "costPerKg": 1.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Phosphate-free eco builder."
   },
@@ -721,7 +782,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Heavy Metal Chelating Agent",
     "activeDefault": 99,
-    "costPerKg": 2.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Strong chelating agent for calcium, magnesium, & iron ions."
   },
@@ -733,7 +794,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Liquid Metal Sequestering Agent",
     "activeDefault": 39,
-    "costPerKg": 1.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Ready-to-use liquid EDTA solution."
   },
@@ -745,7 +806,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium EDTA",
     "function": "Acidic Metal Sequestering Agent",
     "activeDefault": 99,
-    "costPerKg": 3.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Chelator for acidic/neutral detergent formulations."
   },
@@ -757,7 +818,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium Glutamate Diacetate",
     "function": "Eco Readily Biodegradable Chelator",
     "activeDefault": 47,
-    "costPerKg": 3.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Green plant-based biodegradable chelating agent."
   },
@@ -769,7 +830,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Trisodium Dicarboxymethyl Alaninate",
     "function": "High-Performance Eco Chelator",
     "activeDefault": 40,
-    "costPerKg": 3.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Eco phosphate-alternative builder for automatic dishwashing & laundry."
   },
@@ -781,7 +842,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Gluconate",
     "function": "Alkaline Iron & Hardness Chelator",
     "activeDefault": 99,
-    "costPerKg": 1.6,
+    "costPerKg": null,
     "hlb": null,
     "description": "Bio-based chelator effective in highly alkaline caustic solutions."
   },
@@ -793,7 +854,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Triphosphate",
     "function": "Classic Detergent Builder",
     "activeDefault": 94,
-    "costPerKg": 1.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Heavy duty builder for soil suspension & water softening."
   },
@@ -805,7 +866,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Etidronic Acid",
     "function": "Organophosphonate Scale Inhibitor",
     "activeDefault": 60,
-    "costPerKg": 3.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "High stability phosphonate scale and stain chelator."
   },
@@ -817,7 +878,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Subtilisin",
     "function": "Protein Stain Removal Enzyme",
     "activeDefault": 100,
-    "costPerKg": 12.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Enzyme targeting blood, grass, milk, and protein soils."
   },
@@ -829,7 +890,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alpha-Amylase",
     "function": "Starch Stain Removal Enzyme",
     "activeDefault": 100,
-    "costPerKg": 14.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Enzyme breaking down starch, pasta, sauce, and food residues."
   },
@@ -841,7 +902,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triacylglycerol Lipase",
     "function": "Fat & Oil Stain Removal Enzyme",
     "activeDefault": 100,
-    "costPerKg": 18.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Enzyme degrading lipid, grease, oil, and sebum soils."
   },
@@ -853,7 +914,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulase",
     "function": "Fabric Care & Anti-Pilling Enzyme",
     "activeDefault": 100,
-    "costPerKg": 16.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Enzyme removing microfibrils, reviving fabric color & brightness."
   },
@@ -865,7 +926,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Mannan Endoperoxidase",
     "function": "Guar & Food Gum Stain Enzyme",
     "activeDefault": 100,
-    "costPerKg": 22.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Enzyme breaking down food thickeners, ice cream, & dressing stains."
   },
@@ -877,7 +938,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Xanthan Gum",
     "function": "Natural Polysaccharide Thickener",
     "activeDefault": 100,
-    "costPerKg": 6.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Pseudoplastic natural rheology modifier."
   },
@@ -889,7 +950,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulose Gum",
     "function": "Anti-Redeposition Agent & Thickener",
     "activeDefault": 100,
-    "costPerKg": 2.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Polymeric soil suspension agent preventing soil re-attachment."
   },
@@ -901,7 +962,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Hydroxypropyl Methylcellulose",
     "function": "Cellulosic Viscosity Builder",
     "activeDefault": 100,
-    "costPerKg": 7.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "High clarity non-ionic water soluble polymer thickener."
   },
@@ -913,7 +974,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Carbomer",
     "function": "Crosslinked Polyacrylate Gel Polymer",
     "activeDefault": 100,
-    "costPerKg": 12.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High clarity gel thickener requiring alkali neutralization."
   },
@@ -925,7 +986,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Acrylates Copolymer",
     "function": "Alkali Swellable Emulsion Thickener",
     "activeDefault": 30,
-    "costPerKg": 4.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Acidic liquid emulsion thickening upon alkali neutralization."
   },
@@ -937,7 +998,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PVP",
     "function": "Dye Transfer Inhibitor Polymer",
     "activeDefault": 100,
-    "costPerKg": 8.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Polymer trapping loose fugitive dyes in wash water."
   },
@@ -949,7 +1010,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor",
     "activeDefault": 40,
-    "costPerKg": 14.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High performance dye anti-redeposition polymer."
   },
@@ -961,7 +1022,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-90",
     "function": "Binder & Processing Aid",
     "activeDefault": 100,
-    "costPerKg": 2.9,
+    "costPerKg": null,
     "hlb": null,
     "description": "Solid flake polyethylene glycol binder for tablet detergents."
   },
@@ -973,7 +1034,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Water",
     "function": "Solvent & Liquid Carrier Base",
     "activeDefault": 100,
-    "costPerKg": 0.02,
+    "costPerKg": null,
     "hlb": null,
     "description": "Pure deionized water matrix for liquid detergent formulations."
   },
@@ -985,7 +1046,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Hydrotrope & Coupling Agent",
     "activeDefault": 40,
-    "costPerKg": 1.45,
+    "costPerKg": null,
     "hlb": null,
     "description": "Anionic hydrotrope increasing solubility of surfactants in aqueous solutions."
   },
@@ -997,7 +1058,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Concentrated Solid Hydrotrope",
     "activeDefault": 90,
-    "costPerKg": 3.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Powder hydrotrope for concentrated liquid/solid formulations."
   },
@@ -1009,7 +1070,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope",
     "activeDefault": 40,
-    "costPerKg": 1.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "High potassium compatibility hydrotrope."
   },
@@ -1021,7 +1082,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Propylene Glycol",
     "function": "Co-Solvent, Enzyme Stabilizer & Antifreeze",
     "activeDefault": 99,
-    "costPerKg": 2.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Glycol solvent stabilizing enzymes and lowering freeze point."
   },
@@ -1033,7 +1094,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Glycerin",
     "function": "Humectant & Eco Solvent",
     "activeDefault": 99,
-    "costPerKg": 1.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Plant-derived bio-glycerol humectant and enzyme stabilizer."
   },
@@ -1045,7 +1106,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alcohol Denat.",
     "function": "Flash Drying Solvent & Viscosity Modifier",
     "activeDefault": 96,
-    "costPerKg": 1.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Volatile solvent for quick-drying hard surface & glass cleaners."
   },
@@ -1057,7 +1118,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Isopropyl Alcohol",
     "function": "Degreasing Solvent & Sanitizer",
     "activeDefault": 99,
-    "costPerKg": 1.95,
+    "costPerKg": null,
     "hlb": null,
     "description": "Fast evaporating solvent for heavy oil degreasing."
   },
@@ -1069,7 +1130,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Methylchloroisothiazolinone / Methylisothiazolinone",
     "function": "Broad Spectrum Preservative",
     "activeDefault": 1.5,
-    "costPerKg": 12.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Low dose broad spectrum liquid preservative for neutral/acidic formulas."
   },
@@ -1081,7 +1142,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzisothiazolinone",
     "function": "Alkaline Stable Liquid Preservative",
     "activeDefault": 20,
-    "costPerKg": 18.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Preservative stable at high pH (> 8.5) and elevated temperature."
   },
@@ -1093,7 +1154,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Phenoxyethanol",
     "function": "Mild Paraben-Free Preservative",
     "activeDefault": 99,
-    "costPerKg": 5.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Broad spectrum gentle preservative."
   },
@@ -1105,7 +1166,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Benzoate",
     "function": "Acidic Food-Grade Preservative",
     "activeDefault": 99,
-    "costPerKg": 1.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Organic acid preservative active at pH < 5.5."
   },
@@ -1117,7 +1178,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Sorbate",
     "function": "Anti-Fungal Eco Preservative",
     "activeDefault": 99,
-    "costPerKg": 3.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Anti-mold eco preservative active in acidic media."
   },
@@ -1129,7 +1190,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Distyrylbiphenyl Disulfonate",
     "function": "Fluorescent Whitening Agent for Liquids",
     "activeDefault": 100,
-    "costPerKg": 24.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High performance soluble optical brightener for laundry liquids."
   },
@@ -1141,7 +1202,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium 4,4'-bis[(4-anilino-6-morpholino-1,3,5-triazin-2-yl)amino]stilbene-2,2'-disulfonate",
     "function": "Cotton Optical Whitener",
     "activeDefault": 100,
-    "costPerKg": 18.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Cellulosic fiber optical whitener."
   },
@@ -1153,7 +1214,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "CI 42090",
     "function": "Water-Soluble Blue Detergent Dye",
     "activeDefault": 100,
-    "costPerKg": 15.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Standard liquid blue dye for detergent identification."
   },
@@ -1165,7 +1226,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye",
     "activeDefault": 100,
-    "costPerKg": 28.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Polymeric non-staining dye for laundry liquids."
   },
@@ -1177,7 +1238,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dimethicone",
     "function": "Foam Control & Defoamer",
     "activeDefault": 30,
-    "costPerKg": 4.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Silicone emulsion rapidly collapsing excess foam in automatic washers."
   },
@@ -1189,7 +1250,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sulfate",
     "function": "Filler & Processing Aid Powder",
     "activeDefault": 100,
-    "costPerKg": 0.25,
+    "costPerKg": null,
     "hlb": null,
     "description": "Standard inert bulking agent for detergent powders."
   },
@@ -1201,7 +1262,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Chloride",
     "function": "Viscosity Builder for Anionics",
     "activeDefault": 100,
-    "costPerKg": 0.15,
+    "costPerKg": null,
     "hlb": null,
     "description": "Electrolyte thickener building micellar viscosity with SLES & CAPB."
   },
@@ -1213,7 +1274,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Calcium Chloride",
     "function": "Enzyme Stabilizer & Fabric Softener Viscosity Aid",
     "activeDefault": 74,
-    "costPerKg": 0.45,
+    "costPerKg": null,
     "hlb": null,
     "description": "Source of calcium ions stabilizing protease & controlling softener viscosity."
   },
@@ -1225,7 +1286,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Styrene/Acrylates Copolymer",
     "function": "Milky White Lotion Opacifier",
     "activeDefault": 30,
-    "costPerKg": 3.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Polymeric emulsion imparting milky white opaque appearance."
   },
@@ -1237,7 +1298,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Zinc Ricinoleate",
     "function": "Chemical Odor Absorber",
     "activeDefault": 100,
-    "costPerKg": 14.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "Zinc salt trapping nitrogen and sulfur malodor molecules."
   },
@@ -1249,7 +1310,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dodecylbenzene Sulfonic Acid",
     "function": "Primary Anionic Surfactant Acid - Industrial Tech Grade",
     "activeDefault": 96,
-    "costPerKg": 1.85,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "Technical grade Workhorse raw material for liquid & powder detergents. optimized for bulk commercial applications."
   },
@@ -1261,7 +1322,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dodecylbenzene Sulfonic Acid",
     "function": "Primary Anionic Surfactant Acid - High Purity Grade",
     "activeDefault": 96,
-    "costPerKg": 2.62,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "High purity low-impurity Workhorse raw material for liquid & powder detergents. for sensitive & eco premium formulations."
   },
@@ -1273,7 +1334,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dodecylbenzene Sulfonic Acid",
     "function": "Primary Anionic Surfactant Acid - Ready Blend Solution",
     "activeDefault": 48,
-    "costPerKg": 1.37,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "Liquid pre-dissolved solution of LABSA 96% (Acid Slurry) for rapid cold-process compounding."
   },
@@ -1285,7 +1346,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Primary Foamer & Cleanser - Industrial Tech Grade",
     "activeDefault": 70,
-    "costPerKg": 1.63,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Technical grade High-foaming anionic surfactant with 2 moles EO. optimized for bulk commercial applications."
   },
@@ -1297,7 +1358,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Primary Foamer & Cleanser - High Purity Grade",
     "activeDefault": 70,
-    "costPerKg": 2.31,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "High purity low-impurity High-foaming anionic surfactant with 2 moles EO. for sensitive & eco premium formulations."
   },
@@ -1309,7 +1370,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Primary Foamer & Cleanser - Ready Blend Solution",
     "activeDefault": 35,
-    "costPerKg": 1.2,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Liquid pre-dissolved solution of SLES 70% (Sodium Lauryl Ether Sulfate) for rapid cold-process compounding."
   },
@@ -1321,7 +1382,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Dilute Primary Cleanser - Industrial Tech Grade",
     "activeDefault": 28,
-    "costPerKg": 0.75,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Technical grade Ready-to-use liquid SLES formulation base. optimized for bulk commercial applications."
   },
@@ -1333,7 +1394,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Dilute Primary Cleanser - High Purity Grade",
     "activeDefault": 28,
-    "costPerKg": 1.06,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "High purity low-impurity Ready-to-use liquid SLES formulation base. for sensitive & eco premium formulations."
   },
@@ -1345,7 +1406,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Laureth Sulfate",
     "function": "Dilute Primary Cleanser - Ready Blend Solution",
     "activeDefault": 14,
-    "costPerKg": 0.55,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Liquid pre-dissolved solution of SLES 28% Liquid for rapid cold-process compounding."
   },
@@ -1357,7 +1418,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "High Flash Foam Surfactant - Industrial Tech Grade",
     "activeDefault": 95,
-    "costPerKg": 2.29,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Technical grade High flash foam powder/needle anionic surfactant. optimized for bulk commercial applications."
   },
@@ -1369,7 +1430,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "High Flash Foam Surfactant - High Purity Grade",
     "activeDefault": 95,
-    "costPerKg": 3.25,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "High purity low-impurity High flash foam powder/needle anionic surfactant. for sensitive & eco premium formulations."
   },
@@ -1381,7 +1442,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "High Flash Foam Surfactant - Ready Blend Solution",
     "activeDefault": 47,
-    "costPerKg": 1.69,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Liquid pre-dissolved solution of SLS 95% Needles (Sodium Lauryl Sulfate) for rapid cold-process compounding."
   },
@@ -1393,7 +1454,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "Liquid Primary Foamer - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 0.97,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Technical grade Liquid form sodium lauryl sulfate. optimized for bulk commercial applications."
   },
@@ -1405,7 +1466,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "Liquid Primary Foamer - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 1.38,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "High purity low-impurity Liquid form sodium lauryl sulfate. for sensitive & eco premium formulations."
   },
@@ -1417,7 +1478,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauryl Sulfate",
     "function": "Liquid Primary Foamer - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 0.72,
+    "costPerKg": null,
     "hlb": 40.0,
     "description": "Liquid pre-dissolved solution of SLS 30% Liquid for rapid cold-process compounding."
   },
@@ -1429,7 +1490,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Hard Water Tolerant Cleanser - Industrial Tech Grade",
     "activeDefault": 38,
-    "costPerKg": 1.45,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Technical grade Phosphate-free high foaming surfactant with acid/alkali stability. optimized for bulk commercial applications."
   },
@@ -1441,7 +1502,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Hard Water Tolerant Cleanser - High Purity Grade",
     "activeDefault": 38,
-    "costPerKg": 2.06,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "High purity low-impurity Phosphate-free high foaming surfactant with acid/alkali stability. for sensitive & eco premium formulations."
   },
@@ -1453,7 +1514,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Hard Water Tolerant Cleanser - Ready Blend Solution",
     "activeDefault": 19,
-    "costPerKg": 1.07,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Liquid pre-dissolved solution of AOS 38% Liquid (Alpha Olefin Sulfonate) for rapid cold-process compounding."
   },
@@ -1465,7 +1526,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Concentrated Anionic Powder - Industrial Tech Grade",
     "activeDefault": 92,
-    "costPerKg": 2.99,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Technical grade Powdered alpha olefin sulfonate for detergent bars & powders. optimized for bulk commercial applications."
   },
@@ -1477,7 +1538,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Concentrated Anionic Powder - High Purity Grade",
     "activeDefault": 92,
-    "costPerKg": 4.25,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "High purity low-impurity Powdered alpha olefin sulfonate for detergent bars & powders. for sensitive & eco premium formulations."
   },
@@ -1489,7 +1550,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-16 Olefin Sulfonate",
     "function": "Concentrated Anionic Powder - Ready Blend Solution",
     "activeDefault": 46,
-    "costPerKg": 2.21,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Liquid pre-dissolved solution of AOS 92% Powder for rapid cold-process compounding."
   },
@@ -1501,7 +1562,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-17 Sec-Alkyl Sulfonate",
     "function": "Secondary Alkane Sulfonate - Industrial Tech Grade",
     "activeDefault": 60,
-    "costPerKg": 2.11,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Technical grade Highly soluble anionic surfactant with superior grease cutting. optimized for bulk commercial applications."
   },
@@ -1513,7 +1574,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-17 Sec-Alkyl Sulfonate",
     "function": "Secondary Alkane Sulfonate - High Purity Grade",
     "activeDefault": 60,
-    "costPerKg": 3.0,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "High purity low-impurity Highly soluble anionic surfactant with superior grease cutting. for sensitive & eco premium formulations."
   },
@@ -1525,7 +1586,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium C14-17 Sec-Alkyl Sulfonate",
     "function": "Secondary Alkane Sulfonate - Ready Blend Solution",
     "activeDefault": 30,
-    "costPerKg": 1.56,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Liquid pre-dissolved solution of Sodium Alkane Sulfonate 60% (SAS 60) for rapid cold-process compounding."
   },
@@ -1537,7 +1598,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauroyl Sarcosinate",
     "function": "Mild Amino Acid Surfactant - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 2.82,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "Technical grade Corrosion inhibiting mild anionic surfactant for premium care. optimized for bulk commercial applications."
   },
@@ -1549,7 +1610,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauroyl Sarcosinate",
     "function": "Mild Amino Acid Surfactant - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 4.0,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "High purity low-impurity Corrosion inhibiting mild anionic surfactant for premium care. for sensitive & eco premium formulations."
   },
@@ -1561,7 +1622,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lauroyl Sarcosinate",
     "function": "Mild Amino Acid Surfactant - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 2.08,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "Liquid pre-dissolved solution of Sodium Lauryl Sarcosinate 30% for rapid cold-process compounding."
   },
@@ -1573,7 +1634,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Laureth Sulfosuccinate",
     "function": "Ultra-Mild Anionic Foamer - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 2.55,
+    "costPerKg": null,
     "hlb": 12.6,
     "description": "Technical grade Very low irritation anionic surfactant for delicate fabrics & baby care. optimized for bulk commercial applications."
   },
@@ -1585,7 +1646,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Laureth Sulfosuccinate",
     "function": "Ultra-Mild Anionic Foamer - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 3.62,
+    "costPerKg": null,
     "hlb": 12.6,
     "description": "High purity low-impurity Very low irritation anionic surfactant for delicate fabrics & baby care. for sensitive & eco premium formulations."
   },
@@ -1597,7 +1658,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Laureth Sulfosuccinate",
     "function": "Ultra-Mild Anionic Foamer - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 1.89,
+    "costPerKg": null,
     "hlb": 12.6,
     "description": "Liquid pre-dissolved solution of Disodium Laureth Sulfosuccinate (DLS 40%) for rapid cold-process compounding."
   },
@@ -1609,7 +1670,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoyl Isethionate",
     "function": "Solid Syndet Cleanser - Industrial Tech Grade",
     "activeDefault": 85,
-    "costPerKg": 3.7,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Technical grade Mild sulfate-free noodle/powder surfactant. optimized for bulk commercial applications."
   },
@@ -1621,7 +1682,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoyl Isethionate",
     "function": "Solid Syndet Cleanser - High Purity Grade",
     "activeDefault": 85,
-    "costPerKg": 5.25,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "High purity low-impurity Mild sulfate-free noodle/powder surfactant. for sensitive & eco premium formulations."
   },
@@ -1633,7 +1694,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoyl Isethionate",
     "function": "Solid Syndet Cleanser - Ready Blend Solution",
     "activeDefault": 42,
-    "costPerKg": 2.73,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Liquid pre-dissolved solution of Sodium Cocoyl Isethionate 85% (SCI) for rapid cold-process compounding."
   },
@@ -1645,7 +1706,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Methyl Cocoyl Taurate",
     "function": "Sulfate-Free Foaming Agent - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 3.34,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Technical grade Stable across wide pH range with soft foam feel. optimized for bulk commercial applications."
   },
@@ -1657,7 +1718,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Methyl Cocoyl Taurate",
     "function": "Sulfate-Free Foaming Agent - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 4.75,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "High purity low-impurity Stable across wide pH range with soft foam feel. for sensitive & eco premium formulations."
   },
@@ -1669,7 +1730,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Methyl Cocoyl Taurate",
     "function": "Sulfate-Free Foaming Agent - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 2.47,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Liquid pre-dissolved solution of Sodium Methyl Cocoyl Taurate 30% for rapid cold-process compounding."
   },
@@ -1681,7 +1742,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lignosulfonate",
     "function": "Anionic Dispersant & Binder - Industrial Tech Grade",
     "activeDefault": 95,
-    "costPerKg": 0.84,
+    "costPerKg": null,
     "hlb": 10.0,
     "description": "Technical grade Bio-based lignin dispersant for industrial powders. optimized for bulk commercial applications."
   },
@@ -1693,7 +1754,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lignosulfonate",
     "function": "Anionic Dispersant & Binder - High Purity Grade",
     "activeDefault": 95,
-    "costPerKg": 1.19,
+    "costPerKg": null,
     "hlb": 10.0,
     "description": "High purity low-impurity Bio-based lignin dispersant for industrial powders. for sensitive & eco premium formulations."
   },
@@ -1705,7 +1766,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Lignosulfonate",
     "function": "Anionic Dispersant & Binder - Ready Blend Solution",
     "activeDefault": 47,
-    "costPerKg": 0.62,
+    "costPerKg": null,
     "hlb": 10.0,
     "description": "Liquid pre-dissolved solution of Sodium Lignosulfonate for rapid cold-process compounding."
   },
@@ -1717,7 +1778,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-3",
     "function": "Oil-Soluble Emulsifier - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.33,
+    "costPerKg": null,
     "hlb": 8.0,
     "description": "Technical grade Low HLB nonionic surfactant for oil soil emulsification. optimized for bulk commercial applications."
   },
@@ -1729,7 +1790,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-3",
     "function": "Oil-Soluble Emulsifier - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 3.31,
+    "costPerKg": null,
     "hlb": 8.0,
     "description": "High purity low-impurity Low HLB nonionic surfactant for oil soil emulsification. for sensitive & eco premium formulations."
   },
@@ -1741,7 +1802,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-3",
     "function": "Oil-Soluble Emulsifier - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.72,
+    "costPerKg": null,
     "hlb": 8.0,
     "description": "Liquid pre-dissolved solution of LAE-3 (C12-15 Alcohol Ethoxylate 3EO) for rapid cold-process compounding."
   },
@@ -1753,7 +1814,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-7",
     "function": "Primary Detergent Nonionic - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.42,
+    "costPerKg": null,
     "hlb": 12.1,
     "description": "Technical grade Standard laundry detergent nonionic surfactant. optimized for bulk commercial applications."
   },
@@ -1765,7 +1826,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-7",
     "function": "Primary Detergent Nonionic - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 3.44,
+    "costPerKg": null,
     "hlb": 12.1,
     "description": "High purity low-impurity Standard laundry detergent nonionic surfactant. for sensitive & eco premium formulations."
   },
@@ -1777,7 +1838,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-7",
     "function": "Primary Detergent Nonionic - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.79,
+    "costPerKg": null,
     "hlb": 12.1,
     "description": "Liquid pre-dissolved solution of LAE-7 (C12-15 Alcohol Ethoxylate 7EO) for rapid cold-process compounding."
   },
@@ -1789,7 +1850,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-9",
     "function": "Nonionic Degreaser - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.46,
+    "costPerKg": null,
     "hlb": 13.1,
     "description": "Technical grade High performance degreaser and soil suspension agent. optimized for bulk commercial applications."
   },
@@ -1801,7 +1862,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-9",
     "function": "Nonionic Degreaser - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 3.5,
+    "costPerKg": null,
     "hlb": 13.1,
     "description": "High purity low-impurity High performance degreaser and soil suspension agent. for sensitive & eco premium formulations."
   },
@@ -1813,7 +1874,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-9",
     "function": "Nonionic Degreaser - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.82,
+    "costPerKg": null,
     "hlb": 13.1,
     "description": "Liquid pre-dissolved solution of LAE-9 (C12-15 Alcohol Ethoxylate 9EO) for rapid cold-process compounding."
   },
@@ -1825,7 +1886,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-12",
     "function": "High-Solubility Hydrophile - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.6,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "Technical grade High cloud-point nonionic for warm water washing. optimized for bulk commercial applications."
   },
@@ -1837,7 +1898,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-12",
     "function": "High-Solubility Hydrophile - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 3.69,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "High purity low-impurity High cloud-point nonionic for warm water washing. for sensitive & eco premium formulations."
   },
@@ -1849,7 +1910,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "C12-15 Pareth-12",
     "function": "High-Solubility Hydrophile - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.92,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "Liquid pre-dissolved solution of LAE-12 (C12-15 Alcohol Ethoxylate 12EO) for rapid cold-process compounding."
   },
@@ -1861,7 +1922,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-6",
     "function": "Industrial Degreasing Solvent - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 1.85,
+    "costPerKg": null,
     "hlb": 10.9,
     "description": "Technical grade Industrial heavy duty degreasing nonionic surfactant. optimized for bulk commercial applications."
   },
@@ -1873,7 +1934,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-6",
     "function": "Industrial Degreasing Solvent - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 2.62,
+    "costPerKg": null,
     "hlb": 10.9,
     "description": "High purity low-impurity Industrial heavy duty degreasing nonionic surfactant. for sensitive & eco premium formulations."
   },
@@ -1885,7 +1946,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-6",
     "function": "Industrial Degreasing Solvent - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.37,
+    "costPerKg": null,
     "hlb": 10.9,
     "description": "Liquid pre-dissolved solution of Nonylphenol Ethoxylate 6EO (NP-6) for rapid cold-process compounding."
   },
@@ -1897,7 +1958,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-9",
     "function": "Industrial Detergent Workhorse - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 1.94,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Technical grade Classic industrial hard surface cleanser. optimized for bulk commercial applications."
   },
@@ -1909,7 +1970,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-9",
     "function": "Industrial Detergent Workhorse - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 2.75,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "High purity low-impurity Classic industrial hard surface cleanser. for sensitive & eco premium formulations."
   },
@@ -1921,7 +1982,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-9",
     "function": "Industrial Detergent Workhorse - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.43,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Liquid pre-dissolved solution of Nonylphenol Ethoxylate 9EO (NP-9 / Alfox 200) for rapid cold-process compounding."
   },
@@ -1933,7 +1994,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-10",
     "function": "High Water Soluble Cleanser - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.02,
+    "costPerKg": null,
     "hlb": 13.3,
     "description": "Technical grade Water soluble industrial cleanser. optimized for bulk commercial applications."
   },
@@ -1945,7 +2006,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-10",
     "function": "High Water Soluble Cleanser - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 2.88,
+    "costPerKg": null,
     "hlb": 13.3,
     "description": "High purity low-impurity Water soluble industrial cleanser. for sensitive & eco premium formulations."
   },
@@ -1957,7 +2018,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Nonoxynol-10",
     "function": "High Water Soluble Cleanser - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.49,
+    "costPerKg": null,
     "hlb": 13.3,
     "description": "Liquid pre-dissolved solution of Nonylphenol Ethoxylate 10EO (NP-10) for rapid cold-process compounding."
   },
@@ -1969,7 +2030,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Caprylyl/Capryl Glucoside",
     "function": "Eco Nonionic Hydrotrope - Industrial Tech Grade",
     "activeDefault": 50,
-    "costPerKg": 2.73,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Technical grade Bio-based, plant-derived nonionic hydrotrope. optimized for bulk commercial applications."
   },
@@ -1981,7 +2042,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Caprylyl/Capryl Glucoside",
     "function": "Eco Nonionic Hydrotrope - High Purity Grade",
     "activeDefault": 50,
-    "costPerKg": 3.88,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "High purity low-impurity Bio-based, plant-derived nonionic hydrotrope. for sensitive & eco premium formulations."
   },
@@ -1993,7 +2054,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Caprylyl/Capryl Glucoside",
     "function": "Eco Nonionic Hydrotrope - Ready Blend Solution",
     "activeDefault": 25,
-    "costPerKg": 2.02,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Liquid pre-dissolved solution of APG 0810 (Caprylyl/Capryl Glucoside 50%) for rapid cold-process compounding."
   },
@@ -2005,7 +2066,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Glucoside",
     "function": "Eco Detergent Nonionic - Industrial Tech Grade",
     "activeDefault": 50,
-    "costPerKg": 2.86,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Technical grade Plant-derived readily biodegradable nonionic surfactant. optimized for bulk commercial applications."
   },
@@ -2017,7 +2078,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Glucoside",
     "function": "Eco Detergent Nonionic - High Purity Grade",
     "activeDefault": 50,
-    "costPerKg": 4.06,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "High purity low-impurity Plant-derived readily biodegradable nonionic surfactant. for sensitive & eco premium formulations."
   },
@@ -2029,7 +2090,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Glucoside",
     "function": "Eco Detergent Nonionic - Ready Blend Solution",
     "activeDefault": 25,
-    "costPerKg": 2.11,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Liquid pre-dissolved solution of APG 1214 (Lauryl Glucoside 50%) for rapid cold-process compounding."
   },
@@ -2041,7 +2102,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide DEA",
     "function": "Viscosity & Foam Booster - Industrial Tech Grade",
     "activeDefault": 85,
-    "costPerKg": 2.2,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "Technical grade Fatty acid alkanolamide foam booster and thickener. optimized for bulk commercial applications."
   },
@@ -2053,7 +2114,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide DEA",
     "function": "Viscosity & Foam Booster - High Purity Grade",
     "activeDefault": 85,
-    "costPerKg": 3.12,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "High purity low-impurity Fatty acid alkanolamide foam booster and thickener. for sensitive & eco premium formulations."
   },
@@ -2065,7 +2126,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide DEA",
     "function": "Viscosity & Foam Booster - Ready Blend Solution",
     "activeDefault": 42,
-    "costPerKg": 1.62,
+    "costPerKg": null,
     "hlb": 13.5,
     "description": "Liquid pre-dissolved solution of Cocamide DEA 85% (CDEA / CDE) for rapid cold-process compounding."
   },
@@ -2077,7 +2138,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide MEA",
     "function": "Solid Foam Stabilizer - Industrial Tech Grade",
     "activeDefault": 90,
-    "costPerKg": 2.38,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "Technical grade Flake alkanolamide foam booster for liquid & solid formulations. optimized for bulk commercial applications."
   },
@@ -2089,7 +2150,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide MEA",
     "function": "Solid Foam Stabilizer - High Purity Grade",
     "activeDefault": 90,
-    "costPerKg": 3.38,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "High purity low-impurity Flake alkanolamide foam booster for liquid & solid formulations. for sensitive & eco premium formulations."
   },
@@ -2101,7 +2162,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamide MEA",
     "function": "Solid Foam Stabilizer - Ready Blend Solution",
     "activeDefault": 45,
-    "costPerKg": 1.76,
+    "costPerKg": null,
     "hlb": 11.5,
     "description": "Liquid pre-dissolved solution of Cocamide MEA 90% (CMEA) for rapid cold-process compounding."
   },
@@ -2113,7 +2174,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauramine Oxide",
     "function": "Amine Oxide Foam Stabilizer - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 2.29,
+    "costPerKg": null,
     "hlb": 14.2,
     "description": "Technical grade High-foaming bleach-stable amine oxide surfactant. optimized for bulk commercial applications."
   },
@@ -2125,7 +2186,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauramine Oxide",
     "function": "Amine Oxide Foam Stabilizer - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 3.25,
+    "costPerKg": null,
     "hlb": 14.2,
     "description": "High purity low-impurity High-foaming bleach-stable amine oxide surfactant. for sensitive & eco premium formulations."
   },
@@ -2137,7 +2198,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauramine Oxide",
     "function": "Amine Oxide Foam Stabilizer - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 1.69,
+    "costPerKg": null,
     "hlb": 14.2,
     "description": "Liquid pre-dissolved solution of Lauryl Amine Oxide 30% (LDAO) for rapid cold-process compounding."
   },
@@ -2149,7 +2210,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-40 Hydrogenated Castor Oil",
     "function": "Solubilizer for Fragrance/Oils - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 3.61,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Technical grade Nonionic solubilizer for essential oils and perfume. optimized for bulk commercial applications."
   },
@@ -2161,7 +2222,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-40 Hydrogenated Castor Oil",
     "function": "Solubilizer for Fragrance/Oils - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 5.12,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "High purity low-impurity Nonionic solubilizer for essential oils and perfume. for sensitive & eco premium formulations."
   },
@@ -2173,7 +2234,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-40 Hydrogenated Castor Oil",
     "function": "Solubilizer for Fragrance/Oils - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 2.67,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Liquid pre-dissolved solution of PEG-40 Hydrogenated Castor Oil for rapid cold-process compounding."
   },
@@ -2185,7 +2246,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 20",
     "function": "Fragrance & Oil Solubilizer - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 3.43,
+    "costPerKg": null,
     "hlb": 16.7,
     "description": "Technical grade High HLB nonionic hydrophilic solubilizer. optimized for bulk commercial applications."
   },
@@ -2197,7 +2258,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 20",
     "function": "Fragrance & Oil Solubilizer - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 4.88,
+    "costPerKg": null,
     "hlb": 16.7,
     "description": "High purity low-impurity High HLB nonionic hydrophilic solubilizer. for sensitive & eco premium formulations."
   },
@@ -2209,7 +2270,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 20",
     "function": "Fragrance & Oil Solubilizer - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 2.54,
+    "costPerKg": null,
     "hlb": 16.7,
     "description": "Liquid pre-dissolved solution of Polysorbate 20 (Tween 20) for rapid cold-process compounding."
   },
@@ -2221,7 +2282,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 80",
     "function": "Emulsifier for Oily Formulations - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 3.52,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Technical grade High efficiency oleate nonionic emulsifier. optimized for bulk commercial applications."
   },
@@ -2233,7 +2294,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 80",
     "function": "Emulsifier for Oily Formulations - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 5.0,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "High purity low-impurity High efficiency oleate nonionic emulsifier. for sensitive & eco premium formulations."
   },
@@ -2245,7 +2306,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polysorbate 80",
     "function": "Emulsifier for Oily Formulations - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 2.6,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Liquid pre-dissolved solution of Polysorbate 80 (Tween 80) for rapid cold-process compounding."
   },
@@ -2257,7 +2318,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Foam & Viscosity Booster - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 2.02,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Technical grade Mild secondary surfactant co-thickening with NaCl. optimized for bulk commercial applications."
   },
@@ -2269,7 +2330,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Foam & Viscosity Booster - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 2.88,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "High purity low-impurity Mild secondary surfactant co-thickening with NaCl. for sensitive & eco premium formulations."
   },
@@ -2281,7 +2342,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Foam & Viscosity Booster - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 1.49,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Liquid pre-dissolved solution of CAPB 30% (Cocamidopropyl Betaine) for rapid cold-process compounding."
   },
@@ -2293,7 +2354,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Concentrated Betaine Base - Industrial Tech Grade",
     "activeDefault": 45,
-    "costPerKg": 2.99,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Technical grade High concentration zwitterionic surfactant. optimized for bulk commercial applications."
   },
@@ -2305,7 +2366,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Concentrated Betaine Base - High Purity Grade",
     "activeDefault": 45,
-    "costPerKg": 4.25,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "High purity low-impurity High concentration zwitterionic surfactant. for sensitive & eco premium formulations."
   },
@@ -2317,7 +2378,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Betaine",
     "function": "Concentrated Betaine Base - Ready Blend Solution",
     "activeDefault": 22,
-    "costPerKg": 2.21,
+    "costPerKg": null,
     "hlb": 12.0,
     "description": "Liquid pre-dissolved solution of CAPB 45% High Active Concentrate for rapid cold-process compounding."
   },
@@ -2329,7 +2390,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Betaine",
     "function": "High Flash Foam Amphoteric - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 2.46,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Technical grade Strong flash foaming zwitterionic surfactant. optimized for bulk commercial applications."
   },
@@ -2341,7 +2402,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Betaine",
     "function": "High Flash Foam Amphoteric - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 3.5,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "High purity low-impurity Strong flash foaming zwitterionic surfactant. for sensitive & eco premium formulations."
   },
@@ -2353,7 +2414,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Lauryl Betaine",
     "function": "High Flash Foam Amphoteric - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 1.82,
+    "costPerKg": null,
     "hlb": 12.5,
     "description": "Liquid pre-dissolved solution of Lauryl Betaine 30% for rapid cold-process compounding."
   },
@@ -2365,7 +2426,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Coco-Betaine",
     "function": "Natural Betaine Cleanser - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 2.38,
+    "costPerKg": null,
     "hlb": 12.2,
     "description": "Technical grade Alkyl betaine for mild cleansing formulations. optimized for bulk commercial applications."
   },
@@ -2377,7 +2438,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Coco-Betaine",
     "function": "Natural Betaine Cleanser - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 3.38,
+    "costPerKg": null,
     "hlb": 12.2,
     "description": "High purity low-impurity Alkyl betaine for mild cleansing formulations. for sensitive & eco premium formulations."
   },
@@ -2389,7 +2450,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Coco-Betaine",
     "function": "Natural Betaine Cleanser - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 1.76,
+    "costPerKg": null,
     "hlb": 12.2,
     "description": "Liquid pre-dissolved solution of Coco Betaine 30% for rapid cold-process compounding."
   },
@@ -2401,7 +2462,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoamphoacetate",
     "function": "Ultra-Mild Amphoteric - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 3.17,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Technical grade Low-irritation amphoacetate for sensitive washing. optimized for bulk commercial applications."
   },
@@ -2413,7 +2474,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoamphoacetate",
     "function": "Ultra-Mild Amphoteric - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 4.5,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "High purity low-impurity Low-irritation amphoacetate for sensitive washing. for sensitive & eco premium formulations."
   },
@@ -2425,7 +2486,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Cocoamphoacetate",
     "function": "Ultra-Mild Amphoteric - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 2.34,
+    "costPerKg": null,
     "hlb": 13.0,
     "description": "Liquid pre-dissolved solution of Sodium Cocoamphoacetate 40% for rapid cold-process compounding."
   },
@@ -2437,7 +2498,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Cocoamphodiacetate",
     "function": "Gentle Secondary Surfactant - Industrial Tech Grade",
     "activeDefault": 38,
-    "costPerKg": 3.39,
+    "costPerKg": null,
     "hlb": 13.2,
     "description": "Technical grade High-mildness dicarboxylate amphoteric surfactant. optimized for bulk commercial applications."
   },
@@ -2449,7 +2510,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Cocoamphodiacetate",
     "function": "Gentle Secondary Surfactant - High Purity Grade",
     "activeDefault": 38,
-    "costPerKg": 4.81,
+    "costPerKg": null,
     "hlb": 13.2,
     "description": "High purity low-impurity High-mildness dicarboxylate amphoteric surfactant. for sensitive & eco premium formulations."
   },
@@ -2461,7 +2522,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Cocoamphodiacetate",
     "function": "Gentle Secondary Surfactant - Ready Blend Solution",
     "activeDefault": 19,
-    "costPerKg": 2.5,
+    "costPerKg": null,
     "hlb": 13.2,
     "description": "Liquid pre-dissolved solution of Disodium Cocoamphodiacetate 38% for rapid cold-process compounding."
   },
@@ -2473,7 +2534,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Hydroxysultaine",
     "function": "Hard Water Stable Betaine - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 3.43,
+    "costPerKg": null,
     "hlb": 12.8,
     "description": "Technical grade Sultaine amphoteric stable in electrolyte & hard water. optimized for bulk commercial applications."
   },
@@ -2485,7 +2546,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Hydroxysultaine",
     "function": "Hard Water Stable Betaine - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 4.88,
+    "costPerKg": null,
     "hlb": 12.8,
     "description": "High purity low-impurity Sultaine amphoteric stable in electrolyte & hard water. for sensitive & eco premium formulations."
   },
@@ -2497,7 +2558,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cocamidopropyl Hydroxysultaine",
     "function": "Hard Water Stable Betaine - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 2.54,
+    "costPerKg": null,
     "hlb": 12.8,
     "description": "Liquid pre-dissolved solution of Cocamidopropyl Hydroxysultaine 40% for rapid cold-process compounding."
   },
@@ -2509,7 +2570,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cetrimonium Chloride",
     "function": "Fabric Softener & Antistatic Agent - Industrial Tech Grade",
     "activeDefault": 29,
-    "costPerKg": 1.94,
+    "costPerKg": null,
     "hlb": 15.8,
     "description": "Technical grade Cationic quaternary ammonium antistatic conditioner. optimized for bulk commercial applications."
   },
@@ -2521,7 +2582,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cetrimonium Chloride",
     "function": "Fabric Softener & Antistatic Agent - High Purity Grade",
     "activeDefault": 29,
-    "costPerKg": 2.75,
+    "costPerKg": null,
     "hlb": 15.8,
     "description": "High purity low-impurity Cationic quaternary ammonium antistatic conditioner. for sensitive & eco premium formulations."
   },
@@ -2533,7 +2594,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cetrimonium Chloride",
     "function": "Fabric Softener & Antistatic Agent - Ready Blend Solution",
     "activeDefault": 14,
-    "costPerKg": 1.43,
+    "costPerKg": null,
     "hlb": 15.8,
     "description": "Liquid pre-dissolved solution of Cetrimonium Chloride 29% (CTAC) for rapid cold-process compounding."
   },
@@ -2545,7 +2606,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Behentrimonium Chloride",
     "function": "Concentrated Fabric Conditioner - Industrial Tech Grade",
     "activeDefault": 80,
-    "costPerKg": 4.22,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "Technical grade High long-chain cationic softener. optimized for bulk commercial applications."
   },
@@ -2557,7 +2618,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Behentrimonium Chloride",
     "function": "Concentrated Fabric Conditioner - High Purity Grade",
     "activeDefault": 80,
-    "costPerKg": 6.0,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "High purity low-impurity High long-chain cationic softener. for sensitive & eco premium formulations."
   },
@@ -2569,7 +2630,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Behentrimonium Chloride",
     "function": "Concentrated Fabric Conditioner - Ready Blend Solution",
     "activeDefault": 40,
-    "costPerKg": 3.12,
+    "costPerKg": null,
     "hlb": 14.5,
     "description": "Liquid pre-dissolved solution of Behentrimonium Chloride 80% (BTAC) for rapid cold-process compounding."
   },
@@ -2581,7 +2642,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dipalmitoylethyl Hydroxyethylmonium Methosulfate",
     "function": "Eco-Biodegradable Fabric Softener - Industrial Tech Grade",
     "activeDefault": 90,
-    "costPerKg": 2.82,
+    "costPerKg": null,
     "hlb": 11.0,
     "description": "Technical grade Readily biodegradable cationic fabric conditioning agent. optimized for bulk commercial applications."
   },
@@ -2593,7 +2654,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dipalmitoylethyl Hydroxyethylmonium Methosulfate",
     "function": "Eco-Biodegradable Fabric Softener - High Purity Grade",
     "activeDefault": 90,
-    "costPerKg": 4.0,
+    "costPerKg": null,
     "hlb": 11.0,
     "description": "High purity low-impurity Readily biodegradable cationic fabric conditioning agent. for sensitive & eco premium formulations."
   },
@@ -2605,7 +2666,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dipalmitoylethyl Hydroxyethylmonium Methosulfate",
     "function": "Eco-Biodegradable Fabric Softener - Ready Blend Solution",
     "activeDefault": 45,
-    "costPerKg": 2.08,
+    "costPerKg": null,
     "hlb": 11.0,
     "description": "Liquid pre-dissolved solution of Esterquat 90% (Di-Tallow Esterquat) for rapid cold-process compounding."
   },
@@ -2617,7 +2678,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "Disinfectant & Antimicrobial Cationic - Industrial Tech Grade",
     "activeDefault": 50,
-    "costPerKg": 3.08,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Technical grade Quaternary germicide and sanitizer. optimized for bulk commercial applications."
   },
@@ -2629,7 +2690,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "Disinfectant & Antimicrobial Cationic - High Purity Grade",
     "activeDefault": 50,
-    "costPerKg": 4.38,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "High purity low-impurity Quaternary germicide and sanitizer. for sensitive & eco premium formulations."
   },
@@ -2641,7 +2702,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "Disinfectant & Antimicrobial Cationic - Ready Blend Solution",
     "activeDefault": 25,
-    "costPerKg": 2.27,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Liquid pre-dissolved solution of Benzalkonium Chloride 50% (BKC 50) for rapid cold-process compounding."
   },
@@ -2653,7 +2714,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "High-Con Germicidal Cationic - Industrial Tech Grade",
     "activeDefault": 80,
-    "costPerKg": 4.58,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Technical grade Concentrated quaternary biocide. optimized for bulk commercial applications."
   },
@@ -2665,7 +2726,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "High-Con Germicidal Cationic - High Purity Grade",
     "activeDefault": 80,
-    "costPerKg": 6.5,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "High purity low-impurity Concentrated quaternary biocide. for sensitive & eco premium formulations."
   },
@@ -2677,7 +2738,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzalkonium Chloride",
     "function": "High-Con Germicidal Cationic - Ready Blend Solution",
     "activeDefault": 40,
-    "costPerKg": 3.38,
+    "costPerKg": null,
     "hlb": 15.0,
     "description": "Liquid pre-dissolved solution of Benzalkonium Chloride 80% (BKC 80) for rapid cold-process compounding."
   },
@@ -2689,7 +2750,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Saponification & Neutralization Base - Industrial Tech Grade",
     "activeDefault": 50,
-    "costPerKg": 0.57,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Liquid caustic soda neutralizer. optimized for bulk commercial applications."
   },
@@ -2701,7 +2762,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Saponification & Neutralization Base - High Purity Grade",
     "activeDefault": 50,
-    "costPerKg": 0.81,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Liquid caustic soda neutralizer. for sensitive & eco premium formulations."
   },
@@ -2713,7 +2774,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Saponification & Neutralization Base - Ready Blend Solution",
     "activeDefault": 25,
-    "costPerKg": 0.42,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Hydroxide 50% Liquid (Caustic Soda Lye) for rapid cold-process compounding."
   },
@@ -2725,7 +2786,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Solid Neutralizing Caustic - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 0.97,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Solid caustic soda for saponification & neutralization. optimized for bulk commercial applications."
   },
@@ -2737,7 +2798,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Solid Neutralizing Caustic - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 1.38,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Solid caustic soda for saponification & neutralization. for sensitive & eco premium formulations."
   },
@@ -2749,7 +2810,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Hydroxide",
     "function": "Solid Neutralizing Caustic - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 0.72,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Hydroxide 99% Flakes for rapid cold-process compounding."
   },
@@ -2761,7 +2822,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "High Solubility Potassium Base - Industrial Tech Grade",
     "activeDefault": 90,
-    "costPerKg": 1.63,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Potassium base for soft soaps and high-solubility liquid detergents. optimized for bulk commercial applications."
   },
@@ -2773,7 +2834,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "High Solubility Potassium Base - High Purity Grade",
     "activeDefault": 90,
-    "costPerKg": 2.31,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Potassium base for soft soaps and high-solubility liquid detergents. for sensitive & eco premium formulations."
   },
@@ -2785,7 +2846,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "High Solubility Potassium Base - Ready Blend Solution",
     "activeDefault": 45,
-    "costPerKg": 1.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Potassium Hydroxide 90% Flakes (Caustic Potash) for rapid cold-process compounding."
   },
@@ -2797,7 +2858,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "Liquid Caustic Potash - Industrial Tech Grade",
     "activeDefault": 45,
-    "costPerKg": 1.01,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Liquid potassium hydroxide base. optimized for bulk commercial applications."
   },
@@ -2809,7 +2870,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "Liquid Caustic Potash - High Purity Grade",
     "activeDefault": 45,
-    "costPerKg": 1.44,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Liquid potassium hydroxide base. for sensitive & eco premium formulations."
   },
@@ -2821,7 +2882,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Hydroxide",
     "function": "Liquid Caustic Potash - Ready Blend Solution",
     "activeDefault": 22,
-    "costPerKg": 0.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Potassium Hydroxide 45% Liquid for rapid cold-process compounding."
   },
@@ -2833,7 +2894,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triethanolamine",
     "function": "Organic Base Neutralizer & Buffer - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 2.46,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Mild organic amine neutralizer for LABSA & fatty acids. optimized for bulk commercial applications."
   },
@@ -2845,7 +2906,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triethanolamine",
     "function": "Organic Base Neutralizer & Buffer - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 3.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Mild organic amine neutralizer for LABSA & fatty acids. for sensitive & eco premium formulations."
   },
@@ -2857,7 +2918,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triethanolamine",
     "function": "Organic Base Neutralizer & Buffer - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.82,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Triethanolamine 99% (TEA) for rapid cold-process compounding."
   },
@@ -2869,7 +2930,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Ethanolamine",
     "function": "Heavy Duty Amine Base - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 2.11,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Strong organic amine for heavy duty industrial degreasers. optimized for bulk commercial applications."
   },
@@ -2881,7 +2942,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Ethanolamine",
     "function": "Heavy Duty Amine Base - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 3.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Strong organic amine for heavy duty industrial degreasers. for sensitive & eco premium formulations."
   },
@@ -2893,7 +2954,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Ethanolamine",
     "function": "Heavy Duty Amine Base - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Monoethanolamine 99% (MEA) for rapid cold-process compounding."
   },
@@ -2905,7 +2966,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Aminomethyl Propanol",
     "function": "Multifunctional Amine Neutralizer - Industrial Tech Grade",
     "activeDefault": 95,
-    "costPerKg": 5.72,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High efficiency neutralizer and pigment dispersant. optimized for bulk commercial applications."
   },
@@ -2917,7 +2978,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Aminomethyl Propanol",
     "function": "Multifunctional Amine Neutralizer - High Purity Grade",
     "activeDefault": 95,
-    "costPerKg": 8.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High efficiency neutralizer and pigment dispersant. for sensitive & eco premium formulations."
   },
@@ -2929,7 +2990,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Aminomethyl Propanol",
     "function": "Multifunctional Amine Neutralizer - Ready Blend Solution",
     "activeDefault": 47,
-    "costPerKg": 4.23,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Aminomethyl Propanol (AMP-95) for rapid cold-process compounding."
   },
@@ -2941,7 +3002,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Alkalinity Builder & Saponification Helper - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Heavy duty alkaline builder. optimized for bulk commercial applications."
   },
@@ -2953,7 +3014,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Alkalinity Builder & Saponification Helper - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Heavy duty alkaline builder. for sensitive & eco premium formulations."
   },
@@ -2965,7 +3026,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Alkalinity Builder & Saponification Helper - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.29,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Carbonate (Soda Ash Dense) for rapid cold-process compounding."
   },
@@ -2977,7 +3038,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Rapid Dissolving Alkaline Builder - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.42,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Low bulk density rapidly soluble soda ash. optimized for bulk commercial applications."
   },
@@ -2989,7 +3050,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Rapid Dissolving Alkaline Builder - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.6,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Low bulk density rapidly soluble soda ash. for sensitive & eco premium formulations."
   },
@@ -3001,7 +3062,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Carbonate",
     "function": "Rapid Dissolving Alkaline Builder - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.31,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Carbonate (Soda Ash Light) for rapid cold-process compounding."
   },
@@ -3013,7 +3074,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "Alkaline Builder & Anti-Corrosion Agent - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Silicate builder protecting metal parts in washing machines. optimized for bulk commercial applications."
   },
@@ -3025,7 +3086,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "Alkaline Builder & Anti-Corrosion Agent - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 1.06,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Silicate builder protecting metal parts in washing machines. for sensitive & eco premium formulations."
   },
@@ -3037,7 +3098,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "Alkaline Builder & Anti-Corrosion Agent - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.55,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Metasilicate Pentahydrate for rapid cold-process compounding."
   },
@@ -3049,7 +3110,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "High Active Anhydrous Silicate - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 1.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Anhydrous heavy duty industrial builder. optimized for bulk commercial applications."
   },
@@ -3061,7 +3122,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "High Active Anhydrous Silicate - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 1.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Anhydrous heavy duty industrial builder. for sensitive & eco premium formulations."
   },
@@ -3073,7 +3134,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Metasilicate",
     "function": "High Active Anhydrous Silicate - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.81,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Metasilicate Anhydrous for rapid cold-process compounding."
   },
@@ -3085,7 +3146,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Silicate",
     "function": "Liquid Anti-Corrosion Builder - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 0.35,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Liquid silicate for slurry processing & metal protection. optimized for bulk commercial applications."
   },
@@ -3097,7 +3158,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Silicate",
     "function": "Liquid Anti-Corrosion Builder - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 0.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Liquid silicate for slurry processing & metal protection. for sensitive & eco premium formulations."
   },
@@ -3109,7 +3170,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Silicate",
     "function": "Liquid Anti-Corrosion Builder - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 0.26,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Silicate Liquid (2.4 Ratio) for rapid cold-process compounding."
   },
@@ -3121,7 +3182,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Bicarbonate",
     "function": "Mild Alkaline Buffer & Odor Neutralizer - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.48,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Eco-friendly mild buffering builder. optimized for bulk commercial applications."
   },
@@ -3133,7 +3194,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Bicarbonate",
     "function": "Mild Alkaline Buffer & Odor Neutralizer - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.69,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Eco-friendly mild buffering builder. for sensitive & eco premium formulations."
   },
@@ -3145,7 +3206,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Bicarbonate",
     "function": "Mild Alkaline Buffer & Odor Neutralizer - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.36,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Bicarbonate (Baking Soda) for rapid cold-process compounding."
   },
@@ -3157,7 +3218,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.57,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Free-flowing mild alkaline builder crystal. optimized for bulk commercial applications."
   },
@@ -3169,7 +3230,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.81,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Free-flowing mild alkaline builder crystal. for sensitive & eco premium formulations."
   },
@@ -3181,7 +3242,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.42,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Sesquicarbonate for rapid cold-process compounding."
   },
@@ -3193,7 +3254,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Citric Acid",
     "function": "Acidifier & Chelating Agent - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 1.23,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Organic acid for pH control and metal ion sequestering. optimized for bulk commercial applications."
   },
@@ -3205,7 +3266,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Citric Acid",
     "function": "Acidifier & Chelating Agent - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 1.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Organic acid for pH control and metal ion sequestering. for sensitive & eco premium formulations."
   },
@@ -3217,7 +3278,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Citric Acid",
     "function": "Acidifier & Chelating Agent - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.91,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Citric Acid Anhydrous for rapid cold-process compounding."
   },
@@ -3229,7 +3290,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Citrate",
     "function": "Water Softener & Buffer - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 1.06,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Phosphate-free eco builder. optimized for bulk commercial applications."
   },
@@ -3241,7 +3302,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Citrate",
     "function": "Water Softener & Buffer - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 1.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Phosphate-free eco builder. for sensitive & eco premium formulations."
   },
@@ -3253,7 +3314,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Citrate",
     "function": "Water Softener & Buffer - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.78,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Citrate Dihydrate for rapid cold-process compounding."
   },
@@ -3265,7 +3326,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Heavy Metal Chelating Agent - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 2.46,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Strong chelating agent for calcium, magnesium, & iron ions. optimized for bulk commercial applications."
   },
@@ -3277,7 +3338,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Heavy Metal Chelating Agent - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 3.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Strong chelating agent for calcium, magnesium, & iron ions. for sensitive & eco premium formulations."
   },
@@ -3289,7 +3350,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Heavy Metal Chelating Agent - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.82,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Tetrasodium EDTA 99% Powder for rapid cold-process compounding."
   },
@@ -3301,7 +3362,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Liquid Metal Sequestering Agent - Industrial Tech Grade",
     "activeDefault": 39,
-    "costPerKg": 1.23,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Ready-to-use liquid EDTA solution. optimized for bulk commercial applications."
   },
@@ -3313,7 +3374,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Liquid Metal Sequestering Agent - High Purity Grade",
     "activeDefault": 39,
-    "costPerKg": 1.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Ready-to-use liquid EDTA solution. for sensitive & eco premium formulations."
   },
@@ -3325,7 +3386,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium EDTA",
     "function": "Liquid Metal Sequestering Agent - Ready Blend Solution",
     "activeDefault": 19,
-    "costPerKg": 0.91,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Tetrasodium EDTA 39% Liquid for rapid cold-process compounding."
   },
@@ -3337,7 +3398,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium EDTA",
     "function": "Acidic Metal Sequestering Agent - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 2.73,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Chelator for acidic/neutral detergent formulations. optimized for bulk commercial applications."
   },
@@ -3349,7 +3410,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium EDTA",
     "function": "Acidic Metal Sequestering Agent - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 3.88,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Chelator for acidic/neutral detergent formulations. for sensitive & eco premium formulations."
   },
@@ -3361,7 +3422,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium EDTA",
     "function": "Acidic Metal Sequestering Agent - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 2.02,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Disodium EDTA 99% for rapid cold-process compounding."
   },
@@ -3373,7 +3434,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium Glutamate Diacetate",
     "function": "Eco Readily Biodegradable Chelator - Industrial Tech Grade",
     "activeDefault": 47,
-    "costPerKg": 2.82,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Green plant-based biodegradable chelating agent. optimized for bulk commercial applications."
   },
@@ -3385,7 +3446,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium Glutamate Diacetate",
     "function": "Eco Readily Biodegradable Chelator - High Purity Grade",
     "activeDefault": 47,
-    "costPerKg": 4.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Green plant-based biodegradable chelating agent. for sensitive & eco premium formulations."
   },
@@ -3397,7 +3458,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Tetrasodium Glutamate Diacetate",
     "function": "Eco Readily Biodegradable Chelator - Ready Blend Solution",
     "activeDefault": 23,
-    "costPerKg": 2.08,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of GLDA 47% Liquid (Dissolvine GL-47) for rapid cold-process compounding."
   },
@@ -3409,7 +3470,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Trisodium Dicarboxymethyl Alaninate",
     "function": "High-Performance Eco Chelator - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 3.08,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Eco phosphate-alternative builder for automatic dishwashing & laundry. optimized for bulk commercial applications."
   },
@@ -3421,7 +3482,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Trisodium Dicarboxymethyl Alaninate",
     "function": "High-Performance Eco Chelator - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 4.38,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Eco phosphate-alternative builder for automatic dishwashing & laundry. for sensitive & eco premium formulations."
   },
@@ -3433,7 +3494,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Trisodium Dicarboxymethyl Alaninate",
     "function": "High-Performance Eco Chelator - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 2.27,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of MGDA 40% Liquid (Trilon M) for rapid cold-process compounding."
   },
@@ -3445,7 +3506,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Gluconate",
     "function": "Alkaline Iron & Hardness Chelator - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 1.41,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Bio-based chelator effective in highly alkaline caustic solutions. optimized for bulk commercial applications."
   },
@@ -3457,7 +3518,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Gluconate",
     "function": "Alkaline Iron & Hardness Chelator - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 2.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Bio-based chelator effective in highly alkaline caustic solutions. for sensitive & eco premium formulations."
   },
@@ -3469,7 +3530,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Gluconate",
     "function": "Alkaline Iron & Hardness Chelator - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.04,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Gluconate 99% for rapid cold-process compounding."
   },
@@ -3481,7 +3542,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Triphosphate",
     "function": "Classic Detergent Builder - Industrial Tech Grade",
     "activeDefault": 94,
-    "costPerKg": 1.58,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Heavy duty builder for soil suspension & water softening. optimized for bulk commercial applications."
   },
@@ -3493,7 +3554,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Triphosphate",
     "function": "Classic Detergent Builder - High Purity Grade",
     "activeDefault": 94,
-    "costPerKg": 2.25,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Heavy duty builder for soil suspension & water softening. for sensitive & eco premium formulations."
   },
@@ -3505,7 +3566,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Triphosphate",
     "function": "Classic Detergent Builder - Ready Blend Solution",
     "activeDefault": 47,
-    "costPerKg": 1.17,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Tripolyphosphate 94% (STPP) for rapid cold-process compounding."
   },
@@ -3517,7 +3578,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Etidronic Acid",
     "function": "Organophosphonate Scale Inhibitor - Industrial Tech Grade",
     "activeDefault": 60,
-    "costPerKg": 3.34,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High stability phosphonate scale and stain chelator. optimized for bulk commercial applications."
   },
@@ -3529,7 +3590,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Etidronic Acid",
     "function": "Organophosphonate Scale Inhibitor - High Purity Grade",
     "activeDefault": 60,
-    "costPerKg": 4.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High stability phosphonate scale and stain chelator. for sensitive & eco premium formulations."
   },
@@ -3541,7 +3602,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Etidronic Acid",
     "function": "Organophosphonate Scale Inhibitor - Ready Blend Solution",
     "activeDefault": 30,
-    "costPerKg": 2.47,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of HEDP 60% (Etidronic Acid) for rapid cold-process compounding."
   },
@@ -3553,7 +3614,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Subtilisin",
     "function": "Protein Stain Removal Enzyme - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 11.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Enzyme targeting blood, grass, milk, and protein soils. optimized for bulk commercial applications."
   },
@@ -3565,7 +3626,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Subtilisin",
     "function": "Protein Stain Removal Enzyme - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 15.62,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Enzyme targeting blood, grass, milk, and protein soils. for sensitive & eco premium formulations."
   },
@@ -3577,7 +3638,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Subtilisin",
     "function": "Protein Stain Removal Enzyme - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 8.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Protease Liquid (Savinase / Alcalase) for rapid cold-process compounding."
   },
@@ -3589,7 +3650,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alpha-Amylase",
     "function": "Starch Stain Removal Enzyme - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 12.32,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Enzyme breaking down starch, pasta, sauce, and food residues. optimized for bulk commercial applications."
   },
@@ -3601,7 +3662,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alpha-Amylase",
     "function": "Starch Stain Removal Enzyme - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 17.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Enzyme breaking down starch, pasta, sauce, and food residues. for sensitive & eco premium formulations."
   },
@@ -3613,7 +3674,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alpha-Amylase",
     "function": "Starch Stain Removal Enzyme - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 9.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Amylase Liquid (Stainzyme / Termamyl) for rapid cold-process compounding."
   },
@@ -3625,7 +3686,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triacylglycerol Lipase",
     "function": "Fat & Oil Stain Removal Enzyme - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 15.84,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Enzyme degrading lipid, grease, oil, and sebum soils. optimized for bulk commercial applications."
   },
@@ -3637,7 +3698,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triacylglycerol Lipase",
     "function": "Fat & Oil Stain Removal Enzyme - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 22.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Enzyme degrading lipid, grease, oil, and sebum soils. for sensitive & eco premium formulations."
   },
@@ -3649,7 +3710,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Triacylglycerol Lipase",
     "function": "Fat & Oil Stain Removal Enzyme - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 11.7,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Lipase Liquid (Lipex) for rapid cold-process compounding."
   },
@@ -3661,7 +3722,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulase",
     "function": "Fabric Care & Anti-Pilling Enzyme - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 14.52,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Enzyme removing microfibrils, reviving fabric color & brightness. optimized for bulk commercial applications."
   },
@@ -3673,7 +3734,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulase",
     "function": "Fabric Care & Anti-Pilling Enzyme - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 20.62,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Enzyme removing microfibrils, reviving fabric color & brightness. for sensitive & eco premium formulations."
   },
@@ -3685,7 +3746,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulase",
     "function": "Fabric Care & Anti-Pilling Enzyme - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 10.72,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Cellulase Liquid (Carezyme) for rapid cold-process compounding."
   },
@@ -3697,7 +3758,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Mannan Endoperoxidase",
     "function": "Guar & Food Gum Stain Enzyme - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 19.36,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Enzyme breaking down food thickeners, ice cream, & dressing stains. optimized for bulk commercial applications."
   },
@@ -3709,7 +3770,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Mannan Endoperoxidase",
     "function": "Guar & Food Gum Stain Enzyme - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 27.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Enzyme breaking down food thickeners, ice cream, & dressing stains. for sensitive & eco premium formulations."
   },
@@ -3721,7 +3782,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Mannan Endoperoxidase",
     "function": "Guar & Food Gum Stain Enzyme - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 14.3,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Mannanase Liquid (Mannaway) for rapid cold-process compounding."
   },
@@ -3733,7 +3794,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Xanthan Gum",
     "function": "Natural Polysaccharide Thickener - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 5.72,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Pseudoplastic natural rheology modifier. optimized for bulk commercial applications."
   },
@@ -3745,7 +3806,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Xanthan Gum",
     "function": "Natural Polysaccharide Thickener - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 8.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Pseudoplastic natural rheology modifier. for sensitive & eco premium formulations."
   },
@@ -3757,7 +3818,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Xanthan Gum",
     "function": "Natural Polysaccharide Thickener - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 4.23,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Xanthan Gum 200 Mesh for rapid cold-process compounding."
   },
@@ -3769,7 +3830,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulose Gum",
     "function": "Anti-Redeposition Agent & Thickener - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.11,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Polymeric soil suspension agent preventing soil re-attachment. optimized for bulk commercial applications."
   },
@@ -3781,7 +3842,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulose Gum",
     "function": "Anti-Redeposition Agent & Thickener - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 3.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Polymeric soil suspension agent preventing soil re-attachment. for sensitive & eco premium formulations."
   },
@@ -3793,7 +3854,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Cellulose Gum",
     "function": "Anti-Redeposition Agent & Thickener - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Carboxymethyl Cellulose Technical (CMC) for rapid cold-process compounding."
   },
@@ -3805,7 +3866,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Hydroxypropyl Methylcellulose",
     "function": "Cellulosic Viscosity Builder - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 6.34,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High clarity non-ionic water soluble polymer thickener. optimized for bulk commercial applications."
   },
@@ -3817,7 +3878,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Hydroxypropyl Methylcellulose",
     "function": "Cellulosic Viscosity Builder - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 9.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High clarity non-ionic water soluble polymer thickener. for sensitive & eco premium formulations."
   },
@@ -3829,7 +3890,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Hydroxypropyl Methylcellulose",
     "function": "Cellulosic Viscosity Builder - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 4.68,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Hydroxypropyl Methylcellulose 100,000 cps (HPMC) for rapid cold-process compounding."
   },
@@ -3841,7 +3902,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Carbomer",
     "function": "Crosslinked Polyacrylate Gel Polymer - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 10.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High clarity gel thickener requiring alkali neutralization. optimized for bulk commercial applications."
   },
@@ -3853,7 +3914,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Carbomer",
     "function": "Crosslinked Polyacrylate Gel Polymer - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 15.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High clarity gel thickener requiring alkali neutralization. for sensitive & eco premium formulations."
   },
@@ -3865,7 +3926,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Carbomer",
     "function": "Crosslinked Polyacrylate Gel Polymer - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 7.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Carbomer 940 for rapid cold-process compounding."
   },
@@ -3877,7 +3938,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Acrylates Copolymer",
     "function": "Alkali Swellable Emulsion Thickener - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 3.96,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Acidic liquid emulsion thickening upon alkali neutralization. optimized for bulk commercial applications."
   },
@@ -3889,7 +3950,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Acrylates Copolymer",
     "function": "Alkali Swellable Emulsion Thickener - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 5.62,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Acidic liquid emulsion thickening upon alkali neutralization. for sensitive & eco premium formulations."
   },
@@ -3901,7 +3962,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Acrylates Copolymer",
     "function": "Alkali Swellable Emulsion Thickener - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 2.93,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Acrysol 33 (ASE Polymer 30%) for rapid cold-process compounding."
   },
@@ -3913,7 +3974,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PVP",
     "function": "Dye Transfer Inhibitor Polymer - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 7.48,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Polymer trapping loose fugitive dyes in wash water. optimized for bulk commercial applications."
   },
@@ -3925,7 +3986,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PVP",
     "function": "Dye Transfer Inhibitor Polymer - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 10.62,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Polymer trapping loose fugitive dyes in wash water. for sensitive & eco premium formulations."
   },
@@ -3937,7 +3998,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PVP",
     "function": "Dye Transfer Inhibitor Polymer - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 5.53,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Polyvinylpyrrolidone K30 (PVP K30) for rapid cold-process compounding."
   },
@@ -3949,7 +4010,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 12.32,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High performance dye anti-redeposition polymer. optimized for bulk commercial applications."
   },
@@ -3961,7 +4022,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 17.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High performance dye anti-redeposition polymer. for sensitive & eco premium formulations."
   },
@@ -3973,7 +4034,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 9.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of PVNO 40% Liquid (Polyvinylpyridine N-Oxide) for rapid cold-process compounding."
   },
@@ -3985,7 +4046,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-90",
     "function": "Binder & Processing Aid - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 2.55,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Solid flake polyethylene glycol binder for tablet detergents. optimized for bulk commercial applications."
   },
@@ -3997,7 +4058,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-90",
     "function": "Binder & Processing Aid - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 3.62,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Solid flake polyethylene glycol binder for tablet detergents. for sensitive & eco premium formulations."
   },
@@ -4009,7 +4070,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "PEG-90",
     "function": "Binder & Processing Aid - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 1.89,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Polyethylene Glycol 4000 (PEG 4000) for rapid cold-process compounding."
   },
@@ -4021,7 +4082,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Water",
     "function": "Solvent & Liquid Carrier Base - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.02,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Pure deionized water matrix for liquid detergent formulations. optimized for bulk commercial applications."
   },
@@ -4033,7 +4094,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Water",
     "function": "Solvent & Liquid Carrier Base - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.03,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Pure deionized water matrix for liquid detergent formulations. for sensitive & eco premium formulations."
   },
@@ -4045,7 +4106,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Water",
     "function": "Solvent & Liquid Carrier Base - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.01,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Demineralized Water (Aqua) for rapid cold-process compounding."
   },
@@ -4057,7 +4118,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Hydrotrope & Coupling Agent - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 1.28,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Anionic hydrotrope increasing solubility of surfactants in aqueous solutions. optimized for bulk commercial applications."
   },
@@ -4069,7 +4130,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Hydrotrope & Coupling Agent - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 1.81,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Anionic hydrotrope increasing solubility of surfactants in aqueous solutions. for sensitive & eco premium formulations."
   },
@@ -4081,7 +4142,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Hydrotrope & Coupling Agent - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 0.94,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Xylene Sulfonate 40% (SXS 40) for rapid cold-process compounding."
   },
@@ -4093,7 +4154,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Concentrated Solid Hydrotrope - Industrial Tech Grade",
     "activeDefault": 90,
-    "costPerKg": 2.82,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Powder hydrotrope for concentrated liquid/solid formulations. optimized for bulk commercial applications."
   },
@@ -4105,7 +4166,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Concentrated Solid Hydrotrope - High Purity Grade",
     "activeDefault": 90,
-    "costPerKg": 4.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Powder hydrotrope for concentrated liquid/solid formulations. for sensitive & eco premium formulations."
   },
@@ -4117,7 +4178,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Xylene Sulfonate",
     "function": "Concentrated Solid Hydrotrope - Ready Blend Solution",
     "activeDefault": 45,
-    "costPerKg": 2.08,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Xylene Sulfonate 90% Powder (SXS 90) for rapid cold-process compounding."
   },
@@ -4129,7 +4190,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - Industrial Tech Grade",
     "activeDefault": 40,
-    "costPerKg": 1.58,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High potassium compatibility hydrotrope. optimized for bulk commercial applications."
   },
@@ -4141,7 +4202,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - High Purity Grade",
     "activeDefault": 40,
-    "costPerKg": 2.25,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High potassium compatibility hydrotrope. for sensitive & eco premium formulations."
   },
@@ -4153,7 +4214,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - Ready Blend Solution",
     "activeDefault": 20,
-    "costPerKg": 1.17,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Potassium Xylene Sulfonate 40% (PXS) for rapid cold-process compounding."
   },
@@ -4165,7 +4226,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Propylene Glycol",
     "function": "Co-Solvent, Enzyme Stabilizer & Antifreeze - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 1.85,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Glycol solvent stabilizing enzymes and lowering freeze point. optimized for bulk commercial applications."
   },
@@ -4177,7 +4238,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Propylene Glycol",
     "function": "Co-Solvent, Enzyme Stabilizer & Antifreeze - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 2.62,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Glycol solvent stabilizing enzymes and lowering freeze point. for sensitive & eco premium formulations."
   },
@@ -4189,7 +4250,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Propylene Glycol",
     "function": "Co-Solvent, Enzyme Stabilizer & Antifreeze - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.37,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Monopropylene Glycol 99.5% (MPG / Propylene Glycol) for rapid cold-process compounding."
   },
@@ -4201,7 +4262,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Glycerin",
     "function": "Humectant & Eco Solvent - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 1.23,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Plant-derived bio-glycerol humectant and enzyme stabilizer. optimized for bulk commercial applications."
   },
@@ -4213,7 +4274,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Glycerin",
     "function": "Humectant & Eco Solvent - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 1.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Plant-derived bio-glycerol humectant and enzyme stabilizer. for sensitive & eco premium formulations."
   },
@@ -4225,7 +4286,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Glycerin",
     "function": "Humectant & Eco Solvent - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 0.91,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Glycerin 99.5% USP for rapid cold-process compounding."
   },
@@ -4237,7 +4298,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alcohol Denat.",
     "function": "Flash Drying Solvent & Viscosity Modifier - Industrial Tech Grade",
     "activeDefault": 96,
-    "costPerKg": 1.58,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Volatile solvent for quick-drying hard surface & glass cleaners. optimized for bulk commercial applications."
   },
@@ -4249,7 +4310,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alcohol Denat.",
     "function": "Flash Drying Solvent & Viscosity Modifier - High Purity Grade",
     "activeDefault": 96,
-    "costPerKg": 2.25,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Volatile solvent for quick-drying hard surface & glass cleaners. for sensitive & eco premium formulations."
   },
@@ -4261,7 +4322,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Alcohol Denat.",
     "function": "Flash Drying Solvent & Viscosity Modifier - Ready Blend Solution",
     "activeDefault": 48,
-    "costPerKg": 1.17,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Ethanol 96% Denatured for rapid cold-process compounding."
   },
@@ -4273,7 +4334,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Isopropyl Alcohol",
     "function": "Degreasing Solvent & Sanitizer - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 1.72,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Fast evaporating solvent for heavy oil degreasing. optimized for bulk commercial applications."
   },
@@ -4285,7 +4346,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Isopropyl Alcohol",
     "function": "Degreasing Solvent & Sanitizer - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 2.44,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Fast evaporating solvent for heavy oil degreasing. for sensitive & eco premium formulations."
   },
@@ -4297,7 +4358,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Isopropyl Alcohol",
     "function": "Degreasing Solvent & Sanitizer - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.27,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Isopropanol 99% (IPA / Isopropyl Alcohol) for rapid cold-process compounding."
   },
@@ -4309,7 +4370,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Methylchloroisothiazolinone / Methylisothiazolinone",
     "function": "Broad Spectrum Preservative - Industrial Tech Grade",
     "activeDefault": 1.5,
-    "costPerKg": 10.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Low dose broad spectrum liquid preservative for neutral/acidic formulas. optimized for bulk commercial applications."
   },
@@ -4321,7 +4382,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Methylchloroisothiazolinone / Methylisothiazolinone",
     "function": "Broad Spectrum Preservative - High Purity Grade",
     "activeDefault": 1.5,
-    "costPerKg": 15.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Low dose broad spectrum liquid preservative for neutral/acidic formulas. for sensitive & eco premium formulations."
   },
@@ -4333,7 +4394,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Methylchloroisothiazolinone / Methylisothiazolinone",
     "function": "Broad Spectrum Preservative - Ready Blend Solution",
     "activeDefault": 10,
-    "costPerKg": 7.8,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Kathon CG (CMIT/MIT 1.5%) for rapid cold-process compounding."
   },
@@ -4345,7 +4406,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzisothiazolinone",
     "function": "Alkaline Stable Liquid Preservative - Industrial Tech Grade",
     "activeDefault": 20,
-    "costPerKg": 16.28,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Preservative stable at high pH (> 8.5) and elevated temperature. optimized for bulk commercial applications."
   },
@@ -4357,7 +4418,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzisothiazolinone",
     "function": "Alkaline Stable Liquid Preservative - High Purity Grade",
     "activeDefault": 20,
-    "costPerKg": 23.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Preservative stable at high pH (> 8.5) and elevated temperature. for sensitive & eco premium formulations."
   },
@@ -4369,7 +4430,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Benzisothiazolinone",
     "function": "Alkaline Stable Liquid Preservative - Ready Blend Solution",
     "activeDefault": 10,
-    "costPerKg": 12.03,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Benzisothiazolinone 20% (BIT 20 / Proxel GXL) for rapid cold-process compounding."
   },
@@ -4381,7 +4442,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Phenoxyethanol",
     "function": "Mild Paraben-Free Preservative - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 4.84,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Broad spectrum gentle preservative. optimized for bulk commercial applications."
   },
@@ -4393,7 +4454,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Phenoxyethanol",
     "function": "Mild Paraben-Free Preservative - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 6.88,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Broad spectrum gentle preservative. for sensitive & eco premium formulations."
   },
@@ -4405,7 +4466,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Phenoxyethanol",
     "function": "Mild Paraben-Free Preservative - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 3.58,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Phenoxyethanol 99% for rapid cold-process compounding."
   },
@@ -4417,7 +4478,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Benzoate",
     "function": "Acidic Food-Grade Preservative - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 1.58,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Organic acid preservative active at pH < 5.5. optimized for bulk commercial applications."
   },
@@ -4429,7 +4490,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Benzoate",
     "function": "Acidic Food-Grade Preservative - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 2.25,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Organic acid preservative active at pH < 5.5. for sensitive & eco premium formulations."
   },
@@ -4441,7 +4502,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Benzoate",
     "function": "Acidic Food-Grade Preservative - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 1.17,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Benzoate 99% for rapid cold-process compounding."
   },
@@ -4453,7 +4514,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Sorbate",
     "function": "Anti-Fungal Eco Preservative - Industrial Tech Grade",
     "activeDefault": 99,
-    "costPerKg": 2.82,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Anti-mold eco preservative active in acidic media. optimized for bulk commercial applications."
   },
@@ -4465,7 +4526,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Sorbate",
     "function": "Anti-Fungal Eco Preservative - High Purity Grade",
     "activeDefault": 99,
-    "costPerKg": 4.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Anti-mold eco preservative active in acidic media. for sensitive & eco premium formulations."
   },
@@ -4477,7 +4538,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Potassium Sorbate",
     "function": "Anti-Fungal Eco Preservative - Ready Blend Solution",
     "activeDefault": 49,
-    "costPerKg": 2.08,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Potassium Sorbate 99% for rapid cold-process compounding."
   },
@@ -4489,7 +4550,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Distyrylbiphenyl Disulfonate",
     "function": "Fluorescent Whitening Agent for Liquids - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 21.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade High performance soluble optical brightener for laundry liquids. optimized for bulk commercial applications."
   },
@@ -4501,7 +4562,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Distyrylbiphenyl Disulfonate",
     "function": "Fluorescent Whitening Agent for Liquids - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 30.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity High performance soluble optical brightener for laundry liquids. for sensitive & eco premium formulations."
   },
@@ -4513,7 +4574,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium Distyrylbiphenyl Disulfonate",
     "function": "Fluorescent Whitening Agent for Liquids - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 15.6,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Optical Brightener CBS-X (Tinopal CBS-X) for rapid cold-process compounding."
   },
@@ -4525,7 +4586,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium 4,4'-bis[(4-anilino-6-morpholino-1,3,5-triazin-2-yl)amino]stilbene-2,2'-disulfonate",
     "function": "Cotton Optical Whitener - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 15.84,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Cellulosic fiber optical whitener. optimized for bulk commercial applications."
   },
@@ -4537,7 +4598,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium 4,4'-bis[(4-anilino-6-morpholino-1,3,5-triazin-2-yl)amino]stilbene-2,2'-disulfonate",
     "function": "Cotton Optical Whitener - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 22.5,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Cellulosic fiber optical whitener. for sensitive & eco premium formulations."
   },
@@ -4549,7 +4610,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Disodium 4,4'-bis[(4-anilino-6-morpholino-1,3,5-triazin-2-yl)amino]stilbene-2,2'-disulfonate",
     "function": "Cotton Optical Whitener - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 11.7,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Fluorescent Brightener 28 for rapid cold-process compounding."
   },
@@ -4561,7 +4622,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "CI 42090",
     "function": "Water-Soluble Blue Detergent Dye - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 13.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Standard liquid blue dye for detergent identification. optimized for bulk commercial applications."
   },
@@ -4573,7 +4634,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "CI 42090",
     "function": "Water-Soluble Blue Detergent Dye - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 18.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Standard liquid blue dye for detergent identification. for sensitive & eco premium formulations."
   },
@@ -4585,7 +4646,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "CI 42090",
     "function": "Water-Soluble Blue Detergent Dye - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 9.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Acid Blue 9 Liquid Colorant for rapid cold-process compounding."
   },
@@ -4597,7 +4658,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 24.64,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Polymeric non-staining dye for laundry liquids. optimized for bulk commercial applications."
   },
@@ -4609,7 +4670,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 35.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Polymeric non-staining dye for laundry liquids. for sensitive & eco premium formulations."
   },
@@ -4621,7 +4682,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 18.2,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Liquitint Blue HP for rapid cold-process compounding."
   },
@@ -4633,7 +4694,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dimethicone",
     "function": "Foam Control & Defoamer - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 4.22,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Silicone emulsion rapidly collapsing excess foam in automatic washers. optimized for bulk commercial applications."
   },
@@ -4645,7 +4706,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dimethicone",
     "function": "Foam Control & Defoamer - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 6.0,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Silicone emulsion rapidly collapsing excess foam in automatic washers. for sensitive & eco premium formulations."
   },
@@ -4657,7 +4718,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Dimethicone",
     "function": "Foam Control & Defoamer - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 3.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Silicone Antifoam Emulsion 30% for rapid cold-process compounding."
   },
@@ -4669,7 +4730,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sulfate",
     "function": "Filler & Processing Aid Powder - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.22,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Standard inert bulking agent for detergent powders. optimized for bulk commercial applications."
   },
@@ -4681,7 +4742,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sulfate",
     "function": "Filler & Processing Aid Powder - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.31,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Standard inert bulking agent for detergent powders. for sensitive & eco premium formulations."
   },
@@ -4693,7 +4754,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Sulfate",
     "function": "Filler & Processing Aid Powder - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.16,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Sulfate Anhydrous for rapid cold-process compounding."
   },
@@ -4705,7 +4766,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Chloride",
     "function": "Viscosity Builder for Anionics - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 0.13,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Electrolyte thickener building micellar viscosity with SLES & CAPB. optimized for bulk commercial applications."
   },
@@ -4717,7 +4778,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Chloride",
     "function": "Viscosity Builder for Anionics - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 0.19,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Electrolyte thickener building micellar viscosity with SLES & CAPB. for sensitive & eco premium formulations."
   },
@@ -4729,7 +4790,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Sodium Chloride",
     "function": "Viscosity Builder for Anionics - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 0.1,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Sodium Chloride (Vacuum Salt) for rapid cold-process compounding."
   },
@@ -4741,7 +4802,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Calcium Chloride",
     "function": "Enzyme Stabilizer & Fabric Softener Viscosity Aid - Industrial Tech Grade",
     "activeDefault": 74,
-    "costPerKg": 0.4,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Source of calcium ions stabilizing protease & controlling softener viscosity. optimized for bulk commercial applications."
   },
@@ -4753,7 +4814,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Calcium Chloride",
     "function": "Enzyme Stabilizer & Fabric Softener Viscosity Aid - High Purity Grade",
     "activeDefault": 74,
-    "costPerKg": 0.56,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Source of calcium ions stabilizing protease & controlling softener viscosity. for sensitive & eco premium formulations."
   },
@@ -4765,7 +4826,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Calcium Chloride",
     "function": "Enzyme Stabilizer & Fabric Softener Viscosity Aid - Ready Blend Solution",
     "activeDefault": 37,
-    "costPerKg": 0.29,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Calcium Chloride 74% Flakes for rapid cold-process compounding."
   },
@@ -4777,7 +4838,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Styrene/Acrylates Copolymer",
     "function": "Milky White Lotion Opacifier - Industrial Tech Grade",
     "activeDefault": 30,
-    "costPerKg": 3.34,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Polymeric emulsion imparting milky white opaque appearance. optimized for bulk commercial applications."
   },
@@ -4789,7 +4850,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Styrene/Acrylates Copolymer",
     "function": "Milky White Lotion Opacifier - High Purity Grade",
     "activeDefault": 30,
-    "costPerKg": 4.75,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Polymeric emulsion imparting milky white opaque appearance. for sensitive & eco premium formulations."
   },
@@ -4801,7 +4862,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Styrene/Acrylates Copolymer",
     "function": "Milky White Lotion Opacifier - Ready Blend Solution",
     "activeDefault": 15,
-    "costPerKg": 2.47,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Styrene/Acrylates Opacifier 30% for rapid cold-process compounding."
   },
@@ -4813,7 +4874,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Zinc Ricinoleate",
     "function": "Chemical Odor Absorber - Industrial Tech Grade",
     "activeDefault": 100,
-    "costPerKg": 12.76,
+    "costPerKg": null,
     "hlb": null,
     "description": "Technical grade Zinc salt trapping nitrogen and sulfur malodor molecules. optimized for bulk commercial applications."
   },
@@ -4825,7 +4886,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Zinc Ricinoleate",
     "function": "Chemical Odor Absorber - High Purity Grade",
     "activeDefault": 100,
-    "costPerKg": 18.12,
+    "costPerKg": null,
     "hlb": null,
     "description": "High purity low-impurity Zinc salt trapping nitrogen and sulfur malodor molecules. for sensitive & eco premium formulations."
   },
@@ -4837,9 +4898,345 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "inciName": "Zinc Ricinoleate",
     "function": "Chemical Odor Absorber - Ready Blend Solution",
     "activeDefault": 50,
-    "costPerKg": 9.43,
+    "costPerKg": null,
     "hlb": null,
     "description": "Liquid pre-dissolved solution of Zinc Ricinoleate 100% for rapid cold-process compounding."
+  },
+  {
+    "id": "sodium-percarbonate-uni",
+    "name": "Sodium Percarbonate (Active Oxygen Bleach)",
+    "category": "Bleach & Oxidizer",
+    "casNumber": "15630-89-4",
+    "inciName": "Sodium Carbonate Peroxide",
+    "function": "Active Oxygen Destaining Bleach",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Granular active oxygen bleach releasing hydrogen peroxide in washing liquor."
+  },
+  {
+    "id": "taed-bleach-activator",
+    "name": "TAED Bleach Activator (Tetraacetylethylenediamine)",
+    "category": "Bleach & Oxidizer",
+    "casNumber": "10543-57-4",
+    "inciName": "Tetraacetylethylenediamine",
+    "function": "Low Temperature Oxygen Bleach Activator",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Peracetic acid precursor enabling cold-water stain bleaching from 20°C."
+  },
+  {
+    "id": "zeolite-4a",
+    "name": "Zeolite 4A Builder Powder",
+    "category": "Alkaline Builder",
+    "casNumber": "1318-02-1",
+    "inciName": "Zeolite",
+    "function": "Phosphate-Free Calcium Ion Exchange Builder",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Synthetic sodium aluminosilicate ion-exchange builder for eco laundry powders."
+  },
+  {
+    "id": "hcl-33-uni",
+    "name": "Hydrochloric Acid 33% (HCl Technical)",
+    "category": "Acid & Descaler",
+    "casNumber": "7647-01-0",
+    "inciName": "Hydrochloric Acid",
+    "function": "Strong Mineral Acid Scale Dissolver",
+    "activeDefault": 33,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Concentrated technical grade hydrochloric acid for heavy toilet descaling."
+  },
+  {
+    "id": "sulfamic-acid-uni",
+    "name": "Sulfamic Acid 99% Granular",
+    "category": "Acid & Descaler",
+    "casNumber": "5329-14-6",
+    "inciName": "Sulfamic Acid",
+    "function": "Solid Organic Acid Scale Remover",
+    "activeDefault": 99,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Dry granular organic acid descaler with low corrosion profile on metals."
+  },
+  {
+    "id": "glycolic-acid-70",
+    "name": "Glycolic Acid 70% Liquid",
+    "category": "Acid & Descaler",
+    "casNumber": "79-14-1",
+    "inciName": "Glycolic Acid",
+    "function": "Alpha-Hydroxy Acid Soap Scum Penetrator",
+    "activeDefault": 70,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "High-efficiency calcium soap scum and scale penetrator for bathroom tiles."
+  },
+  {
+    "id": "lactic-acid-88",
+    "name": "Lactic Acid 88% Liquid",
+    "category": "Acid & Descaler",
+    "casNumber": "50-21-5",
+    "inciName": "Lactic Acid",
+    "function": "Natural Fermentation Acid Descaler & Sanitizer",
+    "activeDefault": 88,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Eco bio-based AHA providing limescale removal and mild antibacterial action."
+  },
+  {
+    "id": "d-limonene-pure",
+    "name": "D-Limonene (Natural Citrus Terpene 95%)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "5989-27-5",
+    "inciName": "Limonene",
+    "function": "Natural Heavy Grease Solvent & Citrus Aroma",
+    "activeDefault": 95,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Cold-pressed orange peel solvent dissolving heavy grease, tar, and adhesive soils."
+  },
+  {
+    "id": "pine-oil-85",
+    "name": "Natural Pine Oil (85%)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "8002-09-3",
+    "inciName": "Pinus Palustris Oil",
+    "function": "Natural Terpene Solvent & Pine Disinfectant Base",
+    "activeDefault": 85,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Steam-distilled pine terpene oil for floor cleaning emulsions and deodorizing."
+  },
+  {
+    "id": "scs-40",
+    "name": "Sodium Cumene Sulfonate 40% (SCS 40)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "28348-53-0",
+    "inciName": "Sodium Cumene Sulfonate",
+    "function": "Coupling Hydrotrope & Cloud Point Booster",
+    "activeDefault": 40,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Hydrotropic solubilizer coupling nonionics and solvents in clear aqueous solutions."
+  },
+  {
+    "id": "egbe-butyl-glycol",
+    "name": "Ethylene Glycol Monobutyl Ether (Butyl Cellosolve / EGBE)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "111-76-2",
+    "inciName": "Butoxyethanol",
+    "function": "High-Efficiency Grease & Carbonized Soil Solvent",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Powerful fast-coupling glycol ether solvent for industrial oven and glass cleaners."
+  },
+  {
+    "id": "bdg-butyl-diglycol",
+    "name": "Diethylene Glycol Monobutyl Ether (Butyl Diglycol / BDG)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "112-34-5",
+    "inciName": "Butoxydiglycol",
+    "function": "Slow Evaporating Heavy Grease Solvent",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "High-boiling coalescing glycol ether solvent for deep oven fat removal."
+  },
+  {
+    "id": "pm-solvent",
+    "name": "Propylene Glycol Monomethyl Ether (PM Solvent)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "107-98-2",
+    "inciName": "Methoxyisopropanol",
+    "function": "Fast Evaporating Low-Toxicity Surface Solvent",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Low-toxicity P-series glycol ether solvent for streak-free all-purpose cleaners."
+  },
+  {
+    "id": "dpnb-solvent",
+    "name": "Dipropylene Glycol n-Butyl Ether (DPnB Solvent)",
+    "category": "Solvent & Hydrotrope",
+    "casNumber": "29911-28-2",
+    "inciName": "Dipropylene Glycol Butyl Ether",
+    "function": "Hydrophobic Soil Dissolving Solvent",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Slow-evaporating hydrophobic solvent for tough bathroom soap scum and grease."
+  },
+  {
+    "id": "ammonia-25",
+    "name": "Ammonium Hydroxide 25% (Ammonia Water)",
+    "category": "Neutralizer / Base",
+    "casNumber": "1336-21-6",
+    "inciName": "Ammonium Hydroxide",
+    "function": "Volatile Alkaline Grease Cutter & Glass Shine",
+    "activeDefault": 25,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Volatile alkali evaporating completely without leaving residue on glass surfaces."
+  },
+  {
+    "id": "pcmx-chloroxylenol",
+    "name": "Chloroxylenol 99% (PCMX)",
+    "category": "Preservative & Biocide",
+    "casNumber": "88-04-0",
+    "inciName": "Chloroxylenol",
+    "function": "Broad-Spectrum Antibacterial Active",
+    "activeDefault": 99,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Dettol-type halogenated phenolic disinfectant active for antimicrobial soaps."
+  },
+  {
+    "id": "egds-pearlizer",
+    "name": "Glycol Distearate (EGDS Pearlizer)",
+    "category": "Additive & Performance",
+    "casNumber": "627-83-8",
+    "inciName": "Glycol Distearate",
+    "function": "Opacifying Pearlizing Agent",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": 1.5,
+    "description": "Diester crystal former providing rich silky pearlescence to hand soaps."
+  },
+  {
+    "id": "d-panthenol",
+    "name": "D-Panthenol 99% (Pro-Vitamin B5)",
+    "category": "Additive & Performance",
+    "casNumber": "81-13-0",
+    "inciName": "Panthenol",
+    "function": "Skin Barrier Conditioner & Humectant",
+    "activeDefault": 99,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Deep-penetrating provitamin humectant soothing hand skin during frequent washing."
+  },
+  {
+    "id": "peg-120-thickener",
+    "name": "PEG-120 Methyl Glucose Dioleate Thickener",
+    "category": "Polymer & Thickener",
+    "casNumber": "86893-19-8",
+    "inciName": "PEG-120 Methyl Glucose Dioleate",
+    "function": "Ultra-Mild Sulfate-Free Viscosity Builder",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Nonionic natural glucose derivative thickening sulfate-free surfactant systems."
+  },
+  {
+    "id": "carnauba-wax-emulsion",
+    "name": "Carnauba Wax Microemulsion 20%",
+    "category": "Additive & Performance",
+    "casNumber": "8015-86-9",
+    "inciName": "Copernicia Cerifera Cera",
+    "function": "Water-Beading Auto Gloss Wax Additive",
+    "activeDefault": 20,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Micro-emulsified natural carnauba wax delivering hydrophobic sheeting to paintwork."
+  },
+  {
+    "id": "anti-fog-polymer",
+    "name": "Anti-Fog Hydrophilic Surface Polymer",
+    "category": "Polymer & Thickener",
+    "casNumber": "25085-34-1",
+    "inciName": "Acrylates Copolymer",
+    "function": "Hydrophilic Sheeting Anti-Fog Film Former",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Surface-substantive polymer preventing water vapor condensation droplets on glass."
+  },
+  {
+    "id": "perfume-compound",
+    "name": "Commercial Perfume & Essential Fragrance Compound",
+    "category": "Additive & Performance",
+    "casNumber": "N/A",
+    "inciName": "Parfum",
+    "function": "Long-Lasting Aesthetic Fragrance",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "IFRA-compliant industrial fragrance compound for detergent scent."
+  },
+  {
+    "id": "dye-colorant",
+    "name": "Aesthetic Colorant & Liquid Dye Solution",
+    "category": "Optical Brightener & Dye",
+    "casNumber": "N/A",
+    "inciName": "Colorant (CI Blend)",
+    "function": "Visual Product Identity Colorant",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Non-staining water-soluble dye blend for product identification."
+  },
+  {
+    "id": "acid-corrosion-inhibitor",
+    "name": "Acid Corrosion Inhibitor (Propargyl Alcohol Derivative)",
+    "category": "Additive & Performance",
+    "casNumber": "107-19-7",
+    "inciName": "Propargyl Alcohol",
+    "function": "Acid Pickling & Pipe Corrosion Inhibitor",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Specialty acetylenic inhibitor preventing HCl attack on plumbing and pipe walls."
+  },
+  {
+    "id": "tallow-amine-oxide",
+    "name": "Tallow Amine Ethoxylate / Amine Oxide Acid Thickener",
+    "category": "Polymer & Thickener",
+    "casNumber": "61791-26-2",
+    "inciName": "PEG-2 Tallow Amine",
+    "function": "Strong Mineral Acid Vertical Cling Thickener",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Cationic amine ethoxylate structuring 10% HCl into clinging vertical bowl gel."
+  },
+  {
+    "id": "cationic-polymer-emulsion",
+    "name": "Cationic Polymer Thickening Emulsion",
+    "category": "Polymer & Thickener",
+    "casNumber": "9003-05-8",
+    "inciName": "Polyquaternium-37",
+    "function": "Cationic Fabric Softener Viscosity Builder",
+    "activeDefault": 30,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Liquid dispersion polymer for stabilizing esterquat fabric conditioner emulsions."
+  },
+  {
+    "id": "amino-silicone-emulsion",
+    "name": "Amino-Functional Silicone Emulsion (35%)",
+    "category": "Additive & Performance",
+    "casNumber": "71750-79-3",
+    "inciName": "Amodimethicone",
+    "function": "Fiber Lubricant & Easy Ironing Additive",
+    "activeDefault": 35,
+    "costPerKg": null,
+    "hlb": null,
+    "description": "Microemulsion of amino silicone providing silkiness, elasticity, and anti-static glide."
+  },
+  {
+    "id": "pluronic-pe-6400",
+    "name": "Pluronic Low-Foam Nonionic EO/PO (PE 6400)",
+    "category": "Nonionic Surfactant",
+    "casNumber": "9003-11-6",
+    "inciName": "Poloxamer 184",
+    "function": "Zero-Foam Wetting & Rinse Aid Sheeting Agent",
+    "activeDefault": 100,
+    "costPerKg": null,
+    "hlb": 15.0,
+    "description": "Block copolymer of ethylene oxide and propylene oxide for machine dishwashers."
   }
 ];
 
@@ -4857,10 +5254,24 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
   const id = (item?.id || '').toLowerCase();
   const cas = (item?.casNumber || '').toLowerCase();
   const inci = (item?.inciName || '').toLowerCase();
+  const mfg = (item?.manufacturer || '').toLowerCase();
   let aliases = '';
 
   if (inci) {
     aliases += ` ${inci}`;
+  }
+  if (mfg) {
+    aliases += ` ${mfg}`;
+  }
+
+  if (id === 'aristo-9' || name.includes('aristo') || id.includes('aristo')) {
+    aliases += ' aristo aristo 9 aristo9 blue chem bluechem multipurpose additive enzyme booster liquid detergent chemical';
+  }
+  if (id === 'labsa-90' || (name.includes('labsa') && name.includes('90')) || (name.includes('acid slurry') && name.includes('90'))) {
+    aliases += ' labsa 90 acid slurry 90% acid slurry 90 labsa 90% commercial acid slurry';
+  }
+  if (id === 'labsa-96' || (name.includes('labsa') && name.includes('96')) || (name.includes('acid slurry') && name.includes('96'))) {
+    aliases += ' labsa 96 acid slurry 96% acid slurry 96 labsa 96% technical acid slurry';
   }
 
   if (cas === '1310-73-2' || name.includes('sodium hydroxide') || id.includes('naoh')) {
@@ -4914,10 +5325,16 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
 
 export function searchUniversalIngredients(query: string, category?: string): UniversalIngredient[] {
   const q = (query || '').toLowerCase().trim();
+  const cat = (category || '').trim();
   const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
 
   return UNIVERSAL_INGREDIENTS.filter(item => {
-    const matchesCategory = !category || category === 'All' || item?.category === category;
+    let matchesCategory = true;
+    if (cat && cat !== 'All' && cat !== 'All Categories') {
+      const itemCat = (item?.category || '').toLowerCase();
+      const catLower = cat.toLowerCase();
+      matchesCategory = item?.category === cat || itemCat === catLower || itemCat.includes(catLower) || catLower.includes(itemCat);
+    }
     if (!matchesCategory) return false;
     if (tokens.length === 0) return true;
 
@@ -4928,10 +5345,12 @@ export function searchUniversalIngredients(query: string, category?: string): Un
     const descStr = (item?.description || '').toLowerCase();
     const idStr = (item?.id || '').toLowerCase();
     const catStr = (item?.category || '').toLowerCase();
+    const mfgStr = (item?.manufacturer || '').toLowerCase();
+    const prodStr = (item?.productName || '').toLowerCase();
     const activeStr = `${item?.activeDefault ?? ''}% ${item?.activeDefault ?? ''}`;
     const aliasStr = getIngredientAliasKeywords(item);
 
-    const fullSearchableText = `${nameStr} ${funcStr} ${inciStr} ${casStr} ${descStr} ${idStr} ${catStr} ${activeStr} ${aliasStr}`;
+    const fullSearchableText = `${nameStr} ${funcStr} ${inciStr} ${casStr} ${descStr} ${idStr} ${catStr} ${mfgStr} ${prodStr} ${activeStr} ${aliasStr}`;
 
     return tokens.every(token => fullSearchableText.includes(token));
   });

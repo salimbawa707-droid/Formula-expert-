@@ -299,10 +299,10 @@ export default function MathTestSuite() {
 
   // Batch Scaling Sandbox State
   const [scalingIngredients, setScalingIngredients] = useState([
-    { id: "1", name: "LABSA (Neutralized)", percentage: 8.0, costPerKg: 135 },
-    { id: "2", name: "SLES (70%)", percentage: 10.0, costPerKg: 110 },
-    { id: "3", name: "CAPB (30%)", percentage: 3.0, costPerKg: 95 },
-    { id: "4", name: "Water and Builders", percentage: 79.0, costPerKg: 2 }
+    { id: "1", name: "LABSA (Neutralized)", percentage: 8.0, costPerKg: 0 },
+    { id: "2", name: "SLES (70%)", percentage: 10.0, costPerKg: 0 },
+    { id: "3", name: "CAPB (30%)", percentage: 3.0, costPerKg: 0 },
+    { id: "4", name: "Water and Builders", percentage: 79.0, costPerKg: 0 }
   ]);
   const [batchSize, setBatchSize] = useState(250);
   const [selectedWeightUnit, setSelectedWeightUnit] = useState<"kg" | "g" | "lb" | "oz">("kg");
@@ -959,7 +959,7 @@ export default function MathTestSuite() {
                     id: Date.now().toString(),
                     name: "New Builder/Additive",
                     percentage: totalPct >= 100 ? 1 : Number((100 - totalPct).toFixed(1)),
-                    costPerKg: 45
+                    costPerKg: 0
                   }
                 ]);
               }}

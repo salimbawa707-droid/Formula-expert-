@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FormulationIngredient } from '../types';
+import { PRODUCT_CATEGORIES } from './aiformulator/constants';
+import { useFormulaStore } from '../stores/useFormulaStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
+import { canSaveFormula } from '../utils/featureGating';
+import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 
 export interface SaveFormulaModalProps {
   isOpen?: boolean;
@@ -25,10 +30,14 @@ export default function SaveFormulaModal({
   setSaveFormulaName,
   onSave,
   onClose,
-  onConfirm
+  onConfirm,
 }: SaveFormulaModalProps) {
+  const { savedFormulas } = useFormulaStore();
+  const { profile } = useSettingsStore();
+
   const [name, setName] = useState(saveFormulaName || '');
-  const [category, setCategory] = useState('Laundry Detergents');
+  const [category, setCategory] = useState<string>(PRODUCT_CATEGORIES[0]?.id || 'LAUNDRY_LIQUID');
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     if (saveFormulaName !== undefined) {
@@ -40,6 +49,13 @@ export default function SaveFormulaModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check plan limits
+    if (!canSaveFormula(savedFormulas.length, profile.plan)) {
+      setShowPaywall(true);
+      return;
+    }
+
     const finalName = name.trim() || saveFormulaName?.trim() || '';
     if (!finalName) return;
     if (setSaveFormulaName) setSaveFormulaName(finalName);
@@ -49,63 +65,78 @@ export default function SaveFormulaModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Save Formula to Library</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="save-formula-name-input" className="block text-sm font-medium text-gray-700 mb-1">
-              Formula Name
-            </label>
-            <input
-              id="save-formula-name-input"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (setSaveFormulaName) setSaveFormulaName(e.target.value);
-              }}
-              placeholder="e.g. Ultra Clean Heavy Duty Gel"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:text-gray-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none caret-gray-900 font-medium text-sm"
-              style={{ color: '#111827', backgroundColor: '#ffffff', WebkitTextFillColor: '#111827' }}
-            />
-          </div>
-          <div>
-            <label htmlFor="save-formula-category-select" className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <select
-              id="save-formula-category-select"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:text-gray-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none font-medium text-sm"
-              style={{ color: '#111827', backgroundColor: '#ffffff' }}
-            >
-              <option value="Laundry Detergents">Laundry Detergents</option>
-              <option value="Dishwashing">Dishwashing</option>
-              <option value="Hard Surface Cleaner">Hard Surface Cleaner</option>
-              <option value="Car Wash">Car Wash</option>
-              <option value="Industrial & Institutional">Industrial & Institutional</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium text-sm"
-            >
-              Save Formula
-            </button>
-          </div>
-        </form>
+    <>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-6 shadow-2xl text-slate-100">
+          <h3 className="text-lg font-bold text-white mb-4">Save Formula to Library</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="save-formula-name-input" className="block text-xs font-semibold text-slate-300 mb-1">
+                Formula Name *
+              </label>
+              <input
+                id="save-formula-name-input"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (setSaveFormulaName) setSaveFormulaName(e.target.value);
+                }}
+                placeholder="e.g. Premium High-Foam Hand Dishwash"
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="save-formula-category-select" className="block text-xs font-semibold text-slate-300 mb-1">
+                Product Category *
+              </label>
+              <select
+                id="save-formula-category-select"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
+              >
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="p-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-[11px] text-slate-400 flex justify-between items-center">
+              <span>Plan Usage:</span>
+              <span className="font-mono font-bold text-white">
+                {savedFormulas.length} / {profile.plan === 'free' ? '7 Saved' : 'Unlimited'}
+              </span>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-800 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold text-xs shadow-md shadow-blue-600/20"
+              >
+                Save Formula
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      <SubscriptionPaywallModal
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        highlightedFeature="Saved Formula Limit (7 Max on Free Plan)"
+      />
+    </>
   );
 }

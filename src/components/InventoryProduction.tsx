@@ -122,14 +122,14 @@ export default function InventoryProduction({
       grade: 'Standard',
       targetPH: 8.0,
       ingredients: [
-        { name: 'LABSA 96% (Acid Slurry)', percentage: 12.0, costPerKg: 2.80 },
-        { name: 'SLES 70% (Sodium Laureth Sulfate)', percentage: 8.0, costPerKg: 2.10 },
-        { name: 'CAPB 30% (Cocoamidopropyl Betaine)', percentage: 3.5, costPerKg: 2.40 },
-        { name: 'Caustic Soda Lye 48%', percentage: 1.6, costPerKg: 0.95 },
-        { name: 'Sodium Carbonate Dense', percentage: 2.0, costPerKg: 0.45 },
-        { name: 'Sodium Chloride (Vacuum Salt)', percentage: 1.5, costPerKg: 0.25 },
-        { name: 'GLDA 47% Liquid', percentage: 0.8, costPerKg: 3.50 },
-        { name: 'Water (Deionized/Softened)', percentage: 70.6, costPerKg: 0.02 }
+        { name: 'LABSA 96% (Acid Slurry)', percentage: 12.0, costPerKg: 0 },
+        { name: 'SLES 70% (Sodium Laureth Sulfate)', percentage: 8.0, costPerKg: 0 },
+        { name: 'CAPB 30% (Cocoamidopropyl Betaine)', percentage: 3.5, costPerKg: 0 },
+        { name: 'Caustic Soda Lye 48%', percentage: 1.6, costPerKg: 0 },
+        { name: 'Sodium Carbonate Dense', percentage: 2.0, costPerKg: 0 },
+        { name: 'Sodium Chloride (Vacuum Salt)', percentage: 1.5, costPerKg: 0 },
+        { name: 'GLDA 47% Liquid', percentage: 0.8, costPerKg: 0 },
+        { name: 'Water (Deionized/Softened)', percentage: 70.6, costPerKg: 0 }
       ]
     };
   }, [activeFormula]);
@@ -172,7 +172,9 @@ export default function InventoryProduction({
     let inStockCount = 0;
 
     inventory.forEach(item => {
-      totalValue += item.currentStockKg * item.costPerKg;
+      if (typeof item.costPerKg === 'number') {
+        totalValue += item.currentStockKg * item.costPerKg;
+      }
       totalKg += item.currentStockKg;
       const status = getStockStatus(item);
       if (status === 'OUT OF STOCK') outOfStockCount++;
@@ -512,7 +514,7 @@ export default function InventoryProduction({
                           {req.availableStockKg >= 99999 ? '∞' : `${req.remainingStockKg.toFixed(1)} kg`}
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-600 text-xs">
-                          ${req.costPerKg.toFixed(2)}
+                          {req.costPerKg !== null ? `$${req.costPerKg.toFixed(2)}` : '—'}
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900">
                           ${req.totalCost.toFixed(2)}
@@ -671,7 +673,7 @@ export default function InventoryProduction({
                   ) : (
                     filteredInventory.map(item => {
                       const status = getStockStatus(item);
-                      const totalVal = item.currentStockKg * item.costPerKg;
+                      const totalVal = typeof item.costPerKg === 'number' ? item.currentStockKg * item.costPerKg : null;
 
                       return (
                         <tr key={item.id} className="hover:bg-slate-50 transition">
@@ -696,10 +698,10 @@ export default function InventoryProduction({
                             {item.reorderLevelKg} kg
                           </td>
                           <td className="py-3 px-3 text-right font-mono text-slate-700">
-                            ${item.costPerKg.toFixed(2)}
+                            {item.costPerKg !== null ? `$${item.costPerKg.toFixed(2)}` : '—'}
                           </td>
                           <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900">
-                            ${totalVal.toFixed(2)}
+                            {totalVal !== null ? `$${totalVal.toFixed(2)}` : '—'}
                           </td>
                           <td className="py-3 px-3 text-center">
                             {status === 'IN STOCK' && (

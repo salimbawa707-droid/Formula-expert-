@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+echo "=== PRE-FLIGHT: Checking Android Build Tools ==="
+if ! command -v javac &> /dev/null || [ ! -d "/opt/android-sdk" ]; then
+    echo "ERROR: Android build tools (JDK / /opt/android-sdk) are not available in this environment." >&2
+    echo "Security & Release Policy: Refusing to create fake or minimal APKs." >&2
+    exit 1
+fi
+
 echo "=== STEP 1: Vite Web Production Build ==="
 npx vite build
 
@@ -217,7 +224,6 @@ cat <<'EOF' > "$BUILD_DIR/AndroidManifest.xml"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:hardwareAccelerated="true"
-        android:usesCleartextTraffic="true"
         android:largeHeap="true"
         android:extractNativeLibs="true">
         
@@ -444,42 +450,35 @@ echo "=== STEP 8: Adding classes.dex to APK ==="
 cd "$BUILD_DIR"
 zip -u "$BUILD_DIR/app-unaligned.apk" classes.dex
 
-echo "=== STEP 9: Creating Release Signing Keystore ==="
-mkdir -p /app/applet/release-artifacts
-KEYSTORE="/app/applet/release-artifacts/release.keystore"
+PROJECT_ROOT="$(pwd)"
+
+# Secure environment variable validation for release signing
+: "${KEYSTORE_STORE_PASS:?Set KEYSTORE_STORE_PASS before release signing}"
+: "${KEYSTORE_KEY_PASS:?Set KEYSTORE_KEY_PASS before release signing}"
+KEYSTORE="${KEYSTORE_PATH:?Set KEYSTORE_PATH to the secure release keystore}"
+
+# Validate that keystore exists
 if [ ! -f "$KEYSTORE" ]; then
-    keytool -genkeypair -v \
-        -keystore "$KEYSTORE" \
-        -alias "detergent-expert" \
-        -keyalg RSA \
-        -keysize 2048 \
-        -validity 10000 \
-        -storepass "detergent2026" \
-        -keypass "detergent2026" \
-        -dname "CN=Detergent Formula Expert, OU=R&D Lab, O=Formulation Systems, L=Wilmington, ST=Delaware, C=US"
+    echo "ERROR: Secure release keystore not found at $KEYSTORE" >&2
+    exit 1
 fi
 
 echo "=== STEP 10: Zipalign & Sign APK ==="
-FINAL_APK="/app/applet/release-artifacts/detergent-formula-expert-release.apk"
+FINAL_APK="$PROJECT_ROOT/release-artifacts/detergent-formula-expert-release.apk"
 rm -f "$FINAL_APK"
 zipalign -p -f -v 4 "$BUILD_DIR/app-unaligned.apk" "$FINAL_APK"
 
 $APKSIGNER sign \
     --ks "$KEYSTORE" \
-    --ks-pass pass:detergent2026 \
-    --key-pass pass:detergent2026 \
+    --ks-pass env:KEYSTORE_STORE_PASS \
+    --key-pass env:KEYSTORE_KEY_PASS \
     --ks-key-alias detergent-expert \
     "$FINAL_APK"
 
 echo "=== STEP 11: Verifying APK Signature ==="
 $APKSIGNER verify --verbose "$FINAL_APK"
 
-echo "=== STEP 12: Copying to Public & Web Dist Directories ==="
-mkdir -p /app/applet/public
-cp -f "$FINAL_APK" /app/applet/public/detergent-formula-expert-release.apk
-if [ -d "/app/applet/dist" ]; then
-    cp -f "$FINAL_APK" /app/applet/dist/detergent-formula-expert-release.apk
-fi
+echo "=== STEP 12: Copying of APK is disabled for artifact hygiene ==="
 
 echo "=== STEP 13: Inspecting APK Contents and Details ==="
 ls -lh "$FINAL_APK"

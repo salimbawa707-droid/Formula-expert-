@@ -1,12 +1,59 @@
 import React, { useState, useEffect, Component } from "react";
-import { Sliders, CheckCircle2, AlertTriangle, Printer, Layers, Info, Leaf, Sparkles, Scale, Trash2, ArrowUpRight, Save, History, BarChart2, ShieldAlert, FileText, Download, Cpu } from "lucide-react";
+import {
+  Sliders,
+  AlertTriangle,
+  Printer,
+  Layers,
+  Info,
+  Sparkles,
+  Trash2,
+  Save,
+  History,
+  ShieldAlert,
+  FileText,
+  Download,
+  Cpu
+} from "lucide-react";
+import { ScientificBadge } from "./scientific/ScientificComponents";
 import { Chemical, Formulation, FormulationIngredient } from "../types";
 import { CHEMICALS } from "../data/chemicals";
 import { getAllUniversalIngredients } from "../data/universalIngredientLibrary";
-import { calculatePHAdvanced } from "../utils/pHEngine";
-import { mapFormulationIngredientsToPHEngineInput } from "../utils/pHEngineAdapter";
-import { calculateFormulationEcoMetrics, calculateBlendedHLB, getIngredientEcoMetrics, getPreservativeWarning, getTargetPHRange, getAuditedIngredientCategory, calculateActiveMatter, calculateWaterHardnessTolerance, calculateAlkaliConsumption, calculateComplexEcoScore, calculateShelfLife, calculateDetailedViscosity, calculateCleaningPerformance, calculateRawSurfactants, calculateActiveSurfactants, calculateBatchCost, calculateFormulationCompatibility, generateDynamicMixingInstructions, calculateCPI, evaluateFormulationGreenChelators, calculateLabHealthScore, evaluateAIGrade, generateFormulationWarnings, ActiveMatterEngine } from "../utils/calculators";
+import { normalizeProductCategory, ProductCategoryId } from "../domain/productTaxonomy";
+import {
+  calculateFormulationEcoMetrics,
+  calculateBlendedHLB,
+  getIngredientEcoMetrics,
+  getPreservativeWarning,
+  getTargetPHRange,
+  getAuditedIngredientCategory,
+  calculateAlkaliConsumption,
+  calculateComplexEcoScore,
+  calculateShelfLife,
+  calculateDetailedViscosity,
+  calculateRawSurfactants,
+  calculateActiveSurfactants,
+  calculateBatchCost,
+  calculateFormulationCompatibility,
+  generateDynamicMixingInstructions,
+  calculateCPI,
+  evaluateFormulationGreenChelators,
+  calculateLabHealthScore,
+  generateFormulationWarnings,
+  ActiveMatterEngine,
+  FormulaScientificOrchestrator
+} from "../utils/calculators";
+import { HardnessResultOutput, CleaningResultOutput } from "../utils/orchestrator/types";
 import { jsPDF } from "jspdf";
+import { useSettingsStore } from "../stores/useSettingsStore";
+import { isFeatureAllowed } from "../utils/featureGating";
+import SubscriptionPaywallModal from "./SubscriptionPaywallModal";
+
+// Modular sub-components
+import { ActiveFingerprintCard } from "./analyzer/ActiveFingerprintCard";
+import { EcoImpactAssessmentCard } from "./analyzer/EcoImpactAssessmentCard";
+import { PerformanceMetricsFractionsCard } from "./analyzer/PerformanceMetricsFractionsCard";
+import { CostingMarginsCard } from "./analyzer/CostingMarginsCard";
+import { CompatibilityRiskCard } from "./analyzer/CompatibilityRiskCard";
 
 interface Props {
   lang: "en" | "hi" | "mr";
@@ -14,6 +61,8 @@ interface Props {
   ingredients: FormulationIngredient[];
   formulaName: string;
   productType: string;
+  canonicalProductCategoryId?: ProductCategoryId | string;
+  categoryId?: ProductCategoryId | string;
   grade: "Economy" | "Standard" | "Premium";
   targetCost: number;
   onApplyIngredients?: (updatedIngredients: FormulationIngredient[]) => void;
@@ -259,6 +308,8 @@ function SmartFormulaAnalyzerProInner({
   ingredients,
   formulaName,
   productType,
+  canonicalProductCategoryId,
+  categoryId,
   grade,
   targetCost,
   onApplyIngredients: _onApplyIngredients,
@@ -266,6 +317,8 @@ function SmartFormulaAnalyzerProInner({
   formulationResult: formulationResultProp
 }: Props) {
   const formulationResult = formulationResultProp || { grade };
+  const { profile } = useSettingsStore();
+  const [showPaywall, setShowPaywall] = useState(false);
   
   const safeNum = (val: any, digits: number = 1): string => {
     const num = Number(val);
@@ -341,7 +394,7 @@ function SmartFormulaAnalyzerProInner({
     if (!ingredients || ingredients.length === 0) return;
 
     try {
-      // 1. Map ingredients to physical encyclopedia data & find missing fields (Phase 1A & 1B)
+      // 1. Map ingredients to physical encyclopedia data & find missing fields
       const analyzedIngredients = ingredients.map(ing => {
         if (!ing || !ing.name) {
           return {
@@ -364,297 +417,316 @@ function SmartFormulaAnalyzerProInner({
         const activeRes = ActiveMatterEngine.resolveIngredientActive(ing);
         const finalActiveMatterPct = activeRes.activeMatterPct;
 
-      // Check missing data points for Phase 1B
-      const missingFields: string[] = [];
-      if (!ing.hlbValue && (!dbChem || !dbChem.physicalProperties?.viscosity)) {
-        // If surfactant and HLB is missing
-        if (ing.role?.toLowerCase().includes("surfactant") && ing.hlbValue === undefined) {
-          missingFields.push("HLB");
+        const missingFields: string[] = [];
+        if (!ing.hlbValue && (!dbChem || !dbChem.physicalProperties?.viscosity)) {
+          if (ing.role?.toLowerCase().includes("surfactant") && ing.hlbValue === undefined) {
+            missingFields.push("HLB");
+          }
         }
-      }
-      if (!dbChem || !dbChem.physicalProperties?.density) missingFields.push("Density");
-      if (finalActiveMatterPct === undefined || finalActiveMatterPct === null) missingFields.push("Active Matter");
-      if (!dbChem || !dbChem.sustainability?.biodegradability) missingFields.push("OECD Biodegradability");
-      if (!dbChem || !dbChem.suppliers || dbChem.suppliers.length === 0) missingFields.push("Supplier");
-      if (!dbChem || !dbChem.casNumber) missingFields.push("CAS Number");
-      if (!dbChem || !dbChem.molecularWeight) missingFields.push("Molecular Weight");
+        if (!dbChem || !dbChem.physicalProperties?.density) missingFields.push("Density");
+        if (finalActiveMatterPct === undefined || finalActiveMatterPct === null) missingFields.push("Active Matter");
+        if (!dbChem || !dbChem.sustainability?.biodegradability) missingFields.push("OECD Biodegradability");
+        if (!dbChem || !dbChem.suppliers || dbChem.suppliers.length === 0) missingFields.push("Supplier");
+        if (!dbChem || !dbChem.casNumber) missingFields.push("CAS Number");
+        if (!dbChem || !dbChem.molecularWeight) missingFields.push("Molecular Weight");
 
-      const chargeType = dbChem 
-        ? dbChem.category.toLowerCase().includes("anionic") ? "Anionic"
-          : dbChem.category.toLowerCase().includes("cationic") ? "Cationic"
-          : dbChem.category.toLowerCase().includes("amphoteric") || dbChem.category.toLowerCase().includes("betaine") ? "Amphoteric"
-          : dbChem.category.toLowerCase().includes("non-ionic") || dbChem.category.toLowerCase().includes("nonionic") ? "Nonionic"
-          : "Neutral / Auxiliary"
-        : "Neutral / Auxiliary";
+        const chargeType = dbChem 
+          ? dbChem.category.toLowerCase().includes("anionic") ? "Anionic"
+            : dbChem.category.toLowerCase().includes("cationic") ? "Cationic"
+            : dbChem.category.toLowerCase().includes("amphoteric") || dbChem.category.toLowerCase().includes("betaine") ? "Amphoteric"
+            : dbChem.category.toLowerCase().includes("non-ionic") || dbChem.category.toLowerCase().includes("nonionic") ? "Nonionic"
+            : "Neutral / Auxiliary"
+          : "Neutral / Auxiliary";
 
-      const chemicalFamily = dbChem
-        ? dbChem.category
-        : ing.role || "Auxiliary Component";
+        const chemicalFamily = dbChem
+          ? dbChem.category
+          : ing.role || "Auxiliary Component";
 
-      const fallbackHlb = dbChem?.hlb ? parseFloat(String(dbChem.hlb)) : undefined;
-      const finalHlbValue = (ing.hlbValue !== undefined && ing.hlbValue !== null) ? ing.hlbValue : fallbackHlb;
+        const fallbackHlb = dbChem?.hlb ? parseFloat(String(dbChem.hlb)) : undefined;
+        const finalHlbValue = (ing.hlbValue !== undefined && ing.hlbValue !== null) ? ing.hlbValue : fallbackHlb;
 
-      return {
-        ...ing,
-        dbMatched: !!dbChem,
-        hlbValue: finalHlbValue,
-        activeMatterPct: finalActiveMatterPct,
-        casNumber: dbChem?.casNumber || undefined,
-        molecularWeight: dbChem?.molecularWeight || undefined,
-        density: dbChem?.physicalProperties?.density || undefined,
-        pHContribution: dbChem?.physicalProperties?.pH || undefined,
-        biodegradabilityDesc: dbChem?.sustainability?.biodegradability || undefined,
-        chargeType,
-        chemicalFamily,
-        supplier: dbChem?.suppliers?.[0] || undefined,
-        missingFields
-      };
-    });
+        return {
+          ...ing,
+          dbMatched: !!dbChem,
+          hlbValue: finalHlbValue,
+          activeMatterPct: finalActiveMatterPct,
+          casNumber: dbChem?.casNumber || undefined,
+          molecularWeight: dbChem?.molecularWeight || undefined,
+          density: dbChem?.physicalProperties?.density || undefined,
+          pHContribution: dbChem?.physicalProperties?.pH || undefined,
+          biodegradabilityDesc: dbChem?.sustainability?.biodegradability || undefined,
+          chargeType,
+          chemicalFamily,
+          supplier: dbChem?.suppliers?.[0] || undefined,
+          missingFields
+        };
+      });
 
-    // 2. Calculations (Phase 1C)
-    // Active Matter using unified calculation
-    const totalActiveMatter = calculateActiveMatter(analyzedIngredients as any);
+      // Resolve authoritative category context
+      const rawCategory =
+        canonicalProductCategoryId ||
+        categoryId ||
+        (formulationResult as any)?.canonicalProductCategoryId ||
+        (formulationResult as any)?.categoryId ||
+        productType;
+      const canonicalCategory = normalizeProductCategory(rawCategory);
 
-    // pH calculation via authoritative pHEngine & standardized adapter
-    const mappedIngs = mapFormulationIngredientsToPHEngineInput(analyzedIngredients as any);
-    const phAdvancedResult = calculatePHAdvanced(mappedIngs);
-    const estpH = Number(phAdvancedResult.pH.toFixed(2));
-    const phPartialFlag = !phAdvancedResult.solverConverged;
-
-    // HLB Blend (Griffin's Method with Active Surfactant Weights)
-    const estHlb = calculateBlendedHLB(analyzedIngredients as any);
-
-    // Direct sum by category fractions with precise audited rules
-    let surfactantPct = 0;
-    let builderPct = 0;
-    let polymerPct = 0;
-    let electrolytePct = 0;
-    let phAdjusterPct = 0;
-    let enzymePct = 0;
-    let waterPct = 0; // Will represent total solvents + water carrier
-    let additivePct = 0; // Will represent preservatives, fragrances, dyes, enzymes, defoamers
-    
-    // Maintain legacy fields for compatibility
-    let solventPct = 0;
-    let preservativePct = 0;
-    let fragrancePct = 0;
-
-    // Calculate stoichiometric alkali consumption
-    const freePercentagesRes: any = calculateAlkaliConsumption(analyzedIngredients as any);
-    const freePercentages = freePercentagesRes?.freePercentages || freePercentagesRes || {};
-
-    analyzedIngredients.forEach(ing => {
-      const name = (ing?.name || "").toLowerCase();
-      const cleanName = name.replace(/[^a-z0-9]/g, '');
-      const role = (ing.role || "").toLowerCase();
-      
-      // Keep legacy classifications active for any specific backend or validation rules
-      if (name.includes("water") || name.includes("aqua") || name === "dm water" || role.includes("solvent carrier")) {
-        // legacy water
-      } else if (role.includes("solvent") || name.includes("glycol") || name.includes("alcohol")) {
-        solventPct += (ing.percentage ?? 0);
-      } else if (
-        role.includes("preservative") ||
-        name.includes("formalin") ||
-        name.includes("kathon") ||
-        cleanName.includes("mit") ||
-        cleanName.includes("bit") ||
-        cleanName.includes("phenoxyethanol") ||
-        cleanName.includes("dmdm")
-      ) {
-        preservativePct += ing.percentage || 0;
-      } else if (role.includes("fragrance") || name.includes("perfume") || name.includes("essential oil")) {
-        fragrancePct += (ing.percentage ?? 0);
-      }
-
-      // Precise audited classifications for 100% sum-to-batch using unified helper
-      const cat = getAuditedIngredientCategory(ing.name);
-      const freePct = freePercentages[ing.name] !== undefined ? freePercentages[ing.name] : (ing.percentage ?? 0);
-
-      if (cat.startsWith("Surfactants")) {
-        surfactantPct += (ing.percentage ?? 0);
-      } else if (cat === "Builders & Chelators") {
-        if (freePercentages[ing.name] !== undefined) {
-          builderPct += freePct;
-          waterPct += ((ing.percentage ?? 0) - freePct);
-        } else {
-          builderPct += (ing.percentage ?? 0);
-        }
-      } else if (cat === "Polymers & Thickeners") {
-        polymerPct += (ing.percentage ?? 0);
-      } else if (cat === "Electrolytes & Viscosity Modifiers") {
-        electrolytePct += (ing.percentage ?? 0);
-      } else if (cat === "pH Adjusters") {
-        phAdjusterPct += (ing.percentage ?? 0);
-      } else if (cat === "Enzymes") {
-        enzymePct += (ing.percentage ?? 0);
-      } else if (cat === "Preservatives" || cat === "Colorants & Fragrance") {
-        additivePct += (ing.percentage ?? 0);
-      } else {
-        waterPct += (ing.percentage ?? 0); // Solvents & Water Carriers
-      }
-    });
-
-    // preservative detection – special characters handle करें
-    if (preservativePct === 0) {
-      analyzedIngredients.forEach(ing => {
-        const name = (ing?.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const role = (ing?.role || "").toLowerCase();
-        if (
-          role.includes("preservative") ||
-          name.includes("mit") ||
-          name.includes("bit") ||
-          name.includes("phenoxyethanol") ||
-          name.includes("dmdm") ||
-          name.includes("formalin") ||
-          name.includes("kathon") ||
-          name.includes("benzoate")
-        ) {
-          preservativePct += ing.percentage || 0;
+      // Single Source of Truth: Authoritative Orchestrator Evaluation
+      const orchestratorReport = FormulaScientificOrchestrator.evaluate({
+        formulaName,
+        formulaVersion: '1.0.0',
+        productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : rawCategory,
+        ingredients: analyzedIngredients as any,
+        batchSizeKg: 100,
+        waterHardnessPpm,
+        waterProfile: {
+          hardnessPpm: waterHardnessPpm
+        },
+        costContext: {
+          targetCostPerKg: targetCost
         }
       });
-    }
 
-    // Active Surfactant vs Raw Surfactant calculation
-    const rawSurfactantPct = calculateRawSurfactants(analyzedIngredients as any);
-    const activeSurfactantPct = calculateActiveSurfactants(analyzedIngredients as any);
+      const totalActiveMatter = orchestratorReport.activeMatterResult.totalActiveMatterPct;
+      const estpH = orchestratorReport.pHResult.ph;
+      const phPartialFlag = !orchestratorReport.pHResult.solverConverged;
 
-    // Heuristics Performance Predictions
-    const { foamHeight, viscosity, cleaningPower, oilRemoval, hardWater, rinseability, safetyRating, shelfLife } = predictPerformanceHeuristics(analyzedIngredients, activeSurfactantPct, estpH, waterHardnessPpm);
+      // HLB Blend
+      const estHlb = calculateBlendedHLB(analyzedIngredients as any);
 
-    const complexEcoResult = calculateComplexEcoScore(analyzedIngredients as any);
-    const hardnessCalc = calculateWaterHardnessTolerance(analyzedIngredients as any);
-    const viscosityResult = calculateDetailedViscosity(analyzedIngredients as any, {
-      productCategory: (productType || '').trim(),
-      targetPH: estpH,
-      temperatureC: 25
-    });
-    const shelfLifeResult = calculateShelfLife(analyzedIngredients as any);
-    const performanceResult = calculateCleaningPerformance(analyzedIngredients as any);
+      // Category fractions
+      let surfactantPct = 0;
+      let builderPct = 0;
+      let polymerPct = 0;
+      let electrolytePct = 0;
+      let phAdjusterPct = 0;
+      let enzymePct = 0;
+      let waterPct = 0;
+      let additivePct = 0;
+      
+      let solventPct = 0;
+      let preservativePct = 0;
+      let fragrancePct = 0;
 
-    // Eco Score & Biodegradability
-    const ecoMetrics = calculateFormulationEcoMetrics(ingredients);
-    const hasNonBiodegradableSurfactant = analyzedIngredients.some(ing => {
-      const isSurfactant = ing.role?.toLowerCase().includes("surfactant") || 
-                           ing.role?.toLowerCase().includes("detergent") || 
-                           ing.hlbValue !== null;
-      const metrics = getIngredientEcoMetrics(ing?.name || "");
-      return isSurfactant && (ing.percentage ?? 0) > 0 && metrics.biodegradabilityPct < 60;
-    });
+      const freePercentagesRes: any = calculateAlkaliConsumption(analyzedIngredients as any);
+      const freePercentages = freePercentagesRes?.freePercentages || freePercentagesRes || {};
 
-    if (hasNonBiodegradableSurfactant) {
-      ecoMetrics.biodegradabilityPct = Math.min(ecoMetrics.biodegradabilityPct, 40.0);
-    }
+      analyzedIngredients.forEach(ing => {
+        const name = (ing?.name || "").toLowerCase();
+        const cleanName = name.replace(/[^a-z0-9]/g, '');
+        const role = (ing.role || "").toLowerCase();
+        
+        if (name.includes("water") || name.includes("aqua") || name === "dm water" || role.includes("solvent carrier")) {
+          // water
+        } else if (role.includes("solvent") || name.includes("glycol") || name.includes("alcohol")) {
+          solventPct += (ing.percentage ?? 0);
+        } else if (
+          role.includes("preservative") ||
+          name.includes("formalin") ||
+          name.includes("kathon") ||
+          cleanName.includes("mit") ||
+          cleanName.includes("bit") ||
+          cleanName.includes("phenoxyethanol") ||
+          cleanName.includes("dmdm")
+        ) {
+          preservativePct += ing.percentage || 0;
+        } else if (role.includes("fragrance") || name.includes("perfume") || name.includes("essential oil")) {
+          fragrancePct += (ing.percentage ?? 0);
+        }
 
-    const hasMissingBiodeg = analyzedIngredients.some(ing => (ing.percentage ?? 0) > 0 && !ing.biodegradabilityDesc);
-    const ecoScoreStatus = hasMissingBiodeg ? "Incomplete Data — Partial Estimate" : "Calculated";
+        const cat = getAuditedIngredientCategory(ing.name);
+        const freePct = freePercentages[ing.name] !== undefined ? freePercentages[ing.name] : (ing.percentage ?? 0);
 
-    // Carbon Footprint qualitative tier
-    const plantPct = ecoMetrics.plantBasedPct;
-    let carbonFootprint: "Low" | "Medium" | "High" = "Medium";
-    if (plantPct > 70) carbonFootprint = "Low";
-    else if (plantPct < 30) carbonFootprint = "High";
+        if (cat.startsWith("Surfactants")) {
+          surfactantPct += (ing.percentage ?? 0);
+        } else if (cat === "Builders & Chelators") {
+          if (freePercentages[ing.name] !== undefined) {
+            builderPct += freePct;
+            waterPct += ((ing.percentage ?? 0) - freePct);
+          } else {
+            builderPct += (ing.percentage ?? 0);
+          }
+        } else if (cat === "Polymers & Thickeners") {
+          polymerPct += (ing.percentage ?? 0);
+        } else if (cat === "Electrolytes & Viscosity Modifiers") {
+          electrolytePct += (ing.percentage ?? 0);
+        } else if (cat === "pH Adjusters") {
+          phAdjusterPct += (ing.percentage ?? 0);
+        } else if (cat === "Enzymes") {
+          enzymePct += (ing.percentage ?? 0);
+        } else if (cat === "Preservatives" || cat === "Colorants & Fragrance") {
+          additivePct += (ing.percentage ?? 0);
+        } else {
+          waterPct += (ing.percentage ?? 0);
+        }
+      });
 
-    // Costing
-    const rawMaterialCost = calculateBatchCost(ingredients, 1);
-    const manufacturingCost = rawMaterialCost * (1 + overheadPct / 100);
-    const finalExFactoryCost = manufacturingCost + packagingCost;
+      if (preservativePct === 0) {
+        analyzedIngredients.forEach(ing => {
+          const name = (ing?.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const role = (ing?.role || "").toLowerCase();
+          if (
+            role.includes("preservative") ||
+            name.includes("mit") ||
+            name.includes("bit") ||
+            name.includes("phenoxyethanol") ||
+            name.includes("dmdm") ||
+            name.includes("formalin") ||
+            name.includes("kathon") ||
+            name.includes("benzoate")
+          ) {
+            preservativePct += ing.percentage || 0;
+          }
+        });
+      }
 
-    // Suggest margins
-    const suggestedDistributor = finalExFactoryCost * 1.15;
-    const suggestedWholesale = finalExFactoryCost * 1.20;
-    const suggestedRetail = finalExFactoryCost * 1.25;
-    const suggestedMRP = suggestedRetail * 1.18; // 18% GST
+      const rawSurfactantPct = calculateRawSurfactants(analyzedIngredients as any);
+      const activeSurfactantPct = calculateActiveSurfactants(analyzedIngredients as any);
 
-    // 3. Pairwise Compatibility Engine (Phase 1H)
-    const compResult = calculateFormulationCompatibility(analyzedIngredients, String(estpH));
-    const compatibilityAlerts = compResult.alerts;
-    const mixingInstructions = generateDynamicMixingInstructions(analyzedIngredients);
+      const hardnessCalc = orchestratorReport.hardnessResult;
+      const performanceResult = {
+        ...orchestratorReport.cleaningResult,
+        particulateDispersion: orchestratorReport.cleaningResult.particulateSoilRemoval,
+        enzymaticPower: orchestratorReport.cleaningResult.enzymeBonus,
+        hardWaterTolerance: orchestratorReport.hardnessResult.maxSupportedPpm
+      };
 
-    // CPI & Green Chelator Engines
-    const cpiScore = calculateCPI(analyzedIngredients);
-    const greenChelatorAnalysis = evaluateFormulationGreenChelators(analyzedIngredients);
+      const { foamHeight, viscosity, cleaningPower, oilRemoval, hardWater, rinseability, safetyRating, shelfLife } = predictPerformanceHeuristics(
+        analyzedIngredients,
+        activeSurfactantPct,
+        estpH,
+        waterHardnessPpm,
+        hardnessCalc,
+        orchestratorReport.cleaningResult
+      );
 
-    // 4. Formula Health Score (Phase 1F)
-    const healthScoreBreakdown = calculateLabHealthScore(analyzedIngredients as any);
+      const complexEcoResult = calculateComplexEcoScore(analyzedIngredients as any);
+      const viscosityResult = calculateDetailedViscosity(analyzedIngredients as any, {
+        productCategory: (productType || '').trim(),
+        targetPH: estpH,
+        temperatureC: 25
+      });
+      const shelfLifeResult = calculateShelfLife(analyzedIngredients as any);
 
-    // AI Grade Engine
-    const aiGradeResult = evaluateAIGrade(analyzedIngredients as any);
+      const ecoMetrics = calculateFormulationEcoMetrics(ingredients);
+      const hasNonBiodegradableSurfactant = analyzedIngredients.some(ing => {
+        const isSurfactant = ing.role?.toLowerCase().includes("surfactant") || 
+                             ing.role?.toLowerCase().includes("detergent") || 
+                             ing.hlbValue !== null;
+        const metrics = getIngredientEcoMetrics(ing?.name || "");
+        return isSurfactant && (ing.percentage ?? 0) > 0 && metrics.biodegradabilityPct < 60;
+      });
 
-    // 5. Risk Analysis (Phase 1G)
-    const riskAnalysisWarnings = generateFormulationWarnings(analyzedIngredients as any);
+      if (hasNonBiodegradableSurfactant) {
+        ecoMetrics.biodegradabilityPct = Math.min(ecoMetrics.biodegradabilityPct, 40.0);
+      }
 
-    // 6. Formula Fingerprint (Phase 1K)
-    const fingerprint = generateFormulaFingerprint(productType, activeSurfactantPct, builderPct, ecoMetrics, finalExFactoryCost);
+      const hasMissingBiodeg = analyzedIngredients.some(ing => (ing.percentage ?? 0) > 0 && !ing.biodegradabilityDesc);
+      const ecoScoreStatus = hasMissingBiodeg ? "Incomplete Data — Partial Estimate" : "Calculated";
 
-    setAnalysisResult({
-      ingredients: analyzedIngredients,
-      totalActiveMatter,
-      estpH,
-      phPartialFlag,
-      estHlb,
-      surfactantPct: rawSurfactantPct,
-      rawSurfactantPct,
-      activeSurfactantPct,
-      builderPct,
-      polymerPct,
-      electrolytePct,
-      phAdjusterPct,
-      enzymePct,
-      additivePct,
-      solventPct,
-      preservativePct,
-      fragrancePct,
-      waterPct,
-      cpiScore,
-      greenChelatorAnalysis,
-      aiGradeResult,
-      performance: { 
-        foamHeight, 
-        viscosity, 
-        cleaningPower, 
-        oilRemoval, 
-        hardWater, 
-        rinseability, 
-        safetyRating, 
-        shelfLife,
-        viscosityResult,
-        shelfLifeResult,
-        performanceResult,
-        hardnessCalc
-      },
-      ecoMetrics,
-      complexEcoResult,
-      ecoScoreStatus,
-      carbonFootprint,
-      costing: {
-        rawMaterialCost,
-        manufacturingCost,
-        finalExFactoryCost,
-        suggestedDistributor,
-        suggestedWholesale,
-        suggestedRetail,
-        suggestedMRP
-      },
-      compatibilityScore: compResult.compatibilityScore,
-      compatibilityAlerts,
-      mixingInstructions,
-      healthScoreBreakdown,
-      riskAnalysisWarnings,
-      fingerprint
-    });
+      const plantPct = ecoMetrics.plantBasedPct;
+      let carbonFootprint: "Low" | "Medium" | "High" = "Medium";
+      if (plantPct > 70) carbonFootprint = "Low";
+      else if (plantPct < 30) carbonFootprint = "High";
+
+      const rawMaterialCost = calculateBatchCost(ingredients, 1);
+      const manufacturingCost = rawMaterialCost * (1 + overheadPct / 100);
+      const finalExFactoryCost = manufacturingCost + packagingCost;
+
+      const suggestedDistributor = finalExFactoryCost * 1.15;
+      const suggestedWholesale = finalExFactoryCost * 1.20;
+      const suggestedRetail = finalExFactoryCost * 1.25;
+      const suggestedMRP = suggestedRetail * 1.18;
+
+      const compResult = calculateFormulationCompatibility(analyzedIngredients, String(estpH));
+      const compatibilityAlerts = compResult.alerts;
+      const mixingInstructions = generateDynamicMixingInstructions(analyzedIngredients);
+
+      const cpiScore = calculateCPI(analyzedIngredients);
+      const greenChelatorAnalysis = evaluateFormulationGreenChelators(analyzedIngredients);
+
+      const healthScoreBreakdown = calculateLabHealthScore(analyzedIngredients as any);
+      const aiGradeResult = orchestratorReport.aiGrade;
+      const riskAnalysisWarnings = generateFormulationWarnings(analyzedIngredients as any);
+
+      const fingerprint = generateFormulaFingerprint(productType, activeSurfactantPct, builderPct, ecoMetrics, finalExFactoryCost);
+
+      setAnalysisResult({
+        ingredients: analyzedIngredients,
+        totalActiveMatter,
+        estpH,
+        phPartialFlag,
+        estHlb,
+        surfactantPct: rawSurfactantPct,
+        rawSurfactantPct,
+        activeSurfactantPct,
+        builderPct,
+        polymerPct,
+        electrolytePct,
+        phAdjusterPct,
+        enzymePct,
+        additivePct,
+        solventPct,
+        preservativePct,
+        fragrancePct,
+        waterPct,
+        cpiScore,
+        greenChelatorAnalysis,
+        aiGradeResult,
+        performance: { 
+          foamHeight, 
+          viscosity, 
+          cleaningPower, 
+          oilRemoval, 
+          hardWater, 
+          rinseability, 
+          safetyRating, 
+          shelfLife,
+          viscosityResult,
+          shelfLifeResult,
+          performanceResult,
+          hardnessCalc
+        },
+        ecoMetrics,
+        complexEcoResult,
+        ecoScoreStatus,
+        carbonFootprint,
+        costing: {
+          rawMaterialCost,
+          manufacturingCost,
+          finalExFactoryCost,
+          suggestedDistributor,
+          suggestedWholesale,
+          suggestedRetail,
+          suggestedMRP
+        },
+        compatibilityScore: compResult.compatibilityScore,
+        compatibilityAlerts,
+        mixingInstructions,
+        healthScoreBreakdown,
+        riskAnalysisWarnings,
+        fingerprint,
+        orchestratorReport
+      });
     } catch (error) {
       console.error("Critical error inside runScientificAnalysis:", error);
     }
   };
 
-  // Heuristic rule-based predictions
-  const predictPerformanceHeuristics = (analyzedIngs: any[], activeSurfactantPct: number, ph: number, _curHardnessPpm: number) => {
+  // Heuristic rule-based predictions consuming canonical orchestrator outputs
+  const predictPerformanceHeuristics = (
+    analyzedIngs: any[],
+    activeSurfactantPct: number,
+    ph: number,
+    _curHardnessPpm: number,
+    canonicalHardness?: HardnessResultOutput,
+    canonicalCleaning?: CleaningResultOutput
+  ) => {
     let foamHeight: "High" | "Medium" | "Low" | "Zero" = "Medium";
     let viscosity: "High" | "Medium" | "Low" = "Medium";
-    let cleaningPower: "Outstanding" | "High" | "Medium" | "Low" = "Medium";
+    let cleaningPower: "Outstanding" | "High" | "Medium" | "Low" | "N/A" = "Medium";
     let oilRemoval: "Outstanding" | "High" | "Medium" | "Low" = "Medium";
-    let hardWater: "Excellent" | "Good" | "Adequate" | "Poor" = "Adequate";
+    let hardWater: "Excellent" | "Good" | "Adequate" | "Poor" | "INSUFFICIENT_DATA" | string = "Adequate";
     let rinseability: "Excellent" | "Good" | "Medium" | "Difficult" = "Good";
     let safetyRating: "Excellent (Skin-Mild)" | "Standard (Wear Gloves)" | "Industrial Corrosive" = "Standard (Wear Gloves)";
     let shelfLife = "24 Months";
@@ -665,12 +737,10 @@ function SmartFormulaAnalyzerProInner({
     const hasNonionic = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("ethoxylate") || (ing?.name || "").toLowerCase().includes("lae") || (ing?.name || "").toLowerCase().includes("glucoside"));
     const hasPreservative = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("formalin") || (ing?.name || "").toLowerCase().includes("kathon") || (ing?.name || "").toLowerCase().includes("preservative"));
 
-    // Foam
     if (hasDefoamer) foamHeight = "Zero";
     else if ((hasSles || hasLabsa) && activeSurfactantPct > 10) foamHeight = "High";
     else if (activeSurfactantPct < 4) foamHeight = "Low";
 
-    // Viscosity via Authoritative Engine
     const vReport = calculateDetailedViscosity(analyzedIngs, { targetPH: ph, temperatureC: 25 });
     if (vReport.rating === "Rich Gel" || vReport.rating === "High Viscosity Paste" || vReport.rating === "Standard Liquid Detergent") {
       viscosity = "High";
@@ -680,36 +750,38 @@ function SmartFormulaAnalyzerProInner({
       viscosity = "Low";
     }
 
-    // Use unified water hardness tolerance calculator
-    const hardnessCalc = calculateWaterHardnessTolerance(analyzedIngs);
-    hardWater = (typeof hardnessCalc === 'object' && hardnessCalc !== null && 'rating' in (hardnessCalc as any)) ? (hardnessCalc as any).rating : String(hardnessCalc || "Good");
+    // Authoritative Hard Water Tolerance from Canonical Orchestrator Result
+    const hardness = canonicalHardness;
+    hardWater = (typeof hardness === 'object' && hardness !== null)
+      ? (hardness.sufficiency ? String(hardness.sufficiency).toUpperCase() : (hardness.status ? String(hardness.status) : (hardness.maxSupportedPpm !== undefined ? `${hardness.maxSupportedPpm} ppm` : "INSUFFICIENT_DATA")))
+      : "INSUFFICIENT_DATA";
 
-    // Cleaning Power derived from authoritative calculateCleaningPerformance engine
-    const perf = calculateCleaningPerformance(analyzedIngs);
-    const perfScore = typeof perf.rating === 'number' ? perf.rating : 80;
-    if (perfScore >= 90) cleaningPower = "Outstanding";
-    else if (perfScore >= 75) cleaningPower = "High";
-    else if (perfScore >= 60) cleaningPower = "Medium";
-    else cleaningPower = "Low";
+    // Authoritative Cleaning Performance from Canonical Orchestrator Result
+    const perf = canonicalCleaning;
+    if (!perf || perf.cleaningScore === null || !perf.isCleaningApplicable) {
+      cleaningPower = perf?.cleaningPower && perf.cleaningPower !== 'Conditioning / Non-Detergent' ? (perf.cleaningPower as any) : "N/A";
+    } else {
+      const perfScore = perf.cleaningScore ?? perf.overallScore;
+      if (perfScore >= 90) cleaningPower = "Outstanding";
+      else if (perfScore >= 75) cleaningPower = "High";
+      else if (perfScore >= 60) cleaningPower = "Medium";
+      else cleaningPower = "Low";
+    }
 
-    // Rinseability
     if (hasNonionic && !hasSles) rinseability = "Excellent";
     else if (hasSles && activeSurfactantPct > 15 && !hasDefoamer) rinseability = "Difficult";
 
-    // Safety
     if (ph >= 6.5 && ph <= 8.5 && activeSurfactantPct < 15 && !hasLabsa) {
       safetyRating = "Excellent (Skin-Mild)";
     } else if (ph > 11 || ph < 4) {
       safetyRating = "Industrial Corrosive";
     }
 
-    // Shelf life
     if (!hasPreservative) shelfLife = "3 Months (Risk of bacterial spoilage)";
 
     return { foamHeight, viscosity, cleaningPower, oilRemoval, hardWater, rinseability, safetyRating, shelfLife };
   };
 
-  // Formula Fingerprint (Phase 1K)
   const generateFormulaFingerprint = (type: string, surfPct: number, _builderPct: number, eco: any, cost: number) => {
     let formulaType = "Surfactant-Rich Cleanser";
     if (surfPct < 3) formulaType = "Mineral / Builder Blend";
@@ -748,7 +820,6 @@ function SmartFormulaAnalyzerProInner({
       return metrics.plantBasedPct >= 80 && metrics.biodegradabilityPct >= 90;
     });
 
-    // Check for any persistent pollutant (not just surfactants)
     const hasPersistentPollutant = safeIngs.some(ing => {
       if ((ing?.percentage || 0) <= 0) return false;
       const metrics = getIngredientEcoMetrics(ing?.name || "");
@@ -775,7 +846,6 @@ function SmartFormulaAnalyzerProInner({
     return { formulaType, surfactantSystem, builderSystem, ecoLevel, commercialTier };
   };
 
-  // Handle Explain on click
   const handleExplainClick = (field: string) => {
     try {
       let title = "";
@@ -932,7 +1002,6 @@ function SmartFormulaAnalyzerProInner({
     }
   };
 
-  // Phase 1J: AI Recommendation Engine (Online)
   const fetchAIRecommendations = async () => {
     setIsLoadingAi(true);
     setAiError(null);
@@ -955,7 +1024,6 @@ function SmartFormulaAnalyzerProInner({
       }
     } catch (e: any) {
       setAiError("API error occurred. Simulated recommendations displayed below.");
-      // Fallback
       setAiRecommendations([
         {
           type: "Cost Reduction",
@@ -975,7 +1043,6 @@ function SmartFormulaAnalyzerProInner({
     }
   };
 
-  // Phase 2: Save Version History
   const saveCurrentVersion = () => {
     if (!analysisResult) return;
     const nextVer = `Version ${safeNum(savedVersions.length + 1, 1)}`;
@@ -994,15 +1061,18 @@ function SmartFormulaAnalyzerProInner({
     alert(`Successfully backed up ${nextVer} in local lab history.`);
   };
 
-  // Phase 3: Export Center High-Fidelity jsPDF Generator
   const triggerPdfExport = () => {
     if (!analysisResult) return;
+
+    if (!isFeatureAllowed('hasPdfReports', profile.plan)) {
+      setShowPaywall(true);
+      return;
+    }
 
     try {
       const doc = new jsPDF();
       
-      // Header & Title
-      doc.setFillColor(15, 118, 110); // Teal accent
+      doc.setFillColor(15, 118, 110);
       doc.rect(0, 0, 220, 45, "F");
       
       doc.setTextColor(255, 255, 255);
@@ -1015,11 +1085,9 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`Chemical Laboratory Diagnostic R&D Report`, 14, 28);
       doc.text(`Formula Name: ${formulaName || "Custom Sandbox"} | Product: ${productType} | Grade: ${grade}`, 14, 35);
       
-      // Date and Metadata
       doc.setFontSize(8);
       doc.text(`Generated: ${new Date().toLocaleString()} | Lab Operator: salimbawa707@gmail.com`, 14, 41);
 
-      // Section 1: Health & Fingerprint
       doc.setTextColor(50, 50, 50);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -1027,13 +1095,12 @@ function SmartFormulaAnalyzerProInner({
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`• Formula Health Score: ${analysisResult.healthScoreBreakdown.finalScore}/100`, 14, 63);
+      doc.text(`• Formula Screening Score: ${analysisResult.healthScoreBreakdown.finalScore}/100 (Calculated - Not Lab Validated)`, 14, 63);
       doc.text(`• Commercial Tier: ${analysisResult.fingerprint.commercialTier}`, 14, 69);
       doc.text(`• Surfactant System: ${analysisResult.fingerprint.surfactantSystem}`, 14, 75);
       doc.text(`• Builder System: ${analysisResult.fingerprint.builderSystem}`, 14, 81);
       doc.text(`• Eco/Carbon Level: ${analysisResult.fingerprint.ecoLevel} (Carbon: ${analysisResult.carbonFootprint})`, 14, 87);
 
-      // Section 2: Core Calculations
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.text("2. Scientific Calculations Summary", 14, 98);
@@ -1046,7 +1113,6 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`• Biodegradability Score (OECD 301): ${analysisResult.ecoMetrics.biodegradabilityPct}%`, 14, 124);
       doc.text(`• Bio-Based Plant-Sourced Carbon: ${analysisResult.ecoMetrics.plantBasedPct}%`, 14, 130);
 
-      // Section 3: Costing & Margins
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.text("3. Financial Analysis & Pricing Matrix", 14, 142);
@@ -1060,7 +1126,6 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`• Suggest Retail Price: INR ${safeNum(analysisResult?.costing?.suggestedRetail, 2)}`, 14, 174);
       doc.text(`• Suggest MRP (incl. 18% GST): INR ${safeNum(analysisResult?.costing?.suggestedMRP, 2)}`, 14, 180);
 
-      // Section 4: Compatibility
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.text("4. Formulation Pairwise Compatibility Alerts", 14, 192);
@@ -1077,7 +1142,6 @@ function SmartFormulaAnalyzerProInner({
         });
       }
 
-      // References
       doc.setFillColor(243, 244, 246);
       doc.rect(0, 260, 220, 40, "F");
       doc.setTextColor(100, 100, 100);
@@ -1189,140 +1253,13 @@ function SmartFormulaAnalyzerProInner({
   return (
     <div className="space-y-6" id="smart-formula-analyzer-root">
       {/* HEADER COMMERCIAL FINGERPRINT & HEALTH BAR */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Gauge health score */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2 relative overflow-hidden">
-          <div className="absolute top-2 right-2 bg-teal-50 text-[#0f766e] text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-            Health Check
-          </div>
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wide">Lab Health Score</span>
-          
-          <div className="relative w-24 h-24 flex items-center justify-center">
-            {/* Circular progress simulated */}
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path
-                className="text-gray-100"
-                strokeWidth="3.5"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className="text-teal-600"
-                strokeWidth="3.5"
-                strokeDasharray={`${analysisResult.healthScoreBreakdown.finalScore}, 100`}
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center">
-              <span className="text-2xl font-black text-gray-900">{analysisResult.healthScoreBreakdown.finalScore}</span>
-              <span className="text-[9px] text-gray-400 font-bold uppercase">Points</span>
-            </div>
-          </div>
+      <ActiveFingerprintCard
+        analysisResult={analysisResult}
+        formulationResult={formulationResult}
+        onExplainClick={handleExplainClick}
+      />
 
-          <span className={`text-xs font-extrabold px-3 py-0.5 rounded-full ${
-            analysisResult.healthScoreBreakdown.finalScore >= 85 ? "bg-emerald-50 text-emerald-700" :
-            analysisResult.healthScoreBreakdown.finalScore >= 70 ? "bg-teal-50 text-teal-700" :
-            analysisResult.healthScoreBreakdown.finalScore >= 50 ? "bg-amber-50 text-amber-700" :
-            "bg-red-50 text-red-700"
-          }`}>
-            {analysisResult.healthScoreBreakdown.finalScore >= 85 ? "Excellent" :
-             analysisResult.healthScoreBreakdown.finalScore >= 70 ? "Good" :
-             analysisResult.healthScoreBreakdown.finalScore >= 50 ? "Average" : "Poor"}
-          </span>
-        </div>
-
-        {/* Commercial Fingerprint Card (Phase 1K) */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm lg:col-span-3 flex flex-col justify-between space-y-3">
-          <div 
-            onClick={() => handleExplainClick("classification")}
-            className="flex justify-between items-start cursor-pointer group hover:bg-gray-50/70 p-2 -m-2 rounded-xl transition-all border border-transparent hover:border-gray-100"
-            title="Click to view full Formula Classification details"
-          >
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block flex items-center gap-1">
-                Automatic Classification <ArrowUpRight size={10} className="text-gray-400 group-hover:text-teal-600 transition-colors" />
-              </span>
-              {(() => {
-                const classification = 
-                  formulationResult.grade === "Premium" ? "Premium Tier" : 
-                  formulationResult.grade === "Standard" ? "Standard Tier" : 
-                  "Budget Tier";
-                return (
-                  <h3 className="text-base font-bold text-gray-900 mt-0.5 flex items-center gap-1.5 font-display group-hover:text-teal-700 transition-colors">
-                    <Sparkles size={16} className="text-teal-600 group-hover:scale-110 transition-transform" />
-                    {classification} - {analysisResult.fingerprint.formulaType}
-                  </h3>
-                );
-              })()}
-            </div>
-            <span className="bg-teal-50 text-[#0f766e] text-[10px] font-black px-2.5 py-1 rounded-full border border-teal-100 font-mono flex items-center gap-1 transition-all group-hover:bg-teal-100/60">
-              Fingerprint Active <Sparkles size={10} className="animate-pulse" />
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            {/* Surfactant Base Tag */}
-            <div 
-              onClick={() => handleExplainClick("fingerprintSurfactant")}
-              className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100/70 hover:border-gray-200 transition-all hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98] flex flex-col justify-between"
-              title="Click for Surfactant Base Diagnostics"
-            >
-              <span className="text-[9px] text-gray-400 font-bold block uppercase flex items-center justify-between">
-                Surfactant base
-                <Info size={10} className="text-gray-400" />
-              </span>
-              <span className="font-bold text-gray-700 mt-1 block truncate">{analysisResult.fingerprint.surfactantSystem}</span>
-            </div>
-
-            {/* Builder Setup Tag */}
-            <div 
-              onClick={() => handleExplainClick("fingerprintBuilder")}
-              className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100/70 hover:border-gray-200 transition-all hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98] flex flex-col justify-between"
-              title="Click for Builder Setup Diagnostics"
-            >
-              <span className="text-[9px] text-gray-400 font-bold block uppercase flex items-center justify-between">
-                Builder setup
-                <Info size={10} className="text-gray-400" />
-              </span>
-              <span className="font-bold text-gray-700 mt-1 block truncate">{analysisResult.fingerprint.builderSystem}</span>
-            </div>
-
-            {/* Regulatory Eco Tag */}
-            <div 
-              onClick={() => handleExplainClick("fingerprintEco")}
-              className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100/70 hover:border-gray-200 transition-all hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98] flex flex-col justify-between"
-              title="Click for Regulatory Eco Diagnostics"
-            >
-              <span className="text-[9px] text-gray-400 font-bold block uppercase flex items-center justify-between">
-                Regulatory eco
-                <Info size={10} className="text-gray-400" />
-              </span>
-              <span className="font-bold text-gray-700 mt-1 block truncate">{analysisResult.fingerprint.ecoLevel}</span>
-            </div>
-
-            {/* Carbon Profile Tag */}
-            <div 
-              onClick={() => handleExplainClick("fingerprintCarbon")}
-              className="bg-gray-50/50 p-2.5 rounded-xl border border-gray-100 cursor-pointer hover:bg-gray-100/70 hover:border-gray-200 transition-all hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.98] flex flex-col justify-between"
-              title="Click for Carbon Profile Diagnostics"
-            >
-              <span className="text-[9px] text-gray-400 font-bold block uppercase flex items-center justify-between">
-                Carbon Profile
-                <Info size={10} className="text-gray-400" />
-              </span>
-              <span className={`font-bold mt-1 block truncate ${analysisResult.carbonFootprint === "Low" ? "text-emerald-700" : "text-amber-700"}`}>
-                🌱 {analysisResult.carbonFootprint} Footprint
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* KEY CALCULATED METRICS WITH SOURCE BADGES & CONFIDENCE (Phase 1C, 1D, 1E) */}
+      {/* KEY CALCULATED METRICS WITH SOURCE BADGES & CONFIDENCE */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Active Surfactants */}
         <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
@@ -1353,10 +1290,8 @@ function SmartFormulaAnalyzerProInner({
         {/* pH */}
         <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Estimated pH</span>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${analysisResult.phPartialFlag ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
-              {analysisResult.phPartialFlag ? "🟡 Estimated" : "🔵 Calculated"}
-            </span>
+            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">pH</span>
+            <ScientificBadge maturity={analysisResult.phPartialFlag ? "ESTIMATED" : "MODEL_PREDICTION"} />
           </div>
           <div>
             <span className="text-3xl font-black text-gray-900 font-mono">
@@ -1372,7 +1307,7 @@ function SmartFormulaAnalyzerProInner({
             </div>
           </div>
           <div className="text-[10px] text-gray-400 font-medium truncate">
-            Confidence: <span className="text-amber-600 font-bold">{analysisResult.phPartialFlag ? "Medium" : "High"}</span> — {analysisResult.phPartialFlag ? "Partial pH data available" : "Full stoichiometry values."}
+            {analysisResult.phPartialFlag ? "Partial pH data available" : "Full stoichiometry values."}
           </div>
         </div>
 
@@ -1429,129 +1364,43 @@ function SmartFormulaAnalyzerProInner({
         </div>
       </div>
 
-      {/* ECO IMPACT ASSESSMENT BREAKDOWN PANEL (Phase 1E / Explainable Eco Score) */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-          <Leaf size={14} className="text-emerald-600" /> Explainable Eco Impact Assessment (Credits & Deductions)
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="bg-emerald-50/30 p-3.5 rounded-xl border border-emerald-100/40">
-            <span className="font-extrabold text-emerald-800 block mb-2 uppercase tracking-wide text-[10px]">✓ Environmental Credits (Active Bonuses)</span>
-            {analysisResult.complexEcoResult.bonuses.length === 0 ? (
-              <p className="text-gray-400 italic text-[11px] py-1">No active eco bonuses detected. Add plant-based active matter, biosurfactants, or enzymatic packages to gain points.</p>
-            ) : (
-              <div className="space-y-1.5 text-[11px] text-emerald-900">
-                {analysisResult.complexEcoResult.bonuses.map((b: any, idx: number) => (
-                  <div key={idx} className="flex justify-between border-b border-emerald-100/50 pb-1 last:border-0 last:pb-0 font-medium">
-                    <span>{b.name} <span className="text-gray-400 font-semibold text-[9px]">({b.type})</span></span>
-                    <span className="font-black text-emerald-700">+{b.value} pts</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-rose-50/20 p-3.5 rounded-xl border border-rose-100/30">
-            <span className="font-extrabold text-rose-800 block mb-2 uppercase tracking-wide text-[10px]">✗ Ecotoxicity & Structural Penalties (Deductions)</span>
-            {analysisResult.complexEcoResult.deductions.length === 0 ? (
-              <p className="text-emerald-700 font-bold text-[11px] py-1">✓ Excellent! No environmental toxicity or structural deductions active.</p>
-            ) : (
-              <div className="space-y-1.5 text-[11px] text-rose-900">
-                {analysisResult.complexEcoResult.deductions.map((d: any, idx: number) => (
-                  <div key={idx} className="flex justify-between border-b border-rose-100/40 pb-1 last:border-0 last:pb-0 font-medium">
-                    <span>{d.name} <span className="text-gray-400 font-semibold text-[9px]">({d.type})</span></span>
-                    <span className="font-black text-rose-700">-{d.value} pts</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {analysisResult.complexEcoResult.certifications && analysisResult.complexEcoResult.certifications.length > 0 ? (
-          <div className="pt-3 border-t border-gray-100 space-y-2 text-[10px]">
-            <span className="font-extrabold text-gray-500 uppercase tracking-wider block">
-              Eco-Label Certification Assessment:
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {analysisResult.complexEcoResult.certifications.map((cert: any, idx: number) => {
-                const isEligible = cert.status === "Eligible";
-                const isReview = cert.status === "Requires Review";
-                const badgeStyle = isEligible
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                  : isReview
-                  ? "bg-amber-50 text-amber-800 border-amber-200"
-                  : "bg-rose-50 text-rose-800 border-rose-200";
-                const icon = isEligible ? "✓" : isReview ? "⚠️" : "✗";
-
-                return (
-                  <div key={idx} className={`p-2.5 rounded-xl border ${badgeStyle} space-y-1`}>
-                    <div className="flex items-center justify-between font-bold">
-                      <span className="text-[11px]">{cert.name}</span>
-                      <span className="font-black px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wide bg-white/90 border border-current shadow-xs">
-                        {icon} {cert.status}
-                      </span>
-                    </div>
-                    {cert.reasons && cert.reasons.length > 0 ? (
-                      <p className="text-[9px] opacity-90 leading-tight">
-                        {cert.reasons.join("; ")}
-                      </p>
-                    ) : (
-                      <p className="text-[9px] opacity-90 leading-tight">
-                        Meets environmental & biodegradability criteria.
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : analysisResult.complexEcoResult.ecoLabelEligibility.length > 0 && (
-          <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center gap-2 text-[10px]">
-            <span className="font-extrabold text-gray-500 uppercase">Eco-Label Potential:</span>
-            {analysisResult.complexEcoResult.ecoLabelEligibility.map((lbl: string, idx: number) => (
-              <span key={idx} className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full font-bold">
-                ✓ Eligible for {lbl}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ECO IMPACT ASSESSMENT BREAKDOWN PANEL */}
+      <EcoImpactAssessmentCard analysisResult={analysisResult} />
 
       {/* HEALTH SCORE BREAKDOWN */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-          <Layers size={14} className="text-teal-600" /> Lab Health Score Rubric Breakdown (Phase 1F)
+          <Layers size={14} className="text-teal-600" /> Formula Screening Score Rubric (Calculated Result)
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
             <span className="text-[9px] text-gray-400 font-extrabold block uppercase">pH Stability (20)</span>
-            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown.breakdown.phScore}/20</span>
+            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.phScore}/20</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
             <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Category Bal. (20)</span>
-            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown.breakdown.balScore}/20</span>
+            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.balScore}/20</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
             <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Cost Eff. (15)</span>
-            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown.breakdown.costScore}/15</span>
+            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.costScore}/15</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
             <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Eco Score (20)</span>
-            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown.breakdown.ecoScore}/20</span>
+            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.ecoScore}/20</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
             <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Compatability (15)</span>
-            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown.breakdown.compScore}/15</span>
+            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.compScore}/15</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
             <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Completeness (10)</span>
-            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown.breakdown.completenessScore}/10</span>
+            <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.completenessScore}/10</span>
           </div>
         </div>
       </div>
 
-      {/* MISSING DATA DETECTOR (Phase 1B) */}
+      {/* MISSING DATA DETECTOR */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
           <ShieldAlert size={14} className="text-amber-500" /> Ingredient Database Completeness & Missing Fields
@@ -1576,7 +1425,7 @@ function SmartFormulaAnalyzerProInner({
                   <td className="py-2.5 font-mono">{ing.casNumber || <span className="text-red-500 text-[10px] font-bold">Evidence Not Available</span>}</td>
                   <td className="py-2.5">{ing.density || <span className="text-red-500 text-[10px] font-bold">Evidence Not Available</span>}</td>
                   <td className="py-2.5">{ing.activeMatterPct !== undefined ? `${ing.activeMatterPct}%` : <span className="text-red-500 text-[10px] font-bold">Evidence Not Available</span>}</td>
-                  <td className="py-2.5 font-mono">{ing.hlbValue !== null ? ing.hlbValue : "N/A"}</td>
+                  <td className="py-2.5 font-mono">{ing.hlbValue !== null && ing.hlbValue !== undefined ? ing.hlbValue : "N/A"}</td>
                   <td className="py-2.5">{ing.biodegradabilityDesc || <span className="text-red-500 text-[10px] font-bold">Evidence Not Available</span>}</td>
                   <td className="py-2.5 font-mono">{ing.molecularWeight || <span className="text-red-500 text-[10px] font-bold">Evidence Not Available</span>}</td>
                 </tr>
@@ -1587,364 +1436,19 @@ function SmartFormulaAnalyzerProInner({
       </div>
 
       {/* RULE-BASED PERFORMANCE PREDICTIONS & FRACTIONS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Performance Heuristics & Advanced Calculations (Phase 1C & Confidence Engine) */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4 lg:col-span-2">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <BarChart2 size={14} className="text-teal-600" /> Predicted Formulation Performance Metrics
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {/* Foam Height */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col justify-between space-y-2">
-              <div className="flex justify-between items-center w-full">
-                <span className="font-bold text-gray-700">Foam Height & Yield</span>
-                <span className="bg-teal-50 text-[#0f766e] text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-                  Estimated
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline">
-                <span className="font-black text-teal-700 text-base">{analysisResult.performance.foamHeight}</span>
-                <span className="text-[10px] text-gray-400 font-semibold">Active Surfactants: {safeNum(analysisResult?.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult?.ingredients), 1)}%</span>
-              </div>
-            </div>
-
-            {/* Estimated Viscosity */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col justify-between space-y-2">
-              <div className="flex justify-between items-center w-full">
-                <span className="font-bold text-gray-700">Estimated Viscosity</span>
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${
-                  analysisResult.performance?.viscosityResult?.confidence === "High" ? "bg-emerald-50 text-emerald-700" :
-                  analysisResult.performance?.viscosityResult?.confidence === "Medium" ? "bg-blue-50 text-blue-700" :
-                  "bg-amber-50 text-amber-700"
-                }`}>
-                  {analysisResult.performance?.viscosityResult?.confidence ?? "Low"}
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline">
-                <span className="font-black text-teal-700 text-base">
-                  {safeNum(analysisResult?.performance?.viscosityResult?.viscosityCp, 0)} cPs
-                </span>
-                <span className="text-[10px] text-gray-400 font-medium font-mono">
-                  {analysisResult.performance?.viscosityResult?.rating ?? "Low"}
-                </span>
-              </div>
-            </div>
-
-            {/* Cleaning Performance Index */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col justify-between space-y-2 lg:col-span-2">
-              <div className="flex justify-between items-center w-full">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-gray-700">Cleaning Performance Index (CPI)</span>
-                  <span className="text-[9px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.2 rounded-md font-mono">
-                    Rating: {analysisResult.performance?.cleaningPower ?? "Medium"}
-                  </span>
-                </div>
-                <span className="bg-blue-50 text-blue-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-                  Calculated
-                </span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
-                <div className="text-center bg-white p-1.5 rounded border border-gray-100">
-                  <span className="text-[9px] text-gray-400 font-bold block uppercase">Overall CPI</span>
-                  <span className="font-black text-teal-700 text-sm font-mono">
-                    {safeNum(analysisResult?.performance?.performanceResult?.overallScore, 1)} / 100
-                  </span>
-                </div>
-                <div className="text-center bg-white p-1.5 rounded border border-gray-100">
-                  <span className="text-[9px] text-gray-400 font-bold block uppercase">Synergy</span>
-                  <span className="font-semibold text-gray-700 text-xs font-mono">
-                    {safeNum(analysisResult?.performance?.performanceResult?.surfactantSynergy, 0)}%
-                  </span>
-                </div>
-                <div className="text-center bg-white p-1.5 rounded border border-gray-100">
-                  <span className="text-[9px] text-gray-400 font-bold block uppercase">Grease Lift</span>
-                  <span className="font-semibold text-gray-700 text-xs font-mono">
-                    {safeNum(analysisResult?.performance?.performanceResult?.greaseRemoval, 0)}%
-                  </span>
-                </div>
-                <div className="text-center bg-white p-1.5 rounded border border-gray-100">
-                  <span className="text-[9px] text-gray-400 font-bold block uppercase">Particulate</span>
-                  <span className="font-semibold text-gray-700 text-xs font-mono">
-                    {safeNum(analysisResult?.performance?.performanceResult?.particulateDispersion, 0)}%
-                  </span>
-                </div>
-              </div>
-              {(analysisResult?.performance?.performanceResult?.enzymaticPower ?? 0) > 0 && (
-                <div className="bg-emerald-50 text-emerald-800 text-[10px] px-2.5 py-1 rounded-md font-medium flex justify-between">
-                  <span>Enzymatic Catalysis Active:</span>
-                  <span className="font-bold">+{safeNum(analysisResult?.performance?.performanceResult?.enzymaticPower, 0)} points bonus</span>
-                </div>
-              )}
-            </div>
-
-            {/* Hard Water Sequestration */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col justify-between space-y-2">
-              <div className="flex justify-between items-center w-full">
-                <span className="font-bold text-gray-700">Hard Water Sequestration</span>
-                <span className="bg-blue-50 text-blue-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-                  Calculated
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline">
-                <span className="font-black text-teal-700 text-base">
-                  {safeNum(analysisResult?.performance?.performanceResult?.hardWaterTolerance ?? analysisResult?.performance?.hardnessCalc?.maxSupportedPpm, 1)} ppm
-                </span>
-                <span className="text-[10px] text-gray-400 font-semibold">
-                  {analysisResult.performance?.hardWater ?? "Adequate"}
-                </span>
-              </div>
-            </div>
-
-            {/* Shelf Life / Microbial Preservation */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col justify-between space-y-2">
-              <div className="flex justify-between items-center w-full">
-                <span className="font-bold text-gray-700">Antimicrobial Shelf Life</span>
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${
-                  analysisResult.performance?.shelfLifeResult?.confidence === "High" ? "bg-emerald-50 text-emerald-700" :
-                  analysisResult.performance?.shelfLifeResult?.confidence === "Medium" ? "bg-blue-50 text-blue-700" :
-                  "bg-amber-50 text-amber-700"
-                }`}>
-                  {analysisResult.performance?.shelfLifeResult?.confidence ?? "Low"}
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline">
-                <span className="font-black text-teal-700 text-base">
-                  {analysisResult.performance?.shelfLifeResult?.months ?? 0} Months
-                </span>
-                <span className="text-[9px] text-gray-400 font-semibold block truncate max-w-[120px]" title={`${analysisResult.performance?.shelfLifeResult?.preservativeEfficiency ?? 0}% Efficiency`}>
-                  Preservative: {analysisResult.performance?.shelfLifeResult?.preservativeEfficiency ?? 0}%
-                </span>
-              </div>
-              <div className="text-[10px] text-gray-400 font-medium">
-                Limiting: <span className="font-semibold text-gray-600">{analysisResult.performance?.shelfLifeResult?.limitingFactor ?? "N/A"}</span>
-              </div>
-            </div>
-          </div>
-          <p className="text-[10px] text-gray-400 font-bold italic text-center uppercase tracking-wider">
-            ⚠️ Scientific Diagnostics Model Forecasts — Confidences derived from raw chemical purity data & empirical correlations.
-          </p>
-        </div>
-
-        {/* Formulation fractions chart */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Layers size={14} className="text-teal-600" /> Formulation Category Fractions
-          </h4>
-          <div className="space-y-3.5 text-xs">
-            {analysisResult.surfactantPct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Surfactants</span>
-                  <span>{safeNum(analysisResult?.surfactantPct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full" style={{ width: `${analysisResult.surfactantPct}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.builderPct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Builders & Chelators</span>
-                  <span>{safeNum(analysisResult?.builderPct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-amber-500 h-full" style={{ width: `${analysisResult.builderPct}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.polymerPct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Polymers & Thickeners</span>
-                  <span>{safeNum(analysisResult?.polymerPct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-teal-500 h-full" style={{ width: `${analysisResult.polymerPct}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.electrolytePct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Electrolytes & Viscosity Modifiers</span>
-                  <span>{safeNum(analysisResult?.electrolytePct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-purple-500 h-full" style={{ width: `${(analysisResult.electrolytePct || 0)}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.phAdjusterPct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>pH Adjusters</span>
-                  <span>{safeNum(analysisResult?.phAdjusterPct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-orange-500 h-full" style={{ width: `${(analysisResult.phAdjusterPct || 0)}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.enzymePct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Enzymes</span>
-                  <span>{safeNum(analysisResult?.enzymePct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full" style={{ width: `${(analysisResult.enzymePct || 0)}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.waterPct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Solvents & Water Carriers</span>
-                  <span>{safeNum(analysisResult?.waterPct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-indigo-500 h-full" style={{ width: `${analysisResult.waterPct}%` }}></div>
-                </div>
-              </div>
-            )}
-            {analysisResult.additivePct > 0 && (
-              <div>
-                <div className="flex justify-between font-bold text-gray-700 mb-1">
-                  <span>Preservatives & Additives</span>
-                  <span>{safeNum(analysisResult?.additivePct, 1)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-rose-500 h-full" style={{ width: `${(analysisResult.additivePct || 0)}%` }}></div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <PerformanceMetricsFractionsCard analysisResult={analysisResult} />
 
       {/* COSTING & PRICING SHEET */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
-          <div>
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Scale size={14} className="text-teal-600" /> Raw Materials Costing & Industry Margins Sheet
-            </h4>
-            <p className="text-[10px] text-gray-400 font-medium">Verify suggested margins before commercial production.</p>
-          </div>
-          {/* Controls */}
-          <div className="flex items-center gap-3 text-xs flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-gray-500">Overhead:</span>
-              <input
-                type="number"
-                value={overheadPct}
-                onChange={(e) => setOverheadPct(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-14 bg-gray-50 border rounded px-1.5 py-0.5 font-bold"
-              />
-              <span className="text-gray-400">%</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-gray-500">Packaging:</span>
-              <input
-                type="number"
-                value={packagingCost}
-                onChange={(e) => setPackagingCost(Math.max(0, parseFloat(e.target.value) || 0))}
-                className="w-16 bg-gray-50 border rounded px-1.5 py-0.5 font-bold"
-              />
-              <span className="text-gray-400">₹/kg</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5 text-xs text-center">
-          <div className="bg-gray-50 p-3 rounded-xl border">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Raw Material</span>
-            <span className="text-base font-black text-[#0f766e] mt-1 block">₹{safeNum(analysisResult?.costing?.rawMaterialCost, 2)}</span>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-xl border">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Mfg. Overhead</span>
-            <span className="text-base font-black text-gray-700 mt-1 block">₹{safeNum(analysisResult?.costing?.manufacturingCost, 2)}</span>
-          </div>
-          <div className="bg-teal-50/50 p-3 rounded-xl border border-teal-100">
-            <span className="text-[9px] text-teal-800 font-extrabold block uppercase">Ex-Factory Cost</span>
-            <span className="text-base font-black text-teal-700 mt-1 block">₹{safeNum(analysisResult?.costing?.finalExFactoryCost, 2)}</span>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-xl border">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Suggest Whols. (+20%)</span>
-            <span className="text-base font-black text-gray-700 mt-1 block">₹{safeNum(analysisResult?.costing?.suggestedWholesale, 2)}</span>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-xl border">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Distributor (+15%)</span>
-            <span className="text-base font-black text-gray-700 mt-1 block">₹{safeNum(analysisResult?.costing?.suggestedDistributor, 2)}</span>
-          </div>
-          <div className="bg-emerald-50/30 p-3 rounded-xl border border-emerald-100">
-            <span className="text-[9px] text-emerald-800 font-extrabold block uppercase">MRP (incl. 18% GST)</span>
-            <span className="text-base font-black text-emerald-700 mt-1 block">₹{safeNum(analysisResult?.costing?.suggestedMRP, 2)}</span>
-          </div>
-        </div>
-
-        <p className="text-[10px] text-amber-600 font-bold bg-amber-50/50 p-2.5 rounded-xl border border-amber-100 leading-relaxed text-center">
-          ⚠️ Reference pricing based on cost + standard industry margins — not market-validated. Verify against local competitor pricing before finalizing.
-        </p>
-      </div>
+      <CostingMarginsCard
+        analysisResult={analysisResult}
+        overheadPct={overheadPct}
+        setOverheadPct={setOverheadPct}
+        packagingCost={packagingCost}
+        setPackagingCost={setPackagingCost}
+      />
 
       {/* COMPATIBILITY ALERTS & RISK ANALYSIS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pairwise alerts */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <ShieldAlert size={14} className="text-red-500" /> Surfactant Compatibility Alerts (Phase 1H)
-          </h4>
-          <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
-            {analysisResult.compatibilityAlerts.length === 0 ? (
-              <div className="text-xs text-emerald-700 bg-emerald-50 p-4 rounded-xl border border-emerald-100 font-bold flex items-center gap-2">
-                <CheckCircle2 size={16} /> Highly Compatible - All pairwise checks passed successfully.
-              </div>
-            ) : (
-              analysisResult.compatibilityAlerts.map((alert: any, idx: number) => (
-                <div key={idx} className={`p-3 rounded-xl border text-xs space-y-1 ${
-                  alert.severity === "Critical" ? "bg-red-50 border-red-200 text-red-900" :
-                  alert.severity === "High" ? "bg-red-50/50 border-red-100 text-red-800" :
-                  "bg-amber-50/50 border-amber-200 text-amber-800"
-                }`}>
-                  <span className="font-extrabold uppercase text-[9px] tracking-wider block bg-white/60 px-1.5 py-0.5 rounded w-fit">
-                    [{alert.severity}] {alert.type}
-                  </span>
-                  <p className="font-bold">{alert.description}</p>
-                  <p className="text-[10px] opacity-80">{alert.reason}</p>
-                  {alert.recommendation && (
-                    <p className="text-[10px] font-bold mt-1 bg-white/30 p-1.5 rounded border border-black/5">
-                      💡 Mixing recommendation: {alert.recommendation}
-                    </p>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Risk Analysis Alerts */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <AlertTriangle size={14} className="text-amber-500" /> Scientific Formulation Risk Warnings (Phase 1G)
-          </h4>
-          <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
-            {analysisResult.riskAnalysisWarnings.length === 0 ? (
-              <div className="text-xs text-emerald-700 bg-emerald-50 p-4 rounded-xl border border-emerald-100 font-bold flex items-center gap-2">
-                <CheckCircle2 size={16} /> Formulation within safe threshold balances.
-              </div>
-            ) : (
-              analysisResult.riskAnalysisWarnings.map((warning: string, idx: number) => (
-                <div key={idx} className="p-3 bg-amber-50/50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-start gap-2 leading-relaxed">
-                  <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-600" />
-                  <span className="font-semibold">{warning}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+      <CompatibilityRiskCard analysisResult={analysisResult} />
 
       {/* DYNAMIC MANUFACTURING & MIXING SEQUENCE */}
       {analysisResult.mixingInstructions && analysisResult.mixingInstructions.length > 0 && (
@@ -1979,7 +1483,7 @@ function SmartFormulaAnalyzerProInner({
         </div>
       )}
 
-      {/* AI RECOMMENDATION ENGINE (Phase 1J) */}
+      {/* AI RECOMMENDATION ENGINE */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <div className="flex justify-between items-center border-b pb-3 flex-wrap gap-2">
           <div>
@@ -2031,7 +1535,7 @@ function SmartFormulaAnalyzerProInner({
         )}
       </div>
 
-      {/* VERSION CONTROL & BENCHMARK ENGINE (Phase 2) */}
+      {/* VERSION CONTROL & BENCHMARK ENGINE */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <div className="flex justify-between items-center border-b pb-3 flex-wrap gap-2">
           <div>
@@ -2050,7 +1554,6 @@ function SmartFormulaAnalyzerProInner({
 
         {savedVersions.length > 0 && (
           <div className="space-y-4">
-            {/* Version list */}
             <div className="flex gap-2 overflow-x-auto pb-2 text-xs">
               {savedVersions.map((v, idx) => (
                 <div key={idx} className="bg-gray-50 border p-2.5 rounded-xl text-left space-y-1 shrink-0 w-[160px]">
@@ -2065,7 +1568,6 @@ function SmartFormulaAnalyzerProInner({
               ))}
             </div>
 
-            {/* Compare module */}
             <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Compare Formulations Difference</span>
               <div className="flex items-center gap-3 text-xs">
@@ -2100,7 +1602,6 @@ function SmartFormulaAnalyzerProInner({
                 )}
               </div>
 
-              {/* Compare display */}
               {showCompareSection && compareVersionB && (() => {
                 const getVerData = (key: string) => {
                   if (key === "current") {
@@ -2177,7 +1678,7 @@ function SmartFormulaAnalyzerProInner({
         )}
       </div>
 
-      {/* EXPORT CENTER & BIBLIOGRAPHY (Phase 3) */}
+      {/* EXPORT CENTER & BIBLIOGRAPHY */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
           <FileText size={14} className="text-teal-600" /> Professional Laboratory Export Center & References
@@ -2209,7 +1710,6 @@ function SmartFormulaAnalyzerProInner({
           </button>
         </div>
 
-        {/* Real Scientific References (Phase 3) */}
         <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-2 text-[11px] text-gray-500 font-medium">
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Scientific Standards & Literature Bibliography</span>
           <ul className="list-disc pl-4 space-y-1 leading-relaxed">
@@ -2229,7 +1729,7 @@ function SmartFormulaAnalyzerProInner({
         </div>
       </div>
 
-      {/* EXPLAIN MODAL PANEL (Phase 1I) */}
+      {/* EXPLAIN MODAL PANEL */}
       {explainModal && explainModal.isOpen && (
         <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 border shadow-2xl space-y-4 text-xs">
@@ -2267,6 +1767,12 @@ function SmartFormulaAnalyzerProInner({
           </div>
         </div>
       )}
+
+      <SubscriptionPaywallModal
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        highlightedFeature="PDF Professional R&D Report Export"
+      />
     </div>
   );
 }

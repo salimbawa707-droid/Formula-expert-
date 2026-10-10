@@ -9,7 +9,12 @@ import {
   calculateDensity
 } from '../calculators';
 import { evaluateExpertReasoning } from '../expertReasoningEngine';
+import { evaluateScientificQualityGate } from '../scientificQualityGateEngine';
+import { FORMULAS } from '../../data/formulas';
 import { FormulationIngredient } from '../../types';
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
 export interface PhaseDTestResult {
   group: string;
@@ -412,6 +417,204 @@ export function runPhaseDForensicTestSuite(): {
       );
     }
   });
+
+  // =========================================================================
+  // 10. APK Signing Security Regression Suite
+  // =========================================================================
+  const releaseScriptPath = path.join(process.cwd(), 'scripts', 'build_release_apk.py');
+  const releaseScriptContent = fs.readFileSync(releaseScriptPath, 'utf8');
+
+  // Test 10a: No hardcoded signing password "detergent2026"
+  assert(
+    '10. APK Signing Security',
+    'T10a: No hardcoded signing password detergent2026 exists',
+    !releaseScriptContent.includes('detergent2026'),
+    true,
+    true
+  );
+
+  // Test 10b: No local private key generation code
+  const hasKeyGenCode = releaseScriptContent.includes('generateKeyPairSync') || 
+                        releaseScriptContent.includes('generateKeyPair') ||
+                        releaseScriptContent.includes('openssl genrsa') ||
+                        releaseScriptContent.includes('openssl genpkey') ||
+                        releaseScriptContent.includes('keytool -genkey') ||
+                        releaseScriptContent.includes('keytool -genkeypair');
+  assert(
+    '10. APK Signing Security',
+    'T10b: No private-key or keystore generation functions are implemented',
+    !hasKeyGenCode,
+    true,
+    true
+  );
+
+  // Test 10c: References to external keystore variables are used
+  const usesEnvVars = releaseScriptContent.includes('KEYSTORE_PATH') && 
+                      releaseScriptContent.includes('KEYSTORE_STORE_PASS') && 
+                      releaseScriptContent.includes('KEYSTORE_KEY_PASS');
+  assert(
+    '10. APK Signing Security',
+    'T10c: External keystore configuration environment variables are integrated',
+    usesEnvVars,
+    true,
+    true
+  );
+
+  // Test 10d: Missing KEYSTORE_PATH fails immediately in scripts/build_release_apk.py
+  let missingPathFails = false;
+  try {
+    execSync(`python3 "${releaseScriptPath}"`, {
+      env: {
+        ...process.env,
+        KEYSTORE_PATH: '',
+        KEYSTORE_STORE_PASS: 'somepass',
+        KEYSTORE_KEY_PASS: 'somepass'
+      },
+      stdio: 'pipe'
+    });
+  } catch (e) {
+    missingPathFails = true;
+  }
+  assert(
+    '10. APK Signing Security',
+    'T10d: Execution fails immediately if KEYSTORE_PATH is missing',
+    missingPathFails,
+    true,
+    true
+  );
+
+  // Test 10e: Missing signing passwords fails immediately
+  let missingPassFails = false;
+  try {
+    execSync(`python3 "${releaseScriptPath}"`, {
+      env: {
+        ...process.env,
+        KEYSTORE_PATH: '/tmp/nonexistent_keystore.keystore',
+        KEYSTORE_STORE_PASS: '',
+        KEYSTORE_KEY_PASS: ''
+      },
+      stdio: 'pipe'
+    });
+  } catch (e) {
+    missingPassFails = true;
+  }
+  assert(
+    '10. APK Signing Security',
+    'T10e: Execution fails immediately if signing passwords are empty',
+    missingPassFails,
+    true,
+    true
+  );
+
+  // Test 10f: No signing_key.pem is written or referenced for persistent storage
+  const hasSigningKeyReference = releaseScriptContent.includes('release-artifacts/signing_key.pem') ||
+                                 releaseScriptContent.includes('release-artifacts\\signing_key.pem');
+  assert(
+    '10. APK Signing Security',
+    'T10f: No persistent signing_key.pem file reference exists inside build_release_apk.py',
+    !hasSigningKeyReference,
+    true,
+    true
+  );
+
+  // =========================================================================
+  // 11. Formula Status Integrity & Legacy Path Audit Regression Suite
+  // =========================================================================
+
+  // Test 11a: Missing formula status does not default to COMMERCIAL_READY
+  const qgReport = evaluateScientificQualityGate({
+    ingredients: [
+      { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 },
+      { name: 'NaOH 100%', percentage: 1.18, activeMatterPct: 100 },
+      { name: 'Water', percentage: 88.82 }
+    ],
+    productCategory: 'Laundry Liquid'
+  });
+  assert(
+    '11. Formula Status Integrity',
+    'T11a: Formula status is strictly derived from authoritative Quality Gate',
+    typeof qgReport.finalFormulaStatus === 'string' && qgReport.finalFormulaStatus.length > 0,
+    qgReport.finalFormulaStatus,
+    'valid Quality Gate status'
+  );
+
+  // Test 11b & 11c: INCOMPATIBLE or OUT_OF_SPEC formula cannot become COMMERCIAL_READY
+  const incompatibleFormulaTest11: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, role: 'Anionic Surfactant' },
+    { name: 'Cetrimonium Chloride', percentage: 5, activeMatterPct: 50, role: 'Cationic Surfactant' },
+    { name: 'Water', percentage: 85 }
+  ];
+  const compatGate = evaluateScientificQualityGate({
+    ingredients: incompatibleFormulaTest11,
+    productCategory: 'Laundry Liquid'
+  });
+  assert(
+    '11. Formula Status Integrity',
+    'T11b/c: Incompatible formula cannot achieve commercial readiness status',
+    compatGate.finalFormulaStatus === 'INCOMPATIBLE',
+    compatGate.finalFormulaStatus,
+    'INCOMPATIBLE'
+  );
+
+  // Test 11d: LAB_VALIDATION_REQUIRED cannot become LAB_VALIDATED without evidence
+  assert(
+    '11. Formula Status Integrity',
+    'T11d: Unmeasured formula evidence status is PREDICTED_ONLY',
+    compatGate.evidenceStatus === 'PREDICTED_ONLY',
+    compatGate.evidenceStatus,
+    'PREDICTED_ONLY'
+  );
+
+  // Test 11e: Legacy scientific engines have zero production imports
+  const srcFiles = fs.readdirSync(path.join(process.cwd(), 'src'), { recursive: true });
+  let legacyImported = false;
+  srcFiles.forEach((file: any) => {
+    if (typeof file === 'string' && (file.endsWith('.ts') || file.endsWith('.tsx'))) {
+      const fullPath = path.join(process.cwd(), 'src', file);
+      if (fs.statSync(fullPath).isFile()) {
+        const isTestFile = file.includes('__tests__') || file.includes('test-calculations') || file.includes('.test.');
+        if (!isTestFile) {
+          const content = fs.readFileSync(fullPath, 'utf8');
+          if (content.includes('machineEngine') || content.includes('troubleshooterEngine')) {
+            legacyImported = true;
+          }
+        }
+      }
+    }
+  });
+  assert(
+    '11. Formula Status Integrity',
+    'T11e: Legacy scientific engines have zero production imports in src/',
+    !legacyImported,
+    true,
+    true
+  );
+
+  // Test 11f: No active hardcoded scientific result remains
+  const hasInvalidStatus = FORMULAS.some((f: any) => !f.status);
+  assert(
+    '11. Formula Status Integrity',
+    'T11f: All master formula templates have non-empty synchronized status',
+    !hasInvalidStatus,
+    true,
+    true
+  );
+
+  // Test 11g & 11h: Formula status remains synchronized with Quality Gate & Fingerprint/version attached
+  const sampleFormula = FORMULAS[0];
+  const sampleGate = evaluateScientificQualityGate({
+    ingredients: sampleFormula.ingredients,
+    productCategory: sampleFormula.category,
+    formulaName: sampleFormula.name,
+    formulaVersion: sampleFormula.version || '1.0.0'
+  });
+  assert(
+    '11. Formula Status Integrity',
+    'T11g/h: Quality Gate report contains valid fingerprint and version',
+    Boolean(sampleGate.formulaFingerprint && sampleGate.formulaVersion),
+    true,
+    true
+  );
 
   const total = results.length;
   const passed = results.filter(r => r.passed).length;

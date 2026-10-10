@@ -1,4 +1,5 @@
 import { FormulationIngredient } from '../types';
+import { calculateWaterHardnessTolerance } from './chelatorEngine';
 
 export type ClimatePreset = 'Temperate' | 'Hot & Humid Tropical' | 'Cold Northern' | 'Arid / Desert';
 export type WaterHardnessPreset = 'Soft (< 60 ppm)' | 'Medium (60-120 ppm)' | 'Hard (120-180 ppm)' | 'Very Hard (> 180 ppm)';
@@ -69,6 +70,10 @@ export function analyzeClimateAndHardWater(
 ): any {
   const cStr = String(climate || 'Temperate');
   const hStr = String(waterHardness || 'Medium');
+  const safeIngs = Array.isArray(_ingredients) ? _ingredients : [];
+  const hasIngs = safeIngs.length > 0;
+  const hardnessRes = hasIngs ? calculateWaterHardnessTolerance(safeIngs) : null;
+
   return {
     preservativeAdjustment: cStr.includes('Tropical') ? 'Increase preservative concentration by 20% due to ambient heat microbial risks.' : 'Standard preservative loading.',
     viscosityAdjustment: cStr.includes('Cold') ? 'Expect higher product viscosity at low temperature; reduce salt by 0.2% to prevent gelling.' : 'Viscosity profiles stable.',
@@ -80,15 +85,15 @@ export function analyzeClimateAndHardWater(
     },
     hardnessInfo: {
       name: hStr,
-      maxSupportedPpm: 250,
+      maxSupportedPpm: hardnessRes ? hardnessRes.maxSupportedPpm : 'NOT_EVALUATED',
       targetPpm: 150,
       recommendedChelators: ['GLDA 47%', 'Sodium Citrate', 'EDTA Tetrasodium'],
       recommendedBuilders: ['Sodium Carbonate', 'Zeolite 4A'],
       recommendedBuffers: ['Sodium Metasilicate', 'Triethanolamine']
     },
-    calculatedHardnessTolerance: '180 ppm CaCO3',
-    isHardnessExceeded: false,
-    expectedStabilityScore: 92,
+    calculatedHardnessTolerance: hardnessRes ? `${hardnessRes.maxSupportedPpm} ppm CaCO3` : 'NOT_EVALUATED',
+    isHardnessExceeded: hardnessRes ? (hardnessRes.status === 'WARNING' || hardnessRes.status === 'INSUFFICIENT') : false,
+    expectedStabilityScore: hardnessRes ? (hardnessRes.status === 'PASS' ? 95 : hardnessRes.status === 'WARNING' ? 75 : 50) : 'NOT_EVALUATED',
     thermalRisks: ['Slight viscosity thinning at 45°C oven storage test.'],
     recommendations: [
       { id: 'rec-1', title: 'Maintain pH above 6.5', reason: 'Preserves enzyme longevity in warm climates', category: 'Stability', confidenceScore: 90 },

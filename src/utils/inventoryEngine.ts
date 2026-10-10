@@ -11,7 +11,7 @@ export interface InventoryItem {
   unit: string;
   minimumStockKg: number;
   reorderLevelKg: number;
-  costPerKg: number;
+  costPerKg: number | null;
   lotNumber?: string;
   supplier?: string;
   lastUpdated?: string;
@@ -26,7 +26,7 @@ export interface ProductionRequirementItem {
   remainingStockKg: number;
   status: 'sufficient' | 'insufficient' | 'zero_required';
   shortfallKg: number;
-  costPerKg: number;
+  costPerKg: number | null;
   totalCost: number;
 }
 
@@ -49,7 +49,7 @@ export interface ProductionBatchRun {
   consumedIngredients: {
     name: string;
     consumedKg: number;
-    costPerKg: number;
+    costPerKg: number | null;
   }[];
   totalCost: number;
   status: 'Completed' | 'Failed';
@@ -107,7 +107,7 @@ export function getInitialDefaultInventory(): InventoryItem[] {
       unit: 'kg',
       minimumStockKg: seed.min,
       reorderLevelKg: seed.reorder,
-      costPerKg: typeof item.costPerKg === 'number' && item.costPerKg > 0 ? item.costPerKg : 2.50,
+      costPerKg: typeof item.costPerKg === 'number' && item.costPerKg > 0 ? item.costPerKg : null,
       lotNumber: seed.lot,
       supplier: (item as any).suppliers?.[0] || 'Standard Lab Supply',
       lastUpdated: new Date().toISOString()
@@ -280,9 +280,9 @@ export function checkProductionBatchAvailability(
     const availableStockKg = isWater ? 999999 : (matchedInventory?.currentStockKg ?? 0);
     const costPerKg = typeof ing.costPerKg === 'number' && ing.costPerKg >= 0
       ? ing.costPerKg
-      : (matchedInventory?.costPerKg ?? 2.00);
+      : (matchedInventory?.costPerKg ?? null);
 
-    const lineCost = Number((requiredKg * costPerKg).toFixed(2));
+    const lineCost = costPerKg !== null ? Number((requiredKg * costPerKg).toFixed(2)) : 0;
     totalBatchCost += lineCost;
 
     if (percentage === 0 || requiredKg === 0) {
@@ -364,7 +364,7 @@ export function executeAtomicBatchDeduction(
 
   // Create mutable working copy
   let updatedInventory = JSON.parse(JSON.stringify(currentInventory)) as InventoryItem[];
-  const consumedIngredients: { name: string; consumedKg: number; costPerKg: number }[] = [];
+  const consumedIngredients: { name: string; consumedKg: number; costPerKg: number | null }[] = [];
 
   for (const req of check.requirements) {
     if (req.requiredKg <= 0 || req.status === 'zero_required') continue;

@@ -1,5 +1,7 @@
 import { FormulationIngredient } from '../types';
-import { calculatePHAdvanced, calculateNeutralization as calcNeutAuthoritative, NeutralizationInput as NeutInput } from './pHEngine';
+import { getProductCategory } from '../domain/productTaxonomy';
+import { calculatePHAdvanced, calculateNeutralization as calcNeutAuthoritative } from './pHEngine';
+import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from '../domain/ph/acidBaseDataModel';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculateBlendedHLB as calcBlendedHLBAuthoritative, calculateHLB as calcHLBAuthoritative, evaluateAuthoritativeHLB } from './hlbEngine';
 import { 
@@ -19,16 +21,237 @@ import {
   type SaltCurveAnalysis
 } from './viscosityEngine';
 
+export interface HLBSurfactant {
+  name: string;
+  hlb: number;
+  proportion: number;
+}
+
+export interface ActiveMatterIngredient {
+  name: string;
+  percentageInFormula: number;
+  activeMatterPurity: number;
+}
+
+// Import newly modularized domain engines
+import { calculateFormulationCompatibility, evaluateFormulationStability } from './compatibilityEngine';
+import { 
+  calculateCleaningPerformance, 
+  calculateCPI, 
+  getCategoryPerformanceKPIs,
+  type FormulationPerformanceResult,
+  type CategoryKPI,
+  type PerformanceLabMeasurements,
+  type PerformanceProvenance
+} from './cleaningPerformanceEngine';
+import { calculateLabHealthScore, type LabHealthResult } from './labHealthEngine';
+import { evaluateAIGrade, type AIGradeResult, type AIGradeBreakdown } from './gradeEngine';
+import { 
+  evaluateScientificQualityGate, 
+  type MasterScientificQualityGateInput, 
+  type MasterScientificQualityGateReport,
+  type FinalFormulaStatus,
+  type ScientificValidityStatus,
+  type QualityGateSpecificationStatus,
+  type QualityGateCompatibilityStatus,
+  type QualityGatePerformanceStatus,
+  type QualityGateEvidenceStatus,
+  type QualityGateLabReadiness
+} from './scientificQualityGateEngine';
+import { calculateDensity, calculateTotalSolids, getStandardComponentDensity, type DensityCalculationResult } from './densityEngine';
+import {
+  generateMasterScientificProvenanceReport,
+  computeFormulaFingerprint,
+  checkResultTraceability,
+  type ProvenanceState,
+  type ScientificDimensionKey,
+  type ScientificDimensionProvenance,
+  type TraceabilityChain,
+  type MasterScientificProvenanceReport
+} from './provenanceEngine';
+import {
+  evaluateFormulaScientificValidation,
+  validateMeasurementRecord,
+  analyzeLabReplicates,
+  checkMeasurementComparability,
+  calculatePredictionError,
+  evaluateCategoryModelValidation,
+  proposeCalibrationCandidates,
+  CATEGORY_EVIDENCE_MATRIX,
+  type DetailedLabEvidenceRecord,
+  type TestConditions,
+  type ReplicateAnalysisResult,
+  type ComparabilityCheckResult,
+  type ErrorAnalysisResult,
+  type CategoryModelValidationSummary,
+  type CalibrationCandidateProposal
+} from './labEvidenceEngine';
+import {
+  evaluateIngredientDataQuality,
+  traceCompatibilityReasoning,
+  analyzeDependencyPropagation,
+  evaluateIngredientSubstitution,
+  globalIngredientGovernance,
+  INGREDIENT_INTELLIGENCE_REGISTRY,
+  INGREDIENT_INTERACTION_RULES,
+  type IngredientProvenance,
+  type ApplicabilityStatus,
+  type SubstitutionTier,
+  type IngredientQualityStatus,
+  type IngredientChargeProfile,
+  type IngredientGradeProfile,
+  type IngredientDefinition,
+  type InteractionRule,
+  type TraceableCompatibilityFinding,
+  type DependencyPropagationReport,
+  type SubstitutionRecommendation,
+  type GovernedIngredientKnowledgeSnapshot
+} from './ingredientIntelligenceEngine';
+import {
+  ScientificModelGovernanceRegistry,
+  globalGovernanceRegistry,
+  INITIAL_GOVERNED_PARAMETERS,
+  GOLDEN_FORMULA_SET,
+  calculateModelChangeImpact,
+  evaluateHistoricalFormulaReproducibility,
+  type ParameterClassification,
+  type ParameterScope,
+  type GovernanceStatus,
+  type GovernedScientificParameter,
+  type CalibrationApprovalRecord,
+  type ScientificModelVersion,
+  type ChangeImpactAnalysisResult,
+  type ModelRollbackResult
+} from './scientificGovernanceEngine';
+import { 
+  calculateWaterHardnessTolerance, 
+  getChelatorBindingCapacity, 
+  calculateWaterHardnessLoad, 
+  calculateFormulationChelationCapacity, 
+  evaluateFormulationGreenChelators, 
+  calculateGreenChelators,
+  calculateDynamicChelatorRequirement,
+  getProductHardnessPolicy,
+  MW_CACO3,
+  AUTHORITATIVE_CHELATOR_DATABASE,
+  WATER_HARDNESS_SCENARIOS,
+  PRODUCT_HARDNESS_POLICIES,
+  type WaterHardnessToleranceResult,
+  type GreenChelatorResult,
+  type ChelatorDetail,
+  type GreenChelatorInput,
+  type DynamicChelatorRequirement,
+  type ChelatorSpecies,
+  type FormulationChelationCapacityResult,
+  type FormulationChelationIngredientDetail,
+  type WaterHardnessScenario,
+  type WaterHardnessScenarioId,
+  type ProductHardnessPolicy,
+  type HardnessProtectionStatus,
+  type ChelationMechanism
+} from './chelatorEngine';
+import { calculateDilution, convertUnit, type DilutionResult } from './dilutionEngine';
+import { calculateLiquidNVR, type NVRResult } from './liquidNvrEngine';
+import {
+  FormulaScientificOrchestrator,
+  ORCHESTRATOR_VERSION,
+  type CanonicalFormulaInput,
+  type CanonicalFormulaEvaluationResult,
+  type HLBResultOutput,
+  type EvaluationStage,
+  type StageDiagnostic
+} from './orchestrator';
+import { evaluateRegulatoryCompliance, type RegulatoryEvaluationReport, type RegulatoryContext } from './regulatoryEngine';
+
+// Export everything required by the public API
 export { 
+  FormulaScientificOrchestrator,
+  ORCHESTRATOR_VERSION,
+  evaluateRegulatoryCompliance,
+  generateMasterScientificProvenanceReport,
+  computeFormulaFingerprint,
+  checkResultTraceability,
+  evaluateFormulaScientificValidation,
   evaluateAuthoritativeHLB, 
   evaluateAuthoritativeActiveMatter, 
   ActiveMatterEngine, 
-  ViscosityEngine
+  ViscosityEngine,
+  calculateFormulationCompatibility,
+  evaluateFormulationStability,
+  calculateCleaningPerformance,
+  calculateCPI,
+  getCategoryPerformanceKPIs,
+  calculateLabHealthScore,
+  evaluateAIGrade,
+  evaluateScientificQualityGate,
+  calculateDensity,
+  calculateTotalSolids,
+  getStandardComponentDensity,
+  calculateWaterHardnessTolerance,
+  getChelatorBindingCapacity,
+  calculateWaterHardnessLoad,
+  calculateFormulationChelationCapacity,
+  evaluateFormulationGreenChelators,
+  calculateGreenChelators,
+  calculateDynamicChelatorRequirement,
+  getProductHardnessPolicy,
+  MW_CACO3,
+  AUTHORITATIVE_CHELATOR_DATABASE,
+  WATER_HARDNESS_SCENARIOS,
+  PRODUCT_HARDNESS_POLICIES,
+  calculateDilution,
+  convertUnit,
+  calculateLiquidNVR
 };
+
 export type {
+  ProvenanceState,
+  ScientificDimensionKey,
+  ScientificDimensionProvenance,
+  TraceabilityChain,
+  MasterScientificProvenanceReport,
   ViscosityReport,
   SaltCurvePoint,
-  SaltCurveAnalysis
+  SaltCurveAnalysis,
+  LabHealthResult,
+  AIGradeResult,
+  AIGradeBreakdown,
+  MasterScientificQualityGateInput,
+  MasterScientificQualityGateReport,
+  FinalFormulaStatus,
+  ScientificValidityStatus,
+  QualityGateSpecificationStatus,
+  QualityGateCompatibilityStatus,
+  QualityGatePerformanceStatus,
+  QualityGateEvidenceStatus,
+  QualityGateLabReadiness,
+  DensityCalculationResult,
+  WaterHardnessToleranceResult,
+  GreenChelatorResult,
+  ChelatorDetail,
+  GreenChelatorInput,
+  DynamicChelatorRequirement,
+  ChelatorSpecies,
+  FormulationChelationCapacityResult,
+  FormulationChelationIngredientDetail,
+  WaterHardnessScenario,
+  WaterHardnessScenarioId,
+  ProductHardnessPolicy,
+  HardnessProtectionStatus,
+  ChelationMechanism,
+  DilutionResult,
+  FormulationPerformanceResult,
+  CategoryKPI,
+  PerformanceLabMeasurements,
+  PerformanceProvenance,
+  NVRResult,
+  CanonicalFormulaInput,
+  CanonicalFormulaEvaluationResult,
+  HLBResultOutput,
+  EvaluationStage,
+  StageDiagnostic,
+  RegulatoryEvaluationReport,
+  RegulatoryContext
 };
 
 export function calculateSaltCurve(
@@ -54,6 +277,14 @@ export function calculateRawSurfactants(ingredients: FormulationIngredient[]): n
   return calcRawSurfactantsAuthoritative(ingredients);
 }
 
+export function calculateDetailedViscosity(ingredients: FormulationIngredient[], options?: any): ViscosityReport {
+  return calcViscosityAuthoritative(ingredients, options);
+}
+
+export function calculateAIGrade(ingredients: any, ...args: any[]): AIGradeResult {
+  return evaluateAIGrade(ingredients, ...args);
+}
+
 export function roundCurrency(val: number): number {
   return Math.round((val + Number.EPSILON) * 100) / 100;
 }
@@ -71,10 +302,12 @@ export function calculateBatchCost(ingredients: FormulationIngredient[], batchSi
   return roundCurrency(costPerKg * batchSizeKg);
 }
 
-export function calculateCPI(ingredients: FormulationIngredient[], ..._args: any[]): number {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  const res = calculateCleaningPerformance(safeIngs);
-  return res.cleaningScore;
+export function calculateNeutralization(input: any) {
+  return calcNeutAuthoritative(input);
+}
+
+export function calculateHLB(input: any) {
+  return calcHLBAuthoritative(input);
 }
 
 /**
@@ -99,7 +332,7 @@ export function getIngredientEcoMetrics(nameOrIng: string | FormulationIngredien
   const n = (name || "").toLowerCase();
   const isWater = n.includes('water') || n.includes('aqua');
   const isMineral = n.includes('salt') || n.includes('sodium chloride') || n.includes('silicate');
-  const isPlant = n.includes('citric') || n.includes('glycerin') || n.includes('coco') || n.includes('apg');
+  const isPlant = n.includes('citric') || n.includes('glycerin') || n.includes('coco') || n.includes('apg') || n.includes('glucoside') || n.includes('glucapon') || n.includes('panthenol') || n.includes('essential oil') || n.includes('perfume') || n.includes('fragrance');
 
   return {
     biodegradabilityPct: isWater || isMineral ? 100 : (isPlant ? 98 : 85),
@@ -111,19 +344,38 @@ export function getIngredientEcoMetrics(nameOrIng: string | FormulationIngredien
   };
 }
 
-export function calculateFormulationEcoMetrics(_ingredients: FormulationIngredient[], ..._args: any[]) {
+export function calculateFormulationEcoMetrics(ingredients: FormulationIngredient[], ..._args: any[]) {
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  const complexEco = calculateComplexEcoScore(safeIngs);
+  
+  // Calculate dynamic average biodegradability based on ingredient concentrations
+  let totalMass = 0;
+  let weightedBiodeg = 0;
+  
+  safeIngs.forEach(ing => {
+    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
+    if (pct > 0) {
+      const eco = getIngredientEcoMetrics(ing);
+      weightedBiodeg += pct * eco.biodegradabilityPct;
+      totalMass += pct;
+    }
+  });
+  
+  const avgBiodeg = totalMass > 0 ? Math.round(weightedBiodeg / totalMass) : 100;
+  
   return {
-    biodegradabilityIndex: 92,
-    renewableCarbonIndex: 68,
-    aquaticToxicityScore: 'Low Risk',
-    ecoScore: 88,
-    biodegradabilityPct: 92,
-    plantBasedPct: 68
+    biodegradabilityIndex: avgBiodeg,
+    renewableCarbonIndex: complexEco.plantBasedOverallPct,
+    aquaticToxicityScore: complexEco.score >= 80 ? 'Low Risk' : (complexEco.score >= 50 ? 'Moderate Risk' : 'High Risk'),
+    ecoScore: complexEco.score,
+    biodegradabilityPct: avgBiodeg,
+    plantBasedPct: complexEco.plantBasedOverallPct
   };
 }
 
-export function calculateCorrectedEcoRating(_ingredients: FormulationIngredient[]) {
-  return 88;
+export function calculateCorrectedEcoRating(ingredients: FormulationIngredient[]) {
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  return calculateComplexEcoScore(safeIngs).score;
 }
 
 export function getPreservativeWarning(ingredients: FormulationIngredient[], _targetPH?: number): { message: string } | string | null {
@@ -139,13 +391,15 @@ export function getPreservativeWarning(ingredients: FormulationIngredient[], _ta
 }
 
 export function getTargetPHRange(category: string, _role?: string): { min: number; max: number; label: string } {
-  switch (category) {
-    case 'Laundry Detergents': return { min: 7.5, max: 9.5, label: 'Alkaline Laundry Target (7.5 - 9.5)' };
-    case 'Dishwashing': return { min: 6.0, max: 8.0, label: 'Neutral Dishwashing Target (6.0 - 8.0)' };
-    case 'Hard Surface Cleaner': return { min: 8.0, max: 11.5, label: 'Heavy Duty Cleaner Target (8.0 - 11.5)' };
-    case 'Car Wash': return { min: 6.5, max: 8.5, label: 'Safe Automotive Target (6.5 - 8.5)' };
-    default: return { min: 6.0, max: 9.0, label: 'General Detergent Range (6.0 - 9.0)' };
+  const def = getProductCategory(category);
+  if (def) {
+    return {
+      min: def.targetPHMin,
+      max: def.targetPHMax,
+      label: `${def.label} Target (${def.targetPHMin} - ${def.targetPHMax})`
+    };
   }
+  return { min: 6.0, max: 9.0, label: 'General Detergent Range (6.0 - 9.0)' };
 }
 
 const VALID_CANONICAL_CATEGORIES = new Set([
@@ -267,7 +521,7 @@ export function deriveCanonicalCategory(rawCat: string, rawRole: string, rawFunc
   }
 
   // Hydrotropes
-  if (combined.includes('hydrotrope') || combined.includes('sxs') || combined.includes('cumene')) {
+  if (combined.includes('hydrotrope') || combined.includes('sxs') || combined.includes('xylene') || combined.includes('coumene')) {
     return 'Hydrotrope';
   }
 
@@ -331,144 +585,6 @@ export function getDefaultActiveMatter(nameOrIng: string | FormulationIngredient
   return getDefaultActiveMatterAuthoritative(nameOrIng);
 }
 
-export function getChelatorBindingCapacity(name: string): number {
-  const n = (name || "").toLowerCase();
-  if (!n) return 0;
-  if (n.includes('glda') || n.includes('dissolvine') || n.includes('gl-47')) return 137; // GLDA 47% Liquid (Dissolvine GL-47-S)
-  if (n.includes('citrate') || n.includes('citric')) {
-    if (n.includes('citric acid')) return 0; // citric acid is an acidifier, not a chelating sodium salt
-    return 150; // Sodium Citrate Dihydrate
-  }
-  if (n.includes('gluconate')) return 76; // Sodium Gluconate
-  if (n.includes('edta')) return 220; // EDTA Tetrasodium
-  if (n.includes('mgda')) return 155; // MGDA 38% Liquid
-  if (n.includes('dtpa')) return 200; // DTPA
-  return 0; // Non-chelating ingredients return 0
-}
-
-export function calculateWaterHardnessLoad(hardnessPpm: number, washVolumeL: number = 10): number {
-  const ppm = typeof hardnessPpm === 'number' && !isNaN(hardnessPpm) ? Math.max(0, hardnessPpm) : 0;
-  const vol = typeof washVolumeL === 'number' && !isNaN(washVolumeL) ? Math.max(0, washVolumeL) : 10;
-  return ppm * vol; // mg CaCO3
-}
-
-export function calculateFormulationChelationCapacity(ingredients: FormulationIngredient[], washDoseGrams: number = 20, batchSizeKg: number = 100) {
-  const ings = Array.isArray(ingredients) ? ingredients : [];
-  const dose = typeof washDoseGrams === 'number' && washDoseGrams > 0 ? washDoseGrams : 20;
-  const batchKg = typeof batchSizeKg === 'number' && batchSizeKg > 0 ? batchSizeKg : 100;
-
-  let totalSequestrationMg = 0;
-  let batchSequestrationGrams = 0;
-  const details = ings.map(ing => {
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const validPct = isNaN(pct) || pct < 0 ? 0 : pct;
-    const massGrams = (validPct / 100) * dose;
-    const batchMassGrams = (validPct / 100) * batchKg * 1000;
-    const bindingCapacityMgPerG = getChelatorBindingCapacity(ing?.name || '');
-    const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
-    const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
-
-    totalSequestrationMg += boundCaCO3Mg;
-    batchSequestrationGrams += batchBoundCaCO3Grams;
-
-    return {
-      name: ing?.name || 'Unknown',
-      percentage: validPct,
-      massGrams,
-      bindingCapacityMgPerG,
-      boundCaCO3Mg,
-      batchBoundCaCO3Grams
-    };
-  });
-
-  return { totalSequestrationMg, batchSequestrationGrams, details };
-}
-
-export interface WaterHardnessToleranceResult {
-  maxSupportedPpm: number;
-  maxSupportedStoichiometricPpm: number;
-  rating: string;
-  description: string;
-  totalSequestrationMg: number;
-  requiredSequestrationMg: number;
-  hardnessLoadMg: number;
-  batchSequestrationGrams: number;
-  washDoseGrams: number;
-  washVolumeL: number;
-  safetyMarginPct: number;
-  sufficiency: 'sufficient' | 'borderline' | 'insufficient';
-  valueOf: () => string;
-  toString: () => string;
-}
-
-export function calculateWaterHardnessTolerance(
-  ingredients: FormulationIngredient[],
-  waterHardnessPpm: number = 150,
-  washVolumeL: number = 10,
-  washDoseGrams: number = 20,
-  batchSizeKg: number = 100
-): WaterHardnessToleranceResult {
-  const ings = Array.isArray(ingredients) ? ingredients : [];
-  const { totalSequestrationMg, batchSequestrationGrams } = calculateFormulationChelationCapacity(ings, washDoseGrams, batchSizeKg);
-  const targetHardnessPpm = typeof waterHardnessPpm === 'number' ? waterHardnessPpm : 150;
-  const vol = typeof washVolumeL === 'number' ? washVolumeL : 10;
-  
-  const hardnessLoadMg = calculateWaterHardnessLoad(targetHardnessPpm, vol);
-  const requiredSequestrationMg = hardnessLoadMg * 1.25; // 25% safety margin
-
-  // Max supported ppm with 25% safety margin: totalSequestrationMg / (washVolumeL * 1.25)
-  const maxSupportedPpm = totalSequestrationMg > 0 ? Number((totalSequestrationMg / (vol * 1.25)).toFixed(1)) : 0;
-  // Stoichiometric limit without safety margin: totalSequestrationMg / washVolumeL
-  const maxSupportedStoichiometricPpm = totalSequestrationMg > 0 ? Number((totalSequestrationMg / vol).toFixed(1)) : 0;
-
-  let sufficiency: 'sufficient' | 'borderline' | 'insufficient' = 'sufficient';
-  if (totalSequestrationMg === 0) {
-    sufficiency = targetHardnessPpm <= 150 ? 'borderline' : 'insufficient';
-  } else if (totalSequestrationMg >= requiredSequestrationMg) {
-    sufficiency = 'sufficient';
-  } else if (totalSequestrationMg >= hardnessLoadMg) {
-    sufficiency = 'borderline';
-  } else {
-    sufficiency = 'insufficient';
-  }
-
-  let ratingStr = 'Moderate (150 ppm)';
-  let descStr = 'Moderate hardness tolerance; chelator addition recommended for hard water.';
-
-  if (totalSequestrationMg > 0) {
-    if (sufficiency === 'sufficient') {
-      ratingStr = `High (${maxSupportedPpm} ppm)`;
-      descStr = `Sufficient chelation capacity (${Math.round(totalSequestrationMg)} mg CaCO₃ in ${washDoseGrams}g dose) to bind Ca²⁺/Mg²⁺ ions at ${targetHardnessPpm} ppm with safety margin.`;
-    } else if (sufficiency === 'borderline') {
-      ratingStr = `Borderline (${maxSupportedPpm} ppm)`;
-      descStr = `Chelation capacity (${Math.round(totalSequestrationMg)} mg CaCO₃ in ${washDoseGrams}g dose) meets stoichiometric demand (${hardnessLoadMg} mg) but lacks recommended 25% safety margin (${Math.round(requiredSequestrationMg)} mg) for ${targetHardnessPpm} ppm.`;
-    } else {
-      ratingStr = `Low (${maxSupportedPpm} ppm)`;
-      descStr = `Chelation capacity in ${washDoseGrams}g dose is ${Math.round(totalSequestrationMg)} mg CaCO₃ (supports ${maxSupportedPpm} ppm with 25% margin / ${maxSupportedStoichiometricPpm} ppm stoichiometric) vs ${hardnessLoadMg} mg demanded for ${targetHardnessPpm} ppm in ${vol}L wash. In liquid laundry, chelators function as threshold co-builders alongside calcium-tolerant surfactants.`;
-    }
-  } else {
-    ratingStr = `Unchelated (0 ppm)`;
-    descStr = `No chelating agent detected in formula. Active detergency in ${targetHardnessPpm} ppm hard water relies entirely on surfactant calcium tolerance.`;
-  }
-
-  return {
-    maxSupportedPpm,
-    maxSupportedStoichiometricPpm,
-    rating: ratingStr,
-    description: descStr,
-    totalSequestrationMg,
-    requiredSequestrationMg,
-    hardnessLoadMg,
-    batchSequestrationGrams,
-    washDoseGrams,
-    washVolumeL,
-    safetyMarginPct: 25,
-    sufficiency,
-    valueOf: () => ratingStr,
-    toString: () => ratingStr
-  };
-}
-
 export function getInciName(name: string): string {
   const n = (name || "").toLowerCase();
   if (n.includes('labsa')) return 'Dodecylbenzene Sulfonic Acid';
@@ -477,261 +593,6 @@ export function getInciName(name: string): string {
   if (n.includes('naoh')) return 'Sodium Hydroxide';
   if (n.includes('water')) return 'Aqua';
   return name;
-}
-
-export function calculateFormulationCompatibility(
-  ingredients: FormulationIngredient[],
-  estimatedPH?: number | string,
-  ..._args: any[]
-): {
-  compatible: boolean;
-  compatibilityScore: number;
-  alerts: Array<{
-    id: string;
-    title: string;
-    severity: 'Low' | 'Medium' | 'High' | 'Critical';
-    message: string;
-    recommendation?: string;
-  }>;
-  warnings: string[];
-  modelType?: string;
-  riskLevel?: 'Low' | 'Medium' | 'High' | 'Critical';
-  keyPositiveFactors?: string[];
-  keyNegativeFactors?: string[];
-  limitations?: string;
-  labValidationGuidance?: string;
-} {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-
-  let phVal = 7.5;
-  if (typeof estimatedPH === 'number' && !isNaN(estimatedPH)) {
-    phVal = estimatedPH;
-  } else if (typeof estimatedPH === 'string' && estimatedPH.trim() !== '') {
-    const parsed = parseFloat(estimatedPH);
-    if (!isNaN(parsed)) {
-      phVal = parsed;
-    } else if (safeIngs.length > 0) {
-      const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
-      const computed = calculatePHAdvanced(mapped).pH;
-      if (typeof computed === 'number' && !isNaN(computed)) {
-        phVal = computed;
-      }
-    }
-  } else if (safeIngs.length > 0) {
-    const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
-    const computed = calculatePHAdvanced(mapped).pH;
-    if (typeof computed === 'number' && !isNaN(computed)) {
-      phVal = computed;
-    }
-  }
-
-  let hasAnionic = false;
-  let hasCationic = false;
-  let hasPreservative = false;
-  let hasEnzyme = false;
-  let hasHydrotrope = false;
-  let waterPct = 0;
-
-  for (const ing of safeIngs) {
-    const name = (ing?.name || '').toLowerCase();
-    const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
-    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
-
-    if (pct <= 0) continue; // Explicit zero percentage ingredients are physically absent
-
-    if (name.includes('water') || name.includes('aqua') || (cat.includes('solvent') && name.includes('water'))) {
-      waterPct += pct;
-    }
-
-    if (
-      cat.includes('anionic') ||
-      name.includes('labsa') ||
-      name.includes('sles') ||
-      name.includes('sls') ||
-      name.includes('aos') ||
-      name.includes('sulfate') ||
-      name.includes('sulphonate')
-    ) {
-      hasAnionic = true;
-    }
-
-    if (
-      cat.includes('cationic') ||
-      name.includes('quaternary') ||
-      name.includes('quat') ||
-      name.includes('cetrimonium') ||
-      name.includes('behentrimonium') ||
-      name.includes('benzalkonium')
-    ) {
-      hasCationic = true;
-    }
-
-    if (
-      cat.includes('preservative') ||
-      name.includes('preservative') ||
-      name.includes('isothiazolinone') ||
-      name.includes('formalin') ||
-      name.includes('kathon') ||
-      name.includes('phenoxyethanol') ||
-      name.includes('paraben') ||
-      name.includes('benzoate')
-    ) {
-      hasPreservative = true;
-    }
-
-    if (
-      cat.includes('enzyme') ||
-      name.includes('protease') ||
-      name.includes('amylase') ||
-      name.includes('lipase') ||
-      name.includes('cellulase') ||
-      name.includes('mannanase') ||
-      name.includes('stainzyme') ||
-      name.includes('savinase')
-    ) {
-      hasEnzyme = true;
-    }
-
-    if (
-      cat.includes('hydrotrope') ||
-      name.includes('sxs') ||
-      name.includes('xylene') ||
-      name.includes('coumene') ||
-      name.includes('glycol')
-    ) {
-      hasHydrotrope = true;
-    }
-  }
-
-  const alerts: Array<{
-    id: string;
-    title: string;
-    severity: 'Low' | 'Medium' | 'High' | 'Critical';
-    message: string;
-    recommendation?: string;
-  }> = [];
-
-  let penaltySum = 0;
-
-  // 1. Ionic Surfactant Incompatibility
-  if (hasAnionic && hasCationic) {
-    penaltySum += 30;
-    alerts.push({
-      id: 'anionic-cationic-incompatibility',
-      title: 'Anionic / Cationic Interaction Hazard',
-      severity: 'Critical',
-      message: 'Opposite-charge surfactant systems (anionic and cationic) can form ion-pair complexes resulting in potential coacervation, precipitation, or reduced detergency depending on concentration, counterions, and pH.',
-      recommendation: 'Verify phase stability or replace cationic component with amphoteric or nonionic co-surfactants.'
-    });
-  }
-
-  // 2. Preservative System & Water Activity
-  if (waterPct > 20 && !hasPreservative) {
-    penaltySum += 10;
-    alerts.push({
-      id: 'missing-preservative',
-      title: 'Microbial Spoilage Risk (Unpreserved Aqueous System)',
-      severity: 'High',
-      message: 'Aqueous liquid formulations with high water activity (>20% water) are susceptible to microbial growth over time if unpreserved.',
-      recommendation: 'Incorporate a broad-spectrum preservative system (e.g., Phenoxyethanol, Kathon CG, or Sodium Benzoate) suited for the target pH.'
-    });
-  }
-
-  if (hasPreservative && phVal > 8.5) {
-    penaltySum += 10;
-    alerts.push({
-      id: 'preservative-ph-mismatch',
-      title: 'Preservative Alkaline Stability Risk',
-      severity: 'Medium',
-      message: `Certain preservative systems (e.g., isothiazolinones) exhibit accelerated hydrolysis or reduced efficacy in alkaline conditions (pH ${phVal.toFixed(1)} > 8.5).`,
-      recommendation: 'Verify supplier pH stability data or select alkali-stable biocides (e.g., Phenoxyethanol or Benzyl Alcohol).'
-    });
-  }
-
-  // 3. Enzyme pH Denaturation
-  if (hasEnzyme && (phVal < 5.5 || phVal > 10.5)) {
-    penaltySum += 15;
-    alerts.push({
-      id: 'enzyme-ph-denaturation',
-      title: 'Enzyme Activity / pH Stability Risk',
-      severity: 'High',
-      message: `Enzymatic efficacy (protease, amylase, lipase, etc.) may be significantly reduced outside their optimal functional pH window (pH ${phVal.toFixed(1)} outside 5.5 - 10.5).`,
-      recommendation: 'Maintain formulation pH within 6.0 - 10.0 or select pH-stabilized enzyme variants with supplier documentation.'
-    });
-  }
-
-  // 4. Extreme pH Hazards
-  if (phVal < 3.0 || phVal > 12.0) {
-    penaltySum += 20;
-    alerts.push({
-      id: 'extreme-ph-hazard',
-      title: 'Extreme pH Operational Hazard',
-      severity: 'Critical',
-      message: `Formulation pH (${phVal.toFixed(1)}) presents severe corrosion, skin irritation, and chemical stability concerns.`,
-      recommendation: 'Incorporate pH adjusters or buffering agents to target standard functional ranges (4.5 - 11.5).'
-    });
-  }
-
-  // 5. Phase Separation / Gelation
-  const totalActiveSurfactant = calculateActiveSurfactants(safeIngs);
-  if (totalActiveSurfactant > 40 && !hasHydrotrope) {
-    penaltySum += 10;
-    alerts.push({
-      id: 'high-active-matter-phase-instability',
-      title: 'Phase Instability / Gelation Hazard',
-      severity: 'Medium',
-      message: `Formulations with high active surfactant content (${totalActiveSurfactant.toFixed(1)}% > 40%) without hydrotropes or co-solvents may undergo phase separation or liquid crystal gel formation.`,
-      recommendation: 'Incorporate 1 - 3% hydrotrope or co-solvent (e.g., Sodium Xylene Sulfonate, Propylene Glycol, or Ethanol).'
-    });
-  }
-
-  const rawScore = 100 - penaltySum;
-  const compatibilityScore = isNaN(rawScore) ? 100 : Math.max(0, Math.min(100, Math.round(rawScore)));
-
-  const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = !hasCriticalOrHigh;
-  const warnings = alerts.map(a => a.message);
-
-  const keyPositiveFactors: string[] = [];
-  const keyNegativeFactors: string[] = alerts.map(a => a.title);
-
-  if (!hasAnionic || !hasCationic) {
-    keyPositiveFactors.push('Charge compatibility: No opposing anionic-cationic precipitation pairs detected.');
-  }
-  if (waterPct > 20 && hasPreservative) {
-    keyPositiveFactors.push('Preservation system incorporated for aqueous stability.');
-  }
-  if (totalActiveSurfactant <= 40 || hasHydrotrope) {
-    keyPositiveFactors.push('Surfactant concentration within stable micellar dispersion boundaries.');
-  }
-  if (phVal >= 4.5 && phVal <= 11.5) {
-    keyPositiveFactors.push(`pH balance (${phVal.toFixed(1)}) within safe operational window.`);
-  }
-
-  const modelType = 'Rule-Based Deterministic Interaction Matrix';
-  const riskLevel: 'Low' | 'Medium' | 'High' | 'Critical' = alerts.some(a => a.severity === 'Critical')
-    ? 'Critical'
-    : alerts.some(a => a.severity === 'High')
-    ? 'High'
-    : alerts.some(a => a.severity === 'Medium')
-    ? 'Medium'
-    : 'Low';
-
-  const limitations = 'Predictive thermodynamic and charge compatibility matrix. Does not account for specific surfactant counter-ion packing or high-temperature cloud point depression without experimental confirmation.';
-  const labValidationGuidance = 'Oven stability testing (40-45°C, 3 months), freeze-thaw cyclicity (3 cycles, -5°C to 25°C), and centrifugation (3000 rpm, 30 min) recommended for batch release.';
-
-  return {
-    compatible,
-    compatibilityScore,
-    alerts,
-    warnings,
-    modelType,
-    riskLevel,
-    keyPositiveFactors,
-    keyNegativeFactors,
-    limitations,
-    labValidationGuidance
-  };
 }
 
 export function generateDynamicMixingInstructions(_a: any, ..._args: any[]): string[] {
@@ -744,831 +605,14 @@ export function generateDynamicMixingInstructions(_a: any, ..._args: any[]): str
   ];
 }
 
-export function calculateCleaningPerformance(a: any, ..._args: any[]) {
-  const ingredients: FormulationIngredient[] = Array.isArray(a) ? a : [];
-  const activeSurfactant = calculateActiveSurfactants(ingredients);
-
-  let builderPct = 0;
-  let enzymePct = 0;
-  let hasAnionic = false;
-  let hasNonionic = false;
-  let hasAmphoteric = false;
-  let hasCationic = false;
-  let hasSolvent = false;
-
-  for (const ing of ingredients) {
-    const name = (ing?.name || '').toLowerCase();
-    const cat = (ing?.category || ing?.role || '').toLowerCase();
-    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
-
-    if (
-      cat.includes('builder') || cat.includes('chelator') ||
-      name.includes('citrate') || name.includes('glda') || name.includes('edta') ||
-      name.includes('mgda') || name.includes('gluconate') || name.includes('stpp') ||
-      name.includes('carbonate') || name.includes('silicate') || name.includes('zeolite') ||
-      name.includes('soda ash')
-    ) {
-      builderPct += pct;
-    }
-
-    if (
-      cat.includes('enzyme') || name.includes('protease') || name.includes('amylase') ||
-      name.includes('lipase') || name.includes('cellulase') || name.includes('mannanase') ||
-      name.includes('stainzyme') || name.includes('savinase') || name.includes('enzyme')
-    ) {
-      enzymePct += pct;
-    }
-
-    if (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
-      hasAnionic = true;
-    }
-    if (cat.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg')) {
-      hasNonionic = true;
-    }
-    if (cat.includes('amphoteric') || name.includes('capb') || name.includes('betaine')) {
-      hasAmphoteric = true;
-    }
-    if (cat.includes('cationic')) {
-      hasCationic = true;
-    }
-    if (cat.includes('solvent') || name.includes('glycol') || name.includes('alcohol')) {
-      hasSolvent = true;
-    }
-  }
-
-  const baseSurfactantScore = activeSurfactant > 0 ? Math.min(80, activeSurfactant * 4.0 + 10) : 0;
-  const builderContribution = Math.min(15, Math.round(builderPct * 1.5));
-  const enzymeBonus = enzymePct > 0 ? Math.min(15, Math.round(enzymePct * 10 + 5)) : 0;
-
-  let surfactantSynergy = 0;
-  const typesCount = [hasAnionic, hasNonionic, hasAmphoteric, hasCationic].filter(Boolean).length;
-  if (typesCount >= 3) surfactantSynergy = 25;
-  else if (hasAnionic && hasNonionic) surfactantSynergy = 20;
-  else if (hasAnionic && hasAmphoteric) surfactantSynergy = 15;
-  else if (hasNonionic && hasAmphoteric) surfactantSynergy = 12;
-  else if (typesCount === 1) surfactantSynergy = 5;
-
-  const synergyBonus = Math.round(surfactantSynergy * 0.2);
-
-  let score = 0;
-  if (activeSurfactant > 0 || builderPct > 0 || enzymePct > 0) {
-    score = Math.min(100, Math.max(0, Math.round(baseSurfactantScore + builderContribution + enzymeBonus + synergyBonus)));
-  }
-
-  const degreasingScore = Math.min(100, Math.max(0, Math.round(activeSurfactant * 4.5 + (hasSolvent ? 10 : 0) + (enzymePct > 0 ? 5 : 0))));
-  const particulateSoilRemoval = Math.min(100, Math.max(0, Math.round(score * 0.85 + (builderPct > 0 ? 10 : 0))));
-  const foamStabilityScore = Math.min(100, Math.max(0, Math.round(activeSurfactant * 4.0 + (hasAmphoteric ? 15 : 0))));
-
-  let cleaningPower: "Outstanding" | "High" | "Medium" | "Low" = "Low";
-  if (score >= 90) cleaningPower = "Outstanding";
-  else if (score >= 75) cleaningPower = "High";
-  else if (score >= 60) cleaningPower = "Medium";
-
-  const keyPositiveFactors: string[] = [];
-  const keyNegativeFactors: string[] = [];
-
-  if (activeSurfactant >= 10) {
-    keyPositiveFactors.push(`Primary active surfactant loading (${activeSurfactant.toFixed(1)}% active solids)`);
-  } else if (activeSurfactant > 0) {
-    keyPositiveFactors.push(`Active surfactant contribution (${activeSurfactant.toFixed(1)}%)`);
-    keyNegativeFactors.push(`Active surfactant level (${activeSurfactant.toFixed(1)}%) is modest`);
-  } else {
-    keyNegativeFactors.push('No active surfactants detected');
-  }
-
-  if (surfactantSynergy >= 15) {
-    keyPositiveFactors.push('Multi-class surfactant synergy (e.g. Anionic + Amphoteric/Nonionic)');
-  }
-  if (builderContribution > 0) {
-    keyPositiveFactors.push(`Builder / chelation alkalinity & ion-binding contribution (+${builderContribution} pts)`);
-  }
-  if (enzymeBonus > 0) {
-    keyPositiveFactors.push(`Catalytic enzyme package bonus (+${enzymeBonus} pts)`);
-  }
-  if (hasSolvent) {
-    keyPositiveFactors.push('Solvent-assisted hydrophobic degreasing');
-  }
-
-  const modelType = 'Empirical Multi-Factor Predictive Model';
-  const riskLevel: 'Low' | 'Medium' | 'High' = score >= 75 ? 'Low' : (score >= 50 ? 'Medium' : 'High');
-  const limitations = 'Empirical R&D screening metric based on surfactant concentration, class synergy, builder loading, and enzyme catalysis. Does not substitute for standardized Tergotometer stain-swatch (ASTM D4265) laboratory trials.';
-  const labValidationGuidance = 'Laboratory stain-removal efficacy testing (e.g. EMPA/WFK swatches for sebum, grease, protein, and particulate soils) recommended for claims substantiation.';
-
-  return {
-    rating: score,
-    overallScore: score,
-    cleaningScore: score,
-    degreasingScore,
-    greaseRemoval: degreasingScore,
-    surfactantSynergy,
-    particulateSoilRemoval,
-    foamStabilityScore,
-    cleaningPower,
-    builderContribution,
-    enzymeBonus,
-    modelType,
-    riskLevel,
-    keyPositiveFactors,
-    keyNegativeFactors,
-    limitations,
-    labValidationGuidance
-  };
-}
-
-export function evaluateFormulationGreenChelators(ingredients: FormulationIngredient[]) {
-  const ings = Array.isArray(ingredients) ? ingredients : [];
-  const greenChelators = ings.filter(i => {
-    const cap = getChelatorBindingCapacity(i?.name || '');
-    return cap > 0;
-  });
-
-  const hasGreenChelator = greenChelators.length > 0;
-  const { totalSequestrationMg } = calculateFormulationChelationCapacity(ings, 20);
-
-  return {
-    isGreen: hasGreenChelator,
-    totalChelatorCount: greenChelators.length,
-    totalSequestrationMg,
-    recommendation: hasGreenChelator
-      ? `Active green chelation package binding approx ${Math.round(totalSequestrationMg)} mg CaCO₃ per wash dose.`
-      : 'Consider adding biodegradable GLDA or Sodium Citrate for hard water stability.'
-  };
-}
-
-export interface LabHealthAlert {
-  id: string;
-  title: string;
-  severity: 'Critical' | 'High' | 'Medium' | 'Low';
-  message: string;
-  recommendation: string;
-}
-
-export interface LabHealthBreakdown {
-  phScore: number;
-  balScore: number;
-  costScore: number;
-  ecoScore: number;
-  compScore: number;
-  completenessScore: number;
-}
-
-export interface LabHealthResult {
-  finalScore: number;
-  score: number;
-  rating: string;
-  riskLevel: string;
-  alerts: LabHealthAlert[];
-  warnings: string[];
-  breakdown: LabHealthBreakdown;
-}
-
-export function calculateLabHealthScore(
-  input: any,
-  phOverride?: number
-): number & LabHealthResult {
-  let ingredients: FormulationIngredient[] = [];
-  let phVal: number | undefined = undefined;
-
-  if (Array.isArray(input)) {
-    ingredients = input;
-    phVal = typeof phOverride === 'number' && !isNaN(phOverride) ? phOverride : undefined;
-  } else if (input && typeof input === 'object') {
-    if (Array.isArray(input.analyzedIngs)) {
-      ingredients = input.analyzedIngs;
-    } else if (Array.isArray(input.ingredients)) {
-      ingredients = input.ingredients;
-    }
-    if (typeof input.ph === 'number' && !isNaN(input.ph)) {
-      phVal = input.ph;
-    } else if (typeof phOverride === 'number' && !isNaN(phOverride)) {
-      phVal = phOverride;
-    }
-  }
-
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-
-  // If pH is missing or NaN, calculate estimated pH using pHEngineAdapter or default to 7.0
-  if (phVal === undefined || isNaN(phVal) || typeof phVal !== 'number') {
-    if (safeIngs.length > 0) {
-      try {
-        const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
-        const phRes = calculatePHAdvanced(mapped);
-        phVal = typeof phRes?.pH === 'number' && !isNaN(phRes.pH) ? phRes.pH : 7.0;
-      } catch {
-        phVal = 7.0;
-      }
-    } else {
-      phVal = 7.0;
-    }
-  }
-
-  let totalPenalties = 0;
-  let phPenalty = 0;
-  let rawMaterialPenalty = 0;
-  let enzymePenalty = 0;
-  let restrictedPenalty = 0;
-  let unknownPenalty = 0;
-  let otherPenalty = 0;
-
-  const alerts: LabHealthAlert[] = [];
-
-  // Filter ingredients with percentage > 0 (Explicit Zero Safety)
-  const activeIngs = safeIngs.filter(ing => {
-    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
-    return typeof pct === 'number' && !isNaN(pct) && pct > 0;
-  });
-
-  // 1. Operational pH Hazards (R&D / Handling Safety)
-  if (phVal < 3.0) {
-    phPenalty += 25;
-    alerts.push({
-      id: 'ph-extreme-acid',
-      title: 'Extreme Acidic pH Hazard',
-      severity: 'Critical',
-      message: `Formulation pH (${phVal.toFixed(1)}) presents severe skin corrosion, eye damage, and acid chemical burn hazards during handling.`,
-      recommendation: 'Incorporate alkaline neutralizing agents (e.g., NaOH, TEA, or Na2CO3) to adjust pH to standard target range (4.5 - 10.5).'
-    });
-  } else if (phVal < 4.5) {
-    phPenalty += 10;
-    alerts.push({
-      id: 'ph-mild-acid',
-      title: 'Mild Acidic Handling Precaution',
-      severity: 'Medium',
-      message: `Formulation pH (${phVal.toFixed(1)}) is mildly acidic; prolonged skin contact may cause mild dermal irritation.`,
-      recommendation: 'Consider buffering with Sodium Citrate or mild alkali if skin-neutral mildness is required.'
-    });
-  } else if (phVal > 12.0) {
-    phPenalty += 25;
-    alerts.push({
-      id: 'ph-extreme-alkali',
-      title: 'Extreme Alkaline Caustic Hazard',
-      severity: 'Critical',
-      message: `Formulation pH (${phVal.toFixed(1)}) presents severe caustic chemical burn and eye damage hazards.`,
-      recommendation: 'Neutralize excess alkalinity with organic acids (e.g., Citric Acid) or reduce strong builder loading.'
-    });
-  } else if (phVal > 10.5) {
-    phPenalty += 10;
-    alerts.push({
-      id: 'ph-mild-alkali',
-      title: 'Mild Alkaline Handling Precaution',
-      severity: 'Medium',
-      message: `Formulation pH (${phVal.toFixed(1)}) is mildly alkaline; requires standard glove protection during raw material blending.`,
-      recommendation: 'Incorporate Citric Acid or acid buffering if neutral mildness is desired.'
-    });
-  }
-
-  // 2. Raw Material Safety Hazards (Strong Acids, Caustic Alkalis, Enzymes, Volatiles, Dust)
-  let hasStrongAcid = false;
-  let hasStrongAlkali = false;
-  let hasEnzymePowder = false;
-  let hasEnzymeLiquid = false;
-  let hasHeavyDust = false;
-  let hasHighFragrance = false;
-  let hasVolatileSolvent = false;
-
-  for (const ing of activeIngs) {
-    const name = (ing?.name || '').toLowerCase();
-    const cat = (ing?.category || ing?.role || '').toLowerCase();
-    const notes = (ing?.notes || '').toLowerCase();
-    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
-
-    // Strong Acid Check
-    if (
-      name.includes('labsa') || name.includes('acid slurry') || name.includes('sulfonic acid') ||
-      name.includes('phosphoric acid') || name.includes('hydrochloric') || name.includes('sulfuric acid')
-    ) {
-      hasStrongAcid = true;
-    }
-
-    // Strong Alkali Check
-    if (
-      name.includes('caustic soda') || name.includes('naoh') || name.includes('sodium hydroxide') ||
-      name.includes('koh') || name.includes('potassium hydroxide') || name.includes('sodium metasilicate')
-    ) {
-      hasStrongAlkali = true;
-    }
-
-    // Enzyme Check
-    if (
-      cat.includes('enzyme') || name.includes('protease') || name.includes('amylase') ||
-      name.includes('lipase') || name.includes('cellulase') || name.includes('subtilisin') ||
-      name.includes('savinase') || name.includes('stainzyme') || name.includes('enzyme')
-    ) {
-      if (name.includes('powder') || name.includes('granule') || name.includes('solid') || name.includes('dust') || notes.includes('powder')) {
-        hasEnzymePowder = true;
-      } else {
-        hasEnzymeLiquid = true;
-      }
-    }
-
-    // Bulk Powder Dust Hazard (Non-enzyme)
-    if (
-      pct >= 5.0 &&
-      !cat.includes('enzyme') && !name.includes('enzyme') &&
-      (name.includes('powder') || name.includes('soda ash') || name.includes('sodium carbonate powder') || name.includes('sls needles'))
-    ) {
-      hasHeavyDust = true;
-    }
-
-    // Fragrance / Allergen Check
-    if (
-      pct > 1.0 &&
-      (cat.includes('fragrance') || cat.includes('perfume') || name.includes('fragrance') || name.includes('perfume') || name.includes('limonene') || name.includes('essential oil'))
-    ) {
-      hasHighFragrance = true;
-    }
-
-    // Volatile Solvent Check
-    if (
-      pct > 5.0 &&
-      (name.includes('ethanol') || name.includes('isopropanol') || name.includes('ipa') || name.includes('methanol') || name.includes('acetone'))
-    ) {
-      hasVolatileSolvent = true;
-    }
-
-    // Restricted / Prohibited Ingredients Check
-    if (
-      pct > 0.1 &&
-      (name.includes('nonylphenol') || name.includes('npe-') || name.includes('formaldehyde') || name.includes('borax') || name.includes('triclosan'))
-    ) {
-      restrictedPenalty += 20;
-      alerts.push({
-        id: `restricted-${name.replace(/[^a-z0-9]/gi, '-')}`,
-        title: 'Restricted Raw Material Alert',
-        severity: 'High',
-        message: `Ingredient '${ing.name}' is flagged as a restricted raw material due to environmental or regulatory constraints.`,
-        recommendation: 'Replace with eco-compliant alternatives (e.g. Alcohol Ethoxylates or GLDA).'
-      });
-    }
-
-    // Unknown Ingredient Safety Check
-    const knownKeywords = [
-      'water', 'labsa', 'sles', 'sls', 'lae', 'capb', 'betaine', 'aod', 'aos', 'cde',
-      'citrate', 'glda', 'edta', 'mgda', 'gluconate', 'stpp', 'carbonate', 'silicate',
-      'zeolite', 'soda ash', 'naoh', 'koh', 'citric', 'protease', 'amylase', 'lipase',
-      'cellulase', 'enzyme', 'kathon', 'phenoxyethanol', 'benzoate', 'isothiazolinone',
-      'perfume', 'fragrance', 'color', 'dye', 'salt', 'sodium chloride', 'sulfate',
-      'glycol', 'alcohol', 'glycerin', 'polymer', 'xanthan', 'cmc', 'surfactant', 'builder',
-      'solvent', 'preservative', 'chelator', 'acid', 'base', 'alkali', 'thickener'
-    ];
-    const isKnown = knownKeywords.some(kw => name.includes(kw) || cat.includes(kw));
-    if (!isKnown && pct > 0) {
-      if (unknownPenalty < 6) { // cap unknown penalty at 6
-        unknownPenalty += 2;
-        alerts.push({
-          id: `unknown-data-${name.replace(/[^a-z0-9]/gi, '-')}`,
-          title: 'Unknown Safety Data Notice',
-          severity: 'Low',
-          message: `Ingredient '${ing.name}' safety profile is not cataloged in universal library; review supplier Safety Data Sheet (SDS) for handling guidance.`,
-          recommendation: 'Obtain supplier SDS and update safety metadata.'
-        });
-      }
-    }
-  }
-
-  // Handle Strong Acid Penalties
-  if (hasStrongAcid) {
-    if (phVal < 4.5) {
-      rawMaterialPenalty += 15;
-      alerts.push({
-        id: 'strong-acid-unneutralized',
-        title: 'Unneutralized Acid Slurry Hazard',
-        severity: 'High',
-        message: `Unneutralized raw surfactant acid present in low pH formulation (pH ${phVal.toFixed(1)}).`,
-        recommendation: 'Incorporate alkaline neutralizing agent (e.g. Caustic Soda 50% or TEA) under temperature control.'
-      });
-    } else {
-      rawMaterialPenalty += 5;
-      alerts.push({
-        id: 'strong-acid-neutralized',
-        title: 'Raw Acid Handling Precaution',
-        severity: 'Low',
-        message: `Raw acid slurry incorporated in batch (neutralized to pH ${phVal.toFixed(1)}); handle neat acid with acid-resistant PPE during vessel charging.`,
-        recommendation: 'Maintain PPE during acid addition phase.'
-      });
-    }
-  }
-
-  // Handle Strong Alkali Penalties
-  if (hasStrongAlkali) {
-    if (phVal > 10.5) {
-      rawMaterialPenalty += 20;
-      alerts.push({
-        id: 'strong-alkali-unneutralized',
-        title: 'High Caustic Alkali Load Hazard',
-        severity: 'High',
-        message: `Unneutralized caustic alkali present in high pH formulation (pH ${phVal.toFixed(1)}).`,
-        recommendation: 'Adjust stoichiometry with organic acid or reduce free alkali percentage.'
-      });
-    } else {
-      rawMaterialPenalty += 5;
-      alerts.push({
-        id: 'strong-alkali-neutralized',
-        title: 'Caustic Neutralization Precaution',
-        severity: 'Low',
-        message: `Concentrated caustic alkali used in batch (neutralized to pH ${phVal.toFixed(1)}); observe exothermic dissolution safeguards during charging.`,
-        recommendation: 'Control neutralization temperature below 60°C.'
-      });
-    }
-  }
-
-  // Handle Enzyme Penalties
-  if (hasEnzymePowder) {
-    enzymePenalty += 15;
-    alerts.push({
-      id: 'enzyme-powder-dust',
-      title: 'Powder Enzyme Inhalation Hazard',
-      severity: 'High',
-      message: 'Powder enzyme preparation detected: Fine protein dust presents occupational respiratory sensitization hazard.',
-      recommendation: 'Use dust-tight transfer hoppers, local exhaust ventilation, and FFP3 respirators during dry enzyme dumping.'
-    });
-  } else if (hasEnzymeLiquid) {
-    enzymePenalty += 5;
-    alerts.push({
-      id: 'enzyme-liquid-sensitization',
-      title: 'Liquid Enzyme Handling Precaution',
-      severity: 'Low',
-      message: 'Liquid enzyme preparation present: Minimal aerosolization risk; observe standard eye and dermal protection during charging.',
-      recommendation: 'Avoid splash aerosolization during liquid dosing.'
-    });
-  }
-
-  // Handle Bulk Powder Inhalation
-  if (hasHeavyDust) {
-    otherPenalty += 5;
-    alerts.push({
-      id: 'powder-dust-inhalation',
-      title: 'Bulk Powder Dust Precaution',
-      severity: 'Low',
-      message: 'High percentage dry powder raw materials present; may generate nuisance dust during dry vessel loading.',
-      recommendation: 'Use dust extraction during dry charging.'
-    });
-  }
-
-  // Handle High Fragrance
-  if (hasHighFragrance) {
-    otherPenalty += 5;
-    alerts.push({
-      id: 'fragrance-sensitization',
-      title: 'High Fragrance Sensitization Precaution',
-      severity: 'Low',
-      message: 'Elevated fragrance or allergen loading (>1.0%); observe skin sensitization precautions during neat oil metering.',
-      recommendation: 'Ensure adequate room ventilation during fragrance addition.'
-    });
-  }
-
-  // Handle Volatile Solvent
-  if (hasVolatileSolvent) {
-    otherPenalty += 10;
-    alerts.push({
-      id: 'volatile-solvent-flammable',
-      title: 'Volatile Solvent Flammability Hazard',
-      severity: 'Medium',
-      message: 'Volatile solvent present (>5.0%): Vapour accumulation and flammability risk during high-speed agitation.',
-      recommendation: 'Use explosion-proof vessel grounding and vapour extraction.'
-    });
-  }
-
-  totalPenalties = phPenalty + rawMaterialPenalty + enzymePenalty + restrictedPenalty + unknownPenalty + otherPenalty;
-  const rawScore = 100 - totalPenalties;
-  const finalScore = isNaN(rawScore) ? 100 : Math.max(0, Math.min(100, Math.round(rawScore)));
-
-  let rating = 'Safe / Low Hazard';
-  if (finalScore >= 85) {
-    rating = 'Safe / Low Hazard';
-  } else if (finalScore >= 70) {
-    rating = 'Moderate Hazard / Handling Precautions';
-  } else if (finalScore >= 50) {
-    rating = 'Elevated Safety Concern';
-  } else {
-    rating = 'High Safety Hazard';
-  }
-
-  const warnings = alerts.map(a => a.message);
-
-  const breakdown: LabHealthBreakdown = {
-    phScore: Math.max(0, Math.min(20, Math.round(20 - (phPenalty * 0.8)))),
-    balScore: Math.max(0, Math.min(20, Math.round(20 - (rawMaterialPenalty * 0.8)))),
-    costScore: 15,
-    ecoScore: Math.max(0, Math.min(20, Math.round(20 - (restrictedPenalty * 0.8)))),
-    compScore: Math.max(0, Math.min(15, Math.round(15 - (enzymePenalty * 0.8)))),
-    completenessScore: Math.max(0, Math.min(10, Math.round(10 - unknownPenalty)))
-  };
-
-  return {
-    finalScore,
-    score: finalScore,
-    rating,
-    riskLevel: rating,
-    alerts,
-    warnings,
-    breakdown,
-    valueOf: () => finalScore,
-    toString: () => String(finalScore)
-  } as any;
-}
-
-export interface AIGradeBreakdown {
-  cpiScore: number;
-  compatibilityScore: number;
-  healthScore: number;
-  activeMatterScore: number;
-  commercialScore: number;
-}
-
-export interface AIGradeResult {
-  grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F' | string;
-  score: number;
-  reasoning: string;
-  breakdown: AIGradeBreakdown;
-}
-
-export function evaluateAIGrade(
-  input: any,
-  phOverride?: number,
-  targetCostOverride?: number
-): AIGradeResult {
-  let rawIngredients: FormulationIngredient[] = [];
-  let phVal: number | undefined = undefined;
-  let targetCostVal: number | undefined = undefined;
-
-  if (Array.isArray(input)) {
-    rawIngredients = input;
-  } else if (input && typeof input === 'object') {
-    if (Array.isArray(input.ingredients)) {
-      rawIngredients = input.ingredients;
-    } else if (Array.isArray(input.analyzedIngs)) {
-      rawIngredients = input.analyzedIngs;
-    }
-    if (typeof input.ph === 'number' && !isNaN(input.ph)) {
-      phVal = input.ph;
-    } else if (typeof input.targetpH === 'number' && !isNaN(input.targetpH)) {
-      phVal = input.targetpH;
-    } else if (input.properties && typeof parseFloat(input.properties.pH) === 'number' && !isNaN(parseFloat(input.properties.pH))) {
-      phVal = parseFloat(input.properties.pH);
-    }
-    if (typeof input.targetCost === 'number' && !isNaN(input.targetCost)) {
-      targetCostVal = input.targetCost;
-    }
-  }
-
-  if (typeof phOverride === 'number' && !isNaN(phOverride)) {
-    phVal = phOverride;
-  }
-  if (typeof targetCostOverride === 'number' && !isNaN(targetCostOverride)) {
-    targetCostVal = targetCostOverride;
-  }
-
-  // Handle empty or invalid formulation
-  if (!Array.isArray(rawIngredients) || rawIngredients.length === 0) {
-    return {
-      grade: 'F',
-      score: 0,
-      reasoning: 'Empty formulation containing no ingredients.',
-      breakdown: {
-        cpiScore: 0,
-        compatibilityScore: 100,
-        healthScore: 100,
-        activeMatterScore: 0,
-        commercialScore: 100
-      }
-    };
-  }
-
-  // Normalize Canonical Field Aliases for all ingredients
-  const ingredients: FormulationIngredient[] = rawIngredients.map((ing: any) => {
-    const name = ing?.name || '';
-    const taxonomy = normalizeIngredientTaxonomy(ing);
-    const category = taxonomy.category;
-    const role = ing?.role || taxonomy.role;
-    const func = ing?.function || taxonomy.function;
-    const isSolventOrWater = name.toLowerCase().includes('water') || name.toLowerCase().includes('aqua') || category.toLowerCase().includes('solvent');
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
-    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? ing?.activePct ?? ing?.purity ?? (isSolventOrWater ? 0 : 100));
-    const cost = Number(ing?.costPerKg ?? ing?.rawMaterialCostPerKg ?? ing?.cost ?? ing?.unitCost ?? 0);
-
-    return {
-      ...ing,
-      name,
-      percentage: pct,
-      percent: pct,
-      percentageInFormula: pct,
-      activeMatterPct: active,
-      activePercent: active,
-      activeMatterPurity: active,
-      activePct: active,
-      purity: active,
-      category,
-      role,
-      function: func,
-      rawMaterialCostPerKg: cost,
-      cost,
-      costPerKg: cost,
-      unitCost: cost
-    };
-  });
-
-  // 1. Active Matter Calculation
-  const activeMatterPct = calculateActiveMatter(ingredients);
-  let activeMatterScore = 100;
-  if (activeMatterPct === 0) {
-    activeMatterScore = 0;
-  } else if (activeMatterPct < 10) {
-    activeMatterScore = Math.min(100, Math.max(0, Math.round(activeMatterPct * 10)));
-  } else if (activeMatterPct > 35) {
-    activeMatterScore = Math.max(50, Math.round(100 - (activeMatterPct - 35) * 2));
-  }
-
-  const activeIngsCount = ingredients.filter((i: any) => {
-    const isSolventOrWater = (i.name || '').toLowerCase().includes('water') || (i.name || '').toLowerCase().includes('aqua') || (i.category || '').toLowerCase().includes('solvent');
-    return i.percentage > 0 && i.activeMatterPct > 0 && !isSolventOrWater;
-  }).length;
-
-  if (activeIngsCount === 0 || activeMatterPct === 0) {
-    return {
-      grade: 'F',
-      score: 0,
-      reasoning: 'Formulation contains no active ingredients or zero total active matter.',
-      breakdown: {
-        cpiScore: 0,
-        compatibilityScore: 100,
-        healthScore: 100,
-        activeMatterScore: 0,
-        commercialScore: 100
-      }
-    };
-  }
-
-  // 2. CPI / Cleaning Performance Engine
-  const cpiRaw = calculateCPI(ingredients);
-  const cpiScore = Math.min(100, Math.max(0, Math.round(cpiRaw)));
-
-  // 3. Compatibility Engine
-  const compResult = calculateFormulationCompatibility(ingredients, phVal);
-  const compatibilityScore = Math.min(100, Math.max(0, Math.round(compResult.compatibilityScore)));
-
-  // 4. Lab Health Score Engine
-  const healthResult = calculateLabHealthScore(ingredients, phVal);
-  const healthScore = Math.min(100, Math.max(0, Math.round(healthResult.finalScore)));
-
-  // 5. Commercial Cost Component
-  let commercialScore = 100;
-  const batchCost = calculateBatchCost(ingredients, 1);
-  if (typeof targetCostVal === 'number' && targetCostVal > 0) {
-    if (batchCost <= targetCostVal) {
-      commercialScore = 100;
-    } else {
-      const overrunPct = ((batchCost - targetCostVal) / targetCostVal) * 100;
-      commercialScore = Math.min(100, Math.max(0, Math.round(100 - overrunPct)));
-    }
-  }
-
-  // 6. Weighted Composite Score
-  // Weights: CPI 30%, Compatibility 25%, Health 25%, Active Matter 10%, Commercial 10%
-  let weightedScore = Math.round(
-    cpiScore * 0.30 +
-    compatibilityScore * 0.25 +
-    healthScore * 0.25 +
-    activeMatterScore * 0.10 +
-    commercialScore * 0.10
-  );
-
-  // 7. Apply Critical Hazard & Quality Overrides
-  let hazardNote = '';
-  const hasIncompatibilityHazard = compResult.alerts.some(a => a.id === 'surfactant-interaction-hazard' || a.severity === 'Critical') || (compResult.compatible === false && compResult.compatibilityScore <= 70);
-  if (hasIncompatibilityHazard) {
-    weightedScore = Math.min(weightedScore, 50);
-    hazardNote += ' (Capped due to chemical compatibility hazard)';
-  }
-
-  const hasHighCausticOrAcidHazard = (phVal !== undefined && (phVal <= 3.0 || phVal >= 12.5)) || healthResult.rating === "High Safety Hazard" || healthResult.finalScore <= 55;
-  if (hasHighCausticOrAcidHazard) {
-    weightedScore = Math.min(weightedScore, 45);
-    hazardNote += ' (Capped due to lab health / safety hazard)';
-  }
-
-  if (activeMatterPct < 3.0) {
-    weightedScore = Math.min(weightedScore, 55);
-    hazardNote += ' (Capped due to insufficient active matter <3.0%)';
-  }
-
-  const finalScore = Math.min(100, Math.max(0, weightedScore));
-
-  // 8. Letter Grade Assignment
-  let grade = 'F';
-  if (finalScore >= 90) grade = 'A+';
-  else if (finalScore >= 80) grade = 'A';
-  else if (finalScore >= 70) grade = 'B';
-  else if (finalScore >= 60) grade = 'C';
-  else if (finalScore >= 50) grade = 'D';
-
-  // 9. Construct Scientific Reasoning
-  const reasons: string[] = [];
-  reasons.push(`Cleaning CPI: ${cpiScore}/100`);
-  reasons.push(`Compatibility: ${compatibilityScore}/100`);
-  reasons.push(`Lab Health: ${healthScore}/100`);
-  reasons.push(`Active Matter: ${activeMatterPct.toFixed(1)}%`);
-
-  if (targetCostVal && targetCostVal > 0) {
-    reasons.push(`Cost: ₹${batchCost.toFixed(2)}/kg (Target: ₹${targetCostVal.toFixed(2)}/kg)`);
-  }
-
-  const reasoning = `Grade ${grade} (${finalScore}/100): ${reasons.join(', ')}.${hazardNote}`;
-
-  return {
-    grade,
-    score: finalScore,
-    reasoning,
-    breakdown: {
-      cpiScore,
-      compatibilityScore,
-      healthScore,
-      activeMatterScore,
-      commercialScore
-    }
-  };
-}
-
-export const calculateAIGrade = evaluateAIGrade;
-
-export function generateFormulationWarnings(ingredients: FormulationIngredient[]): string[] {
-  const warnings: string[] = [];
-  const active = calculateActiveMatter(ingredients);
-  if (active < 5) warnings.push('Active matter is below 5%, product may have weak cleaning performance.');
-  return warnings;
-}
-
-export interface HLBSurfactant {
-  id?: string;
-  name: string;
-  hlb: number;
-  weight?: number;
-  activePercent?: number;
-  proportion?: number;
-}
-
-export interface ActiveMatterIngredient {
-  id?: string;
-  name: string;
-  rawWeight?: number;
-  activePercent?: number;
-  percentageInFormula?: number;
-  activeMatterPurity?: number;
-}
-
-export interface GreenChelatorInput {
-  name: string;
-  percent: number;
-  type?: string;
-  waterHardnessPpm?: number;
-}
-
-export interface ChelatorDetail {
-  id?: string;
-  name: string;
-  percent: number;
-  isGreen: boolean;
-  score: number;
-  calculatedWeightPct?: number;
-  practicalWeightPct?: number;
-  practicalWeightGrams?: number;
-  bindingCapacity?: number;
-  theoreticalSequestrationGrams?: number;
-  coBuilderTargetGrams?: number;
-  citation?: string;
-}
-
-export interface GreenChelatorResult {
-  score: number;
-  isGreen: boolean;
-  totalCaCO3ToBindMg?: number;
-  stoichiometricTargetMg?: number;
-  chelators?: ChelatorDetail[];
-  details: ChelatorDetail[];
-  recommendation: string;
-}
-
-export type NeutralizationInput = NeutInput;
-
-/**
- * Neutralization Calculator — Delegates directly to single authoritative PHEngine.
- */
-export function calculateNeutralization(
-  acidInput: number | NeutralizationInput,
-  acidPurity?: number,
-  basePurity?: number,
-  acidMw = 326.49,
-  baseMw = 39.9971
-) {
-  return calcNeutAuthoritative(acidInput, acidPurity, basePurity, acidMw, baseMw);
-}
-
 export function scaleFormula(ingredients: FormulationIngredient[], batchSizeKg: number, targetBatchKg?: number) {
   const target = targetBatchKg || batchSizeKg || 100;
   return ingredients.map(i => {
     const pct = i.percentage ?? i.percent ?? i.percentageInFormula ?? 0;
     const scaledKg = (pct / 100) * target;
-    const cost = (i.costPerKg || 0) * scaledKg;
+    const cost = (typeof i.costPerKg === 'number' && !isNaN(i.costPerKg) && i.costPerKg >= 0)
+      ? Number((i.costPerKg * scaledKg).toFixed(2))
+      : null;
     return {
       ...i,
       scaledKg,
@@ -1577,10 +621,6 @@ export function scaleFormula(ingredients: FormulationIngredient[], batchSizeKg: 
       costContribution: cost
     };
   });
-}
-
-export function calculateHLB(surfactants: HLBSurfactant[]): number {
-  return calcHLBAuthoritative(surfactants as any);
 }
 
 export interface SurfactantCmcEntry {
@@ -1655,18 +695,6 @@ export interface MixedCmcResult {
   labValidationGuidance: string;
 }
 
-export function calculateTotalSolids(ingredients: FormulationIngredient[]): number {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  return Number(safeIngs.reduce((acc, ing) => {
-    const name = (ing?.name || '').toLowerCase();
-    const role = (ing?.role || (ing as any)?.category || '').toLowerCase();
-    const isVolatile = name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol') || role.includes('solvent');
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const solidFraction = isVolatile && (name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol')) ? 0 : 1;
-    return acc + (pct * solidFraction);
-  }, 0).toFixed(2));
-}
-
 export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCmcResult | null {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   let totalActiveSurfactantPct = 0;
@@ -1681,7 +709,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     const name = ing?.name || '';
     const n = name.toLowerCase();
     const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
-    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? 100) / 100;
+    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? getDefaultActiveMatter(ing)) / 100;
     const activePct = pct * active;
 
     const cmcData = getIngredientCmcData(name);
@@ -1776,7 +804,7 @@ export function getPHConfidenceAndAssumptions(
   for (const ing of safeIngs) {
     const n = (ing?.name || '').toLowerCase();
     const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
-    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? 100) / 100;
+    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? getDefaultActiveMatter(ing)) / 100;
     totalActivePct += pct * active;
 
     if (n.includes('labsa') || n.includes('sulfonic') || n.includes('citric acid')) {
@@ -1815,288 +843,678 @@ export function getPHConfidenceAndAssumptions(
   };
 }
 
-export interface DilutionResult {
-  v1: number;
-  waterNeeded: number;
-  addedWater: number;
-  targetVolume: number;
-  targetStrength?: number;
-  sourceConcentration?: number;
-  isValid: boolean;
-  errorMessage?: string;
+export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: number } | null => {
+  const data = getIngredientCmcData(name);
+  return data ? { cmcMolar: data.cmcMolar, cmcPpm: data.cmcPpm } : null;
+};
+
+export const calculateMixedCmc = (ingredients: any[]) => {
+  return calculateMixedCMC(ingredients);
+};
+
+export function generateFormulationWarnings(ingredients: FormulationIngredient[]): string[] {
+  const warnings: string[] = [];
+  const active = calculateActiveMatter(ingredients);
+  if (active < 5) warnings.push('Active matter is below 5%, product may have weak cleaning performance.');
+  return warnings;
 }
 
-export function calculateDilution(c1: number | { c1: number; c2: number; v2: number }, c2Arg?: number, v2Arg?: number): DilutionResult {
-  let rawC1: any;
-  let rawC2: any;
-  let rawV2: any;
+export const ShelfLifeHeuristicPolicy = {
+  UNPRESERVED_AQUEOUS_LIMIT_MONTHS: 3,
+  IONIC_CLASH_LIMIT_MONTHS: 1,
+  ENZYMATIC_WATER_LIMIT_MONTHS: 12,
+  LOW_WATER_UNPRESERVED_LIMIT_MONTHS: 18,
+  STANDARD_STABILITY_MONTHS: 24
+};
 
-  if (typeof c1 === 'object' && c1 !== null) {
-    rawC1 = (c1 as any).c1 ?? (c1 as any).sourceConcentration;
-    rawC2 = (c1 as any).c2 ?? (c1 as any).targetStrength ?? (c1 as any).targetConcentration;
-    rawV2 = (c1 as any).v2 ?? (c1 as any).targetVolume;
-  } else {
-    rawC1 = c1;
-    rawC2 = c2Arg;
-    rawV2 = v2Arg;
-  }
-
-  if (
-    rawC1 === null || rawC1 === undefined || rawC1 === '' ||
-    rawC2 === null || rawC2 === undefined || rawC2 === '' ||
-    rawV2 === null || rawV2 === undefined || rawV2 === ''
-  ) {
-    return {
-      v1: 0,
-      waterNeeded: 0,
-      addedWater: 0,
-      targetVolume: 0,
-      sourceConcentration: 0,
-      targetStrength: 0,
-      isValid: false,
-      errorMessage: "Concentration and volume parameters must be valid numeric values."
-    };
-  }
-
-  const c1Num = Number(rawC1);
-  const c2Num = Number(rawC2);
-  const v2Num = Number(rawV2);
-
-  if (isNaN(c1Num) || isNaN(c2Num) || isNaN(v2Num)) {
-    return {
-      v1: 0,
-      waterNeeded: 0,
-      addedWater: 0,
-      targetVolume: 0,
-      sourceConcentration: 0,
-      targetStrength: 0,
-      isValid: false,
-      errorMessage: "Concentration and volume parameters must be valid numeric values."
-    };
-  }
-
-  if (c1Num <= 0 || v2Num <= 0 || c2Num < 0) {
-    return {
-      v1: 0,
-      waterNeeded: 0,
-      addedWater: 0,
-      targetVolume: Math.max(0, v2Num),
-      sourceConcentration: Math.max(0, c1Num),
-      targetStrength: Math.max(0, c2Num),
-      isValid: false,
-      errorMessage: c1Num <= 0
-        ? "Source concentration (C1) must be greater than 0%."
-        : v2Num <= 0
-        ? "Target volume (V2) must be greater than 0 L."
-        : "Target concentration (C2) cannot be negative."
-    };
-  }
-
-  if (c2Num > c1Num) {
-    return {
-      v1: 0,
-      waterNeeded: 0,
-      addedWater: 0,
-      targetVolume: v2Num,
-      sourceConcentration: c1Num,
-      targetStrength: c2Num,
-      isValid: false,
-      errorMessage: "Target concentration (C2) cannot exceed source concentration (C1) in a dilution process."
-    };
-  }
-
-  // Standard dilution equation: C1 * V1 = C2 * V2 => V1 = (C2 * V2) / C1
-  const v1 = (c2Num * v2Num) / c1Num;
-  const waterNeeded = Math.max(0, v2Num - v1);
-
-  return {
-    v1: Number(Number(v1.toFixed(4))),
-    waterNeeded: Number(Number(waterNeeded.toFixed(4))),
-    addedWater: Number(Number(waterNeeded.toFixed(4))),
-    targetVolume: v2Num,
-    sourceConcentration: c1Num,
-    targetStrength: c2Num,
-    isValid: true
-  };
+export interface EcoScoreCoefficientMetadata {
+  value: number;
+  sourceType: "EMPIRICAL_MODEL_PARAMETER" | "ENGINEERING_DEFAULT" | "REGULATORY_HAZARD_CLASSIFICATION" | "EMPIRICAL_CALIBRATION" | "REFERENCE_DATABASE";
+  publishedReference: string;
+  calibrationBasis: string;
+  mathematicalDerivationBasis?: string;
+  isMathematicallyDerived: boolean;
+  scoreType: "REGULATORY_HAZARD_PENALTY" | "BIO_BASED_PREMIUM" | "CATALYTIC_PREMIUM" | "PERSISTENCE_PENALTY";
 }
 
-export function convertUnit(val: number, from: string, to: string): number {
-  if (from === 'kg' && to === 'g') return val * 1000;
-  if (from === 'g' && to === 'kg') return val / 1000;
-  if (from === 'lb' && to === 'kg') return val * 0.45359237;
-  if (from === 'kg' && to === 'lb') return val / 0.45359237;
-  return val;
+export const EcoScoreCoefficientRegistry: Record<string, EcoScoreCoefficientMetadata> = {
+  PLANT_BASED_GOOD_BONUS: {
+    value: 10,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "USDA BioPreferred Program guidelines / EU Ecolabel Part B",
+    calibrationBasis: "Minimum bio-based organic carbon content threshold (>=50%) for bio-preferred labeling.",
+    mathematicalDerivationBasis: "Reference defines bio-carbon criteria (>=50%); numeric +10 score is an internal empirical scoring weight.",
+    isMathematicallyDerived: false,
+    scoreType: "BIO_BASED_PREMIUM"
+  },
+  PLANT_BASED_EXCELLENT_BONUS: {
+    value: 15,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "USDA BioPreferred Program guidelines / EU Ecolabel Part B",
+    calibrationBasis: "High bio-based organic carbon content threshold exceeding 75% bio-based carbon.",
+    mathematicalDerivationBasis: "Reference defines high bio-carbon criteria (>=75%); numeric +15 score is an internal empirical scoring weight.",
+    isMathematicallyDerived: false,
+    scoreType: "BIO_BASED_PREMIUM"
+  },
+  CATALYTIC_ENZYME_BONUS: {
+    value: 5,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "DID List (Detergent Ingredients Database) Part A v2016.1",
+    calibrationBasis: "Enzyme rapid aerobic biodegradation and low aquatic toxicity weighting.",
+    mathematicalDerivationBasis: "DID List supplies aerobic biodegradation and CDV parameters; numeric +5 score is an internal empirical premium.",
+    isMathematicallyDerived: false,
+    scoreType: "CATALYTIC_PREMIUM"
+  },
+  BIODEGRADABLE_BUILDER_BONUS: {
+    value: 5,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "EU Ecolabel Commission Decision (EU) 2017/1218 / DID List Part A",
+    calibrationBasis: "Readily biodegradable organic chelating agents (e.g., GLDA, MGDA, sodium citrate) passing OECD 301 criteria.",
+    mathematicalDerivationBasis: "Standards establish OECD 301 biodegradability pass marks; numeric +5 score is an internal empirical premium.",
+    isMathematicallyDerived: false,
+    scoreType: "CATALYTIC_PREMIUM"
+  },
+  SYNTHETIC_ALKYL_SULFATE_DEDUCTION: {
+    value: 10,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "EU Ecolabel Commission Decision (EU) 2017/1218 / GHS Hazard Classification",
+    calibrationBasis: "Aquatic chronic eco-toxicity hazard profile for synthetic commodity anionic surfactants (e.g., LAS, SLES).",
+    mathematicalDerivationBasis: "GHS assigns H412/H411 aquatic chronic toxicity; numeric -10 score is an internal empirical penalty.",
+    isMathematicallyDerived: false,
+    scoreType: "REGULATORY_HAZARD_PENALTY"
+  },
+  PHOSPHATE_STPP_DEDUCTION: {
+    value: 15,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "EU Regulation (EU) No 259/2012 (Phosphates in consumer laundry/dishwasher detergents)",
+    calibrationBasis: "Freshwater eutrophication risks and regulatory bans on inorganic polyphosphates in consumer detergents.",
+    mathematicalDerivationBasis: "Regulation 259/2012 enacts total phosphorus limits; numeric -15 score is an internal empirical penalty.",
+    isMathematicallyDerived: false,
+    scoreType: "REGULATORY_HAZARD_PENALTY"
+  },
+  CHLORINE_BLEACH_DEDUCTION: {
+    value: 15,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "EU Ecolabel Commission Decision (EU) 2017/1218 / DID List Part A",
+    calibrationBasis: "High aquatic acute/chronic toxicity and generation of absorbable organic halogens (AOX).",
+    mathematicalDerivationBasis: "Ecolabel criteria restrict reactive halogenating bleach species; numeric -15 score is an internal empirical penalty.",
+    isMathematicallyDerived: false,
+    scoreType: "REGULATORY_HAZARD_PENALTY"
+  },
+  SYNTHETIC_POLYMER_DEDUCTION: {
+    value: 10,
+    sourceType: "EMPIRICAL_MODEL_PARAMETER",
+    publishedReference: "EU Ecolabel Commission Decision (EU) 2017/1218 / GHS Hazard Classification",
+    calibrationBasis: "Environmental persistence of recalcitrant synthetic aminopolycarboxylates (EDTA/DTPA) and non-biodegradable polymers (polyacrylates/carbomers).",
+    mathematicalDerivationBasis: "Ecolabel excludes persistent non-biodegradable organics; numeric -10 score is an internal empirical penalty.",
+    isMathematicallyDerived: false,
+    scoreType: "PERSISTENCE_PENALTY"
+  }
+};
+
+export const EcoScoreEmpiricalCoefficients = {
+  BASE_SCORE: 80,
+  PLANT_BASED_THRESHOLD_PCT: 50,
+  PLANT_BASED_EXCELLENT_THRESHOLD_PCT: 75,
+  PLANT_BASED_GOOD_BONUS: EcoScoreCoefficientRegistry.PLANT_BASED_GOOD_BONUS.value,
+  PLANT_BASED_EXCELLENT_BONUS: EcoScoreCoefficientRegistry.PLANT_BASED_EXCELLENT_BONUS.value,
+  CATALYTIC_ENZYME_BONUS: EcoScoreCoefficientRegistry.CATALYTIC_ENZYME_BONUS.value,
+  BIODEGRADABLE_BUILDER_BONUS: EcoScoreCoefficientRegistry.BIODEGRADABLE_BUILDER_BONUS.value,
+  SYNTHETIC_ALKYL_SULFATE_DEDUCTION: EcoScoreCoefficientRegistry.SYNTHETIC_ALKYL_SULFATE_DEDUCTION.value,
+  PHOSPHATE_STPP_DEDUCTION: EcoScoreCoefficientRegistry.PHOSPHATE_STPP_DEDUCTION.value,
+  CHLORINE_BLEACH_DEDUCTION: EcoScoreCoefficientRegistry.CHLORINE_BLEACH_DEDUCTION.value,
+  SYNTHETIC_POLYMER_DEDUCTION: EcoScoreCoefficientRegistry.SYNTHETIC_POLYMER_DEDUCTION.value
+};
+
+export interface AlkaliConsumptionResult {
+  value: number;
+  unit: string;
+  sourceType: "PREDICTED" | "INSUFFICIENT_DATA";
+  modelType: "STOICHIOMETRIC_ESTIMATE";
+  sourceEngine: "AlkaliConsumptionEngine" | "StoichiometricNeutralizationEngine";
+  engineVersion: "2.0" | "3.0";
+  freePercentages: Record<string, number>;
+  confidence: number;
+  confidenceClassification?: "STOICHIOMETRIC_ESTIMATE" | "MODEL_COVERAGE_HIGH";
+  labValidationStatus?: "LAB_VALIDATION_NONE";
+  inputBasis: string;
+  assumptions: string[];
+  limitations: string[];
 }
 
-export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, ..._args: any[]): GreenChelatorResult {
-  let params = {
-    waterHardnessPpm: 150,
-    washVolumeL: 10,
-    washDoseGrams: 20,
-    safetyMarginPct: 25,
-    coBuilderTargetPct: 10,
-    maxFormulationCapPct: 3.0,
-  };
+export function calculateAlkaliConsumption(ingredients: FormulationIngredient[]): AlkaliConsumptionResult {
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
 
-  let inputList: any[] = [];
+  let totalAcidEquivalents = 0;
+  let totalBaseEquivalents = 0;
+  const freePercentages: Record<string, number> = {};
+  let hasInsufficientData = false;
 
-  if (Array.isArray(chelators)) {
-    inputList = chelators;
-  } else if (chelators && typeof chelators === 'object') {
-    params = { ...params, ...chelators };
-    if (Array.isArray(chelators.chelators)) {
-      inputList = chelators.chelators;
+  const ingredientDetails = safeIngs.map(ing => {
+    const name = ing?.name || '';
+    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent ?? 0) || 0;
+    
+    // Resolve profile
+    const profile = resolveScientificAcidBaseProfile(ing);
+    
+    // Check if it's an acid or base
+    const isAcid = profile.classification.protonDonorCount !== undefined && profile.classification.protonDonorCount > 0;
+    const isBase = profile.classification.protonAcceptorCount !== undefined && profile.classification.protonAcceptorCount > 0;
+
+    let eq = 0;
+    if (pct > 0 && (isAcid || isBase)) {
+      // Calculate equivalents (rawMassKg = pct for 100kg batch)
+      const eqResult = calculateReactiveEquivalents(profile, pct);
+      if (eqResult.status === 'INSUFFICIENT_DATA') {
+        hasInsufficientData = true;
+      }
+      eq = eqResult.totalReactiveEquivalents ?? 0;
     }
+
+    return {
+      name,
+      pct,
+      isAcid,
+      isBase,
+      eq
+    };
+  });
+
+  // Sum up total equivalents
+  ingredientDetails.forEach(d => {
+    if (d.isAcid) totalAcidEquivalents += d.eq;
+    if (d.isBase) totalBaseEquivalents += d.eq;
+  });
+
+  // Calculate consumed equivalents
+  const equivalentsConsumed = Math.min(totalAcidEquivalents, totalBaseEquivalents);
+  const alkaliConsumptionKg = (equivalentsConsumed * 39.997) / 1000; // convert g/mol to kg/mol
+
+  // Calculate free percentages of acids
+  let freeFraction = 0;
+  if (totalAcidEquivalents > totalBaseEquivalents && totalAcidEquivalents > 1e-6) {
+    freeFraction = 1.0 - (totalBaseEquivalents / totalAcidEquivalents);
   }
 
-  const hardPpm = typeof params.waterHardnessPpm === 'number' ? params.waterHardnessPpm : (parseFloat(String(params.waterHardnessPpm)) || 150);
-  const washVol = typeof params.washVolumeL === 'number' ? params.washVolumeL : (parseFloat(String(params.washVolumeL)) || 10);
-  const washDose = typeof params.washDoseGrams === 'number' && params.washDoseGrams > 0 ? params.washDoseGrams : (parseFloat(String(params.washDoseGrams)) || 20);
-  const margin = typeof params.safetyMarginPct === 'number' ? params.safetyMarginPct : (parseFloat(String(params.safetyMarginPct)) || 25);
-  const coTarget = typeof params.coBuilderTargetPct === 'number' ? params.coBuilderTargetPct : (parseFloat(String(params.coBuilderTargetPct)) || 10);
-  const maxCap = typeof params.maxFormulationCapPct === 'number' ? params.maxFormulationCapPct : (parseFloat(String(params.maxFormulationCapPct)) || 3.0);
-
-  const totalCaCO3ToBindMg = hardPpm * washVol;
-  const stoichiometricTargetMg = totalCaCO3ToBindMg * (1 + margin / 100);
-
-  let details: ChelatorDetail[] = [];
-
-  if (inputList.length > 0) {
-    details = inputList.map((c, i) => {
-      const bindingCap = c.bindingCapacity || getChelatorBindingCapacity(c.name) || 137;
-      const theoGrams = stoichiometricTargetMg / bindingCap;
-      const coGrams = theoGrams * (coTarget / 100);
-      const calcPct = (coGrams / (washDose || 1)) * 100;
-      const pracPct = Math.min(calcPct, maxCap);
-      const pracGrams = (pracPct / 100) * washDose;
-
-      return {
-        id: c.id || String(i + 1),
-        name: c.name || "Green Chelator",
-        percent: c.percent || pracPct,
-        isGreen: true,
-        score: c.score || 90,
-        bindingCapacity: bindingCap,
-        theoreticalSequestrationGrams: theoGrams,
-        coBuilderTargetGrams: coGrams,
-        calculatedWeightPct: calcPct,
-        practicalWeightPct: pracPct,
-        practicalWeightGrams: pracGrams,
-        citation: c.citation || 'EU Ecolabel Technical Data'
-      };
-    });
-  } else {
-    const baseChelators = [
-      { id: 'glda', name: 'Tetrasodium GLDA (47% Liquid)', bindingCapacity: 137, score: 98, citation: 'Dissolvine GL-47-S Technical Specification & Ecolabel Standard' },
-      { id: 'mgda', name: 'Trisodium MGDA (38% Liquid)', bindingCapacity: 155, score: 92, citation: 'Trilon M Technical Bulletin & Biodegradability Assessment' },
-      { id: 'citrate', name: 'Sodium Citrate Dihydrate (Powder)', bindingCapacity: 150, score: 85, citation: 'Hera Project Eco-Safety Evaluation for Trisodium Citrate' }
-    ];
-
-    details = baseChelators.map((c) => {
-      const theoGrams = stoichiometricTargetMg / c.bindingCapacity;
-      const coGrams = theoGrams * (coTarget / 100);
-      const calcPct = (coGrams / (washDose || 1)) * 100;
-      const pracPct = Math.min(calcPct, maxCap);
-      const pracGrams = (pracPct / 100) * washDose;
-
-      return {
-        id: c.id,
-        name: c.name,
-        percent: pracPct,
-        isGreen: true,
-        score: c.score,
-        bindingCapacity: c.bindingCapacity,
-        theoreticalSequestrationGrams: theoGrams,
-        coBuilderTargetGrams: coGrams,
-        calculatedWeightPct: calcPct,
-        practicalWeightPct: pracPct,
-        practicalWeightGrams: pracGrams,
-        citation: c.citation
-      };
-    });
-  }
+  safeIngs.forEach(ing => {
+    const name = ing?.name || '';
+    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent ?? 0) || 0;
+    
+    const detail = ingredientDetails.find(d => d.name === name);
+    if (detail?.isAcid) {
+      freePercentages[name] = Number((pct * freeFraction).toFixed(4));
+    } else {
+      freePercentages[name] = 0;
+    }
+  });
 
   return {
-    score: 95,
-    isGreen: true,
-    totalCaCO3ToBindMg,
-    stoichiometricTargetMg,
-    chelators: details,
-    details: details,
-    recommendation: 'Eco-friendly GLDA/MGDA chelation package optimized for stoichiometry and water hardness.'
+    value: Number(alkaliConsumptionKg.toFixed(5)),
+    unit: "kg NaOH solid equivalent per 100kg batch",
+    sourceType: hasInsufficientData ? "INSUFFICIENT_DATA" : "PREDICTED",
+    modelType: "STOICHIOMETRIC_ESTIMATE",
+    sourceEngine: "AlkaliConsumptionEngine",
+    engineVersion: "3.0",
+    freePercentages,
+    confidence: hasInsufficientData ? 0 : 100,
+    confidenceClassification: "STOICHIOMETRIC_ESTIMATE",
+    labValidationStatus: "LAB_VALIDATION_NONE",
+    inputBasis: "DETERMINISTIC_STOICHIOMETRIC_REACTIVE_EQUIVALENTS",
+    assumptions: [
+      "Alkali consumption represents the stoichiometric amount of NaOH solid equivalent reacting in the formulation.",
+      "Conversion basis: 1 reactive equivalent of acid/base = 39.997 grams of NaOH solid equivalent."
+    ],
+    limitations: [
+      "Assumes pure stoichiometric reaction based on declared or matched active content.",
+      "Does not account for non-ideal aqueous equilibrium thermodynamic speciation under diverse solvent conditions."
+    ]
   };
 }
 
-export function calculateAlkaliConsumption(_ingredients: FormulationIngredient[]): number {
-  return 1.8;
+export interface EcoBonusEntry {
+  name: string;
+  type: string;
+  value: number;
+  sourceType?: string;
+  publishedReference?: string;
+  calibrationBasis?: string;
+  scoreType?: string;
 }
 
-export function calculateComplexEcoScore(_ingredients: FormulationIngredient[]) {
-  return 92;
+export interface EcoDeductionEntry {
+  name: string;
+  type: string;
+  value: number;
+  sourceType?: string;
+  publishedReference?: string;
+  calibrationBasis?: string;
+  scoreType?: string;
 }
 
-export function calculateShelfLife(_ingredients: FormulationIngredient[]) {
-  return { months: 24, stabilityRisk: 'Low' };
+export interface EcoCertificationEntry {
+  name: string;
+  status: "Eligible" | "Requires Review" | "Ineligible";
+  reasons: string[];
+  classification: "INTERNAL_SCREENING_ESTIMATE";
+  disclaimer: string;
 }
 
-export function calculateDetailedViscosity(
-  ingredients: FormulationIngredient[],
-  options?: { productCategory?: string; targetPH?: number; temperatureC?: number }
-): ViscosityReport {
-  return calcViscosityAuthoritative(ingredients, options);
+export interface ComplexEcoScoreResult {
+  score: number;
+  plantBasedOverallPct: number;
+  bonuses: EcoBonusEntry[];
+  deductions: EcoDeductionEntry[];
+  certifications: EcoCertificationEntry[];
+  sourceType: "PREDICTED";
+  modelType: "RULE_BASED_EMPIRICAL";
+  sourceEngine: "EcoImpactAssessmentEngine";
+  engineVersion: "2.0";
+  inputBasis: string;
+  assumptions: string[];
+  limitations: string[];
+  disclaimer: string;
 }
 
-export function getIngredientCost(name: string): number {
-  const n = (name || "").toLowerCase();
-  if (n.includes('labsa')) return 2.10;
-  if (n.includes('sles')) return 1.85;
-  if (n.includes('naoh')) return 0.65;
-  return 1.50;
-}
+export function calculateComplexEcoScore(ingredients: FormulationIngredient[]): ComplexEcoScoreResult {
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  
+  let baseScore = EcoScoreEmpiricalCoefficients.BASE_SCORE;
+  const bonuses: EcoBonusEntry[] = [];
+  const deductions: EcoDeductionEntry[] = [];
+  
+  let totalPlantPct = 0;
+  let hasEnzyme = false;
+  let hasGreenChelator = false;
+  let hasSulfates = false;
+  let hasPhosphates = false;
+  let hasChlorine = false;
+  let hasSyntheticPolymer = false;
+  let hasRecalcitrantChelator = false;
 
-export interface CommercialMarginChain {
-  rawMaterialCostPerKg: number;
-  batchRawMaterialCost: number;
-  manufacturingOverhead: number;
-  manufacturingCost: number;
-  packagingCost: number;
-  finalExFactoryCost: number;
-  suggestedDistributor: number;
-  suggestedWholesale: number;
-  suggestedRetail: number;
-  suggestedMRP: number;
-}
+  safeIngs.forEach(ing => {
+    const name = (ing?.name || '').toLowerCase();
+    const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
+    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
 
-export function calculateCommercialMarginChain(
-  ingredients: FormulationIngredient[],
-  batchSizeKg: number = 100,
-  overheadPct: number = 12,
-  packagingCost: number = 15
-): CommercialMarginChain {
-  const rawMaterialCostPerKg = calculateBatchCost(ingredients, 1);
-  const batchRawMaterialCost = roundCurrency(rawMaterialCostPerKg * batchSizeKg);
-  const manufacturingOverhead = roundCurrency(rawMaterialCostPerKg * (overheadPct / 100));
-  const manufacturingCost = roundCurrency(rawMaterialCostPerKg + manufacturingOverhead);
-  const finalExFactoryCost = roundCurrency(manufacturingCost + packagingCost);
+    if (pct <= 0) return;
 
-  const suggestedDistributor = roundCurrency(finalExFactoryCost * 1.15);
-  const suggestedWholesale = roundCurrency(finalExFactoryCost * 1.20);
-  const suggestedRetail = roundCurrency(finalExFactoryCost * 1.25);
-  const suggestedMRP = roundCurrency(suggestedRetail * 1.18);
+    const eco = getIngredientEcoMetrics(name);
+    totalPlantPct += (pct * eco.plantBasedPct) / 100;
+
+    if (eco.plantBasedPct >= 80) {
+      totalPlantPct += pct;
+    }
+
+    if (cat.includes('enzyme') || name.includes('protease') || name.includes('amylase') || name.includes('lipase')) {
+      hasEnzyme = true;
+    }
+
+    if (name.includes('glda') || name.includes('mgda') || name.includes('citrate') || name.includes('gluconate')) {
+      hasGreenChelator = true;
+    }
+
+    if (name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('sulfate') || name.includes('sulphonate')) {
+      hasSulfates = true;
+    }
+
+    if (name.includes('tripolyphosphate') || name.includes('stpp') || name.includes('phosphate')) {
+      hasPhosphates = true;
+    }
+
+    if (name.includes('hypochlorite') || name.includes('chlorine') || name.includes('bleach')) {
+      hasChlorine = true;
+    }
+
+    if (name.includes('carbomer') || name.includes('acrylate') || name.includes('polycarboxylate')) {
+      hasSyntheticPolymer = true;
+    }
+
+    if (name.includes('edta') || name.includes('dtpa') || name.includes('hedta')) {
+      hasRecalcitrantChelator = true;
+    }
+  });
+
+  const plantBasedOverallPct = Math.min(100, Math.round(totalPlantPct));
+
+  // Bonuses
+  if (plantBasedOverallPct >= EcoScoreEmpiricalCoefficients.PLANT_BASED_THRESHOLD_PCT) {
+    const registryKey = plantBasedOverallPct >= EcoScoreEmpiricalCoefficients.PLANT_BASED_EXCELLENT_THRESHOLD_PCT 
+      ? "PLANT_BASED_EXCELLENT_BONUS" 
+      : "PLANT_BASED_GOOD_BONUS";
+    const coef = EcoScoreCoefficientRegistry[registryKey];
+    bonuses.push({
+      name: "Plant-Based Ingredients",
+      type: `${plantBasedOverallPct}% Bio-Renewable Carbon`,
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: coef.calibrationBasis,
+      scoreType: coef.scoreType
+    });
+    baseScore += coef.value;
+  }
+
+  if (hasEnzyme) {
+    const coef = EcoScoreCoefficientRegistry.CATALYTIC_ENZYME_BONUS;
+    bonuses.push({
+      name: "Catalytic Enzyme Package",
+      type: "Rapid biodegradation booster",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: coef.calibrationBasis,
+      scoreType: coef.scoreType
+    });
+    baseScore += coef.value;
+  }
+
+  if (hasGreenChelator) {
+    const coef = EcoScoreCoefficientRegistry.BIODEGRADABLE_BUILDER_BONUS;
+    bonuses.push({
+      name: "Biodegradable Builder/Chelator",
+      type: "Eco-friendly scale control",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: coef.calibrationBasis,
+      scoreType: coef.scoreType
+    });
+    baseScore += coef.value;
+  }
+
+  // Deductions
+  if (hasSulfates) {
+    const coef = EcoScoreCoefficientRegistry.SYNTHETIC_ALKYL_SULFATE_DEDUCTION;
+    deductions.push({
+      name: "Synthetic Alkyl Sulfates",
+      type: "Aquatic eco-toxicity hazard",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: coef.calibrationBasis,
+      scoreType: coef.scoreType
+    });
+    baseScore -= coef.value;
+  }
+
+  if (hasPhosphates) {
+    const coef = EcoScoreCoefficientRegistry.PHOSPHATE_STPP_DEDUCTION;
+    deductions.push({
+      name: "Phosphate Builders (STPP)",
+      type: "Eutrophication risk in water bodies",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: coef.calibrationBasis,
+      scoreType: coef.scoreType
+    });
+    baseScore -= coef.value;
+  }
+
+  if (hasChlorine) {
+    const coef = EcoScoreCoefficientRegistry.CHLORINE_BLEACH_DEDUCTION;
+    deductions.push({
+      name: "Organohalogen / Chlorine Bleach",
+      type: "Persistently toxic by-products",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: coef.calibrationBasis,
+      scoreType: coef.scoreType
+    });
+    baseScore -= coef.value;
+  }
+
+  if (hasRecalcitrantChelator) {
+    const coef = EcoScoreCoefficientRegistry.SYNTHETIC_POLYMER_DEDUCTION;
+    deductions.push({
+      name: "Recalcitrant Synthetic Chelator (EDTA/DTPA)",
+      type: "Low aerobic biodegradability & heavy-metal mobilization risk",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: "Persistent synthetic aminopolycarboxylates (e.g. EDTA, DTPA) with low biodegradability.",
+      scoreType: coef.scoreType
+    });
+    baseScore -= coef.value;
+  }
+
+  if (hasSyntheticPolymer) {
+    const coef = EcoScoreCoefficientRegistry.SYNTHETIC_POLYMER_DEDUCTION;
+    deductions.push({
+      name: "Synthetic Non-Biodegradable Polymers",
+      type: "Microplastic precursor / environmental persistence",
+      value: coef.value,
+      sourceType: coef.sourceType,
+      publishedReference: coef.publishedReference,
+      calibrationBasis: "Non-biodegradable synthetic polymers (e.g., polyacrylates, carbomers) with environmental persistence.",
+      scoreType: coef.scoreType
+    });
+    baseScore -= coef.value;
+  }
+
+  const finalScore = Math.max(0, Math.min(100, Math.round(baseScore)));
+
+  // Certifications with screening disclaimers
+  const certifications: EcoCertificationEntry[] = [
+    {
+      name: "EU Ecolabel",
+      status: (!hasPhosphates && !hasChlorine && !hasSyntheticPolymer && !hasRecalcitrantChelator && finalScore >= 80) ? "Eligible" : "Ineligible",
+      reasons: [],
+      classification: "INTERNAL_SCREENING_ESTIMATE",
+      disclaimer: "This is not an official certification determination."
+    },
+    {
+      name: "USDA BioPreferred",
+      status: (plantBasedOverallPct >= 50) ? "Eligible" : (plantBasedOverallPct >= 20 ? "Requires Review" : "Ineligible"),
+      reasons: [],
+      classification: "INTERNAL_SCREENING_ESTIMATE",
+      disclaimer: "This is not an official certification determination."
+    },
+    {
+      name: "Green Seal Standard",
+      status: (finalScore >= 75 && !hasChlorine) ? "Eligible" : "Requires Review",
+      reasons: [],
+      classification: "INTERNAL_SCREENING_ESTIMATE",
+      disclaimer: "This is not an official certification determination."
+    }
+  ];
+
+  certifications.forEach(cert => {
+    if (cert.name === "EU Ecolabel") {
+      if (hasPhosphates) cert.reasons.push("Contains eutrophying phosphates");
+      if (hasChlorine) cert.reasons.push("Contains chlorine bleach chemistry");
+      if (hasSyntheticPolymer) cert.reasons.push("Contains non-biodegradable synthetic polymers");
+      if (hasRecalcitrantChelator) cert.reasons.push("Contains recalcitrant synthetic chelators (EDTA/DTPA)");
+      if (finalScore < 80) cert.reasons.push(`Score ${finalScore} falls below minimum requirement of 80`);
+    } else if (cert.name === "USDA BioPreferred") {
+      cert.reasons.push(`Bio-renewable organic carbon is ${plantBasedOverallPct}% (target: >=50%)`);
+    } else if (cert.name === "Green Seal Standard") {
+      if (hasChlorine) cert.reasons.push("Contains chlorine bleach derivatives");
+      if (finalScore < 75) cert.reasons.push(`Overall eco score ${finalScore} < 75`);
+    }
+  });
 
   return {
-    rawMaterialCostPerKg,
-    batchRawMaterialCost,
-    manufacturingOverhead,
-    manufacturingCost,
-    packagingCost,
-    finalExFactoryCost,
-    suggestedDistributor,
-    suggestedWholesale,
-    suggestedRetail,
-    suggestedMRP
+    score: finalScore,
+    plantBasedOverallPct,
+    bonuses,
+    deductions,
+    certifications,
+    sourceType: "PREDICTED",
+    modelType: "RULE_BASED_EMPIRICAL",
+    sourceEngine: "EcoImpactAssessmentEngine",
+    engineVersion: "2.0",
+    disclaimer: "Rule-Based Predicted Estimate. Not a laboratory environmental measurement.",
+    inputBasis: "Stoichiometric plant-based index and hazard matrices",
+    assumptions: [
+      "Standard aerobic biodegradation rates under municipal waste conditions.",
+      "Renewable organic carbon calculated from plant-based assay loading."
+    ],
+    limitations: [
+      "Empirical rule-based scoring model. Does not substitute for real OECD 301/302 tests.",
+      "Actual aquatic toxicology requires experimental OECD 201/202/203 testing."
+    ]
   };
 }
+
+export interface ShelfLifeResult {
+  months: number;
+  stabilityRisk: "Low" | "Medium" | "High";
+  limitingFactor: string;
+  preservativeEfficiency: number;
+  confidence: "High" | "Medium" | "Low";
+  sourceType: "ENGINEERING_DEFAULT";
+  modelType: "RULE_BASED_ESTIMATE";
+  sourceEngine: "AntimicrobialShelfLifeEngine";
+  engineVersion: "2.0";
+  inputBasis: string;
+  assumptions: string[];
+  limitations: string[];
+  shelfLifeStatus: 'UNKNOWN' | 'HEURISTIC_SCREENING' | 'LAB_VALIDATED';
+  chemicalStability: 'STABLE' | 'DEGRADATION_RISK' | 'UNKNOWN';
+  physicalStability: 'STABLE' | 'PHASE_SEPARATION_RISK' | 'UNKNOWN';
+  microbialStability: 'ADEQUATELY_PRESERVED' | 'UNPRESERVED_AQUEOUS_RISK' | 'UNKNOWN';
+}
+
+export function calculateShelfLife(ingredients: FormulationIngredient[]): ShelfLifeResult {
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+
+  if (safeIngs.length === 0) {
+    return {
+      months: ShelfLifeHeuristicPolicy.STANDARD_STABILITY_MONTHS,
+      stabilityRisk: "Low",
+      limitingFactor: "Packaging barrier stability & standard aging",
+      preservativeEfficiency: 100,
+      confidence: "Low",
+      sourceType: "ENGINEERING_DEFAULT",
+      modelType: "RULE_BASED_ESTIMATE",
+      sourceEngine: "AntimicrobialShelfLifeEngine",
+      engineVersion: "2.0",
+      inputBasis: "Formulation water activity, preservation indices, and surfactant incompatibility checks",
+      assumptions: [
+        "24 months is an engineering default used only when formulation data is absent. It is NOT a predicted or laboratory-validated shelf life.",
+        "Assumes system is stored in air-tight HDPE containers at 20-25°C.",
+        "Assumes preservative active assay meets minimum inhibitory concentration (MIC)."
+      ],
+      limitations: [
+        "Predicted value. Actual shelf life requires accelerated storage chamber validation (40°C at 75% RH for 12 weeks) under ASTM standards.",
+        "Real-world container migration, oxygen exposure, and UV exposure can accelerate raw material rancidity."
+      ],
+      shelfLifeStatus: "UNKNOWN",
+      chemicalStability: "UNKNOWN",
+      physicalStability: "UNKNOWN",
+      microbialStability: "UNKNOWN"
+    };
+  }
+
+  let months = ShelfLifeHeuristicPolicy.STANDARD_STABILITY_MONTHS;
+  let stabilityRisk: "Low" | "Medium" | "High" = "Low";
+  let limitingFactor = "Packaging barrier stability & standard aging";
+  let preservativeEfficiency = 100;
+  let confidence: "High" | "Medium" | "Low" = "High";
+
+  let hasPreservative = false;
+  let waterPct = 0;
+  let hasAnionic = false;
+  let hasCationic = false;
+  let hasEnzyme = false;
+
+  safeIngs.forEach(ing => {
+    const name = (ing?.name || '').toLowerCase();
+    const cat = (ing?.category || ing?.role || '').toLowerCase();
+    const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
+
+    if (pct <= 0) return;
+
+    if (name.includes('water') || name.includes('aqua')) {
+      waterPct += pct;
+    }
+
+    if (cat.includes('preservative') || cat.includes('biocide') || name.includes('preservative') || name.includes('isothiazolinone') || name.includes('phenoxyethanol') || name.includes('benzoate') || name.includes('kathon')) {
+      hasPreservative = true;
+    }
+
+    if (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls')) {
+      hasAnionic = true;
+    }
+
+    if (cat.includes('cationic') || name.includes('quat') || name.includes('cetrimonium') || name.includes('esterquat')) {
+      hasCationic = true;
+    }
+
+    if (cat.includes('enzyme') || name.includes('protease') || name.includes('amylase') || name.includes('lipase')) {
+      hasEnzyme = true;
+    }
+  });
+
+  const isAnionicCationicClash = hasAnionic && hasCationic;
+
+  if (waterPct > 20 && !hasPreservative) {
+    months = ShelfLifeHeuristicPolicy.UNPRESERVED_AQUEOUS_LIMIT_MONTHS;
+    stabilityRisk = "High";
+    limitingFactor = "Unpreserved aqueous phase (high microbial contamination risk)";
+    preservativeEfficiency = 0;
+    confidence = "Low";
+  } else if (isAnionicCationicClash) {
+    months = ShelfLifeHeuristicPolicy.IONIC_CLASH_LIMIT_MONTHS;
+    stabilityRisk = "High";
+    limitingFactor = "Thermodynamic coacervation & phase separation (Ionic precipitation)";
+    preservativeEfficiency = 50;
+    confidence = "Low";
+  } else if (hasEnzyme && waterPct > 30) {
+    months = ShelfLifeHeuristicPolicy.ENZYMATIC_WATER_LIMIT_MONTHS;
+    stabilityRisk = "Medium";
+    limitingFactor = "Enzymatic hydrolysis and thermal denaturation";
+    preservativeEfficiency = 80;
+    confidence = "Medium";
+  } else if (!hasPreservative && waterPct <= 20) {
+    months = ShelfLifeHeuristicPolicy.LOW_WATER_UNPRESERVED_LIMIT_MONTHS;
+    stabilityRisk = "Medium";
+    limitingFactor = "Water activity moisture absorption & raw material caking";
+    preservativeEfficiency = 0;
+    confidence = "Medium";
+  }
+
+  return {
+    months,
+    stabilityRisk,
+    limitingFactor,
+    preservativeEfficiency,
+    confidence,
+    sourceType: "ENGINEERING_DEFAULT",
+    modelType: "RULE_BASED_ESTIMATE",
+    sourceEngine: "AntimicrobialShelfLifeEngine",
+    engineVersion: "2.0",
+    inputBasis: "Formulation water activity, preservation indices, and surfactant incompatibility checks",
+    assumptions: [
+      "Assumes system is stored in air-tight HDPE containers at 20-25°C.",
+      "Assumes preservative active assay meets minimum inhibitory concentration (MIC)."
+    ],
+    limitations: [
+      "Predicted value. Actual shelf life requires accelerated storage chamber validation (40°C at 75% RH for 12 weeks) under ASTM standards.",
+      "Real-world container migration, oxygen exposure, and UV exposure can accelerate raw material rancidity."
+    ],
+    shelfLifeStatus: "HEURISTIC_SCREENING",
+    chemicalStability: hasEnzyme ? "DEGRADATION_RISK" : "STABLE",
+    physicalStability: isAnionicCationicClash ? "PHASE_SEPARATION_RISK" : "STABLE",
+    microbialStability: (waterPct > 20 && !hasPreservative) ? "UNPRESERVED_AQUEOUS_RISK" : "ADEQUATELY_PRESERVED"
+  };
+}
+
+export function getIngredientCost(_name: string): number | null {
+  // Authoritative Commercial Costing: Never invent or guess raw-material prices from names.
+  // Missing price is strictly null / unknown unless explicitly configured by the user.
+  return null;
+}
+
+import {
+  calculateCommercialMarginChain as calcCommercialMarginChainAuthoritative,
+  type CommercialMarginChain
+} from './costingEngine';
+
+export type { CommercialMarginChain };
+export const calculateCommercialMarginChain = calcCommercialMarginChainAuthoritative;
 
 export function calculateProfitAndMargin(cost: number, sellingPrice: number) {
   const profit = roundCurrency(sellingPrice - cost);
@@ -2105,164 +1523,52 @@ export function calculateProfitAndMargin(cost: number, sellingPrice: number) {
   return { profit, markupPct, grossMarginPct };
 }
 
-export interface DensityCalculationResult {
-  densityGPerCm3: number; // Density in g/cm³ (or kg/L) at 20°C
-  densityKgPerM3: number; // Density in kg/m³
-  specificGravity: number; // Dimensionless relative to water at 20°C (ρ_water = 0.9982 g/cm³)
-  totalMassGrams: number;
-  totalVolumeCm3: number;
-  isIdealVolumeAdditivity: boolean;
-  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
-  modelType: string;
-  contributions: Array<{
-    name: string;
-    massPercentage: number;
-    componentDensityGPerCm3: number;
-    volumeCm3: number;
-    volumeFraction: number;
-  }>;
-  notes: string;
-}
-
-/**
- * Resolves standard commercial component density (g/cm³ at 20°C).
- */
-export function getStandardComponentDensity(name: string): number {
-  const n = (name || '').toLowerCase().trim();
-  if (n.includes('water') || n.includes('aqua') || n === 'di water' || n === 'ro water') return 1.000;
-  if (n.includes('labsa') || n.includes('sulfonic') || n.includes('acid slurry')) {
-    return n.includes('90') ? 1.050 : 1.060;
-  }
-  if (n.includes('sles') || n.includes('lauryl ether sulfate') || n.includes('laureth sulfate')) {
-    return n.includes('28') ? 1.030 : 1.100;
-  }
-  if (n.includes('sls') || n.includes('sodium lauryl sulfate')) {
-    return n.includes('30') ? 1.040 : 1.100;
-  }
-  if (n.includes('capb') || n.includes('betaine')) {
-    return n.includes('45') ? 1.070 : 1.045;
-  }
-  if (n.includes('cdea') || n.includes('cocamide dea') || n.includes('diethanolamide')) return 1.000;
-  if (n.includes('cmea') || n.includes('cocamide mea')) return 1.020;
-  if (n.includes('lae') || n.includes('ethoxylate') || n.includes('np-9') || n.includes('lutensol')) return 1.010;
-  if (n.includes('apg') || n.includes('glucoside')) return 1.100;
-  if (n.includes('naoh') || n.includes('caustic soda') || n.includes('sodium hydroxide')) {
-    if (n.includes('48%') || n.includes('lye (48%)')) return 1.510;
-    if (n.includes('50%') || n.includes('lye (50%)')) return 1.530;
-    return 1.450;
-  }
-  if (n.includes('koh') || n.includes('potassium hydroxide')) return 1.450;
-  if (n.includes('soda ash') || n.includes('sodium carbonate')) return 1.200;
-  if (n.includes('sodium sulfate') || n.includes('sulfate')) return 1.200;
-  if (n.includes('sodium chloride') || n.includes('salt') || n.includes('vacuum salt')) return 1.200;
-  if (n.includes('sodium citrate') || n.includes('citrate')) return 1.180;
-  if (n.includes('citric acid')) return 1.150;
-  if (n.includes('glda') || n.includes('dissolvine')) return 1.300;
-  if (n.includes('edta')) return 1.280;
-  if (n.includes('mgda') || n.includes('trilon')) return 1.280;
-  if (n.includes('glycerin') || n.includes('glycerol')) return 1.260;
-  if (n.includes('propylene glycol') || n.includes('pg')) return 1.036;
-  if (n.includes('ethanol') || n.includes('alcohol')) return 0.805;
-  if (n.includes('isopropanol') || n.includes('ipa')) return 0.786;
-  if (n.includes('fragrance') || n.includes('perfume') || n.includes('essential oil')) return 0.950;
-  if (n.includes('preservative') || n.includes('kathon') || n.includes('phenoxyethanol')) return 1.050;
-  if (n.includes('xanthan') || n.includes('carbomer') || n.includes('hpmc') || n.includes('cmc')) return 1.150;
-  return 1.000;
-}
-
-/**
- * Authoritative Formulation Density & Specific Gravity Calculation
- * Computes mixture density via ideal harmonic volume additivity:
- * Total Volume = Σ (Mass_i / Density_i)
- * Mixture Density = Total Mass / Total Volume
- */
-export function calculateDensity(
-  ingredients: FormulationIngredient[] = [],
-  totalBatchMassGrams: number = 100
-): DensityCalculationResult {
-  const safeList = Array.isArray(ingredients) ? ingredients : [];
-  if (safeList.length === 0) {
-    return {
-      densityGPerCm3: 1.000,
-      densityKgPerM3: 1000.0,
-      specificGravity: 1.002,
-      totalMassGrams: totalBatchMassGrams,
-      totalVolumeCm3: totalBatchMassGrams,
-      isIdealVolumeAdditivity: true,
-      confidence: 'HIGH',
-      modelType: 'Pure Water Reference (20°C)',
-      contributions: [],
-      notes: 'No ingredients provided. Defaulting to pure water baseline at 20°C (1.000 g/cm³).'
-    };
-  }
-
-  let totalMass = 0;
-  let totalVolume = 0;
-  const rawContributions: Array<{
-    name: string;
-    massPercentage: number;
-    componentDensityGPerCm3: number;
-    volumeCm3: number;
-  }> = [];
-
-  safeList.forEach(ing => {
-    const rawPct = Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0);
-    if (rawPct <= 0) return;
-    const name = ing.name || 'Component';
-    const explicitDensity = typeof ing.density === 'number' && ing.density > 0.1 ? ing.density : undefined;
-    const compDensity = explicitDensity || getStandardComponentDensity(name);
-
-    const compMassG = (rawPct / 100) * totalBatchMassGrams;
-    const compVolCm3 = compMassG / compDensity;
-
-    totalMass += compMassG;
-    totalVolume += compVolCm3;
-
-    rawContributions.push({
-      name,
-      massPercentage: rawPct,
-      componentDensityGPerCm3: compDensity,
-      volumeCm3: compVolCm3
-    });
-  });
-
-  if (totalMass <= 0 || totalVolume <= 0) {
-    return {
-      densityGPerCm3: 1.000,
-      densityKgPerM3: 1000.0,
-      specificGravity: 1.002,
-      totalMassGrams: totalBatchMassGrams,
-      totalVolumeCm3: totalBatchMassGrams,
-      isIdealVolumeAdditivity: true,
-      confidence: 'HIGH',
-      modelType: 'Pure Water Reference (20°C)',
-      contributions: [],
-      notes: 'Empty or zero active mass. Defaulting to pure water baseline.'
-    };
-  }
-
-  const mixDensityGPerCm3 = totalMass / totalVolume;
-  const densityKgPerM3 = mixDensityGPerCm3 * 1000.0;
-  const specificGravity = mixDensityGPerCm3 / 0.9982; // Relative to water at 20°C
-
-  const contributions = rawContributions.map(c => ({
-    name: c.name,
-    massPercentage: Number(c.massPercentage.toFixed(2)),
-    componentDensityGPerCm3: Number(c.componentDensityGPerCm3.toFixed(3)),
-    volumeCm3: Number(c.volumeCm3.toFixed(3)),
-    volumeFraction: Number((c.volumeCm3 / totalVolume).toFixed(4))
-  }));
-
-  return {
-    densityGPerCm3: Number(mixDensityGPerCm3.toFixed(3)),
-    densityKgPerM3: Number(densityKgPerM3.toFixed(1)),
-    specificGravity: Number(specificGravity.toFixed(3)),
-    totalMassGrams: Number(totalMass.toFixed(2)),
-    totalVolumeCm3: Number(totalVolume.toFixed(2)),
-    isIdealVolumeAdditivity: true,
-    confidence: 'HIGH',
-    modelType: 'Ideal Harmonic Volume Additivity',
-    contributions,
-    notes: 'Mixture density calculated via ideal volume additivity [ρ_mix = Σ m_i / Σ (m_i / ρ_i)]. Minor excess volume of mixing (<1%) may occur in concentrated alcohol/glycol blends.'
-  };
-}
+export {
+  validateMeasurementRecord,
+  analyzeLabReplicates,
+  checkMeasurementComparability,
+  calculatePredictionError,
+  evaluateCategoryModelValidation,
+  proposeCalibrationCandidates,
+  CATEGORY_EVIDENCE_MATRIX,
+  ScientificModelGovernanceRegistry,
+  globalGovernanceRegistry,
+  INITIAL_GOVERNED_PARAMETERS,
+  GOLDEN_FORMULA_SET,
+  calculateModelChangeImpact,
+  evaluateHistoricalFormulaReproducibility,
+  type DetailedLabEvidenceRecord,
+  type TestConditions,
+  type ReplicateAnalysisResult,
+  type ComparabilityCheckResult,
+  type ErrorAnalysisResult,
+  type CategoryModelValidationSummary,
+  type CalibrationCandidateProposal,
+  type ParameterClassification,
+  type ParameterScope,
+  type GovernanceStatus,
+  type GovernedScientificParameter,
+  type CalibrationApprovalRecord,
+  type ScientificModelVersion,
+  type ChangeImpactAnalysisResult,
+  type ModelRollbackResult,
+  evaluateIngredientDataQuality,
+  traceCompatibilityReasoning,
+  analyzeDependencyPropagation,
+  evaluateIngredientSubstitution,
+  globalIngredientGovernance,
+  INGREDIENT_INTELLIGENCE_REGISTRY,
+  INGREDIENT_INTERACTION_RULES,
+  type IngredientProvenance,
+  type ApplicabilityStatus,
+  type SubstitutionTier,
+  type IngredientQualityStatus,
+  type IngredientChargeProfile,
+  type IngredientGradeProfile,
+  type IngredientDefinition,
+  type InteractionRule,
+  type TraceableCompatibilityFinding,
+  type DependencyPropagationReport,
+  type SubstitutionRecommendation,
+  type GovernedIngredientKnowledgeSnapshot
+};
