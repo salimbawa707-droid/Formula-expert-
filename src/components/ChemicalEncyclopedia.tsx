@@ -26,7 +26,7 @@ export default function ChemicalEncyclopedia(_props?: any) {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grouped' | 'all_grades' | 'ingredient_research'>('grouped');
-  const [researchQuery, setResearchQuery] = useState('Aristo 9');
+  const [researchQuery, setResearchQuery] = useState('');
   const [isResearching, setIsResearching] = useState(false);
   const [researchProgress, setResearchProgress] = useState('');
   const [researchResult, setResearchResult] = useState<any | null>(null);
@@ -446,7 +446,7 @@ export default function ChemicalEncyclopedia(_props?: any) {
                       Verification Gate Approval Required
                     </span>
                     <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                      Authoritative properties (Active solids: <strong>90%</strong>, pH: <strong>7.0</strong>) resolved successfully from official Blue Chem India SDS/TDS. Applying these updates will automatically recalculate active surfactants and re-evaluate dependent formulations in your library.
+                      Authoritative properties (Active solids: <strong>{researchResult.parameters?.activeMatter !== undefined ? `${researchResult.parameters.activeMatter}%` : "N/A"}</strong>, pH: <strong>{researchResult.parameters?.pH !== undefined ? researchResult.parameters.pH : "N/A"}</strong>) resolved successfully for <strong>{researchResult.canonicalName || researchResult.resolvedName || researchQuery}</strong> from verified documentation. Applying these updates will automatically update the raw material database and re-evaluate dependent formulations in your library.
                     </p>
                   </div>
                   <button

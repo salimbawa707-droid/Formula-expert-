@@ -101,6 +101,21 @@ export interface CompleteLaboratoryObservation {
   measuredProperty: string;
   measuredValue: number;
   measurementUnit: string;
+  rawMeasuredValue?: number;
+  rawMeasurementUnit?: string;
+  normalizedMeasuredValue?: number;
+  normalizedMeasurementUnit?: string;
+  replicateValues?: number[];
+  sampleId?: string;
+  formulaId?: string;
+  datasetVersion?: string;
+  quarantineReason?: string;
+  reviewDecision?: {
+    status: 'ACCEPTED' | 'QUARANTINED' | 'REJECTED';
+    reviewer?: string;
+    reviewDate?: string;
+    notes?: string;
+  };
   instrumentName?: string;
   instrumentId?: string;
   operator: string;
@@ -327,14 +342,23 @@ export function validateLaboratoryObservation(obs: Partial<CompleteLaboratoryObs
     }
   }
 
-  if (typeof obs.measuredValue !== 'number' || isNaN(obs.measuredValue)) {
-    errors.push('Invalid or non-numeric measuredValue.');
+  if (typeof obs.measuredValue !== 'number' || isNaN(obs.measuredValue) || !isFinite(obs.measuredValue)) {
+    errors.push('Invalid, non-numeric, or non-finite measuredValue.');
   } else {
     if (obs.measuredProperty === 'pH Prediction' && (obs.measuredValue < 0 || obs.measuredValue > 14)) {
       errors.push(`Impossible physical value: pH ${obs.measuredValue} is outside 0-14 scale.`);
     }
     if (obs.measuredProperty === 'Density' && (obs.measuredValue < 0.5 || obs.measuredValue > 3.0)) {
       errors.push(`Impossible density value: ${obs.measuredValue} g/cm³.`);
+    }
+    if ((obs.measuredProperty === 'Active Matter' || obs.measuredProperty === 'Active Surfactant Matter') && (obs.measuredValue < 0 || obs.measuredValue > 100)) {
+      errors.push(`Impossible active matter percentage: ${obs.measuredValue}%. Must be 0–100%.`);
+    }
+    if ((obs.measuredProperty === 'Cleaning Score / CPI' || obs.measuredProperty === 'Cleaning Score') && (obs.measuredValue < 0 || obs.measuredValue > 100)) {
+      errors.push(`Impossible cleaning score: ${obs.measuredValue}. Must be 0–100.`);
+    }
+    if (obs.measuredProperty === 'Viscosity' && obs.measuredValue < 0) {
+      errors.push(`Impossible negative viscosity: ${obs.measuredValue} cP.`);
     }
   }
 

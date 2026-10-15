@@ -338,6 +338,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           model: 'gemini-3.8-flash',
           contents: prompt,
           config: {
+            tools: [{ googleSearchRetrieval: {} }],
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -386,8 +387,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       }
     }
 
-    if (retrievedSources.length === 0 && resolvedKey) {
-      // Use local multi-source technical datasheets
+    if (retrievedSources.length === 0 && (apiKey === 'TEST_MODE' || process.env.NODE_ENV === 'test') && resolvedKey) {
+      // Use local multi-source technical datasheets for test/reproducibility mode
       retrievedSources = MULTI_SOURCE_EVIDENCE_REPOSITORIES[resolvedKey].map(s => ({
         ...s,
         rawContent: this.sanitizeWebContent(s.rawContent)
@@ -519,7 +520,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const resolution = this.resolveIdentity(nameOrAlias);
     const ingredient = resolution.ingredient;
 
-    const ingredientId = ingredient ? ingredient.id : 'unknown-temp';
+    const cleanSlug = nameOrAlias.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "custom-ingredient";
+    const ingredientId = ingredient ? ingredient.id : `custom-${cleanSlug}`;
     const canonicalName = ingredient ? ingredient.name : nameOrAlias;
 
     // Run multi-source pipeline
@@ -546,8 +548,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const shelfVal = firstSource.extractedParameters.shelfLife ?? null;
     const appVal = firstSource.extractedParameters.application ?? null;
 
-    const source = firstSource.publisher || 'Blue Chem India';
-    const sourceUrl = firstSource.url || 'https://bluechemindia.co.in/aristo-9';
+    const source = firstSource.publisher || (firstSource.domain ? firstSource.domain : "Independent Technical Datasheet");
+    const sourceUrl = firstSource.url || (firstSource.domain ? `https://${firstSource.domain}` : "");
     const isConflict = msResult.status === 'CONFLICTING_EVIDENCE';
     const isManufacturerSource = firstSource.sourceType === 'MANUFACTURER_TDS' || firstSource.sourceType === 'MANUFACTURER_SDS' || firstSource.sourceType === 'REGULATORY_DOCUMENT' || firstSource.sourceType === 'MANUFACTURER_SPECIFICATION';
 
@@ -575,7 +577,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         status,
         evidenceLevel,
         source,
-        sourceUrl: validateUrl(sourceUrl) ? sourceUrl : 'https://bluechemindia.co.in/aristo-9',
+        sourceUrl: validateUrl(sourceUrl) ? sourceUrl : (firstSource.domain ? `https://${firstSource.domain}` : ""),
         sourceDocumentUrl: validateUrl(sourceUrl) ? sourceUrl : null,
         notes,
         verifiedAt: new Date().toISOString().split('T')[0],
@@ -589,11 +591,13 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
 
     if (activeVal !== null) {
       provenance.activeMatter = pProv('activeMatter', activeVal, 'Assay determined by solids oven-drying');
-      parameters.activeMatter = typeof activeVal === 'number' ? activeVal : parseFloat(activeVal) || 90;
+      const parsedActive = typeof activeVal === "number" ? activeVal : parseFloat(activeVal);
+      if (!isNaN(parsedActive)) parameters.activeMatter = parsedActive;
     }
     if (phVal !== null) {
       provenance.pH = pProv('pH', phVal, 'pH of 10% aqueous solution');
-      parameters.pH = typeof phVal === 'number' ? phVal : parseFloat(phVal) || 7.0;
+      const parsedPH = typeof phVal === "number" ? phVal : parseFloat(phVal);
+      if (!isNaN(parsedPH)) parameters.pH = parsedPH;
     }
     if (phRangeVal !== null) {
       provenance.pHRange = pProv('pHRange', phRangeVal, 'Operating GHS specification');
@@ -636,21 +640,43 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
    * Applies verified parameters to a canonical ingredient and triggers re-evaluations.
    */
   public static async applyVerifiedData(researchResult: ResearchResult, previousRecord: any): Promise<{ success: boolean; auditTrail: ResearchAuditTrail }> {
-    const { ingredientId, parameters, provenance } = researchResult;
+    const { ingredientId, canonicalName, resolvedName, parameters, provenance } = researchResult;
 
     const ingIndex = UNIVERSAL_INGREDIENTS.findIndex(i => i.id === ingredientId);
-    if (ingIndex === -1) {
-      throw new Error(`Canonical ingredient "${ingredientId}" not found for database update.`);
-    }
+    let updatedIng: any;
 
-    const updatedIng = { ...UNIVERSAL_INGREDIENTS[ingIndex] };
+    if (ingIndex === -1) {
+      const name = canonicalName || resolvedName || ingredientId;
+      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : 0;
+      updatedIng = {
+        id: ingredientId,
+        name,
+        productName: name,
+        category: parameters.ionicNature ? `Surfactant (${parameters.ionicNature})` : "Specialty Chemical / Additive",
+        subCategory: "Researched Raw Material",
+        casNumber: "N/A",
+        inciName: name,
+        function: parameters.application || "Functional Detergent Additive",
+        activeDefault: detectedActive,
+        activeMatterPct: detectedActive,
+        activePercent: detectedActive,
+        costPerKg: previousRecord?.costPerKg ?? 0,
+        density: typeof parameters.density === "number" ? parameters.density : 1.0,
+        phMin: typeof parameters.pH === "number" ? parameters.pH : 6.0,
+        phMax: parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || 9.0) : (typeof parameters.pH === "number" ? parameters.pH + 1.5 : 9.0),
+        description: `Researched technical raw material: ${name}`,
+        isCustom: true
+      };
+    } else {
+      updatedIng = { ...UNIVERSAL_INGREDIENTS[ingIndex] };
+    }
 
     // Apply only verified scientific properties
     if (parameters.activeMatter !== undefined) {
       updatedIng.activeDefault = parameters.activeMatter;
       (updatedIng as any).activeMatterPct = parameters.activeMatter;
       if (updatedIng.unknownProperties) {
-        updatedIng.unknownProperties = updatedIng.unknownProperties.filter(p => p !== 'activeMatter');
+        updatedIng.unknownProperties = updatedIng.unknownProperties.filter((p: string) => p !== 'activeMatter');
       }
     }
     if (parameters.pH !== undefined) {
@@ -663,8 +689,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     if (provenance) {
       (updatedIng as any).provenance = {
         sourceType: 'OFFICIAL_MANUFACTURER',
-        source: provenance.activeMatter?.source || 'Blue Chem India',
-        sourceUrl: provenance.activeMatter?.sourceUrl || 'https://bluechemindia.co.in/aristo-9',
+        source: provenance.activeMatter?.source || "Independent Technical Datasheet",
+        sourceUrl: provenance.activeMatter?.sourceUrl || "",
         verificationStatus: 'VERIFIED',
         verifiedAt: new Date().toISOString().split('T')[0],
         notes: `Automatically verified via R&D Research Crawler. Extracted active content of ${parameters.activeMatter}% and pH of ${parameters.pH}.`
@@ -672,7 +698,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
 
     // Persist dynamic in-memory modifications
-    UNIVERSAL_INGREDIENTS[ingIndex] = updatedIng;
+    if (ingIndex !== -1) { UNIVERSAL_INGREDIENTS[ingIndex] = updatedIng; } else { UNIVERSAL_INGREDIENTS.push(updatedIng); }
 
     // Save to persistent user settings
     let dynamicIngredients: any[] = [];
@@ -716,7 +742,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     for (const formula of affectedFormulas) {
       let isAffected = false;
       const updatedIngredients = formula.ingredients.map(ing => {
-        if (ing.id === ingredientId || ing.name.toLowerCase() === updatedIng.name.toLowerCase() || ing.name.toLowerCase() === 'aristo 9') {
+        if (ing.id === ingredientId || ing.name.toLowerCase() === updatedIng.name.toLowerCase()) {
           isAffected = true;
           return {
             ...ing,

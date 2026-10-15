@@ -1,0 +1,1104 @@
+{
+  "timestamp": "2026-10-14T17:00:46.887Z",
+  "summary": {
+    "discoveredCount": 120,
+    "registeredCount": 120,
+    "executedCount": 120,
+    "skippedCount": 0,
+    "failedModulesCount": 0,
+    "totalAssertionsExecuted": 3717,
+    "totalAssertionsPassed": 3717,
+    "totalAssertionsFailed": 0,
+    "isCleanPass": true,
+    "testIntegrityFailures": 0,
+    "p2Phase13Failures": 0,
+    "failureDetails": [],
+    "testIntegrityFailureDetails": [],
+    "p2Phase13FailureDetails": []
+  },
+  "failureDetails": [],
+  "testIntegrityFailureDetails": [],
+  "p2Phase13FailureDetails": [],
+  "executionMap": [
+    {
+      "file": "pHEngine.regression.test.ts",
+      "moduleName": "runRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 64,
+      "failedAssertions": 0,
+      "totalAssertions": 64,
+      "skipped": false
+    },
+    {
+      "file": "pHEngineV2.regression.test.ts",
+      "moduleName": "runPHEngineV2TestSuite",
+      "executed": true,
+      "passedAssertions": 29,
+      "failedAssertions": 0,
+      "totalAssertions": 29,
+      "skipped": false
+    },
+    {
+      "file": "hlbEngine.regression.test.ts",
+      "moduleName": "runHLBRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 15,
+      "failedAssertions": 0,
+      "totalAssertions": 15,
+      "skipped": false
+    },
+    {
+      "file": "activeMatterEngine.regression.test.ts",
+      "moduleName": "runActiveMatterRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "viscosityEngine.regression.test.ts",
+      "moduleName": "runViscosityEngineTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "dilutionEngine.regression.test.ts",
+      "moduleName": "runDilutionRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 56,
+      "failedAssertions": 0,
+      "totalAssertions": 56,
+      "skipped": false
+    },
+    {
+      "file": "powderEngine.regression.test.ts",
+      "moduleName": "runPowderEngineTestSuite",
+      "executed": true,
+      "passedAssertions": 104,
+      "failedAssertions": 0,
+      "totalAssertions": 104,
+      "skipped": false
+    },
+    {
+      "file": "specificationEngine.regression.test.ts",
+      "moduleName": "runSpecificationEngineTestSuite",
+      "executed": true,
+      "passedAssertions": 67,
+      "failedAssertions": 0,
+      "totalAssertions": 67,
+      "skipped": false
+    },
+    {
+      "file": "scientificRouter.regression.test.ts",
+      "moduleName": "runScientificRouterTestSuite",
+      "executed": true,
+      "passedAssertions": 39,
+      "failedAssertions": 0,
+      "totalAssertions": 39,
+      "skipped": false
+    },
+    {
+      "file": "formulaTemplateRevalidation.test.ts",
+      "moduleName": "runFormulaTemplateRevalidationTestSuite",
+      "executed": true,
+      "passedAssertions": 141,
+      "failedAssertions": 0,
+      "totalAssertions": 141,
+      "skipped": false
+    },
+    {
+      "file": "phase9.regression.test.ts",
+      "moduleName": "runPhase9TestSuite",
+      "executed": true,
+      "passedAssertions": 43,
+      "failedAssertions": 0,
+      "totalAssertions": 43,
+      "skipped": false
+    },
+    {
+      "file": "phEngineCallerCategory.regression.test.ts",
+      "moduleName": "runPHEngineCallerCategoryTestSuite",
+      "executed": true,
+      "passedAssertions": 18,
+      "failedAssertions": 0,
+      "totalAssertions": 18,
+      "skipped": false
+    },
+    {
+      "file": "legacyPowderPHReachability.regression.test.ts",
+      "moduleName": "runLegacyPowderPHReachabilityTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "powderSlurryBasis.regression.test.ts",
+      "moduleName": "runPowderSlurryBasisTestSuite",
+      "executed": true,
+      "passedAssertions": 29,
+      "failedAssertions": 0,
+      "totalAssertions": 29,
+      "skipped": false
+    },
+    {
+      "file": "marginChain.regression.test.ts",
+      "moduleName": "runMarginChainTestSuite",
+      "executed": true,
+      "passedAssertions": 22,
+      "failedAssertions": 0,
+      "totalAssertions": 22,
+      "skipped": false
+    },
+    {
+      "file": "costingEngine.regression.test.ts",
+      "moduleName": "runCostingEngineTestSuite",
+      "executed": true,
+      "passedAssertions": 33,
+      "failedAssertions": 0,
+      "totalAssertions": 33,
+      "skipped": false
+    },
+    {
+      "file": "formulaLibrary.regression.test.ts",
+      "moduleName": "runFormulaLibraryVerificationTestSuite",
+      "executed": true,
+      "passedAssertions": 11,
+      "failedAssertions": 0,
+      "totalAssertions": 11,
+      "skipped": false
+    },
+    {
+      "file": "cleaningPerformance.regression.test.ts",
+      "moduleName": "runCleaningPerformanceTestSuite",
+      "executed": true,
+      "passedAssertions": 13,
+      "failedAssertions": 0,
+      "totalAssertions": 13,
+      "skipped": false
+    },
+    {
+      "file": "compatibility.regression.test.ts",
+      "moduleName": "runCompatibilityTestSuite",
+      "executed": true,
+      "passedAssertions": 60,
+      "failedAssertions": 0,
+      "totalAssertions": 60,
+      "skipped": false
+    },
+    {
+      "file": "labHealth.regression.test.ts",
+      "moduleName": "runLabHealthTestSuite",
+      "executed": true,
+      "passedAssertions": 44,
+      "failedAssertions": 0,
+      "totalAssertions": 44,
+      "skipped": false
+    },
+    {
+      "file": "aiGrade.regression.test.ts",
+      "moduleName": "runAIGradeTestSuite",
+      "executed": true,
+      "passedAssertions": 49,
+      "failedAssertions": 0,
+      "totalAssertions": 49,
+      "skipped": false
+    },
+    {
+      "file": "crossEngine.integration.test.ts",
+      "moduleName": "runCrossEngineIntegrationTestSuite",
+      "executed": true,
+      "passedAssertions": 33,
+      "failedAssertions": 0,
+      "totalAssertions": 33,
+      "skipped": false
+    },
+    {
+      "file": "formulaWorkflow.integration.test.ts",
+      "moduleName": "runFormulaWorkflowTestSuite",
+      "executed": true,
+      "passedAssertions": 33,
+      "failedAssertions": 0,
+      "totalAssertions": 33,
+      "skipped": false
+    },
+    {
+      "file": "formulaDataContract.regression.test.ts",
+      "moduleName": "runFormulaDataContractTestSuite",
+      "executed": true,
+      "passedAssertions": 67,
+      "failedAssertions": 0,
+      "totalAssertions": 67,
+      "skipped": false
+    },
+    {
+      "file": "inventory.regression.test.ts",
+      "moduleName": "runInventoryTestSuite",
+      "executed": true,
+      "passedAssertions": 15,
+      "failedAssertions": 0,
+      "totalAssertions": 15,
+      "skipped": false
+    },
+    {
+      "file": "ingredientMaster.regression.test.ts",
+      "moduleName": "runIngredientMasterTestSuite",
+      "executed": true,
+      "passedAssertions": 11,
+      "failedAssertions": 0,
+      "totalAssertions": 11,
+      "skipped": false
+    },
+    {
+      "file": "expertReasoning.regression.test.ts",
+      "moduleName": "runExpertReasoningTestSuite",
+      "executed": true,
+      "passedAssertions": 18,
+      "failedAssertions": 0,
+      "totalAssertions": 18,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase1Master.regression.test.ts",
+      "moduleName": "runP1Phase1MasterTestSuite",
+      "executed": true,
+      "passedAssertions": 108,
+      "failedAssertions": 0,
+      "totalAssertions": 108,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase2Chelation.regression.test.ts",
+      "moduleName": "runP1Phase2ChelationTestSuite",
+      "executed": true,
+      "passedAssertions": 63,
+      "failedAssertions": 0,
+      "totalAssertions": 63,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase3Master.regression.test.ts",
+      "moduleName": "runP1Phase3MasterTestSuite",
+      "executed": true,
+      "passedAssertions": 39,
+      "failedAssertions": 0,
+      "totalAssertions": 39,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase4Performance.regression.test.ts",
+      "moduleName": "runP1Phase4PerformanceTestSuite",
+      "executed": true,
+      "passedAssertions": 96,
+      "failedAssertions": 0,
+      "totalAssertions": 96,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase4Hardening.regression.test.ts",
+      "moduleName": "runP1Phase4HardeningTestSuite",
+      "executed": true,
+      "passedAssertions": 45,
+      "failedAssertions": 0,
+      "totalAssertions": 45,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase5ScientificQualityGate.regression.test.ts",
+      "moduleName": "runP1Phase5ScientificQualityGateTestSuite",
+      "executed": true,
+      "passedAssertions": 128,
+      "failedAssertions": 0,
+      "totalAssertions": 128,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase6LabEvidenceValidation.regression.test.ts",
+      "moduleName": "runP1Phase6LabEvidenceValidationTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase7ModelGovernance.regression.test.ts",
+      "moduleName": "runP1Phase7ModelGovernanceTestSuite",
+      "executed": true,
+      "passedAssertions": 27,
+      "failedAssertions": 0,
+      "totalAssertions": 27,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase8IngredientIntelligence.regression.test.ts",
+      "moduleName": "runP1Phase8IngredientIntelligenceTestSuite",
+      "executed": true,
+      "passedAssertions": 26,
+      "failedAssertions": 0,
+      "totalAssertions": 26,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase10EndToEndDecision.regression.test.ts",
+      "moduleName": "runP1Phase10EndToEndDecisionTestSuite",
+      "executed": true,
+      "passedAssertions": 82,
+      "failedAssertions": 0,
+      "totalAssertions": 82,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase11LearningLoop.regression.test.ts",
+      "moduleName": "runP1Phase11LearningLoopTestSuite",
+      "executed": true,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
+      "totalAssertions": 20,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase12FormulaDevelopment.regression.test.ts",
+      "moduleName": "runP1Phase12FormulaDevelopmentTestSuite",
+      "executed": true,
+      "passedAssertions": 19,
+      "failedAssertions": 0,
+      "totalAssertions": 19,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase13Manufacturing.regression.test.ts",
+      "moduleName": "runP1Phase13ManufacturingTestSuite",
+      "executed": true,
+      "passedAssertions": 13,
+      "failedAssertions": 0,
+      "totalAssertions": 13,
+      "skipped": false
+    },
+    {
+      "file": "p3WaterHardnessChelation.test.ts",
+      "moduleName": "runP3WaterHardnessTestSuite",
+      "executed": true,
+      "passedAssertions": 65,
+      "failedAssertions": 0,
+      "totalAssertions": 65,
+      "skipped": false
+    },
+    {
+      "file": "p4CleaningPerformanceMaster.test.ts",
+      "moduleName": "runPhase4PerformanceTestSuite",
+      "executed": true,
+      "passedAssertions": 41,
+      "failedAssertions": 0,
+      "totalAssertions": 41,
+      "skipped": false
+    },
+    {
+      "file": "p6CompatibilityMaster.test.ts",
+      "moduleName": "runPhase6CompatibilityTestSuite",
+      "executed": true,
+      "passedAssertions": 34,
+      "failedAssertions": 0,
+      "totalAssertions": 34,
+      "skipped": false
+    },
+    {
+      "file": "p7ScientificProvenanceMaster.test.ts",
+      "moduleName": "runPhase7ProvenanceTestSuite",
+      "executed": true,
+      "passedAssertions": 31,
+      "failedAssertions": 0,
+      "totalAssertions": 31,
+      "skipped": false
+    },
+    {
+      "file": "p8EndToEndIntegrationMaster.test.ts",
+      "moduleName": "runPhase8EndToEndIntegrationTestSuite",
+      "executed": true,
+      "passedAssertions": 78,
+      "failedAssertions": 0,
+      "totalAssertions": 78,
+      "skipped": false
+    },
+    {
+      "file": "p10MasterFormulaRemediation.test.ts",
+      "moduleName": "runPhase10MasterFormulaTestSuite",
+      "executed": true,
+      "passedAssertions": 172,
+      "failedAssertions": 0,
+      "totalAssertions": 172,
+      "skipped": false
+    },
+    {
+      "file": "categoryExpertReasoning.regression.test.ts",
+      "moduleName": "runCategoryExpertReasoningTestSuite",
+      "executed": true,
+      "passedAssertions": 6,
+      "failedAssertions": 0,
+      "totalAssertions": 6,
+      "skipped": false
+    },
+    {
+      "file": "chemicalEncyclopedia.regression.test.ts",
+      "moduleName": "runChemicalEncyclopediaTestSuite",
+      "executed": true,
+      "passedAssertions": 16,
+      "failedAssertions": 0,
+      "totalAssertions": 16,
+      "skipped": false
+    },
+    {
+      "file": "commercialGrades.regression.test.ts",
+      "moduleName": "runCommercialGradesTestSuite",
+      "executed": true,
+      "passedAssertions": 12,
+      "failedAssertions": 0,
+      "totalAssertions": 12,
+      "skipped": false
+    },
+    {
+      "file": "featureGating.regression.test.ts",
+      "moduleName": "runFeatureGatingTestSuite",
+      "executed": true,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
+      "totalAssertions": 20,
+      "skipped": false
+    },
+    {
+      "file": "p5LabEvidenceValidationMaster.test.ts",
+      "moduleName": "runPhase5LabEvidenceValidationTestSuite",
+      "executed": true,
+      "passedAssertions": 31,
+      "failedAssertions": 0,
+      "totalAssertions": 31,
+      "skipped": false
+    },
+    {
+      "file": "liquidNvrEngine.regression.test.ts",
+      "moduleName": "runLiquidNvrRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 17,
+      "failedAssertions": 0,
+      "totalAssertions": 17,
+      "skipped": false
+    },
+    {
+      "file": "singleAuthoritativeVerdict.regression.test.ts",
+      "moduleName": "runSingleAuthoritativeVerdictRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 6,
+      "failedAssertions": 0,
+      "totalAssertions": 6,
+      "skipped": false
+    },
+    {
+      "file": "formulaLibraryQualityGate.regression.test.ts",
+      "moduleName": "runFormulaLibraryQualityGateRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 3,
+      "failedAssertions": 0,
+      "totalAssertions": 3,
+      "skipped": false
+    },
+    {
+      "file": "legacyStatusLeakage.regression.test.ts",
+      "moduleName": "runLegacyStatusLeakageTestSuite",
+      "executed": true,
+      "passedAssertions": 5,
+      "failedAssertions": 0,
+      "totalAssertions": 5,
+      "skipped": false
+    },
+    {
+      "file": "foamRegression.test.ts",
+      "moduleName": "runFoamRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
+      "skipped": false
+    },
+    {
+      "file": "categorySuitabilityRegression.test.ts",
+      "moduleName": "runCategorySuitabilityRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
+      "skipped": false
+    },
+    {
+      "file": "specFallback.regression.test.ts",
+      "moduleName": "runSpecFallbackRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "hardcodedScientificResults.regression.test.ts",
+      "moduleName": "runHardcodedScientificResultsRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 8,
+      "failedAssertions": 0,
+      "totalAssertions": 8,
+      "skipped": false
+    },
+    {
+      "file": "androidNetworkSecurity.regression.test.ts",
+      "moduleName": "runAndroidNetworkSecurityTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
+      "skipped": false
+    },
+    {
+      "file": "currentScientificReport.regression.test.ts",
+      "moduleName": "runCurrentScientificReportRegressionTestSuite",
+      "executed": true,
+      "passedAssertions": 6,
+      "failedAssertions": 0,
+      "totalAssertions": 6,
+      "skipped": false
+    },
+    {
+      "file": "releaseSigningSecurity.regression.test.ts",
+      "moduleName": "runReleaseSigningSecurityTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
+      "skipped": false
+    },
+    {
+      "file": "rdkitAdapter.regression.test.ts",
+      "moduleName": "runRDKitAdapterTestSuite",
+      "executed": true,
+      "passedAssertions": 18,
+      "failedAssertions": 0,
+      "totalAssertions": 18,
+      "skipped": false
+    },
+    {
+      "file": "formulationOptimization.regression.test.ts",
+      "moduleName": "runFormulationOptimizationTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "limsEvidenceEngine.regression.test.ts",
+      "moduleName": "runLimsEvidenceEngineTestSuite",
+      "executed": true,
+      "passedAssertions": 24,
+      "failedAssertions": 0,
+      "totalAssertions": 24,
+      "skipped": false
+    },
+    {
+      "file": "jcampReader.regression.test.ts",
+      "moduleName": "runJcampReaderTestSuite",
+      "executed": true,
+      "passedAssertions": 9,
+      "failedAssertions": 0,
+      "totalAssertions": 9,
+      "skipped": false
+    },
+    {
+      "file": "spectralPreprocessing.regression.test.ts",
+      "moduleName": "runSpectralPreprocessingTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "spectralMatcher.regression.test.ts",
+      "moduleName": "runSpectralMatcherTestSuite",
+      "executed": true,
+      "passedAssertions": 8,
+      "failedAssertions": 0,
+      "totalAssertions": 8,
+      "skipped": false
+    },
+    {
+      "file": "spectralEvidence.regression.test.ts",
+      "moduleName": "runSpectralEvidenceTestSuite",
+      "executed": true,
+      "passedAssertions": 5,
+      "failedAssertions": 0,
+      "totalAssertions": 5,
+      "skipped": false
+    },
+    {
+      "file": "spectralSecurity.regression.test.ts",
+      "moduleName": "runSpectralSecurityTestSuite",
+      "executed": true,
+      "passedAssertions": 4,
+      "failedAssertions": 0,
+      "totalAssertions": 4,
+      "skipped": false
+    },
+    {
+      "file": "labAutomation.regression.test.ts",
+      "moduleName": "runLabAutomationTestSuite",
+      "executed": true,
+      "passedAssertions": 28,
+      "failedAssertions": 0,
+      "totalAssertions": 28,
+      "skipped": false
+    },
+    {
+      "file": "closedLoop.regression.test.ts",
+      "moduleName": "runClosedLoopTestSuite",
+      "executed": true,
+      "passedAssertions": 17,
+      "failedAssertions": 0,
+      "totalAssertions": 17,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationFakeEvidenceRemoval.regression.test.ts",
+      "moduleName": "runP0RemediationFakeEvidenceTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationClosedLoopSimulationIsolation.regression.test.ts",
+      "moduleName": "runP0RemediationClosedLoopTestSuite",
+      "executed": true,
+      "passedAssertions": 23,
+      "failedAssertions": 0,
+      "totalAssertions": 23,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationLabValidatedOrigin.regression.test.ts",
+      "moduleName": "runP0RemediationLabValidatedOriginTestSuite",
+      "executed": true,
+      "passedAssertions": 24,
+      "failedAssertions": 0,
+      "totalAssertions": 24,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationOpentronsSimulationIsolation.regression.test.ts",
+      "moduleName": "runP0RemediationOpentronsSimulationTestSuite",
+      "executed": true,
+      "passedAssertions": 22,
+      "failedAssertions": 0,
+      "totalAssertions": 22,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationSpectralLimsPersistence.regression.test.ts",
+      "moduleName": "runP0RemediationSpectralLimsPersistenceTestSuite",
+      "executed": true,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
+      "totalAssertions": 20,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationInstrumentProvenance.regression.test.ts",
+      "moduleName": "runP0RemediationInstrumentProvenanceTestSuite",
+      "executed": true,
+      "passedAssertions": 15,
+      "failedAssertions": 0,
+      "totalAssertions": 15,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationUnknownProductCategory.regression.test.ts",
+      "moduleName": "runP0RemediationUnknownProductCategoryTestSuite",
+      "executed": true,
+      "passedAssertions": 27,
+      "failedAssertions": 0,
+      "totalAssertions": 27,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationUnknownProductCategoryFallback.regression.test.ts",
+      "moduleName": "runP0RemediationUnknownProductCategoryFallbackTestSuite",
+      "executed": true,
+      "passedAssertions": 31,
+      "failedAssertions": 0,
+      "totalAssertions": 31,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationAndroidProjectIntegrity.regression.test.ts",
+      "moduleName": "runP0RemediationAndroidProjectIntegrityTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationLimsPersistenceUiTruthfulness.regression.test.ts",
+      "moduleName": "runP0RemediationLimsPersistenceUiTruthfulnessTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationScientificVsLabValidation.regression.test.ts",
+      "moduleName": "runP0RemediationScientificVsLabValidationTestSuite",
+      "executed": true,
+      "passedAssertions": 35,
+      "failedAssertions": 0,
+      "totalAssertions": 35,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationSyntheticSpectraProvenanceIsolation.regression.test.ts",
+      "moduleName": "runP0RemediationSyntheticSpectraProvenanceIsolationTestSuite",
+      "executed": true,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
+      "totalAssertions": 20,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationLiquidPhSpecificationRouting.regression.test.ts",
+      "moduleName": "runP0RemediationLiquidPhSpecificationRoutingTestSuite",
+      "executed": true,
+      "passedAssertions": 28,
+      "failedAssertions": 0,
+      "totalAssertions": 28,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationLiquidPowderPhIsolation.regression.test.ts",
+      "moduleName": "runP0RemediationLiquidPowderPhIsolationTestSuite",
+      "executed": true,
+      "passedAssertions": 44,
+      "failedAssertions": 0,
+      "totalAssertions": 44,
+      "skipped": false
+    },
+    {
+      "file": "liquidLaundryAnalysisRemediation.regression.test.ts",
+      "moduleName": "runLiquidLaundryRemediationTestSuite",
+      "executed": true,
+      "passedAssertions": 19,
+      "failedAssertions": 0,
+      "totalAssertions": 19,
+      "skipped": false
+    },
+    {
+      "file": "ingredientIntelligenceSearchRemediation.regression.test.ts",
+      "moduleName": "runIngredientIntelligenceSearchRemediationTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "p0MasterScientificUnknownDataIntegrity.regression.test.ts",
+      "moduleName": "runMasterScientificUnknownDataIntegrityTestSuite",
+      "executed": true,
+      "passedAssertions": 32,
+      "failedAssertions": 0,
+      "totalAssertions": 32,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationAutonomousResearch.regression.test.ts",
+      "moduleName": "runAutonomousResearchTestSuite",
+      "executed": true,
+      "passedAssertions": 41,
+      "failedAssertions": 0,
+      "totalAssertions": 41,
+      "skipped": false
+    },
+    {
+      "file": "p0RemediationLabEvidenceSeed.regression.test.ts",
+      "moduleName": "runLabEvidenceSeedTestSuite",
+      "executed": true,
+      "passedAssertions": 36,
+      "failedAssertions": 0,
+      "totalAssertions": 36,
+      "skipped": false
+    },
+    {
+      "file": "scientificPhaseC.regression.test.ts",
+      "moduleName": "runScientificPhaseCTests",
+      "executed": true,
+      "passedAssertions": 37,
+      "failedAssertions": 0,
+      "totalAssertions": 37,
+      "skipped": false
+    },
+    {
+      "file": "phaseD.forensic.test.ts",
+      "moduleName": "runPhaseDForensicTestSuite",
+      "executed": true,
+      "passedAssertions": 54,
+      "failedAssertions": 0,
+      "totalAssertions": 54,
+      "skipped": false
+    },
+    {
+      "file": "formulaScientificOrchestrator.regression.test.ts",
+      "moduleName": "runFormulaScientificOrchestratorTestSuite",
+      "executed": true,
+      "passedAssertions": 35,
+      "failedAssertions": 0,
+      "totalAssertions": 35,
+      "skipped": false
+    },
+    {
+      "file": "categoryPropagation.regression.test.ts",
+      "moduleName": "runCategoryPropagationTestSuite",
+      "executed": true,
+      "passedAssertions": 49,
+      "failedAssertions": 0,
+      "totalAssertions": 49,
+      "skipped": false
+    },
+    {
+      "file": "p03AiGradeCategoryPropagation.regression.test.ts",
+      "moduleName": "runP03AiGradeCategoryPropagationTestSuite",
+      "executed": true,
+      "passedAssertions": 63,
+      "failedAssertions": 0,
+      "totalAssertions": 63,
+      "skipped": false
+    },
+    {
+      "file": "p04UnknownIngredientDataIntegrity.regression.test.ts",
+      "moduleName": "runP04UnknownIngredientDataIntegrityTestSuite",
+      "executed": true,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
+      "totalAssertions": 20,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase7ProvenanceSystem.regression.test.ts",
+      "moduleName": "runP1Phase7ProvenanceSystemTestSuite",
+      "executed": true,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
+      "totalAssertions": 30,
+      "skipped": false
+    },
+    {
+      "file": "p1Phase8MultiSourceResearch.regression.test.ts",
+      "moduleName": "runP1Phase8MultiSourceResearchTestSuite",
+      "executed": true,
+      "passedAssertions": 17,
+      "failedAssertions": 0,
+      "totalAssertions": 17,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase11HeuristicModels.regression.test.ts",
+      "moduleName": "runP2Phase11HeuristicModelsTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase11ClosurePrediction.regression.test.ts",
+      "moduleName": "runP2Phase11ClosurePredictionTestSuite",
+      "executed": true,
+      "passedAssertions": 4,
+      "failedAssertions": 0,
+      "totalAssertions": 4,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase12EmpiricalAccuracy.regression.test.ts",
+      "moduleName": "runP2Phase12EmpiricalAccuracyTestSuite",
+      "executed": true,
+      "passedAssertions": 5,
+      "failedAssertions": 0,
+      "totalAssertions": 5,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase12GapClosureHardening.regression.test.ts",
+      "moduleName": "runP2Phase12GapClosureHardeningTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase13EmpiricalValidation.regression.test.ts",
+      "moduleName": "runP2Phase13EmpiricalValidationTestSuite",
+      "executed": true,
+      "passedAssertions": 14,
+      "failedAssertions": 0,
+      "totalAssertions": 14,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase14RegulatoryCompliance.regression.test.ts",
+      "moduleName": "runP2Phase14RegulatoryComplianceTestSuite",
+      "executed": true,
+      "passedAssertions": 36,
+      "failedAssertions": 0,
+      "totalAssertions": 36,
+      "skipped": false
+    },
+    {
+      "file": "p2PhaseScientificCertainty.regression.test.ts",
+      "moduleName": "runP2PhaseScientificCertaintyTestSuite",
+      "executed": true,
+      "passedAssertions": 2,
+      "failedAssertions": 0,
+      "totalAssertions": 2,
+      "skipped": false
+    },
+    {
+      "file": "p0p2FinalIntegrityClosure.regression.test.ts",
+      "moduleName": "runP0P2FinalIntegrityClosureTestSuite",
+      "executed": true,
+      "passedAssertions": 18,
+      "failedAssertions": 0,
+      "totalAssertions": 18,
+      "skipped": false
+    },
+    {
+      "file": "p2PhaseN2AcidBaseDataFoundation.regression.test.ts",
+      "moduleName": "runN2AcidBaseDataFoundationTestSuite",
+      "executed": true,
+      "passedAssertions": 17,
+      "failedAssertions": 0,
+      "totalAssertions": 17,
+      "skipped": false
+    },
+    {
+      "file": "p2PhaseN3StoichiometricNeutralizationEngine.regression.test.ts",
+      "moduleName": "runN3StoichiometricNeutralizationTestSuite",
+      "executed": true,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
+      "totalAssertions": 20,
+      "skipped": false
+    },
+    {
+      "file": "p0LabValidationCampaign.regression.test.ts",
+      "moduleName": "runP0LabValidationCampaignTestSuite",
+      "executed": true,
+      "passedAssertions": 11,
+      "failedAssertions": 0,
+      "totalAssertions": 11,
+      "skipped": false
+    },
+    {
+      "file": "p4Phase7ScientificModelDepth.regression.test.ts",
+      "moduleName": "runP4Phase7ScientificModelDepthTestSuite",
+      "executed": true,
+      "passedAssertions": 58,
+      "failedAssertions": 0,
+      "totalAssertions": 58,
+      "skipped": false
+    },
+    {
+      "file": "p5PropertyPipelinesMaster.regression.test.ts",
+      "moduleName": "runP5PropertyPipelinesTestSuite",
+      "executed": true,
+      "passedAssertions": 24,
+      "failedAssertions": 0,
+      "totalAssertions": 24,
+      "skipped": false
+    },
+    {
+      "file": "p7ScientificAccuracyMaster.regression.test.ts",
+      "moduleName": "runP7ScientificAccuracyMasterTestSuite",
+      "executed": true,
+      "passedAssertions": 18,
+      "failedAssertions": 0,
+      "totalAssertions": 18,
+      "skipped": false
+    },
+    {
+      "file": "p8ScientificDecisionIntelligence.test.ts",
+      "moduleName": "runP8ScientificDecisionTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
+      "skipped": false
+    },
+    {
+      "file": "phase10Consistency.regression.test.ts",
+      "moduleName": "runPhase10ConsistencyTestSuite",
+      "executed": true,
+      "passedAssertions": 28,
+      "failedAssertions": 0,
+      "totalAssertions": 28,
+      "skipped": false
+    },
+    {
+      "file": "p2Phase13FinalIntegrity.regression.test.ts",
+      "moduleName": "runP2Phase13FinalIntegrityTestSuite",
+      "executed": true,
+      "passedAssertions": 12,
+      "failedAssertions": 0,
+      "totalAssertions": 12,
+      "skipped": false
+    },
+    {
+      "file": "viscosityModelImprovement.test.ts",
+      "moduleName": "runViscosityModelImprovementTestSuite",
+      "executed": true,
+      "passedAssertions": 4,
+      "failedAssertions": 0,
+      "totalAssertions": 4,
+      "skipped": false
+    },
+    {
+      "file": "formulaAnalysisWorkflow.regression.test.ts",
+      "moduleName": "runFormulaAnalysisWorkflowTestSuite",
+      "executed": true,
+      "passedAssertions": 49,
+      "failedAssertions": 0,
+      "totalAssertions": 49,
+      "skipped": false
+    },
+    {
+      "file": "masterFinalizer.integration.test.ts",
+      "moduleName": "runMasterFinalizerIntegrationTestSuite",
+      "executed": true,
+      "passedAssertions": 24,
+      "failedAssertions": 0,
+      "totalAssertions": 24,
+      "skipped": false
+    },
+    {
+      "file": "testIntegrity.regression.test.ts",
+      "moduleName": "runTestIntegrityTestSuite",
+      "executed": true,
+      "passedAssertions": 25,
+      "failedAssertions": 0,
+      "totalAssertions": 25,
+      "skipped": false
+    }
+  ]
+}

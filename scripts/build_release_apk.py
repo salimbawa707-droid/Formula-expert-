@@ -97,6 +97,20 @@ def build_release():
         print(f"Warning/Notice on cap sync: {e}. Ensuring direct asset sync...")
         shutil.copytree(dist_dir, public_assets_dir, dirs_exist_ok=True)
 
+    # Automated Release Artifact Verification Check
+    print("=== Artifact Verification: Checking Android public assets ===")
+    prohibited_found = []
+    for root, dirs, files in os.walk(public_assets_dir):
+        for file in files:
+            if file == "server.cjs" or file.endswith(".cjs") or file.endswith(".map"):
+                bad_path = os.path.join(root, file)
+                prohibited_found.append(bad_path)
+                os.remove(bad_path)
+    if prohibited_found:
+        print(f"❌ ERROR: Prohibited backend artifacts found in Android public assets: {prohibited_found}")
+        sys.exit(1)
+    print("✓ Artifact verification passed: No server bundles or source maps present in Android public assets.")
+
     # 4. Genuine Gradle Release Build
     print("\n=== STEP 3: Executing Genuine Gradle Release Build ===")
     gradle_cmd = ["./gradlew", "assembleRelease"] if os.path.exists(os.path.join(ANDROID_DIR, "gradlew")) else ["gradle", "assembleRelease"]

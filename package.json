@@ -5,16 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist dist-server android/app/src/main/assets/public",
+    "build:client": "vite build",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist-server/server.cjs",
+    "build": "npm run clean && npm run build:client && npm run build:server",
+    "start": "node dist-server/server.cjs",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "tsx src/utils/test-calculations.ts",
     "build:android": "python3 scripts/build_release_apk.py"
   },
   "dependencies": {
-    "3dmol": "^2.5.5",
     "@capacitor/android": "^8.5.0",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
@@ -25,6 +26,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "3dmol": "^2.5.5",
     "dexie": "^4.4.6",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
@@ -49,5 +51,9 @@
     "tailwindcss": "^3.4.16",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=24.12.0",
+    "npm": ">=9.0.0"
   }
 }

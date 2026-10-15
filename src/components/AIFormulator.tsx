@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useDeferredValue } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   FlaskConical,
   Plus,
@@ -34,12 +34,21 @@ import { evaluatePowderFormulation, PowderLabMeasurementInputs } from "../utils/
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from "../data/universalIngredientLibrary";
 import { ActiveFormulaState, FormulationIngredient } from "../types";
 import { PRODUCT_CATEGORIES } from "./aiformulator/constants";
+import {
+  executeStagedScientificAnalysis,
+  StagedWorkflowProgress,
+  ForensicAuditReport,
+  FormulaAnalysisSnapshot
+} from "../utils/analysisWorkflowEngine";
 
 // Modularized Panels
 import { CostingProjectionsPanel } from "./aiformulator/CostingProjectionsPanel";
 import { ScientificResultsPanel } from "./aiformulator/ScientificResultsPanel";
 import { FormulaVerdictPanel } from "./aiformulator/FormulaVerdictPanel";
 import { FormulationOptimizationPanel } from "./aiformulator/FormulationOptimizationPanel";
+import { StagedAnalysisWorkflowCard } from "./aiformulator/StagedAnalysisWorkflowCard";
+import { GeminiChemistryChatModal, FormulaChatContext } from "./GeminiChemistryChatModal";
+import { Bot } from "lucide-react";
 
 // Critical Micelle Concentration estimation helper (backwards-compatible alias)
 export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: number } | null => {
@@ -328,13 +337,25 @@ export default function FormulaExpert({
   const [powderLabInputs, setPowderLabInputs] = useState<PowderLabMeasurementInputs>({});
   const [powderBalanceToast, setPowderBalanceToast] = useState<string | null>(null);
 
+  // Workflow State for Staged Scientific Analysis
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [workflowProgress, setWorkflowProgress] = useState<StagedWorkflowProgress | null>(null);
+  const [forensicAuditReport, setForensicAuditReport] = useState<ForensicAuditReport | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const activeAnalysisIdRef = useRef<string | null>(null);
+
+  // Gemini Chemistry Chatbot Modal State
+  const [showChemistryChat, setShowChemistryChat] = useState<boolean>(false);
+  const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined);
+
+  const handleOpenChemistryChat = (prompt?: string) => {
+    setChatInitialPrompt(prompt);
+    setShowChemistryChat(true);
+  };
+
   // Determine formulation engine type (Powder vs Liquid)
   const isPowder = isPowderCategory(productCategory);
-
-  // Deferred values for ultra-smooth 60fps / 120fps typing & slider interactions
-  const deferredIngredients = useDeferredValue(ingredients);
-  const deferredBatchSizeKg = useDeferredValue(batchSizeKg);
-  const deferredWaterHardnessPpm = useDeferredValue(waterHardnessPpm);
 
   // Decoupled Deep Scientific Analysis State (Frozen snapshot of analyzed formula state)
   const [deepAnalysisState, setDeepAnalysisState] = useState<DeepAnalysisState>(() => {
@@ -385,12 +406,12 @@ export default function FormulaExpert({
     return computeFormulaFingerprint({
       formulaName,
       productCategory,
-      batchSizeKg: deferredBatchSizeKg,
-      waterHardnessPpm: deferredWaterHardnessPpm,
-      ingredients: deferredIngredients,
+      batchSizeKg,
+      waterHardnessPpm,
+      ingredients,
       powderLabInputs
     });
-  }, [formulaName, productCategory, deferredBatchSizeKg, deferredWaterHardnessPpm, deferredIngredients, powderLabInputs]);
+  }, [formulaName, productCategory, batchSizeKg, waterHardnessPpm, ingredients, powderLabInputs]);
 
   // Stale analysis indicator flag
   const isStale = useMemo(() => {
@@ -611,22 +632,22 @@ export default function FormulaExpert({
 
   // Authoritative Cost Calculation Report (User-Controlled Pricing) - Immediate Live Reaction
   const formulaCost: FormulaCostReport = useMemo(() => {
-    return calculateFormulaCost(deferredIngredients, deferredBatchSizeKg);
-  }, [deferredIngredients, deferredBatchSizeKg]);
+    return calculateFormulaCost(ingredients, batchSizeKg);
+  }, [ingredients, batchSizeKg]);
 
   // Commercial Margin Projections (Driven strictly by user raw-material cost) - Immediate Live Reaction
   const marginChain = useMemo(() => {
-    return calculateCommercialMarginChain(deferredIngredients, deferredBatchSizeKg, 12, 15);
-  }, [deferredIngredients, deferredBatchSizeKg]);
+    return calculateCommercialMarginChain(ingredients, batchSizeKg, 12, 15);
+  }, [ingredients, batchSizeKg]);
 
   // Live Totals Calculations (Decoupled, strictly reflecting immediate live editing inputs)
   const totals = useMemo(() => {
-    const totalRaw = deferredIngredients.reduce((sum, i) => sum + (Number(i.percentage) || 0), 0);
-    const rawSurfactants = calculateRawSurfactants(deferredIngredients);
-    const activeSurfactants = calculateActiveSurfactants(deferredIngredients);
+    const totalRaw = ingredients.reduce((sum, i) => sum + (Number(i.percentage) || 0), 0);
+    const rawSurfactants = calculateRawSurfactants(ingredients);
+    const activeSurfactants = calculateActiveSurfactants(ingredients);
 
     // Water % calculation: strictly 0 for powder unless user explicitly added water
-    const waterIng = deferredIngredients.find(
+    const waterIng = ingredients.find(
       (i) => (i.name || "").toLowerCase().includes("water") || (i.name || "").toLowerCase().includes("aqua")
     );
     const waterPct = isPowder
@@ -643,11 +664,72 @@ export default function FormulaExpert({
       totalBatchCost: formulaCost.totalBatchCost,
       isBalanced: Math.abs(totalRaw - 100) < 0.05
     };
-  }, [deferredIngredients, formulaCost, isPowder]);
+  }, [ingredients, formulaCost, isPowder]);
 
-  // Execute Check Formula Action (Explicitly triggers deep scientific execution pipeline)
-  const handleCheckFormula = () => {
-    const snapshot = {
+  // Context payload prepared for Gemini Chemistry Assistant
+  const formulaChatContext: FormulaChatContext = useMemo(() => {
+    const warningsList: string[] = [];
+    if (forensicAuditReport?.discrepancies) {
+      warningsList.push(...forensicAuditReport.discrepancies);
+    }
+    if (scientificResults?.verdictReasons) {
+      warningsList.push(...scientificResults.verdictReasons);
+    }
+
+    return {
+      formulaName,
+      productCategory,
+      productType: productCategory,
+      batchSizeKg,
+      waterHardnessPpm,
+      ingredients: ingredients.map((i) => ({
+        name: i.name,
+        percentage: Number(i.percentage) || 0,
+        activeMatterPct: i.activeMatterPct,
+        role: i.role,
+        costPerKg: i.costPerKg
+      })),
+      properties: {
+        pH: scientificResults?.pH,
+        viscosity: scientificResults?.viscosity,
+        activeMatter: scientificResults?.activeSurfactants,
+        calculatedHlb: scientificResults?.hlb
+      },
+      warnings: warningsList,
+      verdictReasons: scientificResults?.verdictReasons,
+      specVerdict: scientificResults?.specVerdict,
+      screeningStatus: scientificResults?.screeningStatus,
+      fingerprint: currentFingerprint
+    };
+  }, [
+    formulaName,
+    productCategory,
+    batchSizeKg,
+    waterHardnessPpm,
+    ingredients,
+    scientificResults,
+    forensicAuditReport,
+    currentFingerprint
+  ]);
+
+  // Execute Check Formula Action (Explicitly triggers genuine staged scientific execution pipeline)
+  const handleCheckFormula = async () => {
+    if (isAnalyzing) return; // Prevent duplicate concurrent submissions
+
+    // Cancel any previous in-flight workflow
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const analysisToken = `req-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    activeAnalysisIdRef.current = analysisToken;
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+
+    const snapshot: FormulaAnalysisSnapshot = {
       formulaName,
       productCategory,
       batchSizeKg,
@@ -657,30 +739,87 @@ export default function FormulaExpert({
       activeFormulaVersion: (activeFormula as any)?.version || '1.0.0'
     };
 
-    const newAnalysis = runDeepScientificAnalysis(snapshot);
-    setDeepAnalysisState(newAnalysis);
-    setHasAnalyzed(true);
+    try {
+      const result = await executeStagedScientificAnalysis({
+        snapshot,
+        currentLiveFingerprint: currentFingerprint,
+        onProgress: (prog) => {
+          if (activeAnalysisIdRef.current === analysisToken && !controller.signal.aborted) {
+            setWorkflowProgress(prog);
+          }
+        },
+        abortSignal: controller.signal
+      });
 
-    // Sync to active formula state
-    if (onFormulaGenerated) {
-      const activeObj: ActiveFormulaState = {
-        id: `formula-${Date.now()}`,
-        name: formulaName || `${productCategory} Formulation`,
-        productType: productCategory,
-        category: productCategory,
-        batchSizeKg,
-        batchSize: batchSizeKg,
-        targetPH: newAnalysis.scientificResults.pH,
-        ingredients: ingredients.map((ing, idx) => ({
-          ...ing,
-          id: ing.id || `ing-${idx}`,
-          percentage: Number(ing.percentage) || 0,
-          percent: Number(ing.percentage) || 0,
-          activeMatterPct: Number(ing.activeMatterPct) || 100,
-          costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
-        }))
-      };
-      onFormulaGenerated(activeObj);
+      // Ignore if superseded by a newer run or aborted
+      if (activeAnalysisIdRef.current !== analysisToken || controller.signal.aborted) {
+        return;
+      }
+
+      setWorkflowProgress({
+        analysisId: result.analysisId,
+        status: result.status,
+        currentStageId: null,
+        completedStageCount: result.stages.filter(s => s.status === 'COMPLETED' || s.status === 'COMPLETED_WITH_WARNINGS').length,
+        totalStageCount: result.stages.length,
+        stages: result.stages,
+        intermediateResults: result.intermediateResults,
+        forensicAuditReport: result.forensicAuditReport,
+        error: result.error
+      });
+
+      setForensicAuditReport(result.forensicAuditReport);
+
+      if (result.status === 'FAILED') {
+        setAnalysisError(result.error || 'Scientific analysis validation failure.');
+      } else if (result.deepAnalysisState) {
+        setDeepAnalysisState(result.deepAnalysisState);
+        setHasAnalyzed(true);
+
+        // Sync to active formula state
+        if (onFormulaGenerated) {
+          const activeObj: ActiveFormulaState = {
+            id: `formula-${Date.now()}`,
+            name: formulaName || `${productCategory} Formulation`,
+            productType: productCategory,
+            category: productCategory,
+            batchSizeKg,
+            batchSize: batchSizeKg,
+            targetPH: result.deepAnalysisState.scientificResults.pH,
+            ingredients: ingredients.map((ing, idx) => ({
+              ...ing,
+              id: ing.id || `ing-${idx}`,
+              percentage: Number(ing.percentage) || 0,
+              percent: Number(ing.percentage) || 0,
+              activeMatterPct: Number(ing.activeMatterPct) || 100,
+              costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
+            }))
+          };
+          onFormulaGenerated(activeObj);
+        }
+      }
+    } catch (err: any) {
+      if (activeAnalysisIdRef.current === analysisToken && !controller.signal.aborted) {
+        setAnalysisError(err?.message || 'Unexpected analysis execution error.');
+      }
+    } finally {
+      if (activeAnalysisIdRef.current === analysisToken) {
+        setIsAnalyzing(false);
+      }
+    }
+  };
+
+  const handleCancelAnalysis = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsAnalyzing(false);
+    if (workflowProgress) {
+      setWorkflowProgress({
+        ...workflowProgress,
+        status: 'CANCELLED',
+        currentStageId: null
+      });
     }
   };
 
@@ -1294,14 +1433,70 @@ export default function FormulaExpert({
           marginChain={marginChain}
         />
 
-        {/* PRIMARY ACTION: CHECK FORMULA */}
-        <div className="pt-1">
+        {/* ERROR DISPLAY */}
+        {analysisError && (
+          <div className="bg-rose-950/80 border border-rose-500/60 rounded-xl p-3.5 text-rose-200 text-xs flex items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{analysisError}</span>
+            </div>
+            <button
+              onClick={() => setAnalysisError(null)}
+              className="text-slate-400 hover:text-white text-xs font-bold px-2 py-0.5 rounded cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* STAGED ANALYSIS WORKFLOW CARD */}
+        {(isAnalyzing || workflowProgress || forensicAuditReport) && (
+          <StagedAnalysisWorkflowCard
+            isAnalyzing={isAnalyzing}
+            workflowProgress={workflowProgress}
+            forensicReport={forensicAuditReport}
+            currentLiveFingerprint={currentFingerprint}
+            onCancelAnalysis={handleCancelAnalysis}
+            onRetryAnalysis={handleCheckFormula}
+            onConsultChemistryAI={() => handleOpenChemistryChat("Formula workflow audit me warnings ya check status aayi hai. Kripya is formula ke surfactant ratio, pH balance, aur viscosity ko analyze karke scientific solution batayein.")}
+          />
+        )}
+
+        {/* PRIMARY ACTIONS: CHECK FORMULA & CONSULT CHEMISTRY AI */}
+        <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={handleCheckFormula}
-            className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 active:bg-blue-800 text-white font-extrabold text-sm sm:text-base tracking-wide transition-all shadow-lg shadow-cyan-950/60 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30"
+            disabled={isAnalyzing}
+            className={`w-full py-3.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm tracking-wide transition-all shadow-lg flex items-center justify-center gap-2 border ${
+              isAnalyzing
+                ? 'bg-[#152445] text-cyan-300 border-cyan-500/40 cursor-not-allowed shadow-cyan-950/40'
+                : 'bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 active:bg-blue-800 text-white cursor-pointer border-cyan-400/30 shadow-cyan-950/60 active:scale-[0.99]'
+            }`}
           >
-            <Sparkles className="w-5 h-5 text-white" />
-            <span>CHECK FORMULA / ANALYZE FORMULATION</span>
+            {isAnalyzing ? (
+              <>
+                <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
+                <span>SCIENTIFIC ANALYSIS IN PROGRESS...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>CHECK FORMULA / ANALYZE</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleOpenChemistryChat()}
+            className="w-full py-3.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm tracking-wide transition-all shadow-lg flex items-center justify-center gap-2 border bg-gradient-to-r from-purple-700 via-indigo-600 to-blue-600 hover:from-purple-600 hover:to-indigo-500 text-white cursor-pointer border-purple-400/40 shadow-purple-950/60 active:scale-[0.99]"
+            title="Ask Gemini Chemistry Bot regarding formula problems, neutralization, viscosity, or cloudiness"
+          >
+            <Bot className="w-4 h-4 text-purple-200" />
+            <span>CONSULT GEMINI CHEMISTRY BOT</span>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 bg-purple-950 rounded border border-purple-400/40 text-purple-200">
+              AI 3.8
+            </span>
           </button>
         </div>
       </div>
@@ -1329,7 +1524,12 @@ export default function FormulaExpert({
               </div>
               <button
                 onClick={handleCheckFormula}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs tracking-wider uppercase transition shadow-lg shadow-amber-950/50 cursor-pointer shrink-0 border border-amber-300/40 active:scale-95 flex items-center justify-center gap-1.5"
+                disabled={isAnalyzing}
+                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-extrabold text-xs tracking-wider uppercase transition shadow-lg shrink-0 border flex items-center justify-center gap-1.5 ${
+                  isAnalyzing
+                    ? 'bg-amber-900/50 text-amber-300/50 border-amber-500/20 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-950/50 cursor-pointer border-amber-300/40 active:scale-95'
+                }`}
               >
                 <Sparkles className="w-4 h-4 text-slate-950" />
                 <span>Re-run Check Formula</span>
@@ -1357,6 +1557,7 @@ export default function FormulaExpert({
               <FormulaVerdictPanel
                 scientificResults={scientificResults}
                 productCategory={deepAnalysisState.formulaSnapshot.productCategory}
+                onConsultChemistryAI={() => handleOpenChemistryChat("Formula verdict status matrix me warnings / revision flags hain. Kripya is formula ke specific screening aur specification issues ko fix karne ke chemical adjustments batayein.")}
               />
             </div>
           )}
@@ -1436,6 +1637,15 @@ export default function FormulaExpert({
         ingredients={ingredients}
         formulaName={formulaName || productCategory}
         onClose={() => setShowInciModal(false)}
+      />
+
+      {/* GEMINI CLEANING CHEMISTRY CHATBOT MODAL */}
+      <GeminiChemistryChatModal
+        isOpen={showChemistryChat}
+        onClose={() => setShowChemistryChat(false)}
+        formulaContext={formulaChatContext}
+        initialPrompt={chatInitialPrompt}
+        lang={_lang}
       />
     </div>
   );

@@ -115,7 +115,10 @@ import { runP7ScientificAccuracyMasterTestSuite } from './__tests__/p7Scientific
 import { runP8ScientificDecisionTestSuite } from './__tests__/p8ScientificDecisionIntelligence.test';
 import { runPhase10ConsistencyTestSuite } from './__tests__/phase10Consistency.regression.test';
 import { runViscosityModelImprovementTestSuite } from './__tests__/viscosityModelImprovement.test';
-import { runTestIntegrityTestSuite, evaluateMasterTestHealth, TestExecutionRecord } from './__tests__/testIntegrity.regression.test';
+import { runFormulaAnalysisWorkflowTestSuite } from './__tests__/formulaAnalysisWorkflow.regression.test';
+import { runTestIntegrityTestSuite, TestExecutionRecord } from './__tests__/testIntegrity.regression.test';
+import { runMasterFinalizerIntegrationTestSuite } from './__tests__/masterFinalizer.integration.test';
+import { finalizeMasterTestRun } from './masterTestFinalizer';
 
 const phSummary = runRegressionTestSuite();
 const phV2Summary = runPHEngineV2TestSuite();
@@ -161,7 +164,7 @@ const p2Phase11HeuristicSummary = runP2Phase11HeuristicModelsTestSuite();
 const p2Phase11ClosureSummary = runP2Phase11ClosurePredictionTestSuite();
 const p2Phase12AccuracySummary = runP2Phase12EmpiricalAccuracyTestSuite();
 const p2Phase12HardeningSummary = runP2Phase12GapClosureHardeningTestSuite();
-const p2Phase13ValidationSummary = runP2Phase13EmpiricalValidationTestSuite();
+const p2Phase13ValidationSummary = await runP2Phase13EmpiricalValidationTestSuite();
 const p2Phase14RegulatorySummary = runP2Phase14RegulatoryComplianceTestSuite();
 const p2PhaseScientificCertaintySummary = runP2PhaseScientificCertaintyTestSuite();
 const p1Phase10Summary = runP1Phase10EndToEndDecisionTestSuite();
@@ -238,7 +241,9 @@ const p5PropertyPipelinesSummary = runP5PropertyPipelinesTestSuite();
 const p7ScientificAccuracyMasterSummary = runP7ScientificAccuracyMasterTestSuite();
 const p8ScientificDecisionSummary = runP8ScientificDecisionTestSuite();
 const phase10ConsistencySummary = runPhase10ConsistencyTestSuite();
-runP2Phase13FinalIntegrityTestSuite();
+const formulaAnalysisWorkflowSummary = await runFormulaAnalysisWorkflowTestSuite();
+const p2Phase13Summary = runP2Phase13FinalIntegrityTestSuite();
+const finalizerIntegrationSummary = runMasterFinalizerIntegrationTestSuite();
 
 if (phSummary.failed > 0) {
   console.log('Failed pHEngine legacy tests:');
@@ -293,6 +298,13 @@ if (phaseDSummary.failed > 0) {
   console.log('Failed Phase D tests:');
   phaseDResult.results.filter(r => !r.passed).forEach(r => {
     console.log(`  [FAIL] ${r.group} -> ${r.name}: ${r.message}`);
+  });
+}
+
+if (p2Phase13Summary.failed > 0) {
+  console.log('Failed P2-13 Final Integrity tests:');
+  p2Phase13Summary.results.filter(r => !r.passed).forEach(r => {
+    console.log(`  [FAIL] ${r.testId} -> ${r.description}: ${r.message}`);
   });
 }
 
@@ -356,6 +368,9 @@ console.log(`Phase P0 RDKit Chemical Identity: ${rdkitSummary.passed}/${rdkitSum
 console.log(`Phase P1 Formulation Optimization: ${optimizationSummary.passed}/${optimizationSummary.total} PASS`);
 console.log(`Phase P0.10 Autonomous Research & Data Acquisition: ${autonomousResearchSummary.passed}/${autonomousResearchSummary.total} PASS`);
 console.log(`Phase P0.11 Lab Evidence Seed Remediation: ${labEvidenceSeedSummary.passed}/${labEvidenceSeedSummary.total} PASS`);
+console.log(`Phase 2.10 Formula Analysis Workflow Master: ${formulaAnalysisWorkflowSummary.passed}/${formulaAnalysisWorkflowSummary.total} PASS`);
+console.log(`Phase P2-13 Final Integrity Closure: ${p2Phase13Summary.passed}/${p2Phase13Summary.total} PASS`);
+console.log(`Master Finalizer Integration: ${finalizerIntegrationSummary.passed}/${finalizerIntegrationSummary.total} PASS`);
 
 // Build execution map capturing actual execution of every registered test module
 const executionMap: TestExecutionRecord[] = [
@@ -474,46 +489,26 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'p7ScientificAccuracyMaster.regression.test.ts', moduleName: 'runP7ScientificAccuracyMasterTestSuite', executed: true, passedAssertions: p7ScientificAccuracyMasterSummary.passed, failedAssertions: p7ScientificAccuracyMasterSummary.failed, totalAssertions: p7ScientificAccuracyMasterSummary.total, skipped: false },
   { file: 'p8ScientificDecisionIntelligence.test.ts', moduleName: 'runP8ScientificDecisionTestSuite', executed: true, passedAssertions: p8ScientificDecisionSummary.passed, failedAssertions: p8ScientificDecisionSummary.failed, totalAssertions: p8ScientificDecisionSummary.total, skipped: false },
   { file: 'phase10Consistency.regression.test.ts', moduleName: 'runPhase10ConsistencyTestSuite', executed: true, passedAssertions: phase10ConsistencySummary.passed, failedAssertions: phase10ConsistencySummary.failed, totalAssertions: phase10ConsistencySummary.total, skipped: false },
-  { file: 'p2Phase13FinalIntegrity.regression.test.ts', moduleName: 'runP2Phase13FinalIntegrityTestSuite', executed: true, passedAssertions: 12, failedAssertions: 0, totalAssertions: 12, skipped: false },
+  { file: 'p2Phase13FinalIntegrity.regression.test.ts', moduleName: 'runP2Phase13FinalIntegrityTestSuite', executed: true, passedAssertions: p2Phase13Summary.passed, failedAssertions: p2Phase13Summary.failed, totalAssertions: p2Phase13Summary.total, skipped: false },
   { file: 'viscosityModelImprovement.test.ts', moduleName: 'runViscosityModelImprovementTestSuite', executed: true, passedAssertions: viscosityImprovementPassed, failedAssertions: viscosityImprovementFailed, totalAssertions: viscosityImprovementResults.length, skipped: false },
-  { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 11, failedAssertions: 0, totalAssertions: 11, skipped: false }
+  { file: 'formulaAnalysisWorkflow.regression.test.ts', moduleName: 'runFormulaAnalysisWorkflowTestSuite', executed: true, passedAssertions: formulaAnalysisWorkflowSummary.passed, failedAssertions: formulaAnalysisWorkflowSummary.failed, totalAssertions: formulaAnalysisWorkflowSummary.total, skipped: false },
+  { file: 'masterFinalizer.integration.test.ts', moduleName: 'runMasterFinalizerIntegrationTestSuite', executed: true, passedAssertions: finalizerIntegrationSummary.passed, failedAssertions: finalizerIntegrationSummary.failed, totalAssertions: finalizerIntegrationSummary.total, skipped: false },
+  { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 25, failedAssertions: 0, totalAssertions: 25, skipped: false }
 ];
 
-const testIntegritySummary = runTestIntegrityTestSuite(executionMap);
+const testIntegritySummary = runTestIntegrityTestSuite(executionMap, p2Phase13Summary);
 
-if (testIntegritySummary.failed > 0) {
-  console.log('Failed Test Integrity assertions:');
-  testIntegritySummary.results.filter(r => !r.passed).forEach(r => {
-    console.log(`  [FAIL] ${r.group} -> ${r.name}: ${r.message}`);
-  });
+const testIntegrityRecord = executionMap.find(e => e.file === 'testIntegrity.regression.test.ts');
+if (testIntegrityRecord) {
+  testIntegrityRecord.passedAssertions = testIntegritySummary.passed;
+  testIntegrityRecord.failedAssertions = testIntegritySummary.failed;
+  testIntegrityRecord.totalAssertions = testIntegritySummary.total;
 }
 
-const failedModules = executionMap.filter(m => m.failedAssertions > 0);
-if (failedModules.length > 0) {
-  console.log('Failed Test Modules:');
-  failedModules.forEach(m => {
-    console.log(`  [MODULE FAIL] ${m.file} (${m.moduleName}): ${m.failedAssertions} failed assertions`);
-  });
-}
-
-const masterHealth = evaluateMasterTestHealth(executionMap, testIntegritySummary.discoveredCount);
-
-console.log(`================================================================`);
-console.log(`MASTER TEST RUNNER REPORT:`);
-console.log(`  DISCOVERED MODULES:         ${masterHealth.discoveredCount}`);
-console.log(`  REGISTERED MODULES:         ${masterHealth.registeredCount}`);
-console.log(`  EXECUTED MODULES:           ${masterHealth.executedCount}`);
-console.log(`  SKIPPED MODULES:            ${masterHealth.skippedCount}`);
-console.log(`  FAILED MODULES:             ${masterHealth.failedModulesCount}`);
-console.log(`  TOTAL ASSERTIONS EXECUTED:  ${masterHealth.totalAssertionsExecuted}`);
-console.log(`  TOTAL ASSERTIONS PASSED:    ${masterHealth.totalAssertionsPassed}`);
-console.log(`  TOTAL ASSERTIONS FAILED:    ${masterHealth.totalAssertionsFailed}`);
-console.log(`================================================================`);
-
-if (!masterHealth.isCleanPass) {
-  console.error(`MASTER TEST STATUS: FAILED (${masterHealth.failedModulesCount} failed modules, ${masterHealth.skippedCount} skipped, ${masterHealth.totalAssertionsFailed} failed assertions)`);
-  process.exit(1);
-}
-
-console.log(`MASTER TEST STATUS: 100% PASSED (${masterHealth.executedCount}/${masterHealth.registeredCount} modules, ${masterHealth.totalAssertionsPassed} assertions)`);
+finalizeMasterTestRun({
+  executionMap,
+  discoveredCount: testIntegritySummary.discoveredCount,
+  testIntegritySummary,
+  p2Phase13Summary
+});
 

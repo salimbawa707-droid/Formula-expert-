@@ -33,19 +33,30 @@ import {
   FrozenModelVersion
 } from '../empiricalCalibrationEngine';
 
-export function runP2Phase13FinalIntegrityTestSuite(): void {
+export interface P2Phase13Summary {
+  passed: number;
+  failed: number;
+  total: number;
+  results: { testId: string; description: string; passed: boolean; message: string }[];
+}
+
+export function runP2Phase13FinalIntegrityTestSuite(): P2Phase13Summary {
   console.log('--- STARTING P2-13 FINAL 3 DEFECTS SURGICAL CLOSURE SUITE ---');
 
   let passed = 0;
   let failed = 0;
+  const results: { testId: string; description: string; passed: boolean; message: string }[] = [];
 
   function assert(testId: string, description: string, condition: boolean, actual?: any, expected?: any) {
     if (condition) {
       passed++;
+      results.push({ testId, description, passed: true, message: 'PASSED' });
       console.log(`[PASS] [${testId}] ${description}`);
     } else {
       failed++;
-      console.error(`[FAIL] [${testId}] ${description} -> Expected: ${JSON.stringify(expected)}, Actual: ${JSON.stringify(actual)}`);
+      const message = `Expected: ${JSON.stringify(expected)}, Actual: ${JSON.stringify(actual)}`;
+      results.push({ testId, description, passed: false, message });
+      console.error(`[FAIL] [${testId}] ${description} -> ${message}`);
     }
   }
 
@@ -440,7 +451,12 @@ OBS-DSVER-1,LAUNDRY_LIQUID,F-1,v2.1,BATCH-1,Cleaning Score,85.0,Score Index,ASTM
   console.log(`FAILED                          : ${failed}`);
   console.log('--------------------------------------------------');
 
-  if (failed > 0) {
-    throw new Error(`P2-13 Final Closure Test Suite failed with ${failed} failure(s).`);
-  }
+  const summary: P2Phase13Summary = {
+    passed,
+    failed,
+    total: passed + failed,
+    results
+  };
+
+  return summary;
 }

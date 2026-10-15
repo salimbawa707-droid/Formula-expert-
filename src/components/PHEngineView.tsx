@@ -1,3 +1,4 @@
+import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
 import React, { useState, useCallback, useEffect } from 'react';
 import { 
   TestTube, 
@@ -91,7 +92,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
         id: `active-init-${idx}`,
         name: findMatchingPHEngineIngredient(ing.name),
         rawPercent: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? 100,
+        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === ing.name.toLowerCase() || u.id === (ing as any).id)?.activeDefault ?? (ing.name.toLowerCase().includes('water') || ing.name.toLowerCase().includes('aqua') ? 0 : 0)),
       }));
     }
     return [
@@ -111,7 +112,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
         id: `active-init-${idx}`,
         name: findMatchingPHEngineIngredient(ing.name),
         rawPercent: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? 100,
+        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === ing.name.toLowerCase() || u.id === (ing as any).id)?.activeDefault ?? (ing.name.toLowerCase().includes('water') || ing.name.toLowerCase().includes('aqua') ? 0 : 0)),
       }));
       const bSize = activeFormula.batchSize || (activeFormula as any).batchSizeKg || 100;
       const catRaw = (activeFormula as any)?.canonicalProductCategoryId || (activeFormula as any)?.categoryId || activeFormula?.category || activeFormula?.productType;
@@ -131,7 +132,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
         id: `active-init-${idx}`,
         name: findMatchingPHEngineIngredient(ing.name),
         rawPercent: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? 100,
+        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === ing.name.toLowerCase() || u.id === (ing as any).id)?.activeDefault ?? (ing.name.toLowerCase().includes('water') || ing.name.toLowerCase().includes('aqua') ? 0 : 0)),
       }));
       const bSize = activeFormula.batchSize || (activeFormula as any).batchSizeKg || 100;
       const catRaw = (activeFormula as any)?.canonicalProductCategoryId || (activeFormula as any)?.categoryId || activeFormula?.category || activeFormula?.productType;
@@ -164,7 +165,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
       id: `active-${Date.now()}-${idx}`,
       name: findMatchingPHEngineIngredient(ing.name),
       rawPercent: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-      activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? 100,
+      activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === ing.name.toLowerCase() || u.id === (ing as any).id)?.activeDefault ?? (ing.name.toLowerCase().includes('water') || ing.name.toLowerCase().includes('aqua') ? 0 : 0)),
     }));
 
     setIngredients(importedIngredients);
@@ -396,7 +397,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
 
         <div className="space-y-3">
           {ingredients.map((ing) => {
-            const purity = (ing.activePercent !== undefined ? ing.activePercent / 100 : (INGREDIENT_DATABASE[ing.name] as any)?.purity ?? 1);
+            const purity = (ing.activePercent !== undefined ? ing.activePercent / 100 : (INGREDIENT_DATABASE[ing.name] as any)?.purity ?? 0);
             const activePct = (purity * 100).toFixed(0);
             const rawPctVal = ing.rawPercent ?? 0;
             const ingId = ing.id ?? '';

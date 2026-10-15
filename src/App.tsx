@@ -19,7 +19,8 @@ import {
   Layers,
   Cpu,
   Workflow,
-  Atom
+  Atom,
+  Bot
 } from 'lucide-react';
 
 import AIFormulator from './components/AIFormulator';
@@ -40,6 +41,7 @@ import PHEngineView from './components/PHEngineView';
 import LabAutomationDashboard from './components/LabAutomationDashboard';
 import ClosedLoopDashboard from './components/ClosedLoopDashboard';
 import { ScienceLabWorkbench } from './components/ScienceLabWorkbench';
+import { GeminiChemistryChatModal } from './components/GeminiChemistryChatModal';
 
 import { ActiveFormulaState } from './types';
 
@@ -435,6 +437,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [isGlobalChatOpen, setIsGlobalChatOpen] = useState<boolean>(false);
 
   // Cross-component selected IDs & Single Source of Truth Active Formula State
   const [selectedChemicalId, setSelectedChemicalId] = useState<string | null>(null);
@@ -701,6 +704,17 @@ export default function App() {
             </select>
           </div>
 
+          {/* Gemini Chemistry Bot Quick Launcher Button in Header */}
+          <button
+            type="button"
+            onClick={() => setIsGlobalChatOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-900/60 to-indigo-900/60 hover:from-purple-800/80 hover:to-indigo-800/80 border border-purple-500/40 text-xs font-bold text-purple-200 hover:text-white transition shadow-sm cursor-pointer shrink-0"
+            title="Ask Gemini Cleaning Chemistry Bot"
+          >
+            <Bot size={14} className="text-purple-300" />
+            <span className="hidden sm:inline">AI Chemistry Bot</span>
+          </button>
+
           {/* PWA Install Button & User Account Menu */}
           <PWAInstallButton />
           <AccountMenu />
@@ -885,6 +899,50 @@ export default function App() {
 
       {/* Real-time Connectivity Indicator */}
       <OfflineIndicator />
+
+      {/* FLOATING ACTION BUTTON: GEMINI CHEMISTRY BOT */}
+      <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => setIsGlobalChatOpen(true)}
+          className="group relative flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-cyan-950/80 border border-cyan-400/40 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
+          title="Open Gemini Cleaning Chemistry Assistant"
+        >
+          <div className="relative">
+            <Bot className="w-5 h-5 text-white animate-bounce" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#070b18]" />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="leading-tight">Ask Chemistry AI</span>
+            <span className="text-[9px] font-mono font-medium text-cyan-200">
+              {activeFormula ? `Formula Attached (${activeFormula.name.slice(0, 15)})` : 'Gemini 3.8 Flash'}
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {/* GLOBAL GEMINI CHEMISTRY CHATBOT MODAL */}
+      <GeminiChemistryChatModal
+        isOpen={isGlobalChatOpen}
+        onClose={() => setIsGlobalChatOpen(false)}
+        formulaContext={activeFormula ? {
+          formulaName: activeFormula.name,
+          productCategory: activeFormula.category || activeFormula.productType,
+          productType: activeFormula.productType,
+          batchSizeKg: activeFormula.batchSizeKg || activeFormula.batchSize,
+          ingredients: activeFormula.ingredients?.map(i => ({
+            name: i.name,
+            percentage: Number(i.percentage || (i as any).percent) || 0,
+            activeMatterPct: i.activeMatterPct,
+            role: i.role,
+            costPerKg: i.costPerKg
+          })),
+          properties: {
+            pH: (activeFormula as any).targetPH
+          }
+        } : null}
+        lang={lang}
+      />
 
     </div>
   );

@@ -380,8 +380,19 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   let statusReason = 'All scientific and specification criteria satisfied';
 
   const hasBlockingCompatibility = !compatResult.compatible && compatResult.alerts.some(a => a.severity === 'Critical');
+  const isInvalidPH = isNaN(phResult.pH) || !isFinite(phResult.pH) || phResult.pH < 0 || phResult.pH > 14;
+  const isNonConverged = phResult.converged === false;
 
-  if (hasBlockingCompatibility) {
+  if (hasBlockingCompatibility || isInvalidPH) {
+    overallStatus = 'SCIENTIFICALLY_INVALID';
+    statusReason = isInvalidPH 
+      ? `Numerical instability or invalid pH output from equilibrium solver (pH: ${phResult.pH})`
+      : `Fundamentally incompatible formulation system: ${compatResult.alerts.map(a => a.title).join("; ")}`;
+  } else if (isNonConverged) {
+    overallStatus = 'OUT_OF_SPEC';
+    statusReason = `PHEngine equilibrium solver failed to converge (residual: ${phResult.residual.toExponential(2)})`;
+  } else if (false) { // bypassed old branch
+
     overallStatus = 'SCIENTIFICALLY_INVALID';
     statusReason = `Fundamentally incompatible formulation system: ${compatResult.alerts.map(a => a.title).join('; ')}`;
   } else if (!phWithinTarget || !activeWithinTarget || hasMassBalanceIssue) {

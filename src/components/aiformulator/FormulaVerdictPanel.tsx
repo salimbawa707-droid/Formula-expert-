@@ -1,14 +1,16 @@
 import React from 'react';
-import { CheckCircle, AlertTriangle, Info, Award, CheckCheck, ShieldAlert, Lightbulb, Lock, FlaskConical, ShieldCheck } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Info, Award, CheckCheck, ShieldAlert, Lightbulb, Lock, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface FormulaVerdictPanelProps {
   scientificResults: any;
   productCategory: string;
+  onConsultChemistryAI?: () => void;
 }
 
 export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.memo(({
   scientificResults,
-  productCategory
+  productCategory,
+  onConsultChemistryAI
 }) => {
   const screeningStatus = scientificResults.screeningStatus || "SCREENING: WITHIN CALCULATED TARGETS";
   const specVerdict = scientificResults.specVerdict || "NEEDS REVISION — Cost exceeds maximum specification";
@@ -29,6 +31,16 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
               Category-aware multi-pillar separation for {productCategory}
             </p>
           </div>
+          {onConsultChemistryAI && (
+            <button
+              onClick={onConsultChemistryAI}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-950/50 border border-purple-400/40 active:scale-95 shrink-0 self-start sm:self-auto"
+              title="Consult Gemini Chemistry AI regarding this verdict"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-200" />
+              <span>Consult Chemistry AI on Status</span>
+            </button>
+          )}
         </div>
 
         {/* Owner / R&D Workspace Authority Strip */}

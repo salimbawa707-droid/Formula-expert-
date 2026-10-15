@@ -24,6 +24,8 @@ import {
 } from '../empiricalCalibrationEngine';
 import { EmpiricalDataImporter } from '../empiricalDataImporter';
 import { HardenedEmpiricalAccuracyEngine } from '../empiricalAccuracyFramework';
+import { EmpiricalValidationEvaluationEngine } from '../empiricalValidationEvaluationEngine';
+import { EmpiricalLabPersistenceService } from '../empiricalLabPersistenceService';
 
 export interface TestResult {
   name: string;
@@ -33,7 +35,7 @@ export interface TestResult {
   expected?: any;
 }
 
-export function runP2Phase13EmpiricalValidationTestSuite(): { total: number; passed: number; failed: number; results: TestResult[] } {
+export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ total: number; passed: number; failed: number; results: TestResult[] }> {
   const results: TestResult[] = [];
 
   function assert(name: string, condition: boolean, actual?: any, expected?: any) {
@@ -253,6 +255,170 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     report.includes('OFFICIAL SCIENTIFIC MODEL VALIDATION REPORT') && report.includes('VALIDATED_WITH_LIMITATIONS'),
     true,
     true
+  );
+
+  // 11. JSON Laboratory Data Importer & Duplicate / Quarantine Isolation
+  const jsonPayload = JSON.stringify([
+    {
+      observationId: "OBS-JSON-101",
+      batchId: "BATCH-301",
+      productCategory: "LAUNDRY_LIQUID",
+      measuredProperty: "pH Prediction",
+      measuredValue: 8.45,
+      measurementUnit: "pH units",
+      testMethodId: "ASTM-D1172",
+      waterHardnessPpm: 150,
+      temperatureC: 25.0,
+      dosageGramsPerL: 2.0,
+      contactTimeMin: 15.0,
+      replicateNumber: 1,
+      testDate: "2026-10-11",
+      formulaVersion: "1.0.0",
+      formulaFingerprint: "FP-LAUN-JSON1"
+    },
+    {
+      observationId: "OBS-JSON-101", // Duplicate ID should be quarantined
+      batchId: "BATCH-301",
+      productCategory: "LAUNDRY_LIQUID",
+      measuredProperty: "pH Prediction",
+      measuredValue: 8.46,
+      measurementUnit: "pH units",
+      testMethodId: "ASTM-D1172",
+      waterHardnessPpm: 150,
+      temperatureC: 25.0,
+      dosageGramsPerL: 2.0,
+      contactTimeMin: 15.0,
+      replicateNumber: 2,
+      testDate: "2026-10-11",
+      formulaVersion: "1.0.0",
+      formulaFingerprint: "FP-LAUN-JSON1"
+    }
+  ]);
+  const jsonImportRes = EmpiricalDataImporter.parseJsonLaboratoryData(jsonPayload, {
+    datasetId: 'DS-JSON-2027',
+    datasetVersion: 'DS-JSON-2027-v1',
+    laboratoryName: 'Eurofins Analytics',
+    operator: 'QA Lead',
+    dataOrigin: 'REAL_LAB_MEASUREMENT',
+    formulaVersion: '1.0.0'
+  });
+  assert(
+    'JSON Laboratory Data Importer correctly detects duplicate observation IDs and quarantines them',
+    jsonImportRes.approvedCount === 1 && jsonImportRes.quarantinedRecords.length === 1,
+    jsonImportRes.quarantinedRecords.length,
+    1
+  );
+
+  // 12. Empty Dataset State Handling in Evaluation Engine
+  const emptyEval = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'pH Prediction',
+    predictionsMap: new Map(),
+    observations: [],
+    datasetVersion: 'EMPTY-v1'
+  });
+  assert(
+    'Evaluation engine returns explicit empty state with WAITING_FOR_REAL_LAB_DATA semantics when zero observations exist',
+    emptyEval.totalObservationCount === 0 && emptyEval.validationGateVerdict === 'DATA_PENDING',
+    emptyEval.validationGateVerdict,
+    'DATA_PENDING'
+  );
+
+  // 13. Prediction vs Actual Evaluation Engine with Metrics & Confidence Intervals
+  const sampleObs: CompleteLaboratoryObservation[] = [
+    {
+      observationId: "OBS-EVAL-1",
+      datasetId: "DS-EVAL",
+      datasetVersion: "v1",
+      formulaFingerprint: "FP-TEST-1",
+      formulaVersionId: "1.0.0",
+      formulaId: "F1",
+      batchId: "B-1",
+      productCategory: "LAUNDRY_LIQUID",
+      commercialMaterials: [],
+      waterProfile: { hardnessPpm: 150 },
+      temperatureC: 25,
+      dosageGramsPerL: 2.0,
+      contactTimeMin: 15,
+      testMethodId: "ASTM-D1172",
+      replicateNumber: 1,
+      measuredProperty: "pH Prediction",
+      measuredValue: 8.50,
+      measurementUnit: "pH units",
+      operator: "Op1",
+      laboratoryName: "Lab1",
+      testDate: "2026-10-11",
+      evidenceIds: ["EV-1"],
+      provenanceStatus: "REAL_LAB_MEASUREMENT",
+      dataQualityStatus: "APPROVED_FOR_VALIDATION",
+      dataOrigin: "REAL_LAB_MEASUREMENT",
+      auditTrail: ["test"]
+    },
+    {
+      observationId: "OBS-EVAL-2",
+      datasetId: "DS-EVAL",
+      datasetVersion: "v1",
+      formulaFingerprint: "FP-TEST-2",
+      formulaVersionId: "1.0.0",
+      formulaId: "F2",
+      batchId: "B-2",
+      productCategory: "LAUNDRY_LIQUID",
+      commercialMaterials: [],
+      waterProfile: { hardnessPpm: 150 },
+      temperatureC: 25,
+      dosageGramsPerL: 2.0,
+      contactTimeMin: 15,
+      testMethodId: "ASTM-D1172",
+      replicateNumber: 1,
+      measuredProperty: "pH Prediction",
+      measuredValue: 8.60,
+      measurementUnit: "pH units",
+      operator: "Op1",
+      laboratoryName: "Lab1",
+      testDate: "2026-10-11",
+      evidenceIds: ["EV-2"],
+      provenanceStatus: "REAL_LAB_MEASUREMENT",
+      dataQualityStatus: "APPROVED_FOR_VALIDATION",
+      dataOrigin: "REAL_LAB_MEASUREMENT",
+      auditTrail: ["test"]
+    }
+  ];
+  const predMap = new Map<string, number>();
+  predMap.set("FP-TEST-1", 8.45);
+  predMap.set("FP-TEST-2", 8.55);
+
+  const evalRes = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'pH Prediction',
+    predictionsMap: predMap,
+    observations: sampleObs,
+    datasetVersion: 'DS-EVAL-v1'
+  });
+  assert(
+    'EmpiricalValidationEvaluationEngine correctly calculates MAE, bias, and metrics from real observations',
+    evalRes.acceptedRecordCount === 2 && typeof evalRes.mae === 'number',
+    evalRes.acceptedRecordCount,
+    2
+  );
+
+  // 14. Empirical Lab Persistence Service
+  await EmpiricalLabPersistenceService.saveDataset({
+    datasetId: 'DS-PERSIST-TEST',
+    version: 'v1',
+    categories: ['LAUNDRY_LIQUID'],
+    property: 'pH Prediction',
+    sourceType: 'REAL_LAB_MEASUREMENT',
+    provenanceIds: ['PROV-1'],
+    observationCount: 1,
+    formulaCount: 1,
+    batchCount: 1,
+    status: 'APPROVED_FOR_VALIDATION',
+    createdAt: new Date().toISOString()
+  });
+  const retrievedDs = await EmpiricalLabPersistenceService.getDatasetById('DS-PERSIST-TEST');
+  assert(
+    'EmpiricalLabPersistenceService durably saves and retrieves empirical datasets',
+    Boolean(retrievedDs && retrievedDs.datasetId === 'DS-PERSIST-TEST'),
+    retrievedDs?.datasetId,
+    'DS-PERSIST-TEST'
   );
 
   console.log("--------------------------------------------------------------------------------");

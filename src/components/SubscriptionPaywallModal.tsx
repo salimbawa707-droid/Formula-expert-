@@ -100,8 +100,8 @@ export default function SubscriptionPaywallModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
+      <div className="relative w-full max-w-5xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl my-auto">
         {/* Top Glow & Header */}
         <div className="relative bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 p-6 md:p-8 text-center border-b border-slate-800">
           <button
@@ -225,7 +225,7 @@ export default function SubscriptionPaywallModal({
           </div>
 
           {/* 2. Pro Monthly / Yearly */}
-          <div className="relative flex flex-col bg-gradient-to-b from-blue-900/40 via-slate-800/80 to-slate-800 border-2 border-blue-500 rounded-xl p-5 shadow-xl shadow-blue-500/10 scale-105">
+          <div className="relative flex flex-col bg-gradient-to-b from-blue-900/40 via-slate-800/80 to-slate-800 border-2 border-blue-500 rounded-xl p-5 shadow-2xl shadow-blue-500/20 z-10 ring-2 ring-blue-500/40">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-extrabold uppercase px-3 py-0.5 rounded-full shadow-md tracking-wider">
               MOST POPULAR FOR LABS
             </div>

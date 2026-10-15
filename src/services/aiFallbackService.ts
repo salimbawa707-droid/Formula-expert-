@@ -148,7 +148,7 @@ export class AiFallbackService {
         name: "Omni Unified Gateway (Active)",
         configured: isGatewayActive,
         gateway: "Omni Endpoint",
-        models: ["Omni Combo Auto-Router", "gemini-omni-1.1-flash", "gemini-3.7-flash"]
+        models: ["Omni Combo Auto-Router", "gemini-omni-1.1-flash", "gemini-3.8-flash"]
       },
       {
         id: "omni-combo-gpt",
@@ -183,7 +183,7 @@ export class AiFallbackService {
         name: "Gemini Model (via Omni Combo)",
         configured: isGatewayActive,
         gateway: "Omni Combo Direct Route",
-        models: ["gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"]
+        models: ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"]
       },
       {
         id: "deterministic",
@@ -239,7 +239,7 @@ export class AiFallbackService {
 
     if (omniClient) {
       // ----------------------------------------------------------------------
-      // TIER 1: OMNI COMBO PRIMARY ROUTE (gemini-3.7-flash)
+      // TIER 1: OMNI COMBO PRIMARY ROUTE (gemini-3.8-flash)
       // ----------------------------------------------------------------------
       totalAttempts++;
       try {
@@ -249,14 +249,14 @@ export class AiFallbackService {
         if (options.responseSchema) config.responseSchema = options.responseSchema;
 
         const response = await omniClient.models.generateContent({
-          model: "gemini-3.7-flash",
+          model: "gemini-3.8-flash",
           contents: options.contents,
           config,
         });
 
         const rawText = response.text || "";
         if (rawText.trim()) {
-          return formatSuccess(rawText, "Omni Combo (gemini-3.7-flash Primary)", "omni_combo_primary");
+          return formatSuccess(rawText, "Omni Combo (gemini-3.8-flash Primary)", "omni_combo_primary");
         }
       } catch (err: any) {
         const msg = err?.message || String(err);

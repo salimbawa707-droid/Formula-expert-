@@ -29,6 +29,8 @@ export async function initializeDatabaseAndStores() {
           const idx = UNIVERSAL_INGREDIENTS.findIndex(i => i.id === dyn.id);
           if (idx !== -1) {
             UNIVERSAL_INGREDIENTS[idx] = dyn;
+          } else {
+            UNIVERSAL_INGREDIENTS.push(dyn);
           }
         }
       }

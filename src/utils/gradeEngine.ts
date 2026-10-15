@@ -342,8 +342,11 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   // 3. Extract Authoritative Child Results
   const activeMatter = orchestratorResult.activeMatterResult?.totalSurfactantActivePct ?? 0;
   const totalActiveMatter = orchestratorResult.activeMatterResult?.totalActiveMatterPct ?? activeMatter;
-  const phVal = orchestratorResult.pHResult?.ph ?? 7.0;
-  const compResult = orchestratorResult.compatibilityResult || { compatibilityScore: 100, compatible: true, alerts: [] };
+  const rawPh = orchestratorResult.pHResult?.ph;
+  const phVal = (typeof rawPh === 'number' && !isNaN(rawPh)) ? rawPh : undefined;
+  const compResult = orchestratorResult.compatibilityResult && typeof orchestratorResult.compatibilityResult === 'object' && typeof orchestratorResult.compatibilityResult.compatibilityScore === 'number' && !isNaN(orchestratorResult.compatibilityResult.compatibilityScore)
+    ? orchestratorResult.compatibilityResult
+    : undefined;
   const perfResult = orchestratorResult.cleaningResult || { cpi: 0, overallScore: 0, cleaningScore: 0 };
   const costResult = orchestratorResult.costResult || { costPerKg: 0, isWithinTarget: true, targetCostPerKg: 0 };
   const labEvidenceResult = orchestratorResult.labEvidenceResult || { evidenceLevel: 'PREDICTED_ONLY', isLabValidated: false };
@@ -367,23 +370,39 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   }
 
   // B. Compatibility Pillar
-  const compatibilityScore = Math.min(100, Math.max(0, Math.round(compResult.compatibilityScore ?? 100)));
-  const compatibilityStatus: GradePillarStatus = compResult.compatible ? 'KNOWN' : 'INVALID';
-  if (compResult.compatible && compatibilityScore >= 85) {
-    strengths.push('Full chemical compatibility with no antagonistic raw material interactions.');
-  } else if (!compResult.compatible || compatibilityScore < 70) {
-    limitingFactors.push(`Chemical incompatibility or destabilization risk (Score: ${compatibilityScore}/100).`);
+  const compatibilityScore = compResult ? Math.min(100, Math.max(0, Math.round(compResult.compatibilityScore))) : 0;
+  const compatibilityStatus: GradePillarStatus = compResult ? (compResult.compatible ? 'KNOWN' : 'INVALID') : 'UNKNOWN';
+  if (compResult) {
+    if (compResult.compatible && compatibilityScore >= 85) {
+      strengths.push('Full chemical compatibility with no antagonistic raw material interactions.');
+    } else if (!compResult.compatible || compatibilityScore < 70) {
+      limitingFactors.push(`Chemical incompatibility or destabilization risk (Score: ${compatibilityScore}/100).`);
+    }
+  } else {
+    unknownParameters.push('compatibility');
+    uncertaintyFactors.push('Chemical compatibility analysis is missing; stability and phase separation risk unknown.');
+    limitingFactors.push('Chemical compatibility analysis is missing or unavailable.');
   }
 
   // C. Lab Health & Safety Pillar
-  let healthScore = 100;
-  let healthStatus: GradePillarStatus = 'KNOWN';
-  if (phVal < profile.optimalPHRange[0] || phVal > profile.optimalPHRange[1]) {
-    const phDeviation = Math.min(phVal < profile.optimalPHRange[0] ? profile.optimalPHRange[0] - phVal : phVal - profile.optimalPHRange[1], 5);
-    healthScore = Math.max(40, Math.round(100 - phDeviation * 15));
-    limitingFactors.push(`pH (${phVal.toFixed(2)}) is outside optimal window [${profile.optimalPHRange[0]}-${profile.optimalPHRange[1]}] for ${canonicalCategory}.`);
+  let healthScore = 0;
+  let healthStatus: GradePillarStatus = 'UNKNOWN';
+  if (phVal !== undefined) {
+    healthStatus = 'KNOWN';
+    if (phVal < profile.optimalPHRange[0] || phVal > profile.optimalPHRange[1]) {
+      const phDeviation = Math.min(phVal < profile.optimalPHRange[0] ? profile.optimalPHRange[0] - phVal : phVal - profile.optimalPHRange[1], 5);
+      healthScore = Math.max(40, Math.round(100 - phDeviation * 15));
+      limitingFactors.push(`pH (${phVal.toFixed(2)}) is outside optimal window [${profile.optimalPHRange[0]}-${profile.optimalPHRange[1]}] for ${canonicalCategory}.`);
+    } else {
+      healthScore = 100;
+      strengths.push(`Equilibrium pH (${phVal.toFixed(2)}) is within optimal target range [${profile.optimalPHRange[0]}-${profile.optimalPHRange[1]}].`);
+    }
   } else {
-    strengths.push(`Equilibrium pH (${phVal.toFixed(2)}) is within optimal target range [${profile.optimalPHRange[0]}-${profile.optimalPHRange[1]}].`);
+    healthScore = 0;
+    healthStatus = 'UNKNOWN';
+    unknownParameters.push('pH');
+    uncertaintyFactors.push('pH measurement or prediction is missing; health safety cannot be confirmed.');
+    limitingFactors.push('pH value is missing; scientific health evaluation cannot be performed.');
   }
 
   // D. Active Matter / Concentration Pillar
@@ -433,13 +452,13 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
 
   // 6. Apply Scientific Caps & Incompatibility Overrides
   let hazardCapNote = '';
-  const hasCriticalIncompatibility = compResult.alerts?.some((a: any) => a.severity === 'Critical' || a.id === 'surfactant-interaction-hazard') || (compResult.compatible === false && compResult.compatibilityScore <= 70);
+  const hasCriticalIncompatibility = compResult ? (compResult.alerts?.some((a: any) => a.severity === 'Critical' || a.id === 'surfactant-interaction-hazard') || (compResult.compatible === false && compResult.compatibilityScore <= 70)) : false;
   if (hasCriticalIncompatibility) {
     weightedComposite = Math.min(weightedComposite, 50);
     hazardCapNote += ' [Capped at 50 due to critical chemical incompatibility]';
   }
 
-  const hasExtremePHHazard = phVal <= 2.0 || phVal >= 13.0;
+  const hasExtremePHHazard = phVal !== undefined && (phVal <= 2.0 || phVal >= 13.0);
   if (hasExtremePHHazard && canonicalCategory !== 'TOILET_CLEANER' && canonicalCategory !== 'KITCHEN_DEGREASER') {
     weightedComposite = Math.min(weightedComposite, 45);
     hazardCapNote += ' [Capped at 45 due to extreme pH safety hazard]';
@@ -448,6 +467,13 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   if (totalActiveMatter < 1.0 && canonicalCategory !== 'GLASS_CLEANER') {
     weightedComposite = Math.min(weightedComposite, 40);
     hazardCapNote += ' [Capped at 40 due to negligible active matter]';
+  }
+
+  // Missing critical scientific evaluations (pH or compatibility) must never yield favorable grades (A or A+)
+  const hasMissingCriticalScience = phVal === undefined || !compResult;
+  if (hasMissingCriticalScience) {
+    weightedComposite = Math.min(weightedComposite, 65);
+    hazardCapNote += ' [Capped due to missing unverified scientific data (pH/compatibility)]';
   }
 
   const finalScore = Math.min(100, Math.max(0, weightedComposite));
@@ -464,7 +490,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   const isLabCertified = Boolean(labEvidenceResult.isLabValidated);
   const confidence: 'HIGH' | 'MEDIUM' | 'LOW' = isLabCertified && unknownParameters.length === 0
     ? 'HIGH'
-    : (unknownParameters.length > 2 || !compResult.compatible ? 'LOW' : 'MEDIUM');
+    : (unknownParameters.length > 0 || (compResult ? !compResult.compatible : true) ? 'LOW' : 'MEDIUM');
 
   const labValidationStatus = isLabCertified
     ? 'LAB_VALIDATED (Empirical Bench Certified)'
@@ -476,8 +502,8 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   const reasoningParts: string[] = [
     `Category: ${canonicalCategory} (${profile.primaryFocus})`,
     `Performance: ${performanceScore}/100`,
-    `Compatibility: ${compatibilityScore}/100`,
-    `Health & pH: ${healthScore}/100`,
+    `Compatibility: ${compResult ? `${compatibilityScore}/100` : 'NOT_EVALUATED'}`,
+    `Health & pH: ${phVal !== undefined ? `${healthScore}/100 (pH ${phVal.toFixed(2)})` : 'NOT_EVALUATED'}`,
     `Active Matter: ${activeMatterScore}/100 (${totalActiveMatter.toFixed(1)}%)`,
     `Commercial: ${commercialScore}/100`
   ];
@@ -607,10 +633,10 @@ function evaluateAIGradeFromLegacyOrDraft(
       reasoning: 'Empty formulation containing no ingredients.',
       breakdown: {
         cpiScore: 0,
-        compatibilityScore: 100,
-        healthScore: 100,
+        compatibilityScore: 0,
+        healthScore: 0,
         activeMatterScore: 0,
-        commercialScore: 100
+        commercialScore: 0
       },
       isEvaluable: false
     };
@@ -630,7 +656,8 @@ function evaluateAIGradeFromLegacyOrDraft(
     const func = ing?.function || taxonomy.function;
     const isSolventOrWater = name.toLowerCase().includes('water') || name.toLowerCase().includes('aqua') || category.toLowerCase().includes('solvent');
     const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
-    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? ing?.activePct ?? ing?.purity ?? (isSolventOrWater ? 0 : 100));
+    const rawActiveVal = ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? ing?.activePct ?? ing?.purity;
+    const active = rawActiveVal !== undefined && rawActiveVal !== null ? Number(rawActiveVal) : (isSolventOrWater ? 0 : 0);
     const cost = Number(ing?.costPerKg ?? ing?.rawMaterialCostPerKg ?? ing?.cost ?? ing?.unitCost ?? 0);
 
     return {
@@ -691,10 +718,10 @@ function evaluateAIGradeFromLegacyOrDraft(
       reasoning: 'Formulation contains no active ingredients or zero total active matter.',
       breakdown: {
         cpiScore: 0,
-        compatibilityScore: 100,
-        healthScore: 100,
+        compatibilityScore: 0,
+        healthScore: 0,
         activeMatterScore: 0,
-        commercialScore: 100
+        commercialScore: 0
       },
       isEvaluable: false
     };
