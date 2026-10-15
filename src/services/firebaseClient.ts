@@ -9,6 +9,7 @@ import {
 import { 
   getFirestore, 
   doc, 
+  getDoc,
   getDocFromServer, 
   setDoc, 
   getDocs, 
@@ -120,13 +121,29 @@ export async function syncUserProfile(user: User): Promise<void> {
   try {
     const userDocRef = doc(db, 'users', user.uid);
     const now = new Date().toISOString();
+    
+    // Check if user profile already exists to preserve creation timestamp
+    let originalCreatedAt = now;
+    try {
+      const existingSnap = await getDoc(userDocRef);
+      if (existingSnap.exists()) {
+        const data = existingSnap.data();
+        if (data && data.createdAt) {
+          originalCreatedAt = data.createdAt;
+        }
+      }
+    } catch {
+      // If offline or read error, fallback to now
+    }
+
     await setDoc(userDocRef, {
       id: user.uid,
       email: user.email || '',
       displayName: user.displayName || 'Formulation Chemist',
       photoURL: user.photoURL || '',
       updatedAt: now,
-      createdAt: now
+      lastLoginAt: now,
+      createdAt: originalCreatedAt
     }, { merge: true });
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, userPath);

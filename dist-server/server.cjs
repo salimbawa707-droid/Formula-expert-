@@ -7100,6 +7100,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           model: "gemini-3.8-flash",
           contents: prompt,
           config: {
+            tools: [{ googleSearchRetrieval: {} }],
             responseMimeType: "application/json",
             responseSchema: {
               type: import_genai.Type.OBJECT,
@@ -7367,23 +7368,26 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     let updatedIng;
     if (ingIndex === -1) {
       const name = canonicalName || resolvedName || ingredientId;
-      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : 0;
+      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : previousRecord?.activeDefault ?? null;
+      const detectedDensity = typeof parameters.density === "number" ? parameters.density : previousRecord?.density ?? null;
+      const detectedPhMin = typeof parameters.pH === "number" ? parameters.pH : previousRecord?.phMin ?? null;
+      const detectedPhMax = parameters.pHRange ? parseFloat(parameters.pHRange.split("-")[1]) || null : previousRecord?.phMax ?? null;
       updatedIng = {
         id: ingredientId,
         name,
         productName: name,
         category: parameters.ionicNature ? `Surfactant (${parameters.ionicNature})` : "Specialty Chemical / Additive",
         subCategory: "Researched Raw Material",
-        casNumber: "N/A",
+        casNumber: previousRecord?.casNumber || "N/A",
         inciName: name,
         function: parameters.application || "Functional Detergent Additive",
         activeDefault: detectedActive,
         activeMatterPct: detectedActive,
         activePercent: detectedActive,
-        costPerKg: previousRecord?.costPerKg ?? 0,
-        density: typeof parameters.density === "number" ? parameters.density : 1,
-        phMin: typeof parameters.pH === "number" ? parameters.pH : 6,
-        phMax: parameters.pHRange ? parseFloat(parameters.pHRange.split("-")[1]) || 9 : typeof parameters.pH === "number" ? parameters.pH + 1.5 : 9,
+        costPerKg: previousRecord?.costPerKg !== void 0 ? previousRecord.costPerKg : null,
+        density: detectedDensity,
+        phMin: detectedPhMin,
+        phMax: detectedPhMax,
         description: `Researched technical raw material: ${name}`,
         isCustom: true
       };
@@ -7399,19 +7403,32 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
     if (parameters.pH !== void 0) {
       updatedIng.phMin = parameters.pH;
-      updatedIng.phMax = parameters.pHRange ? parseFloat(parameters.pHRange.split("-")[1]) || 9 : 9;
+      updatedIng.phMax = parameters.pHRange ? parseFloat(parameters.pHRange.split("-")[1]) || null : null;
+    }
+    if (parameters.density !== void 0 && typeof parameters.density === "number") {
+      updatedIng.density = parameters.density;
     }
     if (parameters.ionicNature !== void 0) {
       updatedIng.ionicNature = parameters.ionicNature;
     }
-    if (provenance) {
+    if (provenance && provenance.activeMatter && provenance.activeMatter.sourceUrl && provenance.activeMatter.status === "VERIFIED") {
+      const isMfr = provenance.activeMatter.sourceType === "MANUFACTURER_TDS";
       updatedIng.provenance = {
-        sourceType: "OFFICIAL_MANUFACTURER",
-        source: provenance.activeMatter?.source || "Independent Technical Datasheet",
-        sourceUrl: provenance.activeMatter?.sourceUrl || "",
+        sourceType: isMfr ? "OFFICIAL_MANUFACTURER" : provenance.activeMatter.sourceType || "TECHNICAL_REFERENCE",
+        source: provenance.activeMatter.source || "Technical Datasheet",
+        sourceUrl: provenance.activeMatter.sourceUrl,
         verificationStatus: "VERIFIED",
+        verifiedAt: provenance.activeMatter.verifiedAt || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+        notes: `Verified parameter extraction from primary source.`
+      };
+    } else {
+      updatedIng.provenance = {
+        sourceType: "ESTIMATED",
+        source: provenance?.activeMatter?.source || "Unverified Research Record",
+        sourceUrl: provenance?.activeMatter?.sourceUrl || "",
+        verificationStatus: "UNVERIFIED",
         verifiedAt: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-        notes: `Automatically verified via R&D Research Crawler. Extracted active content of ${parameters.activeMatter}% and pH of ${parameters.pH}.`
+        notes: "Research data lacks validated primary manufacturer TDS evidence."
       };
     }
     if (ingIndex !== -1) {
@@ -7480,7 +7497,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         await db.formulas.put(updatedFormula);
       }
     }
-    return { success: true, auditTrail };
+    return { success: true, auditTrail, updatedIngredient: updatedIng };
   }
 };
 
@@ -8285,11 +8302,150 @@ function calculateReactiveEquivalents(profile, rawMassKg) {
   };
 }
 
+// src/services/serverSecurity.ts
+var InMemoryRateLimiter = class {
+  constructor() {
+    this.tracker = /* @__PURE__ */ new Map();
+    this.lastCleanup = Date.now();
+  }
+  /**
+   * Cleans up expired rate-limit records every 5 minutes to prevent memory leaks
+   */
+  cleanup() {
+    const now = Date.now();
+    if (now - this.lastCleanup < 3e5) return;
+    this.lastCleanup = now;
+    for (const [key, record] of this.tracker.entries()) {
+      if (now > record.resetAt) {
+        this.tracker.delete(key);
+      }
+    }
+  }
+  check(ip, maxRequests, windowMs) {
+    this.cleanup();
+    const now = Date.now();
+    const record = this.tracker.get(ip);
+    if (!record || now > record.resetAt) {
+      this.tracker.set(ip, { count: 1, resetAt: now + windowMs });
+      return { allowed: true, remaining: maxRequests - 1, resetInMs: windowMs };
+    }
+    if (record.count >= maxRequests) {
+      return { allowed: false, remaining: 0, resetInMs: Math.max(0, record.resetAt - now) };
+    }
+    record.count++;
+    return { allowed: true, remaining: maxRequests - record.count, resetInMs: Math.max(0, record.resetAt - now) };
+  }
+  reset(ip) {
+    if (ip) {
+      this.tracker.delete(ip);
+    } else {
+      this.tracker.clear();
+    }
+  }
+};
+var serverRateLimiter = new InMemoryRateLimiter();
+function getClientIp(req) {
+  if (req.ip) {
+    return req.ip;
+  }
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    const firstIp = forwarded.split(",")[0].trim();
+    if (firstIp && /^[0-9a-fA-F:.]+$/.test(firstIp)) {
+      return firstIp;
+    }
+  }
+  return req.socket.remoteAddress || "127.0.0.1";
+}
+function rateLimitMiddleware(options) {
+  const { maxRequests, windowMs, endpointName = "Endpoint" } = options;
+  return (req, res, next) => {
+    const clientIp = getClientIp(req);
+    const key = `${endpointName}:${clientIp}`;
+    const result = serverRateLimiter.check(key, maxRequests, windowMs);
+    res.setHeader("X-RateLimit-Limit", maxRequests);
+    res.setHeader("X-RateLimit-Remaining", result.remaining);
+    res.setHeader("X-RateLimit-Reset", Math.ceil(result.resetInMs / 1e3));
+    if (!result.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil(result.resetInMs / 1e3));
+      res.setHeader("Retry-After", retryAfterSec);
+      res.status(429).json({
+        error: `Too many requests to ${endpointName}. Rate limit exceeded.`,
+        retryAfterSeconds: retryAfterSec
+      });
+      return;
+    }
+    next();
+  };
+}
+function payloadSizeValidator(maxBytes = 25e4) {
+  return (req, res, next) => {
+    const contentLength = req.headers["content-length"];
+    if (contentLength && parseInt(contentLength, 10) > maxBytes) {
+      res.status(413).json({
+        error: `Payload too large. Maximum allowed request size is ${Math.round(maxBytes / 1024)} KB.`
+      });
+      return;
+    }
+    if (req.body && typeof req.body === "object") {
+      try {
+        const bodyStr = JSON.stringify(req.body);
+        if (bodyStr.length > maxBytes) {
+          res.status(413).json({
+            error: `Request body exceeds maximum size limit of ${Math.round(maxBytes / 1024)} KB.`
+          });
+          return;
+        }
+      } catch {
+      }
+    }
+    next();
+  };
+}
+function sanitizeErrorMessage(err) {
+  if (!err) return "An unexpected error occurred.";
+  const msg = typeof err === "string" ? err : err.message || "Operation failed.";
+  let cleanMsg = msg.replace(/AIza[0-9A-Za-z-_]{20,50}/g, "[REDACTED_KEY]").replace(/\/app\/[a-zA-Z0-9_\-\.\/]+/g, "[REDACTED_PATH]").replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[REDACTED_EMAIL]");
+  return cleanMsg;
+}
+
 // server.ts
 import_dotenv.default.config();
 var app = (0, import_express.default)();
 var PORT = 3e3;
-app.use(import_express.default.json());
+app.use(import_express.default.json({ limit: "1mb" }));
+var lastAIOperationSuccess = null;
+var lastAIOperationTimestamp = null;
+var lastAIOperationError = null;
+async function probeGeminiHealth() {
+  const client = getAIClient();
+  if (!client) {
+    return { reachable: false, latencyMs: 0, error: "Missing or invalid GEMINI_API_KEY credentials." };
+  }
+  const start = Date.now();
+  try {
+    const response = await Promise.race([
+      client.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: "Respond with the single word: OK"
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout contacting Gemini API (3000ms limit)")), 3e3))
+    ]);
+    const latencyMs = Date.now() - start;
+    if (response && response.text) {
+      lastAIOperationSuccess = true;
+      lastAIOperationTimestamp = (/* @__PURE__ */ new Date()).toISOString();
+      lastAIOperationError = null;
+      return { reachable: true, latencyMs };
+    }
+    throw new Error("Empty response received from provider.");
+  } catch (err) {
+    lastAIOperationSuccess = false;
+    lastAIOperationTimestamp = (/* @__PURE__ */ new Date()).toISOString();
+    lastAIOperationError = sanitizeErrorMessage(err);
+    return { reachable: false, latencyMs: Date.now() - start, error: lastAIOperationError };
+  }
+}
 var aiClient = null;
 function getAIClient() {
   if (!aiClient) {
@@ -8311,7 +8467,7 @@ function getAIClient() {
   }
   return aiClient;
 }
-app.post("/api/ai/chat", async (req, res) => {
+app.post("/api/ai/chat", payloadSizeValidator(1e5), rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "AI Chat" }), async (req, res) => {
   const { message, history, context } = req.body;
   const client = getAIClient();
   const domainExpertFallback = (msg, ctx) => {
@@ -8434,20 +8590,33 @@ ${JSON.stringify(context || {})}`;
     return;
   }
 });
-app.get("/api/ai/chemistry-status", (_req, res) => {
+app.get("/api/ai/chemistry-status", async (req, res) => {
   const client = getAIClient();
   const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-  const isOnline = Boolean(client && hasKey);
-  const statusState = isOnline ? "CONFIGURED_ONLINE" : "DETERMINISTIC_FALLBACK_ACTIVE";
+  if (req.query.probe === "true" && hasKey) {
+    await probeGeminiHealth();
+  }
+  let reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+  if (!hasKey) {
+    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+  } else if (lastAIOperationSuccess === true) {
+    reachability = "TESTED_SUCCESS";
+  } else if (lastAIOperationSuccess === false) {
+    reachability = "UNREACHABLE";
+  } else {
+    reachability = "CONFIGURED_UNTESTED";
+  }
+  const isOperational = reachability === "TESTED_SUCCESS";
   res.json({
-    activeModel: isOnline ? "gemini-3.8-flash" : "Deterministic Chemical R&D Engine (Local Core)",
+    activeModel: hasKey ? "gemini-3.8-flash" : "Deterministic Chemical R&D Engine (Local Core)",
     provider: "Google Gemini 3.8 Flash (AI Studio)",
-    status: statusState,
-    isOperational: isOnline,
+    status: reachability,
+    isOperational,
     apiKeyConfigured: hasKey,
     clientInitialized: Boolean(client),
-    reachability: isOnline ? "TESTED_SUCCESS" : "UNREACHABLE",
-    fallbackMode: !isOnline,
+    reachability,
+    fallbackMode: !isOperational,
+    lastTestedAt: lastAIOperationTimestamp,
     chemistryCapabilities: {
       surfactantScience: "Anionic, Amphoteric, Non-ionic, Cationic, Biosurfactants (APG)",
       stoichiometricNeutralization: "LABSA + NaOH/KOH/TEA exact molar ratios",
@@ -8460,57 +8629,73 @@ app.get("/api/ai/chemistry-status", (_req, res) => {
     }
   });
 });
-var aiRequestTracker = {};
-function checkRateLimit(ip, maxReqs = 60, windowMs = 6e4) {
-  const now = Date.now();
-  const record = aiRequestTracker[ip];
-  if (!record || now > record.resetAt) {
-    aiRequestTracker[ip] = { count: 1, resetAt: now + windowMs };
-    return true;
+app.post(
+  "/api/ai/research-ingredient",
+  payloadSizeValidator(5e4),
+  rateLimitMiddleware({ maxRequests: 20, windowMs: 6e4, endpointName: "Ingredient Research" }),
+  async (req, res) => {
+    const { nameOrAlias } = req.body || {};
+    if (!nameOrAlias || typeof nameOrAlias !== "string" || nameOrAlias.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid request payload: nameOrAlias must be a non-empty string" });
+    }
+    if (nameOrAlias.length > 200) {
+      return res.status(413).json({ error: "Request payload too large: ingredient name exceeds maximum limit" });
+    }
+    try {
+      const result = await IngredientResearchService.researchIngredient(nameOrAlias.trim(), process.env.GEMINI_API_KEY);
+      res.json(result);
+    } catch (err) {
+      console.error("Sanitized error during ingredient research for:", nameOrAlias.substring(0, 50));
+      res.status(500).json({ error: sanitizeErrorMessage(err) });
+    }
+    return;
   }
-  if (record.count >= maxReqs) return false;
-  record.count++;
-  return true;
-}
-app.post("/api/ai/research-ingredient", async (req, res) => {
-  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
-  if (!checkRateLimit(clientIp)) {
-    return res.status(429).json({ error: "Too many research requests. Please try again in 1 minute." });
+);
+app.post(
+  "/api/ai/apply-verified-ingredient",
+  payloadSizeValidator(1e5),
+  rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "Apply Verified Data" }),
+  async (req, res) => {
+    const { researchResult, previousRecord } = req.body || {};
+    if (!researchResult || typeof researchResult !== "object" || !researchResult.ingredientId) {
+      return res.status(400).json({ error: "Invalid request payload: valid researchResult with ingredientId required." });
+    }
+    const params = researchResult.parameters || {};
+    if (params.activeMatter !== void 0 && params.activeMatter !== null) {
+      const am = Number(params.activeMatter);
+      if (isNaN(am) || am < 0 || am > 100) {
+        return res.status(400).json({ error: "Validation failed: activeMatter must be a number between 0 and 100." });
+      }
+    }
+    if (params.pH !== void 0 && params.pH !== null) {
+      const ph = Number(params.pH);
+      if (isNaN(ph) || ph < 0 || ph > 14) {
+        return res.status(400).json({ error: "Validation failed: pH must be a number between 0 and 14." });
+      }
+    }
+    if (params.density !== void 0 && params.density !== null) {
+      const d = Number(params.density);
+      if (isNaN(d) || d <= 0 || d > 3) {
+        return res.status(400).json({ error: "Validation failed: density must be a positive number up to 3.0 g/cm\xB3." });
+      }
+    }
+    const prov = researchResult.provenance;
+    if (prov && prov.activeMatter && prov.activeMatter.sourceUrl) {
+      const url = String(prov.activeMatter.sourceUrl);
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        return res.status(400).json({ error: "Validation failed: sourceUrl must use http or https protocol." });
+      }
+    }
+    try {
+      const result = await IngredientResearchService.applyVerifiedData(researchResult, previousRecord);
+      res.json(result);
+    } catch (err) {
+      console.error("Sanitized error applying verified ingredient data:", researchResult.ingredientId);
+      res.status(500).json({ error: sanitizeErrorMessage(err) });
+    }
+    return;
   }
-  const { nameOrAlias } = req.body || {};
-  if (!nameOrAlias || typeof nameOrAlias !== "string" || nameOrAlias.trim().length === 0) {
-    return res.status(400).json({ error: "Invalid request payload: nameOrAlias must be a non-empty string" });
-  }
-  if (nameOrAlias.length > 200) {
-    return res.status(413).json({ error: "Request payload too large: ingredient name exceeds maximum limit" });
-  }
-  try {
-    const result = await IngredientResearchService.researchIngredient(nameOrAlias.trim(), process.env.GEMINI_API_KEY);
-    res.json(result);
-  } catch (err) {
-    console.error("Sanitized error during ingredient research for:", nameOrAlias.substring(0, 50));
-    res.status(500).json({ error: "Ingredient research query could not be completed safely." });
-  }
-  return;
-});
-app.post("/api/ai/apply-verified-ingredient", async (req, res) => {
-  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
-  if (!checkRateLimit(clientIp)) {
-    return res.status(429).json({ error: "Too many update requests. Please wait a moment." });
-  }
-  const { researchResult, previousRecord } = req.body || {};
-  if (!researchResult || typeof researchResult !== "object" || !researchResult.ingredientId) {
-    return res.status(400).json({ error: "Invalid request payload: valid researchResult with ingredientId required." });
-  }
-  try {
-    const result = await IngredientResearchService.applyVerifiedData(researchResult, previousRecord);
-    res.json(result);
-  } catch (err) {
-    console.error("Sanitized error applying verified ingredient data:", researchResult.ingredientId);
-    res.status(500).json({ error: "Failed to safely persist verified ingredient update." });
-  }
-  return;
-});
+);
 function enforcePreservativeConstraints(formula) {
   if (!formula || !formula.ingredients || formula.ingredients.length === 0) return formula;
   let pH = 7.5;
@@ -8892,7 +9077,7 @@ function analyzeUserFormulaFallback(ingredients, productType, grade, targetCost)
     packagingCompatibility: "PE, PP, or PET plastic containers"
   };
 }
-app.post("/api/ai/formulate", async (req, res) => {
+app.post("/api/ai/formulate", payloadSizeValidator(15e4), rateLimitMiddleware({ maxRequests: 20, windowMs: 6e4, endpointName: "AI Formulator" }), async (req, res) => {
   const {
     mode,
     ingredients: inputIngredients,
@@ -9633,7 +9818,7 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
     }
   }
 });
-app.post("/api/ai/troubleshoot", async (req, res) => {
+app.post("/api/ai/troubleshoot", payloadSizeValidator(1e5), rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "AI Troubleshooter" }), async (req, res) => {
   const { query, productContext } = req.body;
   const client = getAIClient();
   const fallbackTrouble = {
@@ -9753,7 +9938,7 @@ Do not include markdown code block formatting or backticks. Return raw JSON text
     return;
   }
 });
-app.post("/api/ai/analyze-recommend", async (req, res) => {
+app.post("/api/ai/analyze-recommend", payloadSizeValidator(15e4), rateLimitMiddleware({ maxRequests: 25, windowMs: 6e4, endpointName: "AI Analyzer" }), async (req, res) => {
   const { formulaName, productType, grade, ingredients } = req.body;
   const client = getAIClient();
   const predefinedAnalyzerFallback = () => {
@@ -9858,20 +10043,34 @@ No markdown formatting, raw JSON only.`;
     return;
   }
 });
-app.get("/api/ai/status", (_req, res) => {
+app.get("/api/ai/status", async (req, res) => {
   const providers = AiFallbackService.getProvidersStatus();
   const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
   const client = getAIClient();
-  const isOnline = Boolean(client && hasKey);
-  const comboState = isOnline ? "Omni Dynamic Router (Configured & Reachable)" : "Deterministic Offline Core (Active Fallback)";
+  if (req.query.probe === "true" && hasKey) {
+    await probeGeminiHealth();
+  }
+  let reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+  if (!hasKey) {
+    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+  } else if (lastAIOperationSuccess === true) {
+    reachability = "TESTED_SUCCESS";
+  } else if (lastAIOperationSuccess === false) {
+    reachability = "UNREACHABLE";
+  } else {
+    reachability = "CONFIGURED_UNTESTED";
+  }
+  const isOperational = reachability === "TESTED_SUCCESS";
+  const comboState = hasKey ? isOperational ? "Omni Dynamic Router (Configured & Tested Operational)" : "Omni Dynamic Router (Configured - Awaiting Live Probe)" : "Deterministic Offline Core (Active Fallback)";
   res.json({
     status: "ok",
     gateway: "Omni Unified Endpoint",
     combo: comboState,
     apiKeyConfigured: hasKey,
     clientInitialized: Boolean(client),
-    reachability: isOnline ? "TESTED_SUCCESS" : "UNREACHABLE",
-    providerReachable: isOnline,
+    reachability,
+    providerReachable: isOperational,
+    lastTestedAt: lastAIOperationTimestamp,
     providers,
     pipeline: [
       { step: 1, route: "Omni Combo Primary", model: "gemini-3.7-flash", description: "Flagship Fast Reasoning via Omni" },

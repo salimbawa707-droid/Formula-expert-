@@ -75,6 +75,7 @@ export interface ParameterProvenance {
   extractedValue?: any;
   status: ParameterVerificationStatus;
   evidenceLevel?: ResearchEvidenceLevel;
+  sourceType?: string;
   source: string;
   sourceUrl: string;
   sourceDocumentUrl?: string | null;
@@ -338,7 +339,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           model: 'gemini-3.8-flash',
           contents: prompt,
           config: {
-            tools: [{ googleSearchRetrieval: {} }],
+            tools: [{ googleSearch: {} }],
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -639,7 +640,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
   /**
    * Applies verified parameters to a canonical ingredient and triggers re-evaluations.
    */
-  public static async applyVerifiedData(researchResult: ResearchResult, previousRecord: any): Promise<{ success: boolean; auditTrail: ResearchAuditTrail }> {
+  public static async applyVerifiedData(researchResult: ResearchResult, previousRecord: any): Promise<{ success: boolean; auditTrail: ResearchAuditTrail; updatedIngredient?: any }> {
     const { ingredientId, canonicalName, resolvedName, parameters, provenance } = researchResult;
 
     const ingIndex = UNIVERSAL_INGREDIENTS.findIndex(i => i.id === ingredientId);
@@ -647,23 +648,27 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
 
     if (ingIndex === -1) {
       const name = canonicalName || resolvedName || ingredientId;
-      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : 0;
+      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : (previousRecord?.activeDefault ?? null);
+      const detectedDensity = typeof parameters.density === "number" ? parameters.density : (previousRecord?.density ?? null);
+      const detectedPhMin = typeof parameters.pH === "number" ? parameters.pH : (previousRecord?.phMin ?? null);
+      const detectedPhMax = parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || null) : (previousRecord?.phMax ?? null);
+
       updatedIng = {
         id: ingredientId,
         name,
         productName: name,
         category: parameters.ionicNature ? `Surfactant (${parameters.ionicNature})` : "Specialty Chemical / Additive",
         subCategory: "Researched Raw Material",
-        casNumber: "N/A",
+        casNumber: previousRecord?.casNumber || "N/A",
         inciName: name,
         function: parameters.application || "Functional Detergent Additive",
         activeDefault: detectedActive,
         activeMatterPct: detectedActive,
         activePercent: detectedActive,
-        costPerKg: previousRecord?.costPerKg ?? 0,
-        density: typeof parameters.density === "number" ? parameters.density : 1.0,
-        phMin: typeof parameters.pH === "number" ? parameters.pH : 6.0,
-        phMax: parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || 9.0) : (typeof parameters.pH === "number" ? parameters.pH + 1.5 : 9.0),
+        costPerKg: previousRecord?.costPerKg !== undefined ? previousRecord.costPerKg : null,
+        density: detectedDensity,
+        phMin: detectedPhMin,
+        phMax: detectedPhMax,
         description: `Researched technical raw material: ${name}`,
         isCustom: true
       };
@@ -681,19 +686,35 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
     if (parameters.pH !== undefined) {
       (updatedIng as any).phMin = parameters.pH;
-      (updatedIng as any).phMax = parameters.pHRange ? parseFloat(parameters.pHRange.split('-')[1]) || 9 : 9;
+      (updatedIng as any).phMax = parameters.pHRange ? (parseFloat(parameters.pHRange.split('-')[1]) || null) : null;
+    }
+    if (parameters.density !== undefined && typeof parameters.density === 'number') {
+      (updatedIng as any).density = parameters.density;
     }
     if (parameters.ionicNature !== undefined) {
       (updatedIng as any).ionicNature = parameters.ionicNature;
     }
-    if (provenance) {
+
+    // Strict Provenance Classification:
+    // Never label an ingredient VERIFIED or OFFICIAL_MANUFACTURER merely because provenance object exists
+    if (provenance && provenance.activeMatter && provenance.activeMatter.sourceUrl && provenance.activeMatter.status === 'VERIFIED') {
+      const isMfr = provenance.activeMatter.sourceType === 'MANUFACTURER_TDS';
       (updatedIng as any).provenance = {
-        sourceType: 'OFFICIAL_MANUFACTURER',
-        source: provenance.activeMatter?.source || "Independent Technical Datasheet",
-        sourceUrl: provenance.activeMatter?.sourceUrl || "",
+        sourceType: isMfr ? 'OFFICIAL_MANUFACTURER' : (provenance.activeMatter.sourceType || 'TECHNICAL_REFERENCE'),
+        source: provenance.activeMatter.source || "Technical Datasheet",
+        sourceUrl: provenance.activeMatter.sourceUrl,
         verificationStatus: 'VERIFIED',
+        verifiedAt: provenance.activeMatter.verifiedAt || new Date().toISOString().split('T')[0],
+        notes: `Verified parameter extraction from primary source.`
+      };
+    } else {
+      (updatedIng as any).provenance = {
+        sourceType: 'ESTIMATED',
+        source: provenance?.activeMatter?.source || "Unverified Research Record",
+        sourceUrl: provenance?.activeMatter?.sourceUrl || "",
+        verificationStatus: 'UNVERIFIED',
         verifiedAt: new Date().toISOString().split('T')[0],
-        notes: `Automatically verified via R&D Research Crawler. Extracted active content of ${parameters.activeMatter}% and pH of ${parameters.pH}.`
+        notes: "Research data lacks validated primary manufacturer TDS evidence."
       };
     }
 
@@ -771,6 +792,6 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       }
     }
 
-    return { success: true, auditTrail };
+    return { success: true, auditTrail, updatedIngredient: updatedIng };
   }
 }

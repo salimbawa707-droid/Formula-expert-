@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-14T17:00:46.887Z",
+  "timestamp": "2026-10-15T21:49:16.118Z",
   "summary": {
-    "discoveredCount": 120,
-    "registeredCount": 120,
-    "executedCount": 120,
+    "discoveredCount": 123,
+    "registeredCount": 123,
+    "executedCount": 123,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 3717,
-    "totalAssertionsPassed": 3717,
+    "totalAssertionsExecuted": 3743,
+    "totalAssertionsPassed": 3743,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -1089,6 +1089,33 @@
       "passedAssertions": 24,
       "failedAssertions": 0,
       "totalAssertions": 24,
+      "skipped": false
+    },
+    {
+      "file": "serviceWorker.test.ts",
+      "moduleName": "runServiceWorkerTestSuite",
+      "executed": true,
+      "passedAssertions": 10,
+      "failedAssertions": 0,
+      "totalAssertions": 10,
+      "skipped": false
+    },
+    {
+      "file": "serverSecurityAndTruthfulHealth.test.ts",
+      "moduleName": "runServerSecurityAndTruthfulHealthTestSuite",
+      "executed": true,
+      "passedAssertions": 9,
+      "failedAssertions": 0,
+      "totalAssertions": 9,
+      "skipped": false
+    },
+    {
+      "file": "apiBaseAndBillingSecurity.test.ts",
+      "moduleName": "runApiBaseAndBillingSecurityTestSuite",
+      "executed": true,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
+      "totalAssertions": 7,
       "skipped": false
     },
     {

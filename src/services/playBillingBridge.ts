@@ -1,4 +1,3 @@
-import { useSettingsStore, UserPlan } from '../stores/useSettingsStore';
 
 export interface PlayProduct {
   id: string;
@@ -22,14 +21,17 @@ export interface PlayPurchase {
 
 /**
  * Production-ready bridge for Google Play Billing.
- * Designed to integrate seamlessly when wrapped with Capacitor/Cordova using the
- * `@capacitor-community/play-billing` or `cordova-plugin-purchase` plugins.
+ * 
+ * Strict Entitlement Security (Fail-Closed):
+ * - Never grants Pro or Team entitlements based on unverified client claims.
+ * - Requires real server-side verification with Google Play Developer API.
+ * - When server verification is not configured, safely rejects upgrade requests.
  */
 export class PlayBillingBridge {
   private static isInitialized = false;
   private static nativeBillingObject: any = null;
 
-  // Canonical Google Play Store Product IDs corresponding to our store plans
+  // Canonical Google Play Store Product IDs
   public static readonly PRODUCT_IDS = {
     PRO_MONTHLY: 'com.detergentlab.pro.monthly',
     PRO_YEARLY: 'com.detergentlab.pro.yearly',
@@ -38,24 +40,20 @@ export class PlayBillingBridge {
 
   /**
    * Initializes native listeners for the Google Play Billing interface.
-   * Call this on app startup (e.g., inside App.tsx or main.tsx).
    */
   public static async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
 
-    // Detect native shell environment (Capacitor or Cordova)
-    const win = window as any;
+    const win = typeof window !== 'undefined' ? (window as any) : {};
     const isNative = !!(win.Capacitor || win.cordova);
 
     console.log(`[PlayBillingBridge] Initializing. Native wrapper detected: ${isNative}`);
 
     if (isNative) {
       try {
-        // Safe dynamic lookup for native billing wrappers
         this.nativeBillingObject = win.Capacitor?.Plugins?.PlayBilling || win.store;
         
         if (this.nativeBillingObject) {
-          // Register purchase update listeners
           this.nativeBillingObject.addListener('onPurchasesUpdated', async (data: { purchases: PlayPurchase[] }) => {
             console.log('[PlayBillingBridge] Native purchases updated event:', data);
             for (const purchase of data.purchases) {
@@ -63,7 +61,6 @@ export class PlayBillingBridge {
             }
           });
 
-          // Query available product details to warm cache
           await this.nativeBillingObject.queryProductDetails({
             productIds: Object.values(this.PRODUCT_IDS),
             type: 'subs'
@@ -77,18 +74,18 @@ export class PlayBillingBridge {
       }
     }
 
-    // Web fallback or local Dev development mode
     this.isInitialized = true;
     return false;
   }
 
   /**
    * Triggers the Google Play purchase flow for a given subscription product.
+   * Safe Fail-Closed: Never grants entitlements without server-side receipt verification.
    */
   public static async purchase(productId: string): Promise<{ success: boolean; error?: string }> {
-    console.log(`[PlayBillingBridge] Triggering purchase for product: ${productId}`);
+    console.log(`[PlayBillingBridge] Purchase requested for product: ${productId}`);
 
-    const win = window as any;
+    const win = typeof window !== 'undefined' ? (window as any) : {};
     const isNative = !!(win.Capacitor || win.cordova);
 
     if (isNative && this.nativeBillingObject) {
@@ -100,7 +97,13 @@ export class PlayBillingBridge {
 
         if (result && result.purchase) {
           const verified = await this.handlePurchaseUpdate(result.purchase);
-          return { success: verified };
+          if (!verified) {
+            return {
+              success: false,
+              error: 'Purchase verification failed: Untrusted purchase token. Server receipt verification required.'
+            };
+          }
+          return { success: true };
         }
         return { success: false, error: 'Purchase flow incomplete or canceled.' };
       } catch (err: any) {
@@ -108,31 +111,22 @@ export class PlayBillingBridge {
         return { success: false, error: err?.message || 'Native store billing error' };
       }
     } else {
-      // Interactive Dev Mode / Web simulation
-      console.warn('[PlayBillingBridge] Running in simulated web context.');
-      // Map mock product ID back to local plan types
-      let plan: UserPlan = 'free';
-      if (productId === this.PRODUCT_IDS.PRO_MONTHLY) plan = 'pro_monthly';
-      else if (productId === this.PRODUCT_IDS.PRO_YEARLY) plan = 'pro_yearly';
-      else if (productId === this.PRODUCT_IDS.TEAM_YEARLY) plan = 'team';
-
-      if (plan !== 'free') {
-        const store = useSettingsStore.getState();
-        await store.upgradePlan(plan);
-        return { success: true };
-      }
-      return { success: false, error: 'Unknown simulation product ID' };
+      // Web context without backend payment verification gateway
+      console.warn('[PlayBillingBridge] Web purchase attempted without server verification gateway.');
+      return {
+        success: false,
+        error: 'Billing incomplete: Server-side purchase verification gateway is not configured. Client-side claims cannot grant paid entitlements.'
+      };
     }
   }
 
   /**
-   * Queries existing active subscriptions on the user's Google Play Account
-   * and restores ownership inside our local app state.
+   * Queries existing active subscriptions and verifies them via backend.
    */
   public static async restorePurchases(): Promise<{ success: boolean; restoredCount: number }> {
     console.log('[PlayBillingBridge] Querying Play Store for active subscriptions to restore...');
     
-    const win = window as any;
+    const win = typeof window !== 'undefined' ? (window as any) : {};
     const isNative = !!(win.Capacitor || win.cordova);
 
     if (isNative && this.nativeBillingObject) {
@@ -142,7 +136,7 @@ export class PlayBillingBridge {
 
         if (result && result.purchases) {
           for (const purchase of result.purchases) {
-            if (purchase.purchaseState === 0) { // Purchased/Active
+            if (purchase.purchaseState === 0) {
               const ok = await this.handlePurchaseUpdate(purchase);
               if (ok) restoredCount++;
             }
@@ -156,57 +150,28 @@ export class PlayBillingBridge {
       }
     }
 
-    // Web simulation restore check
     return { success: true, restoredCount: 0 };
   }
 
   /**
-   * Securely processes a Google Play purchase token.
-   * In strict environments, this transfers the token to your secure cloud backend
-   * for server-to-server verification via Google Developer API before acknowledging.
+   * Internal purchase validation handler.
+   * STRICT FAIL-CLOSED: Does not grant Pro/Team without validated server response.
    */
   private static async handlePurchaseUpdate(purchase: PlayPurchase): Promise<boolean> {
-    console.log('[PlayBillingBridge] Processing purchase token:', purchase.purchaseToken);
+    console.log('[PlayBillingBridge] Verifying purchase token:', purchase.purchaseToken?.substring(0, 15) + '...');
 
     if (purchase.purchaseState !== 0) {
       console.log('[PlayBillingBridge] Purchase not in active state:', purchase.purchaseState);
       return false;
     }
 
-    try {
-      // 1. [Security Integration Point] Transmit signature/token to secure server proxy
-      // const verifiedOnServer = await this.verifySignatureWithBackend(purchase);
-      const verifiedOnServer = true; // Secured offline verification baseline for local runtime
+    // Server-side verification check
+    // In strict environments, client must never assume token is valid without backend verification
+    const isServerVerificationConfigured = false; // Set to true when backend verification endpoint is deployed
 
-      if (verifiedOnServer) {
-        // Acknowledge the purchase so Google doesn't automatically refund it after 3 days
-        if (!purchase.acknowledged && this.nativeBillingObject) {
-          await this.nativeBillingObject.acknowledgePurchase({
-            purchaseToken: purchase.purchaseToken
-          });
-          console.log('[PlayBillingBridge] Acknowledged purchase token with Google Play');
-        }
-
-        // 2. Map Google Play Product ID to App License Plan
-        let plan: UserPlan = 'free';
-        if (purchase.productId === this.PRODUCT_IDS.PRO_MONTHLY) {
-          plan = 'pro_monthly';
-        } else if (purchase.productId === this.PRODUCT_IDS.PRO_YEARLY) {
-          plan = 'pro_yearly';
-        } else if (purchase.productId === this.PRODUCT_IDS.TEAM_YEARLY) {
-          plan = 'team';
-        }
-
-        // 3. Update Global Zustand State
-        if (plan !== 'free') {
-          const store = useSettingsStore.getState();
-          await store.upgradePlan(plan);
-          console.log(`[PlayBillingBridge] Verified and upgraded user to plan: ${plan}`);
-          return true;
-        }
-      }
-    } catch (err) {
-      console.error('[PlayBillingBridge] Failed to process purchase token:', err);
+    if (!isServerVerificationConfigured) {
+      console.warn('[PlayBillingBridge] Rejecting purchase token: Backend verification gateway not deployed.');
+      return false;
     }
 
     return false;

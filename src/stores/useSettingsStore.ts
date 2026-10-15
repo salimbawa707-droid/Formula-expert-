@@ -244,7 +244,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
                     text: t.observations,
                     date: t.updatedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
                     formulaId: t.formulaId,
-                    tags: ['FirestoreSync', t.stabilityVerdict || 'Stable'],
+                    tags: ['FirestoreSync', t.stabilityVerdict || 'UNTESTED'],
                     createdAt: t.createdAt,
                     updatedAt: t.updatedAt
                   });
@@ -473,7 +473,24 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     await get().updateProfile(updated);
   },
 
-  upgradePlan: async (plan: UserPlan) => {
+  upgradePlan: async (plan: UserPlan, verificationToken?: string) => {
+    if (plan === 'free') {
+      const updated: Partial<UserProfile> = {
+        plan: 'free',
+        subscriptionExpiresAt: null,
+      };
+      await get().updateProfile(updated);
+      return;
+    }
+
+    // Strict Fail-Closed Billing Security:
+    // Client-side UI state must never be the authority for paid entitlements.
+    if (!verificationToken) {
+      throw new Error(
+        'Billing verification incomplete: Server-side purchase verification is required to grant paid entitlements. Unverified client claims are rejected.'
+      );
+    }
+
     const expiry = new Date();
     if (plan === 'pro_yearly' || plan === 'team') {
       expiry.setFullYear(expiry.getFullYear() + 1);

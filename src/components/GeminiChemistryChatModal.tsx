@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { apiFetch } from '../services/apiBase';
 
 export interface ChatMessage {
   id: string;
@@ -187,7 +188,7 @@ Aap mujhse English, हिन्दी, ya Hinglish me pooch sakte hain. **Check
         fingerprint: formulaContext.fingerprint
       } : undefined;
 
-      const response = await fetch('/api/ai/chat', {
+      const response = await apiFetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

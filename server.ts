@@ -7,13 +7,49 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AiFallbackService } from "./src/services/aiFallbackService";
 import { IngredientResearchService } from "./src/services/ingredientResearchService";
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from "./src/domain/ph/acidBaseDataModel";
+import { rateLimitMiddleware, payloadSizeValidator, sanitizeErrorMessage } from "./src/services/serverSecurity";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
+
+// Truthful AI Health Tracking
+let lastAIOperationSuccess: boolean | null = null;
+let lastAIOperationTimestamp: string | null = null;
+let lastAIOperationError: string | null = null;
+
+async function probeGeminiHealth(): Promise<{ reachable: boolean; latencyMs: number; error?: string }> {
+  const client = getAIClient();
+  if (!client) {
+    return { reachable: false, latencyMs: 0, error: "Missing or invalid GEMINI_API_KEY credentials." };
+  }
+  const start = Date.now();
+  try {
+    const response = await Promise.race([
+      client.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: "Respond with the single word: OK",
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout contacting Gemini API (3000ms limit)")), 3000))
+    ]);
+    const latencyMs = Date.now() - start;
+    if (response && response.text) {
+      lastAIOperationSuccess = true;
+      lastAIOperationTimestamp = new Date().toISOString();
+      lastAIOperationError = null;
+      return { reachable: true, latencyMs };
+    }
+    throw new Error("Empty response received from provider.");
+  } catch (err: any) {
+    lastAIOperationSuccess = false;
+    lastAIOperationTimestamp = new Date().toISOString();
+    lastAIOperationError = sanitizeErrorMessage(err);
+    return { reachable: false, latencyMs: Date.now() - start, error: lastAIOperationError };
+  }
+}
 
 // Initialize GoogleGenAI client lazily or safely
 let aiClient: GoogleGenAI | null = null;
@@ -40,7 +76,7 @@ function getAIClient(): GoogleGenAI | null {
 
 // 1. AI Chat/Query API
 // 1. AI Chat/Query API with Deep Cleaning Product Chemistry Expertise
-app.post("/api/ai/chat", async (req, res) => {
+app.post("/api/ai/chat", payloadSizeValidator(100000), rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "AI Chat" }), async (req, res) => {
   const { message, history, context } = req.body;
   const client = getAIClient();
 
@@ -171,20 +207,37 @@ ${JSON.stringify(context || {})}`;
 });
 
 // Endpoint to check AI Chemistry Model capabilities & domain verification
-app.get("/api/ai/chemistry-status", (_req, res) => {
+app.get("/api/ai/chemistry-status", async (req, res) => {
   const client = getAIClient();
   const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-  const isOnline = Boolean(client && hasKey);
-  const statusState = isOnline ? "CONFIGURED_ONLINE" : "DETERMINISTIC_FALLBACK_ACTIVE";
+  
+  if (req.query.probe === "true" && hasKey) {
+    await probeGeminiHealth();
+  }
+
+  let reachability: "CONFIGURED_ONLINE" | "CONFIGURED_UNTESTED" | "TESTED_SUCCESS" | "UNREACHABLE" | "DETERMINISTIC_FALLBACK_ACTIVE" = "DETERMINISTIC_FALLBACK_ACTIVE";
+  if (!hasKey) {
+    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+  } else if (lastAIOperationSuccess === true) {
+    reachability = "TESTED_SUCCESS";
+  } else if (lastAIOperationSuccess === false) {
+    reachability = "UNREACHABLE";
+  } else {
+    reachability = "CONFIGURED_UNTESTED";
+  }
+
+  const isOperational = reachability === "TESTED_SUCCESS";
+
   res.json({
-    activeModel: isOnline ? "gemini-3.8-flash" : "Deterministic Chemical R&D Engine (Local Core)",
+    activeModel: hasKey ? "gemini-3.8-flash" : "Deterministic Chemical R&D Engine (Local Core)",
     provider: "Google Gemini 3.8 Flash (AI Studio)",
-    status: statusState,
-    isOperational: isOnline,
+    status: reachability,
+    isOperational,
     apiKeyConfigured: hasKey,
     clientInitialized: Boolean(client),
-    reachability: isOnline ? "TESTED_SUCCESS" : "UNREACHABLE",
-    fallbackMode: !isOnline,
+    reachability,
+    fallbackMode: !isOperational,
+    lastTestedAt: lastAIOperationTimestamp,
     chemistryCapabilities: {
       surfactantScience: "Anionic, Amphoteric, Non-ionic, Cationic, Biosurfactants (APG)",
       stoichiometricNeutralization: "LABSA + NaOH/KOH/TEA exact molar ratios",
@@ -198,61 +251,80 @@ app.get("/api/ai/chemistry-status", (_req, res) => {
   });
 });
 
-// Ingredient Research Workstations & Autonomous Data Acquisition
-// In-memory rate-limiter for sensitive AI endpoints
-const aiRequestTracker: Record<string, { count: number; resetAt: number }> = {};
-function checkRateLimit(ip: string, maxReqs = 60, windowMs = 60000): boolean {
-  const now = Date.now();
-  const record = aiRequestTracker[ip];
-  if (!record || now > record.resetAt) {
-    aiRequestTracker[ip] = { count: 1, resetAt: now + windowMs };
-    return true;
+app.post(
+  "/api/ai/research-ingredient",
+  payloadSizeValidator(50000),
+  rateLimitMiddleware({ maxRequests: 20, windowMs: 60000, endpointName: "Ingredient Research" }),
+  async (req, res) => {
+    const { nameOrAlias } = req.body || {};
+    if (!nameOrAlias || typeof nameOrAlias !== "string" || nameOrAlias.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid request payload: nameOrAlias must be a non-empty string" });
+    }
+    if (nameOrAlias.length > 200) {
+      return res.status(413).json({ error: "Request payload too large: ingredient name exceeds maximum limit" });
+    }
+    try {
+      const result = await IngredientResearchService.researchIngredient(nameOrAlias.trim(), process.env.GEMINI_API_KEY);
+      res.json(result);
+    } catch (err: any) {
+      console.error("Sanitized error during ingredient research for:", nameOrAlias.substring(0, 50));
+      res.status(500).json({ error: sanitizeErrorMessage(err) });
+    }
+    return;
   }
-  if (record.count >= maxReqs) return false;
-  record.count++;
-  return true;
-}
+);
 
-app.post("/api/ai/research-ingredient", async (req, res) => {
-  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
-  if (!checkRateLimit(clientIp)) {
-    return res.status(429).json({ error: "Too many research requests. Please try again in 1 minute." });
-  }
-  const { nameOrAlias } = req.body || {};
-  if (!nameOrAlias || typeof nameOrAlias !== "string" || nameOrAlias.trim().length === 0) {
-    return res.status(400).json({ error: "Invalid request payload: nameOrAlias must be a non-empty string" });
-  }
-  if (nameOrAlias.length > 200) {
-    return res.status(413).json({ error: "Request payload too large: ingredient name exceeds maximum limit" });
-  }
-  try {
-    const result = await IngredientResearchService.researchIngredient(nameOrAlias.trim(), process.env.GEMINI_API_KEY);
-    res.json(result);
-  } catch (err: any) {
-    console.error("Sanitized error during ingredient research for:", nameOrAlias.substring(0, 50));
-    res.status(500).json({ error: "Ingredient research query could not be completed safely." });
-  }
-  return;
-});
+app.post(
+  "/api/ai/apply-verified-ingredient",
+  payloadSizeValidator(100000),
+  rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "Apply Verified Data" }),
+  async (req, res) => {
+    const { researchResult, previousRecord } = req.body || {};
+    if (!researchResult || typeof researchResult !== "object" || !researchResult.ingredientId) {
+      return res.status(400).json({ error: "Invalid request payload: valid researchResult with ingredientId required." });
+    }
 
-app.post("/api/ai/apply-verified-ingredient", async (req, res) => {
-  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
-  if (!checkRateLimit(clientIp)) {
-    return res.status(429).json({ error: "Too many update requests. Please wait a moment." });
+    // Strict Server-Side Validation: Validate property types, units, and evidence
+    const params = researchResult.parameters || {};
+    if (params.activeMatter !== undefined && params.activeMatter !== null) {
+      const am = Number(params.activeMatter);
+      if (isNaN(am) || am < 0 || am > 100) {
+        return res.status(400).json({ error: "Validation failed: activeMatter must be a number between 0 and 100." });
+      }
+    }
+
+    if (params.pH !== undefined && params.pH !== null) {
+      const ph = Number(params.pH);
+      if (isNaN(ph) || ph < 0 || ph > 14) {
+        return res.status(400).json({ error: "Validation failed: pH must be a number between 0 and 14." });
+      }
+    }
+
+    if (params.density !== undefined && params.density !== null) {
+      const d = Number(params.density);
+      if (isNaN(d) || d <= 0 || d > 3.0) {
+        return res.status(400).json({ error: "Validation failed: density must be a positive number up to 3.0 g/cm³." });
+      }
+    }
+
+    const prov = researchResult.provenance;
+    if (prov && prov.activeMatter && prov.activeMatter.sourceUrl) {
+      const url = String(prov.activeMatter.sourceUrl);
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        return res.status(400).json({ error: "Validation failed: sourceUrl must use http or https protocol." });
+      }
+    }
+
+    try {
+      const result = await IngredientResearchService.applyVerifiedData(researchResult, previousRecord);
+      res.json(result);
+    } catch (err: any) {
+      console.error("Sanitized error applying verified ingredient data:", researchResult.ingredientId);
+      res.status(500).json({ error: sanitizeErrorMessage(err) });
+    }
+    return;
   }
-  const { researchResult, previousRecord } = req.body || {};
-  if (!researchResult || typeof researchResult !== "object" || !researchResult.ingredientId) {
-    return res.status(400).json({ error: "Invalid request payload: valid researchResult with ingredientId required." });
-  }
-  try {
-    const result = await IngredientResearchService.applyVerifiedData(researchResult, previousRecord);
-    res.json(result);
-  } catch (err: any) {
-    console.error("Sanitized error applying verified ingredient data:", researchResult.ingredientId);
-    res.status(500).json({ error: "Failed to safely persist verified ingredient update." });
-  }
-  return;
-});
+);
 
 // Hard constraint check: enforce preservative safety and pH compatibility BEFORE ingredients list is finalized
 function enforcePreservativeConstraints(formula: any) {
@@ -745,7 +817,7 @@ function analyzeUserFormulaFallback(ingredients: any[], productType: string, gra
 }
 
 // 2. AI Formulation Generator API
-app.post("/api/ai/formulate", async (req, res) => {
+app.post("/api/ai/formulate", payloadSizeValidator(150000), rateLimitMiddleware({ maxRequests: 20, windowMs: 60000, endpointName: "AI Formulator" }), async (req, res) => {
   const {
     mode,
     ingredients: inputIngredients,
@@ -1518,7 +1590,7 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
 });
 
 // 3. AI Troubleshooting Assistant API
-app.post("/api/ai/troubleshoot", async (req, res) => {
+app.post("/api/ai/troubleshoot", payloadSizeValidator(100000), rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "AI Troubleshooter" }), async (req, res) => {
   const { query, productContext } = req.body;
   const client = getAIClient();
 
@@ -1649,7 +1721,7 @@ Do not include markdown code block formatting or backticks. Return raw JSON text
 });
 
 // 4. AI Formula Analyzer & Recommendations API
-app.post("/api/ai/analyze-recommend", async (req, res) => {
+app.post("/api/ai/analyze-recommend", payloadSizeValidator(150000), rateLimitMiddleware({ maxRequests: 25, windowMs: 60000, endpointName: "AI Analyzer" }), async (req, res) => {
   const { formulaName, productType, grade, ingredients } = req.body;
   const client = getAIClient();
 
@@ -1766,12 +1838,30 @@ No markdown formatting, raw JSON only.`;
 });
 
 // 5. AI Engine Status & Fallback Configuration API
-app.get("/api/ai/status", (_req, res) => {
+app.get("/api/ai/status", async (req, res) => {
   const providers = AiFallbackService.getProvidersStatus();
   const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
   const client = getAIClient();
-  const isOnline = Boolean(client && hasKey);
-  const comboState = isOnline ? "Omni Dynamic Router (Configured & Reachable)" : "Deterministic Offline Core (Active Fallback)";
+
+  if (req.query.probe === "true" && hasKey) {
+    await probeGeminiHealth();
+  }
+
+  let reachability: "CONFIGURED_ONLINE" | "CONFIGURED_UNTESTED" | "TESTED_SUCCESS" | "UNREACHABLE" | "DETERMINISTIC_FALLBACK_ACTIVE" = "DETERMINISTIC_FALLBACK_ACTIVE";
+  if (!hasKey) {
+    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+  } else if (lastAIOperationSuccess === true) {
+    reachability = "TESTED_SUCCESS";
+  } else if (lastAIOperationSuccess === false) {
+    reachability = "UNREACHABLE";
+  } else {
+    reachability = "CONFIGURED_UNTESTED";
+  }
+
+  const isOperational = reachability === "TESTED_SUCCESS";
+  const comboState = hasKey
+    ? (isOperational ? "Omni Dynamic Router (Configured & Tested Operational)" : "Omni Dynamic Router (Configured - Awaiting Live Probe)")
+    : "Deterministic Offline Core (Active Fallback)";
 
   res.json({
     status: "ok",
@@ -1779,8 +1869,9 @@ app.get("/api/ai/status", (_req, res) => {
     combo: comboState,
     apiKeyConfigured: hasKey,
     clientInitialized: Boolean(client),
-    reachability: isOnline ? "TESTED_SUCCESS" : "UNREACHABLE",
-    providerReachable: isOnline,
+    reachability,
+    providerReachable: isOperational,
+    lastTestedAt: lastAIOperationTimestamp,
     providers,
     pipeline: [
       { step: 1, route: "Omni Combo Primary", model: "gemini-3.7-flash", description: "Flagship Fast Reasoning via Omni" },

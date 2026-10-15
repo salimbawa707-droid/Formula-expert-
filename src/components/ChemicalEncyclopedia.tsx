@@ -1,13 +1,34 @@
 import { useState, useMemo } from 'react';
 import {
+  BookOpen,
+  Search,
+  Filter,
+  Layers,
+  Sparkles,
+  Cpu,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  ExternalLink,
+  ShieldAlert,
+  Atom,
+  ChevronUp,
+  ChevronDown,
+  Info,
+  Beaker,
+  Activity,
+  DollarSign
+} from 'lucide-react';
+import {
   UNIVERSAL_INGREDIENTS,
   searchUniversalIngredients,
   getAllCategories,
   UniversalIngredient
 } from '../data/universalIngredientLibrary';
-import { Search, BookOpen, Layers, Sparkles, Filter, ChevronDown, ChevronUp, DollarSign, Activity, Beaker, Atom, Info, Cpu, RefreshCw, ExternalLink, ShieldAlert, CheckCircle, AlertTriangle } from 'lucide-react';
 import { resolveChemicalIdentity } from '../utils/cheminformatics/chemicalIdentityService';
 import { ChemicalIdentityRecord } from '../domain/cheminformatics/types';
+import { apiFetch } from '../services/apiBase';
+import { db } from '../db/database';
 
 interface ChemicalFamily {
   key: string;
@@ -71,7 +92,7 @@ export default function ChemicalEncyclopedia(_props?: any) {
     }
 
     try {
-      const response = await fetch('/api/ai/research-ingredient', {
+      const response = await apiFetch('/api/ai/research-ingredient', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nameOrAlias: researchQuery })
@@ -91,7 +112,7 @@ export default function ChemicalEncyclopedia(_props?: any) {
   const handleApplyVerifiedData = async () => {
     if (!researchResult) return;
     try {
-      const response = await fetch('/api/ai/apply-verified-ingredient', {
+      const response = await apiFetch('/api/ai/apply-verified-ingredient', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,9 +121,29 @@ export default function ChemicalEncyclopedia(_props?: any) {
         })
       });
       if (!response.ok) {
-        throw new Error('Failed to update canonical database.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update canonical database.');
       }
-      await response.json();
+      const data = await response.json();
+      
+      // Client-side persistent storage: Save to IndexedDB so researched ingredient survives app restart
+      const updated = data.updatedIngredient;
+      if (updated) {
+        try {
+          const dynamicSetting = await db.userSettings.get('dynamic_ingredients');
+          let dynamicList: any[] = dynamicSetting && Array.isArray(dynamicSetting.value) ? dynamicSetting.value : [];
+          dynamicList = dynamicList.filter(i => i.id !== updated.id);
+          dynamicList.push(updated);
+          await db.userSettings.put({
+            key: 'dynamic_ingredients',
+            value: dynamicList,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (dbErr) {
+          console.warn('Failed to write dynamic ingredient to IndexedDB:', dbErr);
+        }
+      }
+
       setSuccessMessage(`Database successfully updated! Recalculated active matter and refreshed dependent recipes in formulation library.`);
       setResearchResult(null);
     } catch (err: any) {

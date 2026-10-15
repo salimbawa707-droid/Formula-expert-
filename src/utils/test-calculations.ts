@@ -118,6 +118,9 @@ import { runViscosityModelImprovementTestSuite } from './__tests__/viscosityMode
 import { runFormulaAnalysisWorkflowTestSuite } from './__tests__/formulaAnalysisWorkflow.regression.test';
 import { runTestIntegrityTestSuite, TestExecutionRecord } from './__tests__/testIntegrity.regression.test';
 import { runMasterFinalizerIntegrationTestSuite } from './__tests__/masterFinalizer.integration.test';
+import { runServiceWorkerTestSuite } from './__tests__/serviceWorker.test';
+import { runServerSecurityAndTruthfulHealthTestSuite } from './__tests__/serverSecurityAndTruthfulHealth.test';
+import { runApiBaseAndBillingSecurityTestSuite } from './__tests__/apiBaseAndBillingSecurity.test';
 import { finalizeMasterTestRun } from './masterTestFinalizer';
 
 const phSummary = runRegressionTestSuite();
@@ -244,6 +247,9 @@ const phase10ConsistencySummary = runPhase10ConsistencyTestSuite();
 const formulaAnalysisWorkflowSummary = await runFormulaAnalysisWorkflowTestSuite();
 const p2Phase13Summary = runP2Phase13FinalIntegrityTestSuite();
 const finalizerIntegrationSummary = runMasterFinalizerIntegrationTestSuite();
+const serviceWorkerSummary = runServiceWorkerTestSuite();
+const serverSecurityHealthSummary = runServerSecurityAndTruthfulHealthTestSuite();
+const apiBaseBillingSummary = await runApiBaseAndBillingSecurityTestSuite();
 
 if (phSummary.failed > 0) {
   console.log('Failed pHEngine legacy tests:');
@@ -371,6 +377,9 @@ console.log(`Phase P0.11 Lab Evidence Seed Remediation: ${labEvidenceSeedSummary
 console.log(`Phase 2.10 Formula Analysis Workflow Master: ${formulaAnalysisWorkflowSummary.passed}/${formulaAnalysisWorkflowSummary.total} PASS`);
 console.log(`Phase P2-13 Final Integrity Closure: ${p2Phase13Summary.passed}/${p2Phase13Summary.total} PASS`);
 console.log(`Master Finalizer Integration: ${finalizerIntegrationSummary.passed}/${finalizerIntegrationSummary.total} PASS`);
+console.log(`Service Worker PWA Offline Security: ${serviceWorkerSummary.passed}/${serviceWorkerSummary.total} PASS`);
+console.log(`Server Security & Truthful AI Health: ${serverSecurityHealthSummary.passed}/${serverSecurityHealthSummary.total} PASS`);
+console.log(`API Base & Billing Security: ${apiBaseBillingSummary.passed}/${apiBaseBillingSummary.total} PASS`);
 
 // Build execution map capturing actual execution of every registered test module
 const executionMap: TestExecutionRecord[] = [
@@ -493,6 +502,9 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'viscosityModelImprovement.test.ts', moduleName: 'runViscosityModelImprovementTestSuite', executed: true, passedAssertions: viscosityImprovementPassed, failedAssertions: viscosityImprovementFailed, totalAssertions: viscosityImprovementResults.length, skipped: false },
   { file: 'formulaAnalysisWorkflow.regression.test.ts', moduleName: 'runFormulaAnalysisWorkflowTestSuite', executed: true, passedAssertions: formulaAnalysisWorkflowSummary.passed, failedAssertions: formulaAnalysisWorkflowSummary.failed, totalAssertions: formulaAnalysisWorkflowSummary.total, skipped: false },
   { file: 'masterFinalizer.integration.test.ts', moduleName: 'runMasterFinalizerIntegrationTestSuite', executed: true, passedAssertions: finalizerIntegrationSummary.passed, failedAssertions: finalizerIntegrationSummary.failed, totalAssertions: finalizerIntegrationSummary.total, skipped: false },
+  { file: 'serviceWorker.test.ts', moduleName: 'runServiceWorkerTestSuite', executed: true, passedAssertions: serviceWorkerSummary.passed, failedAssertions: serviceWorkerSummary.failed, totalAssertions: serviceWorkerSummary.total, skipped: false },
+  { file: 'serverSecurityAndTruthfulHealth.test.ts', moduleName: 'runServerSecurityAndTruthfulHealthTestSuite', executed: true, passedAssertions: serverSecurityHealthSummary.passed, failedAssertions: serverSecurityHealthSummary.failed, totalAssertions: serverSecurityHealthSummary.total, skipped: false },
+  { file: 'apiBaseAndBillingSecurity.test.ts', moduleName: 'runApiBaseAndBillingSecurityTestSuite', executed: true, passedAssertions: apiBaseBillingSummary.passed, failedAssertions: apiBaseBillingSummary.failed, totalAssertions: apiBaseBillingSummary.total, skipped: false },
   { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 25, failedAssertions: 0, totalAssertions: 25, skipped: false }
 ];
 
