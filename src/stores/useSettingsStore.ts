@@ -52,11 +52,14 @@ export interface AISettings {
   selectedModel?: string;
 }
 
+export type LabTheme = 'midnight' | 'daylight';
+
 export interface AppPreferences {
   category: string;
   batchSizeKg: number;
   waterHardnessPpm: number;
   currencySymbol: string;
+  theme: LabTheme;
 }
 
 export interface SyncState {
@@ -64,6 +67,30 @@ export interface SyncState {
   isSyncing: boolean;
   error: string | null;
   isCloudConnected: boolean;
+}
+
+export function applyTheme(theme: LabTheme): void {
+  if (typeof document !== 'undefined') {
+    const root = document.documentElement;
+    if (theme === 'daylight') {
+      root.classList.add('theme-daylight');
+      root.setAttribute('data-theme', 'daylight');
+    } else {
+      root.classList.remove('theme-daylight');
+      root.setAttribute('data-theme', 'midnight');
+    }
+    try {
+      localStorage.setItem('detergent_lab_theme', theme);
+    } catch {}
+  }
+}
+
+// Immediately apply saved theme if in browser
+if (typeof window !== 'undefined') {
+  try {
+    const initialTheme = (localStorage.getItem('detergent_lab_theme') as LabTheme) || 'midnight';
+    applyTheme(initialTheme);
+  } catch {}
 }
 
 interface SettingsStore {
@@ -77,6 +104,8 @@ interface SettingsStore {
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   updateAISettings: (settings: Partial<AISettings>) => Promise<void>;
   updatePreferences: (prefs: Partial<AppPreferences>) => Promise<void>;
+  setTheme: (theme: LabTheme) => Promise<void>;
+  toggleTheme: () => Promise<void>;
 
   // Real Auth & Subscription Actions
   signIn: (email: string, password?: string, name?: string) => Promise<void>;
@@ -120,6 +149,7 @@ const DEFAULT_PREFERENCES: AppPreferences = {
   batchSizeKg: 100,
   waterHardnessPpm: 150,
   currencySymbol: '$',
+  theme: 'midnight',
 };
 
 let authListenerInitialized = false;
@@ -266,10 +296,13 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         });
       }
 
+      const savedTheme = (typeof localStorage !== 'undefined' ? (localStorage.getItem('detergent_lab_theme') as LabTheme) : null) || prefRec?.value?.theme || 'midnight';
+      applyTheme(savedTheme);
+
       set({
         profile: currentProfile,
         aiSettings: aiRec?.value ? { ...DEFAULT_AI_SETTINGS, ...aiRec.value } : DEFAULT_AI_SETTINGS,
-        preferences: prefRec?.value ? { ...DEFAULT_PREFERENCES, ...prefRec.value } : DEFAULT_PREFERENCES,
+        preferences: prefRec?.value ? { ...DEFAULT_PREFERENCES, ...prefRec.value, theme: savedTheme } : { ...DEFAULT_PREFERENCES, theme: savedTheme },
         syncState: {
           ...get().syncState,
           isCloudConnected: isSupabaseConfigured(),
@@ -347,6 +380,17 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       value: newPrefs,
       updatedAt: new Date().toISOString(),
     });
+  },
+
+  setTheme: async (theme: LabTheme) => {
+    applyTheme(theme);
+    await get().updatePreferences({ theme });
+  },
+
+  toggleTheme: async () => {
+    const currentTheme = get().preferences.theme || 'midnight';
+    const nextTheme: LabTheme = currentTheme === 'daylight' ? 'midnight' : 'daylight';
+    await get().setTheme(nextTheme);
   },
 
   signIn: async (email: string, password?: string, name?: string) => {

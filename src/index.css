@@ -9,6 +9,14 @@
   --border-card: rgba(255, 255, 255, 0.08);
 }
 
+/* Daylight Laboratory Theme: High-contrast light for bright bench visibility */
+html.theme-daylight {
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-card: #f1f5f9;
+  --border-card: #cbd5e1;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -23,6 +31,12 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #070b18;
   color: #f1f5f9;
+}
+
+html.theme-daylight,
+html.theme-daylight body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
 #root {
@@ -95,3 +109,162 @@ html {
   box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.25);
 }
 
+/* ==========================================================================
+   DAYLIGHT LABORATORY (HIGH-CONTRAST LIGHT) THEME
+   Tailored for bright laboratory illumination, preventing eye strain and glare
+   ========================================================================== */
+
+html.theme-daylight .bg-\[\#070b18\],
+html.theme-daylight .bg-\[\#040711\],
+html.theme-daylight .bg-\[\#030712\],
+html.theme-daylight .bg-\[\#060a17\] {
+  background-color: #f8fafc !important;
+}
+
+html.theme-daylight .bg-\[\#0b1020\],
+html.theme-daylight .bg-\[\#0e1629\],
+html.theme-daylight .bg-\[\#0d1527\],
+html.theme-daylight .bg-slate-950,
+html.theme-daylight .bg-slate-950\/70,
+html.theme-daylight .bg-slate-950\/80 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-daylight .bg-\[\#0f172a\],
+html.theme-daylight .bg-\[\#0f172a\]\/70,
+html.theme-daylight .bg-\[\#0f172a\]\/80,
+html.theme-daylight .bg-\[\#111827\],
+html.theme-daylight .bg-\[\#131d35\],
+html.theme-daylight .bg-slate-900 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-daylight .bg-\[\#152342\],
+html.theme-daylight .bg-\[\#18233a\],
+html.theme-daylight .bg-\[\#1a243b\],
+html.theme-daylight .bg-slate-800,
+html.theme-daylight .bg-slate-800\/80 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-daylight .bg-\[\#1e293b\],
+html.theme-daylight .bg-slate-700,
+html.theme-daylight .bg-slate-700\/80 {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+}
+
+html.theme-daylight .border-slate-800,
+html.theme-daylight .border-slate-800\/80,
+html.theme-daylight .border-slate-700,
+html.theme-daylight .border-slate-700\/80,
+html.theme-daylight .border-slate-700\/60 {
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-daylight .text-white {
+  color: #0f172a !important;
+}
+
+html.theme-daylight .text-slate-100,
+html.theme-daylight .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.theme-daylight .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.theme-daylight .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Form inputs & controls in daylight mode */
+html.theme-daylight input,
+html.theme-daylight select,
+html.theme-daylight textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-daylight input::placeholder,
+html.theme-daylight textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Glass panels in daylight mode */
+html.theme-daylight .glass-panel {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Buttons with white text on solid colored backgrounds preserve high-contrast white text */
+html.theme-daylight button.bg-blue-600,
+html.theme-daylight button.bg-cyan-500,
+html.theme-daylight button.bg-cyan-600,
+html.theme-daylight button.bg-indigo-600,
+html.theme-daylight button.bg-emerald-600,
+html.theme-daylight button.bg-purple-600,
+html.theme-daylight button.bg-rose-600,
+html.theme-daylight .bg-blue-600,
+html.theme-daylight .bg-cyan-500,
+html.theme-daylight .bg-cyan-600,
+html.theme-daylight .bg-indigo-600,
+html.theme-daylight .bg-emerald-600,
+html.theme-daylight .bg-purple-600,
+html.theme-daylight .bg-rose-600 {
+  color: #ffffff !important;
+}
+
+/* Keep primary action button text legible */
+html.theme-daylight button.bg-blue-600 *,
+html.theme-daylight button.bg-cyan-600 *,
+html.theme-daylight button.bg-indigo-600 *,
+html.theme-daylight button.bg-emerald-600 * {
+  color: #ffffff !important;
+}
+
+/* High contrast badge tints in daylight mode */
+html.theme-daylight .bg-cyan-950\/50,
+html.theme-daylight .bg-blue-950\/50,
+html.theme-daylight .bg-indigo-950\/50 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #bae6fd !important;
+}
+
+html.theme-daylight .bg-emerald-950\/50,
+html.theme-daylight .bg-green-950\/50 {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #bbf7d0 !important;
+}
+
+html.theme-daylight .bg-amber-950\/50 {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+
+html.theme-daylight .bg-rose-950\/50,
+html.theme-daylight .bg-red-950\/50 {
+  background-color: #ffe4e6 !important;
+  color: #be123c !important;
+  border-color: #fecdd3 !important;
+}
+
+/* Scrollbar in daylight mode */
+html.theme-daylight ::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+html.theme-daylight ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html.theme-daylight ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
