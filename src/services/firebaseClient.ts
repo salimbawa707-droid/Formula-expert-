@@ -18,13 +18,23 @@ import {
   query, 
   orderBy
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+
+// ✅ NEW: Secure Environment Variable Configuration (Replaces JSON import)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || import.meta.env.VITE_FIREBASE_PROJECT_ID
+};
 
 // Initialize Firebase App singleton
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // CRITICAL: Must pass databaseId from config
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
@@ -244,4 +254,4 @@ export async function getUserTrials(userId: string): Promise<any[]> {
   } catch (err) {
     handleFirestoreError(err, OperationType.LIST, path);
   }
-}
+}        
