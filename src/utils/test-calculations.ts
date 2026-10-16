@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 import { runRegressionTestSuite } from './__tests__/pHEngine.regression.test';
 import { runPHEngineV2TestSuite } from './__tests__/pHEngineV2.regression.test';
 import { runHLBRegressionTestSuite } from './__tests__/hlbEngine.regression.test';
@@ -121,6 +123,8 @@ import { runMasterFinalizerIntegrationTestSuite } from './__tests__/masterFinali
 import { runServiceWorkerTestSuite } from './__tests__/serviceWorker.test';
 import { runServerSecurityAndTruthfulHealthTestSuite } from './__tests__/serverSecurityAndTruthfulHealth.test';
 import { runApiBaseAndBillingSecurityTestSuite } from './__tests__/apiBaseAndBillingSecurity.test';
+import { runAuthAndRouteMatrixTestSuite } from './__tests__/authAndRouteMatrix.regression.test';
+import { runSecurityFixesTestSuite } from './__tests__/securityFixes.regression.test';
 import { finalizeMasterTestRun } from './masterTestFinalizer';
 
 const phSummary = runRegressionTestSuite();
@@ -248,8 +252,10 @@ const formulaAnalysisWorkflowSummary = await runFormulaAnalysisWorkflowTestSuite
 const p2Phase13Summary = runP2Phase13FinalIntegrityTestSuite();
 const finalizerIntegrationSummary = runMasterFinalizerIntegrationTestSuite();
 const serviceWorkerSummary = runServiceWorkerTestSuite();
-const serverSecurityHealthSummary = runServerSecurityAndTruthfulHealthTestSuite();
+const serverSecurityHealthSummary = await runServerSecurityAndTruthfulHealthTestSuite();
 const apiBaseBillingSummary = await runApiBaseAndBillingSecurityTestSuite();
+const authAndRouteMatrixSummary = await runAuthAndRouteMatrixTestSuite();
+const securityFixesSummary = await runSecurityFixesTestSuite();
 
 if (phSummary.failed > 0) {
   console.log('Failed pHEngine legacy tests:');
@@ -380,6 +386,8 @@ console.log(`Master Finalizer Integration: ${finalizerIntegrationSummary.passed}
 console.log(`Service Worker PWA Offline Security: ${serviceWorkerSummary.passed}/${serviceWorkerSummary.total} PASS`);
 console.log(`Server Security & Truthful AI Health: ${serverSecurityHealthSummary.passed}/${serverSecurityHealthSummary.total} PASS`);
 console.log(`API Base & Billing Security: ${apiBaseBillingSummary.passed}/${apiBaseBillingSummary.total} PASS`);
+console.log(`Auth & Route Access Matrix: ${authAndRouteMatrixSummary.passed}/${authAndRouteMatrixSummary.total} PASS`);
+console.log(`Security Fixes & Billing Replay (47): ${securityFixesSummary.passed}/${securityFixesSummary.total} PASS`);
 
 // Build execution map capturing actual execution of every registered test module
 const executionMap: TestExecutionRecord[] = [
@@ -505,6 +513,8 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'serviceWorker.test.ts', moduleName: 'runServiceWorkerTestSuite', executed: true, passedAssertions: serviceWorkerSummary.passed, failedAssertions: serviceWorkerSummary.failed, totalAssertions: serviceWorkerSummary.total, skipped: false },
   { file: 'serverSecurityAndTruthfulHealth.test.ts', moduleName: 'runServerSecurityAndTruthfulHealthTestSuite', executed: true, passedAssertions: serverSecurityHealthSummary.passed, failedAssertions: serverSecurityHealthSummary.failed, totalAssertions: serverSecurityHealthSummary.total, skipped: false },
   { file: 'apiBaseAndBillingSecurity.test.ts', moduleName: 'runApiBaseAndBillingSecurityTestSuite', executed: true, passedAssertions: apiBaseBillingSummary.passed, failedAssertions: apiBaseBillingSummary.failed, totalAssertions: apiBaseBillingSummary.total, skipped: false },
+  { file: 'authAndRouteMatrix.regression.test.ts', moduleName: 'runAuthAndRouteMatrixTestSuite', executed: true, passedAssertions: authAndRouteMatrixSummary.passed, failedAssertions: authAndRouteMatrixSummary.failed, totalAssertions: authAndRouteMatrixSummary.total, skipped: false },
+  { file: 'securityFixes.regression.test.ts', moduleName: 'runSecurityFixesTestSuite', executed: true, passedAssertions: securityFixesSummary.passed, failedAssertions: securityFixesSummary.failed, totalAssertions: securityFixesSummary.total, skipped: false },
   { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 25, failedAssertions: 0, totalAssertions: 25, skipped: false }
 ];
 

@@ -19,6 +19,7 @@ import { Chemical, Formulation, FormulationIngredient } from "../types";
 import { CHEMICALS } from "../data/chemicals";
 import { getAllUniversalIngredients } from "../data/universalIngredientLibrary";
 import { normalizeProductCategory, ProductCategoryId } from "../domain/productTaxonomy";
+import { apiFetch } from "../services/apiBase";
 import {
   calculateFormulationEcoMetrics,
   calculateBlendedHLB,
@@ -1006,7 +1007,7 @@ function SmartFormulaAnalyzerProInner({
     setIsLoadingAi(true);
     setAiError(null);
     try {
-      const response = await fetch("/api/ai/analyze-recommend", {
+      const response = await apiFetch("/api/ai/analyze-recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

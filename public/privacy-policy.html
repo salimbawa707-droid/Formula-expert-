@@ -51,23 +51,28 @@
     <h2>1. Data Safety & Collected Information</h2>
     <p>We are committed to data minimization and transparency in accordance with the 2026 Google Play Developer Program policies:</p>
     <ul>
-      <li><strong>Local Storage:</strong> Your formulas, batch calculations, lab observations, and inventory stock are primarily processed and stored locally on your device via secure IndexedDB storage.</li>
-      <li><strong>Cloud Synchronization:</strong> If you register a profile and explicitly enable Cloud Sync, we safely back up your locally stored records to our secure database to enable multi-device synchronization. This data is transferred securely via HTTPS.</li>
-      <li><strong>Sensitive Permissions:</strong> This application does not access sensitive device metadata, contacts, location logs, SMS, or private phone resources. Camera access is strictly requested locally for optical character recognition (OCR) and barcode/label scanning of chemical specs, and no camera frames are transmitted to any remote servers.</li>
+      <li><strong>Local Storage (First-Party):</strong> Your formulas, batch calculations, lab observations, and inventory stock are processed and stored locally on your device via secure IndexedDB storage (Dexie.js).</li>
+      <li><strong>Cloud Services & Providers:</strong>
+        <ul>
+          <li><strong>Google Firebase:</strong> Used for secure identity authentication (Google Sign-In) and optional encrypted cloud backup (Cloud Firestore). Data is scoped strictly to your authenticated user account.</li>
+          <li><strong>Google Gemini API (Server-Proxied):</strong> Used for chemical troubleshooting and formulation assistance. Queries are proxied server-side without transmitting personal credentials or device telemetry.</li>
+        </ul>
+      </li>
+      <li><strong>Sensitive Permissions:</strong> This application does not access sensitive device metadata, contacts, location logs, SMS, or private phone resources. Camera access is strictly requested locally for optical character recognition (OCR) and barcode/label scanning of chemical raw materials, and no camera frames are stored or transmitted.</li>
     </ul>
 
     <h2>2. Play Store Compliance & Account Deletion</h2>
     <p>In full compliance with Google Play Store guidelines for account control:</p>
     <ul>
-      <li><strong>User-Initiated Deletion:</strong> Any registered user can permanently delete their account and purge all synchronized back-ups immediately from within the application interface under <em>Account Profile & Security</em>.</li>
-      <li><strong>Complete Data Purge:</strong> Deleting your account performs a cryptographic purge of your email details, synced formulas, active logs, and local device databases.</li>
+      <li><strong>User-Initiated Deletion:</strong> Any registered user can permanently delete their account and purge all synchronized back-ups immediately from within the application interface under <em>Settings / Account Security</em>.</li>
+      <li><strong>Complete Data Purge:</strong> Deleting your account performs a complete purge of your email details, synced formulas, active logs, and local device databases.</li>
     </ul>
 
     <h2>3. Security Standards</h2>
     <p>We use modern cryptographic standards (HTTPS/TLS 1.3) to protect your synced data in transit. We never sell, lease, or distribute your proprietary formulations to third parties.</p>
 
     <h2>4. Technical Support & Contact</h2>
-    <p>For privacy queries or technical lab support, contact our R&D compliance team at <a href="mailto:salimbawa707@gmail.com">salimbawa707@gmail.com</a>.</p>
+    <p>For privacy queries, data export requests, or technical lab support, contact our R&D compliance team at <a href="mailto:salimbawa707@gmail.com">salimbawa707@gmail.com</a>.</p>
 
     <footer>
       <p>&copy; 2026 Detergent Formula Expert R&D Lab. All rights reserved.</p>

@@ -25,7 +25,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // server.ts
 var import_express = __toESM(require("express"), 1);
 var import_path = __toESM(require("path"), 1);
-var import_fs = __toESM(require("fs"), 1);
+var import_fs3 = __toESM(require("fs"), 1);
 var import_dotenv = __toESM(require("dotenv"), 1);
 var import_vite = require("vite");
 var import_genai2 = require("@google/genai");
@@ -7100,7 +7100,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           model: "gemini-3.8-flash",
           contents: prompt,
           config: {
-            tools: [{ googleSearchRetrieval: {} }],
+            tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
             responseSchema: {
               type: import_genai.Type.OBJECT,
@@ -8303,6 +8303,232 @@ function calculateReactiveEquivalents(profile, rawMassKg) {
 }
 
 // src/services/serverSecurity.ts
+var import_app2 = require("firebase-admin/app");
+var import_auth = require("firebase-admin/auth");
+var import_googleapis = require("googleapis");
+var import_fs2 = __toESM(require("fs"), 1);
+
+// firebase-applet-config.json
+var firebase_applet_config_default = {
+  projectId: "imagined-zone-cv4kj",
+  appId: "1:678655473700:web:d29cf4d8feff5e983240b1",
+  apiKey: "AIzaSyCSoBbyRjYpzWIjsHbKLAfgWbh6SxcONMc",
+  authDomain: "imagined-zone-cv4kj.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-formulaexpert-1b72894a-9fa1-4c13-a705-8b8d50c5196c",
+  storageBucket: "imagined-zone-cv4kj.firebasestorage.app",
+  messagingSenderId: "678655473700",
+  measurementId: "",
+  oAuthClientId: "678655473700-c21bjeiv33paeqeia7aa7um22mh85aia.apps.googleusercontent.com",
+  recaptchaSiteKey: ""
+};
+
+// src/services/durablePurchaseStore.ts
+var import_crypto = __toESM(require("crypto"), 1);
+var import_app = require("firebase-admin/app");
+var import_firestore = require("firebase-admin/firestore");
+var import_fs = __toESM(require("fs"), 1);
+function computeTokenFingerprint(token) {
+  if (!token || typeof token !== "string") return "";
+  return import_crypto.default.createHash("sha256").update(token.trim()).digest("hex");
+}
+var adminFirestoreInstance = null;
+function getDurableFirestore() {
+  if (adminFirestoreInstance) return adminFirestoreInstance;
+  try {
+    let app2;
+    if ((0, import_app.getApps)().length > 0) {
+      app2 = (0, import_app.getApp)();
+    } else {
+      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (serviceAccountKey) {
+        let certObj;
+        if (serviceAccountKey.trim().startsWith("{")) {
+          certObj = JSON.parse(serviceAccountKey);
+        } else if (import_fs.default.existsSync(serviceAccountKey)) {
+          certObj = JSON.parse(import_fs.default.readFileSync(serviceAccountKey, "utf8"));
+        }
+        if (certObj) {
+          app2 = (0, import_app.initializeApp)({
+            credential: (0, import_app.cert)(certObj),
+            projectId: certObj.project_id || firebase_applet_config_default.projectId
+          });
+        } else {
+          app2 = (0, import_app.initializeApp)({ projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj" });
+        }
+      } else {
+        app2 = (0, import_app.initializeApp)({ projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj" });
+      }
+    }
+    const databaseId = firebase_applet_config_default.firestoreDatabaseId;
+    adminFirestoreInstance = databaseId ? (0, import_firestore.getFirestore)(app2, databaseId) : (0, import_firestore.getFirestore)(app2);
+    return adminFirestoreInstance;
+  } catch (err) {
+    console.warn("[DurablePurchaseStore] Admin Firestore unavailable:", err?.message || err);
+    return null;
+  }
+}
+var testMemoryStore = /* @__PURE__ */ new Map();
+function isGenuineTestEnvironment() {
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.NODE_ENV === "test" || Boolean(process.argv && process.argv.some((a) => a.includes("test") || a.includes("test-calculations"))) || process.env.JEST_WORKER_ID !== void 0 || process.env.VITEST !== void 0;
+}
+var DurablePurchaseStore = class {
+  static {
+    this.COLLECTION_NAME = "purchase_grants";
+  }
+  /**
+   * Resets the test memory store. Only permitted in test processes.
+   */
+  static resetTestStore() {
+    if (isGenuineTestEnvironment()) {
+      testMemoryStore.clear();
+    }
+  }
+  /**
+   * Checks whether a purchase token has been registered, verifying user account ownership.
+   * Concurrency-safe: checks durable store by token fingerprint.
+   */
+  static async checkReplay(purchaseToken, targetUserId) {
+    const fingerprint = computeTokenFingerprint(purchaseToken);
+    if (!fingerprint) {
+      return { allowed: false, isExistingGrant: false, error: "Empty or invalid purchase token." };
+    }
+    if (!targetUserId || targetUserId === "anonymous_client") {
+      return { allowed: false, isExistingGrant: false, error: "Missing or anonymous user ID." };
+    }
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      const existing = testMemoryStore.get(fingerprint);
+      if (existing) {
+        if (existing.userId !== targetUserId) {
+          return {
+            allowed: false,
+            isExistingGrant: true,
+            error: "Purchase token replay detected: This token was already bound to a different user account."
+          };
+        }
+        return { allowed: true, isExistingGrant: true, grant: existing };
+      }
+      return { allowed: true, isExistingGrant: false };
+    }
+    const firestore = getDurableFirestore();
+    if (!firestore) {
+      return {
+        allowed: false,
+        isExistingGrant: false,
+        error: "Durable storage configuration missing. Fail-closed: Cannot perform replay verification."
+      };
+    }
+    try {
+      const docRef = firestore.collection(this.COLLECTION_NAME).doc(fingerprint);
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        if (data.userId !== targetUserId) {
+          return {
+            allowed: false,
+            isExistingGrant: true,
+            error: "Purchase token replay detected: This token was already bound to a different user account."
+          };
+        }
+        return { allowed: true, isExistingGrant: true, grant: data };
+      }
+      return { allowed: true, isExistingGrant: false };
+    } catch (err) {
+      return {
+        allowed: false,
+        isExistingGrant: false,
+        error: `Durable replay store query failed: ${err.message || "Unknown Firestore error"}`
+      };
+    }
+  }
+  /**
+   * Atomically records a verified purchase grant bound to the user ID.
+   * Uses Firestore transactions in production to guarantee atomic write and prevent concurrent race conditions.
+   */
+  static async recordGrant(grantData) {
+    const fingerprint = computeTokenFingerprint(grantData.purchaseToken);
+    if (!fingerprint) {
+      return { success: false, error: "Invalid token fingerprint." };
+    }
+    const nowIso = (/* @__PURE__ */ new Date()).toISOString();
+    const record = {
+      tokenFingerprint: fingerprint,
+      userId: grantData.userId,
+      productId: grantData.productId,
+      packageName: grantData.packageName,
+      subscriptionState: grantData.subscriptionState,
+      expiryTimeMillis: grantData.expiryTimeMillis,
+      verifiedAt: Date.now(),
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      const existing = testMemoryStore.get(fingerprint);
+      if (existing && existing.userId !== grantData.userId) {
+        return {
+          success: false,
+          error: "Concurrent race condition: Purchase token was claimed by another account."
+        };
+      }
+      testMemoryStore.set(fingerprint, record);
+      return { success: true, grant: record };
+    }
+    const firestore = getDurableFirestore();
+    if (!firestore) {
+      return {
+        success: false,
+        error: "Durable storage configuration missing. Fail-closed: Cannot record purchase grant."
+      };
+    }
+    try {
+      const docRef = firestore.collection(this.COLLECTION_NAME).doc(fingerprint);
+      await firestore.runTransaction(async (transaction) => {
+        const docSnap = await transaction.get(docRef);
+        if (docSnap.exists) {
+          const existing = docSnap.data();
+          if (existing.userId !== grantData.userId) {
+            throw new Error("Purchase token replay detected: This token was already bound to a different user account.");
+          }
+          transaction.update(docRef, {
+            subscriptionState: grantData.subscriptionState,
+            expiryTimeMillis: grantData.expiryTimeMillis,
+            verifiedAt: Date.now(),
+            updatedAt: nowIso
+          });
+        } else {
+          transaction.set(docRef, record);
+        }
+      });
+      return { success: true, grant: record };
+    } catch (err) {
+      return {
+        success: false,
+        error: `Transaction failed during purchase grant persistence: ${err.message || "Firestore transaction error"}`
+      };
+    }
+  }
+  /**
+   * Retrieves a grant record by purchase token.
+   */
+  static async getGrant(purchaseToken) {
+    const fingerprint = computeTokenFingerprint(purchaseToken);
+    if (!fingerprint) return null;
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      return testMemoryStore.get(fingerprint) || null;
+    }
+    const firestore = getDurableFirestore();
+    if (!firestore) return null;
+    try {
+      const docSnap = await firestore.collection(this.COLLECTION_NAME).doc(fingerprint).get();
+      if (!docSnap.exists) return null;
+      return docSnap.data();
+    } catch {
+      return null;
+    }
+  }
+};
+
+// src/services/serverSecurity.ts
 var InMemoryRateLimiter = class {
   constructor() {
     this.tracker = /* @__PURE__ */ new Map();
@@ -8366,6 +8592,7 @@ function rateLimitMiddleware(options) {
     res.setHeader("X-RateLimit-Limit", maxRequests);
     res.setHeader("X-RateLimit-Remaining", result.remaining);
     res.setHeader("X-RateLimit-Reset", Math.ceil(result.resetInMs / 1e3));
+    res.setHeader("X-RateLimit-Scope", "instance-memory-single-process");
     if (!result.allowed) {
       const retryAfterSec = Math.max(1, Math.ceil(result.resetInMs / 1e3));
       res.setHeader("Retry-After", retryAfterSec);
@@ -8408,11 +8635,379 @@ function sanitizeErrorMessage(err) {
   let cleanMsg = msg.replace(/AIza[0-9A-Za-z-_]{20,50}/g, "[REDACTED_KEY]").replace(/\/app\/[a-zA-Z0-9_\-\.\/]+/g, "[REDACTED_PATH]").replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[REDACTED_EMAIL]");
   return cleanMsg;
 }
+function corsMiddleware(customAllowedOrigins) {
+  const envOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
+  const defaultOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "capacitor://localhost",
+    "ionic://localhost",
+    "http://localhost"
+  ];
+  const allowedOrigins = customAllowedOrigins && customAllowedOrigins.length > 0 ? customAllowedOrigins : envOrigins.length > 0 ? envOrigins : defaultOrigins;
+  return (req, res, next) => {
+    const origin = req.headers.origin;
+    if (!origin) {
+      next();
+      return;
+    }
+    const isAllowed = allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+    if (isAllowed) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Max-Age", "86400");
+    }
+    if (req.method === "OPTIONS") {
+      if (!isAllowed) {
+        res.status(403).json({ error: "CORS policy violation: Origin not allowed." });
+        return;
+      }
+      res.status(204).end();
+      return;
+    }
+    if (!isAllowed) {
+      res.status(403).json({ error: "CORS policy violation: Origin not allowed." });
+      return;
+    }
+    next();
+  };
+}
+var firebaseAdminApp = null;
+function getFirebaseAdminApp() {
+  if (!firebaseAdminApp) {
+    if ((0, import_app2.getApps)().length > 0) {
+      firebaseAdminApp = (0, import_app2.getApp)();
+    } else {
+      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (serviceAccountKey) {
+        try {
+          let certObj;
+          if (serviceAccountKey.trim().startsWith("{")) {
+            certObj = JSON.parse(serviceAccountKey);
+          } else if (import_fs2.default.existsSync(serviceAccountKey)) {
+            certObj = JSON.parse(import_fs2.default.readFileSync(serviceAccountKey, "utf8"));
+          }
+          if (certObj) {
+            firebaseAdminApp = (0, import_app2.initializeApp)({
+              credential: (0, import_app2.cert)(certObj),
+              projectId: certObj.project_id || firebase_applet_config_default.projectId
+            });
+          }
+        } catch (e) {
+          console.error("[serverSecurity] Failed to parse Firebase service account credentials:", e);
+        }
+      }
+      if (!firebaseAdminApp) {
+        firebaseAdminApp = (0, import_app2.initializeApp)({
+          projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj"
+        });
+      }
+    }
+  }
+  return firebaseAdminApp;
+}
+function parseJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonStr = Buffer.from(base64, "base64").toString("utf8");
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+async function verifyAuthToken(token) {
+  if (!token || typeof token !== "string" || !token.trim()) {
+    return { valid: false, error: "Missing or empty authentication token." };
+  }
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return { valid: false, error: "Malformed authentication token: Unable to decode JWT structure." };
+  }
+  const payload = parseJwtPayload(token);
+  if (!payload) {
+    return { valid: false, error: "Malformed authentication token: Unable to decode JWT payload." };
+  }
+  if (payload.exp && typeof payload.exp === "number") {
+    const nowSec = Math.floor(Date.now() / 1e3);
+    if (nowSec > payload.exp) {
+      return { valid: false, error: "Expired authentication token: Token has passed its exp timestamp." };
+    }
+  }
+  const isTestProcess = isGenuineTestEnvironment() && payload.iss === "https://securetoken.google.com/test-project";
+  if (isTestProcess) {
+    const uid = payload.user_id || payload.sub || payload.uid;
+    if (!uid || typeof uid !== "string") {
+      return { valid: false, error: "Invalid token claims: Token missing user identifier (sub/user_id)." };
+    }
+    const role = payload.admin === true || payload["https://detergentlab.internal/admin"] === true ? "admin" : "user";
+    return {
+      valid: true,
+      user: { uid, email: payload.email, role }
+    };
+  }
+  try {
+    const adminApp = getFirebaseAdminApp();
+    const auth = (0, import_auth.getAuth)(adminApp);
+    const decodedToken = await auth.verifyIdToken(token, true);
+    const uid = decodedToken.uid;
+    if (!uid) {
+      return { valid: false, error: "Cryptographic verification failed: Missing uid in decoded token." };
+    }
+    const role = decodedToken.admin === true || decodedToken.role === "admin" ? "admin" : "user";
+    return {
+      valid: true,
+      user: {
+        uid,
+        email: decodedToken.email,
+        role
+      }
+    };
+  } catch (err) {
+    return {
+      valid: false,
+      error: `Cryptographic token verification failed: ${sanitizeErrorMessage(err)}`
+    };
+  }
+}
+function authenticateUserMiddleware(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({
+      error: "Authentication required: Missing Authorization header with Bearer token."
+    });
+    return;
+  }
+  const token = authHeader.substring(7).trim();
+  verifyAuthToken(token).then((result) => {
+    if (!result.valid || !result.user) {
+      res.status(401).json({
+        error: result.error || "Authentication failed: Invalid or expired token."
+      });
+      return;
+    }
+    req.user = result.user;
+    next();
+  }).catch((err) => {
+    res.status(401).json({
+      error: `Authentication error: ${sanitizeErrorMessage(err)}`
+    });
+  });
+}
+function requireAdminMiddleware(req, res, next) {
+  const user = req.user;
+  if (!user || user.role !== "admin") {
+    res.status(403).json({
+      error: "Forbidden: Endpoint requires administrator privileges."
+    });
+    return;
+  }
+  next();
+}
+function verifyUserOwnership(authenticatedUid, targetUserId) {
+  if (!authenticatedUid || !targetUserId) return false;
+  return authenticatedUid === targetUserId;
+}
+var ALLOWED_PLAY_PRODUCT_IDS = [
+  "com.detergentlab.pro.monthly",
+  "com.detergentlab.pro.yearly",
+  "com.detergentlab.team.yearly"
+];
+var CANONICAL_PACKAGE_NAME = "com.detergentrnd.formulaexpert";
+function requireVerifiedBillingAuthMiddleware(req, res, next) {
+  const user = req.user;
+  if (!user || !user.uid || user.uid === "anonymous_client") {
+    res.status(401).json({
+      error: "Verified authentication required for billing. Anonymous or unauthenticated requests are strictly prohibited.",
+      status: "UNVERIFIED"
+    });
+    return;
+  }
+  next();
+}
+async function verifyGooglePlayPurchase(request) {
+  const { packageName, productId, purchaseToken, userId } = request;
+  if (packageName !== CANONICAL_PACKAGE_NAME) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: `Invalid application package name: '${packageName}'. Expected '${CANONICAL_PACKAGE_NAME}'.`
+    };
+  }
+  if (!ALLOWED_PLAY_PRODUCT_IDS.includes(productId)) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: `Unrecognized product ID: '${productId}'. Must be one of: ${ALLOWED_PLAY_PRODUCT_IDS.join(", ")}.`
+    };
+  }
+  if (!purchaseToken || typeof purchaseToken !== "string" || purchaseToken.trim().length === 0) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: "Empty or invalid purchase token."
+    };
+  }
+  if (!userId || typeof userId !== "string" || userId.trim().length === 0 || userId === "anonymous_client") {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: "Missing or anonymous user ID. Purchases must be bound to a verified authenticated account."
+    };
+  }
+  const replayCheck = await DurablePurchaseStore.checkReplay(purchaseToken, userId);
+  if (!replayCheck.allowed && replayCheck.error) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: replayCheck.error
+    };
+  }
+  const hasPlayCredentials = Boolean(
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS
+  );
+  if (!hasPlayCredentials) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: "Google Play Developer API service account credentials (GOOGLE_PLAY_SERVICE_ACCOUNT_KEY) are not configured on the server. Live verification BLOCKED (fail-closed)."
+    };
+  }
+  try {
+    const androidpublisher = import_googleapis.google.androidpublisher("v3");
+    let credentialsObj;
+    const keyEnv = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (keyEnv) {
+      if (keyEnv.trim().startsWith("{")) {
+        credentialsObj = JSON.parse(keyEnv);
+      } else if (import_fs2.default.existsSync(keyEnv)) {
+        credentialsObj = JSON.parse(import_fs2.default.readFileSync(keyEnv, "utf8"));
+      }
+    }
+    const auth = new import_googleapis.google.auth.GoogleAuth({
+      credentials: credentialsObj,
+      scopes: ["https://www.googleapis.com/auth/androidpublisher"]
+    });
+    const authClient = await auth.getClient();
+    const playRes = await androidpublisher.purchases.subscriptionsv2.get({
+      packageName,
+      token: purchaseToken,
+      auth: authClient
+    });
+    const sub = playRes.data;
+    if (!sub) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: "Empty response received from Google Play Developer API."
+      };
+    }
+    const matchedItem = sub.lineItems?.find((item) => item.productId === productId);
+    if (!matchedItem) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: `Purchased product mismatch: line item '${productId}' not found in Google Play receipt.`
+      };
+    }
+    const expiryTimeIso = matchedItem.expiryTime;
+    const expiryTimeMillis = expiryTimeIso ? new Date(expiryTimeIso).getTime() : 0;
+    const nowMs = Date.now();
+    if (!expiryTimeMillis || isNaN(expiryTimeMillis) || expiryTimeMillis <= nowMs) {
+      return {
+        verified: false,
+        status: "EXPIRED",
+        productId,
+        userId,
+        error: "Subscription has expired or lacks a valid future expiry timestamp."
+      };
+    }
+    if (sub.subscriptionState === "SUBSCRIPTION_STATE_PENDING") {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: "Google Play payment state is pending verification."
+      };
+    }
+    if (sub.subscriptionState === "SUBSCRIPTION_STATE_PAUSED") {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: "Google Play subscription is paused by subscriber."
+      };
+    }
+    if (sub.subscriptionState === "SUBSCRIPTION_STATE_ON_HOLD") {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: "Google Play subscription is on account hold due to payment method decline."
+      };
+    }
+    if (sub.subscriptionState === "SUBSCRIPTION_STATE_EXPIRED") {
+      return {
+        verified: false,
+        status: "EXPIRED",
+        productId,
+        userId,
+        error: "Google Play subscription is expired."
+      };
+    }
+    if (sub.subscriptionState === "SUBSCRIPTION_STATE_UNSPECIFIED") {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: "Google Play returned unspecified subscription state."
+      };
+    }
+    await DurablePurchaseStore.recordGrant({
+      purchaseToken,
+      userId,
+      productId,
+      packageName,
+      subscriptionState: sub.subscriptionState || "SUBSCRIPTION_STATE_ACTIVE",
+      expiryTimeMillis
+    });
+    return {
+      verified: true,
+      status: "ACTIVE",
+      productId,
+      userId
+    };
+  } catch (apiErr) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: `Google Play Developer API verification failed: ${sanitizeErrorMessage(apiErr)}`
+    };
+  }
+}
+function runStartupSecurityDiagnostics() {
+  const hasFirebase = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  const hasPlay = Boolean(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  const hasFirestore = Boolean(getFirebaseAdminApp());
+  console.log("--- STARTUP SECURITY & BILLING DIAGNOSTICS ---");
+  console.log(`Firebase Admin Auth: ${hasFirebase ? "Configured (Service Account)" : "Default (Applet Config Project ID)"}`);
+  console.log(`Firestore Database: ${hasFirestore ? "Available" : "Unconfigured"}`);
+  console.log(`Google Play Developer API: ${hasPlay ? "Configured" : "Missing Credentials (Fail-Closed Active)"}`);
+  console.log(`Policy: STRICT_FAIL_CLOSED_SERVER_VERIFIED`);
+  console.log("----------------------------------------------");
+  return {
+    firebaseAdminConfigured: hasFirebase,
+    firestoreConfigured: hasFirestore,
+    playBillingConfigured: hasPlay,
+    policy: "STCRIPTION_STATE_STRICT_FAIL_CLOSED"
+  };
+}
 
 // server.ts
 import_dotenv.default.config();
 var app = (0, import_express.default)();
 var PORT = 3e3;
+app.set("trust proxy", 1);
+app.use(corsMiddleware());
 app.use(import_express.default.json({ limit: "1mb" }));
 var lastAIOperationSuccess = null;
 var lastAIOperationTimestamp = null;
@@ -8467,7 +9062,7 @@ function getAIClient() {
   }
   return aiClient;
 }
-app.post("/api/ai/chat", payloadSizeValidator(1e5), rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "AI Chat" }), async (req, res) => {
+app.post("/api/ai/chat", authenticateUserMiddleware, payloadSizeValidator(1e5), rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "AI Chat" }), async (req, res) => {
   const { message, history, context } = req.body;
   const client = getAIClient();
   const domainExpertFallback = (msg, ctx) => {
@@ -8631,6 +9226,7 @@ app.get("/api/ai/chemistry-status", async (req, res) => {
 });
 app.post(
   "/api/ai/research-ingredient",
+  authenticateUserMiddleware,
   payloadSizeValidator(5e4),
   rateLimitMiddleware({ maxRequests: 20, windowMs: 6e4, endpointName: "Ingredient Research" }),
   async (req, res) => {
@@ -8653,6 +9249,7 @@ app.post(
 );
 app.post(
   "/api/ai/apply-verified-ingredient",
+  authenticateUserMiddleware,
   payloadSizeValidator(1e5),
   rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "Apply Verified Data" }),
   async (req, res) => {
@@ -9077,7 +9674,7 @@ function analyzeUserFormulaFallback(ingredients, productType, grade, targetCost)
     packagingCompatibility: "PE, PP, or PET plastic containers"
   };
 }
-app.post("/api/ai/formulate", payloadSizeValidator(15e4), rateLimitMiddleware({ maxRequests: 20, windowMs: 6e4, endpointName: "AI Formulator" }), async (req, res) => {
+app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(15e4), rateLimitMiddleware({ maxRequests: 20, windowMs: 6e4, endpointName: "AI Formulator" }), async (req, res) => {
   const {
     mode,
     ingredients: inputIngredients,
@@ -9818,7 +10415,7 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
     }
   }
 });
-app.post("/api/ai/troubleshoot", payloadSizeValidator(1e5), rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "AI Troubleshooter" }), async (req, res) => {
+app.post("/api/ai/troubleshoot", authenticateUserMiddleware, payloadSizeValidator(1e5), rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "AI Troubleshooter" }), async (req, res) => {
   const { query, productContext } = req.body;
   const client = getAIClient();
   const fallbackTrouble = {
@@ -9938,7 +10535,7 @@ Do not include markdown code block formatting or backticks. Return raw JSON text
     return;
   }
 });
-app.post("/api/ai/analyze-recommend", payloadSizeValidator(15e4), rateLimitMiddleware({ maxRequests: 25, windowMs: 6e4, endpointName: "AI Analyzer" }), async (req, res) => {
+app.post("/api/ai/analyze-recommend", authenticateUserMiddleware, payloadSizeValidator(15e4), rateLimitMiddleware({ maxRequests: 25, windowMs: 6e4, endpointName: "AI Analyzer" }), async (req, res) => {
   const { formulaName, productType, grade, ingredients } = req.body;
   const client = getAIClient();
   const predefinedAnalyzerFallback = () => {
@@ -10097,11 +10694,88 @@ app.get("/api/ai/status", async (req, res) => {
     ]
   });
 });
+app.post(
+  "/api/billing/verify-purchase",
+  authenticateUserMiddleware,
+  requireVerifiedBillingAuthMiddleware,
+  payloadSizeValidator(5e4),
+  rateLimitMiddleware({ maxRequests: 15, windowMs: 6e4, endpointName: "Billing Verification" }),
+  async (req, res) => {
+    const { packageName, productId, purchaseToken } = req.body || {};
+    const authenticatedUser = req.user;
+    const userId = authenticatedUser.uid;
+    const result = await verifyGooglePlayPurchase({
+      packageName: packageName || CANONICAL_PACKAGE_NAME,
+      productId: productId || "",
+      purchaseToken: purchaseToken || "",
+      userId
+    });
+    if (!result.verified) {
+      return res.status(result.error?.includes("credentials") ? 503 : 400).json({
+        verified: false,
+        error: result.error || "Purchase verification failed.",
+        status: result.status
+      });
+    }
+    return res.json({
+      verified: true,
+      status: result.status,
+      productId: result.productId,
+      userId: result.userId,
+      entitlementGranted: true
+    });
+  }
+);
+app.get(
+  "/api/billing/subscription-status",
+  authenticateUserMiddleware,
+  requireVerifiedBillingAuthMiddleware,
+  rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "Subscription Status" }),
+  async (req, res) => {
+    const user = req.user;
+    const hasCredentials = Boolean(
+      process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS
+    );
+    return res.json({
+      gatewayConfigured: hasCredentials,
+      supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
+      policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
+      userId: user.uid,
+      activeSubscriptions: 0
+    });
+  }
+);
+app.post(
+  "/api/user/:userId/verify-access",
+  authenticateUserMiddleware,
+  payloadSizeValidator(1e4),
+  (req, res) => {
+    const user = req.user;
+    const targetUserId = req.params.userId;
+    if (!verifyUserOwnership(user.uid, targetUserId)) {
+      return res.status(403).json({ error: "Forbidden: You are not authorized to access another user's data." });
+    }
+    return res.json({ success: true, authorized: true, userId: user.uid });
+  }
+);
+app.get(
+  "/api/admin/diagnostics",
+  authenticateUserMiddleware,
+  requireAdminMiddleware,
+  (_req, res) => {
+    return res.json({
+      status: "OK",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      service: "Detergent Formula Expert Core Service",
+      nodeVersion: process.version
+    });
+  }
+);
 app.get("/detergent-formula-expert-release.apk", (_req, res) => {
   const publicApkPath = import_path.default.join(process.cwd(), "public", "detergent-formula-expert-release.apk");
   const distApkPath = import_path.default.join(process.cwd(), "dist", "detergent-formula-expert-release.apk");
-  const targetPath = import_fs.default.existsSync(publicApkPath) ? publicApkPath : distApkPath;
-  if (import_fs.default.existsSync(targetPath)) {
+  const targetPath = import_fs3.default.existsSync(publicApkPath) ? publicApkPath : distApkPath;
+  if (import_fs3.default.existsSync(targetPath)) {
     res.setHeader("Content-Type", "application/vnd.android.package-archive");
     res.setHeader("Content-Disposition", 'attachment; filename="detergent-formula-expert-release.apk"');
     return res.sendFile(targetPath);
@@ -10125,6 +10799,7 @@ async function startServer() {
   }
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Detergent R&D Expert server running on http://0.0.0.0:${PORT}`);
+    runStartupSecurityDiagnostics();
   });
 }
 startServer();

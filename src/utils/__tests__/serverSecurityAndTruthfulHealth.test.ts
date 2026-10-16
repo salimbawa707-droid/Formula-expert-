@@ -13,9 +13,19 @@
  *    - TESTED_SUCCESS (real API operation executed successfully)
  *    - UNREACHABLE (API call failed, timed out, or quota exhausted)
  * 5. Timeouts (3000ms boundary) and network errors are handled without throwing unhandled exceptions.
+ * 6. CORS policy enforces allowlist and handles OPTIONS preflights cleanly.
+ * 7. Server token authentication strictly rejects missing, malformed, expired tokens.
+ * 8. User ownership check strictly prevents cross-user data tampering.
  */
 
-import { serverRateLimiter, sanitizeErrorMessage } from '../../services/serverSecurity';
+import {
+  serverRateLimiter,
+  sanitizeErrorMessage,
+  corsMiddleware,
+  verifyAuthToken,
+  verifyUserOwnership,
+  parseJwtPayload
+} from '../../services/serverSecurity';
 
 export interface TestResult {
   group: string;
@@ -25,7 +35,7 @@ export interface TestResult {
   expected?: any;
 }
 
-export function runServerSecurityAndTruthfulHealthTestSuite(): { total: number; passed: number; failed: number } {
+export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ total: number; passed: number; failed: number }> {
   let passedTests = 0;
   let totalTests = 0;
 
@@ -44,7 +54,7 @@ export function runServerSecurityAndTruthfulHealthTestSuite(): { total: number; 
   console.log('==================================================');
 
   // --------------------------------------------------------------------------
-  // TEST GROUP 1: In-Memory Rate Limiter
+  // TEST GROUP 1: In-Memory Rate Limiter & Single-Process Scope
   // --------------------------------------------------------------------------
   const testIp = `192.168.1.${Math.floor(Math.random() * 200 + 10)}`;
   serverRateLimiter.reset(testIp);
@@ -97,10 +107,129 @@ export function runServerSecurityAndTruthfulHealthTestSuite(): { total: number; 
   const stateFailed = resolveTruthfulAiState(true, false);
   assert('TruthfulHealth 4: Provider connection timeout or auth failure returns UNREACHABLE', stateFailed === 'UNREACHABLE', stateFailed, 'UNREACHABLE');
 
+  // --------------------------------------------------------------------------
+  // TEST GROUP 4: CORS Policy & Preflight Handling
+  // --------------------------------------------------------------------------
+  const mockCors = corsMiddleware(['https://trusted-domain.com', 'capacitor://localhost']);
+
+  // Allowed origin
+  let corsAllowed = false;
+  const mockReq1: any = { headers: { origin: 'https://trusted-domain.com' }, method: 'GET' };
+  const mockRes1: any = {
+    setHeader: (k: string, v: any) => { if (k === 'Access-Control-Allow-Origin' && v === 'https://trusted-domain.com') corsAllowed = true; },
+    status: () => mockRes1,
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq1, mockRes1, () => {});
+  assert('CORS 1: Permits request from explicitly allowlisted origin', corsAllowed, true, true);
+
+  // Unauthorized origin
+  let corsBlocked = false;
+  const mockReq2: any = { headers: { origin: 'https://evil-untrusted-site.com' }, method: 'POST' };
+  const mockRes2: any = {
+    setHeader: () => {},
+    status: (code: number) => { if (code === 403) corsBlocked = true; return mockRes2; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq2, mockRes2, () => {});
+  assert('CORS 2: Rejects requests from unauthorized origins with 403 Forbidden', corsBlocked, true, true);
+
+  // Preflight OPTIONS request
+  let preflightHandled = false;
+  const mockReq3: any = { headers: { origin: 'https://trusted-domain.com' }, method: 'OPTIONS' };
+  const mockRes3: any = {
+    setHeader: () => {},
+    status: (code: number) => { if (code === 204) preflightHandled = true; return mockRes3; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq3, mockRes3, () => {});
+  assert('CORS 3: Returns 204 No Content for preflight OPTIONS request from allowed origin', preflightHandled, true, true);
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 5: Server-Side Authentication & Token Verification
+  // --------------------------------------------------------------------------
+  const sampleDecoded = parseJwtPayload('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c3ItdGVzdC1qd3QifQ.sig');
+  assert('Auth 0: Decodes JWT payload without external library', sampleDecoded?.sub === 'usr-test-jwt', true, true);
+
+  // Empty or missing token
+  const emptyTokenRes = await verifyAuthToken('');
+  assert('Auth 1: Strictly rejects empty or missing authentication token', emptyTokenRes.valid === false, emptyTokenRes.valid, false);
+
+  // Malformed token
+  const malformedRes = await verifyAuthToken('not.a.valid.jwt.string.extra.parts');
+  assert('Auth 2: Strictly rejects malformed token strings that do not conform to JWT structure', malformedRes.valid === false, malformedRes.valid, false);
+
+  // Expired token simulation
+  const expiredPayload = {
+    sub: 'user-expired-999',
+    email: 'expired@test.com',
+    exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
+  };
+  const expiredBase64 = Buffer.from(JSON.stringify(expiredPayload)).toString('base64url');
+  const expiredToken = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${expiredBase64}.signature`;
+  const expiredRes = await verifyAuthToken(expiredToken);
+  assert('Auth 3: Strictly rejects tokens past their exp timestamp with expired error', expiredRes.valid === false && Boolean(expiredRes.error && expiredRes.error.includes('Expired')), true, true);
+
+  // Valid active token in test environment
+  const activePayload = {
+    sub: 'user-active-123',
+    email: 'chemist@detergentlab.internal',
+    iss: 'https://securetoken.google.com/test-project',
+    exp: Math.floor(Date.now() / 1000) + 7200 // Valid for 2 hours
+  };
+  const activeBase64 = Buffer.from(JSON.stringify(activePayload)).toString('base64url');
+  const activeToken = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${activeBase64}.signature`;
+  const activeRes = await verifyAuthToken(activeToken);
+  assert('Auth 4: Derives user identity from valid token without trusting client claims', activeRes.valid === true && activeRes.user?.uid === 'user-active-123', true, true);
+
+  // Client-controlled role elevation attempt (sending role: 'admin' or @detergentlab-admin.internal email)
+  const spoofAdminPayload = {
+    sub: 'attacker-1',
+    email: 'attacker@detergentlab-admin.internal',
+    role: 'admin',
+    iss: 'https://securetoken.google.com/test-project',
+    exp: Math.floor(Date.now() / 1000) + 3600
+  };
+  const spoofAdminBase64 = Buffer.from(JSON.stringify(spoofAdminPayload)).toString('base64url');
+  const spoofAdminToken = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${spoofAdminBase64}.signature`;
+  const spoofAdminRes = await verifyAuthToken(spoofAdminToken);
+  assert('Auth 5: Strictly neutralizes client-controlled admin elevation attempts, assigning role user', spoofAdminRes.valid === true && spoofAdminRes.user?.role === 'user', spoofAdminRes.user?.role, 'user');
+
+  // Verified server-assigned custom claim
+  const verifiedAdminPayload = {
+    sub: 'admin-verified-1',
+    email: 'admin@rnd.internal',
+    admin: true,
+    iss: 'https://securetoken.google.com/test-project',
+    exp: Math.floor(Date.now() / 1000) + 3600
+  };
+  const verifiedAdminBase64 = Buffer.from(JSON.stringify(verifiedAdminPayload)).toString('base64url');
+  const verifiedAdminToken = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${verifiedAdminBase64}.signature`;
+  const verifiedAdminRes = await verifyAuthToken(verifiedAdminToken);
+  assert('Auth 6: Assigns admin role only when verified custom claim admin:true is present', verifiedAdminRes.valid === true && verifiedAdminRes.user?.role === 'admin', verifiedAdminRes.user?.role, 'admin');
+
+  // Live forged token without test issuer fails closed
+  const forgedLiveToken = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmb3JnZWQiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGl2ZS1wcm9qZWN0In0.invalidsig';
+  const forgedLiveRes = await verifyAuthToken(forgedLiveToken);
+  assert('Auth 7: Live token with unverified cryptographic signature strictly fails closed', forgedLiveRes.valid === false, forgedLiveRes.valid, false);
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 6: Per-User Data Isolation
+  // --------------------------------------------------------------------------
+  const ownerMatch = verifyUserOwnership('user-123', 'user-123');
+  assert('UserIsolation 1: Permits operations when authenticated user owns the resource', ownerMatch, true, true);
+
+  const crossUserAttempt = verifyUserOwnership('user-123', 'user-456');
+  assert('UserIsolation 2: Strictly blocks cross-user data access (user A cannot touch user B)', crossUserAttempt === false, true, true);
+
   return { total: totalTests, passed: passedTests, failed: totalTests - passedTests };
 }
 
 if (process.argv[1]?.includes('serverSecurityAndTruthfulHealth.test')) {
-  const summary = runServerSecurityAndTruthfulHealthTestSuite();
-  if (summary.failed > 0) process.exit(1);
+  runServerSecurityAndTruthfulHealthTestSuite().then(summary => {
+    if (summary.failed > 0) process.exit(1);
+  });
 }

@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-15T21:49:16.118Z",
+  "timestamp": "2026-10-16T08:28:58.281Z",
   "summary": {
-    "discoveredCount": 123,
-    "registeredCount": 123,
-    "executedCount": 123,
+    "discoveredCount": 125,
+    "registeredCount": 125,
+    "executedCount": 125,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 3743,
-    "totalAssertionsPassed": 3743,
+    "totalAssertionsExecuted": 3808,
+    "totalAssertionsPassed": 3808,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -1104,18 +1104,36 @@
       "file": "serverSecurityAndTruthfulHealth.test.ts",
       "moduleName": "runServerSecurityAndTruthfulHealthTestSuite",
       "executed": true,
-      "passedAssertions": 9,
+      "passedAssertions": 22,
       "failedAssertions": 0,
-      "totalAssertions": 9,
+      "totalAssertions": 22,
       "skipped": false
     },
     {
       "file": "apiBaseAndBillingSecurity.test.ts",
       "moduleName": "runApiBaseAndBillingSecurityTestSuite",
       "executed": true,
-      "passedAssertions": 7,
+      "passedAssertions": 23,
       "failedAssertions": 0,
-      "totalAssertions": 7,
+      "totalAssertions": 23,
+      "skipped": false
+    },
+    {
+      "file": "authAndRouteMatrix.regression.test.ts",
+      "moduleName": "runAuthAndRouteMatrixTestSuite",
+      "executed": true,
+      "passedAssertions": 14,
+      "failedAssertions": 0,
+      "totalAssertions": 14,
+      "skipped": false
+    },
+    {
+      "file": "securityFixes.regression.test.ts",
+      "moduleName": "runSecurityFixesTestSuite",
+      "executed": true,
+      "passedAssertions": 22,
+      "failedAssertions": 0,
+      "totalAssertions": 22,
       "skipped": false
     },
     {

@@ -138,6 +138,11 @@ export async function apiFetch(
   options: RequestInit & { timeoutMs?: number } = {}
 ): Promise<Response> {
   const { timeoutMs = 25000, ...fetchOptions } = options;
+  const config = getApiBaseConfig();
+  if (config.isNative && !config.isValid) {
+    throw new Error(config.warning || `Native Android network error: No backend VITE_API_BASE_URL configured for endpoint ${endpoint}`);
+  }
+
   const fullUrl = buildApiUrl(endpoint);
   
   const controller = new AbortController();
@@ -146,6 +151,21 @@ export async function apiFetch(
   const headers = new Headers(fetchOptions.headers || {});
   if (!headers.has('Content-Type') && fetchOptions.body && typeof fetchOptions.body === 'string') {
     headers.set('Content-Type', 'application/json');
+  }
+
+  // Automatically attach Bearer token from active Firebase auth session if available
+  if (!headers.has('Authorization')) {
+    try {
+      const fbClient = await import('./firebaseClient').catch(() => null);
+      if (fbClient && fbClient.auth && fbClient.auth.currentUser) {
+        const token = await fbClient.auth.currentUser.getIdToken();
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+      }
+    } catch {
+      // Fall through silently if unauthenticated or in isolated test
+    }
   }
 
   try {

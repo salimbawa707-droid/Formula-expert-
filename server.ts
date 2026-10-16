@@ -7,13 +7,28 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AiFallbackService } from "./src/services/aiFallbackService";
 import { IngredientResearchService } from "./src/services/ingredientResearchService";
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from "./src/domain/ph/acidBaseDataModel";
-import { rateLimitMiddleware, payloadSizeValidator, sanitizeErrorMessage } from "./src/services/serverSecurity";
+import {
+  rateLimitMiddleware,
+  payloadSizeValidator,
+  sanitizeErrorMessage,
+  corsMiddleware,
+  authenticateUserMiddleware,
+  requireAdminMiddleware,
+  requireVerifiedBillingAuthMiddleware,
+  verifyUserOwnership,
+  verifyGooglePlayPurchase,
+  runStartupSecurityDiagnostics,
+  ALLOWED_PLAY_PRODUCT_IDS,
+  CANONICAL_PACKAGE_NAME
+} from "./src/services/serverSecurity";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
+app.set("trust proxy", 1);
+app.use(corsMiddleware());
 app.use(express.json({ limit: "1mb" }));
 
 // Truthful AI Health Tracking
@@ -76,7 +91,7 @@ function getAIClient(): GoogleGenAI | null {
 
 // 1. AI Chat/Query API
 // 1. AI Chat/Query API with Deep Cleaning Product Chemistry Expertise
-app.post("/api/ai/chat", payloadSizeValidator(100000), rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "AI Chat" }), async (req, res) => {
+app.post("/api/ai/chat", authenticateUserMiddleware, payloadSizeValidator(100000), rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "AI Chat" }), async (req, res) => {
   const { message, history, context } = req.body;
   const client = getAIClient();
 
@@ -253,6 +268,7 @@ app.get("/api/ai/chemistry-status", async (req, res) => {
 
 app.post(
   "/api/ai/research-ingredient",
+  authenticateUserMiddleware,
   payloadSizeValidator(50000),
   rateLimitMiddleware({ maxRequests: 20, windowMs: 60000, endpointName: "Ingredient Research" }),
   async (req, res) => {
@@ -276,6 +292,7 @@ app.post(
 
 app.post(
   "/api/ai/apply-verified-ingredient",
+  authenticateUserMiddleware,
   payloadSizeValidator(100000),
   rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "Apply Verified Data" }),
   async (req, res) => {
@@ -817,7 +834,7 @@ function analyzeUserFormulaFallback(ingredients: any[], productType: string, gra
 }
 
 // 2. AI Formulation Generator API
-app.post("/api/ai/formulate", payloadSizeValidator(150000), rateLimitMiddleware({ maxRequests: 20, windowMs: 60000, endpointName: "AI Formulator" }), async (req, res) => {
+app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(150000), rateLimitMiddleware({ maxRequests: 20, windowMs: 60000, endpointName: "AI Formulator" }), async (req, res) => {
   const {
     mode,
     ingredients: inputIngredients,
@@ -1590,7 +1607,7 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
 });
 
 // 3. AI Troubleshooting Assistant API
-app.post("/api/ai/troubleshoot", payloadSizeValidator(100000), rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "AI Troubleshooter" }), async (req, res) => {
+app.post("/api/ai/troubleshoot", authenticateUserMiddleware, payloadSizeValidator(100000), rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "AI Troubleshooter" }), async (req, res) => {
   const { query, productContext } = req.body;
   const client = getAIClient();
 
@@ -1721,7 +1738,7 @@ Do not include markdown code block formatting or backticks. Return raw JSON text
 });
 
 // 4. AI Formula Analyzer & Recommendations API
-app.post("/api/ai/analyze-recommend", payloadSizeValidator(150000), rateLimitMiddleware({ maxRequests: 25, windowMs: 60000, endpointName: "AI Analyzer" }), async (req, res) => {
+app.post("/api/ai/analyze-recommend", authenticateUserMiddleware, payloadSizeValidator(150000), rateLimitMiddleware({ maxRequests: 25, windowMs: 60000, endpointName: "AI Analyzer" }), async (req, res) => {
   const { formulaName, productType, grade, ingredients } = req.body;
   const client = getAIClient();
 
@@ -1899,6 +1916,100 @@ app.get("/api/ai/status", async (req, res) => {
   });
 });
 
+// ----------------------------------------------------------------------------
+// GOOGLE PLAY BILLING SERVER VERIFICATION ENDPOINTS (FAIL-CLOSED)
+// ----------------------------------------------------------------------------
+
+app.post(
+  "/api/billing/verify-purchase",
+  authenticateUserMiddleware,
+  requireVerifiedBillingAuthMiddleware,
+  payloadSizeValidator(50000),
+  rateLimitMiddleware({ maxRequests: 15, windowMs: 60000, endpointName: "Billing Verification" }),
+  async (req, res) => {
+    const { packageName, productId, purchaseToken } = req.body || {};
+    const authenticatedUser = (req as any).user;
+    const userId = authenticatedUser.uid;
+
+    const result = await verifyGooglePlayPurchase({
+      packageName: packageName || CANONICAL_PACKAGE_NAME,
+      productId: productId || '',
+      purchaseToken: purchaseToken || '',
+      userId
+    });
+
+    if (!result.verified) {
+      return res.status(result.error?.includes('credentials') ? 503 : 400).json({
+        verified: false,
+        error: result.error || 'Purchase verification failed.',
+        status: result.status
+      });
+    }
+
+    return res.json({
+      verified: true,
+      status: result.status,
+      productId: result.productId,
+      userId: result.userId,
+      entitlementGranted: true
+    });
+  }
+);
+
+app.get(
+  "/api/billing/subscription-status",
+  authenticateUserMiddleware,
+  requireVerifiedBillingAuthMiddleware,
+  rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "Subscription Status" }),
+  async (req, res) => {
+    const user = (req as any).user;
+    const hasCredentials = Boolean(
+      process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY ||
+      process.env.GOOGLE_APPLICATION_CREDENTIALS
+    );
+
+    return res.json({
+      gatewayConfigured: hasCredentials,
+      supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
+      policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
+      userId: user.uid,
+      activeSubscriptions: 0
+    });
+  }
+);
+
+// ----------------------------------------------------------------------------
+// USER-SCOPED DATA ISOLATION & ADMIN DIAGNOSTICS ENDPOINTS
+// ----------------------------------------------------------------------------
+
+app.post(
+  "/api/user/:userId/verify-access",
+  authenticateUserMiddleware,
+  payloadSizeValidator(10000),
+  (req, res) => {
+    const user = (req as any).user;
+    const targetUserId = req.params.userId;
+    if (!verifyUserOwnership(user.uid, targetUserId)) {
+      return res.status(403).json({ error: "Forbidden: You are not authorized to access another user's data." });
+    }
+    return res.json({ success: true, authorized: true, userId: user.uid });
+  }
+);
+
+app.get(
+  "/api/admin/diagnostics",
+  authenticateUserMiddleware,
+  requireAdminMiddleware,
+  (_req, res) => {
+    return res.json({
+      status: "OK",
+      timestamp: new Date().toISOString(),
+      service: "Detergent Formula Expert Core Service",
+      nodeVersion: process.version
+    });
+  }
+);
+
 // Explicit Android Release APK Download Route
 app.get("/detergent-formula-expert-release.apk", (_req, res) => {
   const publicApkPath = path.join(process.cwd(), "public", "detergent-formula-expert-release.apk");
@@ -1932,6 +2043,7 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Detergent R&D Expert server running on http://0.0.0.0:${PORT}`);
+    runStartupSecurityDiagnostics();
   });
 }
 

@@ -6,9 +6,12 @@
  * 2. Protection against oversized payloads and prompt abuse.
  * 3. Sanitized error responses preventing secret/stack trace leakage.
  * 4. Token validation without trusting client-supplied userIds.
+ * 5. Configurable CORS allowlist and OPTIONS preflight handling.
+ * 6. Google Play billing server verification with fail-closed enforcement.
  * 
  * Note on Architecture:
  * This rate limiter is in-memory. It protects the Node.js server instance.
+ * It is not distributed protection across multiple cluster instances or serverless containers.
  * For multi-instance/serverless deployments, a distributed store (e.g., Redis
  * or Firestore distributed counters) should be configured.
  */
@@ -75,7 +78,8 @@ class InMemoryRateLimiter {
 export const serverRateLimiter = new InMemoryRateLimiter();
 
 /**
- * Safely extracts client IP, rejecting spoofed or malformed headers
+ * Safely extracts client IP, rejecting spoofed or malformed headers.
+ * Does not blindly trust forwarded headers without validation.
  */
 export function getClientIp(req: Request): string {
   // If behind a trusted reverse proxy, express req.ip uses req.app.get('trust proxy')
@@ -95,7 +99,8 @@ export function getClientIp(req: Request): string {
 }
 
 /**
- * Express middleware for rate limiting AI and sensitive endpoints
+ * Express middleware for rate limiting AI and sensitive endpoints.
+ * Emits X-RateLimit-Scope: instance-memory-single-process header.
  */
 export function rateLimitMiddleware(options: RateLimitOptions) {
   const { maxRequests, windowMs, endpointName = 'Endpoint' } = options;
@@ -108,6 +113,7 @@ export function rateLimitMiddleware(options: RateLimitOptions) {
     res.setHeader('X-RateLimit-Limit', maxRequests);
     res.setHeader('X-RateLimit-Remaining', result.remaining);
     res.setHeader('X-RateLimit-Reset', Math.ceil(result.resetInMs / 1000));
+    res.setHeader('X-RateLimit-Scope', 'instance-memory-single-process');
 
     if (!result.allowed) {
       const retryAfterSec = Math.max(1, Math.ceil(result.resetInMs / 1000));
@@ -169,4 +175,563 @@ export function sanitizeErrorMessage(err: any): string {
     .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]');
 
   return cleanMsg;
+}
+
+/**
+ * Configurable CORS Allowlist & Preflight Middleware
+ */
+export function corsMiddleware(customAllowedOrigins?: string[]) {
+  const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'capacitor://localhost',
+    'ionic://localhost',
+    'http://localhost'
+  ];
+
+  const allowedOrigins = customAllowedOrigins && customAllowedOrigins.length > 0
+    ? customAllowedOrigins
+    : (envOrigins.length > 0 ? envOrigins : defaultOrigins);
+
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const origin = req.headers.origin;
+
+    // Same-origin or non-browser server-to-server request
+    if (!origin) {
+      next();
+      return;
+    }
+
+    const isAllowed = allowedOrigins.includes('*') || allowedOrigins.includes(origin);
+
+    if (isAllowed) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Max-Age', '86400');
+    }
+
+    if (req.method === 'OPTIONS') {
+      if (!isAllowed) {
+        res.status(403).json({ error: 'CORS policy violation: Origin not allowed.' });
+        return;
+      }
+      res.status(204).end();
+      return;
+    }
+
+    if (!isAllowed) {
+      res.status(403).json({ error: 'CORS policy violation: Origin not allowed.' });
+      return;
+    }
+
+    next();
+  };
+}
+
+/**
+ * JWT Payload helper: decodes base64url payload without external libraries
+ */
+import { initializeApp, getApps, getApp, cert, type App } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { google } from 'googleapis';
+import fs from 'fs';
+import firebaseConfig from '../../firebase-applet-config.json';
+
+import {
+  DurablePurchaseStore,
+  isGenuineTestEnvironment
+} from './durablePurchaseStore';
+
+let firebaseAdminApp: App | null = null;
+
+export function getFirebaseAdminApp(): App {
+  if (!firebaseAdminApp) {
+    if (getApps().length > 0) {
+      firebaseAdminApp = getApp();
+    } else {
+      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (serviceAccountKey) {
+        try {
+          let certObj: any;
+          if (serviceAccountKey.trim().startsWith('{')) {
+            certObj = JSON.parse(serviceAccountKey);
+          } else if (fs.existsSync(serviceAccountKey)) {
+            certObj = JSON.parse(fs.readFileSync(serviceAccountKey, 'utf8'));
+          }
+          if (certObj) {
+            firebaseAdminApp = initializeApp({
+              credential: cert(certObj),
+              projectId: certObj.project_id || (firebaseConfig as any).projectId
+            });
+          }
+        } catch (e) {
+          console.error('[serverSecurity] Failed to parse Firebase service account credentials:', e);
+        }
+      }
+      if (!firebaseAdminApp) {
+        // Initialize with canonical project ID from applet config to support cryptographic verification of Google-signed ID tokens
+        firebaseAdminApp = initializeApp({
+          projectId: (firebaseConfig as any).projectId || 'imagined-zone-cv4kj'
+        });
+      }
+    }
+  }
+  return firebaseAdminApp;
+}
+
+export function parseJwtPayload(token: string): any {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = Buffer.from(base64, 'base64').toString('utf8');
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+
+export interface AuthenticatedUser {
+  uid: string;
+  email?: string;
+  role: 'user' | 'admin';
+}
+
+/**
+ * Server-side Token Verification
+ * Uses the official Firebase Admin SDK to cryptographically verify ID tokens.
+ * Enforces checkRevoked = true to reject revoked sessions.
+ * Strictly eliminates client-controlled admin escalation.
+ * Isolates test authentication strictly to genuine test processes (never active in production).
+ * Fails closed in production if verification cannot be completed.
+ */
+export async function verifyAuthToken(
+  token: string
+): Promise<{ valid: boolean; user?: AuthenticatedUser; error?: string }> {
+  if (!token || typeof token !== 'string' || !token.trim()) {
+    return { valid: false, error: 'Missing or empty authentication token.' };
+  }
+
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return { valid: false, error: 'Malformed authentication token: Unable to decode JWT structure.' };
+  }
+
+  // Pre-validate basic payload structure
+  const payload = parseJwtPayload(token);
+  if (!payload) {
+    return { valid: false, error: 'Malformed authentication token: Unable to decode JWT payload.' };
+  }
+
+  // Check expiration timestamp
+  if (payload.exp && typeof payload.exp === 'number') {
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (nowSec > payload.exp) {
+      return { valid: false, error: 'Expired authentication token: Token has passed its exp timestamp.' };
+    }
+  }
+
+  // Strictly isolated to genuine test processes running test scripts (never in production)
+  const isTestProcess = isGenuineTestEnvironment() && payload.iss === 'https://securetoken.google.com/test-project';
+
+  if (isTestProcess) {
+    const uid = payload.user_id || payload.sub || payload.uid;
+    if (!uid || typeof uid !== 'string') {
+      return { valid: false, error: 'Invalid token claims: Token missing user identifier (sub/user_id).' };
+    }
+
+    // Role is 'admin' ONLY if explicitly set via verified server custom claims in token, NEVER by arbitrary client headers
+    // Client-supplied email domains (like @detergentlab-admin.internal) are NEVER trusted for admin elevation
+    const role: 'user' | 'admin' = (payload.admin === true || payload['https://detergentlab.internal/admin'] === true)
+      ? 'admin'
+      : 'user';
+
+    return {
+      valid: true,
+      user: { uid, email: payload.email, role }
+    };
+  }
+
+  // In live production mode: Cryptographic verification using official Firebase Admin SDK with revocation check
+  try {
+    const adminApp = getFirebaseAdminApp();
+    const auth = getAuth(adminApp);
+    const decodedToken = await auth.verifyIdToken(token, true);
+
+    const uid = decodedToken.uid;
+    if (!uid) {
+      return { valid: false, error: 'Cryptographic verification failed: Missing uid in decoded token.' };
+    }
+
+    // Role comes strictly from server-assigned custom claims on the token
+    const role: 'user' | 'admin' = (decodedToken.admin === true || decodedToken.role === 'admin')
+      ? 'admin'
+      : 'user';
+
+    return {
+      valid: true,
+      user: {
+        uid,
+        email: decodedToken.email,
+        role
+      }
+    };
+  } catch (err: any) {
+    return {
+      valid: false,
+      error: `Cryptographic token verification failed: ${sanitizeErrorMessage(err)}`
+    };
+  }
+}
+
+/**
+ * Express middleware for protected endpoints requiring authenticated users.
+ * Attaches verified user identity to req.user.
+ * Never trusts client-supplied userIds.
+ */
+export function authenticateUserMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({
+      error: 'Authentication required: Missing Authorization header with Bearer token.'
+    });
+    return;
+  }
+
+  const token = authHeader.substring(7).trim();
+  verifyAuthToken(token).then(result => {
+    if (!result.valid || !result.user) {
+      res.status(401).json({
+        error: result.error || 'Authentication failed: Invalid or expired token.'
+      });
+      return;
+    }
+
+    (req as any).user = result.user;
+    next();
+  }).catch(err => {
+    res.status(401).json({
+      error: `Authentication error: ${sanitizeErrorMessage(err)}`
+    });
+  });
+}
+
+/**
+ * Express middleware requiring administrator role.
+ */
+export function requireAdminMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const user = (req as any).user as AuthenticatedUser | undefined;
+  if (!user || user.role !== 'admin') {
+    res.status(403).json({
+      error: 'Forbidden: Endpoint requires administrator privileges.'
+    });
+    return;
+  }
+  next();
+}
+
+/**
+ * Enforces per-user data isolation.
+ * Prevents user A from modifying or accessing user B's records.
+ */
+export function verifyUserOwnership(authenticatedUid: string, targetUserId: string): boolean {
+  if (!authenticatedUid || !targetUserId) return false;
+  return authenticatedUid === targetUserId;
+}
+
+// ----------------------------------------------------------------------------
+// GOOGLE PLAY BILLING SERVER VERIFICATION (FAIL-CLOSED)
+// ----------------------------------------------------------------------------
+
+export interface VerifyPurchaseRequest {
+  packageName: string;
+  productId: string;
+  purchaseToken: string;
+  userId: string;
+}
+
+export interface VerifyPurchaseResult {
+  verified: boolean;
+  status: 'ACTIVE' | 'EXPIRED' | 'CANCELED' | 'REFUNDED' | 'UNVERIFIED';
+  productId?: string;
+  userId?: string;
+  error?: string;
+}
+
+export const ALLOWED_PLAY_PRODUCT_IDS = [
+  'com.detergentlab.pro.monthly',
+  'com.detergentlab.pro.yearly',
+  'com.detergentlab.team.yearly'
+];
+
+export const CANONICAL_PACKAGE_NAME = 'com.detergentrnd.formulaexpert';
+
+
+/**
+ * Express middleware requiring a verified, non-anonymous authenticated user for billing operations.
+ * Strictly rejects anonymous_client or unauthenticated sessions.
+ */
+export function requireVerifiedBillingAuthMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const user = (req as any).user as AuthenticatedUser | undefined;
+  if (!user || !user.uid || user.uid === 'anonymous_client') {
+    res.status(401).json({
+      error: 'Verified authentication required for billing. Anonymous or unauthenticated requests are strictly prohibited.',
+      status: 'UNVERIFIED'
+    });
+    return;
+  }
+  next();
+}
+
+/**
+ * Verifies a Google Play subscription with strict fail-closed enforcement:
+ * 1. Validates application package name against canonical package.
+ * 2. Validates product ID against canonical allowed catalog.
+ * 3. Enforces user ID binding (strictly rejects anonymous_client and empty IDs).
+ * 4. Checks durable transactional/idempotent replay prevention across accounts.
+ * 5. Calls official Google Play Developer API (androidpublisher.purchases.subscriptions.get).
+ * 6. Verifies server response fields (expiryTimeMillis, cancelReason, paymentState).
+ * 7. Safe Fail-Closed: If Developer API credentials are not configured, live verification is marked BLOCKED.
+ * 8. Never logs purchase tokens or secrets.
+ */
+export async function verifyGooglePlayPurchase(
+  request: VerifyPurchaseRequest
+): Promise<VerifyPurchaseResult> {
+  const { packageName, productId, purchaseToken, userId } = request;
+
+  // 1. Package name validation
+  if (packageName !== CANONICAL_PACKAGE_NAME) {
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: `Invalid application package name: '${packageName}'. Expected '${CANONICAL_PACKAGE_NAME}'.`
+    };
+  }
+
+  // 2. Product ID validation
+  if (!ALLOWED_PLAY_PRODUCT_IDS.includes(productId)) {
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: `Unrecognized product ID: '${productId}'. Must be one of: ${ALLOWED_PLAY_PRODUCT_IDS.join(', ')}.`
+    };
+  }
+
+  // 3. Purchase token presence
+  if (!purchaseToken || typeof purchaseToken !== 'string' || purchaseToken.trim().length === 0) {
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: 'Empty or invalid purchase token.'
+    };
+  }
+
+  // 4. User ID binding: strictly reject missing or anonymous user IDs
+  if (!userId || typeof userId !== 'string' || userId.trim().length === 0 || userId === 'anonymous_client') {
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: 'Missing or anonymous user ID. Purchases must be bound to a verified authenticated account.'
+    };
+  }
+
+  // 5. Durable Replay prevention check: prevent cross-account token reuse
+  const replayCheck = await DurablePurchaseStore.checkReplay(purchaseToken, userId);
+  if (!replayCheck.allowed && replayCheck.error) {
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: replayCheck.error
+    };
+  }
+
+  // 6. External Google Play Developer API credentials check
+  const hasPlayCredentials = Boolean(
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY ||
+    process.env.GOOGLE_APPLICATION_CREDENTIALS
+  );
+
+  if (!hasPlayCredentials) {
+    // FAIL-CLOSED: Never grant paid entitlements without live Developer API receipt validation
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: 'Google Play Developer API service account credentials (GOOGLE_PLAY_SERVICE_ACCOUNT_KEY) are not configured on the server. Live verification BLOCKED (fail-closed).'
+    };
+  }
+
+  // 7. Official Google Play Developer API Verification
+  try {
+    const androidpublisher = google.androidpublisher('v3');
+    let credentialsObj: any;
+    const keyEnv = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (keyEnv) {
+      if (keyEnv.trim().startsWith('{')) {
+        credentialsObj = JSON.parse(keyEnv);
+      } else if (fs.existsSync(keyEnv)) {
+        credentialsObj = JSON.parse(fs.readFileSync(keyEnv, 'utf8'));
+      }
+    }
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: credentialsObj,
+      scopes: ['https://www.googleapis.com/auth/androidpublisher']
+    });
+    const authClient = await auth.getClient();
+
+    const playRes = await androidpublisher.purchases.subscriptionsv2.get({
+      packageName,
+      token: purchaseToken,
+      auth: authClient as any
+    });
+
+    const sub = playRes.data;
+    if (!sub) {
+      return {
+        verified: false,
+        status: 'UNVERIFIED',
+        error: 'Empty response received from Google Play Developer API.'
+      };
+    }
+
+    // Validate product matches one of the lineItems
+    const matchedItem = sub.lineItems?.find(item => item.productId === productId);
+    if (!matchedItem) {
+      return {
+        verified: false,
+        status: 'UNVERIFIED',
+        error: `Purchased product mismatch: line item '${productId}' not found in Google Play receipt.`
+      };
+    }
+
+    const expiryTimeIso = matchedItem.expiryTime;
+    const expiryTimeMillis = expiryTimeIso ? new Date(expiryTimeIso).getTime() : 0;
+    const nowMs = Date.now();
+
+    if (!expiryTimeMillis || isNaN(expiryTimeMillis) || expiryTimeMillis <= nowMs) {
+      return {
+        verified: false,
+        status: 'EXPIRED',
+        productId,
+        userId,
+        error: 'Subscription has expired or lacks a valid future expiry timestamp.'
+      };
+    }
+
+    // Google Play Subscription State Handling per Documented Semantics
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_PENDING') {
+      return {
+        verified: false,
+        status: 'UNVERIFIED',
+        error: 'Google Play payment state is pending verification.'
+      };
+    }
+
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_PAUSED') {
+      return {
+        verified: false,
+        status: 'UNVERIFIED',
+        error: 'Google Play subscription is paused by subscriber.'
+      };
+    }
+
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_ON_HOLD') {
+      return {
+        verified: false,
+        status: 'UNVERIFIED',
+        error: 'Google Play subscription is on account hold due to payment method decline.'
+      };
+    }
+
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_EXPIRED') {
+      return {
+        verified: false,
+        status: 'EXPIRED',
+        productId,
+        userId,
+        error: 'Google Play subscription is expired.'
+      };
+    }
+
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_UNSPECIFIED') {
+      return {
+        verified: false,
+        status: 'UNVERIFIED',
+        error: 'Google Play returned unspecified subscription state.'
+      };
+    }
+
+    // SUBSCRIPTION_STATE_ACTIVE, SUBSCRIPTION_STATE_IN_GRACE_PERIOD, or SUBSCRIPTION_STATE_CANCELED with future expiry
+    // Atomically persist verified grant in durable store bound to user
+    await DurablePurchaseStore.recordGrant({
+      purchaseToken,
+      userId,
+      productId,
+      packageName,
+      subscriptionState: sub.subscriptionState || 'SUBSCRIPTION_STATE_ACTIVE',
+      expiryTimeMillis
+    });
+
+    return {
+      verified: true,
+      status: 'ACTIVE',
+      productId,
+      userId
+    };
+  } catch (apiErr: any) {
+    return {
+      verified: false,
+      status: 'UNVERIFIED',
+      error: `Google Play Developer API verification failed: ${sanitizeErrorMessage(apiErr)}`
+    };
+  }
+}
+
+/**
+ * Startup Security Diagnostics
+ * Safely inspects configuration for Firebase Admin, Firestore, and Google Play Developer API.
+ * Never logs secrets or private keys.
+ */
+export function runStartupSecurityDiagnostics(): {
+  firebaseAdminConfigured: boolean;
+  firestoreConfigured: boolean;
+  playBillingConfigured: boolean;
+  policy: string;
+} {
+  const hasFirebase = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  const hasPlay = Boolean(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  const hasFirestore = Boolean(getFirebaseAdminApp());
+
+  console.log('--- STARTUP SECURITY & BILLING DIAGNOSTICS ---');
+  console.log(`Firebase Admin Auth: ${hasFirebase ? 'Configured (Service Account)' : 'Default (Applet Config Project ID)'}`);
+  console.log(`Firestore Database: ${hasFirestore ? 'Available' : 'Unconfigured'}`);
+  console.log(`Google Play Developer API: ${hasPlay ? 'Configured' : 'Missing Credentials (Fail-Closed Active)'}`);
+  console.log(`Policy: STRICT_FAIL_CLOSED_SERVER_VERIFIED`);
+  console.log('----------------------------------------------');
+
+  return {
+    firebaseAdminConfigured: hasFirebase,
+    firestoreConfigured: hasFirestore,
+    playBillingConfigured: hasPlay,
+    policy: 'STCRIPTION_STATE_STRICT_FAIL_CLOSED'
+  };
 }

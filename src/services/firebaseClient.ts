@@ -164,8 +164,12 @@ export async function saveUserFormula(userId: string, formula: any): Promise<voi
       productType: formula.productType || 'Standard Detergent',
       grade: formula.grade || 'Commercial',
       batchSizeKg: Number(formula.batchSizeKg || formula.batchSize || 100),
-      targetCost: formula.targetCost !== undefined ? Number(formula.targetCost) : 0,
-      targetPH: formula.targetPH !== undefined ? Number(formula.targetPH) : 7.0,
+      targetCost: (formula.targetCost !== undefined && formula.targetCost !== null && !isNaN(Number(formula.targetCost)))
+        ? Number(formula.targetCost)
+        : null,
+      targetPH: (formula.targetPH !== undefined && formula.targetPH !== null && !isNaN(Number(formula.targetPH)))
+        ? Number(formula.targetPH)
+        : null,
       ingredients: formula.ingredients || [],
       notes: formula.notes || '',
       status: formula.status || 'Active',
@@ -213,9 +217,15 @@ export async function saveUserTrial(userId: string, trial: any): Promise<void> {
       title: trial.title || trial.batchName || 'Laboratory Trial',
       formulaId: trial.formulaId || '',
       observations: trial.observations || trial.notes || '',
-      measuredPH: trial.measuredPH !== undefined ? Number(trial.measuredPH) : 7.0,
-      measuredViscosityCp: trial.measuredViscosityCp !== undefined ? Number(trial.measuredViscosityCp) : 0,
-      stabilityVerdict: trial.stabilityVerdict || 'Stable',
+      measuredPH: (trial.measuredPH !== undefined && trial.measuredPH !== null && !isNaN(Number(trial.measuredPH)))
+        ? Number(trial.measuredPH)
+        : null,
+      measuredViscosityCp: (trial.measuredViscosityCp !== undefined && trial.measuredViscosityCp !== null && !isNaN(Number(trial.measuredViscosityCp)))
+        ? Number(trial.measuredViscosityCp)
+        : null,
+      stabilityVerdict: (trial.stabilityVerdict && typeof trial.stabilityVerdict === 'string' && trial.stabilityVerdict.trim())
+        ? trial.stabilityVerdict.trim()
+        : 'UNKNOWN',
       updatedAt: now,
       createdAt: trial.createdAt || now
     }, { merge: true });

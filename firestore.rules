@@ -47,8 +47,8 @@ service cloud.firestore {
         && (!('productType' in data) || (data.productType is string && data.productType.size() <= 128))
         && (!('grade' in data) || (data.grade is string && data.grade.size() <= 64))
         && (!('batchSizeKg' in data) || data.batchSizeKg is number)
-        && (!('targetCost' in data) || data.targetCost is number)
-        && (!('targetPH' in data) || data.targetPH is number)
+        && (!('targetCost' in data) || data.targetCost == null || data.targetCost is number)
+        && (!('targetPH' in data) || data.targetPH == null || data.targetPH is number)
         && (!('ingredients' in data) || (data.ingredients is list && data.ingredients.size() <= 100))
         && (!('notes' in data) || (data.notes is string && data.notes.size() <= 4096))
         && (!('status' in data) || (data.status is string && data.status.size() <= 64))
@@ -63,9 +63,9 @@ service cloud.firestore {
         && data.title is string && data.title.size() > 0 && data.title.size() <= 256
         && (!('formulaId' in data) || (data.formulaId is string && data.formulaId.size() <= 128))
         && (!('observations' in data) || (data.observations is string && data.observations.size() <= 8192))
-        && (!('measuredPH' in data) || data.measuredPH is number)
-        && (!('measuredViscosityCp' in data) || data.measuredViscosityCp is number)
-        && (!('stabilityVerdict' in data) || (data.stabilityVerdict is string && data.stabilityVerdict.size() <= 64));
+        && (!('measuredPH' in data) || data.measuredPH == null || data.measuredPH is number)
+        && (!('measuredViscosityCp' in data) || data.measuredViscosityCp == null || data.measuredViscosityCp is number)
+        && (!('stabilityVerdict' in data) || data.stabilityVerdict == null || (data.stabilityVerdict is string && data.stabilityVerdict.size() <= 64));
     }
 
     // 4. Match Blocks

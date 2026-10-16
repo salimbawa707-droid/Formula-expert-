@@ -1,3 +1,4 @@
+import { apiFetch } from './apiBase';
 
 export interface PlayProduct {
   id: string;
@@ -158,22 +159,36 @@ export class PlayBillingBridge {
    * STRICT FAIL-CLOSED: Does not grant Pro/Team without validated server response.
    */
   private static async handlePurchaseUpdate(purchase: PlayPurchase): Promise<boolean> {
-    console.log('[PlayBillingBridge] Verifying purchase token:', purchase.purchaseToken?.substring(0, 15) + '...');
+    const maskedToken = purchase.purchaseToken ? (purchase.purchaseToken.substring(0, 8) + '...') : 'none';
+    console.log('[PlayBillingBridge] Verifying purchase with backend gateway:', maskedToken);
 
     if (purchase.purchaseState !== 0) {
       console.log('[PlayBillingBridge] Purchase not in active state:', purchase.purchaseState);
       return false;
     }
 
-    // Server-side verification check
-    // In strict environments, client must never assume token is valid without backend verification
-    const isServerVerificationConfigured = false; // Set to true when backend verification endpoint is deployed
+    try {
+      const response = await apiFetch('/api/billing/verify-purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packageName: purchase.packageName,
+          productId: purchase.productId,
+          purchaseToken: purchase.purchaseToken
+        })
+      });
 
-    if (!isServerVerificationConfigured) {
-      console.warn('[PlayBillingBridge] Rejecting purchase token: Backend verification gateway not deployed.');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('[PlayBillingBridge] Server verification rejected token fail-closed:', errorData.error || response.statusText);
+        return false;
+      }
+
+      const data = await response.json();
+      return Boolean(data.verified && data.entitlementGranted);
+    } catch (err) {
+      console.warn('[PlayBillingBridge] Purchase verification gateway unreachable, failing closed:', err);
       return false;
     }
-
-    return false;
   }
 }

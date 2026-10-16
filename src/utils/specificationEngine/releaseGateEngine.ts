@@ -376,7 +376,8 @@ export class BrowserAgent {
 
     // Try dynamic imports of Playwright first for real browser execution
     try {
-      const playwright = await eval("import('playwright')");
+      const dynamicImport = new Function('specifier', 'return import(specifier)');
+      const playwright = await dynamicImport('playwright');
       const { chromium } = playwright;
       const browser = await chromium.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],

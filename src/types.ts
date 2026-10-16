@@ -50,12 +50,12 @@ export interface ActiveFormulaState {
   name: string;
   category?: string;
   categoryId?: ProductCategoryId;
-  targetPH?: number;
+  targetPH?: number | null;
   batchSizeKg?: number;
   batchSize?: number;
   productType?: string;
   grade?: string;
-  targetCost?: number;
+  targetCost?: number | null;
   description?: string;
   isDraft?: boolean;
   ingredients: FormulationIngredient[];
