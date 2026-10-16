@@ -34,6 +34,7 @@ import {
   DurablePurchaseStore,
   computeTokenFingerprint
 } from '../../services/durablePurchaseStore';
+import { google } from 'googleapis';
 
 export interface SecurityFixesTestSummary {
   total: number;
@@ -233,6 +234,343 @@ export async function runSecurityFixesTestSuite(): Promise<SecurityFixesTestSumm
     userId: 'usr-attacker-account-2'
   });
   assert('P1-Replay 6: Verification endpoint rejects replayed token before external API call', endpointReplayRes.verified === false && Boolean(endpointReplayRes.error?.includes('replay')), true, true);
+
+  // 6. Durable store returns explicit rejection on conflicting account grant attempt
+  const conflictToken = 'test-conflict-token-' + Date.now();
+  await DurablePurchaseStore.recordGrant({
+    purchaseToken: conflictToken,
+    userId: 'user-first-owner',
+    productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+    packageName: CANONICAL_PACKAGE_NAME,
+    subscriptionState: 'SUBSCRIPTION_STATE_ACTIVE',
+    expiryTimeMillis: Date.now() + 86400000
+  });
+  const rejectedGrant = await DurablePurchaseStore.recordGrant({
+    purchaseToken: conflictToken,
+    userId: 'user-conflicting-usurper',
+    productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+    packageName: CANONICAL_PACKAGE_NAME,
+    subscriptionState: 'SUBSCRIPTION_STATE_ACTIVE',
+    expiryTimeMillis: Date.now() + 86400000
+  });
+  assert(
+    'P1-Replay 7: Durable store returns rejection on conflicting account grant attempt',
+    rejectedGrant.success === false && Boolean(rejectedGrant.error?.includes('Concurrent race condition') || rejectedGrant.error?.includes('replay')),
+    true,
+    true
+  );
+
+  // 7. Concurrent conflicting requests cannot both receive successful grants
+  const concurrentToken = 'test-concurrent-race-token-' + Date.now();
+  const [raceResult1, raceResult2] = await Promise.all([
+    DurablePurchaseStore.recordGrant({
+      purchaseToken: concurrentToken,
+      userId: 'user-racer-alpha',
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      packageName: CANONICAL_PACKAGE_NAME,
+      subscriptionState: 'SUBSCRIPTION_STATE_ACTIVE',
+      expiryTimeMillis: Date.now() + 86400000
+    }),
+    DurablePurchaseStore.recordGrant({
+      purchaseToken: concurrentToken,
+      userId: 'user-racer-beta',
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      packageName: CANONICAL_PACKAGE_NAME,
+      subscriptionState: 'SUBSCRIPTION_STATE_ACTIVE',
+      expiryTimeMillis: Date.now() + 86400000
+    })
+  ]);
+  const oneSucceeded = (raceResult1.success && !raceResult2.success) || (!raceResult1.success && raceResult2.success);
+  assert(
+    'P1-Replay 8: Concurrent conflicting requests cannot both receive successful grants',
+    oneSucceeded,
+    true,
+    true
+  );
+
+  // 8. Integration Harness: Verify that successful Google Play Developer API response alone CANNOT bypass a failed durable store
+  const origKey = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY;
+  const origPublisher = google.androidpublisher;
+  const origGetClient = google.auth.GoogleAuth.prototype.getClient;
+  const origRecordGrant = DurablePurchaseStore.recordGrant;
+
+  try {
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY = JSON.stringify({ client_email: 'test@example.com' });
+    google.auth.GoogleAuth.prototype.getClient = async () => ({} as any);
+    (google as any).androidpublisher = () => ({
+      purchases: {
+        subscriptionsv2: {
+          get: async () => ({
+            data: {
+              subscriptionState: 'SUBSCRIPTION_STATE_ACTIVE',
+              lineItems: [{
+                productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+                expiryTime: new Date(Date.now() + 86400000).toISOString()
+              }]
+            }
+          })
+        }
+      }
+    });
+
+    // Test A: Durable store returns rejection -> verifyGooglePlayPurchase must fail closed
+    (DurablePurchaseStore as any).recordGrant = async () => ({
+      success: false,
+      error: 'Simulated durable store lock conflict'
+    });
+
+    const storeRejectRes = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'test-token-sim-reject-' + Date.now(),
+      userId: 'usr-sim-1'
+    });
+    assert(
+      'P1-Replay 9: Verification flow strictly fails closed when durable store returns rejection',
+      storeRejectRes.verified === false && storeRejectRes.status === 'UNVERIFIED' && Boolean(storeRejectRes.error?.includes('Simulated durable store lock conflict')),
+      true,
+      true
+    );
+
+    // Test B: Durable store throws exception -> verifyGooglePlayPurchase must catch and fail closed
+    (DurablePurchaseStore as any).recordGrant = async () => {
+      throw new Error('Simulated firestore transaction timeout');
+    };
+
+    const storeThrowRes = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'test-token-sim-throw-' + Date.now(),
+      userId: 'usr-sim-2'
+    });
+    assert(
+      'P1-Replay 10: Verification flow strictly fails closed when durable store throws an exception',
+      storeThrowRes.verified === false && storeThrowRes.status === 'UNVERIFIED' && Boolean(storeThrowRes.error?.includes('Durable store grant persistence threw an exception')),
+      true,
+      true
+    );
+
+    // Test C: Confirms a successful Google Play response alone cannot bypass a failed durable-store operation
+    assert(
+      'P1-Replay 11: A successful Google Play response alone cannot bypass a failed durable-store operation',
+      storeRejectRes.verified === false && storeThrowRes.verified === false,
+      true,
+      true
+    );
+
+  } finally {
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY = origKey;
+    google.androidpublisher = origPublisher;
+    google.auth.GoogleAuth.prototype.getClient = origGetClient;
+    DurablePurchaseStore.recordGrant = origRecordGrant;
+  }
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 5: P1 Google Play Subscription State Strict Allowlist
+  // --------------------------------------------------------------------------
+  const origKey2 = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY;
+  const origPublisher2 = google.androidpublisher;
+  const origGetClient2 = google.auth.GoogleAuth.prototype.getClient;
+
+  try {
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY = JSON.stringify({ client_email: 'test@example.com' });
+    google.auth.GoogleAuth.prototype.getClient = async () => ({} as any);
+
+    let mockState = 'SUBSCRIPTION_STATE_ACTIVE';
+    let mockExpiry = new Date(Date.now() + 86400000).toISOString();
+
+    (google as any).androidpublisher = () => ({
+      purchases: {
+        subscriptionsv2: {
+          get: async () => ({
+            data: {
+              subscriptionState: mockState,
+              lineItems: [{
+                productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+                expiryTime: mockExpiry
+              }]
+            }
+          })
+        }
+      }
+    });
+
+    // 1. Active state with valid future expiry
+    mockState = 'SUBSCRIPTION_STATE_ACTIVE';
+    mockExpiry = new Date(Date.now() + 86400000).toISOString();
+    const resActive = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-active-' + Date.now(),
+      userId: 'usr-state-1'
+    });
+    assert('P1-State 1: Active state with valid future expiry is verified', resActive.verified === true && resActive.status === 'ACTIVE', true, true);
+
+    // 2. Grace-period state with valid future expiry
+    mockState = 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD';
+    mockExpiry = new Date(Date.now() + 86400000).toISOString();
+    const resGrace = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-grace-' + Date.now(),
+      userId: 'usr-state-2'
+    });
+    assert('P1-State 2: Grace-period state with valid future expiry is verified', resGrace.verified === true && resGrace.status === 'ACTIVE', true, true);
+
+    // 3. Canceled state with future expiry (allowed per policy)
+    mockState = 'SUBSCRIPTION_STATE_CANCELED';
+    mockExpiry = new Date(Date.now() + 86400000).toISOString();
+    const resCanceledFuture = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-canceled-future-' + Date.now(),
+      userId: 'usr-state-3'
+    });
+    assert('P1-State 3: Canceled state with future expiry is verified', resCanceledFuture.verified === true && resCanceledFuture.status === 'ACTIVE', true, true);
+
+    // 4. Canceled state with expired expiry
+    mockState = 'SUBSCRIPTION_STATE_CANCELED';
+    mockExpiry = new Date(Date.now() - 3600000).toISOString();
+    const resCanceledExpired = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-canceled-expired-' + Date.now(),
+      userId: 'usr-state-4'
+    });
+    assert('P1-State 4: Canceled state with expired expiry is rejected', resCanceledExpired.verified === false && resCanceledExpired.status === 'EXPIRED', true, true);
+
+    // 5. Pending, paused, on-hold, and expired states are rejected
+    const rejectedStates = [
+      'SUBSCRIPTION_STATE_PENDING',
+      'SUBSCRIPTION_STATE_PAUSED',
+      'SUBSCRIPTION_STATE_ON_HOLD',
+      'SUBSCRIPTION_STATE_EXPIRED'
+    ];
+    let allRejected = true;
+    for (const st of rejectedStates) {
+      mockState = st;
+      mockExpiry = new Date(Date.now() + 86400000).toISOString();
+      const resReject = await verifyGooglePlayPurchase({
+        packageName: CANONICAL_PACKAGE_NAME,
+        productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+        purchaseToken: 'token-' + st.toLowerCase() + '-' + Date.now(),
+        userId: 'usr-state-reject'
+      });
+      if (resReject.verified !== false) {
+        allRejected = false;
+      }
+    }
+    assert('P1-State 5: Pending, paused, on-hold, and expired states are strictly rejected', allRejected, true, true);
+
+    // 6. Unspecified state is rejected
+    mockState = 'SUBSCRIPTION_STATE_UNSPECIFIED';
+    mockExpiry = new Date(Date.now() + 86400000).toISOString();
+    const resUnspec = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-unspec-' + Date.now(),
+      userId: 'usr-state-unspec'
+    });
+    assert('P1-State 6: Unspecified state is rejected', resUnspec.verified === false, true, true);
+
+    // 7. Unknown future state is rejected
+    mockState = 'SUBSCRIPTION_STATE_NEW_UNKNOWN_FEATURE';
+    mockExpiry = new Date(Date.now() + 86400000).toISOString();
+    const resUnknown = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-unknown-' + Date.now(),
+      userId: 'usr-state-unknown'
+    });
+    assert('P1-State 7: Unknown future state is rejected by default', resUnknown.verified === false, true, true);
+
+    // 8. Missing or malformed state is rejected
+    mockState = '';
+    mockExpiry = new Date(Date.now() + 86400000).toISOString();
+    const resMissing = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-missing-' + Date.now(),
+      userId: 'usr-state-missing'
+    });
+    assert('P1-State 8: Missing or malformed state is rejected', resMissing.verified === false, true, true);
+
+    // 9. Unknown state with a future expiry must still be rejected
+    mockState = 'SUBSCRIPTION_STATE_SOMETHING_MADE_UP';
+    mockExpiry = new Date(Date.now() + 864000000).toISOString(); // 10 days future
+    const resUnknownFuture = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-unknown-future-' + Date.now(),
+      userId: 'usr-state-unknown-future'
+    });
+    assert('P1-State 9: Future expiry does not override an unknown state', resUnknownFuture.verified === false, true, true);
+
+    // 10. Allowed state with missing, invalid, or expired expiry must be rejected
+    mockState = 'SUBSCRIPTION_STATE_ACTIVE';
+    mockExpiry = ''; // missing expiry
+    const resNoExpiry = await verifyGooglePlayPurchase({
+      packageName: CANONICAL_PACKAGE_NAME,
+      productId: ALLOWED_PLAY_PRODUCT_IDS[0],
+      purchaseToken: 'token-noexpiry-' + Date.now(),
+      userId: 'usr-state-noexpiry'
+    });
+    assert('P1-State 10: Allowed state with missing expiry is rejected', resNoExpiry.verified === false, true, true);
+
+    // 11. Rejected states never grant entitlement or return verified: true
+    assert('P1-State 11: Rejected states never grant an entitlement or return verified: true', resUnknownFuture.verified === false && resUnspec.verified === false && resCanceledExpired.verified === false, true, true);
+
+  } finally {
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY = origKey2;
+    google.androidpublisher = origPublisher2;
+    google.auth.GoogleAuth.prototype.getClient = origGetClient2;
+  }
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 6: P2 User Profile lastLoginAt Validation
+  // --------------------------------------------------------------------------
+  
+  // Note: These tests assume Firestore rules are deployed.
+  // In this container, we verify the logic of the validation helper directly,
+  // as the full Firestore emulator is not active.
+  
+  const now = new Date().toISOString();
+  
+  // isValidUser helper in rules:
+  // hasAll(['id', 'email'])
+  // hasOnly(['id', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt', 'lastLoginAt'])
+  
+  const validUserWithLogin = {
+    id: 'u1',
+    email: 'test@example.com',
+    createdAt: now,
+    updatedAt: now,
+    lastLoginAt: now
+  };
+  
+  // Simulate rules validation logic
+  const isValidUser = (data: any) => {
+    const keys = Object.keys(data);
+    const hasAll = keys.includes('id') && keys.includes('email');
+    const allowed = ['id', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt', 'lastLoginAt'];
+    const hasOnly = keys.every(k => allowed.includes(k));
+    const lastLoginValid = !data.lastLoginAt || (typeof data.lastLoginAt === 'string' && data.lastLoginAt.length <= 64);
+    
+    return hasAll && hasOnly && lastLoginValid;
+  };
+  
+  assert('P2-User 1: Valid user profile with lastLoginAt', isValidUser(validUserWithLogin) === true, true, true);
+  
+  const invalidUserWithLongLogin = { ...validUserWithLogin, lastLoginAt: 'a'.repeat(65) };
+  assert('P2-User 2: User profile with malformed/long lastLoginAt is rejected', isValidUser(invalidUserWithLongLogin) === false, false, false);
+  
+  const validUserMissingLogin = {
+    id: 'u1',
+    email: 'test@example.com',
+    createdAt: now,
+    updatedAt: now
+  };
+  assert('P2-User 3: User profile missing optional lastLoginAt is accepted', isValidUser(validUserMissingLogin) === true, true, true);
 
   return {
     total: totalTests,

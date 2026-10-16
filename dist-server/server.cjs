@@ -8635,6 +8635,23 @@ function sanitizeErrorMessage(err) {
   let cleanMsg = msg.replace(/AIza[0-9A-Za-z-_]{20,50}/g, "[REDACTED_KEY]").replace(/\/app\/[a-zA-Z0-9_\-\.\/]+/g, "[REDACTED_PATH]").replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[REDACTED_EMAIL]");
   return cleanMsg;
 }
+function isOriginAllowed(origin, allowedOrigins, isExplicitAllowlist) {
+  if (!origin) return true;
+  if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) return true;
+  if (isExplicitAllowlist) {
+    return false;
+  }
+  try {
+    const url = new URL(origin);
+    const host = url.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".run.app") || host.endsWith(".google.com") || host.endsWith(".googleusercontent.com") || url.protocol === "capacitor:" || url.protocol === "ionic:") {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
 function corsMiddleware(customAllowedOrigins) {
   const envOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
   const defaultOrigins = [
@@ -8645,13 +8662,14 @@ function corsMiddleware(customAllowedOrigins) {
     "http://localhost"
   ];
   const allowedOrigins = customAllowedOrigins && customAllowedOrigins.length > 0 ? customAllowedOrigins : envOrigins.length > 0 ? envOrigins : defaultOrigins;
+  const isExplicit = Boolean(customAllowedOrigins && customAllowedOrigins.length > 0);
   return (req, res, next) => {
     const origin = req.headers.origin;
     if (!origin) {
       next();
       return;
     }
-    const isAllowed = allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+    const isAllowed = isOriginAllowed(origin, allowedOrigins, isExplicit);
     if (isAllowed) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -8665,6 +8683,16 @@ function corsMiddleware(customAllowedOrigins) {
         return;
       }
       res.status(204).end();
+      return;
+    }
+    const requestPath = req.path || req.url || "";
+    const isStaticAsset = Boolean(requestPath && !requestPath.startsWith("/api"));
+    if (isStaticAsset) {
+      if (!isAllowed) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      }
+      next();
       return;
     }
     if (!isAllowed) {
@@ -8859,11 +8887,11 @@ async function verifyGooglePlayPurchase(request) {
     };
   }
   const replayCheck = await DurablePurchaseStore.checkReplay(purchaseToken, userId);
-  if (!replayCheck.allowed && replayCheck.error) {
+  if (!replayCheck.allowed) {
     return {
       verified: false,
       status: "UNVERIFIED",
-      error: replayCheck.error
+      error: replayCheck.error || "Durable purchase token replay check failed. Access denied (fail-closed)."
     };
   }
   const hasPlayCredentials = Boolean(
@@ -8925,51 +8953,49 @@ async function verifyGooglePlayPurchase(request) {
         error: "Subscription has expired or lacks a valid future expiry timestamp."
       };
     }
-    if (sub.subscriptionState === "SUBSCRIPTION_STATE_PENDING") {
+    const allowedStates = [
+      "SUBSCRIPTION_STATE_ACTIVE",
+      "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+      "SUBSCRIPTION_STATE_CANCELED"
+    ];
+    const currentState = sub.subscriptionState;
+    if (!currentState || !allowedStates.includes(currentState)) {
       return {
         verified: false,
-        status: "UNVERIFIED",
-        error: "Google Play payment state is pending verification."
-      };
-    }
-    if (sub.subscriptionState === "SUBSCRIPTION_STATE_PAUSED") {
-      return {
-        verified: false,
-        status: "UNVERIFIED",
-        error: "Google Play subscription is paused by subscriber."
-      };
-    }
-    if (sub.subscriptionState === "SUBSCRIPTION_STATE_ON_HOLD") {
-      return {
-        verified: false,
-        status: "UNVERIFIED",
-        error: "Google Play subscription is on account hold due to payment method decline."
-      };
-    }
-    if (sub.subscriptionState === "SUBSCRIPTION_STATE_EXPIRED") {
-      return {
-        verified: false,
-        status: "EXPIRED",
+        status: currentState === "SUBSCRIPTION_STATE_EXPIRED" ? "EXPIRED" : "UNVERIFIED",
         productId,
         userId,
-        error: "Google Play subscription is expired."
+        error: `Google Play subscription state '${currentState || "UNKNOWN"}' is not permitted or unrecognized. Access denied (fail-closed).`
       };
     }
-    if (sub.subscriptionState === "SUBSCRIPTION_STATE_UNSPECIFIED") {
+    let recordResult;
+    try {
+      recordResult = await DurablePurchaseStore.recordGrant({
+        purchaseToken,
+        userId,
+        productId,
+        packageName,
+        subscriptionState: sub.subscriptionState || "SUBSCRIPTION_STATE_ACTIVE",
+        expiryTimeMillis
+      });
+    } catch (storeErr) {
       return {
         verified: false,
         status: "UNVERIFIED",
-        error: "Google Play returned unspecified subscription state."
+        productId,
+        userId,
+        error: `Durable store grant persistence threw an exception: ${sanitizeErrorMessage(storeErr)}`
       };
     }
-    await DurablePurchaseStore.recordGrant({
-      purchaseToken,
-      userId,
-      productId,
-      packageName,
-      subscriptionState: sub.subscriptionState || "SUBSCRIPTION_STATE_ACTIVE",
-      expiryTimeMillis
-    });
+    if (!recordResult || !recordResult.success || !recordResult.grant) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        productId,
+        userId,
+        error: recordResult?.error || "Durable purchase grant recording failed or was rejected. Access denied (fail-closed)."
+      };
+    }
     return {
       verified: true,
       status: "ACTIVE",

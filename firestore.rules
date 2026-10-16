@@ -31,11 +31,12 @@ service cloud.firestore {
     // 3. Validation Blueprints
     function isValidUser(data) {
       return data.keys().hasAll(['id', 'email'])
-        && data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt', 'lastLoginAt'])
         && data.id is string && data.id == request.auth.uid && data.id.size() <= 128
         && data.email is string && data.email.size() <= 256
         && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
-        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024));
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024))
+        && (!('lastLoginAt' in data) || (data.lastLoginAt is string && data.lastLoginAt.size() <= 64));
     }
 
     function isValidFormula(data, userId) {
