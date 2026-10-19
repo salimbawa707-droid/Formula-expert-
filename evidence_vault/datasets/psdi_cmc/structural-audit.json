@@ -27,23 +27,39 @@
         "CMC Units 3": 4
       },
       "unitCodeCounts": {
-        "CMC Units 1": { "M": 3569, "D": 637, "W": 227, "P": 67, "N": 59, "blank": 431 },
-        "CMC Units 2": { "M": 436, "S": 36, "P": 1, "R": 1, "blank": 4516 },
-        "CMC Units 3": { "nonblank": 4, "blank": 4986 }
+        "CMC Units 1": {
+          "M": 3569,
+          "D": 637,
+          "W": 227,
+          "P": 67,
+          "N": 59,
+          "blank": 431
+        },
+        "CMC Units 2": {
+          "M": 436,
+          "S": 36,
+          "P": 1,
+          "R": 1,
+          "blank": 4516
+        },
+        "CMC Units 3": {
+          "M": 4,
+          "blank": 4986
+        }
       },
       "evaluationFieldCommonValues": {
+        "1": 116,
+        "2": 42,
+        "3": 495,
         "L": 4020,
         "R": 191,
         "X": 63,
         "D": 18,
         "P": 6,
-        "1": 116,
-        "2": 42,
-        "3": 495,
         "other_or_ambiguous_values": 15,
         "blank": 24
       },
-      "interpretation": "Observed concentration unit codes M=molar, D=wt/vol %, W=molal, P=wt %, N=normal were mapped from the original NBS NSRDS 36 legend. Other unit fields include additional codes and require their own source-legend review. Evaluation-field values are counted only; no meanings inferred. All original fields and values remain unchanged."
+      "interpretation": "Observed concentration unit codes M=molar, D=wt/vol %, W=molal, P=wt %, N=normal, S=mol/kg, and R=varied were mapped from the original NBS NSRDS 36 legend. R denotes varied concentration units and is not a convertible unit. Evaluation-field values are counted only; no meanings inferred. All original fields and values remain unchanged."
     },
     "CMC_Compounds.csv": {
       "gitBlobSha1": "b0ea82e9b4f9bfac6a86e44f61559ed9ccf74dcd",
