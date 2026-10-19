@@ -1,0 +1,140 @@
+{
+  "title": "NIST/NBS NSRDS 36 codebook crosswalk",
+  "source": {
+    "citation": "Mukerjee, P.; Mysels, K. J. Critical Micelle Concentrations of Aqueous Surfactant Systems. NBS NSRDS 36 (1971). DOI: 10.6028/NBS.NSRDS.36",
+    "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/NSRDS/nbsnsrds36.pdf",
+    "accessed": "2026-10-19",
+    "downloadedBytes": 17839638,
+    "sha256": "3daf8531dc1389698638100b689738594dfe64c79d9f4350825f577990dc0eb3"
+  },
+  "scope": "Maps original NIST/NBS legends to fields in the openly licensed PSDI export. It does not re-transcribe or validate all 4,990 individual records.",
+  "concentrationUnits": {
+    "A": "moles per 100 moles of solvent, including additives",
+    "B": "volume percent of solvent",
+    "C": "moles per 100 moles of surfactant mixture",
+    "D": "weight/volume percent (grams per 100 milliliters of solution)",
+    "E": "percent saturation of solution by additive",
+    "H": "grams per 100 grams of solvent",
+    "I": "moles per 100 moles of surfactant",
+    "K": "total normality of counterions",
+    "M": "molar (moles per liter of solution)",
+    "N": "normal (equivalents per liter of solution)",
+    "P": "weight/weight percent (grams per 100 grams of solution)",
+    "Q": "grams per 100 grams of surfactant",
+    "R": "value varied during experiment",
+    "S": "moles per kilogram of solution",
+    "T": "grams per 100 grams of surfactant mixture",
+    "U": "moles per liter or kilogram of solution, unspecified",
+    "W": "molal (moles per kilogram of solvent)",
+    "Y": "pressure in atmospheres"
+  },
+  "evaluation": {
+    "1": "Independently confirmed by at least two good-quality laboratories; high confidence, approximately within 1.5% for the same measurement approach, with method-to-method differences possible.",
+    "2": "Same apparent quality as category 1 but lacks independent confirmation.",
+    "3": "Selected: lower accuracy than categories 1 and 2, but the source considers it probably within 10% under the same approach.",
+    "D": "Disputed: conflicting values; the source says one may be correct but does not identify which.",
+    "L": "Literature listing for completeness; insufficient information to certify reliability.",
+    "P": "Preferred among differing reported values, but not rated in the selected or recommended categories.",
+    "R": "Reference to a literature value not tabulated in the dataset; may also signal duplicates or errors.",
+    "X": "Cross-reference for mixed surfactant systems tabulated under another compound number."
+  },
+  "qualityRatings": {
+    "description": "The first character of the NIST two-character quality field describes material; the second describes measurement method. The authors caution that their subjective ratings can vary by about one category.",
+    "material": {
+      "A": "Highest purity, unlikely to be significantly improved.",
+      "B": "Very pure; may contain significant traces of impurities.",
+      "C": "Purified; likely to contain significant impurities.",
+      "D": "Purified without special precautions against surfactant impurities.",
+      "E": "Good-quality mixture of head groups.",
+      "F": "Good-quality mixture of wrong homologues.",
+      "G": "Not purified; likely systematic errors of uncertain absolute and relative magnitude.",
+      "H": "Commercial surfactant material.",
+      "P": "High purity claimed without supporting data.",
+      "Q": "Theoretically calculated.",
+      "X": "No information given."
+    },
+    "method": {
+      "A": "Precision about 1%; accuracy about 1.5%.",
+      "B": "Precision about 2%; accuracy about 3%.",
+      "C": "Precision about 3%; accuracy about 5%.",
+      "D": "Precision about 10%; accuracy about 10%.",
+      "E": "Order-of-magnitude uncertainty.",
+      "F": "Wrong method.",
+      "G": "Likely systematic errors of uncertain absolute and relative magnitude.",
+      "Q": "Theoretically calculated.",
+      "X": "No information given."
+    }
+  },
+  "sourceSymbols": {
+    "A": "Misprint corrected in a figure quoted in the reference.",
+    "C": "Units converted from a tabulation in the reference.",
+    "E": "From equations in the reference of method results.",
+    "G": "From a graph of CMC values in the reference.",
+    "K": "From a graph of method results in the reference.",
+    "L": "Also from personal communications with the author.",
+    "M": "Units converted from the preceding value; this is a derived conversion, not an independent laboratory measurement.",
+    "P": "From the NIST authors' plot of data in the reference.",
+    "S": "Average of tabulated values.",
+    "T": "Tabulated or figure quoted in the reference."
+  },
+  "referenceScheme": {
+    "codeFormat": "The first two digits of a reference number encode publication year; the reference index lists the full citation. The author field uses first four letters of one or two authors.",
+    "indexPages": "Printed pp. 213-221",
+    "importantCaveat": "The five-digit code is an index key, not a DOI. Preserve it as supplied and resolve it against the reference index; do not infer a full citation from the year prefix alone."
+  },
+  "originalFieldNotes": {
+    "CMC": "May contain source text or status strings such as VALUES FROM REF IN CMC, GRAPH DATA NOT RETRIEVED, SUMMARIZING EQN ONLY, or QUESTIONABLE CRITERION; these are not numeric measurements.",
+    "CMC Value 1-3 / CMC Units 1-3": "Can contain source-reported and derived values. Consult the associated Source symbol; preserve values and units without silently merging them.",
+    "Qual. Mat. Meth.": "Two quality-rating letters as defined above.",
+    "Method": "Experimental-method description; NIST discusses method classes on printed pp. 8-11.",
+    "Authors / Reference": "Author abbreviations and reference-index keys."
+  },
+  "observedExportAudit": {
+    "measurementRows": 4990,
+    "evaluation": {
+      "knownCodes": {
+        "1": 116,
+        "2": 42,
+        "3": 495,
+        "L": 4020,
+        "R": 191,
+        "X": 63,
+        "D": 18,
+        "P": 6
+      },
+      "knownCodeRows": 4951,
+      "blankRows": 24,
+      "nonLegendOrMalformedRows": 15
+    },
+    "quality": {
+      "conformingTwoLetterPairs": 4700,
+      "blankRows": 273,
+      "nonLegendOrMalformedRows": 17
+    },
+    "source": {
+      "nonblankRows": 4724,
+      "blankRows": 266,
+      "rowsUsingOnlyNISTSourceSymbols": 4707,
+      "rowsWithNonstandardCharacters": 17
+    },
+    "references": {
+      "fiveDigitCodes": 4973,
+      "rowsMatchedToParsedOriginalReferenceIndex": 4947,
+      "rowsWithUnmatchedIndexCodes": 26,
+      "nonNumericNonblankRows": 6,
+      "blankRows": 11,
+      "unmatchedCodes": [
+        "45005",
+        "58017",
+        "58028",
+        "63021",
+        "69016"
+      ]
+    }
+  },
+  "curationDecision": "Known code meanings are documented, but irregular/missing fields, source row alignment, record identity, and original-paper details remain subject to review. No scientific data values, units, or structures were changed.",
+  "crossReferences": [
+    "https://doi.org/10.6028/NBS.NSRDS.36",
+    "https://resources.psdi.ac.uk/data/a7c82670-d2e2-46c6-920a-74294289aa34"
+  ]
+}
