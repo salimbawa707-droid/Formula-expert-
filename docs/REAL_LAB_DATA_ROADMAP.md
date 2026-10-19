@@ -102,7 +102,7 @@ Use only datasets with an explicit, reuse-compatible open data license for exter
 
 - Reconcile the source file and historical audit discrepancy.
 - Publish the canonical engine-to-evidence map and source/license register.
-- Begin with the existing SURFPRO and foam/rheology artifacts because their measurement types can be tied to specific engine outputs.
+- Begin ingestion with the explicitly CC-BY-4.0 PSDI CMC collection and RepOD conductivity files after download, checksum, schema, and row-lineage checks; use them only for matching surfactant/CMC outputs. Keep SURFPRO and foam/rheology artifacts excluded until their dataset-level licenses are confirmed.
 - Do not modify engine constants or claim app validation until source rights, checksums, row lineage, and holdout design pass the gates above.
 - After this map is reviewed, expand in priority order to pH/neutralization, chelation, detergency/cleaning, active-matter QC, powders, and compatibility/stability.
 
