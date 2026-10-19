@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { AiFallbackService } from "./src/services/aiFallbackService";
 import { IngredientResearchService } from "./src/services/ingredientResearchService";
+import { DurablePurchaseStore } from "./src/services/durablePurchaseStore";
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from "./src/domain/ph/acidBaseDataModel";
 import {
   rateLimitMiddleware,
@@ -2012,13 +2013,26 @@ app.get(
         process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY ||
         process.env.GOOGLE_APPLICATION_CREDENTIALS
       );
+      const subscriptionLookup = await DurablePurchaseStore.listActiveGrantsForUser(user.uid);
+      if (!subscriptionLookup.available) {
+        return res.status(503).json({
+          error: "Subscription status is temporarily unavailable because the verified purchase store could not be read."
+        });
+      }
+
+      const activeSubscriptions = subscriptionLookup.grants.map(grant => ({
+        productId: grant.productId,
+        status: grant.subscriptionState,
+        expiresAt: new Date(grant.expiryTimeMillis).toISOString()
+      }));
 
       return res.json({
         gatewayConfigured: hasCredentials,
         supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
         policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
         userId: user.uid,
-        activeSubscriptions: 0
+        activeSubscriptions: activeSubscriptions.length,
+        subscriptions: activeSubscriptions
       });
     } catch (err: any) {
       return res.status(500).json({ error: sanitizeErrorMessage(err) });
