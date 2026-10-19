@@ -1186,13 +1186,13 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
       });
     });
 
-    // If too restrictive (e.g. 0 or 1 item left), populate a safe base with what they listed
+    // Fail closed when the user's available materials cannot support even a minimal
+    // fallback. Never introduce unlisted surfactants or builders.
     if (ingredients.length <= 1) {
-      ingredients = [
-        { name: "SLES (70%)", percentage: grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0, role: "Primary Surfactant", costPerKg: null, activeMatterPct: 70, hlbValue: 13.0 },
-        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Builder", costPerKg: null, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
-      ];
+      return res.status(422).json({
+        success: false,
+        error: "The available-ingredient list does not contain enough compatible materials to build a fallback formula. No unlisted ingredients were added. Add the raw materials you want to use and try again."
+      });
     }
   }
 
