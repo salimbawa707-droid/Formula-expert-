@@ -1,0 +1,75 @@
+{
+  "dataset": "PSDI Critical Micelle Concentration Data Collection",
+  "auditType": "structural_only_no_scientific_promotion",
+  "auditDate": "2026-10-19",
+  "source": "https://resources.psdi.ac.uk/data/a7c82670-d2e2-46c6-920a-74294289aa34",
+  "license": "CC BY 4.0",
+  "sourceFiles": {
+    "NIST_Table_of_Critical_Micelle_Concentration_Values.csv": {
+      "gitBlobSha1": "abca6413696c3c66e2b895c5ba773aac8122fc61",
+      "rows": 4990,
+      "columns": 18,
+      "nonblank": {
+        "Additives": 2636,
+        "Temperature": 4875,
+        "CMC": 4767,
+        "Qual. Mat. Meth.": 4717,
+        "Method": 4981,
+        "Authors": 4978,
+        "Reference": 4979,
+        "Source": 4724,
+        "Evaluation": 4966,
+        "CMC Value 1": 4559,
+        "CMC Units 1": 4559,
+        "CMC Value 2": 474,
+        "CMC Units 2": 474,
+        "CMC Value 3": 4,
+        "CMC Units 3": 4
+      },
+      "unitCodeCounts": {
+        "CMC Units 1": { "M": 3569, "D": 637, "W": 227, "P": 67, "N": 59, "blank": 431 },
+        "CMC Units 2": { "M": 436, "S": 36, "P": 1, "R": 1, "blank": 4516 },
+        "CMC Units 3": { "nonblank": 4, "blank": 4986 }
+      },
+      "evaluationFieldCommonValues": {
+        "L": 4020,
+        "R": 191,
+        "X": 63,
+        "D": 18,
+        "P": 6,
+        "1": 116,
+        "2": 42,
+        "3": 495,
+        "other_or_ambiguous_values": 15,
+        "blank": 24
+      },
+      "interpretation": "Observed concentration unit codes M=molar, D=wt/vol %, W=molal, P=wt %, N=normal were mapped from the original NBS NSRDS 36 legend. Other unit fields include additional codes and require their own source-legend review. Evaluation-field values are counted only; no meanings inferred. All original fields and values remain unchanged."
+    },
+    "CMC_Compounds.csv": {
+      "gitBlobSha1": "b0ea82e9b4f9bfac6a86e44f61559ed9ccf74dcd",
+      "rows": 719,
+      "columns": 7,
+      "identityMethodCounts": {
+        "LLM initial name and weight": 530,
+        "Found by mass lookup": 58,
+        "LLM retried name and weight": 13,
+        "Unknown": 115,
+        "PubChem name": 3
+      }
+    }
+  },
+  "joinAudit": {
+    "measurementRowsWithCompoundNumber": 4990,
+    "uniqueMeasurementCompoundNumbers": 719,
+    "uniqueCompoundTableNumbers": 719,
+    "keySetCountsMatch": true,
+    "identityValidated": false,
+    "warning": "A complete compound-number key join does not validate structure/name correctness. Compound identities and SMILES require source-level curation."
+  },
+  "scopeLimits": [
+    "This is a structural inventory, not row-by-row validation against the NIST publication.",
+    "No code conversion, unit conversion, outlier removal, CMC string parsing, compound structure correction, or model calibration was performed.",
+    "The table is a historical literature compilation with multiple methods, temperatures, additives, and source references; rows are not independent replicates."
+  ],
+  "unitLegendSource": "https://nvlpubs.nist.gov/nistpubs/Legacy/NSRDS/nbsnsrds36.pdf"
+}
