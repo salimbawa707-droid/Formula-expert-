@@ -80,7 +80,8 @@
   "referenceScheme": {
     "codeFormat": "The first two digits of a reference number encode publication year; the reference index lists the full citation. The author field uses first four letters of one or two authors.",
     "indexPages": "Printed pp. 213-221",
-    "importantCaveat": "The five-digit code is an index key, not a DOI. Preserve it as supplied and resolve it against the reference index; do not infer a full citation from the year prefix alone."
+    "importantCaveat": "The five-digit code is an index key, not a DOI. Preserve it as supplied and resolve it against the reference index; do not infer a full citation from the year prefix alone.",
+    "unmatchedReferenceReview": "See reference-code-review.csv. A code 58017 is present in the original index despite a leading OCR artifact; 45005, 63021, and 69016 remain unresolved across nine rows."
   },
   "originalFieldNotes": {
     "CMC": "May contain source text or status strings such as VALUES FROM REF IN CMC, GRAPH DATA NOT RETRIEVED, SUMMARIZING EQN ONLY, or QUESTIONABLE CRITERION; these are not numeric measurements.",
@@ -119,22 +120,24 @@
     },
     "references": {
       "fiveDigitCodes": 4973,
-      "rowsMatchedToParsedOriginalReferenceIndex": 4947,
-      "rowsWithUnmatchedIndexCodes": 26,
+      "rowsMatchedToOriginalReferenceIndex": 4964,
+      "rowsWithUnresolvedIndexCodes": 9,
       "nonNumericNonblankRows": 6,
       "blankRows": 11,
-      "unmatchedCodes": [
-        "45005",
-        "58017",
-        "58028",
-        "63021",
-        "69016"
-      ]
+      "unresolvedCodes": {
+        "45005": 2,
+        "63021": 6,
+        "69016": 1
+      }
     }
   },
-  "curationDecision": "Known code meanings are documented, but irregular/missing fields, source row alignment, record identity, and original-paper details remain subject to review. No scientific data values, units, or structures were changed.",
+  "curationDecision": "The original legend now decodes units, source symbols, evaluation grades, quality ratings, and reference-code format. Nine rows still have unresolved reference IDs; irregular/missing fields and 719 structure/name joins remain subject to review. Compound 2 has a documented NIST-name versus PSDI LLM-structure conflict. No source data values, units, or structures were changed.",
   "crossReferences": [
     "https://doi.org/10.6028/NBS.NSRDS.36",
     "https://resources.psdi.ac.uk/data/a7c82670-d2e2-46c6-920a-74294289aa34"
+  ],
+  "relatedReviewFiles": [
+    "compound-identity-review.csv",
+    "reference-code-review.csv"
   ]
 }
