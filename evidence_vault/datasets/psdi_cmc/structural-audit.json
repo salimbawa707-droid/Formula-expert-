@@ -90,17 +90,23 @@
         "references": {
           "fiveDigitCodes": 4973,
           "rowsMatchedToOriginalReferenceIndex": 4964,
-          "rowsWithUnresolvedCodes": 9,
+          "rowsWithCitationResolvedOutsideIndex": 6,
+          "rowsWithUnresolvedCodes": 3,
           "nonNumericNonblankRows": 6,
           "blankRows": 11,
           "unresolvedCodeCounts": {
             "45005": 2,
-            "63021": 6,
             "69016": 1
+          },
+          "externalCitationResolution": {
+            "code": "63021",
+            "rows": 6,
+            "source": "PubMed PMID 14134118; DOI 10.1111/j.2042-7158.1963.tb12887.x",
+            "scope": "Bibliographic metadata only; measurements not ingested."
           }
         }
       },
-      "curationNote": "Definitions for unit, evaluation, quality, source and reference fields are in nist-codebook.json. See reference-code-review.csv for nine unresolved reference rows. The CMC field can contain text/status values and should not be parsed blindly."
+      "curationNote": "Definitions for unit, evaluation, quality, source and reference fields are in nist-codebook.json. Of 4,973 numeric reference codes, 4,964 match the NIST index; six code-63021 rows have a citation resolved via PubMed (metadata only); three rows remain unresolved (45005 x2, 69016 x1). The CMC field can contain text/status values and should not be parsed blindly."
     },
     "CMC_Compounds.csv": {
       "gitBlobSha1": "b0ea82e9b4f9bfac6a86e44f61559ed9ccf74dcd",
@@ -129,7 +135,7 @@
     "This is a structural inventory, not row-by-row validation against the NIST publication.",
     "No code conversion, unit conversion, outlier removal, CMC string parsing, compound structure correction, or model calibration was performed.",
     "The table is a historical literature compilation with multiple methods, temperatures, additives, and source references; rows are not independent replicates.",
-    "NIST reference-code index reconciliation leaves nine rows unresolved (codes 45005, 63021, 69016); details are in reference-code-review.csv."
+    "NIST reference-code index reconciliation leaves three rows unresolved: 45005 (two rows) and 69016 (one row). Six 63021 rows are bibliographically mapped via PubMed, but paper measurements were not ingested; details are in reference-code-review.csv."
   ],
   "unitLegendSource": "https://nvlpubs.nist.gov/nistpubs/Legacy/NSRDS/nbsnsrds36.pdf"
 }
