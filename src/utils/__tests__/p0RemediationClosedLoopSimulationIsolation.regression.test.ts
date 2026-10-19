@@ -153,7 +153,10 @@ export function runP0RemediationClosedLoopTestSuite(): {
       'pH units',
       'ISO 4316 Potentiometric glass electrode',
       regRes.instrument!.instrumentId, // Real user-registered instrument
-      'QC Analyst'
+      'QC Analyst',
+      1,
+      undefined,
+      25
     );
   } catch (e) {
     // Should not throw

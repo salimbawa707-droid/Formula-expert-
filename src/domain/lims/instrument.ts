@@ -238,6 +238,18 @@ export function registerUserInstrument(reg: UserInstrumentRegistration): { succe
   if (!reg.instrumentId || !reg.name || !reg.serialNumber || !reg.manufacturer || !reg.model) {
     return { success: false, error: 'Missing required instrument registration fields.' };
   }
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const lastCalibration = new Date(`${reg.lastCalibrationDate}T00:00:00Z`);
+  const nextCalibration = new Date(`${reg.nextCalibrationDate}T00:00:00Z`);
+  if (!datePattern.test(reg.lastCalibrationDate) || !datePattern.test(reg.nextCalibrationDate) ||
+      Number.isNaN(lastCalibration.getTime()) || Number.isNaN(nextCalibration.getTime()) ||
+      lastCalibration.toISOString().slice(0, 10) !== reg.lastCalibrationDate ||
+      nextCalibration.toISOString().slice(0, 10) !== reg.nextCalibrationDate || nextCalibration <= lastCalibration) {
+    return { success: false, error: 'Calibration dates must be valid YYYY-MM-DD dates, with next calibration after last calibration.' };
+  }
+  if (!reg.calibrationCertificateReference?.trim() || !reg.registeredBy?.trim()) {
+    return { success: false, error: 'Calibration certificate reference and registering person are required.' };
+  }
 
   // Prevent collision with reference/demo system fixtures
   if (CANONICAL_LAB_INSTRUMENTS.some(i => i.instrumentId === reg.instrumentId)) {
@@ -257,7 +269,7 @@ export function registerUserInstrument(reg: UserInstrumentRegistration): { succe
     serialNumber: reg.serialNumber,
     instrumentType: reg.instrumentType,
     classification: 'USER_REGISTERED',
-    calibrationStatus: 'VALID',
+    calibrationStatus: evaluateInstrumentCalibration({ nextCalibrationDate: reg.nextCalibrationDate, isActive: true } as InstrumentRecord),
     lastCalibrationDate: reg.lastCalibrationDate,
     nextCalibrationDate: reg.nextCalibrationDate,
     calibrationCertificateReference: reg.calibrationCertificateReference,

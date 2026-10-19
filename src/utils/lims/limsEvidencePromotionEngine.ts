@@ -386,7 +386,7 @@ export function createMeasurementCorrection(
 export function buildEvidenceRecordFromMeasurement(
   measurement: LabMeasurement,
   instrument?: InstrumentRecord,
-  verifierUser = 'QC_ANALYST',
+  _reviewerUser = 'QC_ANALYST',
   previousEvidenceHash?: string
 ): EvidenceRecord {
   // Strict non-promotion guardrail for simulated measurements
@@ -406,8 +406,9 @@ export function buildEvidenceRecordFromMeasurement(
     throw new Error('AUTHORITATIVE LIMS BLOCK: Simulated / Demo / Synthetic measurements are blocked from entering the authoritative laboratory evidence chain.');
   }
 
-  const validationResult = canPromoteToLabValidated(measurement);
-  const evidenceLevel: ScientificEvidenceLevel = validationResult.allowed ? 'LAB_VALIDATED' : 'LAB_TESTED';
+  // Recording a measurement is not the senior-review action. Keep this record
+  // at LAB_TESTED until an explicit review workflow promotes it.
+  const evidenceLevel: ScientificEvidenceLevel = 'LAB_TESTED';
   const now = new Date().toISOString();
   const evidenceId = `EVID-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
@@ -433,6 +434,12 @@ export function buildEvidenceRecordFromMeasurement(
     measuredAt: measurement.measuredAt,
     instrumentId: measurement.instrumentId,
     isCalibrated,
+    temperatureC: measurement.temperatureC,
+    sampleConcentration: measurement.sampleConcentration,
+    sampleConcentrationUnit: measurement.sampleConcentrationUnit,
+    dilutionWaterHardnessPpm: measurement.dilutionWaterHardnessPpm,
+    dilutionWaterDescription: measurement.dilutionWaterDescription,
+    rawDataReference: measurement.rawDataReference,
   });
 
   const hash = computeAuditHash(payload, previousEvidenceHash);
@@ -457,9 +464,7 @@ export function buildEvidenceRecordFromMeasurement(
     instrumentCalibrationValid: isCalibrated,
     createdAt: now,
     createdBy: measurement.analyst,
-    verificationStatus: 'VERIFIED',
-    verifiedBy: verifierUser,
-    verifiedAt: now,
+    verificationStatus: 'UNVERIFIED',
     hash,
     previousHash: previousEvidenceHash,
   };

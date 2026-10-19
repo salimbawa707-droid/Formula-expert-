@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   TestTube,
   CheckCircle2,
@@ -24,8 +24,9 @@ import {
   MeasurementCorrection,
   StandardUnit
 } from '../domain/lims/types';
-import { CANONICAL_LAB_INSTRUMENTS, InstrumentRecord } from '../domain/lims/instrument';
+import { getRegisteredInstruments, InstrumentRecord, registerUserInstrument, UserInstrumentRegistration } from '../domain/lims/instrument';
 import { FORMULAS } from '../data/formulas';
+import { db } from '../db/database';
 import {
   createFormulaVersionSnapshot,
   createBatchRecord,
@@ -33,6 +34,9 @@ import {
   generateApplicableTestsForSample,
   recordLabMeasurement
 } from '../utils/lims/limsEngine';
+import { CANONICAL_TEST_METHODS } from '../domain/lims/testMethods';
+import { normalizeProductCategory } from '../domain/productTaxonomy';
+import { getValidationPlanForCategory } from '../domain/lims/validationPlan';
 import { transitionSampleStatus } from '../utils/lims/limsSampleLifecycleEngine';
 import { createAuditRecord, verifyAuditTrailChain } from '../utils/lims/limsAuditTrailEngine';
 import { buildEvidenceRecordFromMeasurement, createMeasurementCorrection } from '../utils/lims/limsEvidencePromotionEngine';
@@ -42,51 +46,101 @@ export const LimsDashboard: React.FC = () => {
   // Master active sub-section
   const [activeSection, setActiveSection] = useState<'samples' | 'tests' | 'results' | 'instruments' | 'audit' | 'release' | 'spectroscopy'>('samples');
 
-  // Initial demo data setup
+  // Formula selection is only a recipe-library reference; no physical sample is implied.
   const [selectedFormulaId, setSelectedFormulaId] = useState<string>(FORMULAS[0].id);
-  const instruments: InstrumentRecord[] = CANONICAL_LAB_INSTRUMENTS;
-
-  // LIMS Entities in local state
-  const initialFormula = FORMULAS[0];
-  const initialVersion = createFormulaVersionSnapshot(
-    initialFormula.id,
-    '1.0.0',
-    initialFormula.name,
-    initialFormula.category,
-    initialFormula.ingredients.map(i => ({
-      id: i.id,
-      name: i.name,
-      percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-      activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? 100),
-      costPerKg: Number(i.costPerKg ?? 1.0),
-      category: i.category,
-      function: i.function
-    }))
-  );
-
-  const initialBatch = createBatchRecord(initialVersion, 'BATCH-2026-HD-001', 500, 498.5, 'Lead Compounder');
-  const initialSample = drawLabSample(initialBatch, initialVersion, 'FINISHED_PRODUCT', 'Senior QC Analyst');
-  const initialTests = generateApplicableTestsForSample(initialSample, initialFormula.category);
-
-  const [formulaVersions, setFormulaVersions] = useState<FormulaVersion[]>([initialVersion]);
-  const [batches, setBatches] = useState<BatchRecord[]>([initialBatch]);
-  const [samples, setSamples] = useState<LabSample[]>([initialSample]);
-  const [tests, setTests] = useState<LabTest[]>(initialTests);
+  const selectedFormula = FORMULAS.find(formula => formula.id === selectedFormulaId) || FORMULAS[0];
+  const normalizedSelectedCategory = selectedFormula ? normalizeProductCategory(selectedFormula.category) : 'UNKNOWN_PRODUCT_CATEGORY';
+  const validationPlan = normalizedSelectedCategory === 'UNKNOWN_PRODUCT_CATEGORY' ? [] : getValidationPlanForCategory(normalizedSelectedCategory);
+  const [instruments, setInstruments] = useState<InstrumentRecord[]>(() => getRegisteredInstruments());
+  const [formulaVersions, setFormulaVersions] = useState<FormulaVersion[]>([]);
+  const [batches, setBatches] = useState<BatchRecord[]>([]);
+  const [samples, setSamples] = useState<LabSample[]>([]);
+  const [tests, setTests] = useState<LabTest[]>([]);
   const [measurements, setMeasurements] = useState<LabMeasurement[]>([]);
   const [corrections, setCorrections] = useState<MeasurementCorrection[]>([]);
   const [evidenceRecords, setEvidenceRecords] = useState<EvidenceRecord[]>([]);
-  const [auditChain, setAuditChain] = useState<LimsAuditRecord[]>([
-    createAuditRecord('SYSTEM', 'INITIALIZE_LIMS', 'BATCH', initialBatch.batchId, null, initialBatch, 'LIMS Clean-Room Genesis Initialization')
-  ]);
+  const [auditChain, setAuditChain] = useState<LimsAuditRecord[]>([]);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    db.userSettings.get('lims_session_v1')
+      .then(record => {
+        if (!active || !record || !record.value || typeof record.value !== 'object') return;
+        const saved = record.value as Partial<{
+          formulaVersions: FormulaVersion[]; batches: BatchRecord[]; samples: LabSample[];
+          tests: LabTest[]; measurements: LabMeasurement[]; corrections: MeasurementCorrection[];
+          evidenceRecords: EvidenceRecord[]; auditChain: LimsAuditRecord[];
+        }>;
+        if (Array.isArray(saved.formulaVersions)) setFormulaVersions(saved.formulaVersions);
+        if (Array.isArray(saved.batches)) setBatches(saved.batches);
+        if (Array.isArray(saved.samples)) setSamples(saved.samples);
+        if (Array.isArray(saved.tests)) setTests(saved.tests);
+        if (Array.isArray(saved.measurements)) setMeasurements(saved.measurements);
+        if (Array.isArray(saved.corrections)) setCorrections(saved.corrections);
+        if (Array.isArray(saved.evidenceRecords)) setEvidenceRecords(saved.evidenceRecords);
+        if (Array.isArray(saved.auditChain)) setAuditChain(saved.auditChain);
+      })
+      .catch(error => console.error('Failed to load local LIMS session:', error))
+      .finally(() => { if (active) setSessionReady(true); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    db.userSettings.put({
+      key: 'lims_session_v1',
+      value: { formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, auditChain },
+      updatedAt: new Date().toISOString(),
+    }).catch(error => console.error('Failed to persist local LIMS session:', error));
+  }, [sessionReady, formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, auditChain]);
 
   // UI Input states
-  const [selectedSampleId, setSelectedSampleId] = useState<string>(initialSample.sampleId);
+  const [selectedSampleId, setSelectedSampleId] = useState<string>('');
   const [measValue, setMeasValue] = useState<string>('');
   const [measUnit, setMeasUnit] = useState<StandardUnit>('pH units');
-  const [measInstrumentId, setMeasInstrumentId] = useState<string>(instruments[0]?.instrumentId || '');
-  const [measAnalyst, setMeasAnalyst] = useState<string>('QC Analyst A. Sharma');
-  const [selectedTestId, setSelectedTestId] = useState<string>(initialTests[0]?.testId || '');
+  const [measInstrumentId, setMeasInstrumentId] = useState<string>(() => getRegisteredInstruments().find(i => i.classification === 'USER_REGISTERED')?.instrumentId || '');
+  const [measAnalyst, setMeasAnalyst] = useState<string>('');
+  const [selectedTestId, setSelectedTestId] = useState<string>('');
   const [measNotes, setMeasNotes] = useState<string>('');
+  const [measTemperature, setMeasTemperature] = useState<string>('');
+  const [measSampleConcentration, setMeasSampleConcentration] = useState<string>('');
+  const [measSampleConcentrationUnit, setMeasSampleConcentrationUnit] = useState<'%' | 'g/L'>('%');
+  const [measDilutionWaterHardness, setMeasDilutionWaterHardness] = useState<string>('');
+  const [measDilutionWaterDescription, setMeasDilutionWaterDescription] = useState<string>('');
+  const [batchNumber, setBatchNumber] = useState<string>('');
+  const [batchOperator, setBatchOperator] = useState<string>('');
+  const [targetBatchKg, setTargetBatchKg] = useState<string>('');
+  const [actualBatchKg, setActualBatchKg] = useState<string>('');
+  const [limsMessage, setLimsMessage] = useState<string>('');
+  const [instrumentDraft, setInstrumentDraft] = useState<UserInstrumentRegistration>({
+    instrumentId: '', name: '', manufacturer: '', model: '', serialNumber: '', instrumentType: '',
+    calibrationCertificateReference: '', lastCalibrationDate: '', nextCalibrationDate: '',
+    location: '', custodian: '', registeredBy: '',
+  });
+
+  const updateInstrumentDraft = (field: keyof UserInstrumentRegistration, value: string) => {
+    setInstrumentDraft(current => ({ ...current, [field]: value }));
+  };
+
+  const handleRegisterInstrument = (event: React.FormEvent) => {
+    event.preventDefault();
+    const registration = { ...instrumentDraft, registeredBy: instrumentDraft.registeredBy.trim() };
+    const result = registerUserInstrument(registration);
+    if (!result.success || !result.instrument) {
+      setLimsMessage(result.error || 'Instrument registration failed.');
+      return;
+    }
+    const refreshed = getRegisteredInstruments();
+    setInstruments(refreshed);
+    setMeasInstrumentId(result.instrument.instrumentId);
+    setLimsMessage(`Instrument registered. Calibration date status: ${result.instrument.calibrationStatus}. Certificate contents and scope still require human verification.`);
+    setInstrumentDraft({
+      instrumentId: '', name: '', manufacturer: '', model: '', serialNumber: '', instrumentType: '',
+      calibrationCertificateReference: '', lastCalibrationDate: '', nextCalibrationDate: '',
+      location: '', custodian: '', registeredBy: '',
+    });
+  };
 
   // Correction Modal / Form State
   const [correctingMeas, setCorrectingMeas] = useState<LabMeasurement | null>(null);
@@ -97,27 +151,51 @@ export const LimsDashboard: React.FC = () => {
   const handleRecordMeasurement = (e: React.FormEvent) => {
     e.preventDefault();
     const test = tests.find(t => t.testId === selectedTestId);
-    if (!test) return;
+    if (!test) {
+      setLimsMessage('Select a registered sample test before entering results.');
+      return;
+    }
 
     const valNum = parseFloat(measValue);
-    if (isNaN(valNum)) return;
+    const temperatureC = parseFloat(measTemperature);
+    if (!Number.isFinite(valNum) || !Number.isFinite(temperatureC) || !measAnalyst.trim()) {
+      setLimsMessage('Enter a finite measurement, actual test temperature, and analyst identity.');
+      return;
+    }
+    const concentration = measSampleConcentration === '' ? undefined : Number(measSampleConcentration);
+    const dilutionWaterHardnessPpm = measDilutionWaterHardness === '' ? undefined : Number(measDilutionWaterHardness);
+    if (test.parameterKey === 'ph' && (
+      concentration === undefined || !Number.isFinite(concentration) || concentration <= 0 ||
+      dilutionWaterHardnessPpm === undefined || !Number.isFinite(dilutionWaterHardnessPpm) || dilutionWaterHardnessPpm < 0 ||
+      !measDilutionWaterDescription.trim()
+    )) {
+      setLimsMessage('For pH, record sample concentration, dilution-water hardness, and the water source/type.');
+      return;
+    }
 
-    const measurement = recordLabMeasurement(
-      test,
-      valNum,
-      measUnit,
-      test.parameterName,
-      measInstrumentId,
-      measAnalyst,
-      measurements.filter(m => m.testId === test.testId).length + 1,
-      instruments,
-      25.0,
-      measNotes
-    );
+    try {
+      const measurement = recordLabMeasurement(
+        test,
+        valNum,
+        measUnit,
+        CANONICAL_TEST_METHODS.find(method => method.methodId === test.testMethodId)?.procedureReference || test.parameterName,
+        measInstrumentId,
+        measAnalyst.trim(),
+        measurements.filter(m => m.testId === test.testId).length + 1,
+        instruments,
+        temperatureC,
+        measNotes,
+        {
+          sampleConcentration: concentration,
+          sampleConcentrationUnit: concentration === undefined ? undefined : measSampleConcentrationUnit,
+          dilutionWaterHardnessPpm,
+          dilutionWaterDescription: measDilutionWaterDescription.trim() || undefined,
+        }
+      );
 
-    const instrument = instruments.find(i => i.instrumentId === measInstrumentId);
-    const prevEvidence = evidenceRecords.length > 0 ? evidenceRecords[evidenceRecords.length - 1].hash : undefined;
-    const evidence = buildEvidenceRecordFromMeasurement(measurement, instrument, measAnalyst, prevEvidence);
+      const instrument = instruments.find(i => i.instrumentId === measInstrumentId);
+      const prevEvidence = evidenceRecords.length > 0 ? evidenceRecords[evidenceRecords.length - 1].hash : undefined;
+      const evidence = buildEvidenceRecordFromMeasurement(measurement, instrument, measAnalyst, prevEvidence);
 
     // Update Test Status to COMPLETED
     const updatedTests = tests.map(t =>
@@ -137,14 +215,24 @@ export const LimsDashboard: React.FC = () => {
       lastAudit
     );
 
-    setMeasurements([measurement, ...measurements]);
-    setEvidenceRecords([evidence, ...evidenceRecords]);
-    setTests(updatedTests);
-    setAuditChain([...auditChain, audit]);
+      setMeasurements([measurement, ...measurements]);
+      setEvidenceRecords([evidence, ...evidenceRecords]);
+      setTests(updatedTests);
+      setAuditChain([...auditChain, audit]);
+      setFormulaVersions(formulaVersions.map(version => version.formulaId === measurement.formulaId && version.formulaVersion === measurement.formulaVersion
+        ? { ...version, labValidationStatus: 'LAB_TEST_IN_PROGRESS', validationStatusReason: 'Physical measurements are being collected; senior review and approved acceptance criteria are still required.' }
+        : version));
+      setLimsMessage('Measurement recorded with instrument and temperature provenance.');
 
-    // Reset input
-    setMeasValue('');
-    setMeasNotes('');
+      setMeasValue('');
+      setMeasTemperature('');
+      setMeasSampleConcentration('');
+      setMeasDilutionWaterHardness('');
+      setMeasDilutionWaterDescription('');
+      setMeasNotes('');
+    } catch (error) {
+      setLimsMessage(error instanceof Error ? error.message : 'Measurement could not be recorded.');
+    }
   };
 
   // Handle Controlled Sample Status Transition
@@ -212,6 +300,8 @@ export const LimsDashboard: React.FC = () => {
 
   // Check audit chain validity
   const auditVerification = verifyAuditTrailChain(auditChain);
+  const activeTest = tests.find(test => test.testId === selectedTestId);
+  const isPHTest = activeTest?.parameterKey === 'ph';
 
   return (
     <div className="space-y-6 text-left">
@@ -233,7 +323,9 @@ export const LimsDashboard: React.FC = () => {
 
           <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs">
             <span className="text-slate-400">Audit Hash Chain:</span>
-            {auditVerification.isValid ? (
+            {auditChain.length === 0 ? (
+              <span className="text-amber-400 font-bold">No laboratory audit events yet</span>
+            ) : auditVerification.isValid ? (
               <span className="flex items-center gap-1 text-emerald-400 font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Cryptographically Intact ({auditChain.length} blocks)
               </span>
@@ -276,6 +368,12 @@ export const LimsDashboard: React.FC = () => {
         </div>
       </div>
 
+      {limsMessage && (
+        <div role="status" className="rounded-xl border border-cyan-500/30 bg-cyan-950/30 px-4 py-3 text-xs text-cyan-100">
+          {limsMessage}
+        </div>
+      )}
+
       {/* SECTION 1: SAMPLE MANAGEMENT */}
       {activeSection === 'samples' && (
         <div className="space-y-6">
@@ -291,6 +389,11 @@ export const LimsDashboard: React.FC = () => {
               </div>
 
               <div className="space-y-3">
+                {samples.length === 0 && (
+                  <p className="rounded-lg border border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-300">
+                    No physical laboratory samples are registered yet. This workspace starts empty and does not contain simulated batches or test results.
+                  </p>
+                )}
                 {samples.map(s => (
                   <div
                     key={s.sampleId}
@@ -317,6 +420,9 @@ export const LimsDashboard: React.FC = () => {
                         </div>
                         <div className="text-xs text-slate-400 mt-1">
                           Batch: <span className="text-slate-200 font-medium">{s.batchId}</span> • Formula: <span className="text-slate-200">{s.formulaId} (v{s.formulaVersion})</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1">
+                          Validation status: <span className="font-mono text-amber-300">{formulaVersions.find(v => v.formulaId === s.formulaId && v.formulaVersion === s.formulaVersion)?.labValidationStatus || 'INSUFFICIENT_EVIDENCE'}</span>
                         </div>
                       </div>
 
@@ -424,47 +530,78 @@ export const LimsDashboard: React.FC = () => {
                   <label className="block text-slate-400 mb-1">Batch Number</label>
                   <input
                     type="text"
-                    defaultValue={`BATCH-${new Date().getFullYear()}-${Math.floor(Math.random() * 900 + 100)}`}
-                    id="newBatchNo"
+                    required
+                    value={batchNumber}
+                    onChange={e => setBatchNumber(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">Sampler Operator</label>
+                  <label className="block text-slate-400 mb-1">Batch Operator / Sampler</label>
                   <input
                     type="text"
-                    defaultValue="QC Lab Analyst"
-                    id="newSampler"
+                    required
+                    value={batchOperator}
+                    onChange={e => setBatchOperator(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 mb-1">Target Batch (kg)</label>
+                    <input type="number" min="0.001" step="any" required value={targetBatchKg} onChange={e => setTargetBatchKg(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Actual Batch (kg)</label>
+                    <input type="number" min="0.001" step="any" required value={actualBatchKg} onChange={e => setActualBatchKg(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+                  </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    const f = FORMULAS.find(x => x.id === selectedFormulaId) || FORMULAS[0];
-                    const batchNo = (document.getElementById('newBatchNo') as HTMLInputElement)?.value || 'BATCH-NEW';
-                    const sampler = (document.getElementById('newSampler') as HTMLInputElement)?.value || 'QC Analyst';
+                    const f = FORMULAS.find(x => x.id === selectedFormulaId);
+                    const targetKg = Number(targetBatchKg);
+                    const actualKg = Number(actualBatchKg);
+                    if (!f || !batchNumber.trim() || !batchOperator.trim() || !Number.isFinite(targetKg) || targetKg <= 0 || !Number.isFinite(actualKg) || actualKg <= 0) {
+                      setLimsMessage('Select a formula and enter a batch number, operator, and positive target/actual batch masses.');
+                      return;
+                    }
+
+                    const composition = f.ingredients.map(i => {
+                      const percentage = i.percent ?? i.percentageInFormula ?? (i as any).percentage;
+                      return {
+                        id: i.id,
+                        name: i.name,
+                        percentage: percentage === undefined || percentage === null ? undefined : Number(percentage),
+                        activeMatterPct: i.activeMatterPct ?? i.activePercent ?? (i as any).activeDefault,
+                        costPerKg: i.costPerKg,
+                        category: i.category,
+                        function: i.function,
+                      };
+                    });
+                    if (composition.some(i => i.percentage === undefined || !Number.isFinite(i.percentage))) {
+                      setLimsMessage('Formula composition has missing or invalid ingredient percentages. Resolve them before registering a physical batch.');
+                      return;
+                    }
+                    const missingActiveMatter = composition.filter(i => i.activeMatterPct === undefined || !Number.isFinite(Number(i.activeMatterPct))).map(i => i.name);
 
                     const v = createFormulaVersionSnapshot(
                       f.id,
-                      '1.0.0',
+                      String((f as any).version ?? '1.0.0'),
                       f.name,
                       f.category,
-                      f.ingredients.map(i => ({
-                        id: i.id,
-                        name: i.name,
-                        percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-                        activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? 100),
-                        costPerKg: Number(i.costPerKg ?? 1.0),
-                        category: i.category,
-                        function: i.function
-                      }))
+                      composition as any,
+                      batchOperator.trim(),
+                      missingActiveMatter.length ? `Missing active matter data: ${missingActiveMatter.join(', ')}` : undefined,
                     );
+                    v.labValidationStatus = 'LAB_VALIDATION_REQUIRED';
+                    v.validationStatusReason = 'A physical batch was registered. Complete the generated product-specific lab tests and obtain authorized review.';
 
-                    const b = createBatchRecord(v, batchNo, 1000, 995, sampler);
-                    const s = drawLabSample(b, v, 'FINISHED_PRODUCT', sampler);
+                    const b = createBatchRecord(v, batchNumber.trim(), targetKg, actualKg, batchOperator.trim());
+                    const s = drawLabSample(b, v, 'FINISHED_PRODUCT', batchOperator.trim());
                     const newTs = generateApplicableTestsForSample(s, f.category);
 
                     setFormulaVersions([...formulaVersions, v]);
@@ -473,8 +610,14 @@ export const LimsDashboard: React.FC = () => {
                     setTests([...newTs, ...tests]);
                     setSelectedSampleId(s.sampleId);
 
-                    const audit = createAuditRecord(sampler, 'DRAW_NEW_SAMPLE', 'SAMPLE', s.sampleId, null, s, `Sample drawn for ${f.name}`);
+                    const audit = createAuditRecord(batchOperator.trim(), 'DRAW_NEW_SAMPLE', 'SAMPLE', s.sampleId, null, s, `Sample drawn for ${f.name}`);
                     setAuditChain([...auditChain, audit]);
+                    setLimsMessage(missingActiveMatter.length
+                      ? `Batch and sample registered. Active-matter specifications remain unknown for: ${missingActiveMatter.join(', ')}.`
+                      : 'Batch and sample registered from the selected formula version.');
+                    setBatchNumber('');
+                    setTargetBatchKg('');
+                    setActualBatchKg('');
                   }}
                   className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 mt-4"
                 >
@@ -489,6 +632,17 @@ export const LimsDashboard: React.FC = () => {
 
       {/* SECTION 2: ANALYTICAL TESTS */}
       {activeSection === 'tests' && (
+        <div className="space-y-5">
+        <div className="bg-[#0e1629] border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-3">
+          <h3 className="text-base font-bold text-white">Validation Plan Checklist</h3>
+          <p className="text-xs text-amber-300">Planning guide only. Items need authorized method/specification review; no pass limits are implied.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {validationPlan.map(item => <div key={item.id} className="rounded-lg border border-slate-700 p-3">
+              <div className="flex justify-between gap-2"><span className="text-sm text-white">{item.area.replaceAll('_', ' ')}</span><span className="text-[10px] text-amber-300">{item.status.replaceAll('_', ' ')}</span></div>
+              <p className="text-xs text-slate-300 mt-1">{item.purpose}</p><p className="text-[11px] text-slate-500 mt-1">{item.reviewNote}</p>
+            </div>)}
+          </div>
+        </div>
         <div className="bg-[#0e1629] border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -517,7 +671,12 @@ export const LimsDashboard: React.FC = () => {
                     <td className="p-3 font-mono text-cyan-300">{t.testId}</td>
                     <td className="p-3 font-mono text-slate-300">{t.sampleId}</td>
                     <td className="p-3 font-medium text-white">{t.parameterName}</td>
-                    <td className="p-3 text-slate-400">{t.testMethodId}</td>
+                    <td className="p-3 text-slate-400">
+                      {CANONICAL_TEST_METHODS.find(method => method.methodId === t.testMethodId)?.procedureReference || t.testMethodId}
+                      <div className="mt-1 text-[10px] font-mono text-amber-300">
+                        Acceptance: {CANONICAL_TEST_METHODS.find(method => method.methodId === t.testMethodId)?.acceptanceCriteriaStatus || 'NEEDS_EXPERT_REVIEW'}
+                      </div>
+                    </td>
                     <td className="p-3 font-mono text-amber-300">{t.standardUnit}</td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -549,6 +708,7 @@ export const LimsDashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       )}
 
@@ -612,14 +772,41 @@ export const LimsDashboard: React.FC = () => {
                   value={measInstrumentId}
                   onChange={(e) => setMeasInstrumentId(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
+                  required
                 >
-                  {instruments.map(inst => (
+                  <option value="">Select a registered physical instrument</option>
+                  {instruments.filter(inst => inst.classification === 'USER_REGISTERED').map(inst => (
                     <option key={inst.instrumentId} value={inst.instrumentId}>
                       {inst.name} [{inst.calibrationStatus}]
                     </option>
                   ))}
                 </select>
+                {!instruments.some(inst => inst.classification === 'USER_REGISTERED') && (
+                  <p className="mt-1 text-amber-300">Register your actual instrument in Instruments &amp; Calibration before entering a measurement.</p>
+                )}
               </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Actual Test Temperature (°C) *</label>
+                <input type="number" step="any" required value={measTemperature} onChange={e => setMeasTemperature(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+              </div>
+
+              {isPHTest && (
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-slate-700 p-3">
+                  <label className="text-slate-400">Sample Concentration *
+                    <input type="number" min="0.000001" step="any" required value={measSampleConcentration} onChange={e => setMeasSampleConcentration(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+                  </label>
+                  <label className="text-slate-400">Concentration Unit *
+                    <select value={measSampleConcentrationUnit} onChange={e => setMeasSampleConcentrationUnit(e.target.value as '%' | 'g/L')} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"><option value="%">% (as prepared)</option><option value="g/L">g/L</option></select>
+                  </label>
+                  <label className="text-slate-400">Dilution Water Hardness (ppm as CaCO₃) *
+                    <input type="number" min="0" step="any" required value={measDilutionWaterHardness} onChange={e => setMeasDilutionWaterHardness(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+                  </label>
+                  <label className="text-slate-400">Dilution Water Source / Type *
+                    <input required value={measDilutionWaterDescription} onChange={e => setMeasDilutionWaterDescription(e.target.value)} placeholder="Record actual water source/type" className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+                  </label>
+                </div>
+              )}
 
               <div>
                 <label className="block text-slate-400 mb-1">Analyst Identity *</label>
@@ -728,6 +915,38 @@ export const LimsDashboard: React.FC = () => {
             <span className="text-xs text-slate-400">Calibration Validates Evidence Level</span>
           </div>
 
+          <form onSubmit={handleRegisterInstrument} className="rounded-xl border border-slate-700 bg-slate-950/50 p-4 space-y-3">
+            <div>
+              <h4 className="text-sm font-bold text-white">Register your laboratory instrument</h4>
+              <p className="mt-1 text-xs text-amber-200">Only user-registered instruments can record measurements. Enter actual serial/calibration references; the app does not independently authenticate certificates or laboratory accreditation.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              {([
+                ['instrumentId', 'Instrument ID'], ['name', 'Instrument Name'], ['manufacturer', 'Manufacturer'],
+                ['model', 'Model'], ['serialNumber', 'Serial Number'], ['calibrationCertificateReference', 'Calibration Certificate Reference'],
+                ['location', 'Location'], ['custodian', 'Custodian'], ['registeredBy', 'Registered By'],
+              ] as Array<[keyof UserInstrumentRegistration, string]>).map(([field, label]) => (
+                <label key={field} className="text-slate-400">
+                  {label} *
+                  <input required value={instrumentDraft[field]} onChange={e => updateInstrumentDraft(field, e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+                </label>
+              ))}
+              <label className="text-slate-400">Instrument Type *
+                <select required value={instrumentDraft.instrumentType} onChange={e => updateInstrumentDraft('instrumentType', e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                  <option value="">Select type</option>
+                  {['pH_METER','AUTOMATED_TITRATOR','TERGOTOMETER','SPECTROMETER_FTIR','VISCOMETER','DENSITOMETER','MOISTURE_ANALYZER','BULK_DENSITY_TESTER'].map(type => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </label>
+              <label className="text-slate-400">Last Calibration Date *
+                <input type="date" required value={instrumentDraft.lastCalibrationDate} onChange={e => updateInstrumentDraft('lastCalibrationDate', e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+              </label>
+              <label className="text-slate-400">Next Calibration Due *
+                <input type="date" required value={instrumentDraft.nextCalibrationDate} onChange={e => updateInstrumentDraft('nextCalibrationDate', e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" />
+              </label>
+            </div>
+            <button type="submit" className="px-4 py-2 rounded-lg bg-cyan-500 text-slate-950 text-xs font-bold">Register Instrument</button>
+          </form>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {instruments.map(inst => (
               <div key={inst.instrumentId} className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 space-y-2">
@@ -766,10 +985,12 @@ export const LimsDashboard: React.FC = () => {
               <History className="w-5 h-5 text-cyan-400" />
               Cryptographic Audit Chain Ledger ({auditChain.length} Blocks)
             </h3>
-            <span className="text-xs font-mono text-emerald-400">Chain Integrity: Intact</span>
+            <span className={`text-xs font-mono ${auditChain.length === 0 ? 'text-amber-400' : auditVerification.isValid ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {auditChain.length === 0 ? 'No audit events yet' : auditVerification.isValid ? 'Chain Integrity: Intact' : `Chain Broken at #${auditVerification.brokenIndex}`}
+            </span>
           </div>
 
-          <div className="space-y-3">
+          {auditChain.length === 0 ? <p className="text-sm text-slate-400">No lab audit events have been recorded in this local session.</p> : <div className="space-y-3">
             {auditChain.map((entry, idx) => (
               <div key={entry.auditId} className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 font-mono text-xs space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-400">
@@ -788,7 +1009,7 @@ export const LimsDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
+          </div>}
         </div>
       )}
 

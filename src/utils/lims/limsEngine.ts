@@ -29,7 +29,7 @@ import {
   StandardUnit,
 } from '../../domain/lims/types';
 import { CANONICAL_LAB_INSTRUMENTS, getInstrumentWithCurrentStatus, InstrumentRecord } from '../../domain/lims/instrument';
-import { getApplicableTestMethods } from '../../domain/lims/testMethods';
+import { CANONICAL_TEST_METHODS, getApplicableTestMethods } from '../../domain/lims/testMethods';
 
 export interface LimsSessionState {
   formulaVersions: FormulaVersion[];
@@ -40,6 +40,13 @@ export interface LimsSessionState {
   evidenceRecords: EvidenceRecord[];
   instruments: InstrumentRecord[];
   auditTrail: LimsAuditRecord[];
+}
+
+export interface MeasurementConditions {
+  sampleConcentration?: number;
+  sampleConcentrationUnit?: '%' | 'g/L';
+  dilutionWaterHardnessPpm?: number;
+  dilutionWaterDescription?: string;
 }
 
 /**
@@ -70,6 +77,8 @@ export function createFormulaVersionSnapshot(
     physicalForm,
     createdAt: new Date().toISOString(),
     createdBy,
+    labValidationStatus: 'INSUFFICIENT_EVIDENCE',
+    validationStatusReason: 'Formula snapshot created; calculation and laboratory evidence have not been reviewed.',
     notes,
   };
 }
@@ -192,8 +201,9 @@ export function recordLabMeasurement(
   analyst: string,
   repeatNumber = 1,
   instrumentRegistry: InstrumentRecord[] = CANONICAL_LAB_INSTRUMENTS,
-  temperatureC = 25.0,
-  notes?: string
+  temperatureC: number | undefined = undefined,
+  notes?: string,
+  conditions: MeasurementConditions = {}
 ): LabMeasurement {
   // Strict non-promotion guardrail for simulated measurements
   if (
@@ -210,16 +220,32 @@ export function recordLabMeasurement(
     throw new Error('AUTHORITATIVE LIMS BLOCK: Simulated / Demo / Synthetic measurements are blocked from entering the authoritative laboratory evidence chain.');
   }
 
-  if (value === undefined || value === null || isNaN(value)) {
-    throw new Error(`Cannot record measurement for ${test.parameterName}: numeric value is required and cannot be NaN.`);
+  if (!Number.isFinite(value)) {
+    throw new Error(`Cannot record measurement for ${test.parameterName}: a finite numeric value is required.`);
   }
-  if (!unit || unit === 'none' && test.standardUnit !== 'none' && test.standardUnit !== 'pH units') {
-    throw new Error(`Cannot record measurement for ${test.parameterName}: valid scientific unit is required.`);
+  if (temperatureC === undefined || !Number.isFinite(temperatureC)) {
+    throw new Error('Cannot record measurement: actual measurement temperature is required and must be finite.');
+  }
+  if (conditions.sampleConcentration !== undefined && (!Number.isFinite(conditions.sampleConcentration) || conditions.sampleConcentration <= 0)) {
+    throw new Error('Sample concentration must be a positive finite number when provided.');
+  }
+  if (conditions.dilutionWaterHardnessPpm !== undefined && (!Number.isFinite(conditions.dilutionWaterHardnessPpm) || conditions.dilutionWaterHardnessPpm < 0)) {
+    throw new Error('Dilution water hardness must be a non-negative finite number when provided.');
+  }
+  if (!unit || unit !== test.standardUnit) {
+    throw new Error(`Cannot record measurement for ${test.parameterName}: unit must match the test unit (${test.standardUnit}).`);
   }
 
   const instrument = getInstrumentWithCurrentStatus(instrumentId, instrumentRegistry);
   if (!instrument || instrument.classification !== 'USER_REGISTERED') {
     throw new Error(`AUTHORITATIVE LIMS BLOCK: Instrument '${instrumentId}' is not a user-registered instrument (classified as ${instrument?.classification || 'UNKNOWN'}). Reference and demo instruments cannot record authoritative laboratory measurements.`);
+  }
+  const method = CANONICAL_TEST_METHODS.find(item => item.methodId === test.testMethodId);
+  if (!method) {
+    throw new Error(`Cannot record measurement: test method '${test.testMethodId}' is not in the reviewed method registry.`);
+  }
+  if (method.requiredInstrumentType && instrument.instrumentType !== method.requiredInstrumentType) {
+    throw new Error(`Instrument type mismatch: '${method.name}' requires ${method.requiredInstrumentType}, selected ${instrument.instrumentType}.`);
   }
   const calStatus = instrument.calibrationStatus;
 
@@ -244,6 +270,7 @@ export function recordLabMeasurement(
     analyst,
     repeatNumber,
     temperatureC,
+    ...conditions,
     notes,
     createdAt: now,
   };

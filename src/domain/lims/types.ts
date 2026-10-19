@@ -85,6 +85,14 @@ export type InstrumentClassification =
   | 'SIMULATED'
   | 'USER_REGISTERED';
 
+export type FormulaLabValidationStatus =
+  | 'CALCULATION_VALID'
+  | 'LAB_VALIDATION_REQUIRED'
+  | 'LAB_TEST_IN_PROGRESS'
+  | 'LAB_VALIDATED'
+  | 'LAB_FAILED'
+  | 'INSUFFICIENT_EVIDENCE';
+
 // =============================================================================
 // CORE LIMS ENTITIES
 // =============================================================================
@@ -103,6 +111,10 @@ export interface FormulaVersion {
   physicalForm: PhysicalForm;
   createdAt: string;
   createdBy: string;
+  labValidationStatus?: FormulaLabValidationStatus;
+  validationStatusReason?: string;
+  validationReviewedBy?: string;
+  validationReviewedAt?: string;
   notes?: string;
 }
 
@@ -166,7 +178,13 @@ export interface TestMethod {
   parameterName: string;
   standardUnit: StandardUnit;
   procedureReference: string; // e.g. "ISO 4316", "ASTM D1172", "CIPAC MT 75.3"
+  sourceRegistryId?: string;
   applicableProductForms: PhysicalForm | 'ALL';
+  applicableProductCategories?: ProductCategoryId[];
+  acceptanceCriteriaStatus?: 'SOURCE_DEFINED' | 'USER_DEFINED' | 'NEEDS_EXPERT_REVIEW';
+  acceptanceCriteriaSource?: string;
+  samplePreparation?: string;
+  controls?: string;
   acceptanceCriteria?: {
     min?: number;
     max?: number;
@@ -227,6 +245,10 @@ export interface LabMeasurement {
   repeatNumber: number;
   uncertainty?: number;
   temperatureC?: number;
+  sampleConcentration?: number;
+  sampleConcentrationUnit?: '%' | 'g/L';
+  dilutionWaterHardnessPpm?: number;
+  dilutionWaterDescription?: string;
   isOutlier?: boolean;
   notes?: string;
   isCorrected?: boolean;

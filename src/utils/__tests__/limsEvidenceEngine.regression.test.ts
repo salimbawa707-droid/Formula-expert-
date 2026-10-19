@@ -233,7 +233,9 @@ export function runLimsEvidenceEngineTestSuite(): TestResultSummary {
     phTest!.parameterName,
     phMeter.instrumentId,
     'Senior Analyst A. Kumar',
-    1
+    1,
+    undefined,
+    25
   );
 
   assert(
@@ -438,10 +440,10 @@ export function runLimsEvidenceEngineTestSuite(): TestResultSummary {
   // ---------------------------------------------------------------------------
   const evidenceRecord = buildEvidenceRecordFromMeasurement(meas1, phMeter, 'Senior Analyst');
   assert(
-    evidenceRecord.evidenceLevel === 'LAB_VALIDATED' &&
+    evidenceRecord.evidenceLevel === 'LAB_TESTED' &&
     evidenceRecord.instrumentCalibrationValid === true &&
-    evidenceRecord.verificationStatus === 'VERIFIED',
-    'Test 22: EvidenceRecord constructed from calibrated instrument measurement receives LAB_VALIDATED level',
+    evidenceRecord.verificationStatus === 'UNVERIFIED',
+    'Test 22: Recording a measurement does not auto-approve it or promote it to LAB_VALIDATED',
     `Evidence ID: ${evidenceRecord.evidenceId}, Level: ${evidenceRecord.evidenceLevel}`
   );
 

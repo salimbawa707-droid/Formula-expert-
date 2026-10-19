@@ -42,6 +42,7 @@ export type OverallVerdictStatus =
 export type StandardUnit = 
   | '%' 
   | 'g/mL' 
+  | 'mPa·s'
   | 'kg/m³' 
   | 'seconds' 
   | 'minutes' 
