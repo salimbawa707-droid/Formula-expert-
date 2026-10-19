@@ -102,7 +102,7 @@ Use only datasets with an explicit, reuse-compatible open data license for exter
 
 - Reconcile the source file and historical audit discrepancy.
 - Publish the canonical engine-to-evidence map and source/license register.
-- RepOD ingestion is now archived: its three CC BY 4.0 raw curves passed published MD5 checks and 202 rows were normalized with source-file and line references. Keep this set quarantined from CMC calibration until missing measurement conditions and cell constant are resolved. Next, process only explicitly licensed PSDI data and verify its original-row provenance. Keep SURFPRO and foam/rheology artifacts excluded until dataset-level licenses are confirmed.
+- RepOD's three CC BY 4.0 raw curves are archived; their published MD5 checks pass and 202 rows were normalized with source-file and line references. Keep them quarantined from CMC calibration until measurement conditions and cell constant are resolved. PSDI's CC BY 4.0 raw CMC tables are also archived, but remain quarantined for unit, reference-code and identity review. Keep SURFPRO and foam/rheology artifacts excluded until dataset-level licenses are confirmed.
 - Do not modify engine constants or claim app validation until source rights, checksums, row lineage, and holdout design pass the gates above.
 - After this map is reviewed, expand in priority order to pH/neutralization, chelation, detergency/cleaning, active-matter QC, powders, and compatibility/stability.
 
@@ -125,3 +125,12 @@ Use only datasets with an explicit, reuse-compatible open data license for exter
 - The source uses the label `conductivity [mS]`; mS is a conductance unit and the files provide no cell constant for conversion to specific conductivity. Temperature, solution matrix, instrument/electrode, replicate identifiers, and uncertainty are also absent.
 - No CMC breakpoint was estimated and no engine constants changed. The canonical engine map has no standalone CMC prediction engine; these curves cannot validate HLB, detergency, or general formulation outputs. Keep them as sourced evidence pending method metadata and a clearly matched output.
 - A deterministic offline normalizer verifies each raw MD5 and reports row counts before writing the derivative CSV.
+
+
+## Phase 2 ingestion update — PSDI historical CMC tables (2026-10-19)
+
+- Archived the two CC BY 4.0 source CSV files unchanged from PSDI-UK/psdi-datasets; their Git blob object IDs match the upstream tree and byte-level hashes are recorded in the dataset manifest.
+- The raw files contain 719 compound rows and 4,990 measurement rows. A structural audit found 4,559 numeric values in `CMC Value 1`; `CMC Units 1` uses M/D/W/P/N/blank codes. Only the meaning of M appears self-describing; no undocumented unit-code conversion was applied.
+- The compound table includes a `Method` value “LLM initial name and weight.” At least one visible candidate name/structure mismatch needs resolution against NIST references. Keep compound-to-measurement joins quarantined.
+- The NIST measurement table has free-text CMC values, method names, temperature fields and legacy author/reference codes. Do not interpret date-like codes as measurement values, merge across methods, or treat a machine-readable row as a validated app benchmark.
+- No app engine was calibrated. The current engine inventory has no standalone CMC predictor; the archive remains external evidence until exact identity, units, references, conditions and a matching engine output are resolved.
