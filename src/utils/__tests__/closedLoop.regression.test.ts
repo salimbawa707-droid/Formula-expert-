@@ -18,6 +18,7 @@
 import { ingestExperimentResult, IngestResultInput } from '../closedLoopRAndD/experimentResultIngestionEngine';
 import { comparePredictionVsMeasurement } from '../closedLoopRAndD/predictionVsMeasurementEngine';
 import { isParameterApplicable, classifyScientificDeviation } from '../closedLoopRAndD/scientificDeviationEngine';
+import { evaluateMeasurementsBatch } from '../closedLoopRAndD/measurementEvaluationEngine';
 import { determineFeedbackDecision } from '../closedLoopRAndD/feedbackDecisionEngine';
 import { generateReformulationCandidate } from '../closedLoopRAndD/reformulationFeedbackEngine';
 import { applyFeedbackToFormulation } from '../closedLoopRAndD/optimizationFeedbackBridge';
@@ -133,6 +134,24 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
     compPH.uncertaintyFormatted === '±0.05 pH units');
 
   // ==========================================================================
+  const emptyBatchEval = evaluateMeasurementsBatch({
+    category: 'LAUNDRY_LIQUID' as any,
+    physicalForm: 'LIQUID',
+    observedMeasurements: [],
+  });
+  assert('B2. Empty measurement batch is INSUFFICIENT_DATA and never passes',
+    emptyBatchEval.overallStatus === 'INSUFFICIENT_DATA' && !emptyBatchEval.overallPass);
+
+  const noSpecBatchEval = evaluateMeasurementsBatch({
+    category: 'LAUNDRY_LIQUID' as any,
+    physicalForm: 'LIQUID',
+    observedMeasurements: [observedPH],
+  });
+  assert('B3. Missing specification limits cannot produce an overall pass',
+    noSpecBatchEval.overallStatus === 'INSUFFICIENT_DATA' &&
+    noSpecBatchEval.insufficientDataCount === 1 &&
+    !noSpecBatchEval.overallPass);
+
   // SECTION C: REPLICATE STATISTICS & UNCERTAINTY
   // ==========================================================================
   const obsNoUncertainty = { ...observedPH, uncertainty: undefined };
