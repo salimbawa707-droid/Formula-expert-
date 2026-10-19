@@ -41,6 +41,7 @@ import { PlayBillingBridge } from './services/playBillingBridge';
 import PHEngineView from './components/PHEngineView';
 import LabAutomationDashboard from './components/LabAutomationDashboard';
 import ClosedLoopDashboard from './components/ClosedLoopDashboard';
+import LabOperationsHub from './components/LabOperationsHub';
 import { ScienceLabWorkbench } from './components/ScienceLabWorkbench';
 import { GeminiChemistryChatModal } from './components/GeminiChemistryChatModal';
 import { ScientificRoadmapVault } from './components/ScientificRoadmapVault';
@@ -412,6 +413,7 @@ export type TabType =
   | 'docs_library'
   | 'lab_notebook'
   | 'lab_automation'
+  | 'lab_operations'
   | 'closed_loop'
   | 'validation_suite'
   | 'scientific_vault';
@@ -601,6 +603,7 @@ export default function App() {
     { id: 'docs_library' as TabType, label: t.docs, icon: FileText, accent: "text-indigo-400" },
     { id: 'lab_notebook' as TabType, label: t.labNotebook, icon: PenTool, accent: "text-rose-400" },
     { id: 'lab_automation' as TabType, label: "Lab Automation", icon: Cpu, accent: "text-amber-400" },
+    { id: 'lab_operations' as TabType, label: "Lab-to-Production", icon: FlaskConical, accent: "text-cyan-400" },
     { id: 'closed_loop' as TabType, label: "Closed-Loop R&D", icon: Workflow, accent: "text-teal-400" },
     { id: 'validation_suite' as TabType, label: t.validation, icon: Award, accent: "text-purple-400" },
     { id: 'scientific_vault' as TabType, label: "Evidence Vault & Roadmap", icon: Database, accent: "text-amber-400" },
@@ -885,6 +888,10 @@ export default function App() {
 
           {activeTab === 'lab_automation' && (
             <LabAutomationDashboard />
+          )}
+
+          {activeTab === 'lab_operations' && (
+            <LabOperationsHub />
           )}
 
           {activeTab === 'closed_loop' && (

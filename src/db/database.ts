@@ -63,6 +63,49 @@ export interface LabNoteRecord {
   updatedAt: string;
 }
 
+export interface LabMeasurementRecord {
+  id: string;
+  sampleId: string;
+  batchNumber: string;
+  parameter: string;
+  value: number;
+  unit: string;
+  method: string;
+  instrumentId: string;
+  calibrationValid: boolean;
+  analyst: string;
+  measuredAt: string;
+  evidenceLevel: 'MEASURED' | 'UNVERIFIED';
+  sourceFile?: string;
+  importedAt: string;
+}
+
+export interface RawMaterialLotRecord {
+  id: string;
+  materialName: string;
+  lotNumber: string;
+  supplier: string;
+  receivedKg: number;
+  expiryDate?: string;
+  coaFileName?: string;
+  coaReviewed: boolean;
+  status: 'QUARANTINE' | 'RELEASED' | 'REJECTED';
+  receivedAt: string;
+}
+
+export interface StabilityStudyRecord {
+  id: string;
+  formulaName: string;
+  batchNumber: string;
+  sampleId: string;
+  condition: string;
+  startDate: string;
+  intervalDays: number[];
+  observations: Array<{ day: number; observedAt?: string; result?: string; status: 'DUE' | 'RECORDED' }>;
+  status: 'ACTIVE' | 'COMPLETED' | 'ON_HOLD';
+  createdAt: string;
+}
+
 export interface FormulaVersionRecord {
   id: string;
   formulaId: string;
@@ -97,6 +140,9 @@ export class DetergentDatabase extends Dexie {
   productionRuns!: Table<ProductionRunRecord, string>;
   labNotes!: Table<LabNoteRecord, string>;
   formulaVersions!: Table<FormulaVersionRecord, string>;
+  labMeasurements!: Table<LabMeasurementRecord, string>;
+  rawMaterialLots!: Table<RawMaterialLotRecord, string>;
+  stabilityStudies!: Table<StabilityStudyRecord, string>;
   specRecords!: Table<SpecRecord, string>;
   userSettings!: Table<UserSettingRecord, string>;
 
@@ -111,6 +157,19 @@ export class DetergentDatabase extends Dexie {
       formulaVersions: 'id, formulaId, versionNumber, timestamp',
       specRecords: 'category, updatedAt',
       userSettings: 'key, updatedAt'
+    });
+
+    this.version(2).stores({
+      formulas: 'id, name, category, productType, isFavorite, updatedAt',
+      inventory: 'id, name, category, stockKg, updatedAt',
+      productionRuns: 'id, batchNumber, formulaId, date, status, createdAt',
+      labNotes: 'id, title, date, formulaId, createdAt',
+      formulaVersions: 'id, formulaId, versionNumber, timestamp',
+      specRecords: 'category, updatedAt',
+      userSettings: 'key, updatedAt',
+      labMeasurements: 'id, sampleId, batchNumber, parameter, measuredAt, evidenceLevel',
+      rawMaterialLots: 'id, materialName, lotNumber, supplier, expiryDate, status, receivedAt',
+      stabilityStudies: 'id, formulaName, batchNumber, sampleId, status, createdAt'
     });
   }
 }
