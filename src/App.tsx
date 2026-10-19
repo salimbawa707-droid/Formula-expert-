@@ -20,7 +20,8 @@ import {
   Cpu,
   Workflow,
   Atom,
-  Bot
+  Bot,
+  Database
 } from 'lucide-react';
 
 import AIFormulator from './components/AIFormulator';
@@ -42,6 +43,7 @@ import LabAutomationDashboard from './components/LabAutomationDashboard';
 import ClosedLoopDashboard from './components/ClosedLoopDashboard';
 import { ScienceLabWorkbench } from './components/ScienceLabWorkbench';
 import { GeminiChemistryChatModal } from './components/GeminiChemistryChatModal';
+import { ScientificRoadmapVault } from './components/ScientificRoadmapVault';
 
 import { ActiveFormulaState } from './types';
 
@@ -411,7 +413,8 @@ export type TabType =
   | 'lab_notebook'
   | 'lab_automation'
   | 'closed_loop'
-  | 'validation_suite';
+  | 'validation_suite'
+  | 'scientific_vault';
 
 export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -600,6 +603,7 @@ export default function App() {
     { id: 'lab_automation' as TabType, label: "Lab Automation", icon: Cpu, accent: "text-amber-400" },
     { id: 'closed_loop' as TabType, label: "Closed-Loop R&D", icon: Workflow, accent: "text-teal-400" },
     { id: 'validation_suite' as TabType, label: t.validation, icon: Award, accent: "text-purple-400" },
+    { id: 'scientific_vault' as TabType, label: "Evidence Vault & Roadmap", icon: Database, accent: "text-amber-400" },
   ];
 
   return (
@@ -889,6 +893,10 @@ export default function App() {
 
           {activeTab === 'validation_suite' && (
             <MathTestSuite />
+          )}
+
+          {activeTab === 'scientific_vault' && (
+            <ScientificRoadmapVault />
           )}
 
         </div>

@@ -218,56 +218,56 @@ export function runDeepScientificAnalysis(snapshot: {
   };
 }
 
-const DEFAULT_FORMULAS: Record<string, Array<{ name: string; percentage: number; activeMatterPct: number; role?: string; costPerKg?: number }>> = {
+const DEFAULT_FORMULAS: Record<string, Array<{ name: string; percentage: number; activeMatterPct: number; role?: string; costPerKg?: number | null }>> = {
   "Laundry Powder": [
-    { name: "Linear Alkylbenzene Sulfonic Acid (LABSA 90%)", percentage: 12.0, activeMatterPct: 90, role: "Anionic Surfactant", costPerKg: 0 },
-    { name: "Sodium Carbonate (Dense Soda Ash)", percentage: 32.0, activeMatterPct: 100, role: "Builder (Precipitation)", costPerKg: 0 },
-    { name: "Zeolite 4A (Detergent Builder)", percentage: 15.0, activeMatterPct: 100, role: "Builder (Ion-Exchange)", costPerKg: 0 },
-    { name: "Sodium Percarbonate (Coated Oxygen Bleach)", percentage: 10.0, activeMatterPct: 100, role: "Bleaching Agent", costPerKg: 0 },
-    { name: "Tetraacetylethylenediamine (TAED)", percentage: 2.0, activeMatterPct: 100, role: "Bleach Activator", costPerKg: 0 },
-    { name: "Acrylic-Maleic Copolymer (Anti-Redeposition)", percentage: 2.0, activeMatterPct: 100, role: "Anti-redeposition Polymer", costPerKg: 0 },
-    { name: "Sodium Silicate Powder (Processing Aid)", percentage: 4.0, activeMatterPct: 100, role: "Processing Aid", costPerKg: 0 },
-    { name: "Optical Brightener (CBS-X)", percentage: 0.15, activeMatterPct: 100, role: "Optical Brightener", costPerKg: 0 },
-    { name: "Protease Enzyme Granules", percentage: 0.80, activeMatterPct: 100, role: "Enzyme", costPerKg: 0 },
-    { name: "Fragrance Encapsulates", percentage: 0.35, activeMatterPct: 100, role: "Fragrance", costPerKg: 0 },
-    { name: "Blue / Red Speckles", percentage: 0.70, activeMatterPct: 100, role: "Colorant", costPerKg: 0 },
-    { name: "Sodium Sulphate Anhydrous (Filler / Bulking)", percentage: 21.0, activeMatterPct: 100, role: "Filler / Bulking Agent", costPerKg: 0 }
+    { name: "Linear Alkylbenzene Sulfonic Acid (LABSA 90%)", percentage: 12.0, activeMatterPct: 90, role: "Anionic Surfactant", costPerKg: null },
+    { name: "Sodium Carbonate (Dense Soda Ash)", percentage: 32.0, activeMatterPct: 100, role: "Builder (Precipitation)", costPerKg: null },
+    { name: "Zeolite 4A (Detergent Builder)", percentage: 15.0, activeMatterPct: 100, role: "Builder (Ion-Exchange)", costPerKg: null },
+    { name: "Sodium Percarbonate (Coated Oxygen Bleach)", percentage: 10.0, activeMatterPct: 100, role: "Bleaching Agent", costPerKg: null },
+    { name: "Tetraacetylethylenediamine (TAED)", percentage: 2.0, activeMatterPct: 100, role: "Bleach Activator", costPerKg: null },
+    { name: "Acrylic-Maleic Copolymer (Anti-Redeposition)", percentage: 2.0, activeMatterPct: 100, role: "Anti-redeposition Polymer", costPerKg: null },
+    { name: "Sodium Silicate Powder (Processing Aid)", percentage: 4.0, activeMatterPct: 100, role: "Processing Aid", costPerKg: null },
+    { name: "Optical Brightener (CBS-X)", percentage: 0.15, activeMatterPct: 100, role: "Optical Brightener", costPerKg: null },
+    { name: "Protease Enzyme Granules", percentage: 0.80, activeMatterPct: 100, role: "Enzyme", costPerKg: null },
+    { name: "Fragrance Encapsulates", percentage: 0.35, activeMatterPct: 100, role: "Fragrance", costPerKg: null },
+    { name: "Blue / Red Speckles", percentage: 0.70, activeMatterPct: 100, role: "Colorant", costPerKg: null },
+    { name: "Sodium Sulphate Anhydrous (Filler / Bulking)", percentage: 21.0, activeMatterPct: 100, role: "Filler / Bulking Agent", costPerKg: null }
   ],
   "Laundry Liquid": [
-    { name: "Water (Aqua, Demineralized)", percentage: 70.0, activeMatterPct: 0, role: "Solvent", costPerKg: 0 },
-    { name: "Linear Alkylbenzene Sulfonic Acid (LABSA 90%)", percentage: 8.0, activeMatterPct: 90, role: "Anionic Surfactant", costPerKg: 0 },
-    { name: "Sodium Hydroxide (Caustic Soda Lye 100%)", percentage: 1.05, activeMatterPct: 100, role: "pH Adjuster", costPerKg: 0 },
-    { name: "Sodium Laureth Sulfate (SLES 70%)", percentage: 10.0, activeMatterPct: 70, role: "Anionic Surfactant", costPerKg: 0 },
-    { name: "Cocamidopropyl Betaine (CAPB 30%)", percentage: 3.0, activeMatterPct: 30, role: "Amphoteric Surfactant", costPerKg: 0 },
-    { name: "Sodium Chloride (Salt)", percentage: 1.5, activeMatterPct: 100, role: "Thickener", costPerKg: 0 },
-    { name: "Sodium Citrate (Dihydrate)", percentage: 1.0, activeMatterPct: 100, role: "Chelator", costPerKg: 0 },
-    { name: "Optical Brightener (CBS-X)", percentage: 0.15, activeMatterPct: 100, role: "Additive", costPerKg: 0 },
-    { name: "Phenoxyethanol (Safe Preservative)", percentage: 0.2, activeMatterPct: 100, role: "Preservative", costPerKg: 0 },
-    { name: "Fragrance (Floral / Ocean Fresh)", percentage: 0.3, activeMatterPct: 100, role: "Fragrance", costPerKg: 0 },
-    { name: "Blue / Violet Color Dye", percentage: 0.005, activeMatterPct: 100, role: "Colorant", costPerKg: 0 },
-    { name: "Water (Aqua, Balance to 100%)", percentage: 4.795, activeMatterPct: 0, role: "Solvent", costPerKg: 0 }
+    { name: "Water (Aqua, Demineralized)", percentage: 70.0, activeMatterPct: 0, role: "Solvent", costPerKg: null },
+    { name: "Linear Alkylbenzene Sulfonic Acid (LABSA 90%)", percentage: 8.0, activeMatterPct: 90, role: "Anionic Surfactant", costPerKg: null },
+    { name: "Sodium Hydroxide (Caustic Soda Lye 100%)", percentage: 1.05, activeMatterPct: 100, role: "pH Adjuster", costPerKg: null },
+    { name: "Sodium Laureth Sulfate (SLES 70%)", percentage: 10.0, activeMatterPct: 70, role: "Anionic Surfactant", costPerKg: null },
+    { name: "Cocamidopropyl Betaine (CAPB 30%)", percentage: 3.0, activeMatterPct: 30, role: "Amphoteric Surfactant", costPerKg: null },
+    { name: "Sodium Chloride (Salt)", percentage: 1.5, activeMatterPct: 100, role: "Thickener", costPerKg: null },
+    { name: "Sodium Citrate (Dihydrate)", percentage: 1.0, activeMatterPct: 100, role: "Chelator", costPerKg: null },
+    { name: "Optical Brightener (CBS-X)", percentage: 0.15, activeMatterPct: 100, role: "Additive", costPerKg: null },
+    { name: "Phenoxyethanol (Safe Preservative)", percentage: 0.2, activeMatterPct: 100, role: "Preservative", costPerKg: null },
+    { name: "Fragrance (Floral / Ocean Fresh)", percentage: 0.3, activeMatterPct: 100, role: "Fragrance", costPerKg: null },
+    { name: "Blue / Violet Color Dye", percentage: 0.005, activeMatterPct: 100, role: "Colorant", costPerKg: null },
+    { name: "Water (Aqua, Balance to 100%)", percentage: 4.795, activeMatterPct: 0, role: "Solvent", costPerKg: null }
   ],
   "Dishwash Liquid": [
-    { name: "Water (Aqua, Demineralized)", percentage: 65.0, activeMatterPct: 0, role: "Solvent", costPerKg: 0 },
-    { name: "Linear Alkylbenzene Sulfonic Acid (LABSA 90%)", percentage: 12.0, activeMatterPct: 90, role: "Anionic Surfactant", costPerKg: 0 },
-    { name: "Sodium Hydroxide (Caustic Soda Lye 100%)", percentage: 1.55, activeMatterPct: 100, role: "pH Adjuster", costPerKg: 0 },
-    { name: "Sodium Laureth Sulfate (SLES 70%)", percentage: 8.0, activeMatterPct: 70, role: "Anionic Surfactant", costPerKg: 0 },
-    { name: "Cocamidopropyl Betaine (CAPB 30%)", percentage: 4.0, activeMatterPct: 30, role: "Amphoteric Surfactant", costPerKg: 0 },
-    { name: "Sodium Chloride (Salt)", percentage: 2.0, activeMatterPct: 100, role: "Thickener", costPerKg: 0 },
-    { name: "Magnesium Sulfate (Epsom Salt)", percentage: 1.0, activeMatterPct: 100, role: "Electrolyte", costPerKg: 0 },
-    { name: "Sodium Benzoate (Safe Eco Preservative)", percentage: 0.2, activeMatterPct: 100, role: "Preservative", costPerKg: 0 },
-    { name: "Lemon Fragrance / Essential Oil", percentage: 0.25, activeMatterPct: 100, role: "Fragrance", costPerKg: 0 },
-    { name: "Yellow Food Grade Dye", percentage: 0.005, activeMatterPct: 100, role: "Colorant", costPerKg: 0 },
-    { name: "Water (Aqua, Balance to 100%)", percentage: 5.995, activeMatterPct: 0, role: "Solvent", costPerKg: 0 }
+    { name: "Water (Aqua, Demineralized)", percentage: 65.0, activeMatterPct: 0, role: "Solvent", costPerKg: null },
+    { name: "Linear Alkylbenzene Sulfonic Acid (LABSA 90%)", percentage: 12.0, activeMatterPct: 90, role: "Anionic Surfactant", costPerKg: null },
+    { name: "Sodium Hydroxide (Caustic Soda Lye 100%)", percentage: 1.55, activeMatterPct: 100, role: "pH Adjuster", costPerKg: null },
+    { name: "Sodium Laureth Sulfate (SLES 70%)", percentage: 8.0, activeMatterPct: 70, role: "Anionic Surfactant", costPerKg: null },
+    { name: "Cocamidopropyl Betaine (CAPB 30%)", percentage: 4.0, activeMatterPct: 30, role: "Amphoteric Surfactant", costPerKg: null },
+    { name: "Sodium Chloride (Salt)", percentage: 2.0, activeMatterPct: 100, role: "Thickener", costPerKg: null },
+    { name: "Magnesium Sulfate (Epsom Salt)", percentage: 1.0, activeMatterPct: 100, role: "Electrolyte", costPerKg: null },
+    { name: "Sodium Benzoate (Safe Eco Preservative)", percentage: 0.2, activeMatterPct: 100, role: "Preservative", costPerKg: null },
+    { name: "Lemon Fragrance / Essential Oil", percentage: 0.25, activeMatterPct: 100, role: "Fragrance", costPerKg: null },
+    { name: "Yellow Food Grade Dye", percentage: 0.005, activeMatterPct: 100, role: "Colorant", costPerKg: null },
+    { name: "Water (Aqua, Balance to 100%)", percentage: 5.995, activeMatterPct: 0, role: "Solvent", costPerKg: null }
   ],
   "Floor Cleaner": [
-    { name: "Water (Aqua, Demineralized)", percentage: 90.0, activeMatterPct: 0, role: "Solvent", costPerKg: 0 },
-    { name: "Linear Alcohol Ethoxylate (LAE-9)", percentage: 3.5, activeMatterPct: 100, role: "Nonionic Surfactant", costPerKg: 0 },
-    { name: "Benzalkonium Chloride (BKC 50%)", percentage: 2.0, activeMatterPct: 50, role: "Cationic Disinfectant", costPerKg: 0 },
-    { name: "Isopropyl Alcohol (IPA)", percentage: 1.5, activeMatterPct: 100, role: "Solvent", costPerKg: 0 },
-    { name: "Pine / Citrus Fragrance", percentage: 0.5, activeMatterPct: 100, role: "Fragrance", costPerKg: 0 },
-    { name: "Green Color Dye", percentage: 0.005, activeMatterPct: 100, role: "Colorant", costPerKg: 0 },
-    { name: "Water (Aqua, Balance to 100%)", percentage: 2.495, activeMatterPct: 0, role: "Solvent", costPerKg: 0 }
+    { name: "Water (Aqua, Demineralized)", percentage: 90.0, activeMatterPct: 0, role: "Solvent", costPerKg: null },
+    { name: "Linear Alcohol Ethoxylate (LAE-9)", percentage: 3.5, activeMatterPct: 100, role: "Nonionic Surfactant", costPerKg: null },
+    { name: "Benzalkonium Chloride (BKC 50%)", percentage: 2.0, activeMatterPct: 50, role: "Cationic Disinfectant", costPerKg: null },
+    { name: "Isopropyl Alcohol (IPA)", percentage: 1.5, activeMatterPct: 100, role: "Solvent", costPerKg: null },
+    { name: "Pine / Citrus Fragrance", percentage: 0.5, activeMatterPct: 100, role: "Fragrance", costPerKg: null },
+    { name: "Green Color Dye", percentage: 0.005, activeMatterPct: 100, role: "Colorant", costPerKg: null },
+    { name: "Water (Aqua, Balance to 100%)", percentage: 2.495, activeMatterPct: 0, role: "Solvent", costPerKg: null }
   ]
 };
 
@@ -315,7 +315,7 @@ export default function FormulaExpert({
         id: ing.id || `ing-${Date.now()}-${idx}`,
         percentage: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
         activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? getDefaultActiveMatter(ing.name || "")),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0,
+        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
         role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
       }));
     }
@@ -327,7 +327,7 @@ export default function FormulaExpert({
       percentage: item.percentage,
       activeMatterPct: item.activeMatterPct,
       role: item.role || getAuditedIngredientCategory(item.name),
-      costPerKg: 0
+      costPerKg: item.costPerKg ?? null
     }));
   });
 
@@ -374,7 +374,7 @@ export default function FormulaExpert({
         id: ing.id || `ing-${Date.now()}-${idx}`,
         percentage: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
         activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? getDefaultActiveMatter(ing.name || "")),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0,
+        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
         role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
       }));
     } else {
@@ -386,7 +386,7 @@ export default function FormulaExpert({
         percentage: item.percentage,
         activeMatterPct: item.activeMatterPct,
         role: item.role || getAuditedIngredientCategory(item.name),
-        costPerKg: 0
+        costPerKg: item.costPerKg ?? null
       }));
     }
 
@@ -435,7 +435,7 @@ export default function FormulaExpert({
         id: ing.id || `ing-${Date.now()}-${idx}`,
         percentage: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
         activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? getDefaultActiveMatter(ing.name || "")),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0,
+        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
         role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
       }));
 
@@ -475,9 +475,10 @@ export default function FormulaExpert({
           const match = prev.find(
             (p) => p.name.trim().toLowerCase() === item.name.trim().toLowerCase()
           );
-          const preservedPrice = match && typeof match.costPerKg === 'number' && !isNaN(match.costPerKg) && match.costPerKg > 0
+          const hasPreserved = match && typeof match.costPerKg === 'number' && !isNaN(match.costPerKg) && match.costPerKg >= 0;
+          const preservedPrice = hasPreserved
             ? match.costPerKg
-            : (item.costPerKg || 0);
+            : (item.costPerKg ?? null);
           return {
             id: `ing-${Date.now()}-${idx}`,
             name: item.name,
@@ -491,7 +492,7 @@ export default function FormulaExpert({
     }
   };
 
-  // Add New Ingredient Row (Initializes with costPerKg: 0)
+  // Add New Ingredient Row (Initializes with unconfigured costPerKg: null)
   const handleAddIngredient = () => {
     const newIng: FormulationIngredient = {
       id: `ing-${Date.now()}-${ingredients.length}`,
@@ -499,7 +500,7 @@ export default function FormulaExpert({
       percentage: 0,
       activeMatterPct: 100,
       role: "Additive",
-      costPerKg: 0
+      costPerKg: null
     };
     setIngredients((prev) => [...prev, newIng]);
   };
@@ -522,7 +523,7 @@ export default function FormulaExpert({
           role: selected.category || selected.function || getAuditedIngredientCategory(selected.name),
           function: selected.function,
           activeMatterPct: isUnknownActive ? 0 : (selected.activeDefault ?? selected.activeMatter ?? 100),
-          costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0,
+          costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
           hlb: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
           hlbValue: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
           casNumber: selected.casNumber,
@@ -539,7 +540,12 @@ export default function FormulaExpert({
     setIngredients((prev) =>
       prev.map((ing) => {
         if (ing.id !== id) return ing;
-        const updated = { ...ing, [field]: field === "costPerKg" ? Math.max(0, Number(val) || 0) : val };
+        const updated = {
+          ...ing,
+          [field]: field === "costPerKg"
+            ? (val === "" || val === null || val === undefined || isNaN(Number(val)) ? null : Math.max(0, Number(val)))
+            : val
+        };
         if (field === "name") {
           const matched = UNIVERSAL_INGREDIENTS.find(
             (u) => u.name.toLowerCase() === String(val).toLowerCase() || u.id.toLowerCase() === String(val).toLowerCase()
@@ -552,7 +558,7 @@ export default function FormulaExpert({
             updated.role = matched.category || matched.function || getAuditedIngredientCategory(matched.name);
             updated.function = matched.function;
             // Retain user's entered price without overwriting from library
-            updated.costPerKg = ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0;
+            updated.costPerKg = ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null;
             if (matched.hlb !== null && matched.hlb !== undefined) {
               updated.hlb = matched.hlb;
               updated.hlbValue = matched.hlb;
@@ -567,7 +573,7 @@ export default function FormulaExpert({
             updated.activeMatterPct = autoActive;
             updated.role = autoCat;
             // Retain user price
-            updated.costPerKg = ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : null;
+            updated.costPerKg = ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null;
           }
         }
         return updated;

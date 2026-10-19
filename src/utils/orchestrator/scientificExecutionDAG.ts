@@ -198,6 +198,7 @@ export interface ScientificExecutionState {
   warnings: any[];
   errors: any[];
   blockingIssues: any[];
+  stageDiagnostics: any[];
 }
 
 // =============================================================================
@@ -306,9 +307,11 @@ export class ScientificExecutionDAG {
         state.resolvedIngredients = state.normalizedIngredients.map((ing) => {
           const cleanName = ing.name.toLowerCase();
           const matchedUniv = UNIVERSAL_INGREDIENTS.find(
-            u => u.name.toLowerCase() === cleanName ||
+            u => (ing.canonicalIngredientId && u.id === ing.canonicalIngredientId) ||
+                 u.name.toLowerCase() === cleanName ||
                  u.id.toLowerCase() === cleanName ||
                  (u.inciName && u.inciName.toLowerCase() === cleanName) ||
+                 ((cleanName === 'sodium bicarbonate' || cleanName === 'baking soda') && u.id === 'sodium-bicarbonate') ||
                  (cleanName.includes('water') && (u.id === 'dm-water' || u.name.toLowerCase().includes('demineralized water')))
           );
 
@@ -1217,7 +1220,8 @@ export class ScientificExecutionDAG {
 
       warnings: [],
       errors: [],
-      blockingIssues: []
+      blockingIssues: [],
+      stageDiagnostics: []
     };
 
     const sortedNodeIds = this.sortNodes();
@@ -1300,5 +1304,18 @@ export class ScientificExecutionDAG {
     }
 
     return { state, trace };
+  }
+
+  /**
+   * Resets intermediate state results to ensure scientific calculation consistency on input changes.
+   */
+  public resetState(state: ScientificExecutionState) {
+    state.resolvedIngredients = [];
+    state.finalEquilibriumPH = null;
+    state.phIonicStrength = 0;
+    state.chelationResult = undefined;
+    state.compatibilityResult = undefined;
+    state.viscosityResult = undefined;
+    state.stageDiagnostics = [];
   }
 }

@@ -1215,6 +1215,8 @@ const RAW_FORMULAS: FormulaItem[] = [
       },
       {
         "id": "f11-bicarb",
+        "canonicalIngredientId": "sodium-bicarbonate",
+        "casNumber": "144-55-8",
         "name": "Sodium Bicarbonate",
         "category": "Alkaline Builder",
         "percent": 1.5,
@@ -1775,6 +1777,8 @@ const RAW_FORMULAS: FormulaItem[] = [
       },
       {
         "id": "4",
+        "canonicalIngredientId": "sodium-bicarbonate",
+        "casNumber": "144-55-8",
         "name": "Sodium Bicarbonate",
         "category": "Alkaline Builder",
         "percent": 1,
@@ -2219,6 +2223,8 @@ const RAW_FORMULAS: FormulaItem[] = [
       },
       {
         "id": "4",
+        "canonicalIngredientId": "sodium-bicarbonate",
+        "casNumber": "144-55-8",
         "name": "Sodium Bicarbonate",
         "category": "Alkaline Builder",
         "percent": 0.5,
@@ -2415,6 +2421,8 @@ const RAW_FORMULAS: FormulaItem[] = [
       },
       {
         "id": "f26-bicarb",
+        "canonicalIngredientId": "sodium-bicarbonate",
+        "casNumber": "144-55-8",
         "name": "Sodium Bicarbonate",
         "category": "Alkaline Builder",
         "percent": 0.3,
@@ -3394,6 +3402,8 @@ const RAW_FORMULAS: FormulaItem[] = [
       },
       {
         "id": "6",
+        "canonicalIngredientId": "sodium-bicarbonate",
+        "casNumber": "144-55-8",
         "name": "Sodium Bicarbonate",
         "category": "Alkaline Builder",
         "percent": 1.5,

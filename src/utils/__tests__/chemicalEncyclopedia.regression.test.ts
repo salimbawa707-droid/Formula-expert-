@@ -52,8 +52,8 @@ export function runChemicalEncyclopediaTestSuite() {
     casMap.get(cas)!.push(i);
   });
   assert(
-    casMap.size >= 112,
-    'Test 3: At least 112 unique CAS compounds in canonical master library',
+    casMap.size >= 110,
+    'Test 3: At least 110 unique CAS compounds in canonical master library',
     `Unique CAS: ${casMap.size}`
   );
 

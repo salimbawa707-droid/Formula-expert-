@@ -1,1 +1,12 @@
-
+{
+  "projectId": "imagined-zone-cv4kj",
+  "appId": "1:678655473700:web:d29cf4d8feff5e983240b1",
+  "apiKey": "AIzaSyCSoBbyRjYpzWIjsHbKLAfgWbh6SxcONMc",
+  "authDomain": "imagined-zone-cv4kj.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-formulaexpert-1b72894a-9fa1-4c13-a705-8b8d50c5196c",
+  "storageBucket": "imagined-zone-cv4kj.firebasestorage.app",
+  "messagingSenderId": "678655473700",
+  "measurementId": "",
+  "oAuthClientId": "678655473700-c21bjeiv33paeqeia7aa7um22mh85aia.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
+}

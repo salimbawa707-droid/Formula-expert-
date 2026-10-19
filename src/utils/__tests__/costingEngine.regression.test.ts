@@ -196,6 +196,98 @@ export function runCostingEngineTestSuite() {
   assertNear('Test 10: Add/Delete', 'Cost after adding CAPB is 2950.00', afterAddCost, 2950.00);
   assertNear('Test 10: Add/Delete', 'Cost after deleting LABSA is 1550.00', afterDeleteCost, 1550.00);
 
+  // =========================================================================
+  // TEST 11 — PHASE 1: UNKNOWN INGREDIENT PRICE REMAINS NULL (NEVER ₹0)
+  // =========================================================================
+  const unknownPriceFormula: FormulationIngredient[] = [
+    { id: 'u1', name: 'Specialty Polymer', percentage: 5, costPerKg: null },
+    { id: 'u2', name: 'Bio-Enzyme Blend', percentage: 2, costPerKg: undefined },
+    { id: 'u3', name: 'Botanical Extract', percentage: 1, costPerKg: '' as any },
+    { id: 'u4', name: 'Fragrance Premium', percentage: 2, costPerKg: NaN }
+  ];
+  const report11 = calculateFormulaCost(unknownPriceFormula, 100);
+  assertEqual('Test 11: Unknown Price Null', 'u1 costPerKg remains null', report11.ingredientCosts[0].userPrice, null);
+  assertEqual('Test 11: Unknown Price Null', 'u1 hasUserPrice is false', report11.ingredientCosts[0].hasUserPrice, false);
+  assertEqual('Test 11: Unknown Price Null', 'u1 status is MISSING_PRICE', report11.ingredientCosts[0].pricingStatus, 'MISSING_PRICE');
+  assertEqual('Test 11: Unknown Price Null', 'u2 costPerKg remains null', report11.ingredientCosts[1].userPrice, null);
+  assertEqual('Test 11: Unknown Price Null', 'u3 costPerKg remains null', report11.ingredientCosts[2].userPrice, null);
+  assertEqual('Test 11: Unknown Price Null', 'u4 costPerKg remains null', report11.ingredientCosts[3].userPrice, null);
+  assertEqual('Test 11: Unknown Price Null', 'All 4 unknown ingredients recognized as missing', report11.missingPriceCount, 4);
+  assertEqual('Test 11: Unknown Price Null', 'Formula pricing status is NO_PRICING', report11.pricingStatus, 'NO_PRICING');
+  assertEqual('Test 11: Unknown Price Null', 'costLabel is COST UNAVAILABLE', report11.costLabel, 'COST UNAVAILABLE');
+
+  // =========================================================================
+  // TEST 12 — PHASE 1: COMPLETE VS PARTIAL VS NO-PRICING CATEGORIZATION
+  // =========================================================================
+  // Case A: All missing prices
+  const allMissingFormula: FormulationIngredient[] = [
+    { id: 'a1', name: 'LABSA 90%', percentage: 12, costPerKg: null },
+    { id: 'a2', name: 'SLES 70%', percentage: 10, costPerKg: null },
+    { id: 'a3', name: 'Water', percentage: 78, costPerKg: null }
+  ];
+  const report12A = calculateFormulaCost(allMissingFormula, 100);
+  assertEqual('Test 12A: No Pricing', 'pricingStatus is NO_PRICING', report12A.pricingStatus, 'NO_PRICING');
+  assertEqual('Test 12A: No Pricing', 'costLabel is COST UNAVAILABLE', report12A.costLabel, 'COST UNAVAILABLE');
+  assertEqual('Test 12A: No Pricing', 'isComplete is false', report12A.isComplete, false);
+  assertEqual('Test 12A: No Pricing', 'missingPriceCount is 3', report12A.missingPriceCount, 3);
+
+  // Case B: Partial pricing (2 priced, 1 unpriced)
+  const partialFormula: FormulationIngredient[] = [
+    { id: 'b1', name: 'LABSA 90%', percentage: 10, costPerKg: 140 },
+    { id: 'b2', name: 'SLES 70%', percentage: 10, costPerKg: 110 },
+    { id: 'b3', name: 'Water', percentage: 80, costPerKg: null }
+  ];
+  const report12B = calculateFormulaCost(partialFormula, 100);
+  assertEqual('Test 12B: Partial Pricing', 'pricingStatus is PARTIAL_PRICING', report12B.pricingStatus, 'PARTIAL_PRICING');
+  assertEqual('Test 12B: Partial Pricing', 'costLabel is PARTIAL COST', report12B.costLabel, 'PARTIAL COST — EXCLUDES UNPRICED INGREDIENTS');
+  assertEqual('Test 12B: Partial Pricing', 'isComplete is false', report12B.isComplete, false);
+  assertEqual('Test 12B: Partial Pricing', 'completePriceCount is 2', report12B.completePriceCount, 2);
+  assertEqual('Test 12B: Partial Pricing', 'missingPriceCount is 1', report12B.missingPriceCount, 1);
+  assertNear('Test 12B: Partial Pricing', 'Partial batch cost sums priced items (2500.00)', report12B.totalBatchCost, 2500.00);
+
+  // Case C: Complete pricing (all 3 priced)
+  const completeFormula: FormulationIngredient[] = [
+    { id: 'c1', name: 'LABSA 90%', percentage: 10, costPerKg: 140 },
+    { id: 'c2', name: 'SLES 70%', percentage: 10, costPerKg: 110 },
+    { id: 'c3', name: 'Water', percentage: 80, costPerKg: 1 }
+  ];
+  const report12C = calculateFormulaCost(completeFormula, 100);
+  assertEqual('Test 12C: Complete Pricing', 'pricingStatus is COMPLETE_PRICING', report12C.pricingStatus, 'COMPLETE_PRICING');
+  assertEqual('Test 12C: Complete Pricing', 'costLabel is TOTAL COST', report12C.costLabel, 'TOTAL COST');
+  assertEqual('Test 12C: Complete Pricing', 'isComplete is true', report12C.isComplete, true);
+  assertEqual('Test 12C: Complete Pricing', 'missingPriceCount is 0', report12C.missingPriceCount, 0);
+  assertNear('Test 12C: Complete Pricing', 'Total batch cost matches sum (2580.00)', report12C.totalBatchCost, 2580.00);
+
+  // =========================================================================
+  // TEST 13 — PHASE 1: GENUINELY USER-ENTERED ₹0 DISTINGUISHED FROM MISSING
+  // =========================================================================
+  const intentionalZeroFormula: FormulationIngredient[] = [
+    { id: 'z1', name: 'Free Recovered Process Water', percentage: 80, costPerKg: 0 },
+    { id: 'z2', name: 'LABSA 90%', percentage: 20, costPerKg: 140 }
+  ];
+  const report13 = calculateFormulaCost(intentionalZeroFormula, 100);
+  assertEqual('Test 13: Explicit Zero', 'Water hasUserPrice is true', report13.ingredientCosts[0].hasUserPrice, true);
+  assertEqual('Test 13: Explicit Zero', 'Water userPrice is 0', report13.ingredientCosts[0].userPrice, 0);
+  assertEqual('Test 13: Explicit Zero', 'Water pricingStatus is EXPLICIT_USER_PRICE', report13.ingredientCosts[0].pricingStatus, 'EXPLICIT_USER_PRICE');
+  assertEqual('Test 13: Explicit Zero', 'Missing price count is 0', report13.missingPriceCount, 0);
+  assertEqual('Test 13: Explicit Zero', 'pricingStatus is COMPLETE_PRICING', report13.pricingStatus, 'COMPLETE_PRICING');
+  assertEqual('Test 13: Explicit Zero', 'isComplete is true', report13.isComplete, true);
+  assertNear('Test 13: Explicit Zero', 'Batch cost reflects 20 kg @ 140 + 80 kg @ 0 = 2800.00', report13.totalBatchCost, 2800.00);
+  assertNear('Test 13: Explicit Zero', 'Cost per kg is 28.00', report13.costPerKg, 28.00);
+
+  // =========================================================================
+  // TEST 14 — PHASE 1: PRESERVE CANONICAL INGREDIENT IDS & INTEGRITY
+  // =========================================================================
+  const canonicalCheckFormula: FormulationIngredient[] = [
+    { id: 'labsa', name: 'LABSA 96%', percentage: 15, costPerKg: 145 },
+    { id: 'sles-70', name: 'SLES 70%', percentage: 10, costPerKg: 112 },
+    { id: 'caustic-soda-50', name: 'Sodium Hydroxide 50%', percentage: 3, costPerKg: 42 }
+  ];
+  const report14 = calculateFormulaCost(canonicalCheckFormula, 100);
+  assertEqual('Test 14: Canonical IDs', 'ID labsa preserved', report14.ingredientCosts[0].id, 'labsa');
+  assertEqual('Test 14: Canonical IDs', 'ID sles-70 preserved', report14.ingredientCosts[1].id, 'sles-70');
+  assertEqual('Test 14: Canonical IDs', 'ID caustic-soda-50 preserved', report14.ingredientCosts[2].id, 'caustic-soda-50');
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 

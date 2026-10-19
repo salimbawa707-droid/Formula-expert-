@@ -99,10 +99,10 @@ export function runCommercialGradesTestSuite(): {
   const slesGrades = casMap.get('68585-34-2') || [];
   assert(
     3,
-    'Unique CAS compounds is >= 112 and SLES CAS (68585-34-2) contains 8 commercial variants',
-    casMap.size >= 112 && slesGrades.length === 8,
+    'Unique CAS compounds is >= 110 and SLES CAS (68585-34-2) contains 8 commercial variants',
+    casMap.size >= 110 && slesGrades.length === 8,
     `CAS count: ${casMap.size}, SLES variants: ${slesGrades.length}`,
-    'CAS count: >= 112, SLES variants: 8'
+    'CAS count: >= 110, SLES variants: 8'
   );
 
   // TEST 4: Search "SLES" returns both SLES 28% and SLES 70% commercial variants

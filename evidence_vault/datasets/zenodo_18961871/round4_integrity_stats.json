@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-10-17T22:12:48.053Z",
+  "record": "18961871",
+  "files": [
+    {
+      "filename": "Supplementary_SolutionFlowCurves.xlsx",
+      "localBytes": 22280,
+      "computedMd5": "cd5bfd6e95fc65e412807d53935c2d96",
+      "computedSha256": "90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590",
+      "sheets": {
+        "SolutionFlowCurves": {
+          "rows": 226,
+          "cols": 8,
+          "dataRowsLength": 226,
+          "validRows": 212
+        }
+      }
+    },
+    {
+      "filename": "Supplementary_FilmThickness_v1.xlsx",
+      "localBytes": 149923,
+      "computedMd5": "bc9582baafecd6552f6014216a0844e6",
+      "computedSha256": "170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428",
+      "sheets": {
+        "Data": {
+          "rows": 2396,
+          "cols": 19,
+          "dataRowsLength": 2396,
+          "validRows": 2396
+        }
+      }
+    },
+    {
+      "filename": "Supplementary_BubbleSizes_v1.xlsx",
+      "localBytes": 557745,
+      "computedMd5": "9fcfe68a37d2d92a7999569a07908854",
+      "computedSha256": "9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad",
+      "sheets": {
+        "20min": {
+          "rows": 4407,
+          "cols": 8,
+          "dataRowsLength": 4407,
+          "validRows": 4407
+        },
+        "30min": {
+          "rows": 2386,
+          "cols": 8,
+          "dataRowsLength": 2386,
+          "validRows": 2386
+        }
+      }
+    },
+    {
+      "filename": "Supplementary_RheometerData_v2.xlsx",
+      "localBytes": 162970,
+      "computedMd5": "c9b5a9cde073eb7c58933eec37a559a6",
+      "computedSha256": "073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70",
+      "sheets": {
+        "Contents": {
+          "rows": 7,
+          "cols": 2,
+          "dataRowsLength": 7,
+          "validRows": 7
+        },
+        "AmpSwps_all": {
+          "rows": 301,
+          "cols": 11,
+          "dataRowsLength": 301,
+          "validRows": 290
+        },
+        "FrqSwps_all": {
+          "rows": 241,
+          "cols": 11,
+          "dataRowsLength": 241,
+          "validRows": 227
+        },
+        "FoamD_AmpSwpTest": {
+          "rows": 201,
+          "cols": 11,
+          "dataRowsLength": 201,
+          "validRows": 194
+        },
+        "FoamA_SteadyYield": {
+          "rows": 92,
+          "cols": 9,
+          "dataRowsLength": 92,
+          "validRows": 90
+        },
+        "SteadyShear_5": {
+          "rows": 733,
+          "cols": 9,
+          "dataRowsLength": 733,
+          "validRows": 722
+        },
+        "SteadyShear_1": {
+          "rows": 733,
+          "cols": 9,
+          "dataRowsLength": 733,
+          "validRows": 722
+        }
+      }
+    }
+  ]
+}

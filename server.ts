@@ -18,6 +18,12 @@ import {
   verifyUserOwnership,
   verifyGooglePlayPurchase,
   runStartupSecurityDiagnostics,
+  validatePort,
+  isApiKeyConfigured,
+  resolveGeminiModel,
+  resolveTrustProxy,
+  securityHeadersMiddleware,
+  validateEnvironmentConfig,
   ALLOWED_PLAY_PRODUCT_IDS,
   CANONICAL_PACKAGE_NAME
 } from "./src/services/serverSecurity";
@@ -25,9 +31,11 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = validatePort(process.env.PORT);
+const GEMINI_MODEL = resolveGeminiModel();
 
-app.set("trust proxy", 1);
+app.set("trust proxy", resolveTrustProxy(process.env.TRUST_PROXY));
+app.use(securityHeadersMiddleware());
 app.use(corsMiddleware());
 app.use(express.json({ limit: "1mb" }));
 
@@ -45,7 +53,7 @@ async function probeGeminiHealth(): Promise<{ reachable: boolean; latencyMs: num
   try {
     const response = await Promise.race([
       client.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: GEMINI_MODEL,
         contents: "Respond with the single word: OK",
       }),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout contacting Gemini API (3000ms limit)")), 3000))
@@ -71,10 +79,10 @@ let aiClient: GoogleGenAI | null = null;
 function getAIClient(): GoogleGenAI | null {
   if (!aiClient) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && apiKey.trim() && apiKey !== "MY_GEMINI_API_KEY") {
+    if (isApiKeyConfigured(apiKey)) {
       try {
         aiClient = new GoogleGenAI({
-          apiKey,
+          apiKey: apiKey!.trim(),
           httpOptions: {
             headers: {
               "User-Agent": "aistudio-build",
@@ -82,7 +90,7 @@ function getAIClient(): GoogleGenAI | null {
           },
         });
       } catch (e) {
-        console.error("Failed to initialize Google Gen AI client:", e);
+        console.error("Failed to initialize Google Gen AI client:", sanitizeErrorMessage(e));
       }
     }
   }
@@ -210,7 +218,7 @@ ${JSON.stringify(context || {})}`;
     });
     return;
   } catch (error: any) {
-    console.error("All AI models and fallbacks failed in chat:", error);
+    console.error("All AI models and fallbacks failed in chat:", sanitizeErrorMessage(error));
     res.json({
       reply: domainExpertFallback(message, context),
       mode: "Auto Fallback (Quota / Network Resilient)",
@@ -223,47 +231,51 @@ ${JSON.stringify(context || {})}`;
 
 // Endpoint to check AI Chemistry Model capabilities & domain verification
 app.get("/api/ai/chemistry-status", async (req, res) => {
-  const client = getAIClient();
-  const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-  
-  if (req.query.probe === "true" && hasKey) {
-    await probeGeminiHealth();
-  }
-
-  let reachability: "CONFIGURED_ONLINE" | "CONFIGURED_UNTESTED" | "TESTED_SUCCESS" | "UNREACHABLE" | "DETERMINISTIC_FALLBACK_ACTIVE" = "DETERMINISTIC_FALLBACK_ACTIVE";
-  if (!hasKey) {
-    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
-  } else if (lastAIOperationSuccess === true) {
-    reachability = "TESTED_SUCCESS";
-  } else if (lastAIOperationSuccess === false) {
-    reachability = "UNREACHABLE";
-  } else {
-    reachability = "CONFIGURED_UNTESTED";
-  }
-
-  const isOperational = reachability === "TESTED_SUCCESS";
-
-  res.json({
-    activeModel: hasKey ? "gemini-3.8-flash" : "Deterministic Chemical R&D Engine (Local Core)",
-    provider: "Google Gemini 3.8 Flash (AI Studio)",
-    status: reachability,
-    isOperational,
-    apiKeyConfigured: hasKey,
-    clientInitialized: Boolean(client),
-    reachability,
-    fallbackMode: !isOperational,
-    lastTestedAt: lastAIOperationTimestamp,
-    chemistryCapabilities: {
-      surfactantScience: "Anionic, Amphoteric, Non-ionic, Cationic, Biosurfactants (APG)",
-      stoichiometricNeutralization: "LABSA + NaOH/KOH/TEA exact molar ratios",
-      rheologyElectrolyteCurve: "NaCl micellar expansion, salting-out curves & polymer thickening",
-      chelationHardWater: "GLDA, MGDA, Sodium Gluconate, STPP, Zeolites (ppm CaCO3)",
-      phaseStabilityHlb: "HLB 1.0 - 20.0, Krafft point, cloud point, hydrotropes (SXS, PG)",
-      enzymePreservativeStability: "Protease/Amylase stabilizers & pH preservative windows",
-      troubleshooting: "Cloudiness, phase separation, viscosity drop, odor, foaming control",
-      multilingualSupport: ["English", "Hindi (हिन्दी)", "Hinglish", "Gujarati", "Marathi"]
+  try {
+    const client = getAIClient();
+    const hasKey = isApiKeyConfigured(process.env.GEMINI_API_KEY);
+    
+    if (req.query.probe === "true" && hasKey) {
+      await probeGeminiHealth();
     }
-  });
+
+    let reachability: "CONFIGURED_ONLINE" | "CONFIGURED_UNTESTED" | "TESTED_SUCCESS" | "UNREACHABLE" | "DETERMINISTIC_FALLBACK_ACTIVE" = "DETERMINISTIC_FALLBACK_ACTIVE";
+    if (!hasKey) {
+      reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+    } else if (lastAIOperationSuccess === true) {
+      reachability = "TESTED_SUCCESS";
+    } else if (lastAIOperationSuccess === false) {
+      reachability = "UNREACHABLE";
+    } else {
+      reachability = "CONFIGURED_UNTESTED";
+    }
+
+    const isOperational = reachability === "TESTED_SUCCESS";
+
+    res.json({
+      activeModel: hasKey ? GEMINI_MODEL : "Deterministic Chemical R&D Engine (Local Core)",
+      provider: `Google Gemini (${GEMINI_MODEL})`,
+      status: reachability,
+      isOperational,
+      apiKeyConfigured: hasKey,
+      clientInitialized: Boolean(client),
+      reachability,
+      fallbackMode: !isOperational,
+      lastTestedAt: lastAIOperationTimestamp,
+      chemistryCapabilities: {
+        surfactantScience: "Anionic, Amphoteric, Non-ionic, Cationic, Biosurfactants (APG)",
+        stoichiometricNeutralization: "LABSA + NaOH/KOH/TEA exact molar ratios",
+        rheologyElectrolyteCurve: "NaCl micellar expansion, salting-out curves & polymer thickening",
+        chelationHardWater: "GLDA, MGDA, Sodium Gluconate, STPP, Zeolites (ppm CaCO3)",
+        phaseStabilityHlb: "HLB 1.0 - 20.0, Krafft point, cloud point, hydrotropes (SXS, PG)",
+        enzymePreservativeStability: "Protease/Amylase stabilizers & pH preservative windows",
+        troubleshooting: "Cloudiness, phase separation, viscosity drop, odor, foaming control",
+        multilingualSupport: ["English", "Hindi (हिन्दी)", "Hinglish", "Gujarati", "Marathi"]
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: sanitizeErrorMessage(err) });
+  }
 });
 
 app.post(
@@ -1581,7 +1593,7 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
     });
     return;
   } catch (error: any) {
-    console.error("All AI models failed in Formulation Generator, activating audited chemistry fallback:", error);
+    console.error("All AI models failed in Formulation Generator, activating audited chemistry fallback:", sanitizeErrorMessage(error));
     if (mode === "check") {
       const checkedFallback = analyzeUserFormulaFallback(inputIngredients || [], productType, grade, targetCost);
       res.json({
@@ -1725,7 +1737,7 @@ Do not include markdown code block formatting or backticks. Return raw JSON text
     });
     return;
   } catch (error: any) {
-    console.error("All AI models failed in Troubleshooting API, activating chemistry rules fallback:", error);
+    console.error("All AI models failed in Troubleshooting API, activating chemistry rules fallback:", sanitizeErrorMessage(error));
     res.json({
       success: true,
       mode: "Chemical R&D Rules Fallback (Quota Protected)",
@@ -1843,7 +1855,7 @@ No markdown formatting, raw JSON only.`;
     });
     return;
   } catch (err: any) {
-    console.error("Formula recommendations fallback error:", err);
+    console.error("Formula recommendations fallback error:", sanitizeErrorMessage(err));
     res.json({
       success: true,
       recommendations: predefinedAnalyzerFallback(),
@@ -1856,64 +1868,68 @@ No markdown formatting, raw JSON only.`;
 
 // 5. AI Engine Status & Fallback Configuration API
 app.get("/api/ai/status", async (req, res) => {
-  const providers = AiFallbackService.getProvidersStatus();
-  const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-  const client = getAIClient();
+  try {
+    const providers = AiFallbackService.getProvidersStatus();
+    const hasKey = isApiKeyConfigured(process.env.GEMINI_API_KEY);
+    const client = getAIClient();
 
-  if (req.query.probe === "true" && hasKey) {
-    await probeGeminiHealth();
+    if (req.query.probe === "true" && hasKey) {
+      await probeGeminiHealth();
+    }
+
+    let reachability: "CONFIGURED_ONLINE" | "CONFIGURED_UNTESTED" | "TESTED_SUCCESS" | "UNREACHABLE" | "DETERMINISTIC_FALLBACK_ACTIVE" = "DETERMINISTIC_FALLBACK_ACTIVE";
+    if (!hasKey) {
+      reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+    } else if (lastAIOperationSuccess === true) {
+      reachability = "TESTED_SUCCESS";
+    } else if (lastAIOperationSuccess === false) {
+      reachability = "UNREACHABLE";
+    } else {
+      reachability = "CONFIGURED_UNTESTED";
+    }
+
+    const isOperational = reachability === "TESTED_SUCCESS";
+    const comboState = hasKey
+      ? (isOperational ? "Omni Dynamic Router (Configured & Tested Operational)" : "Omni Dynamic Router (Configured - Awaiting Live Probe)")
+      : "Deterministic Offline Core (Active Fallback)";
+
+    res.json({
+      status: "ok",
+      gateway: "Omni Unified Endpoint",
+      combo: comboState,
+      apiKeyConfigured: hasKey,
+      clientInitialized: Boolean(client),
+      reachability,
+      providerReachable: isOperational,
+      lastTestedAt: lastAIOperationTimestamp,
+      providers,
+      pipeline: [
+        { step: 1, route: "Omni Combo Primary", model: GEMINI_MODEL, description: "Flagship Fast Reasoning via Omni" },
+        { step: 2, route: "Omni Interactions API", model: "gemini-omni-1.1-flash", description: "Omni Model Interactions Route" },
+        { step: 3, route: "Omni Combo Fast Failover", model: "gemini-3.1-flash-lite", description: "Low-Latency Dynamic Failover" },
+        { step: 4, route: "Omni Combo Alias Route", model: "gemini-flash-latest", description: "High-Availability Redundancy Alias" },
+        { step: 5, route: "Deterministic Chemistry Engine", model: "Stoichiometric & Physics Rules", description: "Zero-Credit & Offline Resilient Fallback" }
+      ],
+      supportedLogicalProfiles: [
+        "OpenAI / GPT-4o & GPT-4o-mini",
+        "Anthropic / Claude 3.7 Sonnet & 3.5 Haiku",
+        "DeepSeek-V3 & DeepSeek-R1",
+        "Moonshot / Kimi 8k/32k",
+        "Google Gemini Flash & Pro"
+      ],
+      features: [
+        "Single Gateway Omni Endpoint Architecture",
+        "Dynamic Account & Model Routing via Omni Combo",
+        "Zero External Provider Keys Required in UI",
+        "Automatic 429 Quota & Rate Limit Protection",
+        "Omni Model Interactions API Support",
+        "Deterministic Stoichiometric Formula Balancing",
+        "Continuous Offline Workflow Guarantee"
+      ]
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: sanitizeErrorMessage(err) });
   }
-
-  let reachability: "CONFIGURED_ONLINE" | "CONFIGURED_UNTESTED" | "TESTED_SUCCESS" | "UNREACHABLE" | "DETERMINISTIC_FALLBACK_ACTIVE" = "DETERMINISTIC_FALLBACK_ACTIVE";
-  if (!hasKey) {
-    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
-  } else if (lastAIOperationSuccess === true) {
-    reachability = "TESTED_SUCCESS";
-  } else if (lastAIOperationSuccess === false) {
-    reachability = "UNREACHABLE";
-  } else {
-    reachability = "CONFIGURED_UNTESTED";
-  }
-
-  const isOperational = reachability === "TESTED_SUCCESS";
-  const comboState = hasKey
-    ? (isOperational ? "Omni Dynamic Router (Configured & Tested Operational)" : "Omni Dynamic Router (Configured - Awaiting Live Probe)")
-    : "Deterministic Offline Core (Active Fallback)";
-
-  res.json({
-    status: "ok",
-    gateway: "Omni Unified Endpoint",
-    combo: comboState,
-    apiKeyConfigured: hasKey,
-    clientInitialized: Boolean(client),
-    reachability,
-    providerReachable: isOperational,
-    lastTestedAt: lastAIOperationTimestamp,
-    providers,
-    pipeline: [
-      { step: 1, route: "Omni Combo Primary", model: "gemini-3.7-flash", description: "Flagship Fast Reasoning via Omni" },
-      { step: 2, route: "Omni Interactions API", model: "gemini-omni-1.1-flash", description: "Omni Model Interactions Route" },
-      { step: 3, route: "Omni Combo Fast Failover", model: "gemini-3.1-flash-lite", description: "Low-Latency Dynamic Failover" },
-      { step: 4, route: "Omni Combo Alias Route", model: "gemini-flash-latest", description: "High-Availability Redundancy Alias" },
-      { step: 5, route: "Deterministic Chemistry Engine", model: "Stoichiometric & Physics Rules", description: "Zero-Credit & Offline Resilient Fallback" }
-    ],
-    supportedLogicalProfiles: [
-      "OpenAI / GPT-4o & GPT-4o-mini",
-      "Anthropic / Claude 3.7 Sonnet & 3.5 Haiku",
-      "DeepSeek-V3 & DeepSeek-R1",
-      "Moonshot / Kimi 8k/32k",
-      "Google Gemini Flash & Pro"
-    ],
-    features: [
-      "Single Gateway Omni Endpoint Architecture",
-      "Dynamic Account & Model Routing via Omni Combo",
-      "Zero External Provider Keys Required in UI",
-      "Automatic 429 Quota & Rate Limit Protection",
-      "Omni Model Interactions API Support",
-      "Deterministic Stoichiometric Formula Balancing",
-      "Continuous Offline Workflow Guarantee"
-    ]
-  });
 });
 
 // ----------------------------------------------------------------------------
@@ -1927,32 +1943,36 @@ app.post(
   payloadSizeValidator(50000),
   rateLimitMiddleware({ maxRequests: 15, windowMs: 60000, endpointName: "Billing Verification" }),
   async (req, res) => {
-    const { packageName, productId, purchaseToken } = req.body || {};
-    const authenticatedUser = (req as any).user;
-    const userId = authenticatedUser.uid;
+    try {
+      const { packageName, productId, purchaseToken } = req.body || {};
+      const authenticatedUser = (req as any).user;
+      const userId = authenticatedUser.uid;
 
-    const result = await verifyGooglePlayPurchase({
-      packageName: packageName || CANONICAL_PACKAGE_NAME,
-      productId: productId || '',
-      purchaseToken: purchaseToken || '',
-      userId
-    });
-
-    if (!result.verified) {
-      return res.status(result.error?.includes('credentials') ? 503 : 400).json({
-        verified: false,
-        error: result.error || 'Purchase verification failed.',
-        status: result.status
+      const result = await verifyGooglePlayPurchase({
+        packageName: packageName || CANONICAL_PACKAGE_NAME,
+        productId: productId || '',
+        purchaseToken: purchaseToken || '',
+        userId
       });
-    }
 
-    return res.json({
-      verified: true,
-      status: result.status,
-      productId: result.productId,
-      userId: result.userId,
-      entitlementGranted: true
-    });
+      if (!result.verified) {
+        return res.status(result.error?.includes('credentials') ? 503 : 400).json({
+          verified: false,
+          error: result.error || 'Purchase verification failed.',
+          status: result.status
+        });
+      }
+
+      return res.json({
+        verified: true,
+        status: result.status,
+        productId: result.productId,
+        userId: result.userId,
+        entitlementGranted: true
+      });
+    } catch (err: any) {
+      return res.status(500).json({ verified: false, error: sanitizeErrorMessage(err) });
+    }
   }
 );
 
@@ -1962,19 +1982,23 @@ app.get(
   requireVerifiedBillingAuthMiddleware,
   rateLimitMiddleware({ maxRequests: 30, windowMs: 60000, endpointName: "Subscription Status" }),
   async (req, res) => {
-    const user = (req as any).user;
-    const hasCredentials = Boolean(
-      process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY ||
-      process.env.GOOGLE_APPLICATION_CREDENTIALS
-    );
+    try {
+      const user = (req as any).user;
+      const hasCredentials = Boolean(
+        process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY ||
+        process.env.GOOGLE_APPLICATION_CREDENTIALS
+      );
 
-    return res.json({
-      gatewayConfigured: hasCredentials,
-      supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
-      policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
-      userId: user.uid,
-      activeSubscriptions: 0
-    });
+      return res.json({
+        gatewayConfigured: hasCredentials,
+        supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
+        policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
+        userId: user.uid,
+        activeSubscriptions: 0
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: sanitizeErrorMessage(err) });
+    }
   }
 );
 
@@ -2025,6 +2049,13 @@ app.get("/detergent-formula-expert-release.apk", (_req, res) => {
   }
 });
 
+// Global Sanitized Error Handler (Terminal Express Middleware)
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const sanitized = sanitizeErrorMessage(err);
+  const statusCode = typeof err.status === "number" && err.status >= 400 && err.status < 600 ? err.status : 500;
+  res.status(statusCode).json({ error: sanitized });
+});
+
 // Vite Server middleware setup
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
@@ -2044,6 +2075,7 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Detergent R&D Expert server running on http://0.0.0.0:${PORT}`);
     runStartupSecurityDiagnostics();
+    validateEnvironmentConfig();
   });
 }
 

@@ -358,13 +358,19 @@ export class ActiveMatterEngine {
     // 1. Check explicit formula override inputs
     const explicitActive = ing?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
     
-    // Canonical master lookup by ID or Name
+    // Canonical master lookup by canonical ID, ID, Name, or deterministic alias
     let canonicalMatch: UniversalIngredient | undefined;
-    if (ing?.id) {
+    if (ing?.canonicalIngredientId) {
+      canonicalMatch = UNIVERSAL_INGREDIENTS.find(u => u.id === ing.canonicalIngredientId);
+    }
+    if (!canonicalMatch && ing?.id) {
       canonicalMatch = UNIVERSAL_INGREDIENTS.find(u => u.id === ing.id);
     }
     if (!canonicalMatch && rawName) {
-      canonicalMatch = UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === lowerName);
+      canonicalMatch = UNIVERSAL_INGREDIENTS.find(u =>
+        u.name.toLowerCase() === lowerName ||
+        ((lowerName === 'sodium bicarbonate' || lowerName === 'baking soda') && u.id === 'sodium-bicarbonate')
+      );
     }
 
     const resolvedCategory = canonicalMatch?.category || rawCategory || (isWater ? 'Solvent / Carrier' : isSolvent ? 'Solvent' : 'Additive');

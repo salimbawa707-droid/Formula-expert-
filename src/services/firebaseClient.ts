@@ -19,15 +19,19 @@ import {
   orderBy
 } from 'firebase/firestore';
 
-// ✅ NEW: Secure Environment Variable Configuration (Replaces JSON import)
+import rawAppletConfig from '../../firebase-applet-config.json';
+
+// Secure Environment Variable Configuration with platform configuration fallback
+const env = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || import.meta.env.VITE_FIREBASE_PROJECT_ID
+  apiKey: env.VITE_FIREBASE_API_KEY || (rawAppletConfig as any)?.apiKey || '',
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || (rawAppletConfig as any)?.authDomain || '',
+  projectId: env.VITE_FIREBASE_PROJECT_ID || (rawAppletConfig as any)?.projectId || '',
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (rawAppletConfig as any)?.storageBucket || '',
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || (rawAppletConfig as any)?.messagingSenderId || '',
+  appId: env.VITE_FIREBASE_APP_ID || (rawAppletConfig as any)?.appId || '',
+  firestoreDatabaseId: env.VITE_FIRESTORE_DATABASE_ID || (rawAppletConfig as any)?.firestoreDatabaseId || (rawAppletConfig as any)?.projectId || ''
 };
 
 // Initialize Firebase App singleton

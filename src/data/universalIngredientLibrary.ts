@@ -25,7 +25,9 @@ export interface UniversalIngredient {
   name: string;
   category: string;
   subCategory?: string;
-  casNumber: string;
+  casNumber: string | null;
+  identityType?: 'SINGLE_SUBSTANCE' | 'MULTI_COMPONENT_MIXTURE' | 'PROPRIETARY_BLEND' | 'COMMERCIAL_UVCB';
+  casStatus?: 'ASSIGNED' | 'NOT_APPLICABLE_MIXTURE' | 'PROPRIETARY' | 'UNKNOWN';
   inciName: string;
   function: string;
   activeDefault: number;
@@ -94,7 +96,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "aristo-9",
     "name": "Aristo 9 (Multipurpose Detergent Additive)",
     "category": "Additive & Performance",
-    "casNumber": "PROPRIETARY-BLEND",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Proprietary Enzyme & Thickener Blend",
     "function": "Multipurpose Detergent Additive & Viscosity/Enzyme Booster",
     "activeDefault": 0,
@@ -742,7 +746,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "sodium-sesquicarbonate",
     "name": "Sodium Sesquicarbonate",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer",
     "activeDefault": 100,
@@ -1006,7 +1010,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pvno-40",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor",
     "activeDefault": 40,
@@ -1066,7 +1070,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pxs-40",
     "name": "Potassium Xylene Sulfonate 40% (PXS)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope",
     "activeDefault": 40,
@@ -1222,7 +1226,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "liquitint-blue",
     "name": "Liquitint Blue HP",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye",
     "activeDefault": 100,
@@ -3214,7 +3220,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "sodium-sesquicarbonate-tech",
     "name": "Sodium Sesquicarbonate (Technical Grade)",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - Industrial Tech Grade",
     "activeDefault": 100,
@@ -3226,7 +3232,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "sodium-sesquicarbonate-pure",
     "name": "Sodium Sesquicarbonate (High Purity / R&D Grade)",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - High Purity Grade",
     "activeDefault": 100,
@@ -3238,7 +3244,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "sodium-sesquicarbonate-sol",
     "name": "Sodium Sesquicarbonate (Custom Concentrated Solution)",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - Ready Blend Solution",
     "activeDefault": 50,
@@ -4006,7 +4012,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pvno-40-tech",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide) (Technical Grade)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - Industrial Tech Grade",
     "activeDefault": 40,
@@ -4018,7 +4024,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pvno-40-pure",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide) (High Purity / R&D Grade)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - High Purity Grade",
     "activeDefault": 40,
@@ -4030,7 +4036,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pvno-40-sol",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide) (Custom Concentrated Solution)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - Ready Blend Solution",
     "activeDefault": 20,
@@ -4186,7 +4192,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pxs-40-tech",
     "name": "Potassium Xylene Sulfonate 40% (PXS) (Technical Grade)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - Industrial Tech Grade",
     "activeDefault": 40,
@@ -4198,7 +4204,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pxs-40-pure",
     "name": "Potassium Xylene Sulfonate 40% (PXS) (High Purity / R&D Grade)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - High Purity Grade",
     "activeDefault": 40,
@@ -4210,7 +4216,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "pxs-40-sol",
     "name": "Potassium Xylene Sulfonate 40% (PXS) (Custom Concentrated Solution)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - Ready Blend Solution",
     "activeDefault": 20,
@@ -4654,7 +4660,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "liquitint-blue-tech",
     "name": "Liquitint Blue HP (Technical Grade)",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - Industrial Tech Grade",
     "activeDefault": 100,
@@ -4666,7 +4674,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "liquitint-blue-pure",
     "name": "Liquitint Blue HP (High Purity / R&D Grade)",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - High Purity Grade",
     "activeDefault": 100,
@@ -4678,7 +4688,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "liquitint-blue-sol",
     "name": "Liquitint Blue HP (Custom Concentrated Solution)",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - Ready Blend Solution",
     "activeDefault": 50,
@@ -5158,7 +5170,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "perfume-compound",
     "name": "Commercial Perfume & Essential Fragrance Compound",
     "category": "Additive & Performance",
-    "casNumber": "N/A",
+    "casNumber": null,
+    "identityType": "MULTI_COMPONENT_MIXTURE",
+    "casStatus": "NOT_APPLICABLE_MIXTURE",
     "inciName": "Parfum",
     "function": "Long-Lasting Aesthetic Fragrance",
     "activeDefault": 100,
@@ -5170,7 +5184,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "dye-colorant",
     "name": "Aesthetic Colorant & Liquid Dye Solution",
     "category": "Optical Brightener & Dye",
-    "casNumber": "N/A",
+    "casNumber": null,
+    "identityType": "MULTI_COMPONENT_MIXTURE",
+    "casStatus": "NOT_APPLICABLE_MIXTURE",
     "inciName": "Colorant (CI Blend)",
     "function": "Visual Product Identity Colorant",
     "activeDefault": 100,
@@ -5318,6 +5334,18 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
   }
   if (cas === '6132-04-3' || name.includes('sodium citrate')) {
     aliases += ' sodium citrate trisodium citrate';
+  }
+  if (
+    cas === '144-55-8' ||
+    id === 'sodium-bicarbonate' ||
+    id === 'sodium-bicarbonate-tech' ||
+    id === 'sodium-bicarbonate-pure' ||
+    id === 'sodium-bicarbonate-sol' ||
+    name === 'sodium bicarbonate' ||
+    name === 'baking soda' ||
+    name.startsWith('sodium bicarbonate (baking soda)')
+  ) {
+    aliases += ' sodium bicarbonate baking soda bicarb nahco3 bicarbonate of soda';
   }
 
   return aliases;

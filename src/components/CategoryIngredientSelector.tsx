@@ -75,7 +75,7 @@ export default function CategoryIngredientSelector({
           function: 'Custom / Unverified Raw Material',
           activeDefault: 0,
           activeMatter: undefined,
-          costPerKg: 0,
+          costPerKg: null,
           hlb: null,
           description: 'Custom ingredient entered by formulator. Scientific constants uncharacterized (NEEDS_VERIFICATION).',
           provenance: {
@@ -308,7 +308,7 @@ export default function CategoryIngredientSelector({
                           {ing.manufacturer && (
                             <span className="text-slate-500">• Mfr: <strong className="text-slate-700 font-semibold">{ing.manufacturer}</strong></span>
                           )}
-                          {ing.casNumber && ing.casNumber !== 'PROPRIETARY-BLEND' && (
+                          {ing.casNumber && (
                             <span className="text-slate-400 font-mono">• CAS: {ing.casNumber}</span>
                           )}
                           {ing.inciName && (
@@ -325,7 +325,9 @@ export default function CategoryIngredientSelector({
                       {/* Right: Pricing & Selection */}
                       <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                         <div className="text-xs font-bold text-teal-800">
-                          {typeof ing.costPerKg === 'number' && ing.costPerKg > 0 ? `₹${ing.costPerKg.toFixed(2)}/kg` : 'Price unconfigured'}
+                          {typeof ing.costPerKg === 'number' && ing.costPerKg >= 0
+                            ? (ing.costPerKg === 0 ? '₹0.00/kg (Free)' : `₹${ing.costPerKg.toFixed(2)}/kg`)
+                            : 'Price unconfigured'}
                         </div>
                         {isSelected ? (
                           <div className="text-[10px] text-teal-700 font-bold flex items-center gap-0.5 mt-0.5">

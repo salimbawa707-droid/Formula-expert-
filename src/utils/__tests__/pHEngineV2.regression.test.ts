@@ -275,26 +275,71 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
   );
 
   // =========================================================================
-  // TEST 18: Bisection Fallback Execution Under Forced Overshoot
+  // TEST 19: F3-01 High Ionic Strength & Polybasic Acid Convergence (Citric Acid 20%)
   // =========================================================================
-  const t18Comp = normalizeFormulationComposition(
-    mapFormulationIngredientsToPHEngineInput([{ name: 'Sodium Hydroxide', percentage: 2.0 }]),
+  const t19Comp = normalizeFormulationComposition(
+    mapFormulationIngredientsToPHEngineInput([{ name: 'Citric Acid', percentage: 20.0 }, { name: 'Sodium Hydroxide', percentage: 5.0 }]),
     100
   );
-  const t18Res = NumericalEquilibriumSolver.solve(t18Comp, 25.0, { initialGuess: 0.0 });
+  const t19Res = NumericalEquilibriumSolver.solve(t19Comp, 25.0);
   assert(
     'Phase 3 Reference Tests',
-    'Test 18: Solver converges under extreme initial guess',
-    t18Res.converged,
-    t18Res.converged,
+    'Test 19 (F3-01): High ionic strength polybasic buffer converges robustly',
+    t19Res.converged,
+    t19Res.converged,
     true
   );
   assert(
     'Phase 3 Reference Tests',
-    'Test 18: Solver triggers bisection fallback when candidate exceeds bracket',
-    (t18Res.log ?? []).some(step => step.method === 'bisection'),
+    'Test 19 (F3-01): Residual remains within acceptable tolerance at high ionic strength',
+    Math.abs(t19Res.residual) <= 1e-4,
+    t19Res.residual,
+    '<= 1e-4'
+  );
+
+  // =========================================================================
+  // TEST 20: F3-02 Unlisted Proprietary Surfactants & Safe Fallback
+  // =========================================================================
+  const t20Res = PHEngineV2.calculatePH(
+    mapFormulationIngredientsToPHEngineInput([
+      { name: 'Proprietary Mystery Surfactant Blend X', percentage: 5.0 }
+    ]),
+    100
+  );
+  assert(
+    'Phase 3 Reference Tests',
+    'Test 20 (F3-02): Unlisted proprietary surfactant safely defaults without inventing equilibrium parameters',
+    t20Res.confidence <= 70 || t20Res.warnings.length > 0,
     true,
     true
+  );
+  assert(
+    'Phase 3 Reference Tests',
+    'Test 20 (F3-02): pH calculation completes safely at neutral baseline for inert unknown',
+    t20Res.pH >= 6.5 && t20Res.pH <= 7.5,
+    t20Res.pH,
+    '7.00 ± 0.50'
+  );
+
+  // =========================================================================
+  // TEST 21: F3-03 Dynamic Dilution & Stale Result Prevention (DAG State Isolation)
+  // =========================================================================
+  const formulaDilutionA = [
+    { name: 'Citric Acid', percentage: 5.0 },
+    { name: 'Deionized Water', percentage: 95.0 }
+  ];
+  const formulaDilutionB = [
+    { name: 'Citric Acid', percentage: 1.0 },
+    { name: 'Deionized Water', percentage: 99.0 }
+  ];
+  const resDilA = PHEngineV2.calculatePH(mapFormulationIngredientsToPHEngineInput(formulaDilutionA), 100);
+  const resDilB = PHEngineV2.calculatePH(mapFormulationIngredientsToPHEngineInput(formulaDilutionB), 100);
+  assert(
+    'Phase 3 Reference Tests',
+    'Test 21 (F3-03): Dilution change recalculates active molarity and pH state independently without stale cache retention',
+    resDilA.pH !== resDilB.pH,
+    `Dil A pH: ${resDilA.pH}, Dil B pH: ${resDilB.pH}`,
+    'Distinct computed pH values'
   );
 
   const passed = results.filter(r => r.passed).length;

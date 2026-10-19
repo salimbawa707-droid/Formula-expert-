@@ -242,6 +242,206 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
     },
     version: '2026.1',
     effectiveFrom: '2026-01-01'
+  },
+  'sodium_bicarbonate': {
+    ingredientId: 'sodium_bicarbonate',
+    canonicalName: 'Sodium Bicarbonate',
+    chemicalName: 'Sodium hydrogen carbonate',
+    casRn: '144-55-8',
+    molecularFormula: 'NaHCO3',
+    molecularWeight: 84.007,
+    inciName: 'Sodium Bicarbonate',
+    synonyms: ['Baking Soda', 'Sodium hydrogen carbonate', 'Bicarbonate of soda', 'Sodium acid carbonate', 'nahco3', 'sodium-bicarbonate'],
+    tradeNames: ['Baking Soda', 'Sodium Bicarbonate USP', 'Sodium Bicarbonate Technical Grade'],
+    chemicalFamily: 'BUILDER',
+    chemicalSubfamily: 'INORGANIC_BUFFER',
+    functionalClass: 'Mild Alkaline Buffer & Odor Neutralizer',
+    chargeClass: 'NEUTRAL',
+    physicalForm: 'POWDER',
+    identityStatus: 'IDENTIFIED',
+    identityConfidence: 100,
+    regulatoryIdentities: [
+      {
+        jurisdiction: 'GLOBAL',
+        authority: 'FDA / ECHA REACH',
+        status: 'APPROVED',
+        effectiveFrom: '2010-01-01',
+        provenance: {
+          property: 'regulatoryStatus',
+          value: 'APPROVED',
+          source: 'FDA GRAS 21 CFR 184.1736 & ECHA REACH Dossier 144-55-8',
+          sourceType: 'REGULATORY_GOVERNMENT_BODY',
+          evidenceLevel: 3,
+          verificationStatus: 'VERIFIED',
+          verificationDate: '2026-01-01'
+        }
+      }
+    ],
+    provenanceMap: {
+      casRn: {
+        property: 'casRn',
+        value: '144-55-8',
+        source: 'CAS Registry & IUPAC Standard',
+        sourceType: 'ESTABLISHED_TECHNICAL_REFERENCE',
+        evidenceLevel: 5,
+        verificationStatus: 'VERIFIED',
+        verificationDate: '2026-01-01'
+      },
+      inciName: {
+        property: 'inciName',
+        value: 'Sodium Bicarbonate',
+        source: 'Personal Care Products Council (PCPC) INCI Dictionary',
+        sourceType: 'ESTABLISHED_TECHNICAL_REFERENCE',
+        evidenceLevel: 5,
+        verificationStatus: 'VERIFIED',
+        verificationDate: '2026-01-01'
+      }
+    },
+    version: '2026.1',
+    effectiveFrom: '2026-01-01'
+  },
+  'sodium_sesquicarbonate': {
+    ingredientId: 'sodium_sesquicarbonate',
+    canonicalName: 'Sodium Sesquicarbonate',
+    chemicalName: 'Trisodium hydrogendicarbonate dihydrate',
+    casRn: '533-96-0',
+    molecularFormula: 'Na3H(CO3)2·2H2O',
+    molecularWeight: 226.03,
+    inciName: 'Sodium Sesquicarbonate',
+    synonyms: ['Trisodium hydrogendicarbonate', 'Sodium sesquicarbonate dihydrate', 'Trona mineral', 'sodium-sesquicarbonate'],
+    tradeNames: ['Sodium Sesquicarbonate Technical Grade', 'Crex'],
+    chemicalFamily: 'BUILDER',
+    chemicalSubfamily: 'INORGANIC_BUFFER',
+    functionalClass: 'Crystalline Alkaline Buffer & Mild Builder',
+    chargeClass: 'NEUTRAL',
+    physicalForm: 'SOLID',
+    identityStatus: 'IDENTIFIED',
+    identityConfidence: 98,
+    regulatoryIdentities: [
+      {
+        jurisdiction: 'GLOBAL',
+        authority: 'ECHA REACH / EU Food Additive E500(iii)',
+        status: 'APPROVED',
+        effectiveFrom: '2010-01-01',
+        provenance: {
+          property: 'regulatoryStatus',
+          value: 'APPROVED',
+          source: 'ECHA REACH Dossier 533-96-0',
+          sourceType: 'REGULATORY_GOVERNMENT_BODY',
+          evidenceLevel: 3,
+          verificationStatus: 'VERIFIED',
+          verificationDate: '2026-01-01'
+        }
+      }
+    ],
+    provenanceMap: {
+      casRn: {
+        property: 'casRn',
+        value: '533-96-0',
+        source: 'CAS Registry (CAS RN: 533-96-0)',
+        sourceType: 'ESTABLISHED_TECHNICAL_REFERENCE',
+        evidenceLevel: 5,
+        verificationStatus: 'VERIFIED',
+        verificationDate: '2026-01-01'
+      }
+    },
+    version: '2026.1',
+    effectiveFrom: '2026-01-01'
+  },
+  'pvno': {
+    ingredientId: 'pvno',
+    canonicalName: 'Poly(4-vinylpyridine N-oxide)',
+    chemicalName: '4-ethenylpyridine 1-oxide homopolymer',
+    casRn: '26715-00-4',
+    molecularFormula: '(C7H7NO)n',
+    inciName: 'Polyvinylpyridine N-Oxide',
+    synonyms: ['PVNO', 'PVPNO', 'Polyvinylpyridine N-Oxide', 'Poly(4-vinylpyridine-1-oxide)', 'pvno-40'],
+    tradeNames: ['Chromabond S-100', 'PVNO 40% Liquid'],
+    chemicalFamily: 'POLYMER',
+    chemicalSubfamily: 'DYE_TRANSFER_INHIBITOR',
+    functionalClass: 'Premium Dye Transfer Inhibitor Polymer',
+    chargeClass: 'NONIONIC',
+    physicalForm: 'LIQUID',
+    identityStatus: 'IDENTIFIED',
+    identityConfidence: 96,
+    regulatoryIdentities: [
+      {
+        jurisdiction: 'GLOBAL',
+        authority: 'ECHA / US EPA TSCA',
+        status: 'APPROVED',
+        effectiveFrom: '2010-01-01',
+        provenance: {
+          property: 'regulatoryStatus',
+          value: 'APPROVED',
+          source: 'US EPA TSCA Inventory & ECHA List 607-969-9',
+          sourceType: 'REGULATORY_GOVERNMENT_BODY',
+          evidenceLevel: 3,
+          verificationStatus: 'VERIFIED',
+          verificationDate: '2026-01-01'
+        }
+      }
+    ],
+    provenanceMap: {
+      casRn: {
+        property: 'casRn',
+        value: '26715-00-4',
+        source: 'CAS Registry & Polymer Technical Reference (CAS RN: 26715-00-4)',
+        sourceType: 'ESTABLISHED_TECHNICAL_REFERENCE',
+        evidenceLevel: 5,
+        verificationStatus: 'VERIFIED',
+        verificationDate: '2026-01-01'
+      }
+    },
+    version: '2026.1',
+    effectiveFrom: '2026-01-01'
+  },
+  'potassium_xylene_sulfonate': {
+    ingredientId: 'potassium_xylene_sulfonate',
+    canonicalName: 'Potassium Xylene Sulfonate',
+    chemicalName: 'Potassium dimethylbenzenesulfonate (mixed isomers)',
+    casRn: '30346-73-7',
+    molecularFormula: 'C8H9KO3S',
+    molecularWeight: 224.32,
+    inciName: 'Potassium Xylene Sulfonate',
+    synonyms: ['PXS', 'Potassium xylenesulfonate', 'Potassium dimethylbenzenesulfonate', 'pxs-40'],
+    tradeNames: ['Stepanate KX', 'PXS 40%'],
+    chemicalFamily: 'SOLVENT_HYDROTROPE',
+    chemicalSubfamily: 'ARYL_SULFONATE_HYDROTROPE',
+    functionalClass: 'High Solubility Potassium Hydrotrope & Coupling Agent',
+    chargeClass: 'ANIONIC',
+    physicalForm: 'LIQUID',
+    identityStatus: 'IDENTIFIED',
+    identityConfidence: 98,
+    regulatoryIdentities: [
+      {
+        jurisdiction: 'GLOBAL',
+        authority: 'ECHA REACH / US EPA TSCA',
+        status: 'APPROVED',
+        effectiveFrom: '2010-01-01',
+        provenance: {
+          property: 'regulatoryStatus',
+          value: 'APPROVED',
+          source: 'ECHA REACH Dossier 30346-73-7',
+          sourceType: 'REGULATORY_GOVERNMENT_BODY',
+          evidenceLevel: 3,
+          verificationStatus: 'VERIFIED',
+          verificationDate: '2026-01-01'
+        }
+      }
+    ],
+    provenanceMap: {
+      casRn: {
+        property: 'casRn',
+        value: '30346-73-7',
+        source: 'CAS Registry (CAS RN: 30346-73-7)',
+        sourceType: 'ESTABLISHED_TECHNICAL_REFERENCE',
+        evidenceLevel: 5,
+        verificationStatus: 'VERIFIED',
+        verificationDate: '2026-01-01'
+      }
+    },
+    version: '2026.1',
+    effectiveFrom: '2026-01-01'
   }
 };
 

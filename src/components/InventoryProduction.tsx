@@ -122,14 +122,14 @@ export default function InventoryProduction({
       grade: 'Standard',
       targetPH: 8.0,
       ingredients: [
-        { name: 'LABSA 96% (Acid Slurry)', percentage: 12.0, costPerKg: 0 },
-        { name: 'SLES 70% (Sodium Laureth Sulfate)', percentage: 8.0, costPerKg: 0 },
-        { name: 'CAPB 30% (Cocoamidopropyl Betaine)', percentage: 3.5, costPerKg: 0 },
-        { name: 'Caustic Soda Lye 48%', percentage: 1.6, costPerKg: 0 },
-        { name: 'Sodium Carbonate Dense', percentage: 2.0, costPerKg: 0 },
-        { name: 'Sodium Chloride (Vacuum Salt)', percentage: 1.5, costPerKg: 0 },
-        { name: 'GLDA 47% Liquid', percentage: 0.8, costPerKg: 0 },
-        { name: 'Water (Deionized/Softened)', percentage: 70.6, costPerKg: 0 }
+        { name: 'LABSA 96% (Acid Slurry)', percentage: 12.0, costPerKg: null },
+        { name: 'SLES 70% (Sodium Laureth Sulfate)', percentage: 8.0, costPerKg: null },
+        { name: 'CAPB 30% (Cocoamidopropyl Betaine)', percentage: 3.5, costPerKg: null },
+        { name: 'Caustic Soda Lye 48%', percentage: 1.6, costPerKg: null },
+        { name: 'Sodium Carbonate Dense', percentage: 2.0, costPerKg: null },
+        { name: 'Sodium Chloride (Vacuum Salt)', percentage: 1.5, costPerKg: null },
+        { name: 'GLDA 47% Liquid', percentage: 0.8, costPerKg: null },
+        { name: 'Water (Deionized/Softened)', percentage: 70.6, costPerKg: null }
       ]
     };
   }, [activeFormula]);

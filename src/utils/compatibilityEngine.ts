@@ -646,6 +646,36 @@ export function calculateFormulationCompatibility(
   }
 
   // ============================================================================
+  // MECHANISM 5b: INGREDIENT pH STABILITY LIMITS (F-07: Evidence-Gated)
+  // ============================================================================
+  // Only evaluate when both phMin and phMax are verified numbers backed by evidence.
+  // Uncharacterized ingredients with null/undefined boundaries produce ZERO false warnings.
+  for (const ing of safeIngs) {
+    const min = (ing as any).phMin;
+    const max = (ing as any).phMax;
+    const isUnneutralizedPrecursor =
+      ((ing.name || '').toLowerCase().includes('labsa') || (ing.name || '').toLowerCase().includes('acid slurry')) &&
+      hasStrongAlkali;
+
+    if (!isUnneutralizedPrecursor && typeof min === 'number' && typeof max === 'number' && !isNaN(min) && !isNaN(max)) {
+      if (phVal < min || phVal > max) {
+        penaltySum += 10;
+        const ingSlug = (ing.name || 'ingredient').toLowerCase().replace(/[^a-z0-9]/g, '-');
+        alerts.push({
+          id: `ingredient-ph-stability-limit-${ingSlug}`,
+          title: `Ingredient pH Stability Limit Exceeded: ${ing.name}`,
+          mechanism: 'ACID_BASE',
+          severity: 'Medium',
+          message: `Ingredient "${ing.name}" specified chemical stability boundary is pH ${min.toFixed(1)} - ${max.toFixed(1)}. Current formulation pH (${phVal.toFixed(1)}) falls outside this stability threshold.`,
+          recommendation: `Maintain formulation pH within ${min.toFixed(1)} - ${max.toFixed(1)} or adjust buffering system to prevent active degradation.`,
+          affectedIngredients: [ing.name],
+          condition: `Formulation pH ${phVal.toFixed(1)} outside stability limit [${min.toFixed(1)}, ${max.toFixed(1)}]`
+        });
+      }
+    }
+  }
+
+  // ============================================================================
   // MECHANISM 6: POLYMER / RHEOLOGY COMPATIBILITY
   // ============================================================================
   if (waterPct > 20 && hasPolymerThickener && hasElectrolyteSalt && totalElectrolytePct > 3.0) {

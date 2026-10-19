@@ -177,43 +177,152 @@ export function sanitizeErrorMessage(err: any): string {
   return cleanMsg;
 }
 
+/**
+ * Safely parses and normalizes an origin string to its canonical scheme://host(:port).
+ * Rejects origins with userinfo, paths, queries, fragments, unsupported schemes, or literal 'null'.
+ */
+export function normalizeOrigin(originStr: string): string | null {
+  if (!originStr || typeof originStr !== 'string') return null;
+  const trimmed = originStr.trim();
+  if (!trimmed || trimmed === 'null') return null;
+
+  try {
+    const url = new URL(trimmed);
+    const protocol = url.protocol.toLowerCase();
+
+    // Permitted schemes: web (http, https) and mobile webview containers (capacitor, ionic)
+    if (protocol !== 'http:' && protocol !== 'https:' && protocol !== 'capacitor:' && protocol !== 'ionic:') {
+      return null;
+    }
+
+    // Disallow user credentials (e.g. https://user:pass@domain.com)
+    if (url.username || url.password) {
+      return null;
+    }
+
+    // Disallow query parameters or fragment identifiers in origin
+    if (url.search || url.hash) {
+      return null;
+    }
+
+    // Disallow paths beyond standard root '/'
+    if (url.pathname && url.pathname !== '/') {
+      return null;
+    }
+
+    // For standard web protocols, hostname must be non-empty
+    if ((protocol === 'http:' || protocol === 'https:') && !url.hostname) {
+      return null;
+    }
+
+    // Mobile schemes (capacitor://localhost, ionic://localhost)
+    if (protocol === 'capacitor:' || protocol === 'ionic:') {
+      const host = (url.hostname || url.host || 'localhost').toLowerCase();
+      return `${protocol}//${host}`;
+    }
+
+    return url.origin.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Determines whether a given request origin is allowed based on the allowlist and environment configuration.
+ * Strictly adheres to explicit allowlists (ALLOWED_ORIGINS) without broad suffix fallbacks.
+ */
 export function isOriginAllowed(
   origin: string,
   allowedOrigins: string[],
-  isExplicitAllowlist: boolean
+  isExplicitAllowlist: boolean = false
 ): boolean {
-  if (!origin) return true;
-  if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) return true;
+  if (!origin || typeof origin !== 'string') return false;
 
-  // If caller provided an explicit test/custom allowlist, strictly adhere to it
+  const trimmedOrigin = origin.trim();
+  if (!trimmedOrigin) return false;
+
+  // Handle literal "null" origin: only permitted if explicitly allowlisted
+  if (trimmedOrigin === 'null') {
+    return allowedOrigins.includes('null');
+  }
+
+  const normalizedReqOrigin = normalizeOrigin(trimmedOrigin);
+  if (!normalizedReqOrigin) {
+    return false;
+  }
+
+  // Pre-normalize allowedOrigins list
+  const normalizedAllowedSet = new Set<string>();
+  let hasWildcard = false;
+
+  for (const entry of allowedOrigins) {
+    if (!entry || typeof entry !== 'string') continue;
+    const trimmedEntry = entry.trim();
+    if (trimmedEntry === '*') {
+      hasWildcard = true;
+      continue;
+    }
+    if (trimmedEntry === 'null') {
+      normalizedAllowedSet.add('null');
+      continue;
+    }
+    const norm = normalizeOrigin(trimmedEntry);
+    if (norm) {
+      normalizedAllowedSet.add(norm);
+    }
+  }
+
+  // Wildcard allowlist
+  if (hasWildcard) {
+    return true;
+  }
+
+  // Direct exact match against normalized allowlist
+  if (normalizedAllowedSet.has(normalizedReqOrigin)) {
+    return true;
+  }
+
+  // If caller or environment configured an explicit allowlist, strictly fail-closed.
+  // No suffix fallback or heuristic matches are permitted.
   if (isExplicitAllowlist) {
     return false;
   }
 
-  // Production defaults: allow local dev, Capacitor, Google Cloud Run preview URLs and Google AI Studio
-  try {
-    const url = new URL(origin);
-    const host = url.hostname.toLowerCase();
-    if (
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host.endsWith('.run.app') ||
-      host.endsWith('.google.com') ||
-      host.endsWith('.googleusercontent.com') ||
-      url.protocol === 'capacitor:' ||
-      url.protocol === 'ionic:'
-    ) {
-      return true;
+  // Default non-explicit development fallback:
+  // ONLY in non-production environments (development or test), permit localhost / 127.0.0.1 and mobile app schemes
+  const isDevOrTest = process.env.NODE_ENV !== 'production';
+  if (isDevOrTest) {
+    try {
+      const url = new URL(normalizedReqOrigin);
+      const host = url.hostname.toLowerCase();
+      if (
+        (host === 'localhost' || host === '127.0.0.1') &&
+        (url.protocol === 'http:' || url.protocol === 'https:')
+      ) {
+        return true;
+      }
+      if (url.protocol === 'capacitor:' || url.protocol === 'ionic:') {
+        return true;
+      }
+    } catch {
+      return false;
     }
-  } catch {
-    return false;
   }
 
+  // Suffix checks (*.run.app, *.google.com, *.googleusercontent.com) have been completely removed.
+  // Arbitrary subdomains are strictly rejected.
   return false;
 }
 
 /**
  * Configurable CORS Allowlist & Preflight Middleware
+ * 
+ * Enforces strict, deterministic origin verification:
+ * - Authoritative explicit allowlist (ALLOWED_ORIGINS or custom)
+ * - Exact validated origin return with Vary: Origin
+ * - Never combines wildcard origin with Access-Control-Allow-Credentials
+ * - Denied origins receive 403 Forbidden with zero permissive CORS headers
+ * - No-origin requests (server-to-server, curl) pass through cleanly
  */
 export function corsMiddleware(customAllowedOrigins?: string[]) {
   const envOrigins = (process.env.ALLOWED_ORIGINS || '')
@@ -221,7 +330,11 @@ export function corsMiddleware(customAllowedOrigins?: string[]) {
     .map(o => o.trim())
     .filter(Boolean);
 
-  const defaultOrigins = [
+  const hasCustom = Boolean(customAllowedOrigins && customAllowedOrigins.length > 0);
+  const hasEnv = envOrigins.length > 0;
+  const isExplicit = hasCustom || hasEnv;
+
+  const defaultOrigins: string[] = [
     'http://localhost:3000',
     'http://localhost:5173',
     'capacitor://localhost',
@@ -229,54 +342,68 @@ export function corsMiddleware(customAllowedOrigins?: string[]) {
     'http://localhost'
   ];
 
-  const allowedOrigins = customAllowedOrigins && customAllowedOrigins.length > 0
-    ? customAllowedOrigins
-    : (envOrigins.length > 0 ? envOrigins : defaultOrigins);
+  // If specific legitimate Cloud Run / AI Studio app URL is set in environment, add its exact origin
+  if (process.env.APP_URL) {
+    const normAppUrl = normalizeOrigin(process.env.APP_URL);
+    if (normAppUrl && !defaultOrigins.includes(normAppUrl)) {
+      defaultOrigins.push(normAppUrl);
+    }
+  }
 
-  const isExplicit = Boolean(customAllowedOrigins && customAllowedOrigins.length > 0);
+  const allowedOrigins = hasCustom
+    ? customAllowedOrigins!
+    : (hasEnv ? envOrigins : defaultOrigins);
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const origin = req.headers.origin;
 
-    // Same-origin or non-browser server-to-server request
+    // 1. Same-origin or non-browser server-to-server request (no Origin header)
     if (!origin) {
       next();
       return;
     }
 
+    // Always signal downstream caches that response varies by request origin
+    res.setHeader('Vary', 'Origin');
+
     const isAllowed = isOriginAllowed(origin, allowedOrigins, isExplicit);
 
-    if (isAllowed) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Max-Age', '86400');
-    }
-
-    if (req.method === 'OPTIONS') {
-      if (!isAllowed) {
+    if (!isAllowed) {
+      if (req.method === 'OPTIONS') {
         res.status(403).json({ error: 'CORS policy violation: Origin not allowed.' });
         return;
       }
-      res.status(204).end();
-      return;
-    }
 
-    // For non-API frontend assets in dev/preview mode, never block script/style delivery to iframe
-    const requestPath = req.path || req.url || '';
-    const isStaticAsset = Boolean(requestPath && !requestPath.startsWith('/api'));
-    if (isStaticAsset) {
-      if (!isAllowed) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      // Non-API frontend assets in dev/preview mode
+      const requestPath = req.path || req.url || '';
+      const isStaticAsset = Boolean(requestPath && !requestPath.startsWith('/api'));
+      if (isStaticAsset && process.env.NODE_ENV !== 'production') {
+        next();
+        return;
       }
-      next();
+
+      res.status(403).json({ error: 'CORS policy violation: Origin not allowed.' });
       return;
     }
 
-    if (!isAllowed) {
-      res.status(403).json({ error: 'CORS policy violation: Origin not allowed.' });
+    // Origin is allowed: normalize and set headers
+    const normalizedReqOrigin = normalizeOrigin(origin) || origin;
+    const hasWildcardAllow = allowedOrigins.includes('*');
+
+    if (hasWildcardAllow) {
+      // Invariant: Do not use wildcard Access-Control-Allow-Origin: * with credentials
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', normalizedReqOrigin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Max-Age', '86400');
+
+    if (req.method === 'OPTIONS') {
+      res.status(204).end();
       return;
     }
 
@@ -779,5 +906,110 @@ export function runStartupSecurityDiagnostics(): {
     firestoreConfigured: hasFirestore,
     playBillingConfigured: hasPlay,
     policy: 'STCRIPTION_STATE_STRICT_FAIL_CLOSED'
+  };
+}
+
+/**
+ * Validates integer listening port between 1 and 65535, falling back to 3000 for local dev and AI Studio preview.
+ */
+export function validatePort(portVal?: string | number): number {
+  if (portVal === undefined || portVal === null) return 3000;
+  const num = typeof portVal === 'number' ? portVal : parseInt(String(portVal).trim(), 10);
+  if (isNaN(num) || num < 1 || num > 65535) {
+    return 3000;
+  }
+  return num;
+}
+
+/**
+ * Validates whether an API key is genuinely configured (non-empty, non-whitespace, non-placeholder, >=10 chars).
+ */
+export function isApiKeyConfigured(apiKey?: string): boolean {
+  if (!apiKey || typeof apiKey !== 'string') return false;
+  const trimmed = apiKey.trim();
+  if (trimmed.length < 10) return false;
+  const placeholderPatterns = [
+    'MY_GEMINI_API_KEY',
+    'YOUR_API_KEY',
+    'placeholder',
+    'undefined',
+    'null',
+    'YOUR_KEY_HERE',
+    'API_KEY_HERE'
+  ];
+  if (placeholderPatterns.some(p => trimmed.toLowerCase() === p.toLowerCase())) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Resolves the AI model identifier from custom/env config or verified default gemini-3.8-flash.
+ */
+export function resolveGeminiModel(customModel?: string): string {
+  const DEFAULT_MODEL = 'gemini-3.8-flash';
+  const candidate = customModel || process.env.GEMINI_MODEL;
+  if (!candidate || typeof candidate !== 'string' || !candidate.trim()) {
+    return DEFAULT_MODEL;
+  }
+  return candidate.trim();
+}
+
+/**
+ * Parses reverse proxy trust setting ('true', 'false', hop integer, or subnets), defaulting to 1 for Cloud Run.
+ */
+export function resolveTrustProxy(trustVal?: string): boolean | number | string {
+  if (trustVal === undefined || trustVal === null || trustVal === '') {
+    return 1;
+  }
+  const trimmed = String(trustVal).trim().toLowerCase();
+  if (trimmed === 'true') {
+    return 1;
+  }
+  if (trimmed === 'false' || trimmed === '0') {
+    return false;
+  }
+  const parsedNum = parseInt(trimmed, 10);
+  if (!isNaN(parsedNum) && String(parsedNum) === trimmed) {
+    return parsedNum;
+  }
+  return trustVal;
+}
+
+/**
+ * Middleware establishing standard web security response headers while preserving AI Studio preview iframe embedding.
+ */
+export function securityHeadersMiddleware() {
+  return (_req: Request, res: Response, next: NextFunction): void => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // NOTE: X-Frame-Options is intentionally omitted to maintain compatibility with Google AI Studio preview iframes.
+    next();
+  };
+}
+
+/**
+ * Startup Environment Diagnostic Validator
+ */
+export function validateEnvironmentConfig(): {
+  port: number;
+  model: string;
+  trustProxy: boolean | number | string;
+  hasGeminiKey: boolean;
+  hasFirebaseCredentials: boolean;
+} {
+  const port = validatePort(process.env.PORT);
+  const model = resolveGeminiModel();
+  const trustProxy = resolveTrustProxy(process.env.TRUST_PROXY);
+  const hasGeminiKey = isApiKeyConfigured(process.env.GEMINI_API_KEY);
+  const hasFirebaseCredentials = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+  return {
+    port,
+    model,
+    trustProxy,
+    hasGeminiKey,
+    hasFirebaseCredentials
   };
 }

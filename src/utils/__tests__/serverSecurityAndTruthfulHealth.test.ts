@@ -22,9 +22,17 @@ import {
   serverRateLimiter,
   sanitizeErrorMessage,
   corsMiddleware,
+  isOriginAllowed,
+  normalizeOrigin,
   verifyAuthToken,
   verifyUserOwnership,
-  parseJwtPayload
+  parseJwtPayload,
+  validatePort,
+  isApiKeyConfigured,
+  resolveGeminiModel,
+  resolveTrustProxy,
+  securityHeadersMiddleware,
+  validateEnvironmentConfig
 } from '../../services/serverSecurity';
 
 export interface TestResult {
@@ -108,23 +116,29 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
   assert('TruthfulHealth 4: Provider connection timeout or auth failure returns UNREACHABLE', stateFailed === 'UNREACHABLE', stateFailed, 'UNREACHABLE');
 
   // --------------------------------------------------------------------------
-  // TEST GROUP 4: CORS Policy & Preflight Handling
+  // TEST GROUP 4: Strict CORS Policy & Preflight Handling
   // --------------------------------------------------------------------------
   const mockCors = corsMiddleware(['https://trusted-domain.com', 'capacitor://localhost']);
 
-  // Allowed origin
+  // Case 1: Explicitly allowed origin is accepted with credentials and Vary: Origin
   let corsAllowed = false;
+  let corsAllowedCreds = false;
+  let corsVaryOrigin = false;
   const mockReq1: any = { headers: { origin: 'https://trusted-domain.com' }, method: 'GET' };
   const mockRes1: any = {
-    setHeader: (k: string, v: any) => { if (k === 'Access-Control-Allow-Origin' && v === 'https://trusted-domain.com') corsAllowed = true; },
+    setHeader: (k: string, v: any) => {
+      if (k === 'Access-Control-Allow-Origin' && v === 'https://trusted-domain.com') corsAllowed = true;
+      if (k === 'Access-Control-Allow-Credentials' && v === 'true') corsAllowedCreds = true;
+      if (k === 'Vary' && v === 'Origin') corsVaryOrigin = true;
+    },
     status: () => mockRes1,
     json: () => {},
     end: () => {}
   };
   mockCors(mockReq1, mockRes1, () => {});
-  assert('CORS 1: Permits request from explicitly allowlisted origin', corsAllowed, true, true);
+  assert('CORS 1: Permits request from explicitly allowlisted origin with credentials and Vary: Origin', corsAllowed && corsAllowedCreds && corsVaryOrigin, true, true);
 
-  // Unauthorized origin
+  // Case 2: Unauthorized origin rejected with 403 Forbidden
   let corsBlocked = false;
   const mockReq2: any = { headers: { origin: 'https://evil-untrusted-site.com' }, method: 'POST' };
   const mockRes2: any = {
@@ -136,7 +150,7 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
   mockCors(mockReq2, mockRes2, () => {});
   assert('CORS 2: Rejects requests from unauthorized origins with 403 Forbidden', corsBlocked, true, true);
 
-  // Preflight OPTIONS request
+  // Case 3: Allowed OPTIONS preflight
   let preflightHandled = false;
   const mockReq3: any = { headers: { origin: 'https://trusted-domain.com' }, method: 'OPTIONS' };
   const mockRes3: any = {
@@ -147,6 +161,131 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
   };
   mockCors(mockReq3, mockRes3, () => {});
   assert('CORS 3: Returns 204 No Content for preflight OPTIONS request from allowed origin', preflightHandled, true, true);
+
+  // Case 4: Unlisted attacker origin https://attacker.example is strictly denied
+  let attackerBlocked = false;
+  const mockReq4: any = { headers: { origin: 'https://attacker.example' }, method: 'GET' };
+  const mockRes4: any = {
+    setHeader: () => {},
+    status: (code: number) => { if (code === 403) attackerBlocked = true; return mockRes4; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq4, mockRes4, () => {});
+  assert('CORS 4: Unlisted attacker origin https://attacker.example is strictly denied with 403', attackerBlocked, true, true);
+
+  // Case 5: Arbitrary https://anything.run.app origin is denied when not allowlisted
+  let runAppBlocked = false;
+  const mockReq5: any = { headers: { origin: 'https://attacker-app-xyz.run.app' }, method: 'POST' };
+  const mockRes5: any = {
+    setHeader: () => {},
+    status: (code: number) => { if (code === 403) runAppBlocked = true; return mockRes5; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq5, mockRes5, () => {});
+  assert('CORS 5: Arbitrary https://anything.run.app origin is denied when not explicitly allowlisted', runAppBlocked, true, true);
+
+  // Case 6: Arbitrary https://anything.google.com origin is denied when not allowlisted
+  let googleBlocked = false;
+  const mockReq6: any = { headers: { origin: 'https://malicious-site.google.com' }, method: 'GET' };
+  const mockRes6: any = {
+    setHeader: () => {},
+    status: (code: number) => { if (code === 403) googleBlocked = true; return mockRes6; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq6, mockRes6, () => {});
+  assert('CORS 6: Arbitrary https://anything.google.com origin is denied when not explicitly allowlisted', googleBlocked, true, true);
+
+  // Case 7: Arbitrary https://anything.googleusercontent.com origin is denied when not allowlisted
+  let gUserContentBlocked = false;
+  const mockReq7: any = { headers: { origin: 'https://untrusted-user-content.googleusercontent.com' }, method: 'GET' };
+  const mockRes7: any = {
+    setHeader: () => {},
+    status: (code: number) => { if (code === 403) gUserContentBlocked = true; return mockRes7; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReq7, mockRes7, () => {});
+  assert('CORS 7: Arbitrary https://anything.googleusercontent.com origin is denied when not explicitly allowlisted', gUserContentBlocked, true, true);
+
+  // Case 8: An explicit allowlist remains authoritative; suffix fallback cannot bypass it
+  const explicitBypassAttempt1 = isOriginAllowed('https://fake.run.app', ['https://trusted-domain.com'], true);
+  const explicitBypassAttempt2 = isOriginAllowed('https://fake.google.com', ['https://trusted-domain.com'], true);
+  assert('CORS 8: Explicit allowlist remains authoritative; suffix fallback cannot bypass it', !explicitBypassAttempt1 && !explicitBypassAttempt2, true, true);
+
+  // Case 9: Legitimate configured Google AI Studio preview and Cloud Run origins continue to work
+  const previewCors = corsMiddleware(['https://ais-dev-ym6digshqiqxzclyquokv2-218386943250.asia-southeast1.run.app']);
+  let previewAllowed = false;
+  const mockReqPreview: any = { headers: { origin: 'https://ais-dev-ym6digshqiqxzclyquokv2-218386943250.asia-southeast1.run.app' }, method: 'GET' };
+  const mockResPreview: any = {
+    setHeader: (k: string, v: any) => {
+      if (k === 'Access-Control-Allow-Origin' && v === 'https://ais-dev-ym6digshqiqxzclyquokv2-218386943250.asia-southeast1.run.app') previewAllowed = true;
+    },
+    status: () => mockResPreview,
+    json: () => {},
+    end: () => {}
+  };
+  previewCors(mockReqPreview, mockResPreview, () => {});
+  assert('CORS 9: Legitimate configured Google AI Studio preview and Cloud Run origins continue to work', previewAllowed, true, true);
+
+  // Case 10: Localhost is accepted only under intended configuration, rejected when explicit production allowlist excludes it
+  const prodExplicitRejectLocalhost = isOriginAllowed('http://localhost:3000', ['https://production-app.com'], true);
+  const explicitAcceptLocalhost = isOriginAllowed('http://localhost:3000', ['http://localhost:3000'], true);
+  assert('CORS 10: Localhost is rejected when explicit allowlist excludes it, accepted when listed', !prodExplicitRejectLocalhost && explicitAcceptLocalhost, true, true);
+
+  // Case 11: Malformed origins, userinfo, and Origin: null follow documented strict policy
+  const malformedScheme = isOriginAllowed('javascript:alert(1)', ['https://trusted-domain.com']);
+  const malformedCreds = isOriginAllowed('https://user:pass@trusted-domain.com', ['https://trusted-domain.com']);
+  const malformedInvalid = isOriginAllowed('not-a-valid-origin', ['https://trusted-domain.com']);
+  const originNullBlocked = isOriginAllowed('null', ['https://trusted-domain.com']);
+  const normalizationValid = normalizeOrigin('https://trusted-domain.com') === 'https://trusted-domain.com';
+  const normalizationPathRejected = normalizeOrigin('https://trusted-domain.com/unwanted/path') === null;
+  assert('CORS 11: Malformed origins, userinfo, paths, and Origin: null are strictly rejected by normalizer', !malformedScheme && !malformedCreds && !malformedInvalid && !originNullBlocked && normalizationValid && normalizationPathRejected, true, true);
+
+  // Case 12: OPTIONS preflight is rejected with 403 and receives no permissive CORS headers for denied origin
+  let deniedOptionsStatus = 0;
+  const deniedOptionsHeaders: Record<string, string> = {};
+  const mockReqDeniedOptions: any = { headers: { origin: 'https://attacker.example' }, method: 'OPTIONS' };
+  const mockResDeniedOptions: any = {
+    setHeader: (k: string, v: string) => { deniedOptionsHeaders[k] = v; },
+    status: (code: number) => { deniedOptionsStatus = code; return mockResDeniedOptions; },
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReqDeniedOptions, mockResDeniedOptions, () => {});
+  assert('CORS 12: Denied origin preflight OPTIONS returns 403 and receives zero permissive CORS headers', deniedOptionsStatus === 403 && !deniedOptionsHeaders['Access-Control-Allow-Origin'], true, true);
+
+  // Case 13: Credentialed CORS never combines credentials with a wildcard origin
+  const wildcardCors = corsMiddleware(['*']);
+  let wildcardOriginHeader = '';
+  let wildcardCredsHeader = '';
+  const mockReqWildcard: any = { headers: { origin: 'https://any-site.com' }, method: 'GET' };
+  const mockResWildcard: any = {
+    setHeader: (k: string, v: string) => {
+      if (k === 'Access-Control-Allow-Origin') wildcardOriginHeader = v;
+      if (k === 'Access-Control-Allow-Credentials') wildcardCredsHeader = v;
+    },
+    status: () => mockResWildcard,
+    json: () => {},
+    end: () => {}
+  };
+  wildcardCors(mockReqWildcard, mockResWildcard, () => {});
+  assert('CORS 13: Credentialed CORS never combines Access-Control-Allow-Credentials with wildcard origin', wildcardOriginHeader === '*' && wildcardCredsHeader === '', true, true);
+
+  // Case 14: No-Origin requests continue to support legitimate non-browser clients without reflecting an origin
+  let noOriginNextCalled = false;
+  let noOriginAllowedHeader = '';
+  const mockReqNoOrigin: any = { headers: {}, method: 'GET' };
+  const mockResNoOrigin: any = {
+    setHeader: (k: string, v: string) => { if (k === 'Access-Control-Allow-Origin') noOriginAllowedHeader = v; },
+    status: () => mockResNoOrigin,
+    json: () => {},
+    end: () => {}
+  };
+  mockCors(mockReqNoOrigin, mockResNoOrigin, () => { noOriginNextCalled = true; });
+  assert('CORS 14: No-Origin request passes through cleanly to next() without setting Access-Control-Allow-Origin', noOriginNextCalled && !noOriginAllowedHeader, true, true);
 
   // --------------------------------------------------------------------------
   // TEST GROUP 5: Server-Side Authentication & Token Verification
@@ -224,6 +363,62 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
 
   const crossUserAttempt = verifyUserOwnership('user-123', 'user-456');
   assert('UserIsolation 2: Strictly blocks cross-user data access (user A cannot touch user B)', crossUserAttempt === false, true, true);
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 7: Port Configuration & Fallbacks
+  // --------------------------------------------------------------------------
+  assert('Port 1: Valid numeric port is preserved', validatePort(8080) === 8080, validatePort(8080), 8080);
+  assert('Port 2: Valid string port is parsed and returned as integer', validatePort('5000') === 5000, validatePort('5000'), 5000);
+  assert('Port 3: Missing/undefined port defaults to 3000', validatePort(undefined) === 3000, validatePort(undefined), 3000);
+  assert('Port 4: Empty string port defaults to 3000', validatePort('') === 3000, validatePort(''), 3000);
+  assert('Port 5: Out of range (<1) port falls back to 3000', validatePort(0) === 3000, validatePort(0), 3000);
+  assert('Port 6: Out of range (>65535) port falls back to 3000', validatePort(70000) === 3000, validatePort(70000), 3000);
+  assert('Port 7: Non-numeric string port falls back to 3000', validatePort('invalid-port') === 3000, validatePort('invalid-port'), 3000);
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 8: Gemini API Key Validation & Placeholder Detection
+  // --------------------------------------------------------------------------
+  assert('ApiKey 1: Undefined key returns false', isApiKeyConfigured(undefined) === false, false, false);
+  assert('ApiKey 2: Empty string returns false', isApiKeyConfigured('') === false, false, false);
+  assert('ApiKey 3: Whitespace string returns false', isApiKeyConfigured('   \t  ') === false, false, false);
+  assert('ApiKey 4: Placeholder MY_GEMINI_API_KEY returns false', isApiKeyConfigured('MY_GEMINI_API_KEY') === false, false, false);
+  assert('ApiKey 5: Placeholder YOUR_API_KEY returns false', isApiKeyConfigured('YOUR_API_KEY') === false, false, false);
+  assert('ApiKey 6: Placeholder placeholder returns false', isApiKeyConfigured('placeholder') === false, false, false);
+  assert('ApiKey 7: Short string (<10 chars) returns false', isApiKeyConfigured('shortkey') === false, false, false);
+  assert('ApiKey 8: Legitimate key (>=10 chars, non-placeholder) returns true', isApiKeyConfigured('AIzaSyDFakeLegitimateKey12345') === true, true, true);
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 9: Model Resolution & Trust Proxy Setting
+  // --------------------------------------------------------------------------
+  assert('Model 1: Defaults to documented default gemini-3.8-flash', resolveGeminiModel(undefined) === 'gemini-3.8-flash', resolveGeminiModel(undefined), 'gemini-3.8-flash');
+  assert('Model 2: Accepts custom configured model string', resolveGeminiModel('gemini-3.1-flash-lite') === 'gemini-3.1-flash-lite', resolveGeminiModel('gemini-3.1-flash-lite'), 'gemini-3.1-flash-lite');
+  assert('Proxy 1: Defaults to 1 for reverse proxy environments', resolveTrustProxy(undefined) === 1, resolveTrustProxy(undefined), 1);
+  assert('Proxy 2: Parses string "true" as 1', resolveTrustProxy('true') === 1, resolveTrustProxy('true'), 1);
+  assert('Proxy 3: Parses string "false" as boolean false', resolveTrustProxy('false') === false, resolveTrustProxy('false'), false);
+  assert('Proxy 4: Parses string "0" as boolean false', resolveTrustProxy('0') === false, resolveTrustProxy('0'), false);
+  assert('Proxy 5: Parses numeric string as integer hops', resolveTrustProxy('2') === 2, resolveTrustProxy('2'), 2);
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 10: Security Headers & Environment Validation
+  // --------------------------------------------------------------------------
+  const mockReq: any = { headers: {} };
+  const mockHeaders: Record<string, string> = {};
+  const mockRes: any = {
+    setHeader: (key: string, val: string) => { mockHeaders[key] = val; }
+  };
+  let nextCalled: boolean = false;
+  const secMiddleware = securityHeadersMiddleware();
+  secMiddleware(mockReq, mockRes, () => { nextCalled = true; });
+
+  assert('SecHeaders 1: Sets X-Content-Type-Options to nosniff', mockHeaders['X-Content-Type-Options'] === 'nosniff', mockHeaders['X-Content-Type-Options'], 'nosniff');
+  assert('SecHeaders 2: Sets X-XSS-Protection to 1; mode=block', mockHeaders['X-XSS-Protection'] === '1; mode=block', mockHeaders['X-XSS-Protection'], '1; mode=block');
+  assert('SecHeaders 3: Sets Referrer-Policy to strict-origin-when-cross-origin', mockHeaders['Referrer-Policy'] === 'strict-origin-when-cross-origin', mockHeaders['Referrer-Policy'], 'strict-origin-when-cross-origin');
+  assert('SecHeaders 4: Does NOT set X-Frame-Options to DENY (preserves AI Studio iframe)', mockHeaders['X-Frame-Options'] !== 'DENY', mockHeaders['X-Frame-Options'], undefined);
+  assert('SecHeaders 5: Passes control to next() in middleware chain', Boolean(nextCalled), nextCalled, true);
+
+  const envAudit = validateEnvironmentConfig();
+  assert('EnvAudit 1: Returns parsed port number', typeof envAudit.port === 'number' && envAudit.port > 0, true, true);
+  assert('EnvAudit 2: Returns resolved model name', Boolean(envAudit.model && envAudit.model.length > 0), true, true);
 
   return { total: totalTests, passed: passedTests, failed: totalTests - passedTests };
 }

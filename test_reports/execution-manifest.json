@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-16T20:23:18.601Z",
+  "timestamp": "2026-10-19T10:34:54.345Z",
   "summary": {
-    "discoveredCount": 125,
-    "registeredCount": 125,
-    "executedCount": 125,
+    "discoveredCount": 126,
+    "registeredCount": 126,
+    "executedCount": 126,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 3827,
-    "totalAssertionsPassed": 3827,
+    "totalAssertionsExecuted": 4003,
+    "totalAssertionsPassed": 4003,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -33,9 +33,9 @@
       "file": "pHEngineV2.regression.test.ts",
       "moduleName": "runPHEngineV2TestSuite",
       "executed": true,
-      "passedAssertions": 29,
+      "passedAssertions": 32,
       "failedAssertions": 0,
-      "totalAssertions": 29,
+      "totalAssertions": 32,
       "skipped": false
     },
     {
@@ -159,9 +159,9 @@
       "file": "costingEngine.regression.test.ts",
       "moduleName": "runCostingEngineTestSuite",
       "executed": true,
-      "passedAssertions": 33,
+      "passedAssertions": 68,
       "failedAssertions": 0,
-      "totalAssertions": 33,
+      "totalAssertions": 68,
       "skipped": false
     },
     {
@@ -1104,9 +1104,9 @@
       "file": "serverSecurityAndTruthfulHealth.test.ts",
       "moduleName": "runServerSecurityAndTruthfulHealthTestSuite",
       "executed": true,
-      "passedAssertions": 22,
+      "passedAssertions": 62,
       "failedAssertions": 0,
-      "totalAssertions": 22,
+      "totalAssertions": 62,
       "skipped": false
     },
     {
@@ -1134,6 +1134,15 @@
       "passedAssertions": 41,
       "failedAssertions": 0,
       "totalAssertions": 41,
+      "skipped": false
+    },
+    {
+      "file": "vaultLogic.regression.test.ts",
+      "moduleName": "runVaultLogicTestSuite",
+      "executed": true,
+      "passedAssertions": 98,
+      "failedAssertions": 0,
+      "totalAssertions": 98,
       "skipped": false
     },
     {

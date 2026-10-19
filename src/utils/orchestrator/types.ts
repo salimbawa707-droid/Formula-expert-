@@ -53,6 +53,7 @@ export interface StageDiagnostic {
 export interface CanonicalIngredientInput {
   ingredientId?: string;
   id?: string;
+  canonicalIngredientId?: string;
   name: string;
   commercialGradeId?: string;
   percentage: number;
@@ -63,7 +64,7 @@ export interface CanonicalIngredientInput {
   role?: string;
   category?: string;
   function?: string;
-  casNumber?: string;
+  casNumber?: string | null;
   inciName?: string;
   hlb?: number;
   hlbValue?: number;

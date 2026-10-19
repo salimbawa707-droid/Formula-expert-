@@ -1,0 +1,669 @@
+{
+  "inspectionTimestamp": "2026-10-17T22:04:18.272Z",
+  "zenodoRecord": {
+    "recordId": "18961871",
+    "doi": "10.5281/zenodo.18961871",
+    "title": "Rheometer methods for characterising and comparing foams: an example using household detergents [dataset]",
+    "authors": [
+      "Ceri Allgood",
+      "Thomas Jones"
+    ],
+    "institution": "Lancaster University",
+    "license": "CC-BY-4.0",
+    "primaryCitation": "Rheologica Acta (2026), DOI: 10.1007/s00397-026-XXXX"
+  },
+  "workbooks": {
+    "Supplementary_SolutionFlowCurves.xlsx": {
+      "spec": {
+        "filename": "Supplementary_SolutionFlowCurves.xlsx",
+        "expectedMd5": "cd5bfd6e95fc65e412807d53935c2d96",
+        "expectedSize": 22280,
+        "targetEngine": "ENG-003",
+        "description": "Rotational steady-shear flow curves of detergent solutions and DI water controls"
+      },
+      "hashes": {
+        "byteSize": 22280,
+        "md5": "cd5bfd6e95fc65e412807d53935c2d96",
+        "sha256": "90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590"
+      },
+      "details": {
+        "sheetName": "SolutionFlowCurves",
+        "cellRange": "A1:H226",
+        "totalRows": 226,
+        "dataRowCount": 224,
+        "missingCells": 98,
+        "headers": [
+          null,
+          "Point No.",
+          "Time",
+          "Shear Rate",
+          "Shear Stress",
+          "Viscosity",
+          "Torque",
+          "Temperature"
+        ],
+        "units": [
+          null,
+          "[-]",
+          "[s]",
+          "[s-1]",
+          "[Pa]",
+          "[Pa s]",
+          "[N m]",
+          "[C]"
+        ],
+        "sampleCount": 15,
+        "waterControlReplicates": [
+          "Water_1",
+          "Water_2",
+          "Water_3"
+        ],
+        "detergentReplicates": [
+          "A1",
+          "A2",
+          "A3",
+          "B1",
+          "B2",
+          "B3",
+          "C1",
+          "C2",
+          "C3",
+          "D1",
+          "D2",
+          "D3"
+        ],
+        "sampleSummaries": {
+          "Water_1": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.0010426,
+              0.020884
+            ],
+            "viscosityRange_mPas": [
+              0.92258,
+              1.0464
+            ],
+            "tempRange_C": [
+              20,
+              20
+            ]
+          },
+          "Water_2": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.001415,
+              0.020864
+            ],
+            "viscosityRange_mPas": [
+              0.96365,
+              1.4152
+            ],
+            "tempRange_C": [
+              19.99,
+              20
+            ]
+          },
+          "Water_3": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00090073,
+              0.020825
+            ],
+            "viscosityRange_mPas": [
+              0.90089,
+              1.0434
+            ],
+            "tempRange_C": [
+              19.99,
+              20
+            ]
+          },
+          "A1": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.0011086,
+              0.02222
+            ],
+            "viscosityRange_mPas": [
+              1.064,
+              1.3741999999999999
+            ],
+            "tempRange_C": [
+              19.98,
+              20
+            ]
+          },
+          "A2": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.0013275,
+              0.022025
+            ],
+            "viscosityRange_mPas": [
+              1.0816000000000001,
+              1.3359
+            ],
+            "tempRange_C": [
+              19.98,
+              20
+            ]
+          },
+          "A3": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.001093,
+              0.022195
+            ],
+            "viscosityRange_mPas": [
+              1.093,
+              1.2946
+            ],
+            "tempRange_C": [
+              19.98,
+              20
+            ]
+          },
+          "B1": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.0010509,
+              0.02102
+            ],
+            "viscosityRange_mPas": [
+              0.92513,
+              1.0849
+            ],
+            "tempRange_C": [
+              20,
+              20
+            ]
+          },
+          "B2": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00099634,
+              0.020936
+            ],
+            "viscosityRange_mPas": [
+              0.9571500000000001,
+              1.0493
+            ],
+            "tempRange_C": [
+              20,
+              20
+            ]
+          },
+          "B3": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00078533,
+              0.020891
+            ],
+            "viscosityRange_mPas": [
+              0.78538,
+              1.057
+            ],
+            "tempRange_C": [
+              19.99,
+              20
+            ]
+          },
+          "C1": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00077336,
+              0.021365
+            ],
+            "viscosityRange_mPas": [
+              0.77345,
+              1.1586
+            ],
+            "tempRange_C": [
+              19.98,
+              20
+            ]
+          },
+          "C2": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00091881,
+              0.020911
+            ],
+            "viscosityRange_mPas": [
+              0.91886,
+              1.048
+            ],
+            "tempRange_C": [
+              19.99,
+              20.01
+            ]
+          },
+          "C3": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00085958,
+              0.020803
+            ],
+            "viscosityRange_mPas": [
+              0.85963,
+              1.0426
+            ],
+            "tempRange_C": [
+              19.99,
+              20
+            ]
+          },
+          "D1": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.00086944,
+              0.020881
+            ],
+            "viscosityRange_mPas": [
+              0.86949,
+              1.0465
+            ],
+            "tempRange_C": [
+              19.99,
+              20
+            ]
+          },
+          "D2": {
+            "nPoints": 15,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.0011258,
+              0.0208
+            ],
+            "viscosityRange_mPas": [
+              0.98945,
+              1.1259
+            ],
+            "tempRange_C": [
+              19.97,
+              20
+            ]
+          },
+          "D3": {
+            "nPoints": 14,
+            "shearRateRange_s1": [
+              1,
+              20
+            ],
+            "shearStressRange_Pa": [
+              0.0010429,
+              0.020807
+            ],
+            "viscosityRange_mPas": [
+              0.9873200000000001,
+              1.0636
+            ],
+            "tempRange_C": [
+              19.98,
+              20
+            ]
+          }
+        }
+      }
+    },
+    "Supplementary_FilmThickness_v1.xlsx": {
+      "spec": {
+        "filename": "Supplementary_FilmThickness_v1.xlsx",
+        "expectedMd5": "bc9582baafecd6552f6014216a0844e6",
+        "expectedSize": 149923,
+        "targetEngine": "ENG-005",
+        "description": "Inter-bubble fluid film thickness (lamella width) measurements for Foams A-D"
+      },
+      "hashes": {
+        "byteSize": 149923,
+        "md5": "bc9582baafecd6552f6014216a0844e6",
+        "sha256": "170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428"
+      },
+      "details": {
+        "sheetName": "Data",
+        "cellRange": "A1:S2396",
+        "totalRows": 2396,
+        "scale": {
+          "scale_px_per_mm": 1095,
+          "um_per_px": 0.91324200913242
+        },
+        "totalMeasurements": 7522,
+        "foamStats": {
+          "Foam_A": {
+            "measurementCount": 2350,
+            "min_um": 2.582648401826484,
+            "max_um": 95.03378995433789,
+            "mean_um": 21.804416982415155,
+            "median_um": 21.182648401826484,
+            "sd_um": 8.956074234022207,
+            "iqr_um": 10.9324200913242
+          },
+          "Foam_B": {
+            "measurementCount": 1465,
+            "min_um": 7.30593607305936,
+            "max_um": 49.05205479452055,
+            "mean_um": 21.61610173453646,
+            "median_um": 21.024657534246572,
+            "sd_um": 5.968018639023935,
+            "iqr_um": 8.341552511415525
+          },
+          "Foam_C": {
+            "measurementCount": 2394,
+            "min_um": 3.65296803652968,
+            "max_um": 111.25479452054793,
+            "mean_um": 23.75813658957132,
+            "median_um": 20.421004566210044,
+            "sd_um": 11.877474262980801,
+            "iqr_um": 17.096803652968035
+          },
+          "Foam_D": {
+            "measurementCount": 1313,
+            "min_um": 7.36255707762557,
+            "max_um": 63.357077625570774,
+            "mean_um": 21.762824859935918,
+            "median_um": 21.91780821917808,
+            "sd_um": 5.640844049383088,
+            "iqr_um": 7.0374429223744315
+          }
+        }
+      }
+    },
+    "Supplementary_BubbleSizes_v1.xlsx": {
+      "spec": {
+        "filename": "Supplementary_BubbleSizes_v1.xlsx",
+        "expectedMd5": "9fcfe68a37d2d92a7999569a07908854",
+        "expectedSize": 557745,
+        "targetEngine": "ENG-005",
+        "description": "Bubble area and radius distributions at 20 min and 30 min aging times"
+      },
+      "hashes": {
+        "byteSize": 557745,
+        "md5": "9fcfe68a37d2d92a7999569a07908854",
+        "sha256": "9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad"
+      },
+      "details": {
+        "20min": {
+          "cellRange": "A1:H4407",
+          "totalRows": 4407,
+          "totalBubbles": 13388,
+          "foamStats": {
+            "Foam_A": {
+              "bubbleCount": 4405,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 553.9746114081664,
+              "mean_radius_um": 92.26697958953604,
+              "median_radius_um": 71.02115730633564,
+              "d10_diameter_um": 34.177263182735665,
+              "d50_diameter_um": 142.04231461267128,
+              "d90_diameter_um": 401.35966962430246,
+              "d32_sauter_diameter_um": 417.3316799207364
+            },
+            "Foam_B": {
+              "bubbleCount": 3145,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 710.6926719043051,
+              "mean_radius_um": 140.73959144267502,
+              "median_radius_um": 119.31487678069682,
+              "d10_diameter_um": 45.50490854033679,
+              "d50_diameter_um": 238.62975356139364,
+              "d90_diameter_um": 576.8635703965316,
+              "d32_sauter_diameter_um": 571.3584296483365
+            },
+            "Foam_C": {
+              "bubbleCount": 3629,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 719.140555099759,
+              "mean_radius_um": 117.2918676087185,
+              "median_radius_um": 69.9382389819549,
+              "d10_diameter_um": 39.57646046264483,
+              "d50_diameter_um": 139.8764779639098,
+              "d90_diameter_um": 581.9493966241016,
+              "d32_sauter_diameter_um": 592.5541696218559
+            },
+            "Foam_D": {
+              "bubbleCount": 2209,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 713.6143060829245,
+              "mean_radius_um": 163.91492680883735,
+              "median_radius_um": 130.95654343883058,
+              "d10_diameter_um": 41.54010814125324,
+              "d50_diameter_um": 261.91308687766116,
+              "d90_diameter_um": 708.4900269597161,
+              "d32_sauter_diameter_um": 681.8797081641882
+            }
+          }
+        },
+        "30min": {
+          "cellRange": "A1:H2386",
+          "totalRows": 2386,
+          "totalBubbles": 6121,
+          "foamStats": {
+            "Foam_A": {
+              "bubbleCount": 2384,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 649.6387865593102,
+              "mean_radius_um": 126.35746353038577,
+              "median_radius_um": 96.77082770391237,
+              "d10_diameter_um": 41.21933030485891,
+              "d50_diameter_um": 193.54165540782475,
+              "d90_diameter_um": 554.2381179732178,
+              "d32_sauter_diameter_um": 561.2389134222474
+            },
+            "Foam_B": {
+              "bubbleCount": 1147,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 880.2756585955286,
+              "mean_radius_um": 196.22452310878458,
+              "median_radius_um": 170.78919381665227,
+              "d10_diameter_um": 78.81681358563826,
+              "d50_diameter_um": 341.57838763330454,
+              "d90_diameter_um": 767.5371075783415,
+              "d32_sauter_diameter_um": 736.3953337556202
+            },
+            "Foam_C": {
+              "bubbleCount": 1453,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 1062.2165736531588,
+              "mean_radius_um": 132.3419429126279,
+              "median_radius_um": 58.2929359490678,
+              "d10_diameter_um": 25.241581696535924,
+              "d50_diameter_um": 116.5858718981356,
+              "d90_diameter_um": 749.9199864975802,
+              "d32_sauter_diameter_um": 895.0701592103379
+            },
+            "Foam_D": {
+              "bubbleCount": 1137,
+              "min_radius_um": 2.5762081440536817,
+              "max_radius_um": 881.6656011073252,
+              "mean_radius_um": 175.4843534205992,
+              "median_radius_um": 124.40711584258842,
+              "d10_diameter_um": 38.21134188074888,
+              "d50_diameter_um": 248.81423168517685,
+              "d90_diameter_um": 853.2967622290043,
+              "d32_sauter_diameter_um": 860.6342525744187
+            }
+          }
+        },
+        "grandTotalBubbles": 19509
+      }
+    },
+    "Supplementary_RheometerData_v2.xlsx": {
+      "spec": {
+        "filename": "Supplementary_RheometerData_v2.xlsx",
+        "expectedMd5": "c9b5a9cde073eb7c58933eec37a559a6",
+        "expectedSize": 162970,
+        "targetEngine": "ENG-003 & ENG-005",
+        "description": "Oscillatory amplitude and frequency sweeps, steady yield, and continuous shear at 1/s and 5/s"
+      },
+      "hashes": {
+        "byteSize": 162970,
+        "md5": "c9b5a9cde073eb7c58933eec37a559a6",
+        "sha256": "073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70"
+      },
+      "details": {
+        "sheetNames": [
+          "Contents",
+          "AmpSwps_all",
+          "FrqSwps_all",
+          "FoamD_AmpSwpTest",
+          "FoamA_SteadyYield",
+          "SteadyShear_5",
+          "SteadyShear_1"
+        ],
+        "sheets": {
+          "AmpSwps_all": {
+            "cellRange": "A1:K301",
+            "totalRows": 301,
+            "testCount": 12,
+            "ampSummaries": {
+              "A1": {
+                "nPoints": 25,
+                "plateauG0_Pa": 50.721,
+                "yieldStress_Pa": 17.881,
+                "yieldStrain": 0.789
+              },
+              "A2": {
+                "nPoints": 25,
+                "plateauG0_Pa": 52.02,
+                "yieldStress_Pa": 17.11,
+                "yieldStrain": 0.789
+              },
+              "A3": {
+                "nPoints": 25,
+                "plateauG0_Pa": 51.26133333333333,
+                "yieldStress_Pa": 16.459,
+                "yieldStrain": 0.789
+              },
+              "B1": {
+                "nPoints": 25,
+                "plateauG0_Pa": 31.50266666666667,
+                "yieldStress_Pa": 14.936,
+                "yieldStrain": 1.14
+              },
+              "B2": {
+                "nPoints": 25,
+                "plateauG0_Pa": 30.67866666666667,
+                "yieldStress_Pa": 12.39,
+                "yieldStrain": 1.14
+              },
+              "B3": {
+                "nPoints": 25,
+                "plateauG0_Pa": 37.772999999999996,
+                "yieldStress_Pa": 13.163,
+                "yieldStrain": 0.789
+              },
+              "C1": {
+                "nPoints": 25,
+                "plateauG0_Pa": 29.840333333333337,
+                "yieldStress_Pa": 13.466,
+                "yieldStrain": 1.14
+              },
+              "C2": {
+                "nPoints": 25,
+                "plateauG0_Pa": 29.108000000000004,
+                "yieldStress_Pa": 13.877,
+                "yieldStrain": 1.14
+              },
+              "C3": {
+                "nPoints": 25,
+                "plateauG0_Pa": 28.587,
+                "yieldStress_Pa": 13.126,
+                "yieldStrain": 1.14
+              },
+              "D1": {
+                "nPoints": 25,
+                "plateauG0_Pa": 28.078999999999997,
+                "yieldStress_Pa": 15.743,
+                "yieldStrain": 1.14
+              },
+              "D2": {
+                "nPoints": 25,
+                "plateauG0_Pa": 25.274,
+                "yieldStress_Pa": 12.959,
+                "yieldStrain": 1.14
+              },
+              "D3": {
+                "nPoints": 24,
+                "plateauG0_Pa": 28.97666666666667,
+                "yieldStress_Pa": 13.349,
+                "yieldStrain": 1.14
+              }
+            }
+          },
+          "SteadyShear_5": {
+            "cellRange": "A1:I733",
+            "totalRows": 733,
+            "shearRate_s1": 5,
+            "pointCount": 731
+          },
+          "SteadyShear_1": {
+            "cellRange": "A1:I733",
+            "totalRows": 733,
+            "shearRate_s1": 1,
+            "pointCount": 731
+          },
+          "FoamA_SteadyYield": {
+            "cellRange": "A1:I92",
+            "totalRows": 92,
+            "pointCount": 90
+          }
+        }
+      }
+    }
+  }
+}

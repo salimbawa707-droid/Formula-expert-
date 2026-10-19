@@ -68,20 +68,44 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-[#0e1629] p-3.5 rounded-xl border border-slate-700/80">
           <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">
-            Finished Formula Cost / kg
+            {formulaCost.pricingStatus === 'PARTIAL_PRICING'
+              ? `Partial Cost / kg (${formulaCost.completePriceCount}/${formulaCost.totalIngredientsCount} priced)`
+              : formulaCost.pricingStatus === 'NO_PRICING' || formulaCost.pricingStatus === 'UNKNOWN'
+              ? 'Finished Formula Cost / kg'
+              : 'Finished Formula Cost / kg'}
           </span>
           <span className="text-xl sm:text-2xl font-mono font-extrabold text-emerald-400 block mt-1">
-            ₹{formulaCost.costPerKg.toFixed(2)}
-            <span className="text-xs text-slate-400 font-normal ml-1">/ kg</span>
+            {formulaCost.pricingStatus === 'NO_PRICING' || formulaCost.pricingStatus === 'UNKNOWN' ? (
+              <span className="text-slate-500 font-sans text-lg font-bold">Unpriced</span>
+            ) : (
+              <>
+                ₹{formulaCost.costPerKg.toFixed(2)}
+                <span className="text-xs text-slate-400 font-normal ml-1">/ kg</span>
+                {formulaCost.pricingStatus === 'PARTIAL_PRICING' && (
+                  <span className="text-[10px] text-amber-400 font-sans font-normal ml-1.5">(Partial)</span>
+                )}
+              </>
+            )}
           </span>
         </div>
 
         <div className="bg-[#0e1629] p-3.5 rounded-xl border border-slate-700/80">
           <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">
-            Total Batch Cost ({batchSizeKg} kg)
+            {formulaCost.pricingStatus === 'PARTIAL_PRICING'
+              ? `Partial Batch Cost (${batchSizeKg} kg)`
+              : `Total Batch Cost (${batchSizeKg} kg)`}
           </span>
           <span className="text-xl sm:text-2xl font-mono font-extrabold text-white block mt-1">
-            ₹{formulaCost.totalBatchCost.toFixed(2)}
+            {formulaCost.pricingStatus === 'NO_PRICING' || formulaCost.pricingStatus === 'UNKNOWN' ? (
+              <span className="text-slate-500 font-sans text-base font-bold">Price Input Required</span>
+            ) : (
+              <>
+                ₹{formulaCost.totalBatchCost.toFixed(2)}
+                {formulaCost.pricingStatus === 'PARTIAL_PRICING' && (
+                  <span className="text-xs text-amber-400 font-sans font-normal ml-1.5">(Partial)</span>
+                )}
+              </>
+            )}
           </span>
         </div>
 
@@ -131,16 +155,20 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
                   </td>
                   <td className="py-2 px-2 text-right">
                     {item.hasUserPrice ? (
-                      <span className="text-emerald-400 font-bold">₹{item.costPerKg.toFixed(2)}</span>
+                      item.costPerKg === 0 ? (
+                        <span className="text-emerald-400 font-bold">₹0.00 <span className="text-[10px] text-emerald-300 font-normal">(Free)</span></span>
+                      ) : (
+                        <span className="text-emerald-400 font-bold">₹{item.costPerKg.toFixed(2)}</span>
+                      )
                     ) : (
                       <span className="text-amber-400 text-[11px] font-sans font-semibold">Not Set</span>
                     )}
                   </td>
                   <td className="py-2 px-2 text-right font-bold text-white">
-                    ₹{item.totalCost.toFixed(2)}
+                    {item.hasUserPrice ? `₹${item.totalCost.toFixed(2)}` : <span className="text-slate-600 font-normal">—</span>}
                   </td>
                   <td className="py-2 px-2 text-right text-cyan-300">
-                    {item.costPercentageOfTotal.toFixed(1)}%
+                    {item.hasUserPrice && formulaCost.totalBatchCost > 0 ? `${item.costPercentageOfTotal.toFixed(1)}%` : <span className="text-slate-600 font-normal">—</span>}
                   </td>
                 </tr>
               ))}
@@ -150,7 +178,7 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
       </div>
 
       {/* Commercial Margin Chain Projections */}
-      {formulaCost.totalBatchCost > 0 && marginChain && (
+      {formulaCost.isComplete && formulaCost.totalBatchCost > 0 && marginChain && (
         <div className="bg-[#0e1629] rounded-xl border border-slate-800 p-3 sm:p-4 space-y-3">
           <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider">
             Commercial Margin Chain Projections

@@ -35,7 +35,6 @@ export const CHEMICALS: ChemicalItem[] = [
     description: 'High performance anionic surfactant requiring alkaline neutralization (NaOH, TEA, or KOH). Primary workhorse of liquid detergent formulations.',
     phRange: '1.0 - 2.5 (Raw) / 7.0 - 9.5 (Neutralized)',
     activeMatterDefault: 96,
-    costRange: '$1.80 - $2.40 / kg',
     hlb: 11.5,
     safetyRating: 'Corrosive (Raw) / Low Irritant (Neutralized)'
   },
@@ -49,7 +48,6 @@ export const CHEMICALS: ChemicalItem[] = [
     description: 'Ethoxylated anionic surfactant providing rapid foaming, flash foam stability, and low skin irritation in liquid detergents and dishwash.',
     phRange: '6.5 - 8.5',
     activeMatterDefault: 70,
-    costRange: '$1.60 - $2.10 / kg',
     hlb: 40.0,
     safetyRating: 'Mild Skin Irritant'
   },
@@ -63,7 +61,6 @@ export const CHEMICALS: ChemicalItem[] = [
     description: 'Nonionic surfactant with cloud point ~60°C. Excellent degreasing and soil suspension performance across wide temperature ranges.',
     phRange: '5.0 - 9.0',
     activeMatterDefault: 100,
-    costRange: '$2.50 - $3.20 / kg',
     hlb: 13.1,
     safetyRating: 'Eye Irritant'
   },
@@ -77,7 +74,6 @@ export const CHEMICALS: ChemicalItem[] = [
     description: 'Zwitterionic amphoteric surfactant that co-thickens anionic formulations when combined with NaCl.',
     phRange: '4.5 - 8.5',
     activeMatterDefault: 30,
-    costRange: '$2.10 - $2.80 / kg',
     hlb: 12.0,
     safetyRating: 'Non-hazardous at formulation levels'
   }

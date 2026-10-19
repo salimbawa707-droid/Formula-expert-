@@ -1,23 +1,24 @@
-# Detergent Formula Expert — ZIP 40 Implementation Plan
+# Implementation Plan: Resolving Filesystem I/O and Build Issues
 
-1.  **Infrastructure Hardening (Node & Dependencies)**:
-    *   Update `package.json` to reflect `engines: { "node": ">=24.12.0" }`.
-    *   Update `firebase` dependencies to meet version requirements and run `npm install` for a clean lockfile state.
-    *   Validate the entire suite with `npm test`, `npm run typecheck`, and production builds.
+The application is experiencing intermittent filesystem lock issues in the AI Studio preview environment, preventing successful package installation (`npm install`) and subsequent builds.
 
-2.  **Android Release Pipeline Preparation**:
-    *   Update `android/app/build.gradle` to `compileSdk 36` and `targetSdk 36`.
-    *   Check Gradle Wrapper (`gradle-wrapper.properties`) and AGP (Android Gradle Plugin) versions for compatibility with SDK 36.
-    *   Configure the build pipeline to generate the AAB artifact.
+## Strategy
 
-3.  **Ingredient Research & Scientific Integrity**:
-    *   Implement official Google Search grounding in `src/services/ingredientResearchService.ts` using `@google/genai`.
-    *   Ensure strict enforcement of `UNKNOWN`/`null` for missing scientific properties.
-    *   Implement server-side validation for researched ingredient applications.
+1.  **Environment Reconciliation**:
+    -   Perform a clean state reset to clear any stale file handles or temporary lock files.
+    -   Verify the workspace root and directory structure.
+    -   Force a clean installation of all project dependencies.
 
-4.  **Truthful Health Reporting**:
-    *   Refactor `/api/ai/status` and `/api/ai/chemistry-status` to expose accurate provider reachability and client-initialization states.
+2.  **Build Verification**:
+    -   Execute a fresh build (`npm run build`) to ensure all components and configurations are correctly resolved in the synchronized environment.
+    -   Run a full lint and type-check to confirm code stability.
 
-5.  **Final Verification**:
-    *   Regenerate the 39-template scientific audit report.
-    *   Verify all tests pass and ensure no pricing logic regressions.
+3.  **Deployment Verification**:
+    -   Verify that all Firestore integration configurations and Firebase blueprints are correctly in place.
+
+## Steps
+
+1.  Clear build artifacts and stale lock files.
+2.  Clean install dependencies.
+3.  Re-run full build and linting.
+4.  If successful, finalize any remaining application tasks.

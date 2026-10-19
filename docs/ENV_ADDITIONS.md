@@ -12,5 +12,8 @@
 - Note: When unconfigured, the billing verification endpoint safely fails closed (`status: 'UNVERIFIED'`, verification marked `BLOCKED`). Never returns active entitlements based on environment variable presence alone.
 
 ### 3. Server Security & Diagnostics
+- `PORT`: Optional server listening port. Validated integer between 1 and 65535 (defaults to `3000` for local development and AI Studio preview; binds dynamically when injected by Cloud Run / container runtimes).
+- `GEMINI_MODEL`: Optional AI model identifier (defaults to documented verified model `gemini-3.8-flash`).
+- `TRUST_PROXY`: Optional reverse proxy trust setting ('true', 'false', hop integer, or subnet; defaults to `1` for single-hop Cloud Run / reverse proxies).
 - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (defaults to `http://localhost:3000`, `capacitor://localhost`, etc.).
 - `NODE_ENV`: Runtime environment (`production`, `development`, `test`). Test bypasses are completely inaccessible in `production`.

@@ -125,6 +125,7 @@ import { runServerSecurityAndTruthfulHealthTestSuite } from './__tests__/serverS
 import { runApiBaseAndBillingSecurityTestSuite } from './__tests__/apiBaseAndBillingSecurity.test';
 import { runAuthAndRouteMatrixTestSuite } from './__tests__/authAndRouteMatrix.regression.test';
 import { runSecurityFixesTestSuite } from './__tests__/securityFixes.regression.test';
+import { runVaultLogicTestSuite } from './__tests__/vaultLogic.regression.test';
 import { finalizeMasterTestRun } from './masterTestFinalizer';
 
 const phSummary = runRegressionTestSuite();
@@ -256,6 +257,7 @@ const serverSecurityHealthSummary = await runServerSecurityAndTruthfulHealthTest
 const apiBaseBillingSummary = await runApiBaseAndBillingSecurityTestSuite();
 const authAndRouteMatrixSummary = await runAuthAndRouteMatrixTestSuite();
 const securityFixesSummary = await runSecurityFixesTestSuite();
+const vaultLogicSummary = runVaultLogicTestSuite();
 
 if (phSummary.failed > 0) {
   console.log('Failed pHEngine legacy tests:');
@@ -515,6 +517,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'apiBaseAndBillingSecurity.test.ts', moduleName: 'runApiBaseAndBillingSecurityTestSuite', executed: true, passedAssertions: apiBaseBillingSummary.passed, failedAssertions: apiBaseBillingSummary.failed, totalAssertions: apiBaseBillingSummary.total, skipped: false },
   { file: 'authAndRouteMatrix.regression.test.ts', moduleName: 'runAuthAndRouteMatrixTestSuite', executed: true, passedAssertions: authAndRouteMatrixSummary.passed, failedAssertions: authAndRouteMatrixSummary.failed, totalAssertions: authAndRouteMatrixSummary.total, skipped: false },
   { file: 'securityFixes.regression.test.ts', moduleName: 'runSecurityFixesTestSuite', executed: true, passedAssertions: securityFixesSummary.passed, failedAssertions: securityFixesSummary.failed, totalAssertions: securityFixesSummary.total, skipped: false },
+  { file: 'vaultLogic.regression.test.ts', moduleName: 'runVaultLogicTestSuite', executed: true, passedAssertions: vaultLogicSummary.passed, failedAssertions: vaultLogicSummary.failed, totalAssertions: vaultLogicSummary.total, skipped: false },
   { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 25, failedAssertions: 0, totalAssertions: 25, skipped: false }
 ];
 

@@ -33,7 +33,6 @@ import {
   calculateDetailedViscosity,
   calculateRawSurfactants,
   calculateActiveSurfactants,
-  calculateBatchCost,
   calculateFormulationCompatibility,
   generateDynamicMixingInstructions,
   calculateCPI,
@@ -43,6 +42,7 @@ import {
   ActiveMatterEngine,
   FormulaScientificOrchestrator
 } from "../utils/calculators";
+import { calculateFormulaCost } from "../utils/costingEngine";
 import { HardnessResultOutput, CleaningResultOutput } from "../utils/orchestrator/types";
 import { jsPDF } from "jspdf";
 import { useSettingsStore } from "../stores/useSettingsStore";
@@ -630,7 +630,8 @@ function SmartFormulaAnalyzerProInner({
       if (plantPct > 70) carbonFootprint = "Low";
       else if (plantPct < 30) carbonFootprint = "High";
 
-      const rawMaterialCost = calculateBatchCost(ingredients, 1);
+      const costReport = calculateFormulaCost(ingredients, 1);
+      const rawMaterialCost = costReport.costPerKg;
       const manufacturingCost = rawMaterialCost * (1 + overheadPct / 100);
       const finalExFactoryCost = manufacturingCost + packagingCost;
 
@@ -694,6 +695,10 @@ function SmartFormulaAnalyzerProInner({
         carbonFootprint,
         costing: {
           rawMaterialCost,
+          isComplete: costReport.isComplete,
+          pricingStatus: costReport.pricingStatus,
+          missingPriceCount: costReport.missingPriceCount,
+          costLabel: costReport.costLabel,
           manufacturingCost,
           finalExFactoryCost,
           suggestedDistributor,

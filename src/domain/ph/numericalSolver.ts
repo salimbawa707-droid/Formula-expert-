@@ -161,8 +161,10 @@ export class NumericalEquilibriumSolver {
         const maxB = Math.max(low, high);
 
         if (candidate > minB && candidate < maxB && Math.abs(delta) < Math.abs(high - low)) {
-          nextPH = candidate;
-          stepSize = Math.abs(delta);
+          // Robustness: limit step to 80% of bracket width to prevent erratic oscillation
+          const limit = 0.8 * Math.abs(high - low);
+          nextPH = currentPH + Math.max(-limit, Math.min(limit, delta));
+          stepSize = Math.abs(nextPH - currentPH);
           methodUsed = 'newton';
         } else {
           // Fall back to bisection

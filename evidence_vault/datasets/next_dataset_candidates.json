@@ -1,0 +1,292 @@
+{
+  "auditTimestamp": "2026-10-17T21:55:00.000Z",
+  "phaseStatus": "ACTIVE_OPEN",
+  "phase5GateStatus": "STRICTLY_LOCKED",
+  "selectionObjective": "Identify next highest-value experimental dataset for ENG-003, ENG-004, and ENG-005",
+  "engineInventory": [
+    {
+      "id": "ENG-001",
+      "name": "PHEngineV2",
+      "sourcePath": "src/core/phEngineV2.ts",
+      "predictedProperties": ["equilibriumPH", "activityCoefficients (Davies)", "bufferCapacity (beta)"],
+      "requiredInputs": [
+        { "name": "acidBaseEquilibria", "unit": "pKa array" },
+        { "name": "concentrations", "unit": "mol/L" },
+        { "name": "temperature", "unit": "K" },
+        { "name": "ionicStrength", "unit": "mol/L" }
+      ],
+      "models": ["Davies equation (log10 gamma)", "Charge balance neutrality", "Iterative Henderson-Hasselbalch polyprotic solver"],
+      "existingEvidence": ["EVD-009 (NIST SRD 69)", "EVD-010 (PubChem)"],
+      "missingEvidence": "Empirical potentiometric titration curves (pH vs mL titrant) under high electrolyte ionic strength (> 0.2M)."
+    },
+    {
+      "id": "ENG-002",
+      "name": "SurfactantMicellizationEngine",
+      "sourcePath": "src/core/surfactantMicellizationEngine.ts",
+      "predictedProperties": ["mixedCMC", "micelleComposition (alpha_i)", "synergyIndex"],
+      "requiredInputs": [
+        { "name": "individualCMCs", "unit": "mol/L" },
+        { "name": "moleFractions", "unit": "dimensionless (x_i)" },
+        { "name": "rubinghBetaInteraction", "unit": "dimensionless (beta)" }
+      ],
+      "models": ["Rubingh Regular Solution Theory (RST)", "Clint ideal solution equation"],
+      "existingEvidence": ["EVD-002 / DS-001 (SURFPRO Zenodo 15861809 - Numerically Inspected, pure-component input reference only)"],
+      "missingEvidence": "Binary mixed-surfactant titration series (varying mole fractions) to validate interaction parameter beta and mixed micelle synergy."
+    },
+    {
+      "id": "ENG-003",
+      "name": "RheologyViscosityEngine",
+      "sourcePath": "src/core/rheologyEngine.ts",
+      "predictedProperties": ["apparentViscosity", "flowBehaviorIndex (n)", "yieldStress (tau_0)"],
+      "requiredInputs": [
+        { "name": "shearRate", "unit": "1/s (0.1 to 1000)" },
+        { "name": "surfactantTotal", "unit": "% w/w" },
+        { "name": "naclElectrolyte", "unit": "% w/w" },
+        { "name": "associativePolymer", "unit": "% w/w" }
+      ],
+      "models": ["Herschel-Bulkley flow curve", "Carreau-Yasuda model", "Salt-thickening quadratic polynomial"],
+      "existingEvidence": ["EVD-003 (Chitre et al. Shampoo Sci Data 2024 - uninspected)", "EVD-005 (RheoData - uninspected)"],
+      "missingEvidence": "Standard rotational shear flow curves (shear stress vs shear rate) on surfactant-thickened detergent solutions."
+    },
+    {
+      "id": "ENG-004",
+      "name": "BuilderChelationEngine",
+      "sourcePath": "src/core/builderChelationEngine.ts",
+      "predictedProperties": ["freeCalcium ([Ca2+])", "calciumBindingCapacity", "precipitationRiskFactor"],
+      "requiredInputs": [
+        { "name": "chelantConcentrations", "unit": "mol/L (citrate, STPP, GLDA, MGDA)" },
+        { "name": "waterHardness", "unit": "ppm CaCO3" },
+        { "name": "solutionPH", "unit": "pH units" }
+      ],
+      "models": ["Multi-ligand conditional stability constants (K_cond)", "Non-linear mass-balance solver", "Calcium-LAS solubility product (Ksp)"],
+      "existingEvidence": ["EVD-004 (PMC11222379)", "EVD-009 (NIST SRD 69)"],
+      "missingEvidence": "Raw calcium ion-selective electrode (ISE) potentiometric titration curves in presence of citrate/GLDA builders."
+    },
+    {
+      "id": "ENG-005",
+      "name": "FoamKineticsEngine",
+      "sourcePath": "src/core/foamKineticsEngine.ts",
+      "predictedProperties": ["initialFoamVolume (V_0)", "foamHalfLife (t_1/2)", "soilDepressionFactor"],
+      "requiredInputs": [
+        { "name": "surfactantChassis", "unit": "composition matrix" },
+        { "name": "defomingSoilLoad", "unit": "ppm sebum / oil" },
+        { "name": "waterHardness", "unit": "ppm CaCO3" }
+      ],
+      "models": ["Bikerman dynamic foam generation equation", "Ross-Miles exponential decay model", "Gibbs-Marangoni lamellar drainage film equation"],
+      "existingEvidence": ["EVD-006 (Zenodo 18961871 - uninspected lead)"],
+      "missingEvidence": "Dynamic foam height time series, lamellar film drainage thickness, and bubble size distribution under controlled hardness."
+    },
+    {
+      "id": "ENG-006",
+      "name": "CostingIntegrityEngine",
+      "sourcePath": "src/core/costingIntegrityEngine.ts",
+      "predictedProperties": ["totalFormulaCostPerKg", "knownCostFloor", "unpricedIngredientsCount", "costStatus"],
+      "requiredInputs": [
+        { "name": "rawMaterials", "unit": "recipe array with prices" },
+        { "name": "targetVolume", "unit": "kg" }
+      ],
+      "models": ["Strict null-propagation summation", "Known floor accounting"],
+      "existingEvidence": ["Phase 1 Audit (CONFIRMED)", "13 Unit Tests Passing"],
+      "missingEvidence": "None. Engine verified under Phase 1 pricing integrity."
+    }
+  ],
+  "candidateDatasets": [
+    {
+      "candidateId": "CAND-01",
+      "rank": 1,
+      "name": "Household Detergent Foam & Rheology Profiles (Allgood & Jones, Rheol. Acta 2026)",
+      "repository": "Zenodo Open Repository",
+      "identifier": "10.5281/zenodo.18961871",
+      "directUrl": "https://zenodo.org/records/18961871",
+      "apiEndpoint": "https://zenodo.org/api/records/18961871",
+      "license": "CC-BY-4.0",
+      "authors": ["Ceri Allgood", "Thomas Jones"],
+      "affiliation": "Lancaster Environment Centre, Lancaster University",
+      "publication": "Rheologica Acta (2026)",
+      "files": [
+        {
+          "name": "Supplementary_SolutionFlowCurves.xlsx",
+          "sizeBytes": 22280,
+          "md5": "cd5bfd6e95fc65e412807d53935c2d96",
+          "targetEngine": "ENG-003",
+          "measurements": "Rotational shear rate (0.1 to 100 1/s) vs shear stress (Pa) and apparent viscosity (mPa*s) for detergent solutions"
+        },
+        {
+          "name": "Supplementary_FilmThickness_v1.xlsx",
+          "sizeBytes": 149923,
+          "md5": "bc9582baafecd6552f6014216a0844e6",
+          "targetEngine": "ENG-005",
+          "measurements": "Inter-bubble fluid film thickness (micrometers) over 20-minute foam drainage period across commercial detergents A-D"
+        },
+        {
+          "name": "Supplementary_BubbleSizes_v1.xlsx",
+          "sizeBytes": 557745,
+          "md5": "9fcfe68a37d2d92a7999569a07908854",
+          "targetEngine": "ENG-005",
+          "measurements": "Bubble diameter distributions (d10, d50, d90, Sauter mean d32 in micrometers)"
+        },
+        {
+          "name": "Supplementary_RheometerData_v2.xlsx",
+          "sizeBytes": 162970,
+          "md5": "c9b5a9cde073eb7c58933eec37a559a6",
+          "targetEngine": "ENG-003 / ENG-005",
+          "measurements": "Foam rheology (storage modulus G', loss modulus G'', yield stress in Pa)"
+        }
+      ],
+      "evaluationScores": {
+        "engineOutputMatch": 98,
+        "measurementQuality": 95,
+        "traceableProvenance": 98,
+        "conditionTransparency": 92,
+        "benchmarkSuitability": 95,
+        "ingestionFeasibility": 98,
+        "totalScore": 96.0
+      },
+      "verdict": "SELECTED_NEXT_DATASET",
+      "rationale": "Directly targets the two zero-evidence engines (ENG-005 Foam Kinetics and ENG-003 Rheology). Small downloadable files (< 200 KB per table), verified MD5 checksums, CC-BY-4.0 license, and primary peer-reviewed experimental measurements on commercial household detergents."
+    },
+    {
+      "candidateId": "CAND-02",
+      "rank": 2,
+      "name": "RheoPy / RheoData Wormlike Micelle Flow Curve Series (caggioni_wlm_polymer_temp_series)",
+      "repository": "GitHub (rheopy/rheodata)",
+      "identifier": "GitHub:rheopy/rheodata/tree/master/rheodata/datasets/caggioni_wlm_polymer_temp_series",
+      "directUrl": "https://raw.githubusercontent.com/rheopy/rheodata/master/rheodata/datasets/caggioni_wlm_polymer_temp_series/data.csv",
+      "license": "BSD-3-Clause",
+      "authors": ["RheoPy Open Source Community"],
+      "files": [
+        {
+          "name": "data.csv",
+          "sizeBytes": 12027,
+          "targetEngine": "ENG-003",
+          "measurements": "Shear rate (0.01 to 100 1/s) vs shear stress (Pa) at 18, 20, 22, 24, 26, 28 C"
+        }
+      ],
+      "evaluationScores": {
+        "engineOutputMatch": 90,
+        "measurementQuality": 80,
+        "traceableProvenance": 50,
+        "conditionTransparency": 70,
+        "benchmarkSuitability": 65,
+        "ingestionFeasibility": 95,
+        "totalScore": 72.0
+      },
+      "verdict": "REJECTED_AS_PRIMARY",
+      "rationale": "High file feasibility, but dataset.yaml explicitly states: 'Paper: Unpublished (community contribution), authors: [], doi: null'. Surfactant chemical formulation details and purity are uncertified, making it unsuitable as an authoritative benchmark."
+    },
+    {
+      "candidateId": "CAND-03",
+      "rank": 3,
+      "name": "Chitre et al. High-Throughput Shampoo Formulation Dataset",
+      "repository": "Cambridge Apollo / PMC",
+      "identifier": "10.1038/s41597-024-03573-w / PMC11222379",
+      "directUrl": "https://www.repository.cam.ac.uk/handle/1810/370552",
+      "license": "CC-BY-4.0",
+      "authors": ["Chitre, Querimit, Rihm, Hippalgaonkar, et al."],
+      "publication": "Scientific Data 11, 715 (2024)",
+      "files": [
+        {
+          "name": "shampoo_formulations_dataset.csv",
+          "sizeBytes": 250000,
+          "targetEngine": "ENG-003",
+          "measurements": "Viscosity at single shear rate (20 1/s), centrifugal stability score"
+        }
+      ],
+      "evaluationScores": {
+        "engineOutputMatch": 70,
+        "measurementQuality": 85,
+        "traceableProvenance": 95,
+        "conditionTransparency": 75,
+        "benchmarkSuitability": 55,
+        "ingestionFeasibility": 50,
+        "totalScore": 68.0
+      },
+      "verdict": "REJECTED_AS_PRIMARY",
+      "rationale": "Focuses on personal care conditioning shampoos (silicones, polyquaterniums) rather than household detergent matrix. Only reports single-point shear viscosity rather than full flow curve, limiting validation of Herschel-Bulkley or Carreau-Yasuda models."
+    },
+    {
+      "candidateId": "CAND-04",
+      "rank": 4,
+      "name": "Alvarez-Gomez et al. Surfactant Mesophase Boundary SAXS Dataset",
+      "repository": "Nature Scientific Data / Zenodo",
+      "identifier": "10.1038/s41597-025-06306-9",
+      "directUrl": "https://www.nature.com/articles/s41597-025-06306-9",
+      "license": "CC-BY-4.0",
+      "authors": ["Alvarez-Gomez et al."],
+      "publication": "Scientific Data 12, 145 (2025)",
+      "files": [
+        {
+          "name": "Supplementary_Data_1.xlsx",
+          "sizeBytes": 450000,
+          "targetEngine": "ENG-002",
+          "measurements": "Small-angle X-ray scattering intensity vs scattering vector q, phase boundary wt%"
+        }
+      ],
+      "evaluationScores": {
+        "engineOutputMatch": 60,
+        "measurementQuality": 90,
+        "traceableProvenance": 95,
+        "conditionTransparency": 80,
+        "benchmarkSuitability": 50,
+        "ingestionFeasibility": 65,
+        "totalScore": 61.0
+      },
+      "verdict": "REJECTED_AS_PRIMARY",
+      "rationale": "Targets ENG-002, which already has SURFPRO numerically inspected. SAXS diffraction data requires complex 2D Bragg peak fitting rather than direct formulation validation, whereas foam and chelation have zero empirical data."
+    },
+    {
+      "candidateId": "CAND-05",
+      "rank": 5,
+      "name": "NIST Critically Selected Stability Constants of Metal Complexes (SRD 46)",
+      "repository": "NIST Standard Reference Data Program",
+      "identifier": "NIST SRD 46 Version 7.0",
+      "directUrl": "https://www.nist.gov/srd/nist46",
+      "license": "Proprietary NIST Standard Reference Database",
+      "authors": ["Martell, Smith, Motekaitis"],
+      "files": [
+        {
+          "name": "NIST46_Database (Legacy Binary)",
+          "sizeBytes": 15000000,
+          "targetEngine": "ENG-004",
+          "measurements": "Thermodynamic stability constants (log K) for Ca2+/Mg2+ with citrate, NTA, EDTA"
+        }
+      ],
+      "evaluationScores": {
+        "engineOutputMatch": 85,
+        "measurementQuality": 98,
+        "traceableProvenance": 98,
+        "conditionTransparency": 90,
+        "benchmarkSuitability": 45,
+        "ingestionFeasibility": 20,
+        "totalScore": 52.0
+      },
+      "verdict": "REJECTED_AS_PRIMARY",
+      "rationale": "Proprietary database distributed as legacy Windows binary; cannot be downloaded or parsed via open REST API in AI Studio container. Supplies thermodynamic constants rather than raw potentiometric electrode titration runs."
+    }
+  ],
+  "selectedNextDataset": {
+    "identifier": "10.5281/zenodo.18961871",
+    "name": "Household Detergent Foam Profiles & Rheology Benchmark (Zenodo Record 18961871)",
+    "targetEngines": ["ENG-005", "ENG-003"],
+    "leadFile": "Supplementary_SolutionFlowCurves.xlsx",
+    "leadFileSize": 22280,
+    "leadFileMD5": "cd5bfd6e95fc65e412807d53935c2d96",
+    "leadFileDownloadUrl": "https://zenodo.org/api/records/18961871/files/Supplementary_SolutionFlowCurves.xlsx/content",
+    "secondaryFiles": [
+      {
+        "name": "Supplementary_FilmThickness_v1.xlsx",
+        "sizeBytes": 149923,
+        "md5": "bc9582baafecd6552f6014216a0844e6",
+        "url": "https://zenodo.org/api/records/18961871/files/Supplementary_FilmThickness_v1.xlsx/content"
+      },
+      {
+        "name": "Supplementary_BubbleSizes_v1.xlsx",
+        "sizeBytes": 557745,
+        "md5": "9fcfe68a37d2d92a7999569a07908854",
+        "url": "https://zenodo.org/api/records/18961871/files/Supplementary_BubbleSizes_v1.xlsx/content"
+      }
+    ],
+    "ingestionStorageTarget": "data/evidence/zenodo_18961871/",
+    "requiredDependencies": ["xlsx (or python openpyxl via script) for parsing tabular sheets"]
+  }
+}

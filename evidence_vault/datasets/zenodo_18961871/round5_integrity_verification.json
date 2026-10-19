@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-10-18T08:11:14.323Z",
+  "record": "18961871",
+  "doi": "10.5281/zenodo.18961871",
+  "governance": {
+    "phase4b": "ACTIVE",
+    "phase5": "LOCKED",
+    "provenanceStatus": "NOT_INDEPENDENTLY_VERIFIED",
+    "localIntegrityStatus": "VERIFIED"
+  },
+  "totals": {
+    "usedRangeRows": 11497,
+    "headerRows": 8,
+    "metadataRows": 17,
+    "blankRows": 56,
+    "numericRows": 11343,
+    "numericCells": 80312,
+    "physicalObservationsStatus": "UNRESOLVED"
+  },
+  "files": [
+    {
+      "filename": "Supplementary_SolutionFlowCurves.xlsx",
+      "sheets": {},
+      "status": "CORRUPTED"
+    },
+    {
+      "filename": "Supplementary_FilmThickness_v1.xlsx",
+      "sheets": {
+        "Data": {
+          "usedRangeRows": 2396,
+          "headerRows": 0,
+          "metadataRows": 2,
+          "blankRows": 0,
+          "numericRows": 2383,
+          "numericCells": 22586,
+          "physicalObservationStatus": "UNRESOLVED"
+        }
+      },
+      "status": "VERIFIED"
+    },
+    {
+      "filename": "Supplementary_BubbleSizes_v1.xlsx",
+      "sheets": {
+        "20min": {
+          "usedRangeRows": 4407,
+          "headerRows": 0,
+          "metadataRows": 2,
+          "blankRows": 0,
+          "numericRows": 4405,
+          "numericCells": 26776,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "30min": {
+          "usedRangeRows": 2386,
+          "headerRows": 0,
+          "metadataRows": 2,
+          "blankRows": 0,
+          "numericRows": 2384,
+          "numericCells": 12242,
+          "physicalObservationStatus": "UNRESOLVED"
+        }
+      },
+      "status": "VERIFIED"
+    },
+    {
+      "filename": "Supplementary_RheometerData_v2.xlsx",
+      "sheets": {
+        "Contents": {
+          "usedRangeRows": 7,
+          "headerRows": 2,
+          "metadataRows": 5,
+          "blankRows": 0,
+          "numericRows": 0,
+          "numericCells": 0,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "AmpSwps_all": {
+          "usedRangeRows": 301,
+          "headerRows": 1,
+          "metadataRows": 1,
+          "blankRows": 11,
+          "numericRows": 276,
+          "numericCells": 2760,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "FrqSwps_all": {
+          "usedRangeRows": 241,
+          "headerRows": 1,
+          "metadataRows": 1,
+          "blankRows": 14,
+          "numericRows": 210,
+          "numericCells": 2100,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "FoamD_AmpSwpTest": {
+          "usedRangeRows": 201,
+          "headerRows": 1,
+          "metadataRows": 1,
+          "blankRows": 7,
+          "numericRows": 184,
+          "numericCells": 1840,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "FoamA_SteadyYield": {
+          "usedRangeRows": 92,
+          "headerRows": 1,
+          "metadataRows": 1,
+          "blankRows": 2,
+          "numericRows": 85,
+          "numericCells": 680,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "SteadyShear_5": {
+          "usedRangeRows": 733,
+          "headerRows": 1,
+          "metadataRows": 1,
+          "blankRows": 11,
+          "numericRows": 708,
+          "numericCells": 5664,
+          "physicalObservationStatus": "UNRESOLVED"
+        },
+        "SteadyShear_1": {
+          "usedRangeRows": 733,
+          "headerRows": 1,
+          "metadataRows": 1,
+          "blankRows": 11,
+          "numericRows": 708,
+          "numericCells": 5664,
+          "physicalObservationStatus": "UNRESOLVED"
+        }
+      },
+      "status": "VERIFIED"
+    }
+  ]
+}

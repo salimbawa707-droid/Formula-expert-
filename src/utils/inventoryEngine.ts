@@ -5,7 +5,7 @@ export interface InventoryItem {
   id: string;
   ingredientId: string;
   name: string;
-  casNumber?: string;
+  casNumber?: string | null;
   category: string;
   currentStockKg: number;
   unit: string;

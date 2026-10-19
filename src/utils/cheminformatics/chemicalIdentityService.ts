@@ -330,7 +330,7 @@ export async function resolveChemicalIdentity(
     return {
       ingredientId: ingredient.id,
       ingredientName: ingredient.name,
-      casNumber: ingredient.casNumber,
+      casNumber: ingredient.casNumber || undefined,
       classification: mapping.classification,
       isPureMolecule: mapping.isPureMolecule,
       structureStatus,
@@ -350,7 +350,7 @@ export async function resolveChemicalIdentity(
     return {
       ingredientId: ingredient.id,
       ingredientName: ingredient.name,
-      casNumber: ingredient.casNumber,
+      casNumber: ingredient.casNumber || undefined,
       classification: speciesEntry.family === 'CARBOXYLIC_WEAK_ACID' || speciesEntry.family === 'SULFONIC_ACID_LABSA' ? 'SINGLE_MOLECULE' : 'INORGANIC_SALT',
       isPureMolecule: true,
       structureStatus: 'INSUFFICIENT_DATA',
@@ -365,7 +365,7 @@ export async function resolveChemicalIdentity(
   return {
     ingredientId: ingredient.id,
     ingredientName: ingredient.name,
-    casNumber: ingredient.casNumber,
+    casNumber: ingredient.casNumber || undefined,
     classification: isPolymer ? 'POLYMER' : isMixture ? 'COMMERCIAL_MIXTURE' : 'UNKNOWN_STRUCTURE',
     isPureMolecule: false,
     structureStatus: isMixture ? 'COMMERCIAL_MIXTURE' : 'STRUCTURE_NOT_AVAILABLE',
