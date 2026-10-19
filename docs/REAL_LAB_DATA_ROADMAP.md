@@ -6,7 +6,7 @@
 
 ## Goal
 
-Use traceable published experimental data to benchmark the app's scientific engines, and keep those external benchmarks distinct from observations generated in the user's own laboratory. A public paper or dataset is not automatically a direct validation set for every engine that consumes related chemistry.
+Use only datasets with an explicit, reuse-compatible open data license for external benchmarks. Keep those benchmarks distinct from observations generated in the user's own laboratory. A public paper, open-access article, or public GitHub repository is not sufficient by itself: verify the license attached to the dataset/files. A dataset is not automatically a direct validation set for every engine that consumes related chemistry.
 
 ## What the repository already contains
 
@@ -49,10 +49,10 @@ Use traceable published experimental data to benchmark the app's scientific engi
 
 1. Search the repository, cited papers, GitHub source repositories, Zenodo/Cambridge/OSF and official scientific databases.
 2. Register the primary citation, DOI/API URL, authors, publication date, dataset-level license, files, hashes, and access date.
-3. Separate data-license status from article-license status. If dataset terms are missing, do not redistribute or embed the data.
+3. Separate data-license status from article-license status. If dataset terms are missing, do not redistribute, embed, benchmark, or use for calibration. Exclude non-open or unclear-terms datasets from validation.
 4. Record why each candidate is direct, indirect, unsuitable, proprietary, or awaiting permission.
 
-**Gate 1:** Explicit dataset reuse rights and traceable primary source for any redistributed file.
+**Gate 1:** Explicit open data license (for example CC BY 4.0, CC0, or a compatible open data license), traceable primary source, and attribution record for every included dataset/file. Unclear, absent, non-commercial-only, or restricted terms mean exclusion from validation.
 
 ### Phase 2 — Deterministic ingestion
 
@@ -88,7 +88,7 @@ Use traceable published experimental data to benchmark the app's scientific engi
 3. Refresh source metadata/checksums on a scheduled review; pin old versions for reproducibility.
 4. Maintain separate states for \`PUBLISHED_BENCHMARK\`, \`INTERNAL_LAB_TESTED\`, \`LAB_VALIDATED\`, \`CALCULATED\`, and \`SYNTHETIC_TEST_FIXTURE\`.
 
-## Initial source-audit findings (2026-10-19)
+## Open-license policy and newly verified candidates (2026-10-19)\n\n- **Use only openly licensed data:** the dataset/file itself must carry explicit reuse rights. Public accessibility, an open GitHub code license, an open-access article, or a repository's general terms do not substitute for a data license. Preserve required attribution and source lineage.\n- **PSDI CMC Data Collection:** the PSDI record states Open Access and CC-BY-4.0 and describes the records as derived from NIST's *Critical Micelle Concentrations of Aqueous Surfactant Systems*, machine-converted and manually enhanced. Candidate for historical pure-surfactant CMC benchmarks only, subject to verifying row-level provenance and parser accuracy against the source publication.\n- **RepOD conductivity CMC dataset:** the dataset and its three listed text files explicitly state CC BY 4.0; it contains experimental conductivity data for a narrow set of multicharged cationic surfactants. Candidate for matched CMC/conductivity engine outputs only, not general detergent formulation validation. File MD5s are recorded in the source register.\n- **SURFPRO and Zenodo 18961871:** the currently inspected record pages did not expose a dataset license in the captured metadata. Keep quarantined and exclude them from validation until the dataset-level license is independently verified. Article licensing does not resolve this.\n\n## Initial source-audit findings (2026-10-19)
 
 1. **SURFPRO:** Zenodo identifies a 1,624-surfactant curated property dataset and cites the SurfPro paper/repository. Local project audits correctly limit it to pure-component evidence and say mixture interaction validation is unsupported. Dataset-level reuse terms still need explicit confirmation before redistribution.
 2. **Foam/rheology record 18961871:** Zenodo's primary record describes raw flow-curve/rheometer data, bubble sizes, and film thicknesses. The linked article is CC BY 4.0, but the dataset file license must be checked from dataset metadata itself; the article license is not treated as a substitute.
@@ -108,7 +108,7 @@ Use traceable published experimental data to benchmark the app's scientific engi
 
 ## External source references
 
-- SURFPRO Zenodo record: https://zenodo.org/records/15861809
+- PSDI CMC Data Collection (CC-BY-4.0): https://resources.psdi.ac.uk/data/a7c82670-d2e2-46c6-920a-74294289aa34\n- RepOD experimental conductivity/CMC dataset (CC BY 4.0): https://repod.icm.edu.pl/dataset.xhtml?persistentId=doi:10.18150/IMF2OE\n- SURFPRO Zenodo record (license not confirmed): https://zenodo.org/records/15861809
 - Foam/rheology dataset Zenodo record: https://zenodo.org/records/18961871
 - SURFPRO code/data repository: https://github.com/BigChemistry-RobotLab/SurfPro
 - RheoData repository: https://github.com/rheopy/rheodata
