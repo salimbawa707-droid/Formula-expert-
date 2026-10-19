@@ -29,7 +29,7 @@
  * ============================================================================
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import path from 'path';
 import {
   buildProductConstraints,
@@ -642,7 +642,8 @@ export function runFormulationOptimizationTestSuite(): TestResultSummary {
         });
     `;
 
-    const rawOutput = execSync(`npx tsx -e "${runnerCode.replace(/"/g, '\\"')}"`, {
+    const tsxCliPath = path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
+    const rawOutput = execFileSync(process.execPath, [tsxCliPath, '-e', runnerCode], {
       encoding: 'utf-8',
       timeout: 45000,
     });

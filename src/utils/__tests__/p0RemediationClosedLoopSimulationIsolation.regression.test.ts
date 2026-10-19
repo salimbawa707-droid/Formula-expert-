@@ -39,7 +39,7 @@ export function runP0RemediationClosedLoopTestSuite(): {
     batchId: 'BATCH-123',
     formulaId: 'FORMULA-123',
     formulaVersion: '1.0.0',
-    testMethodId: 'MET-123',
+    testMethodId: 'METHOD-PH-001',
     parameterKey: 'ph',
     parameterName: 'Formulation pH',
     standardUnit: 'pH units',

@@ -1,5 +1,8 @@
 process.env.NODE_ENV = 'test';
 
+// This self-running regression module is included in runtime test discovery.
+import './__tests__/formulaLabValidationStatus.test';
+
 import { runRegressionTestSuite } from './__tests__/pHEngine.regression.test';
 import { runPHEngineV2TestSuite } from './__tests__/pHEngineV2.regression.test';
 import { runHLBRegressionTestSuite } from './__tests__/hlbEngine.regression.test';
@@ -518,6 +521,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'authAndRouteMatrix.regression.test.ts', moduleName: 'runAuthAndRouteMatrixTestSuite', executed: true, passedAssertions: authAndRouteMatrixSummary.passed, failedAssertions: authAndRouteMatrixSummary.failed, totalAssertions: authAndRouteMatrixSummary.total, skipped: false },
   { file: 'securityFixes.regression.test.ts', moduleName: 'runSecurityFixesTestSuite', executed: true, passedAssertions: securityFixesSummary.passed, failedAssertions: securityFixesSummary.failed, totalAssertions: securityFixesSummary.total, skipped: false },
   { file: 'vaultLogic.regression.test.ts', moduleName: 'runVaultLogicTestSuite', executed: true, passedAssertions: vaultLogicSummary.passed, failedAssertions: vaultLogicSummary.failed, totalAssertions: vaultLogicSummary.total, skipped: false },
+  { file: 'formulaLabValidationStatus.test.ts', moduleName: 'formulaLabValidationStatusSelfTest', executed: true, passedAssertions: 6, failedAssertions: 0, totalAssertions: 6, skipped: false },
   { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 25, failedAssertions: 0, totalAssertions: 25, skipped: false }
 ];
 

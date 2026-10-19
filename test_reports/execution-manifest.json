@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-19T10:34:54.345Z",
+  "timestamp": "2026-10-19T20:22:49.466Z",
   "summary": {
-    "discoveredCount": 126,
-    "registeredCount": 126,
-    "executedCount": 126,
+    "discoveredCount": 127,
+    "registeredCount": 127,
+    "executedCount": 127,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4003,
-    "totalAssertionsPassed": 4003,
+    "totalAssertionsExecuted": 4022,
+    "totalAssertionsPassed": 4022,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -285,9 +285,9 @@
       "file": "p1Phase3Master.regression.test.ts",
       "moduleName": "runP1Phase3MasterTestSuite",
       "executed": true,
-      "passedAssertions": 39,
+      "passedAssertions": 42,
       "failedAssertions": 0,
-      "totalAssertions": 39,
+      "totalAssertions": 42,
       "skipped": false
     },
     {
@@ -663,9 +663,9 @@
       "file": "closedLoop.regression.test.ts",
       "moduleName": "runClosedLoopTestSuite",
       "executed": true,
-      "passedAssertions": 17,
+      "passedAssertions": 19,
       "failedAssertions": 0,
-      "totalAssertions": 17,
+      "totalAssertions": 19,
       "skipped": false
     },
     {
@@ -951,9 +951,9 @@
       "file": "p2Phase13EmpiricalValidation.regression.test.ts",
       "moduleName": "runP2Phase13EmpiricalValidationTestSuite",
       "executed": true,
-      "passedAssertions": 14,
+      "passedAssertions": 22,
       "failedAssertions": 0,
-      "totalAssertions": 14,
+      "totalAssertions": 22,
       "skipped": false
     },
     {
@@ -1143,6 +1143,15 @@
       "passedAssertions": 98,
       "failedAssertions": 0,
       "totalAssertions": 98,
+      "skipped": false
+    },
+    {
+      "file": "formulaLabValidationStatus.test.ts",
+      "moduleName": "formulaLabValidationStatusSelfTest",
+      "executed": true,
+      "passedAssertions": 6,
+      "failedAssertions": 0,
+      "totalAssertions": 6,
       "skipped": false
     },
     {
