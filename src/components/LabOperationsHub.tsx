@@ -51,7 +51,13 @@ export default function LabOperationsHub() {
   };
   useEffect(() => { refresh().catch(() => setMessage('Could not open local lab database.')); }, []);
 
-  const dueCheckpoints = useMemo(() => studies.reduce((n, s) => n + s.observations.filter(o => o.status === 'DUE' && s.status === 'ACTIVE').length, 0), [studies]);
+  const isCheckpointDue = (study: StabilityStudyRecord, day: number) => {
+    const dueAt = new Date(study.startDate + 'T00:00:00');
+    dueAt.setDate(dueAt.getDate() + day);
+    return dueAt.getTime() <= Date.now();
+  };
+  const dueCheckpoints = useMemo(() => studies.reduce((n, study) =>
+    n + study.observations.filter(o => o.status === 'DUE' && study.status === 'ACTIVE' && isCheckpointDue(study, o.day)).length, 0), [studies]);
 
   const importCsv = async (file?: File) => {
     if (!file) return;
@@ -114,7 +120,7 @@ export default function LabOperationsHub() {
       coaFileName: lotForm.coaFileName || undefined, coaReviewed: false, status: 'QUARANTINE', receivedAt: isoNow()
     });
     setLotForm({ materialName: '', lotNumber: '', supplier: '', receivedKg: '', expiryDate: '', coaFileName: '' });
-    setMessage('Lot recorded in quarantine. It is not released for production.');
+    setMessage('Lot marked as quarantined. Production inventory is not linked to this lot record yet.');
     await refresh();
   };
 
@@ -138,6 +144,7 @@ export default function LabOperationsHub() {
   };
 
   const recordCheckpoint = async (study: StabilityStudyRecord, day: number) => {
+    if (!isCheckpointDue(study, day)) { setMessage('This checkpoint date has not arrived yet.'); return; }
     const result = window.prompt('Record observed appearance, pH, viscosity, separation, or other results for day ' + day + '.');
     if (result === null || !result.trim()) return;
     await db.stabilityStudies.update(study.id, {
@@ -208,7 +215,7 @@ export default function LabOperationsHub() {
         </form>
         <div className="space-y-3">{studies.map(study => <article key={study.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="font-bold">{study.formulaName} — {study.sampleId}</h3><p className="text-xs text-slate-400">Batch {study.batchNumber || '—'} · {study.condition} · Started {study.startDate}</p></div><span className="text-xs text-cyan-300">{study.status}</span></div>
-          <div className="mt-3 flex flex-wrap gap-2">{study.observations.map(o => <button key={o.day} disabled={study.status !== 'ACTIVE'} onClick={() => recordCheckpoint(study, o.day)} className={'rounded-lg border px-3 py-2 text-xs ' + (o.status === 'RECORDED' ? 'border-emerald-700 bg-emerald-950/50 text-emerald-200' : 'border-slate-700 bg-slate-900 text-slate-300')}>Day {o.day}: {o.status}{o.result ? ' · ' + o.result : ''}</button>)}</div>
+          <div className="mt-3 flex flex-wrap gap-2">{study.observations.map(o => <button key={o.day} disabled={study.status !== 'ACTIVE'} onClick={() => recordCheckpoint(study, o.day)} disabled={o.status !== 'RECORDED' && !isCheckpointDue(study, o.day)} className={'rounded-lg border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40 ' + (o.status === 'RECORDED' ? 'border-emerald-700 bg-emerald-950/50 text-emerald-200' : 'border-slate-700 bg-slate-900 text-slate-300')}>Day {o.day}: {o.status}{o.result ? ' · ' + o.result : ''}</button>)}</div>
         </article>)}</div>
         {studies.length === 0 && <p className="text-sm text-slate-400"><Beaker className="mr-1 inline h-4 w-4" />No stability studies have been created on this device.</p>}
       </section>}
