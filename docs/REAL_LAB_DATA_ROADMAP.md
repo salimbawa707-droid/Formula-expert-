@@ -1,6 +1,6 @@
 # Real Experimental Data Roadmap
 
-**Status:** Work started — source audit and evidence-map reconciliation  
+**Status:** Work started — source audit, open-data ingestion and evidence-map reconciliation  
 **Baseline:** GitHub \`main\`, reviewed 2026-10-19  
 **Scientific promotion:** Disabled while the existing Phase 5 governance gate is locked
 
@@ -102,7 +102,7 @@ Use only datasets with an explicit, reuse-compatible open data license for exter
 
 - Reconcile the source file and historical audit discrepancy.
 - Publish the canonical engine-to-evidence map and source/license register.
-- Begin ingestion with the explicitly CC-BY-4.0 PSDI CMC collection and RepOD conductivity files after download, checksum, schema, and row-lineage checks; use them only for matching surfactant/CMC outputs. Keep SURFPRO and foam/rheology artifacts excluded until their dataset-level licenses are confirmed.
+- RepOD ingestion is now archived: its three CC BY 4.0 raw curves passed published MD5 checks and 202 rows were normalized with source-file and line references. Keep this set quarantined from CMC calibration until missing measurement conditions and cell constant are resolved. Next, process only explicitly licensed PSDI data and verify its original-row provenance. Keep SURFPRO and foam/rheology artifacts excluded until dataset-level licenses are confirmed.
 - Do not modify engine constants or claim app validation until source rights, checksums, row lineage, and holdout design pass the gates above.
 - After this map is reviewed, expand in priority order to pH/neutralization, chelation, detergency/cleaning, active-matter QC, powders, and compatibility/stability.
 
@@ -116,3 +116,12 @@ Use only datasets with an explicit, reuse-compatible open data license for exter
 - Mixed-CMC released-code repository: https://github.com/brozosc/Predicting-the-Temperature-Dependent-CMC-of-Surfactant-Mixtures-with-Graph-Neural-Networks
 - PubChem PUG REST policy/docs: https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest
 - NIST SRD 46: https://www.nist.gov/srd/nist46
+
+
+## Phase 2 ingestion update — RepOD CMC data (2026-10-19)
+
+- Archived the three CC BY 4.0 raw text files unchanged under `evidence_vault/datasets/repod_cmc/`; all three downloaded MD5 values match the repository's published file checksums.
+- Normalized 79 + 79 + 44 = 202 measurement rows into `repod_cmc_measurements.csv`. Every row retains its source ID, filename, original row index, and source line number. Raw C, V, and signal values/units are preserved; missing values remain blank.
+- The source uses the label `conductivity [mS]`; mS is a conductance unit and the files provide no cell constant for conversion to specific conductivity. Temperature, solution matrix, instrument/electrode, replicate identifiers, and uncertainty are also absent.
+- No CMC breakpoint was estimated and no engine constants changed. The canonical engine map has no standalone CMC prediction engine; these curves cannot validate HLB, detergency, or general formulation outputs. Keep them as sourced evidence pending method metadata and a clearly matched output.
+- A deterministic offline normalizer verifies each raw MD5 and reports row counts before writing the derivative CSV.
