@@ -9,9 +9,10 @@
  * ============================================================================
  */
 
-import { CompleteLaboratoryObservation } from './empiricalLabObservationModel';
+import { CompleteLaboratoryObservation, validateLaboratoryObservation } from './empiricalLabObservationModel';
 import { ModelValidationStatus15, DataSplittingEngine, LeakageAuditResult } from './empiricalCalibrationEngine';
 import { ScientificMaturity } from '../domain/scientificCertainty/types';
+import { CANONICAL_PRODUCT_CATEGORY_IDS, ProductCategoryId, getProductCategory } from '../domain/productTaxonomy';
 
 export interface EmpiricalTargetConfig {
   targetId: string;
@@ -45,8 +46,8 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     acceptanceThreshold: 0.015,
     minIndependentBatches: 5,
     minIndependentObservations: 15,
-    description: 'Digital oscillating U-tube or hydrometer density at 20°C (ASTM D1298)',
-    testMethod: 'ASTM-D1298'
+    description: 'Finished-product density at a declared temperature using a product-appropriate registered protocol; ASTM D1298 is petroleum-only and is not accepted for detergents.',
+    testMethod: 'PRODUCT_DENSITY_METHOD_REQUIRED'
   },
   'Active Matter': {
     targetId: 'target-active-matter',
@@ -67,7 +68,7 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     acceptanceThreshold: 15.0, // 15% relative error
     minIndependentBatches: 5,
     minIndependentObservations: 15,
-    description: 'Brookfield rotational viscometer at 25°C spindle 2 (ASTM D2196)',
+    description: 'Rotational viscometry using the applicable ASTM D2196 procedure with geometry/shear conditions, sample preparation, and temperature recorded.',
     testMethod: 'ASTM-D2196'
   },
   'Cleaning Score / CPI': {
@@ -78,10 +79,78 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     acceptanceThreshold: 5.0,
     minIndependentBatches: 5,
     minIndependentObservations: 20,
-    description: 'Multi-soil reflectance test swatches under standard wash (ASTM D3050)',
+    description: 'Artificially soiled fabric screening (ASTM D3050-26); soil selection must be documented and results are not suitable for detergent ranking.',
     testMethod: 'ASTM-D3050'
   }
 };
+export const MIN_WITHIN_ACCEPTANCE_TARGET_PCT = 90;
+
+/** Category-specific lab scorecard. These are measurement targets, not claims of validation. */
+export const CATEGORY_EMPIRICAL_SCORECARDS: Record<ProductCategoryId, {
+  requiredTargets: string[];
+  engineGroups: string[];
+}> = Object.fromEntries(CANONICAL_PRODUCT_CATEGORY_IDS.map(category => {
+  const applicability = getProductCategory(category)?.categoryApplicability;
+  const engineGroups = ['Formula identity / mass balance', 'pH / neutralization', 'active matter', 'density / stability', 'regulatory / cost QA'];
+  if (applicability?.hlb || applicability?.cmc) engineGroups.push('surfactant / HLB / CMC');
+  if (applicability?.viscosity) engineGroups.push('rheology / viscosity');
+  if (applicability?.cleaningScore) engineGroups.push('cleaning performance');
+  if (applicability?.foam) engineGroups.push('foam performance');
+  if (applicability?.builder) engineGroups.push('hardness / builder / chelation');
+  if (category === 'LAUNDRY_POWDER') engineGroups.push('powder flow / dissolution');
+  if (category === 'FABRIC_SOFTENER') engineGroups.push('fabric conditioning / cationic compatibility');
+  if (category === 'GLASS_CLEANER') engineGroups.push('streaking / residue');
+  return [category, {
+  requiredTargets: category === 'LAUNDRY_POWDER'
+    ? ['pH Prediction', 'Bulk Density', 'Active Matter', 'Cleaning Score / CPI', 'Dissolution / Residue']
+    : category === 'DISHWASH_MANUAL'
+      ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Grease Removal / Plate Count']
+      : category === 'DISHWASH_AUTOMATIC'
+        ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Spotting / Film']
+        : category === 'FLOOR_CLEANER' || category === 'MULTIPURPOSE_CLEANER'
+          ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Soil Removal / Residue']
+          : category === 'TOILET_CLEANER'
+            ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Scale Removal / Corrosion Compatibility']
+            : category === 'BATHROOM_CLEANER'
+              ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Scale / Soap Scum Removal']
+              : category === 'GLASS_CLEANER'
+                ? ['pH Prediction', 'Density', 'Active Matter', 'Streaking / Haze', 'Evaporation Residue']
+                : category === 'FABRIC_SOFTENER'
+                  ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Softening / Antistatic Performance']
+                  : category === 'HAND_WASH'
+                    ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Soil Removal / Mildness']
+                    : category === 'KITCHEN_DEGREASER'
+                      ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Grease Removal / Substrate Compatibility']
+                      : category === 'CAR_SHAMPOO'
+                        ? ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Soil Removal / Paint Safety']
+                        : ['pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Cleaning Score / CPI'],
+  engineGroups
+  }];
+})) as Record<ProductCategoryId, { requiredTargets: string[]; engineGroups: string[] }>;
+
+export function getCategoryEmpiricalCoverage(observations: CompleteLaboratoryObservation[]) {
+  return CANONICAL_PRODUCT_CATEGORY_IDS.map(category => {
+    const scorecard = CATEGORY_EMPIRICAL_SCORECARDS[category];
+    const categoryObs = observations.filter(o => o.productCategory === category);
+    const targetStatus = scorecard.requiredTargets.map(property => {
+      const matched = categoryObs.filter(o => isObservationForProperty(o.measuredProperty, property));
+      const eligible = matched.filter(o => o.dataOrigin === 'REAL_LAB_MEASUREMENT' && o.dataQualityStatus === 'APPROVED_FOR_VALIDATION' && validateLaboratoryObservation(o).status === 'APPROVED_FOR_VALIDATION');
+      return { property, observationCount: matched.length, approvedRealLabCount: eligible.length,
+        status: eligible.length ? 'EVIDENCE_AVAILABLE' as const : 'DATA_PENDING' as const };
+    });
+    return { category, requiredTargetCount: targetStatus.length,
+      evidenceAvailableCount: targetStatus.filter(t => t.status === 'EVIDENCE_AVAILABLE').length,
+      observations: categoryObs.length, targetStatus, engineGroups: scorecard.engineGroups };
+  });
+}
+
+function isObservationForProperty(measuredProperty: string, property: string): boolean {
+  const measured = measuredProperty.trim().toLowerCase();
+  const target = property.toLowerCase();
+  if (target === 'pH Prediction'.toLowerCase()) return measured === 'ph' || measured === target;
+  if (target === 'Cleaning Score / CPI'.toLowerCase()) return ['cleaning score / cpi', 'cleaning score', 'cpi'].includes(measured);
+  return measured === target;
+}
 
 export interface DetailedPredictionComparisonRecord {
   observationId: string;
@@ -151,6 +220,9 @@ export interface EmpiricalPropertyEvaluationResult {
 
   // Detailed Comparisons
   comparisons: DetailedPredictionComparisonRecord[];
+  withinAcceptanceRatePct?: number;
+  validationObservationCount?: number;
+  hasRegisteredTarget: boolean;
 }
 
 export class EmpiricalValidationEvaluationEngine {
@@ -162,27 +234,24 @@ export class EmpiricalValidationEvaluationEngine {
     predictionsMap: Map<string, number>; // formulaFingerprint or observationId -> predictedValue
     observations: CompleteLaboratoryObservation[];
     datasetVersion?: string;
-    defaultPredictedValue?: number;
+    category?: ProductCategoryId;
   }): EmpiricalPropertyEvaluationResult {
-    const { property, predictionsMap, observations, datasetVersion = 'DS-CURRENT', defaultPredictedValue } = input;
+    const { property, predictionsMap, observations, datasetVersion = 'DS-CURRENT', category } = input;
+    const hasRegisteredTarget = Boolean(CANONICAL_EMPIRICAL_TARGETS[property]);
     const targetConfig = CANONICAL_EMPIRICAL_TARGETS[property] || {
       targetId: `target-${property.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       property,
       unit: 'units',
       primaryMetric: 'MAE',
-      acceptanceThreshold: 1.0,
+      acceptanceThreshold: 0,
       minIndependentBatches: 5,
       minIndependentObservations: 15,
       description: `Empirical evaluation for ${property}`,
-      testMethod: 'STANDARD-METHOD'
+      testMethod: 'UNCONFIGURED'
     };
 
     // Filter relevant observations
-    const propObs = observations.filter(o => 
-      o.measuredProperty.toLowerCase() === property.toLowerCase() ||
-      (property === 'Cleaning Score / CPI' && (o.measuredProperty === 'Cleaning Score' || o.measuredProperty === 'CPI')) ||
-      (property === 'pH Prediction' && o.measuredProperty === 'pH')
-    );
+    const propObs = observations.filter(o => isObservationForProperty(o.measuredProperty, property) && (!category || o.productCategory === category));
 
     // If zero real observations exist: Strict honest empty return
     if (propObs.length === 0) {
@@ -216,16 +285,30 @@ export class EmpiricalValidationEvaluationEngine {
         gateReasons: [
           'Laboratory validation pending — no qualifying real laboratory dataset is available for this prediction target.'
         ],
-        comparisons: []
+        comparisons: [],
+        hasRegisteredTarget
       };
     }
 
     // Filter for real experimental data origin firewall
-    const validRealObs = propObs.filter(o => 
+    const validRealObs = propObs.filter(o =>
       o.dataOrigin === 'REAL_LAB_MEASUREMENT' && 
-      o.dataQualityStatus === 'APPROVED_FOR_VALIDATION'
+      o.dataQualityStatus === 'APPROVED_FOR_VALIDATION' &&
+      validateLaboratoryObservation(o).status === 'APPROVED_FOR_VALIDATION'
     );
     const excludedCount = propObs.length - validRealObs.length;
+
+    // Formula-level holdout: never report calibration rows as independent validation metrics.
+    let evaluationObs: CompleteLaboratoryObservation[] = [];
+    let splitAudit: LeakageAuditResult = {
+      passed: false, overlappingFingerprints: [], overlappingBatches: [],
+      message: 'Independent holdout unavailable; at least two distinct formula fingerprints with eligible real-lab observations are required.'
+    };
+    if (new Set(validRealObs.map(o => o.formulaFingerprint)).size >= 2) {
+      const split = DataSplittingEngine.splitDatasetGrouped(validRealObs, 0.7);
+      evaluationObs = split.independentValidationSet;
+      splitAudit = split.audit;
+    }
 
     // Build comparisons
     const comparisons: DetailedPredictionComparisonRecord[] = [];
@@ -233,11 +316,9 @@ export class EmpiricalValidationEvaluationEngine {
     const measuredArr: number[] = [];
     let outOfDomainCount = 0;
 
-    for (const obs of validRealObs) {
+    for (const obs of evaluationObs) {
       let predVal = predictionsMap.get(obs.observationId);
       if (predVal === undefined) predVal = predictionsMap.get(obs.formulaFingerprint);
-      if (predVal === undefined && defaultPredictedValue !== undefined) predVal = defaultPredictedValue;
-
       // If no prediction available for this formula, skip
       if (predVal === undefined || isNaN(predVal) || !isFinite(predVal)) continue;
 
@@ -247,9 +328,9 @@ export class EmpiricalValidationEvaluationEngine {
       const residual = predVal - measVal;
       const absErr = Math.abs(residual);
       const relErrPct = measVal !== 0 ? (absErr / Math.abs(measVal)) * 100 : 0;
-      const isWithin = targetConfig.primaryMetric === 'MAPE'
+      const isWithin = hasRegisteredTarget && (targetConfig.primaryMetric === 'MAPE'
         ? relErrPct <= targetConfig.acceptanceThreshold
-        : absErr <= targetConfig.acceptanceThreshold;
+        : absErr <= targetConfig.acceptanceThreshold);
 
       // Check applicability domain if ranges available
       let inDomain = true;
@@ -306,12 +387,15 @@ export class EmpiricalValidationEvaluationEngine {
         acceptanceThreshold: targetConfig.acceptanceThreshold,
         isAcceptanceThresholdMet: false,
         isBatchSufficiencyMet: false,
-        validationGateVerdict: 'DATA_PENDING',
+        validationGateVerdict: validRealObs.length ? 'DATA_INSUFFICIENT' : 'DATA_PENDING',
         assignedScientificMaturity: 'MODEL_PREDICTION',
         gateReasons: [
-          'No comparable formula predictions found matching empirical laboratory dataset observations.'
+          validRealObs.length
+            ? 'No independent formula holdout with matching prediction values is available. Calibration observations are excluded from validation metrics.'
+            : 'No comparable approved real-lab observations are available for this target and category.'
         ],
-        comparisons: []
+        comparisons: [],
+        hasRegisteredTarget
       };
     }
 
@@ -335,7 +419,7 @@ export class EmpiricalValidationEvaluationEngine {
     const meanMeas = measuredArr.reduce((a, b) => a + b, 0) / n;
     const ssTot = measuredArr.reduce((acc, m) => acc + Math.pow(m - meanMeas, 2), 0);
     const r2 = (n >= 2 && ssTot > 0)
-      ? Number(Math.max(0, Math.min(1, 1 - (sumSq / ssTot))).toFixed(4))
+      ? Number((1 - (sumSq / ssTot)).toFixed(4))
       : undefined;
 
     // Degrees of Freedom and Student's t critical values for 95% confidence
@@ -374,30 +458,24 @@ export class EmpiricalValidationEvaluationEngine {
     const uniqueFormulas = new Set(comparisons.map(c => c.formulaFingerprint)).size;
 
     // Leakage Audit using DataSplittingEngine
-    let leakageAudit: LeakageAuditResult = {
-      passed: true,
-      overlappingFingerprints: [],
-      overlappingBatches: [],
-      message: 'Independent batch groupings preserved without partition leakage.'
-    };
-    if (validRealObs.length >= 6 && uniqueFormulas >= 2) {
-      try {
-        const split = DataSplittingEngine.splitDatasetGrouped(validRealObs, 0.7);
-        leakageAudit = split.audit;
-      } catch {
-        // Splitting fallback
-      }
-    }
+    const leakageAudit = splitAudit;
 
     // Metric Acceptance Check
-    const metricValue = targetConfig.primaryMetric === 'RMSE' ? rmse : mae;
-    const isThresholdMet = metricValue <= targetConfig.acceptanceThreshold;
+    const mape = comparisons.reduce((sum, c) => sum + c.relativeErrorPct, 0) / n;
+    const withinAcceptanceRatePct = Number((comparisons.filter(c => c.isWithinAcceptance).length / n * 100).toFixed(2));
+    const metricValue = targetConfig.primaryMetric === 'RMSE' ? rmse : targetConfig.primaryMetric === 'MAPE' ? mape : mae;
+    const isThresholdMet = hasRegisteredTarget && metricValue <= targetConfig.acceptanceThreshold;
     const isBatchSufficiencyMet = uniqueBatches >= targetConfig.minIndependentBatches && n >= targetConfig.minIndependentObservations;
 
     // Determine Final Gate Verdict and Maturity
     const gateReasons: string[] = [];
     if (!isThresholdMet) {
-      gateReasons.push(`Error threshold not met: achieved ${targetConfig.primaryMetric} = ${metricValue} exceeds threshold ${targetConfig.acceptanceThreshold} ${targetConfig.unit}.`);
+      gateReasons.push(hasRegisteredTarget
+        ? `Error threshold not met: achieved ${targetConfig.primaryMetric} = ${metricValue} exceeds threshold ${targetConfig.acceptanceThreshold} ${targetConfig.unit}.`
+        : 'No registered test method and acceptance threshold exist for this property; comparison is exploratory and cannot validate the model.');
+    }
+    if (withinAcceptanceRatePct < MIN_WITHIN_ACCEPTANCE_TARGET_PCT) {
+      gateReasons.push(`Within-tolerance holdout rate ${withinAcceptanceRatePct}% is below the ${MIN_WITHIN_ACCEPTANCE_TARGET_PCT}% target.`);
     }
     if (!isBatchSufficiencyMet) {
       gateReasons.push(`Insufficient independent sample size: ${uniqueBatches}/${targetConfig.minIndependentBatches} batches, ${n}/${targetConfig.minIndependentObservations} observations.`);
@@ -452,7 +530,10 @@ export class EmpiricalValidationEvaluationEngine {
       validationGateVerdict: verdict,
       assignedScientificMaturity: maturity,
       gateReasons,
-      comparisons
+      comparisons,
+      withinAcceptanceRatePct,
+      validationObservationCount: n,
+      hasRegisteredTarget
     };
   }
 }

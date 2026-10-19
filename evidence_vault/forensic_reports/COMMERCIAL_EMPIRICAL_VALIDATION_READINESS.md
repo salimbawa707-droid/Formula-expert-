@@ -1,0 +1,31 @@
+# Commercial Empirical Validation Readiness
+
+Updated: 2026-10-20
+
+## What the app can claim today
+
+- The validation hub now exposes category scorecards for all 13 canonical product categories.
+- The scientific orchestrator is the prediction source for the properties it returns. A lab row is compared only when its formula fingerprint exactly matches that formula's supplied empirical fingerprint.
+- Metrics are computed on a deterministic formula-group holdout. Calibration fingerprints are excluded from reported validation metrics. At least two formula fingerprints are required before an independent holdout exists.
+- A 90% within-tolerance rate is a minimum validation target, not a measured result or guarantee. Existing registered targets also require 5 independent batches and 15 independent observations (20 for cleaning CPI).
+- A target without a registered method and acceptance threshold can show exploratory comparisons but cannot receive `LAB_VALIDATED` status.
+- No 90–95% accuracy claim is supported until matched, category-specific, independently held-out lab data meets the evidence gates. The currently catalogued 39 formulas do not constitute such a dataset.
+
+## Data source and commercial-use gates
+
+- SURFPRO is a pure-surfactant CMC/surface-tension reference, not finished-detergent formula validation. The source repository's `LICENSE.md` declares CC BY-NC-SA 4.0, while the corresponding Zenodo record's rights field is blank. It is therefore marked `DO_NOT_INGEST_IN_COMMERCIAL_PRODUCT` in `datasets/source-register.csv` absent separate written permission. See the [SURFPRO dataset](https://zenodo.org/records/15861809) and [repository license](https://github.com/BigChemistry-RobotLab/SurfPro/blob/main/LICENSE.md).
+- PSDI's historical CMC collection declares CC BY 4.0, but the archived audit still reports unresolved references, malformed codes, and a compound identity conflict. Its README keeps it in raw archive only; it must not be treated as a cleared model benchmark until those records are reconciled.
+- Zenodo 18961871 rheology/foam workbooks remain quarantined for rights, schema, conditions, and row-to-measurement lineage checks. Their specialized observables cannot validate complete detergent recipes by themselves.
+- Published values and open data are reference evidence, not a substitute for controlled product-lab measurements. Import provenance now defaults to unknown, fabricated lab/operator names and evidence IDs are not generated, and real-lab imports require a raw evidence reference. Unregistered test methods are review-only.
+
+## Standard method notes
+
+ASTM D1172-15(2024) is an active guide for preparing aqueous soap/detergent solutions and determining their pH ([ASTM catalog](https://store.astm.org/d1172-15r24.html)). ASTM D3050-26 is a screening guide for artificially soiled fabrics and explicitly is not suitable for detergent ranking ([ASTM catalog](https://store.astm.org/d3050-26.html)). ASTM D1298 covers crude petroleum and liquid petroleum products, so it is not accepted for finished detergent density ([ASTM catalog](https://store.astm.org/d1298-24.html)). ASTM D2196-20(2026) is active for rotational rheology and requires the selected method/geometry conditions to be recorded ([ASTM catalog](https://store.astm.org/d2196-20r26.html)). ISO 2271:1989 determines anionic-active matter by direct two-phase titration, but its stated scope does not apply when cationic surfactants are present ([ISO catalog](https://www.iso.org/standard/7094.html)). Method registrations must respect property, category, unit, and chemistry scope; a standard name alone does not qualify a record.
+
+## Remaining commercial release work
+
+1. Curate permitted source datasets with row-level citations, license, measured conditions, methods, uncertainty, and stable identifiers.
+2. Register category- and subclass-specific protocols/acceptance limits for the scorecard targets that currently have no standard configuration.
+3. Collect matched lab runs across multiple independent formula fingerprints and manufacturing batches; retain raw evidence and review decisions.
+4. Run the held-out evaluations separately by category and property. Report observed coverage, uncertainty, within-tolerance percentage, MAE/RMSE, and out-of-domain limits.
+5. Complete jurisdiction-specific regulatory, label, claims, packaging, manufacturing, and safety review before calling the product commercially released.

@@ -152,7 +152,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
   const densityResult = calculateDensity(standardLiquidIngredients);
   assert(
     'D. Density Screening vs Lab',
-    'Calculated density ~1.015 g/cm³ is theoretical screening and not ASTM D1298 certified',
+    'Calculated density ~1.015 g/cm³ is theoretical screening and not product-appropriate lab density certified',
     Number(densityResult.densityGPerCm3.toFixed(3)) >= 1.010
   );
 

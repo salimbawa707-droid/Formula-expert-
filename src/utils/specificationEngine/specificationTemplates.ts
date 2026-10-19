@@ -47,7 +47,7 @@ export const CATEGORY_SPECIFICATION_TEMPLATES: Record<string, SpecificationTempl
       createParam('p-ll-1', 'massBalance', 'Formula Mass Total', 100.0, 100.0, 100.0, '%', 'CRITICAL', 'PRODUCT_SPECIFICATION', false, 'Calculated Stoichiometric Mass Sum'),
       createParam('p-ll-2', 'activeMatter', 'Total Active Surfactant', 16.0, 10.0, 25.0, '%', 'CRITICAL', 'PRODUCT_SPECIFICATION', false, 'Active Surfactant Matter Sum'),
       createParam('p-ll-3', 'ph', 'Finished Product pH', 8.5, 7.5, 9.5, 'pH units', 'CRITICAL', 'PRODUCT_SPECIFICATION', true, 'Potentiometric Measurement @ 25°C'),
-      createParam('p-ll-4', 'density', 'Liquid Density / Specific Gravity @ 20°C', 1.04, 1.01, 1.08, 'g/mL', 'MAJOR', 'PRODUCT_SPECIFICATION', true, 'Hydrometer / Pycnometer @ 20°C (ASTM D1298)'),
+      createParam('p-ll-4', 'density', 'Liquid Density / Specific Gravity @ 20°C', 1.04, 1.01, 1.08, 'g/mL', 'MAJOR', 'PRODUCT_SPECIFICATION', true, 'Product-appropriate hydrometer, pycnometer or digital density method at a declared temperature; use a validated product SOP.'),
       createParam('p-ll-5', 'viscosity', 'Product Viscosity @ 25°C', 800, 500, 1500, 'none', 'MAJOR', 'PRODUCT_SPECIFICATION', true, 'Brookfield Viscometer Spindle 2 @ 20 RPM'),
       createParam('p-ll-6', 'liquidNVR', 'Liquid Non-Volatile Residue (NVR)', 22.0, 15.0, 35.0, '%', 'MAJOR', 'PRODUCT_SPECIFICATION', true, 'Oven Evaporation @ 105°C (calculateLiquidNVR)'),
       createParam('p-ll-7', 'costPerKg', 'Finished Raw Material Cost / kg', 35.0, undefined, 45.0, '₹/kg', 'MAJOR', 'INTERNAL_R_AND_D_TARGET', false, 'Ingredient Cost Sum')

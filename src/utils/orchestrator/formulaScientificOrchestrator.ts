@@ -354,7 +354,7 @@ export class FormulaScientificOrchestrator {
       {
         label: 'Liquid Density @ 20°C',
         ok: state.densityGPerCm3 >= 1.01 && state.densityGPerCm3 <= 1.08,
-        message: `${state.densityGPerCm3.toFixed(3)} g/cm³ — SCREENING (ASTM D1298 Measured Density: NOT TESTED)`,
+        message: `${state.densityGPerCm3.toFixed(3)} g/cm³ — SCREENING (product-appropriate lab density method: NOT TESTED)`,
         provenance: 'SCREENING'
       },
       {

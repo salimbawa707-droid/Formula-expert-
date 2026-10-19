@@ -112,8 +112,11 @@ export class DataSplittingEngine {
       formulaGroups.set(obs.formulaFingerprint, list);
     }
 
-    const uniqueFingerprints = Array.from(formulaGroups.keys());
-    const targetCalCount = Math.ceil(uniqueFingerprints.length * calibrationRatio);
+    // Stable ordering makes the holdout reproducible and independent of CSV row order.
+    const uniqueFingerprints = Array.from(formulaGroups.keys()).sort();
+    const targetCalCount = uniqueFingerprints.length > 1
+      ? Math.min(uniqueFingerprints.length - 1, Math.ceil(uniqueFingerprints.length * calibrationRatio))
+      : uniqueFingerprints.length;
 
     const calFingerprints = new Set(uniqueFingerprints.slice(0, targetCalCount));
 

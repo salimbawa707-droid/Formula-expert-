@@ -301,7 +301,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               Calculated Density @ 20°C: {(scientificResults.density?.densityGPerCm3 ?? 1.0).toFixed(3)} g/cm³ — SCREENING
             </p>
             <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
-              <span className="text-slate-400">ASTM D1298 Measured Density:</span>
+              <span className="text-slate-400">Product-appropriate lab density method:</span>
               <span className="font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded text-[10px] border border-amber-500/30">
                 NOT TESTED
               </span>

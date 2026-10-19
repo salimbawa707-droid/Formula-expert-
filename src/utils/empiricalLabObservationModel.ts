@@ -139,64 +139,82 @@ export class MeasurementMethodRegistry {
     // Pre-populate industry standard laboratory test methods
     this.registerMethod({
       methodId: 'ASTM-D3050',
-      methodName: 'Standard Guide for Measuring Soil Removal by Laundry Detergents',
+      methodName: 'Standard Guide for Measuring Soil Removal from Artificially Soiled Fabrics (not suitable for detergent ranking)',
       standardOrganization: 'ASTM',
-      standardNumber: 'ASTM D3050-19',
+      standardNumber: 'ASTM D3050-26',
       propertyMeasured: 'Cleaning Score / CPI',
       applicableCategories: ['LAUNDRY_LIQUID', 'LAUNDRY_POWDER'],
       sampleRequirements: 'Standardized artificially soiled swatches (pigment, sebum, protein, oil)',
       units: ['% Soil Removal', 'ΔE Reflectance', 'Score Index'],
       calculationMethod: 'Kubelka-Munk reflectance spectral evaluation K/S = (1-R)^2 / 2R',
-      acceptanceCriteria: 'Replicate CV <= 3.5%',
+      acceptanceCriteria: 'Screening only; soil selection and comparison protocol must be agreed and documented. Not suitable for detergent ranking.',
       instrumentRequirements: 'Spectrophotometer / Colorimeter D65 illuminate',
       environmentalConditions: '21°C ± 2°C, 50% RH',
       replicateRequirements: 3,
-      sourceProvenance: 'ASTM International Annual Book of Standards Vol 15.04',
-      effectiveDate: '2019-01-01'
+      sourceProvenance: 'ASTM D3050-26, DOI 10.1520/D3050-26; ASTM states this guide is not suitable for detergent ranking.',
+      effectiveDate: '2026-04-16'
     });
 
     this.registerMethod({
       methodId: 'ASTM-D1172',
-      methodName: 'Standard Test Method for pH of Aqueous Solutions of Soaps and Detergents',
+      methodName: 'Standard Guide for pH of Aqueous Solutions of Soaps and Detergents',
       standardOrganization: 'ASTM',
-      standardNumber: 'ASTM D1172-15',
+      standardNumber: 'ASTM D1172-15(2024)',
       propertyMeasured: 'pH Prediction',
       applicableCategories: [
         'LAUNDRY_LIQUID', 'LAUNDRY_POWDER', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC',
         'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER',
         'GLASS_CLEANER', 'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'
       ],
-      sampleRequirements: '1.0% w/w aqueous solution in DI water at 25°C',
+      sampleRequirements: 'Prepare an aqueous solution according to the applicable D1172 procedure; record concentration and temperature.',
       units: ['pH units'],
       calculationMethod: 'Direct potentiometric Glass electrode reading',
       acceptanceCriteria: 'Replicate tolerance ± 0.05 pH units',
       instrumentRequirements: 'Calibrated pH Meter (NIST 4.01, 7.00, 10.01 buffers)',
       environmentalConditions: '25°C ± 0.5°C',
       replicateRequirements: 2,
-      sourceProvenance: 'ASTM International Vol 15.04',
-      effectiveDate: '2015-01-01'
+      sourceProvenance: 'ASTM D1172-15(2024), active edition.',
+      effectiveDate: '2024-01-12'
     });
 
     this.registerMethod({
       methodId: 'ASTM-D1298',
-      methodName: 'Standard Test Method for Density, Relative Density, or API Gravity',
+      methodName: 'Standard Test Method for Density, Relative Density, or API Gravity of Crude Petroleum and Liquid Petroleum Products by Hydrometer Method',
       standardOrganization: 'ASTM',
-      standardNumber: 'ASTM D1298-12',
-      propertyMeasured: 'Density',
-      applicableCategories: [
-        'LAUNDRY_LIQUID', 'DISHWASH_MANUAL', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER',
-        'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER', 'FABRIC_SOFTENER',
-        'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'
-      ],
-      sampleRequirements: 'Liquid sample 250 mL at 20°C',
+      standardNumber: 'ASTM D1298-24',
+      propertyMeasured: 'Petroleum Density',
+      applicableCategories: [],
+      sampleRequirements: 'Crude petroleum and liquid petroleum products only; not registered for detergent products.',
       units: ['g/cm³', 'kg/m³', 'Specific Gravity'],
-      calculationMethod: 'Digital oscillating U-tube densitometer or precision hydrometer',
-      acceptanceCriteria: 'Replicate tolerance ± 0.001 g/cm³',
-      instrumentRequirements: 'Density Meter Anton Paar DMA / Precision Hydrometer',
+      calculationMethod: 'Hydrometer method for crude petroleum and liquid petroleum products only.',
+      acceptanceCriteria: 'Not registered for detergent products; do not use for detergent validation.',
+      instrumentRequirements: 'Hydrometer per the petroleum-product method scope.',
       environmentalConditions: '20°C ± 0.1°C',
       replicateRequirements: 2,
-      sourceProvenance: 'ASTM International Vol 05.01',
-      effectiveDate: '2012-01-01'
+      sourceProvenance: 'ASTM D1298-24 scope is crude petroleum and liquid petroleum products; not applicable to detergent formulas.',
+      effectiveDate: '2024-01-01'
+    });
+
+    this.registerMethod({
+      methodId: 'ASTM-D2196',
+      methodName: 'Standard Test Methods for Rheological Properties of Non-Newtonian Materials by Rotational Viscometer',
+      standardOrganization: 'ASTM',
+      standardNumber: 'ASTM D2196-20(2026)',
+      propertyMeasured: 'Viscosity',
+      applicableCategories: [
+        'LAUNDRY_LIQUID', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER',
+        'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER',
+        'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'
+      ],
+      sampleRequirements: 'Report applicable method, geometry/spindle, speed or shear rate, sample preparation and test temperature; follow the selected D2196 procedure.',
+      units: ['cP', 'mPa·s', 'Pa·s'],
+      calculationMethod: 'Apparent viscosity measured by rotational viscometer under the selected ASTM D2196 procedure.',
+      acceptanceCriteria: 'Replicates and uncertainty must be documented; ASTM D2196 does not supply a universal product pass threshold.',
+      instrumentRequirements: 'Calibrated rotational viscometer with geometry and operating conditions recorded.',
+      environmentalConditions: 'Record sample and instrument temperature for every measurement.',
+      replicateRequirements: 3,
+      sourceProvenance: 'ASTM D2196-20(2026), active edition.',
+      effectiveDate: '2026-03-18'
     });
 
     this.registerMethod({
@@ -321,6 +339,9 @@ export function validateLaboratoryObservation(obs: Partial<CompleteLaboratoryObs
   ) {
     errors.push(`FIREWALL REJECTION: Observations with origin ${obs.dataOrigin} are strictly forbidden from empirical calibration/validation datasets.`);
   }
+  if (obs.dataOrigin && obs.dataOrigin !== 'REAL_LAB_MEASUREMENT') {
+    warnings.push(`Origin ${obs.dataOrigin} is reference/field provenance, not an approved real-laboratory validation measurement.`);
+  }
 
   // 2. Mandatory Identification Fields
   if (!obs.observationId) errors.push('Missing observationId.');
@@ -331,14 +352,32 @@ export function validateLaboratoryObservation(obs: Partial<CompleteLaboratoryObs
   if (!obs.laboratoryName) errors.push('Missing laboratoryName.');
   if (!obs.operator) errors.push('Missing operator identity.');
   if (!obs.testDate) errors.push('Missing testDate.');
+  if (obs.dataOrigin === 'REAL_LAB_MEASUREMENT' && !obs.rawEvidenceRef) {
+    errors.push('Real-lab measurement requires a raw evidence reference (for example, a controlled record ID or source file reference).');
+  }
+  if (obs.measuredProperty?.toLowerCase() === 'viscosity' && obs.testMethodId === 'ASTM-D2196' && (!obs.instrumentName || !obs.standardRef)) {
+    errors.push('ASTM D2196 viscosity records require instrument details and the selected procedure/geometry reference.');
+  }
 
   // 3. Measurement Method & Range Validation
   if (!obs.testMethodId) {
     errors.push('Missing testMethodId.');
   } else {
     const method = MeasurementMethodRegistry.getMethod(obs.testMethodId);
-    if (!method && !obs.testMethodId.startsWith('USER_DEFINED')) {
+    if (!method) {
       warnings.push(`Unregistered test method ID: ${obs.testMethodId}. Classifying as unverified method.`);
+    } else {
+      const propertyAliases: Record<string, string[]> = {
+        'pH Prediction': ['pH Prediction', 'pH'],
+        'Cleaning Score / CPI': ['Cleaning Score / CPI', 'Cleaning Score', 'CPI']
+      };
+      const acceptedNames = propertyAliases[method.propertyMeasured] || [method.propertyMeasured];
+      if (obs.measuredProperty && !acceptedNames.some(name => name.toLowerCase() === obs.measuredProperty!.toLowerCase())) {
+        errors.push(`Method/property mismatch: ${method.methodId} measures '${method.propertyMeasured}', not '${obs.measuredProperty}'.`);
+      }
+      if (obs.productCategory && !method.applicableCategories.includes(obs.productCategory)) {
+        errors.push(`Method/category mismatch: ${method.methodId} is not registered for '${obs.productCategory}'.`);
+      }
     }
   }
 

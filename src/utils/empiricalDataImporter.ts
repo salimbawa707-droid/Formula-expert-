@@ -16,6 +16,7 @@ import {
   computeDeterministicFormulaFingerprint
 } from './empiricalLabObservationModel';
 import { HardenedEmpiricalAccuracyEngine } from './empiricalAccuracyFramework';
+import { normalizeProductCategory } from '../domain/productTaxonomy';
 
 export interface QuarantinedLaboratoryObservation {
   rowNumber: number;
@@ -127,7 +128,9 @@ export class EmpiricalDataImporter {
 
       const rawCategory = getCol('productcategory');
       if (!rawCategory) missingFields.push('productCategory');
-      const category = (rawCategory || '').toUpperCase() as Productcategory13;
+      const normalizedCategory = normalizeProductCategory(rawCategory);
+      const category = normalizedCategory as Productcategory13;
+      if (normalizedCategory === 'UNKNOWN_PRODUCT_CATEGORY') missingFields.push('productCategory (unknown or unmapped)');
 
       const formulaId = getCol('formulaid');
       if (!formulaId) missingFields.push('formulaId');
@@ -263,8 +266,9 @@ export class EmpiricalDataImporter {
         operator: getCol('operator') || defaultMetadata.operator,
         laboratoryName: getCol('laboratoryname') || defaultMetadata.laboratoryName,
         testDate,
-        evidenceIds: [`EV-${obsId}`],
-        provenanceStatus: 'REAL_LAB_IMPORT',
+        rawEvidenceRef: getCol('rawevidenceref') || undefined,
+        evidenceIds: getCol('evidenceids') ? getCol('evidenceids').split('|').filter(Boolean) : [],
+        provenanceStatus: 'USER_DECLARED_IMPORT_UNVERIFIED',
         dataQualityStatus: 'APPROVED_FOR_VALIDATION',
         dataOrigin: defaultMetadata.dataOrigin,
         auditTrail: [`Imported via parseCsvLaboratoryData on ${new Date().toISOString()}`]
@@ -272,6 +276,8 @@ export class EmpiricalDataImporter {
 
       // Quality Gate Validation
       const qg = validateLaboratoryObservation(obs);
+      obs.dataQualityStatus = qg.status;
+      obs.auditTrail.push(...qg.auditLog, ...qg.warnings);
       if (qg.status === 'REJECTED') {
         rejectedCount++;
         const reason = `Row ${rowNum} [${obsId}]: ${qg.errors.join('; ')}`;
@@ -287,8 +293,8 @@ export class EmpiricalDataImporter {
         if (qg.status === 'APPROVED_FOR_VALIDATION') approvedCount++;
         if (qg.status === 'NEEDS_REVIEW') needsReviewCount++;
 
-        // Register to framework
-        HardenedEmpiricalAccuracyEngine.registerObservation({
+        // Only fully approved observations may enter the calibration framework.
+        if (qg.status === 'APPROVED_FOR_VALIDATION') HardenedEmpiricalAccuracyEngine.registerObservation({
           observationId: obs.observationId,
           datasetId: obs.datasetId,
           datasetVersion: rawDatasetVer!,
@@ -308,8 +314,8 @@ export class EmpiricalDataImporter {
           laboratoryName: obs.laboratoryName,
           operator: obs.operator,
           testDate: obs.testDate,
-          evidenceId: obs.evidenceIds[0] || `EV-${obs.observationId}`,
-          datasetStatus: 'APPROVED_FOR_VALIDATION'
+          evidenceId: obs.evidenceIds[0] || obs.rawEvidenceRef || '',
+          datasetStatus: qg.status
         });
 
         importedObservations.push(obs);
@@ -410,7 +416,8 @@ export class EmpiricalDataImporter {
 
       seenObservationIds.add(obsId);
 
-      const category = (item.productCategory || defaultMetadata.dataOrigin || '').toUpperCase() as Productcategory13;
+      const normalizedCategory = normalizeProductCategory(item.productCategory || '');
+      const category = normalizedCategory as Productcategory13;
       const formulaId = item.formulaId || 'FORMULA-JSON';
       const formulaVer = item.formulaVersion || item.formulaVersionId || defaultMetadata.formulaVersion;
       const datasetVer = item.datasetVersion || defaultMetadata.datasetVersion;
@@ -428,6 +435,7 @@ export class EmpiricalDataImporter {
 
       const missing: string[] = [];
       if (!category) missing.push('productCategory');
+      if (normalizedCategory === 'UNKNOWN_PRODUCT_CATEGORY') missing.push('productCategory (unknown or unmapped)');
       if (!formulaVer) missing.push('formulaVersion');
       if (!datasetVer) missing.push('datasetVersion');
       if (!batchId) missing.push('batchId');
@@ -495,14 +503,17 @@ export class EmpiricalDataImporter {
         operator: item.operator || defaultMetadata.operator,
         laboratoryName: item.laboratoryName || defaultMetadata.laboratoryName,
         testDate,
-        evidenceIds: item.evidenceIds || [`EV-${obsId}`],
-        provenanceStatus: 'REAL_LAB_IMPORT_JSON',
+        rawEvidenceRef: item.rawEvidenceRef,
+        evidenceIds: Array.isArray(item.evidenceIds) ? item.evidenceIds : [],
+        provenanceStatus: 'USER_DECLARED_IMPORT_UNVERIFIED',
         dataQualityStatus: 'APPROVED_FOR_VALIDATION',
         dataOrigin: defaultMetadata.dataOrigin,
         auditTrail: [`Imported via parseJsonLaboratoryData on ${new Date().toISOString()}`]
       };
 
       const qg = validateLaboratoryObservation(obs);
+      obs.dataQualityStatus = qg.status;
+      obs.auditTrail.push(...qg.auditLog, ...qg.warnings);
       if (qg.status === 'REJECTED') {
         rejectedCount++;
         const reason = `Record #${rowNum} [${obsId}]: ${qg.errors.join('; ')}`;
@@ -518,7 +529,7 @@ export class EmpiricalDataImporter {
         if (qg.status === 'APPROVED_FOR_VALIDATION') approvedCount++;
         if (qg.status === 'NEEDS_REVIEW') needsReviewCount++;
 
-        HardenedEmpiricalAccuracyEngine.registerObservation({
+        if (qg.status === 'APPROVED_FOR_VALIDATION') HardenedEmpiricalAccuracyEngine.registerObservation({
           observationId: obs.observationId,
           datasetId: obs.datasetId,
           datasetVersion: datasetVer!,
@@ -538,8 +549,8 @@ export class EmpiricalDataImporter {
           laboratoryName: obs.laboratoryName,
           operator: obs.operator,
           testDate: obs.testDate,
-          evidenceId: obs.evidenceIds[0] || `EV-${obs.observationId}`,
-          datasetStatus: 'APPROVED_FOR_VALIDATION'
+          evidenceId: obs.evidenceIds[0] || obs.rawEvidenceRef || '',
+          datasetStatus: qg.status
         });
 
         importedObservations.push(obs);

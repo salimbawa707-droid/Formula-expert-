@@ -25,6 +25,7 @@ import {
 import { EmpiricalDataImporter } from '../empiricalDataImporter';
 import { HardenedEmpiricalAccuracyEngine } from '../empiricalAccuracyFramework';
 import { EmpiricalValidationEvaluationEngine } from '../empiricalValidationEvaluationEngine';
+import { getCategoryEmpiricalCoverage } from '../empiricalValidationEvaluationEngine';
 import { EmpiricalLabPersistenceService } from '../empiricalLabPersistenceService';
 
 export interface TestResult {
@@ -145,6 +146,7 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
     laboratoryName: 'Certified Intertek Lab',
     operator: 'Dr. Jane Doe',
     testDate: '2026-10-05',
+    rawEvidenceRef: 'controlled-record://EV-CERT-101',
     evidenceIds: ['EV-CERT-101'],
     provenanceStatus: 'VERIFIED_PRIMARY_MEASUREMENT',
     dataQualityStatus: 'APPROVED_FOR_VALIDATION',
@@ -157,6 +159,20 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
     realQuality.status === 'APPROVED_FOR_VALIDATION' && realQuality.errors.length === 0,
     realQuality.status,
     'APPROVED_FOR_VALIDATION'
+  );
+  const mismatchedMethod = validateLaboratoryObservation({ ...realObs, measuredProperty: 'Density' });
+  assert(
+    'Quality Gate rejects a known test method when its measured property does not match the record',
+    mismatchedMethod.status === 'REJECTED' && mismatchedMethod.errors.some(e => e.includes('Method/property mismatch')),
+    mismatchedMethod.status,
+    'REJECTED'
+  );
+  const categoryCoverage = getCategoryEmpiricalCoverage([]);
+  assert(
+    'Empirical scorecard exposes all 13 categories as pending when no approved evidence exists',
+    categoryCoverage.length === 13 && categoryCoverage.every(c => c.evidenceAvailableCount === 0 && c.targetStatus.every(t => t.status === 'DATA_PENDING')),
+    categoryCoverage.length,
+    13
   );
 
   // 5. Grouped Dataset Splitting & Leakage Audit
@@ -216,9 +232,9 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
   );
 
   // 9. CSV Laboratory Data Importer Wizard
-  const csvData = `observationId,productCategory,formulaId,formulaVersion,datasetVersion,batchId,measuredProperty,measuredValue,measurementUnit,testMethodId,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,ingredients
-OBS-CSV-101,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score / CPI,88.5,Score Index,ASTM-D3050,150,25,5,15,1,2026-10-05,labsa:10|sles:8|water:82
-OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score / CPI,89.0,Score Index,ASTM-D3050,150,25,5,15,2,2026-10-05,labsa:10|sles:8|water:82`;
+  const csvData = `observationId,productCategory,formulaId,formulaVersion,datasetVersion,batchId,measuredProperty,measuredValue,measurementUnit,testMethodId,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,ingredients,rawEvidenceRef
+OBS-CSV-101,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score / CPI,88.5,Score Index,ASTM-D3050,150,25,5,15,1,2026-10-05,labsa:10|sles:8|water:82,controlled-record://CSV-101
+OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score / CPI,89.0,Score Index,ASTM-D3050,150,25,5,15,2,2026-10-05,labsa:10|sles:8|water:82,controlled-record://CSV-102`;
   const importRes = EmpiricalDataImporter.parseCsvLaboratoryData(csvData, {
     datasetId: 'DS-CSV-2027',
     datasetVersion: 'DS-CSV-2027-v1',
@@ -275,6 +291,7 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
       testDate: "2026-10-11",
       formulaVersion: "1.0.0",
       formulaFingerprint: "FP-LAUN-JSON1"
+      ,rawEvidenceRef: "controlled-record://JSON-101"
     },
     {
       observationId: "OBS-JSON-101", // Duplicate ID should be quarantined
@@ -292,6 +309,7 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
       testDate: "2026-10-11",
       formulaVersion: "1.0.0",
       formulaFingerprint: "FP-LAUN-JSON1"
+      ,rawEvidenceRef: "controlled-record://JSON-102"
     }
   ]);
   const jsonImportRes = EmpiricalDataImporter.parseJsonLaboratoryData(jsonPayload, {
@@ -362,6 +380,7 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
       laboratoryName: "Lab1",
       testDate: "2026-10-11",
       evidenceIds: ["EV-1"],
+      rawEvidenceRef: "controlled-record://OBS-EVAL-1",
       provenanceStatus: "REAL_LAB_MEASUREMENT",
       dataQualityStatus: "APPROVED_FOR_VALIDATION",
       dataOrigin: "REAL_LAB_MEASUREMENT",
@@ -390,6 +409,7 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
       laboratoryName: "Lab1",
       testDate: "2026-10-11",
       evidenceIds: ["EV-2"],
+      rawEvidenceRef: "controlled-record://OBS-EVAL-2",
       provenanceStatus: "REAL_LAB_MEASUREMENT",
       dataQualityStatus: "APPROVED_FOR_VALIDATION",
       dataOrigin: "REAL_LAB_MEASUREMENT",
@@ -407,10 +427,10 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     datasetVersion: 'DS-EVAL-v1'
   });
   assert(
-    'EmpiricalValidationEvaluationEngine correctly calculates MAE, bias, and metrics from real observations',
-    evalRes.acceptedRecordCount === 2 && typeof evalRes.mae === 'number',
+    'EmpiricalValidationEvaluationEngine calculates metrics only on the independent formula holdout',
+    evalRes.acceptedRecordCount === 1 && typeof evalRes.mae === 'number' && evalRes.leakageAudit.passed,
     evalRes.acceptedRecordCount,
-    2
+    1
   );
 
   // 14. Empirical Lab Persistence Service

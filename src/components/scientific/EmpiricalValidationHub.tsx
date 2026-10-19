@@ -24,7 +24,10 @@ import {
   QuarantinedLaboratoryObservation
 } from '../../utils/empiricalDataImporter';
 import { EmpiricalDataset } from '../../utils/empiricalAccuracyFramework';
-import { CompleteLaboratoryObservation } from '../../utils/empiricalLabObservationModel';
+import { CompleteLaboratoryObservation, DataOrigin, computeDeterministicFormulaFingerprint } from '../../utils/empiricalLabObservationModel';
+import { FormulaScientificOrchestrator } from '../../utils/orchestrator/formulaScientificOrchestrator';
+import { normalizeProductCategory, ProductCategoryId } from '../../domain/productTaxonomy';
+import { getCategoryEmpiricalCoverage } from '../../utils/empiricalValidationEvaluationEngine';
 
 interface EmpiricalValidationHubProps {
   activeFormula?: any;
@@ -45,6 +48,9 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
   const [importFormat, setImportFormat] = useState<'CSV' | 'JSON'>('CSV');
   const [rawImportText, setRawImportText] = useState<string>('');
   const [importDatasetId, setImportDatasetId] = useState<string>('DS-LAB-2026');
+  const [importDataOrigin, setImportDataOrigin] = useState<DataOrigin>('UNKNOWN_ORIGIN');
+  const [importLabName, setImportLabName] = useState<string>('');
+  const [importOperator, setImportOperator] = useState<string>('');
   const [importResult, setImportResult] = useState<LabImportResult | null>(null);
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'targets' | 'datasets' | 'evaluation' | 'quarantine'>('targets');
@@ -79,15 +85,59 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
   }, [activeProperty, observations, activeFormula]);
 
   const runEvaluation = () => {
-    // Generate prediction mapping from active formula if available
+    // Predictions come from the app's SSOT scientific orchestrator and are matched
+    // only to the exact formula fingerprint; no target/specification value is used as a prediction.
     const predictionsMap = new Map<string, number>();
-    let defaultPred: number | undefined = undefined;
-
-    if (activeFormula) {
-      if (activeProperty === 'pH Prediction' && typeof activeFormula.targetPH === 'number') {
-        defaultPred = activeFormula.targetPH;
-      } else if (activeProperty === 'Active Matter' && typeof activeFormula.activeMatter === 'number') {
-        defaultPred = activeFormula.activeMatter;
+    let category: ProductCategoryId | undefined;
+    if (activeFormula && Array.isArray(activeFormula.ingredients)) {
+      const normalizedCategory = normalizeProductCategory(activeFormula.productCategory || activeFormula.category);
+      if (normalizedCategory !== 'UNKNOWN_PRODUCT_CATEGORY') {
+        try {
+          const evaluated = FormulaScientificOrchestrator.evaluate({
+            formulaId: activeFormula.formulaId || activeFormula.id,
+            formulaName: activeFormula.formulaName || activeFormula.name,
+            formulaVersion: activeFormula.formulaVersion || activeFormula.version,
+            productCategory: normalizedCategory,
+            ingredients: activeFormula.ingredients.map((ingredient: any) => ({
+              ...ingredient,
+              name: ingredient.name || ingredient.ingredientName || ingredient.id || 'Unknown ingredient',
+              percentage: Number(ingredient.percentage ?? ingredient.percent ?? 0)
+            })),
+            targetPH: activeFormula.targetPH,
+            waterHardnessPpm: activeFormula.waterHardnessPpm ?? activeFormula.hardness
+          });
+          const predictedValues: Record<string, number | null | undefined> = {
+            'pH Prediction': evaluated.pHResult?.ph,
+            'Density': evaluated.densityResult?.densityGPerCm3,
+            'Active Matter': evaluated.activeMatterResult?.totalActiveMatterPct,
+            'Viscosity': evaluated.viscosityResult?.predictedViscosityCp,
+            'Cleaning Score / CPI': evaluated.cleaningResult?.cpi
+          };
+          const predicted = predictedValues[activeProperty];
+          const formulaVersion = activeFormula.formulaVersion || activeFormula.version;
+          const fingerprintIngredients = activeFormula.ingredients.map((ingredient: any) => ({
+            ingredientId: ingredient.ingredientId || ingredient.canonicalIngredientId || ingredient.id || '',
+            gradeId: ingredient.gradeId || ingredient.commercialGradeId,
+            commercialMaterial: ingredient.commercialMaterial,
+            percentage: Number(ingredient.percentage ?? ingredient.percent ?? 0),
+            activeMatterPct: ingredient.activeMatterPct ?? ingredient.activePercent
+          }));
+          const canFingerprint = Boolean(formulaVersion) && fingerprintIngredients.length > 0 &&
+            fingerprintIngredients.every((ingredient: any) => ingredient.ingredientId && Number.isFinite(ingredient.percentage));
+          const fingerprint = activeFormula.empiricalFormulaFingerprint ||
+            (canFingerprint ? computeDeterministicFormulaFingerprint({
+              productCategory: normalizedCategory,
+              ingredients: fingerprintIngredients,
+              formulaVersion,
+              waterHardnessPpm: activeFormula.waterHardnessPpm ?? activeFormula.hardness
+            }) : activeFormula.formulaFingerprint);
+          if (typeof predicted === 'number' && Number.isFinite(predicted) && typeof fingerprint === 'string' && fingerprint) {
+            predictionsMap.set(fingerprint, predicted);
+          }
+          category = normalizedCategory;
+        } catch (error) {
+          console.error('Empirical validation prediction failed in scientific orchestrator.', error);
+        }
       }
     }
 
@@ -95,8 +145,8 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
       property: activeProperty,
       predictionsMap,
       observations,
+      category,
       datasetVersion: datasets.find(d => d.datasetId === selectedDatasetId)?.version || 'DS-EMPTY',
-      defaultPredictedValue: defaultPred
     });
 
     setEvaluationResult(res);
@@ -139,9 +189,9 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
     try {
       const defaultMeta = {
         datasetId: importDatasetId.trim() || 'DS-LAB-IMPORT',
-        laboratoryName: 'Central QA Analytical Facility',
-        operator: 'Laboratory Analyst',
-        dataOrigin: 'REAL_LAB_MEASUREMENT' as const,
+        laboratoryName: importLabName.trim(),
+        operator: importOperator.trim(),
+        dataOrigin: importDataOrigin,
         formulaVersion: '1.0.0'
       };
 
@@ -151,19 +201,21 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
 
       setImportResult(result);
 
-      if (result.approvedCount > 0) {
+      if (result.importedObservations.length > 0) {
         // Save dataset
         await EmpiricalLabPersistenceService.saveDataset({
           datasetId: defaultMeta.datasetId,
           version: '',
           categories: Array.from(new Set(result.importedObservations.map(o => o.productCategory))),
           property: activeProperty,
-          sourceType: 'REAL_LAB_MEASUREMENT',
+          sourceType: result.importedObservations[0]?.dataOrigin || 'UNKNOWN_ORIGIN',
           provenanceIds: [`PROV-${defaultMeta.datasetId}`],
           observationCount: result.importedObservations.length,
           formulaCount: new Set(result.importedObservations.map(o => o.formulaFingerprint)).size,
           batchCount: new Set(result.importedObservations.map(o => o.batchId)).size,
-          status: 'APPROVED_FOR_VALIDATION',
+          status: result.importedObservations.every(o => o.dataOrigin === 'REAL_LAB_MEASUREMENT' && o.dataQualityStatus === 'APPROVED_FOR_VALIDATION')
+            ? 'APPROVED_FOR_VALIDATION'
+            : 'QUALITY_CHECK',
           createdAt: new Date().toISOString()
         });
 
@@ -287,7 +339,7 @@ OBS-PH-006,DS-LAB-2026,BATCH-105,SMP-105-1,LAUNDRY_LIQUID,pH Prediction,8.46,pH 
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            Validation Targets (5)
+            Validation Targets (13 categories)
           </button>
 
           <button
@@ -331,6 +383,29 @@ OBS-PH-006,DS-LAB-2026,BATCH-105,SMP-105-1,LAUNDRY_LIQUID,pH Prediction,8.46,pH 
       {/* TAB 1: VALIDATION TARGETS OVERVIEW */}
       {activeTab === 'targets' && (
         <div className="space-y-4">
+          <section className="bg-[#0b1020] border border-slate-800 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xs font-extrabold text-white">13 Category Empirical Coverage</h3>
+                <p className="text-[10px] text-slate-400 mt-1">Har category ke relevant lab targets yahan track hote hain; pending ka matlab validated nahi hai.</p>
+              </div>
+              <span className="text-[10px] font-mono text-cyan-300">{getCategoryEmpiricalCoverage(observations).filter(c => c.evidenceAvailableCount > 0).length}/13 categories with approved lab evidence</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+              {getCategoryEmpiricalCoverage(observations).map(coverage => (
+                <div key={coverage.category} className="rounded-lg border border-slate-800 bg-[#070b18] p-3">
+                  <div className="flex justify-between gap-2 text-[10px] font-bold text-white">
+                    <span>{coverage.category.replaceAll('_', ' ')}</span>
+                    <span className={coverage.evidenceAvailableCount === coverage.requiredTargetCount ? 'text-emerald-300' : 'text-amber-300'}>{coverage.evidenceAvailableCount}/{coverage.requiredTargetCount} targets</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {coverage.targetStatus.map(target => <span key={target.property} title={`${target.property}: ${target.approvedRealLabCount} approved real-lab rows`} className={`rounded px-1.5 py-0.5 text-[9px] ${target.status === 'EVIDENCE_AVAILABLE' ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950/60 text-amber-300'}`}>{target.property}</span>)}
+                  </div>
+                  <div className="mt-2 text-[9px] text-slate-500">Observed rows: {coverage.observations} · Engine groups tracked: {coverage.engineGroups.length} · Scores require matched predictions.</div>
+                </div>
+              ))}
+            </div>
+          </section>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {Object.entries(CANONICAL_EMPIRICAL_TARGETS).map(([propName, target]) => {
               const matchingObs = observations.filter(o => o.measuredProperty.toLowerCase() === propName.toLowerCase() || (propName === 'Cleaning Score / CPI' && o.measuredProperty === 'Cleaning Score'));
@@ -546,26 +621,30 @@ OBS-PH-006,DS-LAB-2026,BATCH-105,SMP-105-1,LAUNDRY_LIQUID,pH Prediction,8.46,pH 
                 </div>
 
                 {/* Metric Statistics Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs font-mono">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-xs font-mono">
                   <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
                     <span className="text-[10px] text-slate-400 block">MAE ({evaluationResult.unit})</span>
-                    <strong className="text-base text-white">{evaluationResult.totalObservationCount > 0 ? evaluationResult.mae : 'N/A'}</strong>
+                    <strong className="text-base text-white">{evaluationResult.acceptedRecordCount > 0 ? evaluationResult.mae : 'N/A'}</strong>
                   </div>
                   <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
                     <span className="text-[10px] text-slate-400 block">RMSE ({evaluationResult.unit})</span>
-                    <strong className="text-base text-white">{evaluationResult.totalObservationCount > 0 ? evaluationResult.rmse : 'N/A'}</strong>
+                    <strong className="text-base text-white">{evaluationResult.acceptedRecordCount > 0 ? evaluationResult.rmse : 'N/A'}</strong>
                   </div>
                   <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
                     <span className="text-[10px] text-slate-400 block">Mean Bias</span>
-                    <strong className="text-base text-white">{evaluationResult.totalObservationCount > 0 ? evaluationResult.meanSignedBias : 'N/A'}</strong>
+                    <strong className="text-base text-white">{evaluationResult.acceptedRecordCount > 0 ? evaluationResult.meanSignedBias : 'N/A'}</strong>
                   </div>
                   <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
                     <span className="text-[10px] text-slate-400 block">Independent Batches</span>
                     <strong className="text-base text-cyan-300">{evaluationResult.independentBatchCount}</strong>
                   </div>
                   <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
-                    <span className="text-[10px] text-slate-400 block">Accepted Records</span>
+                    <span className="text-[10px] text-slate-400 block">Independent Holdout Records</span>
                     <strong className="text-base text-cyan-300">{evaluationResult.acceptedRecordCount}</strong>
+                  </div>
+                  <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
+                    <span className="text-[10px] text-slate-400 block">Within Tolerance · Goal 90–95%</span>
+                    <strong className={`text-base ${(evaluationResult.withinAcceptanceRatePct ?? 0) >= 90 ? 'text-emerald-300' : 'text-amber-300'}`}>{evaluationResult.withinAcceptanceRatePct === undefined ? 'N/A' : `${evaluationResult.withinAcceptanceRatePct}%`}</strong>
                   </div>
                   <div className="bg-[#0b1324] border border-slate-800 rounded-xl p-3">
                     <span className="text-[10px] text-slate-400 block">Leakage Audit</span>
@@ -702,6 +781,27 @@ OBS-PH-006,DS-LAB-2026,BATCH-105,SMP-105-1,LAUNDRY_LIQUID,pH Prediction,8.46,pH 
 
             <div className="space-y-3 overflow-y-auto flex-1 pr-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Data origin (honestly select):</label>
+                  <select value={importDataOrigin} onChange={e => setImportDataOrigin(e.target.value as DataOrigin)} className="w-full bg-[#131d35] border border-slate-700 rounded-lg p-2 text-white text-xs">
+                    <option value="UNKNOWN_ORIGIN">Unknown / not classified</option>
+                    <option value="REAL_LAB_MEASUREMENT">Real laboratory measurement</option>
+                    <option value="REAL_FIELD_MEASUREMENT">Real field measurement</option>
+                    <option value="LITERATURE_VALUE">Literature value (reference only)</option>
+                    <option value="REFERENCE_STANDARD">Reference standard (reference only)</option>
+                    <option value="SOURCE_BACKED_VALUE">Open/source-backed value (reference only)</option>
+                    <option value="SYNTHETIC_TEST_DATA">Synthetic test data (blocked)</option>
+                    <option value="SIMULATED_DATA">Simulated data (blocked)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Lab / source organization:</label>
+                  <input value={importLabName} onChange={e => setImportLabName(e.target.value)} className="w-full bg-[#131d35] border border-slate-700 rounded-lg p-2 text-white text-xs" placeholder="Asli source ka naam" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Operator / source author:</label>
+                  <input value={importOperator} onChange={e => setImportOperator(e.target.value)} className="w-full bg-[#131d35] border border-slate-700 rounded-lg p-2 text-white text-xs" placeholder="Asli analyst ya author" />
+                </div>
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 block mb-1">Dataset ID:</label>
                   <input
