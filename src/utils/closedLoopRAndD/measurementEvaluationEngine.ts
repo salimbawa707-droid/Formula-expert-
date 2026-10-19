@@ -27,6 +27,7 @@ export interface EvaluationBatchSummary {
   failCount: number;
   notApplicableCount: number;
   insufficientDataCount: number;
+  overallStatus: 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA' | 'NOT_APPLICABLE';
   overallPass: boolean;
 }
 
@@ -66,12 +67,21 @@ export function evaluateMeasurementsBatch(
     }
   }
 
+  const overallStatus = evaluations.length === 0 || insufficientDataCount > 0
+    ? 'INSUFFICIENT_DATA'
+    : failCount > 0
+      ? 'FAIL'
+      : notApplicableCount === evaluations.length
+        ? 'NOT_APPLICABLE'
+        : 'PASS';
+
   return {
     evaluations,
     passCount,
     failCount,
     notApplicableCount,
     insufficientDataCount,
-    overallPass: failCount === 0,
+    overallStatus,
+    overallPass: overallStatus === 'PASS',
   };
 }

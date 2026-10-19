@@ -318,9 +318,23 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
   });
   assert(
     'Evaluation engine returns explicit empty state with WAITING_FOR_REAL_LAB_DATA semantics when zero observations exist',
-    emptyEval.totalObservationCount === 0 && emptyEval.validationGateVerdict === 'DATA_PENDING',
+    emptyEval.totalObservationCount === 0 && emptyEval.validationGateVerdict === 'DATA_PENDING' &&
+    emptyEval.mae === null && emptyEval.rmse === null && !emptyEval.leakageAudit.passed,
     emptyEval.validationGateVerdict,
     'DATA_PENDING'
+  );
+
+  const noPredictionEval = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'Cleaning Score / CPI',
+    predictionsMap: new Map(),
+    observations: [realObs],
+    datasetVersion: 'NO-PREDICTION-v1'
+  });
+  assert(
+    'No comparable predictions return unavailable metrics and do not mark leakage audit as passed',
+    noPredictionEval.mae === null && noPredictionEval.rmse === null && !noPredictionEval.leakageAudit.passed,
+    { mae: noPredictionEval.mae, rmse: noPredictionEval.rmse, leakageAuditPassed: noPredictionEval.leakageAudit.passed },
+    { mae: null, rmse: null, leakageAuditPassed: false }
   );
 
   // 13. Prediction vs Actual Evaluation Engine with Metrics & Confidence Intervals

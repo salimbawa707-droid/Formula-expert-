@@ -113,11 +113,11 @@ export interface EmpiricalPropertyEvaluationResult {
   excludedRecordCount: number;
   
   // Statistical Error Metrics
-  mae: number;
-  rmse: number;
-  meanSignedBias: number;
-  residualVariance: number;
-  standardErrorOfMean: number;
+  mae: number | null;
+  rmse: number | null;
+  meanSignedBias: number | null;
+  residualVariance: number | null;
+  standardErrorOfMean: number | null;
   r2?: number;
 
   // Statistical Confidence Interval on Mean Error (Student's t)
@@ -196,16 +196,16 @@ export class EmpiricalValidationEvaluationEngine {
         uniqueFormulaCount: 0,
         outOfDomainRecordCount: 0,
         excludedRecordCount: 0,
-        mae: 0,
-        rmse: 0,
-        meanSignedBias: 0,
-        residualVariance: 0,
-        standardErrorOfMean: 0,
+        mae: null,
+        rmse: null,
+        meanSignedBias: null,
+        residualVariance: null,
+        standardErrorOfMean: null,
         leakageAudit: {
-          passed: true,
+          passed: false,
           overlappingFingerprints: [],
           overlappingBatches: [],
-          message: 'Zero observations in dataset; no leakage possible.'
+          message: 'Leakage audit not evaluated because the dataset contains no observations.'
         },
         primaryMetric: targetConfig.primaryMetric,
         acceptanceThreshold: targetConfig.acceptanceThreshold,
@@ -291,16 +291,16 @@ export class EmpiricalValidationEvaluationEngine {
         uniqueFormulaCount: 0,
         outOfDomainRecordCount: outOfDomainCount,
         excludedRecordCount: excludedCount,
-        mae: 0,
-        rmse: 0,
-        meanSignedBias: 0,
-        residualVariance: 0,
-        standardErrorOfMean: 0,
+        mae: null,
+        rmse: null,
+        meanSignedBias: null,
+        residualVariance: null,
+        standardErrorOfMean: null,
         leakageAudit: {
-          passed: true,
+          passed: false,
           overlappingFingerprints: [],
           overlappingBatches: [],
-          message: 'Zero comparable predictions.'
+          message: 'Leakage audit not evaluated because no comparable prediction/measurement pairs were available.'
         },
         primaryMetric: targetConfig.primaryMetric,
         acceptanceThreshold: targetConfig.acceptanceThreshold,
