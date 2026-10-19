@@ -10,9 +10,10 @@ These source files are copied from the PSDI repository's `CMC_DataSets/` folder 
 
 - `NIST_Table_of_Critical_Micelle_Concentration_Values.csv`: 4,990 data rows; fields include compound number, source CMC text, normalized value/unit slots, temperature, method, author/reference codes, and evaluation metadata.
 - `CMC_Compounds.csv`: 719 compound rows with name, IUPAC, SMILES, molecular weights, and a method/provenance field.
-- In the 4,990-row measurement file, 4,559 rows have numeric `CMC Value 1`; the first-unit field uses codes `M`, `D`, `W`, `P`, `N`, or blank. The code meanings for non-`M` values are not resolved here; no unit conversion was performed.
+- In the 4,990-row measurement file, 4,559 rows have numeric `CMC Value 1`; the first-unit field uses codes `M`, `D`, `W`, `P`, `N`, or blank. The original NBS NSRDS 36 concentration-unit legend maps these observed codes as `M` = molar, `D` = wt/vol %, `W` = molal, `P` = wt %, and `N` = normal. This legend decoding does not make the records homogeneous: preserve original values and codes, and do not convert units without checking record context and source conditions.
 - The source also has free-text `CMC` cells and reference codes. Preserve all fields; do not parse date-like/reference codes as concentrations or collapse multiple measurement methods/temperatures into one value.
 - The compound file explicitly labels some identities/weights as `LLM initial name and weight`. One visible candidate identity inconsistency is “SODIUM OCTYL 1 SULFATE” paired with IUPAC “sodium;2-ethylhexyl sulfate” and a branched structure. Treat compound identity matching as unresolved until checked against the original NIST references.
+- The unit legend is in the [original NIST/NBS NSRDS 36 publication](https://nvlpubs.nist.gov/nistpubs/Legacy/NSRDS/nbsnsrds36.pdf) (concentration-units legend, p. 222).
 
 ## Use gate
 
