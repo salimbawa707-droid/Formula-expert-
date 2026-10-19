@@ -318,7 +318,8 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
   });
   assert(
     'Evaluation engine returns explicit empty state with WAITING_FOR_REAL_LAB_DATA semantics when zero observations exist',
-    emptyEval.totalObservationCount === 0 && emptyEval.validationGateVerdict === 'DATA_PENDING',
+    emptyEval.totalObservationCount === 0 && emptyEval.validationGateVerdict === 'DATA_PENDING' &&
+    emptyEval.mae === null && emptyEval.rmse === null && !emptyEval.leakageAudit.passed,
     emptyEval.validationGateVerdict,
     'DATA_PENDING'
   );
