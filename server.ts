@@ -1177,13 +1177,7 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
 
     ingredients = ingredients.filter(ing => {
       const nameL = ing.name.toLowerCase();
-      return allowedWords.some((token: string) => {
-        if (token.length <= 4) {
-          const regex = new RegExp(`\\b${token}\\b|${token}`, "i");
-          return regex.test(nameL);
-        }
-        return nameL.includes(token);
-      });
+      return allowedWords.some((token: string) => token.length > 0 && nameL.includes(token));
     });
 
     // Fail closed when the user's available materials cannot support even a minimal
