@@ -174,6 +174,17 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
     categoryCoverage.length,
     13
   );
+  const powderBulkDensity = categoryCoverage.find(c => c.category === 'LAUNDRY_POWDER')?.targetStatus.find(t => t.property === 'Bulk Density');
+  const liquidLaundryPh = categoryCoverage.find(c => c.category === 'LAUNDRY_LIQUID')?.targetStatus.find(t => t.property === 'pH Prediction');
+  const manualDishDensity = categoryCoverage.find(c => c.category === 'DISHWASH_MANUAL')?.targetStatus.find(t => t.property === 'Density');
+  assert(
+    'Category coverage distinguishes unsupported model/method gaps from targets that are technically ready for evidence',
+    powderBulkDensity?.readiness === 'METHOD_AND_PREDICTION_REQUIRED' &&
+      liquidLaundryPh?.readiness === 'READY' && liquidLaundryPh.protocolMethodId === 'ASTM-D1172' &&
+      manualDishDensity?.readiness === 'METHOD_REQUIRED',
+    { powderBulkDensity: powderBulkDensity?.readiness, liquidLaundryPh: liquidLaundryPh?.readiness, method: liquidLaundryPh?.protocolMethodId, manualDishDensity: manualDishDensity?.readiness },
+    { powderBulkDensity: 'METHOD_AND_PREDICTION_REQUIRED', liquidLaundryPh: 'READY', method: 'ASTM-D1172', manualDishDensity: 'METHOD_REQUIRED' }
+  );
 
   // 5. Grouped Dataset Splitting & Leakage Audit
   const obsList: CompleteLaboratoryObservation[] = [

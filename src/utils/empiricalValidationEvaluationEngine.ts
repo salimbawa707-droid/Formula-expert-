@@ -140,6 +140,28 @@ export const CATEGORY_EMPIRICAL_SCORECARDS: Record<ProductCategoryId, {
   }];
 })) as Record<ProductCategoryId, { requiredTargets: string[]; engineGroups: string[] }>;
 
+export type EmpiricalTargetReadiness = 'READY' | 'METHOD_REQUIRED' | 'PREDICTION_REQUIRED' | 'METHOD_AND_PREDICTION_REQUIRED';
+
+const ORCHESTRATOR_PREDICTION_TARGETS = new Set([
+  'pH Prediction', 'Density', 'Active Matter', 'Viscosity', 'Cleaning Score / CPI'
+]);
+
+function getEmpiricalTargetReadiness(property: string, category: ProductCategoryId): {
+  readiness: EmpiricalTargetReadiness;
+  protocolMethodId: string | null;
+  predictionSupported: boolean;
+} {
+  const protocolMethodId = isTargetProtocolRegistered(property, category)
+    ? CANONICAL_EMPIRICAL_TARGETS[property].testMethod
+    : null;
+  const predictionSupported = ORCHESTRATOR_PREDICTION_TARGETS.has(property);
+  const methodReady = protocolMethodId !== null;
+  const readiness: EmpiricalTargetReadiness = methodReady
+    ? (predictionSupported ? 'READY' : 'PREDICTION_REQUIRED')
+    : (predictionSupported ? 'METHOD_REQUIRED' : 'METHOD_AND_PREDICTION_REQUIRED');
+  return { readiness, protocolMethodId, predictionSupported };
+}
+
 export function getCategoryEmpiricalCoverage(observations: CompleteLaboratoryObservation[]) {
   return CANONICAL_PRODUCT_CATEGORY_IDS.map(category => {
     const scorecard = CATEGORY_EMPIRICAL_SCORECARDS[category];
@@ -147,8 +169,10 @@ export function getCategoryEmpiricalCoverage(observations: CompleteLaboratoryObs
     const targetStatus = scorecard.requiredTargets.map(property => {
       const matched = categoryObs.filter(o => isObservationForProperty(o.measuredProperty, property));
       const eligible = matched.filter(o => o.dataOrigin === 'REAL_LAB_MEASUREMENT' && o.dataQualityStatus === 'APPROVED_FOR_VALIDATION' && validateLaboratoryObservation(o).status === 'APPROVED_FOR_VALIDATION');
+      const readiness = getEmpiricalTargetReadiness(property, category);
       return { property, observationCount: matched.length, approvedRealLabCount: eligible.length,
-        status: eligible.length ? 'EVIDENCE_AVAILABLE' as const : 'DATA_PENDING' as const };
+        status: eligible.length ? 'EVIDENCE_AVAILABLE' as const : 'DATA_PENDING' as const,
+        ...readiness };
     });
     return { category, requiredTargetCount: targetStatus.length,
       evidenceAvailableCount: targetStatus.filter(t => t.status === 'EVIDENCE_AVAILABLE').length,

@@ -399,7 +399,27 @@ OBS-PH-006,DS-LAB-2026,BATCH-105,SMP-105-1,LAUNDRY_LIQUID,pH Prediction,8.46,pH 
                     <span className={coverage.evidenceAvailableCount === coverage.requiredTargetCount ? 'text-emerald-300' : 'text-amber-300'}>{coverage.evidenceAvailableCount}/{coverage.requiredTargetCount} targets</span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {coverage.targetStatus.map(target => <span key={target.property} title={`${target.property}: ${target.approvedRealLabCount} approved real-lab rows`} className={`rounded px-1.5 py-0.5 text-[9px] ${target.status === 'EVIDENCE_AVAILABLE' ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950/60 text-amber-300'}`}>{target.property}</span>)}
+                    {coverage.targetStatus.map(target => {
+                      const readinessLabel = target.readiness === 'READY'
+                        ? 'ready'
+                        : target.readiness === 'METHOD_REQUIRED'
+                          ? 'method needed'
+                          : target.readiness === 'PREDICTION_REQUIRED'
+                            ? 'model needed'
+                            : 'method + model needed';
+                      const readinessColor = target.readiness === 'READY'
+                        ? 'text-cyan-200'
+                        : 'text-rose-300';
+                      return (
+                        <span
+                          key={target.property}
+                          title={`${target.property}: ${target.approvedRealLabCount} approved real-lab rows; ${readinessLabel}${target.protocolMethodId ? ` (${target.protocolMethodId})` : ''}`}
+                          className={`rounded px-1.5 py-0.5 text-[9px] ${target.status === 'EVIDENCE_AVAILABLE' ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950/60 text-amber-300'}`}
+                        >
+                          {target.property} <span className={`${readinessColor} opacity-80`}>· {readinessLabel}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                   <div className="mt-2 text-[9px] text-slate-500">Observed rows: {coverage.observations} · Engine groups tracked: {coverage.engineGroups.length} · Scores require matched predictions.</div>
                 </div>

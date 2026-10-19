@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-19T20:22:49.466Z",
+  "timestamp": "2026-10-19T20:28:11.634Z",
   "summary": {
     "discoveredCount": 127,
     "registeredCount": 127,
     "executedCount": 127,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4022,
-    "totalAssertionsPassed": 4022,
+    "totalAssertionsExecuted": 4023,
+    "totalAssertionsPassed": 4023,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -951,9 +951,9 @@
       "file": "p2Phase13EmpiricalValidation.regression.test.ts",
       "moduleName": "runP2Phase13EmpiricalValidationTestSuite",
       "executed": true,
-      "passedAssertions": 22,
+      "passedAssertions": 23,
       "failedAssertions": 0,
-      "totalAssertions": 22,
+      "totalAssertions": 23,
       "skipped": false
     },
     {
