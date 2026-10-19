@@ -70,7 +70,7 @@ npm run dev
 
 ## 🧪 Testing & Verification
 
-The platform maintains an authoritative 123-module regression and integrity test suite verifying all scientific engines, security middleware, and offline caching policies:
+The platform maintains a master regression and integrity suite covering scientific engines, security middleware, and offline caching policies. The latest verified run in this repository executed 127 modules; the runner reports the current count in its execution manifest:
 
 ```bash
 # Run full master test suite

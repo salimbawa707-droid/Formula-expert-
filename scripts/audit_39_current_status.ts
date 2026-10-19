@@ -91,6 +91,10 @@ export function generateCurrentScientificReport(): CurrentScientificReport {
     if (!compRes.compatible) issues.push(`Incompat=[${compRes.alerts.map(a => a.title).join('; ')}]`);
 
     const qgStatus = qg.finalFormulaStatus;
+    const calculatedChecks = issues.join(' | ') || 'CALCULATED_CHECKS_PASS';
+    const validationState = qgStatus === 'LAB_VALIDATION_REQUIRED'
+      ? 'LAB_VALIDATION_REQUIRED'
+      : 'NOT_LAB_VALIDATED';
     statusDistribution[qgStatus] = (statusDistribution[qgStatus] || 0) + 1;
 
     formulaRecords.push({
@@ -111,7 +115,7 @@ export function generateCurrentScientificReport(): CurrentScientificReport {
       qgStatus,
       blockingIssues: qg.blockingIssues.map(b => b.title),
       majorWarnings: qg.majorWarnings.map(w => w.title),
-      issuesSummary: issues.join(' | ') || 'VALID'
+      issuesSummary: `${calculatedChecks}; ${validationState}`
     });
   }
 
