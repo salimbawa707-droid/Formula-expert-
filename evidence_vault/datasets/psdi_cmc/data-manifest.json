@@ -1,0 +1,27 @@
+{
+  "dataset": {
+    "title": "Critical Micelle Concentration (CMC) Data Collection",
+    "source": "PSDI-UK/psdi-datasets, CMC_DataSets/",
+    "sourcePage": "https://resources.psdi.ac.uk/data/a7c82670-d2e2-46c6-920a-74294289aa34",
+    "underlyingSource": "NIST NBS NSRDS 36, DOI 10.6028/NBS.NSRDS.36",
+    "license": "CC BY 4.0",
+    "accessed": "2026-10-19",
+    "ingestionState": "RAW_ARCHIVE_ONLY_QUARANTINED_PENDING_CURATION"
+  },
+  "files": {
+    "CMC_Compounds.csv": {
+      "bytes": 112377,
+      "gitBlobSha1": "b0ea82e9b4f9bfac6a86e44f61559ed9ccf74dcd",
+      "md5": "d0409027b905d66164704d99448bd1b4",
+      "sha256": "072d4adf73916baea1dd2cb83bc3b7b332e2650031931dfe329947b8c5ddcdd8",
+      "dataRows": 719
+    },
+    "NIST_Table_of_Critical_Micelle_Concentration_Values.csv": {
+      "bytes": 649056,
+      "gitBlobSha1": "abca6413696c3c66e2b895c5ba773aac8122fc61",
+      "md5": "820e94cfb0ce512683aa9693fdb63c28",
+      "sha256": "d1e11f175f345311f1c9bfddf389a6e5dbf9ada14e073eff78defc5b6f533717",
+      "dataRows": 4990
+    }
+  }
+}
