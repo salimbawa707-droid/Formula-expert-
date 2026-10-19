@@ -9,7 +9,7 @@
  * ============================================================================
  */
 
-import { CompleteLaboratoryObservation, validateLaboratoryObservation } from './empiricalLabObservationModel';
+import { CompleteLaboratoryObservation, MeasurementMethodRegistry, validateLaboratoryObservation } from './empiricalLabObservationModel';
 import { ModelValidationStatus15, DataSplittingEngine, LeakageAuditResult } from './empiricalCalibrationEngine';
 import { ScientificMaturity } from '../domain/scientificCertainty/types';
 import { CANONICAL_PRODUCT_CATEGORY_IDS, ProductCategoryId, getProductCategory } from '../domain/productTaxonomy';
@@ -20,6 +20,8 @@ export interface EmpiricalTargetConfig {
   unit: string;
   primaryMetric: 'MAE' | 'RMSE' | 'MAPE';
   acceptanceThreshold: number;
+  minIndependentFormulas: number;
+  minHoldoutFormulas: number;
   minIndependentBatches: number;
   minIndependentObservations: number;
   description: string;
@@ -33,8 +35,10 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     unit: 'pH units',
     primaryMetric: 'MAE',
     acceptanceThreshold: 0.15,
-    minIndependentBatches: 5,
-    minIndependentObservations: 15,
+    minIndependentFormulas: 10,
+    minHoldoutFormulas: 3,
+    minIndependentBatches: 10,
+    minIndependentObservations: 30,
     description: 'Direct potentiometric glass electrode measurement (ASTM D1172)',
     testMethod: 'ASTM-D1172'
   },
@@ -44,8 +48,10 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     unit: 'g/cm³',
     primaryMetric: 'MAE',
     acceptanceThreshold: 0.015,
-    minIndependentBatches: 5,
-    minIndependentObservations: 15,
+    minIndependentFormulas: 10,
+    minHoldoutFormulas: 3,
+    minIndependentBatches: 10,
+    minIndependentObservations: 30,
     description: 'Finished-product density at a declared temperature using a product-appropriate registered protocol; ASTM D1298 is petroleum-only and is not accepted for detergents.',
     testMethod: 'PRODUCT_DENSITY_METHOD_REQUIRED'
   },
@@ -55,8 +61,10 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     unit: '%',
     primaryMetric: 'MAE',
     acceptanceThreshold: 0.50,
-    minIndependentBatches: 5,
-    minIndependentObservations: 15,
+    minIndependentFormulas: 10,
+    minHoldoutFormulas: 3,
+    minIndependentBatches: 10,
+    minIndependentObservations: 30,
     description: 'Two-phase titration / analytical surfactant assay (ISO 2271 / ASTM D1681)',
     testMethod: 'ISO-2271'
   },
@@ -66,8 +74,10 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     unit: 'cP',
     primaryMetric: 'MAPE',
     acceptanceThreshold: 15.0, // 15% relative error
-    minIndependentBatches: 5,
-    minIndependentObservations: 15,
+    minIndependentFormulas: 10,
+    minHoldoutFormulas: 3,
+    minIndependentBatches: 10,
+    minIndependentObservations: 30,
     description: 'Rotational viscometry using the applicable ASTM D2196 procedure with geometry/shear conditions, sample preparation, and temperature recorded.',
     testMethod: 'ASTM-D2196'
   },
@@ -77,8 +87,10 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     unit: 'points (0-100)',
     primaryMetric: 'MAE',
     acceptanceThreshold: 5.0,
-    minIndependentBatches: 5,
-    minIndependentObservations: 20,
+    minIndependentFormulas: 10,
+    minHoldoutFormulas: 3,
+    minIndependentBatches: 10,
+    minIndependentObservations: 30,
     description: 'Artificially soiled fabric screening (ASTM D3050-26); soil selection must be documented and results are not suitable for detergent ranking.',
     testMethod: 'ASTM-D3050'
   }
@@ -152,6 +164,17 @@ function isObservationForProperty(measuredProperty: string, property: string): b
   return measured === target;
 }
 
+function isTargetProtocolRegistered(property: string, category?: ProductCategoryId): boolean {
+  const target = CANONICAL_EMPIRICAL_TARGETS[property];
+  if (!target) return false;
+  const method = MeasurementMethodRegistry.getMethod(target.testMethod);
+  if (!method) return false;
+  if (!isObservationForProperty(method.propertyMeasured, property)) return false;
+  if (category) return method.applicableCategories.includes(category);
+  // Category-scoped evidence cannot be pooled into an unscoped scorecard.
+  return CANONICAL_PRODUCT_CATEGORY_IDS.every(id => method.applicableCategories.includes(id));
+}
+
 export interface DetailedPredictionComparisonRecord {
   observationId: string;
   batchId: string;
@@ -176,6 +199,7 @@ export interface EmpiricalPropertyEvaluationResult {
   datasetVersion: string;
   totalObservationCount: number;
   acceptedRecordCount: number;
+  eligibleFormulaCount: number;
   independentBatchCount: number;
   uniqueFormulaCount: number;
   outOfDomainRecordCount: number;
@@ -212,6 +236,7 @@ export interface EmpiricalPropertyEvaluationResult {
   // Acceptance Gate & Scientific Maturity
   primaryMetric: 'MAE' | 'RMSE' | 'MAPE';
   acceptanceThreshold: number;
+  isFormulaSufficiencyMet: boolean;
   isAcceptanceThresholdMet: boolean;
   isBatchSufficiencyMet: boolean;
   validationGateVerdict: ModelValidationStatus15;
@@ -237,15 +262,18 @@ export class EmpiricalValidationEvaluationEngine {
     category?: ProductCategoryId;
   }): EmpiricalPropertyEvaluationResult {
     const { property, predictionsMap, observations, datasetVersion = 'DS-CURRENT', category } = input;
-    const hasRegisteredTarget = Boolean(CANONICAL_EMPIRICAL_TARGETS[property]);
-    const targetConfig = CANONICAL_EMPIRICAL_TARGETS[property] || {
+    const configuredTarget = CANONICAL_EMPIRICAL_TARGETS[property];
+    const hasRegisteredTarget = isTargetProtocolRegistered(property, category);
+    const targetConfig = configuredTarget || {
       targetId: `target-${property.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       property,
       unit: 'units',
       primaryMetric: 'MAE',
       acceptanceThreshold: 0,
-      minIndependentBatches: 5,
-      minIndependentObservations: 15,
+      minIndependentFormulas: 10,
+      minHoldoutFormulas: 3,
+      minIndependentBatches: 10,
+      minIndependentObservations: 30,
       description: `Empirical evaluation for ${property}`,
       testMethod: 'UNCONFIGURED'
     };
@@ -261,6 +289,7 @@ export class EmpiricalValidationEvaluationEngine {
         datasetVersion,
         totalObservationCount: 0,
         acceptedRecordCount: 0,
+        eligibleFormulaCount: 0,
         independentBatchCount: 0,
         uniqueFormulaCount: 0,
         outOfDomainRecordCount: 0,
@@ -278,6 +307,7 @@ export class EmpiricalValidationEvaluationEngine {
         },
         primaryMetric: targetConfig.primaryMetric,
         acceptanceThreshold: targetConfig.acceptanceThreshold,
+        isFormulaSufficiencyMet: false,
         isAcceptanceThresholdMet: false,
         isBatchSufficiencyMet: false,
         validationGateVerdict: 'DATA_PENDING',
@@ -292,6 +322,8 @@ export class EmpiricalValidationEvaluationEngine {
 
     // Filter for real experimental data origin firewall
     const validRealObs = propObs.filter(o =>
+      hasRegisteredTarget &&
+      o.testMethodId === targetConfig.testMethod &&
       o.dataOrigin === 'REAL_LAB_MEASUREMENT' && 
       o.dataQualityStatus === 'APPROVED_FOR_VALIDATION' &&
       validateLaboratoryObservation(o).status === 'APPROVED_FOR_VALIDATION'
@@ -334,8 +366,8 @@ export class EmpiricalValidationEvaluationEngine {
 
       // Check applicability domain if ranges available
       let inDomain = true;
-      if (obs.temperatureC && (obs.temperatureC < 10 || obs.temperatureC > 60)) inDomain = false;
-      if (obs.waterProfile?.hardnessPpm && obs.waterProfile.hardnessPpm > 600) inDomain = false;
+      if (typeof obs.temperatureC === 'number' && (obs.temperatureC < 10 || obs.temperatureC > 60)) inDomain = false;
+      if (typeof obs.waterProfile?.hardnessPpm === 'number' && obs.waterProfile.hardnessPpm > 600) inDomain = false;
       if (!inDomain) outOfDomainCount++;
 
       comparisons.push({
@@ -368,6 +400,7 @@ export class EmpiricalValidationEvaluationEngine {
         datasetVersion,
         totalObservationCount: propObs.length,
         acceptedRecordCount: 0,
+        eligibleFormulaCount: new Set(validRealObs.map(o => o.formulaFingerprint)).size,
         independentBatchCount: 0,
         uniqueFormulaCount: 0,
         outOfDomainRecordCount: outOfDomainCount,
@@ -385,6 +418,7 @@ export class EmpiricalValidationEvaluationEngine {
         },
         primaryMetric: targetConfig.primaryMetric,
         acceptanceThreshold: targetConfig.acceptanceThreshold,
+        isFormulaSufficiencyMet: false,
         isAcceptanceThresholdMet: false,
         isBatchSufficiencyMet: false,
         validationGateVerdict: validRealObs.length ? 'DATA_INSUFFICIENT' : 'DATA_PENDING',
@@ -456,6 +490,7 @@ export class EmpiricalValidationEvaluationEngine {
     // Independent batches & formulas counts
     const uniqueBatches = new Set(comparisons.map(c => c.batchId)).size;
     const uniqueFormulas = new Set(comparisons.map(c => c.formulaFingerprint)).size;
+    const eligibleFormulaCount = new Set(validRealObs.map(o => o.formulaFingerprint)).size;
 
     // Leakage Audit using DataSplittingEngine
     const leakageAudit = splitAudit;
@@ -466,6 +501,7 @@ export class EmpiricalValidationEvaluationEngine {
     const metricValue = targetConfig.primaryMetric === 'RMSE' ? rmse : targetConfig.primaryMetric === 'MAPE' ? mape : mae;
     const isThresholdMet = hasRegisteredTarget && metricValue <= targetConfig.acceptanceThreshold;
     const isBatchSufficiencyMet = uniqueBatches >= targetConfig.minIndependentBatches && n >= targetConfig.minIndependentObservations;
+    const isFormulaSufficiencyMet = eligibleFormulaCount >= targetConfig.minIndependentFormulas && uniqueFormulas >= targetConfig.minHoldoutFormulas;
 
     // Determine Final Gate Verdict and Maturity
     const gateReasons: string[] = [];
@@ -480,6 +516,9 @@ export class EmpiricalValidationEvaluationEngine {
     if (!isBatchSufficiencyMet) {
       gateReasons.push(`Insufficient independent sample size: ${uniqueBatches}/${targetConfig.minIndependentBatches} batches, ${n}/${targetConfig.minIndependentObservations} observations.`);
     }
+    if (!isFormulaSufficiencyMet) {
+      gateReasons.push(`Insufficient formula diversity: ${eligibleFormulaCount}/${targetConfig.minIndependentFormulas} eligible formulas overall and ${uniqueFormulas}/${targetConfig.minHoldoutFormulas} independent holdout formulas.`);
+    }
     if (!leakageAudit.passed) {
       gateReasons.push(`Data leakage detected across train/test partitions: ${leakageAudit.overlappingBatches.length} shared batches.`);
     }
@@ -491,7 +530,7 @@ export class EmpiricalValidationEvaluationEngine {
     let maturity: ScientificMaturity = 'LAB_VALIDATED';
 
     if (gateReasons.length > 0) {
-      if (!isBatchSufficiencyMet) {
+      if (!isBatchSufficiencyMet || !isFormulaSufficiencyMet) {
         verdict = 'DATA_INSUFFICIENT';
         maturity = 'EMPIRICALLY_CALIBRATED';
       } else {
@@ -510,6 +549,7 @@ export class EmpiricalValidationEvaluationEngine {
       datasetVersion,
       totalObservationCount: propObs.length,
       acceptedRecordCount: n,
+      eligibleFormulaCount,
       independentBatchCount: uniqueBatches,
       uniqueFormulaCount: uniqueFormulas,
       outOfDomainRecordCount: outOfDomainCount,
@@ -525,6 +565,7 @@ export class EmpiricalValidationEvaluationEngine {
       leakageAudit,
       primaryMetric: targetConfig.primaryMetric,
       acceptanceThreshold: targetConfig.acceptanceThreshold,
+      isFormulaSufficiencyMet,
       isAcceptanceThresholdMet: isThresholdMet,
       isBatchSufficiencyMet,
       validationGateVerdict: verdict,

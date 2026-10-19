@@ -6,9 +6,10 @@ Updated: 2026-10-20
 
 - The validation hub now exposes category scorecards for all 13 canonical product categories.
 - The scientific orchestrator is the prediction source for the properties it returns. A lab row is compared only when its formula fingerprint exactly matches that formula's supplied empirical fingerprint.
-- Metrics are computed on a deterministic formula-group holdout. Calibration fingerprints are excluded from reported validation metrics. At least two formula fingerprints are required before an independent holdout exists.
-- A 90% within-tolerance rate is a minimum validation target, not a measured result or guarantee. Existing registered targets also require 5 independent batches and 15 independent observations (20 for cleaning CPI).
-- A target without a registered method and acceptance threshold can show exploratory comparisons but cannot receive `LAB_VALIDATED` status.
+- Metrics are computed on a deterministic formula-group holdout. Calibration fingerprints are excluded from reported validation metrics. The commercial gate now requires 10 eligible formula fingerprints overall and at least 3 distinct formula fingerprints in the holdout; two-formula datasets cannot earn `LAB_VALIDATED`.
+- A 90% within-tolerance rate is a minimum validation target, not a measured result or guarantee. A `LAB_VALIDATED` result also requires at least 10 eligible formula fingerprints overall, 3 distinct formula fingerprints in the independent holdout, 10 independent holdout batches, and 30 comparable holdout observations.
+- A target is active only when its configured method is registered for that property and requested category; category-limited protocols cannot be pooled into an unscoped cross-category score. A target without an eligible registered method and acceptance threshold can show exploratory comparisons but cannot receive `LAB_VALIDATED` status.
+- Current registry coverage is incomplete: ASTM D1172 pH is registered for all 13 categories; ASTM D2196 viscosity is registered for 12 liquid categories; ASTM D3050 is a laundry-only screening method and cannot substantiate detergent ranking. The configured detergent-density method is still a placeholder, and the active-matter target's ISO 2271 method is not registered in the observation registry. Those targets therefore cannot currently receive `LAB_VALIDATED` status.
 - No 90–95% accuracy claim is supported until matched, category-specific, independently held-out lab data meets the evidence gates. The currently catalogued 39 formulas do not constitute such a dataset.
 
 ## Data source and commercial-use gates

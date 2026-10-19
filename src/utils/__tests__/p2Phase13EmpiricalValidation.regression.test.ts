@@ -341,6 +341,24 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     emptyEval.validationGateVerdict,
     'DATA_PENDING'
   );
+  const densityWithoutProtocol = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'Density', predictionsMap: new Map(), observations: [], category: 'LAUNDRY_LIQUID'
+  });
+  assert(
+    'Density target remains unregistered while its configured product method is only a placeholder',
+    !densityWithoutProtocol.hasRegisteredTarget && densityWithoutProtocol.validationGateVerdict === 'DATA_PENDING',
+    { hasRegisteredTarget: densityWithoutProtocol.hasRegisteredTarget, verdict: densityWithoutProtocol.validationGateVerdict },
+    { hasRegisteredTarget: false, verdict: 'DATA_PENDING' }
+  );
+  const categoryScopedCleaningTarget = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'Cleaning Score / CPI', predictionsMap: new Map(), observations: []
+  });
+  assert(
+    'Laundry-only D3050 protocol cannot validate an unscoped mixed-category cleaning target',
+    !categoryScopedCleaningTarget.hasRegisteredTarget,
+    categoryScopedCleaningTarget.hasRegisteredTarget,
+    false
+  );
 
   const noPredictionEval = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
     property: 'Cleaning Score / CPI',
@@ -431,6 +449,56 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     evalRes.acceptedRecordCount === 1 && typeof evalRes.mae === 'number' && evalRes.leakageAudit.passed,
     evalRes.acceptedRecordCount,
     1
+  );
+  assert(
+    'A single held-out formula cannot satisfy commercial formula-diversity sufficiency',
+    evalRes.uniqueFormulaCount === 1 && evalRes.eligibleFormulaCount === 2 &&
+      !evalRes.isFormulaSufficiencyMet && evalRes.validationGateVerdict === 'DATA_INSUFFICIENT',
+    { heldOutFormulas: evalRes.uniqueFormulaCount, eligibleFormulas: evalRes.eligibleFormulaCount, formulaSufficiency: evalRes.isFormulaSufficiencyMet, verdict: evalRes.validationGateVerdict },
+    { heldOutFormulas: 1, eligibleFormulas: 2, formulaSufficiency: false, verdict: 'DATA_INSUFFICIENT' }
+  );
+  const zeroTemperatureEval = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'pH Prediction',
+    predictionsMap: predMap,
+    observations: sampleObs.map((observation, index) => index === 1 ? { ...observation, temperatureC: 0 } : observation),
+    datasetVersion: 'ZERO-TEMPERATURE-v1'
+  });
+  assert(
+    'A zero-degree lab observation is retained but correctly counted outside the supported domain',
+    zeroTemperatureEval.outOfDomainRecordCount === 1 && zeroTemperatureEval.comparisons[0]?.isInDomain === false,
+    { outOfDomainCount: zeroTemperatureEval.outOfDomainRecordCount, comparisonIsInDomain: zeroTemperatureEval.comparisons[0]?.isInDomain },
+    { outOfDomainCount: 1, comparisonIsInDomain: false }
+  );
+
+  const sufficientHoldoutObs = Array.from({ length: 10 }, (_, formulaIndex) =>
+    Array.from({ length: 10 }, (_, batchIndex) => ({
+      ...sampleObs[0],
+      observationId: `OBS-COMM-${formulaIndex}-${batchIndex}`,
+      formulaFingerprint: `FP-COMM-${String(formulaIndex).padStart(2, '0')}`,
+      batchId: `B-COMM-${formulaIndex}-${batchIndex}`,
+      replicateNumber: batchIndex + 1,
+      measuredValue: 8.5,
+      evidenceIds: [`EV-COMM-${formulaIndex}-${batchIndex}`],
+      rawEvidenceRef: `controlled-record://COMM-${formulaIndex}-${batchIndex}`
+    }))
+  ).flat();
+  const sufficientPredictions = new Map<string, number>(
+    Array.from({ length: 10 }, (_, formulaIndex) => [`FP-COMM-${String(formulaIndex).padStart(2, '0')}`, 8.5])
+  );
+  const sufficientEval = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
+    property: 'pH Prediction',
+    predictionsMap: sufficientPredictions,
+    observations: sufficientHoldoutObs,
+    category: 'LAUNDRY_LIQUID',
+    datasetVersion: 'COMMERCIAL-GATE-v1'
+  });
+  assert(
+    'LAB_VALIDATED requires 10 eligible formula groups and at least 3 formula groups in the independent holdout',
+    sufficientEval.validationGateVerdict === 'LAB_VALIDATED' && sufficientEval.eligibleFormulaCount === 10 &&
+      sufficientEval.uniqueFormulaCount === 3 && sufficientEval.acceptedRecordCount === 30 &&
+      sufficientEval.isFormulaSufficiencyMet && sufficientEval.isBatchSufficiencyMet,
+    { verdict: sufficientEval.validationGateVerdict, eligibleFormulas: sufficientEval.eligibleFormulaCount, holdoutFormulas: sufficientEval.uniqueFormulaCount, holdoutObservations: sufficientEval.acceptedRecordCount },
+    { verdict: 'LAB_VALIDATED', eligibleFormulas: 10, holdoutFormulas: 3, holdoutObservations: 30 }
   );
 
   // 14. Empirical Lab Persistence Service
