@@ -251,6 +251,50 @@ export class DurablePurchaseStore {
   }
 
   /**
+   * Lists active, unexpired purchase grants owned by a user.
+   * Never returns purchase token material; stored records contain only token fingerprints.
+   */
+  public static async listActiveGrantsForUser(
+    userId: string
+  ): Promise<{ available: boolean; grants: PurchaseGrantRecord[] }> {
+    if (!userId || userId === 'anonymous_client') {
+      return { available: false, grants: [] };
+    }
+
+    let records: PurchaseGrantRecord[];
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      records = Array.from(testMemoryStore.values()).filter(record => record.userId === userId);
+    } else {
+      const firestore = getDurableFirestore();
+      if (!firestore) return { available: false, grants: [] };
+
+      try {
+        const snapshot = await firestore.collection(this.COLLECTION_NAME)
+          .where('userId', '==', userId)
+          .get();
+        records = snapshot.docs.map(doc => doc.data() as PurchaseGrantRecord);
+      } catch {
+        return { available: false, grants: [] };
+      }
+    }
+
+    const now = Date.now();
+    const activeStates = new Set([
+      'SUBSCRIPTION_STATE_ACTIVE',
+      'SUBSCRIPTION_STATE_IN_GRACE_PERIOD',
+      'SUBSCRIPTION_STATE_CANCELED'
+    ]);
+    return {
+      available: true,
+      grants: records.filter(record =>
+        Number.isFinite(record.expiryTimeMillis) &&
+        record.expiryTimeMillis > now &&
+        activeStates.has(record.subscriptionState)
+      )
+    };
+  }
+
+  /**
    * Retrieves a grant record by purchase token.
    */
   public static async getGrant(purchaseToken: string): Promise<PurchaseGrantRecord | null> {
