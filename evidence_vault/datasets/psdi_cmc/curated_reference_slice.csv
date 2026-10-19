@@ -1,0 +1,2 @@
+evidence_id,compound_no,source_name,measured_cmc,unit,temperature_c,material_quality_code,method_quality_code,method,authors,reference_code,source_symbol,evaluation_code,reference_title,reference_doi,dataset_license,scope
+PSDI-CMC-C1-66007-25C,1,SODIUM DODECYL 1 SULFATE,0.0082,M,25,A,A,SURFACE TNSN LINEAR PLOT,ELWO MYSE,66007,T,1,The surface tension of sodium dodecylsulfate solutions and the phase separation model of micelle formation,10.1016/0095-8522(66)90017-1,CC-BY-4.0,Pure-component aqueous input reference only; not mixed-surfactant or finished-formula validation

@@ -1,5 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { getProductCategory } from '../domain/productTaxonomy';
+import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference } from '../data/experimentalReferenceData';
 import { calculatePHAdvanced, calculateNeutralization as calcNeutAuthoritative } from './pHEngine';
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from '../domain/ph/acidBaseDataModel';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
@@ -628,6 +629,7 @@ export interface SurfactantCmcEntry {
   cmcPpm: number;
   type: 'anionic' | 'nonionic' | 'amphoteric' | 'cationic';
   standardMw: number;
+  referenceEvidence?: PureSurfactantCmcReference;
 }
 
 export function getIngredientCmcData(name: string): (SurfactantCmcEntry & { matchedKey: string }) | null {
@@ -639,7 +641,17 @@ export function getIngredientCmcData(name: string): (SurfactantCmcEntry & { matc
     return { cmcMolar: 0.3, cmcPpm: 114, type: 'anionic', standardMw: 380, matchedKey: 'SLES' };
   }
   if (n.includes('sls') || (n.includes('lauryl sulfate') && !n.includes('ether')) || n.includes('sodium dodecyl sulfate')) {
-    return { cmcMolar: 8.2, cmcPpm: 2360, type: 'anionic', standardMw: 288, matchedKey: 'SLS' };
+    const referenceEvidence = PURE_SURFACTANT_CMC_REFERENCES.SLS;
+    const cmcMolar = referenceEvidence.valueMolar * 1000;
+    const standardMw = 288.3; // NIST table molecular weight for compound 1
+    return {
+      cmcMolar,
+      cmcPpm: Number((cmcMolar * standardMw).toFixed(1)),
+      type: 'anionic',
+      standardMw,
+      matchedKey: 'SLS',
+      referenceEvidence
+    };
   }
   if (n.includes('aos') || n.includes('olefin sulfonate')) {
     return { cmcMolar: 0.6, cmcPpm: 182, type: 'anionic', standardMw: 304, matchedKey: 'AOS' };
@@ -689,7 +701,8 @@ export interface MixedCmcResult {
   classification: string;
   hasSynergyPair: boolean;
   hasElectrolyteScreening: boolean;
-  components: Array<{ name: string; activeFraction: number; cmcMolar: number; cmcPpm: number; type: string }>;
+  components: Array<{ name: string; activeFraction: number; cmcMolar: number; cmcPpm: number; type: string; referenceEvidence?: PureSurfactantCmcReference }>;
+  evidenceRefs: string[];
   confidence: 'Higher Confidence' | 'Moderate Confidence' | 'Lower Confidence';
   limitation: string;
   labValidationGuidance: string;
@@ -698,7 +711,7 @@ export interface MixedCmcResult {
 export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCmcResult | null {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   let totalActiveSurfactantPct = 0;
-  const components: Array<{ name: string; activePct: number; cmcMolar: number; cmcPpm: number; type: string; mw: number }> = [];
+  const components: Array<{ name: string; activePct: number; cmcMolar: number; cmcPpm: number; type: string; mw: number; referenceEvidence?: PureSurfactantCmcReference }> = [];
 
   let hasAnionic = false;
   let hasAmphoteric = false;
@@ -721,7 +734,8 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
         cmcMolar: cmcData.cmcMolar,
         cmcPpm: cmcData.cmcPpm,
         type: cmcData.type,
-        mw: cmcData.standardMw
+        mw: cmcData.standardMw,
+        referenceEvidence: cmcData.referenceEvidence
       });
 
       if (cmcData.type === 'anionic') hasAnionic = true;
@@ -754,7 +768,8 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
       activeFraction: Number(fraction.toFixed(3)),
       cmcMolar: c.cmcMolar,
       cmcPpm: c.cmcPpm,
-      type: c.type
+      type: c.type,
+      referenceEvidence: c.referenceEvidence
     };
   });
 
@@ -778,6 +793,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     hasSynergyPair,
     hasElectrolyteScreening: hasElectrolyte,
     components: resolvedComponents,
+    evidenceRefs: Array.from(new Set(components.map(c => c.referenceEvidence?.evidenceId).filter((id): id is string => Boolean(id)))),
     confidence,
     limitation: 'Clint ideal mixed-pseudophase calculation assumes zero excess free energy of mixing (β = 0). Synergistic headgroup interactions and electrolyte screening typically depress experimental benchtop CMC below this ideal baseline.',
     labValidationGuidance: 'Surface tensiometry (Wilhelmy plate / du Noüy ring equilibrium surface tension vs log-concentration isotherm) recommended for experimental CMC determination.'

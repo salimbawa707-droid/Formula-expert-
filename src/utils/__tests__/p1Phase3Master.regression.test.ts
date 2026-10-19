@@ -146,6 +146,30 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
   const lae9Cmc = getIngredientCmcData('Alcohol Ethoxylate (LAE-9)');
   assert('LAE-9 CMC Resolved', lae9Cmc !== null && lae9Cmc.cmcMolar === 0.05, lae9Cmc?.cmcMolar, 0.05);
 
+  const sourcedSlsCmc = getIngredientCmcData('Sodium dodecyl sulfate');
+  assert(
+    'SLS pure CMC parameter matches curated PSDI/NIST 25°C record',
+    sourcedSlsCmc !== null && Math.abs(sourcedSlsCmc.cmcMolar - 8.2) < 1e-12 && sourcedSlsCmc.referenceEvidence?.evidenceId === 'PSDI-CMC-C1-66007-25C',
+    { cmcMolar: sourcedSlsCmc?.cmcMolar, evidenceId: sourcedSlsCmc?.referenceEvidence?.evidenceId },
+    { cmcMolar: 8.2, evidenceId: 'PSDI-CMC-C1-66007-25C' }
+  );
+  assert(
+    'SLS ppm conversion uses the NIST molecular weight and retains evidence lineage',
+    sourcedSlsCmc?.cmcPpm === 2364.1 && sourcedSlsCmc.referenceEvidence?.sourceReferenceCode === '66007',
+    { cmcPpm: sourcedSlsCmc?.cmcPpm, reference: sourcedSlsCmc?.referenceEvidence?.sourceReferenceCode },
+    { cmcPpm: 2364.1, reference: '66007' }
+  );
+  const sourcedSlsMixture = calculateMixedCMC([
+    { name: 'Sodium dodecyl sulfate', percentage: 10, activeMatterPct: 100, category: 'Anionic Surfactant' }
+  ]);
+  assert(
+    'Mixed CMC engine carries pure-input evidence through its output contract',
+    sourcedSlsMixture?.evidenceRefs.includes('PSDI-CMC-C1-66007-25C') === true &&
+      sourcedSlsMixture.components[0]?.referenceEvidence?.temperatureC === 25,
+    { evidenceRefs: sourcedSlsMixture?.evidenceRefs, temperatureC: sourcedSlsMixture?.components[0]?.referenceEvidence?.temperatureC },
+    { evidenceRefs: ['PSDI-CMC-C1-66007-25C'], temperatureC: 25 }
+  );
+
   // Binary Surfactant Mixture:
   // Component A: LABSA (MW=320, CMC=1.2 mM), active fraction alpha_1 = 0.5
   // Component B: LAE-9 (MW=580, CMC=0.05 mM), active fraction alpha_2 = 0.5
