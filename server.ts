@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { AiFallbackService } from "./src/services/aiFallbackService";
 import { IngredientResearchService } from "./src/services/ingredientResearchService";
+import { DurablePurchaseStore } from "./src/services/durablePurchaseStore";
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from "./src/domain/ph/acidBaseDataModel";
 import {
   rateLimitMiddleware,
@@ -471,15 +472,35 @@ function enforcePreservativeConstraints(formula: any) {
     }
 
     if (needsSubstitution) {
-      // Substitute with the nearest safe, pH-compatible preservative alternative, preserving existing percentage
+      // Substitute with the nearest pH-compatible alternative, preserving the listed percentage.
       formula.ingredients[preservativeIdx] = {
         ...safePreservative,
         percentage: currentIng.percentage > 0 ? currentIng.percentage : safePreservative.percentage
       };
+
+      // Keep the process description aligned with the changed ingredient.
+      if (Array.isArray(formula.manufacturingMethod)) {
+        const preservativeNames = /sodium benzoate|potassium sorbate|benzyl alcohol|kathon(?:\s*cg)?|formalin|dmdm hydantoin|phenoxyethanol/gi;
+        formula.manufacturingMethod = formula.manufacturingMethod.map((step: any) =>
+          typeof step === "string" ? step.replace(preservativeNames, safePreservative.name) : step
+        );
+      }
+      if (!Array.isArray(formula.commonMistakes)) formula.commonMistakes = [];
+      formula.commonMistakes.push(
+        `Preservative changed to ${safePreservative.name} for pH compatibility; confirm supplier directions, legal suitability, dose, and preservation efficacy with a qualified review and challenge testing.`
+      );
     }
   } else {
-    // If no preservative is found in the recipe, auto-include a safe, compatible preservative
+    // If no preservative is found in the recipe, auto-include a pH-compatible preservative.
     formula.ingredients.push(safePreservative);
+    if (!Array.isArray(formula.manufacturingMethod)) formula.manufacturingMethod = [];
+    formula.manufacturingMethod.push(
+      `Add the listed preservative (${safePreservative.name}) only as directed by its supplier; verify efficacy with a preservation challenge test.`
+    );
+    if (!Array.isArray(formula.commonMistakes)) formula.commonMistakes = [];
+    formula.commonMistakes.push(
+      `Preservative was added automatically; confirm supplier directions, legal suitability, dose, and preservation efficacy with a qualified review and challenge testing.`
+    );
   }
 
   return formula;
@@ -1177,22 +1198,16 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
 
     ingredients = ingredients.filter(ing => {
       const nameL = ing.name.toLowerCase();
-      return allowedWords.some((token: string) => {
-        if (token.length <= 4) {
-          const regex = new RegExp(`\\b${token}\\b|${token}`, "i");
-          return regex.test(nameL);
-        }
-        return nameL.includes(token);
-      });
+      return allowedWords.some((token: string) => token.length > 0 && nameL.includes(token));
     });
 
-    // If too restrictive (e.g. 0 or 1 item left), populate a safe base with what they listed
+    // Fail closed when the user's available materials cannot support even a minimal
+    // fallback. Never introduce unlisted surfactants or builders.
     if (ingredients.length <= 1) {
-      ingredients = [
-        { name: "SLES (70%)", percentage: grade === "Premium" ? 15.0 : grade === "Standard" ? 10.0 : 6.0, role: "Primary Surfactant", costPerKg: null, activeMatterPct: 70, hlbValue: 13.0 },
-        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Builder", costPerKg: null, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0.0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
-      ];
+      return res.status(422).json({
+        success: false,
+        error: "The available-ingredient list does not contain enough compatible materials to build a fallback formula. No unlisted ingredients were added. Add the raw materials you want to use and try again."
+      });
     }
   }
 
@@ -1337,6 +1352,16 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
 
   if (!client) {
     const balancedMock = enforceFormulaMassBalance(mockFormula);
+    const unverifiedPH = "Unverified offline estimate; measure in a lab";
+    balancedMock.estimatedPH = unverifiedPH;
+    balancedMock.properties = {
+      ...balancedMock.properties,
+      pH: unverifiedPH
+    };
+    if (!Array.isArray(balancedMock.commonMistakes)) balancedMock.commonMistakes = [];
+    balancedMock.commonMistakes.push(
+      "Offline demo values are illustrative only. The requested target pH is not a measured or calculated result; verify pH with a calibrated meter and adjust through controlled lab trials."
+    );
     return res.json({
       success: true,
       mode: "Demo/Offline Mode",
@@ -1988,13 +2013,26 @@ app.get(
         process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY ||
         process.env.GOOGLE_APPLICATION_CREDENTIALS
       );
+      const subscriptionLookup = await DurablePurchaseStore.listActiveGrantsForUser(user.uid);
+      if (!subscriptionLookup.available) {
+        return res.status(503).json({
+          error: "Subscription status is temporarily unavailable because the verified purchase store could not be read."
+        });
+      }
+
+      const activeSubscriptions = subscriptionLookup.grants.map(grant => ({
+        productId: grant.productId,
+        status: grant.subscriptionState,
+        expiresAt: new Date(grant.expiryTimeMillis).toISOString()
+      }));
 
       return res.json({
         gatewayConfigured: hasCredentials,
         supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
         policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
         userId: user.uid,
-        activeSubscriptions: 0
+        activeSubscriptions: activeSubscriptions.length,
+        subscriptions: activeSubscriptions
       });
     } catch (err: any) {
       return res.status(500).json({ error: sanitizeErrorMessage(err) });
