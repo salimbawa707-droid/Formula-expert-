@@ -59,7 +59,48 @@
         "other_or_ambiguous_values": 15,
         "blank": 24
       },
-      "interpretation": "Observed concentration unit codes M=molar, D=wt/vol %, W=molal, P=wt %, N=normal, S=mol/kg, and R=varied were mapped from the original NBS NSRDS 36 legend. R denotes varied concentration units and is not a convertible unit. Evaluation-field values are counted only; no meanings inferred. All original fields and values remain unchanged."
+      "interpretation": "Observed concentration unit codes M=molar, D=wt/vol %, W=molal, P=wt %, N=normal, S=mol/kg, and R=varied were mapped from the original NBS NSRDS 36 legend. R denotes varied concentration units and is not a convertible unit. Evaluation-field values are counted only; no meanings inferred. All original fields and values remain unchanged.",
+      "codeFieldAudit": {
+        "evaluation": {
+          "knownNistCodes": {
+            "1": 116,
+            "2": 42,
+            "3": 495,
+            "L": 4020,
+            "R": 191,
+            "X": 63,
+            "D": 18,
+            "P": 6
+          },
+          "knownCodeRows": 4951,
+          "blankRows": 24,
+          "nonLegendOrMalformedRows": 15
+        },
+        "quality": {
+          "conformingTwoLetterPairs": 4700,
+          "blankRows": 273,
+          "nonLegendOrMalformedRows": 17
+        },
+        "source": {
+          "nonblankRows": 4724,
+          "blankRows": 266,
+          "rowsUsingOnlyNistSourceSymbols": 4707,
+          "rowsWithNonstandardCharacters": 17
+        },
+        "references": {
+          "fiveDigitCodes": 4973,
+          "rowsMatchedToOriginalReferenceIndex": 4964,
+          "rowsWithUnresolvedCodes": 9,
+          "nonNumericNonblankRows": 6,
+          "blankRows": 11,
+          "unresolvedCodeCounts": {
+            "45005": 2,
+            "63021": 6,
+            "69016": 1
+          }
+        }
+      },
+      "curationNote": "Definitions for unit, evaluation, quality, source and reference fields are in nist-codebook.json. See reference-code-review.csv for nine unresolved reference rows. The CMC field can contain text/status values and should not be parsed blindly."
     },
     "CMC_Compounds.csv": {
       "gitBlobSha1": "b0ea82e9b4f9bfac6a86e44f61559ed9ccf74dcd",
@@ -80,12 +121,15 @@
     "uniqueCompoundTableNumbers": 719,
     "keySetCountsMatch": true,
     "identityValidated": false,
-    "warning": "A complete compound-number key join does not validate structure/name correctness. Compound identities and SMILES require source-level curation."
+    "warning": "A complete compound-number key join does not validate structure/name correctness. Compound identities and SMILES require source-level curation.",
+    "identityReviewFile": "compound-identity-review.csv",
+    "candidateConflict": "Compound no. 2: NIST lists SODIUM OCTYL 1 SULFATE; PSDI LLM-added IUPAC/SMILES encode 2-ethylhexyl sulfate. Do not accept the structure join until source paper verification."
   },
   "scopeLimits": [
     "This is a structural inventory, not row-by-row validation against the NIST publication.",
     "No code conversion, unit conversion, outlier removal, CMC string parsing, compound structure correction, or model calibration was performed.",
-    "The table is a historical literature compilation with multiple methods, temperatures, additives, and source references; rows are not independent replicates."
+    "The table is a historical literature compilation with multiple methods, temperatures, additives, and source references; rows are not independent replicates.",
+    "NIST reference-code index reconciliation leaves nine rows unresolved (codes 45005, 63021, 69016); details are in reference-code-review.csv."
   ],
   "unitLegendSource": "https://nvlpubs.nist.gov/nistpubs/Legacy/NSRDS/nbsnsrds36.pdf"
 }
