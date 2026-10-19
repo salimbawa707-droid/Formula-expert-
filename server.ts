@@ -471,15 +471,35 @@ function enforcePreservativeConstraints(formula: any) {
     }
 
     if (needsSubstitution) {
-      // Substitute with the nearest safe, pH-compatible preservative alternative, preserving existing percentage
+      // Substitute with the nearest pH-compatible alternative, preserving the listed percentage.
       formula.ingredients[preservativeIdx] = {
         ...safePreservative,
         percentage: currentIng.percentage > 0 ? currentIng.percentage : safePreservative.percentage
       };
+
+      // Keep the process description aligned with the changed ingredient.
+      if (Array.isArray(formula.manufacturingMethod)) {
+        const preservativeNames = /sodium benzoate|potassium sorbate|benzyl alcohol|kathon(?:\s*cg)?|formalin|dmdm hydantoin|phenoxyethanol/gi;
+        formula.manufacturingMethod = formula.manufacturingMethod.map((step: any) =>
+          typeof step === "string" ? step.replace(preservativeNames, safePreservative.name) : step
+        );
+      }
+      if (!Array.isArray(formula.commonMistakes)) formula.commonMistakes = [];
+      formula.commonMistakes.push(
+        `Preservative changed to ${safePreservative.name} for pH compatibility; confirm supplier directions, legal suitability, dose, and preservation efficacy with a qualified review and challenge testing.`
+      );
     }
   } else {
-    // If no preservative is found in the recipe, auto-include a safe, compatible preservative
+    // If no preservative is found in the recipe, auto-include a pH-compatible preservative.
     formula.ingredients.push(safePreservative);
+    if (!Array.isArray(formula.manufacturingMethod)) formula.manufacturingMethod = [];
+    formula.manufacturingMethod.push(
+      `Add the listed preservative (${safePreservative.name}) only as directed by its supplier; verify efficacy with a preservation challenge test.`
+    );
+    if (!Array.isArray(formula.commonMistakes)) formula.commonMistakes = [];
+    formula.commonMistakes.push(
+      `Preservative was added automatically; confirm supplier directions, legal suitability, dose, and preservation efficacy with a qualified review and challenge testing.`
+    );
   }
 
   return formula;
@@ -1331,6 +1351,16 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
 
   if (!client) {
     const balancedMock = enforceFormulaMassBalance(mockFormula);
+    const unverifiedPH = "Unverified offline estimate; measure in a lab";
+    balancedMock.estimatedPH = unverifiedPH;
+    balancedMock.properties = {
+      ...balancedMock.properties,
+      pH: unverifiedPH
+    };
+    if (!Array.isArray(balancedMock.commonMistakes)) balancedMock.commonMistakes = [];
+    balancedMock.commonMistakes.push(
+      "Offline demo values are illustrative only. The requested target pH is not a measured or calculated result; verify pH with a calibrated meter and adjust through controlled lab trials."
+    );
     return res.json({
       success: true,
       mode: "Demo/Offline Mode",
