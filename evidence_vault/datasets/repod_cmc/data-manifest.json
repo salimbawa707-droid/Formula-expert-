@@ -32,11 +32,6 @@
       "bytes": 37713,
       "md5": "07e01f07b2fdb4072cc6089f41e1d0ab",
       "sha256": "4e6a80bf964238c694d681000006d073e89c463151452428587102518f1a5641"
-    },
-    "normalize_repod_cmc.mjs": {
-      "bytes": 2478,
-      "md5": "80c08dd474ab4bfdb8a82cff9b3253b9",
-      "sha256": "11d93b1a7ec50c7be3aea66908c955b3a51b6e37b5fb8ba11541ae75d11b3f85"
     }
   }
 }
