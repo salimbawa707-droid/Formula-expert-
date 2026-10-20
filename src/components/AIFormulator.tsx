@@ -19,9 +19,9 @@ import {
   getAuditedIngredientCategory,
   getDefaultActiveMatter,
   calculateMixedCMC,
-  getIngredientCmcData,
-  FormulaScientificOrchestrator
+  getIngredientCmcData
 } from "../utils/calculators";
+import { FormulaScientificOrchestrator } from "../utils/orchestrator/formulaScientificOrchestrator";
 import { calculateFormulaCost, FormulaCostReport } from "../utils/costingEngine";
 import { normalizeProductCategory } from "../domain/productTaxonomy";
 import CategoryIngredientSelector from "./CategoryIngredientSelector";

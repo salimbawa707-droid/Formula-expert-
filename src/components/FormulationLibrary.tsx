@@ -5,7 +5,8 @@ import { FormulaItem, ActiveFormulaState } from '../types';
 import { PRODUCT_CATEGORIES, normalizeProductCategory } from './aiformulator/constants';
 import { useFormulaStore } from '../stores/useFormulaStore';
 import { revalidateFormulaTemplate } from '../utils/templateRevalidationEngine';
-import { evaluateScientificQualityGate, FormulaScientificOrchestrator } from '../utils/calculators';
+import { evaluateScientificQualityGate } from '../utils/calculators';
+import { FormulaScientificOrchestrator } from '../utils/orchestrator/formulaScientificOrchestrator';
 
 interface FormulationLibraryProps {
   onLoadFormula?: (formula: ActiveFormulaState) => void;

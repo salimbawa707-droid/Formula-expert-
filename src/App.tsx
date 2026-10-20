@@ -1,5 +1,4 @@
-import { initializeDatabaseAndStores } from './db/init';
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Library, 
@@ -24,26 +23,26 @@ import {
   Database
 } from 'lucide-react';
 
-import AIFormulator from './components/AIFormulator';
 import AccountMenu from './components/AccountMenu';
-import ChemicalEncyclopedia from './components/ChemicalEncyclopedia';
-import FormulationLibrary from './components/FormulationLibrary';
-import RCCalculators from './components/RCCalculators';
-import QCOperations from './components/QCOperations';
-import InventoryProduction from './components/InventoryProduction';
-import DocsLibrary from './components/DocsLibrary';
-import LabNotebook from './components/LabNotebook';
-import MathTestSuite from './components/MathTestSuite';
+const AIFormulator = lazy(() => import('./components/AIFormulator'));
+const ChemicalEncyclopedia = lazy(() => import('./components/ChemicalEncyclopedia'));
+const FormulationLibrary = lazy(() => import('./components/FormulationLibrary'));
+const RCCalculators = lazy(() => import('./components/RCCalculators'));
+const QCOperations = lazy(() => import('./components/QCOperations'));
+const InventoryProduction = lazy(() => import('./components/InventoryProduction'));
+const DocsLibrary = lazy(() => import('./components/DocsLibrary'));
+const LabNotebook = lazy(() => import('./components/LabNotebook'));
+const MathTestSuite = lazy(() => import('./components/MathTestSuite'));
 import OnboardingModal from './components/OnboardingModal';
 import OfflineIndicator from './components/OfflineIndicator';
 import PWAInstallButton from './components/PWAInstallButton';
 import { PlayBillingBridge } from './services/playBillingBridge';
-import PHEngineView from './components/PHEngineView';
-import LabAutomationDashboard from './components/LabAutomationDashboard';
-import ClosedLoopDashboard from './components/ClosedLoopDashboard';
-import { ScienceLabWorkbench } from './components/ScienceLabWorkbench';
-import { GeminiChemistryChatModal } from './components/GeminiChemistryChatModal';
-import { ScientificRoadmapVault } from './components/ScientificRoadmapVault';
+const PHEngineView = lazy(() => import('./components/PHEngineView'));
+const LabAutomationDashboard = lazy(() => import('./components/LabAutomationDashboard'));
+const ClosedLoopDashboard = lazy(() => import('./components/ClosedLoopDashboard'));
+const ScienceLabWorkbench = lazy(() => import('./components/ScienceLabWorkbench').then((module) => ({ default: module.ScienceLabWorkbench })));
+const GeminiChemistryChatModal = lazy(() => import('./components/GeminiChemistryChatModal').then((module) => ({ default: module.GeminiChemistryChatModal })));
+const ScientificRoadmapVault = lazy(() => import('./components/ScientificRoadmapVault').then((module) => ({ default: module.ScientificRoadmapVault })));
 
 import { ActiveFormulaState } from './types';
 
@@ -420,7 +419,9 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    initializeDatabaseAndStores();
+    import('./db/init')
+      .then(({ initializeDatabaseAndStores }) => initializeDatabaseAndStores())
+      .catch((err) => console.error('[App] Database initialization failed:', err));
     PlayBillingBridge.initialize().catch((err) => {
       console.error('[App] Play Billing initialization failed:', err);
     });
@@ -816,6 +817,8 @@ export default function App() {
       <main className="flex-1 w-full p-3 sm:p-5 md:p-6 min-w-0 overflow-x-hidden">
         <div className="max-w-7xl mx-auto w-full space-y-6">
 
+          <Suspense fallback={<div className="min-h-40 flex items-center justify-center text-sm text-slate-400" role="status" aria-live="polite">Loading workspace…</div>}>
+
           {activeTab === 'formula_expert' && (
             <AIFormulator 
               lang={lang as any} 
@@ -899,6 +902,8 @@ export default function App() {
             <ScientificRoadmapVault />
           )}
 
+          </Suspense>
+
         </div>
       </main>
 
@@ -930,7 +935,7 @@ export default function App() {
       </div>
 
       {/* GLOBAL GEMINI CHEMISTRY CHATBOT MODAL */}
-      <GeminiChemistryChatModal
+      {isGlobalChatOpen && <Suspense fallback={null}><GeminiChemistryChatModal
         isOpen={isGlobalChatOpen}
         onClose={() => setIsGlobalChatOpen(false)}
         formulaContext={activeFormula ? {
@@ -950,7 +955,7 @@ export default function App() {
           }
         } : null}
         lang={lang}
-      />
+      /></Suspense>}
 
     </div>
   );

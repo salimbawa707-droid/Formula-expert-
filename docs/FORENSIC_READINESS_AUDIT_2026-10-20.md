@@ -36,6 +36,7 @@
 - `node_modules/.bin/tsx scripts/audit_39_current_status.ts`: passed; 39 formulas across all 13 categories, with 5 explicitly requiring laboratory validation.
 - `node scripts/clean-build.mjs`: passed.
 - `vite build --configLoader runner`: passed; generated the production client bundle. Vite reported non-fatal vendor externalization, mixed dynamic/static import, and large main-chunk warnings.
+- The app now lazy-loads its tab screens, database initialization, and molecular viewer. The main entry chunk fell from 4.3 MB to about 1.15 MB raw / 303 KB gzip; Science Lab and its 3D viewer load as separate chunks. The scientific orchestrator circular-chunk warning is resolved.
 - `esbuild server.ts --bundle ...`: not verified because the restricted environment denied esbuild access to an ancestor directory before resolving the entrypoint.
 
 ## Additional release blockers discovered after the initial audit
@@ -43,6 +44,7 @@
 - Account deletion now has a provider-aware server endpoint, but must be deployed with the required Supabase service-role or Firebase Admin credentials and verified against the production schemas before release.
 - The auth fixes have since passed an updated local regression run (127 modules / 4,028 assertions) and typecheck; CI and production HTTP smoke results still need verification after the commit is pushed.
 - The Vite client build is now locally verified; full server build and HTTP smoke results still require the GitHub Actions runner because this shell's sandbox blocks esbuild's parent-directory read.
+- Large-chunk warning remains for the main entry and on-demand molecular viewer; further splitting/real device performance checks remain useful before a broad commercial rollout.
 
 ## Conclusion
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { 
   Atom, 
   FlaskConical, 
@@ -37,7 +37,7 @@ import {
   searchEuropePmcArticles
 } from '../services/scienceService';
 
-import { MolecularVisualizer } from './scientific/MolecularVisualizer';
+const MolecularVisualizer = lazy(() => import('./scientific/MolecularVisualizer').then((module) => ({ default: module.MolecularVisualizer })));
 
 interface ScienceLabWorkbenchProps {
   initialChemicalQuery?: string;
@@ -335,19 +335,21 @@ export const ScienceLabWorkbench: React.FC<ScienceLabWorkbenchProps> = ({
         
         {/* LEFT PANE: Interactive 3D WebGL & 2D Canvas Molecular Visualizer (7 Cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <MolecularVisualizer
-            mode={isEnzyme ? 'macromolecule' : 'small_molecule'}
-            cifData={cifData}
-            sdfData={sdfData}
-            smiles={compoundProps?.CanonicalSMILES || selectedTarget.smiles}
-            title={selectedTarget.name}
-            sourceType={
-              isEnzyme 
-                ? (alphaFoldModel ? 'AlphaFold DB' : 'RCSB PDB') 
-                : (sdfData ? 'PubChem 3D Conformer' : '2D Structure')
-            }
-            plddtAvailable={isEnzyme && Boolean(alphaFoldModel)}
-          />
+          <Suspense fallback={<div className="min-h-72 rounded-2xl border border-slate-800 bg-slate-950/50 flex items-center justify-center text-sm text-slate-400" role="status">Loading molecular viewer…</div>}>
+            <MolecularVisualizer
+              mode={isEnzyme ? 'macromolecule' : 'small_molecule'}
+              cifData={cifData}
+              sdfData={sdfData}
+              smiles={compoundProps?.CanonicalSMILES || selectedTarget.smiles}
+              title={selectedTarget.name}
+              sourceType={
+                isEnzyme
+                  ? (alphaFoldModel ? 'AlphaFold DB' : 'RCSB PDB')
+                  : (sdfData ? 'PubChem 3D Conformer' : '2D Structure')
+              }
+              plddtAvailable={isEnzyme && Boolean(alphaFoldModel)}
+            />
+          </Suspense>
 
           {/* Compound Bio-Description & Chemical Role Card */}
           <div className="bg-[#0b1224] border border-slate-800 rounded-2xl p-4 sm:p-5">
