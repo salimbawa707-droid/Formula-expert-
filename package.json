@@ -22,6 +22,7 @@
     "@capacitor/core": "^8.5.0",
     "@google/genai": "^2.4.0",
     "@jridgewell/resolve-uri": "3.1.2",
+    "@opentelemetry/api": "^1.9.0",
     "@rdkit/rdkit": "^2026.3.6",
     "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/vite": "^4.0.0",
@@ -50,6 +51,7 @@
     "pngjs": "^7.0.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
+    "esbuild": "^0.24.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
