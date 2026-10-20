@@ -13,11 +13,17 @@ import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
  * 3. Only source-backed values are copied into the formulation ingredient.
  * 4. Missing/conflicting values remain undefined instead of being guessed.
  * 5. Successful research is persisted so the same ingredient can be reused.
+ * 6. Untrusted seeded/test domains can never become authoritative formula data.
  */
 export class IngredientResearchBridge {
   private static normalize(value: string): string {
     return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
   }
+
+  private static readonly BLOCKED_EVIDENCE_DOMAINS = new Set([
+    'reputablesupplier.com',
+    'industryjournal.org'
+  ]);
 
   private static localIngredient(name: string) {
     const normalized = this.normalize(name);
@@ -26,6 +32,35 @@ export class IngredientResearchBridge {
         .filter(Boolean)
         .some((candidate) => this.normalize(String(candidate)) === normalized);
     }) || null;
+  }
+
+  private static isBlockedSourceDomain(url: string | null | undefined): boolean {
+    if (!url) return true;
+    try {
+      const hostname = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+      return this.BLOCKED_EVIDENCE_DOMAINS.has(hostname);
+    } catch {
+      return true;
+    }
+  }
+
+  private static hasCalculationGradeEvidence(research: MultiSourceResearchResult): boolean {
+    const activeMatter = research.propertiesExtracted?.activeMatter;
+    if (typeof activeMatter !== 'number' || !Number.isFinite(activeMatter) || activeMatter < 0 || activeMatter > 100) {
+      return false;
+    }
+
+    const usableSources = research.sourcesRetrieved.filter(source => !this.isBlockedSourceDomain(source.url));
+    if (usableSources.length === 0) return false;
+
+    // A primary technical/regulatory source is required before a researched
+    // numeric assay can cross the deterministic calculation gate.
+    return usableSources.some(source =>
+      source.sourceType === 'MANUFACTURER_TDS' ||
+      source.sourceType === 'MANUFACTURER_SDS' ||
+      source.sourceType === 'MANUFACTURER_SPECIFICATION' ||
+      source.sourceType === 'REGULATORY_DOCUMENT'
+    );
   }
 
   private static toFormulaIngredient(
@@ -65,9 +100,7 @@ export class IngredientResearchBridge {
       ingredient.phMax = ph;
     }
 
-    if (typeof p.ionicNature === 'string') {
-      ingredient.category = p.ionicNature;
-    }
+    if (typeof p.ionicNature === 'string') ingredient.category = p.ionicNature;
     if (typeof p.application === 'string') {
       ingredient.function = p.application;
       ingredient.role = p.application;
@@ -87,10 +120,6 @@ export class IngredientResearchBridge {
     return undefined;
   }
 
-  /**
-   * Finds a local/researched ingredient first and only then performs grounded research.
-   * This is the entry point that formula creation should call for an unknown ingredient.
-   */
   public static async resolveForFormula(
     ingredientName: string,
     options?: { grade?: string; apiKey?: string; jurisdiction?: 'IN' | 'EU' | 'US' }
@@ -102,9 +131,7 @@ export class IngredientResearchBridge {
     warning?: string;
   }> {
     const name = ingredientName.trim();
-    if (!name) {
-      return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'Ingredient name is empty.' };
-    }
+    if (!name) return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'Ingredient name is empty.' };
 
     const local = this.localIngredient(name);
     if (local) {
@@ -158,12 +185,15 @@ export class IngredientResearchBridge {
         notes: 'Loaded from the local researched-ingredient cache.'
       };
 
+      const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch);
+      const requiresUserApproval = cached.requiresUserApproval || !calculationEvidence;
+
       return {
         ingredient: this.toFormulaIngredient(name, cachedResearch, cached),
         source: 'RESEARCH_CACHE',
         research: cachedResearch,
-        requiresUserApproval: cached.requiresUserApproval,
-        warning: cached.requiresUserApproval ? 'Research exists but requires user verification before production use.' : undefined
+        requiresUserApproval,
+        warning: requiresUserApproval ? 'Research exists but lacks sufficient trusted primary evidence for deterministic calculation.' : undefined
       };
     }
 
@@ -182,8 +212,9 @@ export class IngredientResearchBridge {
       jurisdiction: options.jurisdiction
     }, options.apiKey);
 
-    const hasUsableSources = research.sourcesRetrieved.some(source => Boolean(source.url));
+    const hasUsableSources = research.sourcesRetrieved.some(source => !this.isBlockedSourceDomain(source.url));
     const hasProperties = Object.keys(research.propertiesExtracted || {}).length > 0;
+    const calculationEvidence = this.hasCalculationGradeEvidence(research);
 
     if (!hasUsableSources || !hasProperties || research.status === 'RESEARCH_UNAVAILABLE') {
       return {
@@ -215,7 +246,7 @@ export class IngredientResearchBridge {
       sourceIds: research.sourcesRetrieved.map(source => source.sourceId),
       sourceUrls: research.sourcesRetrieved.map(source => source.url).filter((url): url is string => Boolean(url)),
       status: research.status === 'CONFLICTING_EVIDENCE' ? 'CONFLICTING_EVIDENCE' : (research.requiresUserApproval ? 'NEEDS_VERIFICATION' : 'SOURCE_BACKED'),
-      requiresUserApproval: research.requiresUserApproval || research.status !== 'SUCCESS',
+      requiresUserApproval: research.requiresUserApproval || research.status !== 'SUCCESS' || !calculationEvidence,
       researchedAt: now,
       updatedAt: now
     };
@@ -227,7 +258,7 @@ export class IngredientResearchBridge {
       source: 'WEB_RESEARCH',
       research,
       requiresUserApproval: record.requiresUserApproval,
-      warning: record.requiresUserApproval ? 'Web research found evidence, but the ingredient requires verification before production use.' : undefined
+      warning: record.requiresUserApproval ? 'Web research found evidence, but trusted primary evidence is insufficient for automatic calculation/release.' : undefined
     };
   }
 }
