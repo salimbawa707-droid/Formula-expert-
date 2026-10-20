@@ -3,7 +3,7 @@ declare module 'express' {
     interface Request {
       [key: string]: any;
       body: any;
-      headers: Record<string, string | undefined> & {
+      headers: Record<string, string | string[] | undefined> & {
         authorization?: string;
       };
       ip?: string;
@@ -36,12 +36,12 @@ declare module 'express' {
 
     interface ExpressApplication {
       set(name: string, value: any): this;
-      use(...handlers: any[]): this;
-      get(path: string, ...handlers: any[]): this;
-      post(path: string, ...handlers: any[]): this;
-      put(path: string, ...handlers: any[]): this;
-      patch(path: string, ...handlers: any[]): this;
-      delete(path: string, ...handlers: any[]): this;
+      use(...handlers: (Handler | ErrorHandler)[]): this;
+      get(path: string, ...handlers: Handler[]): this;
+      post(path: string, ...handlers: Handler[]): this;
+      put(path: string, ...handlers: Handler[]): this;
+      patch(path: string, ...handlers: Handler[]): this;
+      delete(path: string, ...handlers: Handler[]): this;
       listen(...args: any[]): any;
     }
 
