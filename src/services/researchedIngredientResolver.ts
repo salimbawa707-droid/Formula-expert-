@@ -67,18 +67,17 @@ export class ResearchedIngredientResolver {
     }
 
     const profile = this.buildResearchedProfile(researched, cleanName);
-    const hasUnknownQuantities = Boolean(
-      profile.activeMatter == null ||
-      profile.hlb == null ||
-      (profile.unknownProperties && profile.unknownProperties.length > 0)
-    );
+    // Active matter is the only universally required quantitative property for
+    // the deterministic active-matter calculation. HLB, density, pH, CMC, etc.
+    // are optional and must be gated by the specific engine that consumes them.
+    const hasRequiredCalculationData = profile.activeMatter != null;
 
     return {
       ingredient: profile,
-      status: hasUnknownQuantities ? 'NEEDS_VERIFICATION' : 'RESEARCHED',
-      reason: hasUnknownQuantities
-        ? 'Research returned an incomplete profile; unresolved properties remain explicit.'
-        : 'Ingredient profile was populated from the grounded research service.'
+      status: hasRequiredCalculationData ? 'RESEARCHED' : 'NEEDS_VERIFICATION',
+      reason: hasRequiredCalculationData
+        ? 'Ingredient profile contains source-backed active matter and may enter the deterministic calculation boundary.'
+        : 'Research returned an incomplete profile; active matter remains unresolved.'
     };
   }
 
@@ -87,9 +86,10 @@ export class ResearchedIngredientResolver {
     const localResolved = result.resolvedName || name;
     const activeMatter = typeof parameters.activeMatter === 'number' ? parameters.activeMatter : undefined;
     const hlb = typeof parameters.hlb === 'number' ? parameters.hlb : null;
-    const unknownProperties = Object.entries(parameters)
+    const optionalUnknownProperties = Object.entries(parameters)
       .filter(([, value]) => value === null || value === undefined || value === '')
-      .map(([key]) => key);
+      .map(([key]) => key)
+      .filter((key) => key !== 'activeMatter');
 
     return {
       id: `researched-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
@@ -112,9 +112,8 @@ export class ResearchedIngredientResolver {
         notes: `Research ID: ${result.researchId}; ${result.sourcesRetrieved.length} source(s) retrieved.`
       },
       unknownProperties: Array.from(new Set([
-        ...unknownProperties,
-        ...(activeMatter == null ? ['activeMatter'] : []),
-        ...(hlb == null ? ['hlb'] : [])
+        ...optionalUnknownProperties,
+        ...(activeMatter == null ? ['activeMatter'] : [])
       ]))
     };
   }
