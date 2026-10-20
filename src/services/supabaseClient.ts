@@ -1,20 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { apiFetch } from './apiBase';
+import { isSupabaseConfigured } from './authProviderConfig';
+export { isSupabaseConfigured, clearPersistedAuthentication } from './authProviderConfig';
 
 // Environment variables for Supabase connection
 const envMeta = (import.meta as any).env || {};
 const supabaseUrl = (envMeta.VITE_SUPABASE_URL as string | undefined)?.trim();
 const supabaseAnonKey = (envMeta.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
-
-export const isSupabaseConfigured = (): boolean => {
-  return Boolean(
-    supabaseUrl && 
-    supabaseAnonKey && 
-    supabaseUrl.startsWith('https://') &&
-    !supabaseUrl.includes('your-project') &&
-    supabaseAnonKey.length > 20
-  );
-};
 
 // Create the real Supabase client if credentials exist, otherwise initialize a placeholder client
 export const supabase: SupabaseClient = isSupabaseConfigured()
@@ -46,12 +38,6 @@ export function createAuthUnavailableResult(provider: string): SupabaseAuthResul
     success: false,
     error: `${provider} authentication is unavailable because Supabase is not configured. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or continue using the app as a local guest.`,
   };
-}
-
-export function clearPersistedAuthentication<T extends { isAuthenticated: boolean }>(
-  profile: T
-): Omit<T, 'isAuthenticated'> & { isAuthenticated: boolean } {
-  return { ...profile, isAuthenticated: false };
 }
 
 /**

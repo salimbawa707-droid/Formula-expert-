@@ -156,7 +156,7 @@ export async function apiFetch(
   // Attach the active Firebase token first, then fall back to a Supabase session.
   if (!headers.has('Authorization')) {
     try {
-      const fbClient = await import('./firebaseClient').catch(() => null);
+      const fbClient = await import('./firebaseAuthClient').catch(() => null);
       if (fbClient && fbClient.auth && fbClient.auth.currentUser) {
         const token = await fbClient.auth.currentUser.getIdToken();
         if (token) {

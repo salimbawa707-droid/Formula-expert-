@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db, FormulaRecord } from '../db/database';
 import { ActiveFormulaState, FormulationIngredient } from '../types';
-import { auth as firebaseAuth, saveUserFormula, deleteUserFormula } from '../services/firebaseClient';
+import { auth as firebaseAuth } from '../services/firebaseAuthClient';
 
 interface FormulaStore {
   activeFormula: ActiveFormulaState | null;
@@ -115,6 +115,7 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
     // Sync to Firestore if authenticated with Firebase
     if (firebaseAuth.currentUser) {
       try {
+        const { saveUserFormula } = await import('../services/firebaseClient');
         await saveUserFormula(firebaseAuth.currentUser.uid, record);
       } catch (err) {
         console.warn('Failed to persist formula to Firestore:', err);
@@ -131,6 +132,7 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
     // Sync deletion to Firestore if authenticated with Firebase
     if (firebaseAuth.currentUser) {
       try {
+        const { deleteUserFormula } = await import('../services/firebaseClient');
         await deleteUserFormula(firebaseAuth.currentUser.uid, id);
       } catch (err) {
         console.warn('Failed to delete formula from Firestore:', err);

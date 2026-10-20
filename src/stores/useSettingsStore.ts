@@ -1,17 +1,12 @@
 import { create } from 'zustand';
 import { db } from '../db/database';
 import { CloudSyncService } from '../services/cloudSync';
-import { supabase, isSupabaseConfigured, AuthService, clearPersistedAuthentication } from '../services/supabaseClient';
+import { clearPersistedAuthentication, hasPersistedSupabaseSession, isSupabaseConfigured } from '../services/authProviderConfig';
 import { 
   auth as firebaseAuth, 
   signInWithGoogle as firebaseSignInWithGoogle, 
-  signOutUser as firebaseSignOutUser,
-  saveUserFormula,
-  getUserFormulas,
-  saveUserTrial,
-  getUserTrials,
-  syncUserProfile
-} from '../services/firebaseClient';
+  signOutUser as firebaseSignOutUser
+} from '../services/firebaseAuthClient';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export type UserPlan = 'free' | 'pro_monthly' | 'pro_yearly' | 'team';
@@ -181,8 +176,9 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       currentProfile = clearPersistedAuthentication(currentProfile);
 
       // Check real Supabase session if configured
-      if (isSupabaseConfigured()) {
+      if (isSupabaseConfigured() && hasPersistedSupabaseSession()) {
         try {
+          const { supabase } = await import('../services/supabaseClient');
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             const u = session.user;
@@ -263,6 +259,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
             await get().updateProfile(updatedProf);
             // Sync user profile & download cloud formulas/trials from Firestore
             try {
+              const { syncUserProfile, getUserFormulas, getUserTrials } = await import('../services/firebaseClient');
               await syncUserProfile(fbUser);
               const userFormulas = await getUserFormulas(fbUser.uid);
               if (userFormulas && userFormulas.length > 0) {
@@ -360,6 +357,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     // If Supabase is connected and user is authenticated, sync to cloud profiles table
     if (isSupabaseConfigured() && newProfile.isAuthenticated && newProfile.id && !newProfile.id.startsWith('guest_')) {
       try {
+        const { supabase } = await import('../services/supabaseClient');
         await supabase.from('profiles').upsert({
           id: newProfile.id,
           email: newProfile.email,
@@ -417,6 +415,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (!isSupabaseConfigured()) {
       throw new Error('Email sign-in is unavailable because Supabase is not configured. Continue as a local guest or configure Supabase authentication.');
     }
+    const { AuthService } = await import('../services/supabaseClient');
     const authRes = await AuthService.signInWithEmail(normalizedEmail, password);
     if (!authRes.success || !authRes.user || !authRes.session) {
       throw new Error(authRes.error || 'Authentication did not return a valid user session.');
@@ -446,6 +445,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (!isSupabaseConfigured()) {
       throw new Error('Account sign-up is unavailable because Supabase is not configured. Continue as a local guest or configure Supabase authentication.');
     }
+    const { AuthService } = await import('../services/supabaseClient');
     const authRes = await AuthService.signUpWithEmail(normalizedEmail, password, normalizedName, company?.trim());
     if (!authRes.success || !authRes.user) {
       throw new Error(authRes.error || 'Failed to create account.');
@@ -472,7 +472,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     try {
       const user = await firebaseSignInWithGoogle();
       if (user) {
-        if (isSupabaseConfigured()) {
+        if (hasPersistedSupabaseSession()) {
+          const { AuthService } = await import('../services/supabaseClient');
           await AuthService.signOut();
         }
         const updated: Partial<UserProfile> = {
@@ -482,11 +483,14 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
           isAuthenticated: true,
         };
         await get().updateProfile(updated);
+        const { syncUserProfile } = await import('../services/firebaseClient');
+        await syncUserProfile(user);
         await get().triggerCloudSync();
       }
     } catch (err: any) {
       console.error('Firebase Google Sign-In error:', err);
       if (isSupabaseConfigured()) {
+        const { AuthService } = await import('../services/supabaseClient');
         const authRes = await AuthService.signInWithGoogle();
         if (!authRes.success) {
           throw new Error(authRes.error || 'Google Sign-In failed.');
@@ -503,7 +507,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     } catch (e) {
       console.warn('Firebase sign out error:', e);
     }
-    if (isSupabaseConfigured()) {
+    if (hasPersistedSupabaseSession()) {
+      const { AuthService } = await import('../services/supabaseClient');
       await AuthService.signOut();
     }
     const resetProf: UserProfile = {
@@ -650,6 +655,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
     if (currentUser) {
       try {
+        const { saveUserFormula, saveUserTrial } = await import('../services/firebaseClient');
         const allFormulas = await db.formulas.toArray();
         for (const f of allFormulas) {
           await saveUserFormula(currentUser.uid, f);
@@ -700,6 +706,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   deleteAccount: async () => {
     const userId = get().profile.id;
+    const { AuthService } = await import('../services/supabaseClient');
     const deletion = await AuthService.deleteAccount(userId);
     if (!deletion.success) {
       throw new Error(deletion.error || 'Account deletion could not be verified.');

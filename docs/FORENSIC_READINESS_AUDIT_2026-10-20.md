@@ -36,7 +36,7 @@
 - `node_modules/.bin/tsx scripts/audit_39_current_status.ts`: passed; 39 formulas across all 13 categories, with 5 explicitly requiring laboratory validation.
 - `node scripts/clean-build.mjs`: passed.
 - `vite build --configLoader runner`: passed; generated the production client bundle. Vite reported non-fatal vendor externalization, mixed dynamic/static import, and large main-chunk warnings.
-- The app now lazy-loads its tab screens, database initialization, and molecular viewer. The main entry chunk fell from 4.3 MB to about 1.15 MB raw / 303 KB gzip; Science Lab and its 3D viewer load as separate chunks. The scientific orchestrator circular-chunk warning is resolved.
+- The app now lazy-loads its tab screens, database initialization, and molecular viewer. Firebase Firestore sync and the Supabase client load only when signed-in cloud features need them. The main entry fell from 4.3 MB to about 370 KB raw / 98 KB gzip; Science Lab and its 3D viewer load as separate chunks. The scientific orchestrator circular-chunk warning is resolved.
 - `esbuild server.ts --bundle ...`: not verified because the restricted environment denied esbuild access to an ancestor directory before resolving the entrypoint.
 
 ## Additional release blockers discovered after the initial audit

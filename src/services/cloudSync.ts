@@ -1,5 +1,5 @@
 import { db, FormulaRecord, LabNoteRecord, InventoryRecord, ProductionRunRecord } from '../db/database';
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { isSupabaseConfigured } from './authProviderConfig';
 
 export interface SyncStatus {
   lastSyncedAt: string | null;
@@ -84,6 +84,7 @@ export class CloudSyncService {
     this.status.error = null;
 
     try {
+      const { supabase } = await import('./supabaseClient');
       // Get current authenticated user id from Supabase if not provided
       let currentUserId = userId;
       if (!currentUserId) {
@@ -370,6 +371,7 @@ export class CloudSyncService {
     // 2. If Supabase is configured and user is signed in, purge user records in cloud tables
     if (isSupabaseConfigured() && userId) {
       try {
+        const { supabase } = await import('./supabaseClient');
         await Promise.allSettled([
           supabase.from('formulas').delete().eq('user_id', userId),
           supabase.from('lab_notes').delete().eq('user_id', userId),

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db, LabNoteRecord } from '../db/database';
-import { auth as firebaseAuth, saveUserTrial } from '../services/firebaseClient';
+import { auth as firebaseAuth } from '../services/firebaseAuthClient';
 
 interface LabNotebookStore {
   notes: LabNoteRecord[];
@@ -47,6 +47,7 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
 
     if (firebaseAuth.currentUser) {
       try {
+        const { saveUserTrial } = await import('../services/firebaseClient');
         await saveUserTrial(firebaseAuth.currentUser.uid, {
           id,
           title: record.title,
@@ -72,6 +73,7 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
 
     if (firebaseAuth.currentUser) {
       try {
+        const { saveUserTrial } = await import('../services/firebaseClient');
         const note = await db.labNotes.get(id);
         if (note) {
           await saveUserTrial(firebaseAuth.currentUser.uid, {

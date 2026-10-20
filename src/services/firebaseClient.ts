@@ -1,11 +1,7 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut as firebaseSignOut, 
-  User 
-} from 'firebase/auth';
+import type { User } from 'firebase/auth';
+import { app, auth } from './firebaseAuthClient';
+export { auth, signInWithGoogle, signOutUser } from './firebaseAuthClient';
+import rawAppletConfig from '../../firebase-applet-config.json';
 import { 
   getFirestore, 
   doc, 
@@ -19,28 +15,11 @@ import {
   orderBy
 } from 'firebase/firestore';
 
-import rawAppletConfig from '../../firebase-applet-config.json';
-
-// Secure Environment Variable Configuration with platform configuration fallback
 const env = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+const firestoreDatabaseId = env.VITE_FIRESTORE_DATABASE_ID || (rawAppletConfig as any)?.firestoreDatabaseId || (rawAppletConfig as any)?.projectId || '';
 
-const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || (rawAppletConfig as any)?.apiKey || '',
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || (rawAppletConfig as any)?.authDomain || '',
-  projectId: env.VITE_FIREBASE_PROJECT_ID || (rawAppletConfig as any)?.projectId || '',
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (rawAppletConfig as any)?.storageBucket || '',
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || (rawAppletConfig as any)?.messagingSenderId || '',
-  appId: env.VITE_FIREBASE_APP_ID || (rawAppletConfig as any)?.appId || '',
-  firestoreDatabaseId: env.VITE_FIRESTORE_DATABASE_ID || (rawAppletConfig as any)?.firestoreDatabaseId || (rawAppletConfig as any)?.projectId || ''
-};
-
-// Initialize Firebase App singleton
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-// CRITICAL: Must pass databaseId from config
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+// Loaded only by authenticated cloud-sync features, not the local-first app shell.
+export const db = getFirestore(app, firestoreDatabaseId);
 
 // Standard Firestore Error Handling
 export enum OperationType {
@@ -103,32 +82,6 @@ export async function testFirestoreConnection(): Promise<boolean> {
   }
 }
 testFirestoreConnection();
-
-// Authentication helpers
-export async function signInWithGoogle(): Promise<User> {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    
-    // Sync user profile to Firestore
-    if (user) {
-      await syncUserProfile(user);
-    }
-    return user;
-  } catch (err) {
-    console.error("Firebase Google sign-in failed:", err);
-    throw err;
-  }
-}
-
-export async function signOutUser(): Promise<void> {
-  try {
-    await firebaseSignOut(auth);
-  } catch (err) {
-    console.error("Firebase sign-out failed:", err);
-    throw err;
-  }
-}
 
 export async function syncUserProfile(user: User): Promise<void> {
   const userPath = `users/${user.uid}`;
