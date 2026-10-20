@@ -22,6 +22,7 @@
     "@capacitor/core": "^8.5.0",
     "@google/genai": "^2.4.0",
     "@jridgewell/resolve-uri": "3.1.2",
+    "@opentelemetry/api": "^1.9.0",
     "@rdkit/rdkit": "^2026.3.6",
     "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/vite": "^4.0.0",
