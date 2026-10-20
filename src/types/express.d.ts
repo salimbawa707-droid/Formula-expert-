@@ -3,7 +3,7 @@ declare module 'express' {
     interface Request {
       [key: string]: any;
       body: any;
-      headers: Record<string, string | string[] | undefined> & {
+      headers: Record<string, string | undefined> & {
         authorization?: string;
       };
       ip?: string;
@@ -26,13 +26,15 @@ declare module 'express' {
 
     type NextFunction = (error?: any) => void;
 
-    interface Handler {
-      (req: Request, res: Response, next: NextFunction): any;
-    }
+    /**
+     * Deliberately permissive at the Express/Connect boundary. This project
+     * mounts Vite/Connect middleware as well as normal Express handlers.
+     * Concrete application middleware still uses the typed Request/Response
+     * signatures above.
+     */
+    type Handler = (...args: any[]) => any;
 
-    interface ErrorHandler {
-      (error: any, req: Request, res: Response, next: NextFunction): any;
-    }
+    type ErrorHandler = (...args: any[]) => any;
 
     interface ExpressApplication {
       set(name: string, value: any): this;
