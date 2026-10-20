@@ -181,7 +181,7 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
     'Category coverage distinguishes unsupported model/method gaps from targets that are technically ready for evidence',
     powderBulkDensity?.readiness === 'METHOD_AND_PREDICTION_REQUIRED' &&
       liquidLaundryPh?.readiness === 'READY' && liquidLaundryPh.protocolMethodId === 'ASTM-D1172' &&
-      manualDishDensity?.readiness === 'METHOD_REQUIRED',
+      manualDishDensity?.readiness === 'READY',
     { powderBulkDensity: powderBulkDensity?.readiness, liquidLaundryPh: liquidLaundryPh?.readiness, method: liquidLaundryPh?.protocolMethodId, manualDishDensity: manualDishDensity?.readiness },
     { powderBulkDensity: 'METHOD_AND_PREDICTION_REQUIRED', liquidLaundryPh: 'READY', method: 'ASTM-D1172', manualDishDensity: 'READY' }
   );
