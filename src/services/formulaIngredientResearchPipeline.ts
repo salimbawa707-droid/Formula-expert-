@@ -1,5 +1,6 @@
 import { ActiveFormulaState, FormulationIngredient } from '../types';
 import { IngredientResearchBridge } from './ingredientResearchBridge';
+import { evaluateAuthoritativeActiveMatter, ActiveMatterReport } from '../utils/activeMatterEngine';
 
 export interface FormulaIngredientResearchOptions {
   grade?: string;
@@ -14,15 +15,15 @@ export interface FormulaIngredientResearchResult {
   unresolved: string[];
   warnings: string[];
   calculationReady: boolean;
+  activeMatterReport?: ActiveMatterReport;
 }
 
 /**
  * Calculation boundary for researched ingredients.
  *
- * This is deliberately separate from the UI: formula calculation receives only
- * ingredients that have a local-library match or source-backed research that
- * does not require approval. Unknown, conflicting, or incomplete evidence is
- * kept out of the calculation-ready formula rather than silently guessing.
+ * Unknown/conflicting/incomplete evidence is kept out of the calculation-ready
+ * formula. Once the boundary is passed, the deterministic Active Matter engine
+ * consumes the exact researched properties copied into FormulationIngredient.
  */
 export async function prepareFormulaForCalculation(
   formula: ActiveFormulaState,
@@ -32,7 +33,6 @@ export async function prepareFormulaForCalculation(
   const warnings: string[] = [];
   let researchedCount = 0;
   let cachedCount = 0;
-
   const resolvedIngredients: FormulationIngredient[] = [];
 
   for (const ingredient of formula.ingredients) {
@@ -65,9 +65,7 @@ export async function prepareFormulaForCalculation(
 
     if (result.requiresUserApproval) {
       unresolved.push(ingredient.name);
-      warnings.push(
-        `${ingredient.name}: research exists but requires verification before calculation/release.`
-      );
+      warnings.push(`${ingredient.name}: research exists but requires verification before calculation/release.`);
       continue;
     }
 
@@ -75,17 +73,30 @@ export async function prepareFormulaForCalculation(
   }
 
   const calculationReady = unresolved.length === 0;
+  const preparedFormula: ActiveFormulaState = {
+    ...formula,
+    ingredients: resolvedIngredients
+  };
+
+  // This is the first deterministic calculation after research resolution.
+  // The report contains the actual active-matter contribution of every
+  // ingredient, including source-backed researched activeMatterPct values.
+  const activeMatterReport = calculationReady
+    ? evaluateAuthoritativeActiveMatter(preparedFormula.ingredients, formula.batchSizeKg ?? formula.batchSize ?? 100)
+    : undefined;
+
+  if (activeMatterReport?.activeMatterStatus === 'INSUFFICIENT_DATA') {
+    warnings.push(...activeMatterReport.warnings);
+  }
 
   return {
-    formula: {
-      ...formula,
-      ingredients: resolvedIngredients
-    },
+    formula: preparedFormula,
     researchedCount,
     cachedCount,
     unresolved,
     warnings,
-    calculationReady
+    calculationReady,
+    activeMatterReport
   };
 }
 
@@ -99,9 +110,18 @@ export async function requireCalculationReadyFormula(
 ): Promise<ActiveFormulaState> {
   const result = await prepareFormulaForCalculation(formula, options);
   if (!result.calculationReady) {
-    throw new Error(
-      `Formula is not calculation-ready. Verification required for: ${result.unresolved.join(', ')}`
-    );
+    throw new Error(`Formula is not calculation-ready. Verification required for: ${result.unresolved.join(', ')}`);
   }
   return result.formula;
+}
+
+/**
+ * Full research-to-calculation entry point. UI/formulator callers should use
+ * this instead of sending raw unknown ingredients directly to an engine.
+ */
+export async function calculateFormulaWithResearch(
+  formula: ActiveFormulaState,
+  options: FormulaIngredientResearchOptions = {}
+): Promise<FormulaIngredientResearchResult> {
+  return prepareFormulaForCalculation(formula, options);
 }
