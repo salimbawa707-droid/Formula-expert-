@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { apiFetch } from './apiBase';
 
 // Environment variables for Supabase connection
 const envMeta = (import.meta as any).env || {};
@@ -185,13 +186,18 @@ export class AuthService {
   /**
    * Delete account
    */
-  public static async deleteAccount(_userId: string): Promise<{ success: boolean; error?: string }> {
-    if (!isSupabaseConfigured()) {
-      return createAuthUnavailableResult('Account deletion');
+  public static async deleteAccount(userId: string): Promise<{ success: boolean; error?: string }> {
+    if (!userId?.trim()) return { success: false, error: 'No authenticated account is available to delete.' };
+    try {
+      const response = await apiFetch('/api/account', { method: 'DELETE' });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || body?.success !== true) {
+        return { success: false, error: body?.error || `Account deletion failed (HTTP ${response.status}).` };
+      }
+      await this.signOut();
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Account deletion could not be confirmed by the server.' };
     }
-    return {
-      success: false,
-      error: 'Secure account deletion is unavailable: a trusted server endpoint must delete the authentication identity and its data together. No account data was removed.',
-    };
   }
 }

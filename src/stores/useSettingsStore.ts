@@ -704,6 +704,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (!deletion.success) {
       throw new Error(deletion.error || 'Account deletion could not be verified.');
     }
+    // Firebase identities are removed server-side; clear the local Firebase session too.
+    try { await firebaseSignOutUser(); } catch (error) { console.warn('Firebase sign-out after account deletion failed:', error); }
     await CloudSyncService.purgeUserData(userId);
     const resetProf: UserProfile = {
       ...DEFAULT_PROFILE,

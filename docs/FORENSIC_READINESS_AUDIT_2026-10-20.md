@@ -27,7 +27,7 @@
 2. README test-suite documentation now reflects the latest observed run (127 modules) and points readers to the generated manifest for the current count rather than preserving a stale fixed number.
 3. Email authentication now fails closed when Supabase is unconfigured; it no longer fabricates successful local identities. Persisted profile metadata cannot restore authenticated status without a live provider session, and email confirmation is required before signup is treated as a signed-in session.
 4. Supabase/Firebase auth-state listeners are independently registered so enabling both providers does not suppress one listener. Protected API calls now send the active Supabase token when no Firebase token is present, and the server verifies Supabase identities with the configured Auth API.
-5. Account deletion now fails closed before deleting local data when no trusted identity-and-data deletion endpoint exists. The profile UI states that deletion is unavailable rather than claiming it will permanently delete data.
+5. Added authenticated `DELETE /api/account`: Supabase accounts require server-only service-role configuration and remove known user-owned tables before deleting Auth; Firebase accounts require Admin credentials and recursively remove `users/{uid}` before deleting Auth. The client purges local data only after the server confirms success.
 
 ## Verification performed
 
@@ -39,7 +39,7 @@
 
 ## Additional release blockers discovered after the initial audit
 
-- A provider-aware account deletion implementation is still required before release; no client-side code can safely remove Supabase Auth identities or Firebase identities and their corresponding data as one verified operation.
+- Account deletion now has a provider-aware server endpoint, but must be deployed with the required Supabase service-role or Firebase Admin credentials and verified against the production schemas before release.
 - The auth fixes have since passed an updated local regression run (127 modules / 4,028 assertions) and typecheck; CI and production HTTP smoke results still need verification after the commit is pushed.
 
 ## Conclusion

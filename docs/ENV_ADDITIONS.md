@@ -5,10 +5,12 @@
 ### 0. Supabase Authentication for Protected API Routes
 - `SUPABASE_URL` and `SUPABASE_ANON_KEY`: Server-side project URL and public anon key used to ask the configured Supabase Auth API to validate access tokens. `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are also accepted when the same `.env` is loaded by the server.
 - The anon key is not a service-role credential. Never place a Supabase service-role key in browser variables or `VITE_*` settings.
+- `SUPABASE_SERVICE_ROLE_KEY`: server-only Supabase service-role key required by `DELETE /api/account` to remove the signed-in user's records and Auth identity. Store it in a production secret manager; never expose it to the client.
 - Firebase Google sessions continue to be verified with Firebase Admin. Email/password Supabase sessions are verified with the configured Supabase project; unconfigured or cross-project tokens fail closed.
 
 ### 1. Firebase Admin SDK
 - `FIREBASE_SERVICE_ACCOUNT_KEY`: Path to or stringified JSON of the Firebase service account credential for server-side cryptographic token verification (`verifyIdToken(token, true)`).
+- Account deletion also requires Firebase Admin credentials with Auth user deletion and Firestore recursive-delete permissions.
 - `GOOGLE_APPLICATION_CREDENTIALS`: Standard GCP service account credentials fallback.
 - Note: If unconfigured, the server uses the default Firebase Applet Project ID (`imagined-zone-cv4kj`) for public key cryptographic verification.
 

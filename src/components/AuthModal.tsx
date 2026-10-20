@@ -183,7 +183,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     <ShieldAlert className="w-4 h-4" /> Permanent Action Notice
                   </div>
                   <p className="text-slate-300">
-                    A secure server-side account deletion endpoint is not configured yet. This action will not delete your account or data until that endpoint is available.
+                    This permanently removes your signed-in account and its synced data. The server must have the matching provider's admin credentials configured; if it cannot verify complete deletion, the app will keep your local data and show an error.
                   </p>
                   <div className="flex gap-2">
                     <button

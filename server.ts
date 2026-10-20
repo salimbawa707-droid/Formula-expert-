@@ -7,6 +7,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AiFallbackService } from "./src/services/aiFallbackService";
 import { IngredientResearchService } from "./src/services/ingredientResearchService";
 import { DurablePurchaseStore } from "./src/services/durablePurchaseStore";
+import { getDurableFirestore } from "./src/services/durablePurchaseStore";
+import { getAuth } from "firebase-admin/auth";
+import { getFirebaseAdminApp, parseJwtPayload } from "./src/services/serverSecurity";
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from "./src/domain/ph/acidBaseDataModel";
 import {
   rateLimitMiddleware,
@@ -39,6 +42,54 @@ app.set("trust proxy", resolveTrustProxy(process.env.TRUST_PROXY));
 app.use(securityHeadersMiddleware());
 app.use(corsMiddleware());
 app.use(express.json({ limit: "1mb" }));
+
+// Delete the authenticated identity and its provider-owned cloud records. Provider
+// secrets stay server-side; the user ID always comes from verified middleware.
+app.delete("/api/account", authenticateUserMiddleware, rateLimitMiddleware({ maxRequests: 3, windowMs: 60000, endpointName: "Account deletion" }), async (req, res) => {
+  const user = (req as any).user as { uid: string } | undefined;
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const claims = parseJwtPayload(token);
+  if (!user?.uid || !claims) return res.status(401).json({ success: false, error: "Authenticated account could not be confirmed." });
+
+  try {
+    if (typeof claims.iss === "string" && claims.iss.endsWith("/auth/v1")) {
+      const projectUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").trim().replace(/\/$/, "");
+      const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+      if (!projectUrl || !serviceKey) return res.status(503).json({ success: false, error: "Supabase account deletion is not configured on the server (SUPABASE_SERVICE_ROLE_KEY missing)." });
+      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+      for (const table of ["formulas", "lab_notes", "inventory", "production_runs"]) {
+        const cleanup = await fetch(`${projectUrl}/rest/v1/${table}?user_id=eq.${encodeURIComponent(user.uid)}`, {
+          method: "DELETE", headers: { ...headers, Prefer: "return=minimal" }, signal: AbortSignal.timeout(10000),
+        });
+        if (!cleanup.ok) throw new Error(`Could not remove account data from ${table} (HTTP ${cleanup.status}).`);
+      }
+      const profileCleanup = await fetch(`${projectUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user.uid)}`, {
+        method: "DELETE", headers: { ...headers, Prefer: "return=minimal" }, signal: AbortSignal.timeout(10000),
+      });
+      if (!profileCleanup.ok) throw new Error(`Could not remove account profile (HTTP ${profileCleanup.status}).`);
+      const deleted = await fetch(`${projectUrl}/auth/v1/admin/users/${encodeURIComponent(user.uid)}`, {
+        method: "DELETE", headers, signal: AbortSignal.timeout(10000),
+      });
+      if (!deleted.ok) throw new Error(`Supabase could not delete the authentication identity (HTTP ${deleted.status}).`);
+      return res.json({ success: true });
+    }
+
+    const firestore = getDurableFirestore();
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      return res.status(503).json({ success: false, error: "Firebase account deletion requires server-side Firebase Admin credentials." });
+    }
+    if (!firestore) return res.status(503).json({ success: false, error: "Firebase account data store is unavailable." });
+    const app = getFirebaseAdminApp();
+    const auth = getAuth(app);
+    await firestore.recursiveDelete(firestore.doc(`users/${user.uid}`));
+    await auth.deleteUser(user.uid);
+    return res.json({ success: true });
+  } catch (err: any) {
+    console.error("[AccountDeletion] Deletion failed:", sanitizeErrorMessage(err));
+    return res.status(500).json({ success: false, error: sanitizeErrorMessage(err) || "Account deletion failed; no success was confirmed." });
+  }
+});
 
 // Truthful AI Health Tracking
 let lastAIOperationSuccess: boolean | null = null;
