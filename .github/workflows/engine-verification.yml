@@ -22,8 +22,8 @@ jobs:
         with:
           node-version: 24.12.0
           cache: npm
-      - name: Install locked dependencies
-        run: npm ci
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
       - name: Typecheck
         run: npm run typecheck
       - name: Run regression suite
