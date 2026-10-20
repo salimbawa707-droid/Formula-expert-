@@ -138,6 +138,7 @@ export class IngredientResearchBridge {
     const key = `${this.normalize(name)}|${this.normalize(options?.grade || '')}`;
     const cached = await db.researchedIngredients.get(key);
     if (cached) {
+      const persistedProvenance = Array.isArray(cached.provenance) ? cached.provenance : [];
       const cachedResearch: MultiSourceResearchResult = {
         researchId: cached.id,
         query: cached.queryName,
@@ -145,17 +146,29 @@ export class IngredientResearchBridge {
         resolvedName: cached.canonicalName,
         confidence: 'HIGH_CONFIDENCE_MATCH',
         status: cached.status === 'CONFLICTING_EVIDENCE' ? 'CONFLICTING_EVIDENCE' : 'SUCCESS',
-        sourcesRetrieved: cached.sourceIds.map((sourceId, index) => ({
-          sourceId,
-          url: cached.sourceUrls[index] || null,
-          domain: cached.sourceUrls[index] ? new URL(cached.sourceUrls[index]).hostname : '',
-          title: 'Persisted research source',
-          publisher: 'Persisted source',
-          sourceType: 'TECHNICAL_REFERENCE' as any,
-          retrievedAt: cached.researchedAt,
-          extractedParameters: cached.parameters,
-          rawContent: ''
-        })),
+        sourcesRetrieved: persistedProvenance.length > 0
+          ? persistedProvenance.map((source: any, index: number) => ({
+              sourceId: source.sourceId || cached.sourceIds[index] || `persisted-${index + 1}`,
+              url: source.url ?? cached.sourceUrls[index] ?? null,
+              domain: source.domain || (source.url ? new URL(source.url).hostname : ''),
+              title: source.title || 'Persisted research source',
+              publisher: source.publisher || 'Persisted source',
+              sourceType: source.sourceType,
+              retrievedAt: source.retrievedAt || cached.researchedAt,
+              extractedParameters: cached.parameters,
+              rawContent: ''
+            }))
+          : cached.sourceIds.map((sourceId, index) => ({
+              sourceId,
+              url: cached.sourceUrls[index] || null,
+              domain: cached.sourceUrls[index] ? new URL(cached.sourceUrls[index]).hostname : '',
+              title: 'Persisted research source',
+              publisher: 'Persisted source',
+              sourceType: undefined as any,
+              retrievedAt: cached.researchedAt,
+              extractedParameters: cached.parameters,
+              rawContent: ''
+            })),
         propertiesExtracted: cached.parameters,
         comparisonReport: [],
         requiresUserApproval: cached.requiresUserApproval,
