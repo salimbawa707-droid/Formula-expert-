@@ -6,14 +6,6 @@ import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
 /**
  * Runtime bridge between the local ingredient library, Gemini-grounded research,
  * and the deterministic formula engine.
- *
- * Rules:
- * 1. Existing local ingredients are returned immediately; no web call is made.
- * 2. Unknown ingredients are researched through IngredientResearchService.
- * 3. Only source-backed values are copied into the formulation ingredient.
- * 4. Missing/conflicting values remain undefined instead of being guessed.
- * 5. Successful research is persisted so the same ingredient can be reused.
- * 6. Untrusted seeded/test domains can never become authoritative formula data.
  */
 export class IngredientResearchBridge {
   private static normalize(value: string): string {
@@ -27,11 +19,9 @@ export class IngredientResearchBridge {
 
   private static localIngredient(name: string) {
     const normalized = this.normalize(name);
-    return UNIVERSAL_INGREDIENTS.find((ingredient) => {
-      return [ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName, ingredient.casNumber]
-        .filter(Boolean)
-        .some((candidate) => this.normalize(String(candidate)) === normalized);
-    }) || null;
+    return UNIVERSAL_INGREDIENTS.find((ingredient) => [
+      ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName, ingredient.casNumber
+    ].filter(Boolean).some((candidate) => this.normalize(String(candidate)) === normalized)) || null;
   }
 
   private static isBlockedSourceDomain(url: string | null | undefined): boolean {
@@ -46,15 +36,9 @@ export class IngredientResearchBridge {
 
   private static hasCalculationGradeEvidence(research: MultiSourceResearchResult): boolean {
     const activeMatter = research.propertiesExtracted?.activeMatter;
-    if (typeof activeMatter !== 'number' || !Number.isFinite(activeMatter) || activeMatter < 0 || activeMatter > 100) {
-      return false;
-    }
-
+    if (typeof activeMatter !== 'number' || !Number.isFinite(activeMatter) || activeMatter < 0 || activeMatter > 100) return false;
     const usableSources = research.sourcesRetrieved.filter(source => !this.isBlockedSourceDomain(source.url));
     if (usableSources.length === 0) return false;
-
-    // A primary technical/regulatory source is required before a researched
-    // numeric assay can cross the deterministic calculation gate.
     return usableSources.some(source =>
       source.sourceType === 'MANUFACTURER_TDS' ||
       source.sourceType === 'MANUFACTURER_SDS' ||
@@ -63,11 +47,7 @@ export class IngredientResearchBridge {
     );
   }
 
-  private static toFormulaIngredient(
-    name: string,
-    research: MultiSourceResearchResult,
-    record?: ResearchedIngredientRecord
-  ): FormulationIngredient {
+  private static toFormulaIngredient(name: string, research: MultiSourceResearchResult, record?: ResearchedIngredientRecord): FormulationIngredient {
     const p = research.propertiesExtracted || record?.parameters || {};
     const ingredient: FormulationIngredient = {
       id: record?.id || `researched-${this.normalize(name)}`,
@@ -75,7 +55,7 @@ export class IngredientResearchBridge {
       canonicalIngredientId: record?.id,
       identityType: 'COMMERCIAL_UVCB',
       casStatus: 'UNKNOWN',
-      notes: research.notes || 'Properties populated from source-backed ingredient research. Verify against the supplier TDS/COA before production use.',
+      notes: research.notes || 'Properties populated from source-backed ingredient research. Verify against the supplier TDS/COA before production use.'
     };
 
     const activeMatter = this.numberOrUndefined(p.activeMatter);
@@ -99,7 +79,6 @@ export class IngredientResearchBridge {
       ingredient.phMin = ph;
       ingredient.phMax = ph;
     }
-
     if (typeof p.ionicNature === 'string') ingredient.category = p.ionicNature;
     if (typeof p.application === 'string') {
       ingredient.function = p.application;
@@ -107,7 +86,6 @@ export class IngredientResearchBridge {
     }
     if (typeof p.inciName === 'string') ingredient.inciName = p.inciName;
     if (typeof p.casNumber === 'string') ingredient.casNumber = p.casNumber;
-
     return ingredient;
   }
 
@@ -120,10 +98,7 @@ export class IngredientResearchBridge {
     return undefined;
   }
 
-  public static async resolveForFormula(
-    ingredientName: string,
-    options?: { grade?: string; apiKey?: string; jurisdiction?: 'IN' | 'EU' | 'US' }
-  ): Promise<{
+  public static async resolveForFormula(ingredientName: string, options?: { grade?: string; apiKey?: string; jurisdiction?: 'IN' | 'EU' | 'US' }): Promise<{
     ingredient: FormulationIngredient | null;
     source: 'LOCAL_LIBRARY' | 'RESEARCH_CACHE' | 'WEB_RESEARCH' | 'UNRESOLVED';
     research?: MultiSourceResearchResult;
@@ -135,16 +110,18 @@ export class IngredientResearchBridge {
 
     const local = this.localIngredient(name);
     if (local) {
+      const localAny = local as any;
+      const localActive = localAny.activeMatterDefault ?? local.activeMatter;
       return {
         ingredient: {
           id: local.id,
           name: local.name,
           category: local.category,
-          activePercent: local.activeMatterDefault ?? local.activeMatter,
-          activeMatterPct: local.activeMatterDefault ?? local.activeMatter,
-          hlb: local.hlb,
-          hlbValue: local.hlb,
-          density: local.physicalProperties?.density,
+          activePercent: localActive,
+          activeMatterPct: localActive,
+          hlb: local.hlb ?? undefined,
+          hlbValue: local.hlb ?? undefined,
+          density: localAny.physicalProperties?.density,
           inciName: local.inciName,
           casNumber: local.casNumber,
           identityType: local.identityType as FormulationIngredient['identityType'],
@@ -184,10 +161,8 @@ export class IngredientResearchBridge {
         requiresUserApproval: cached.requiresUserApproval,
         notes: 'Loaded from the local researched-ingredient cache.'
       };
-
       const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch);
       const requiresUserApproval = cached.requiresUserApproval || !calculationEvidence;
-
       return {
         ingredient: this.toFormulaIngredient(name, cachedResearch, cached),
         source: 'RESEARCH_CACHE',
@@ -198,12 +173,7 @@ export class IngredientResearchBridge {
     }
 
     if (!options?.apiKey || options.apiKey === 'MY_GEMINI_API_KEY') {
-      return {
-        ingredient: null,
-        source: 'UNRESOLVED',
-        requiresUserApproval: true,
-        warning: 'Ingredient is not in the local database and no configured Gemini research key is available.'
-      };
+      return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'Ingredient is not in the local database and no configured Gemini research key is available.' };
     }
 
     const research = await IngredientResearchService.researchMultiSource({
@@ -211,19 +181,12 @@ export class IngredientResearchBridge {
       grade: options.grade,
       jurisdiction: options.jurisdiction
     }, options.apiKey);
-
     const hasUsableSources = research.sourcesRetrieved.some(source => !this.isBlockedSourceDomain(source.url));
     const hasProperties = Object.keys(research.propertiesExtracted || {}).length > 0;
     const calculationEvidence = this.hasCalculationGradeEvidence(research);
 
     if (!hasUsableSources || !hasProperties || research.status === 'RESEARCH_UNAVAILABLE') {
-      return {
-        ingredient: null,
-        source: 'UNRESOLVED',
-        research,
-        requiresUserApproval: true,
-        warning: 'No sufficiently supported web evidence was found. Formula properties were not invented.'
-      };
+      return { ingredient: null, source: 'UNRESOLVED', research, requiresUserApproval: true, warning: 'No sufficiently supported web evidence was found. Formula properties were not invented.' };
     }
 
     const id = key;
@@ -250,9 +213,7 @@ export class IngredientResearchBridge {
       researchedAt: now,
       updatedAt: now
     };
-
     await db.researchedIngredients.put(record);
-
     return {
       ingredient: this.toFormulaIngredient(name, research, record),
       source: 'WEB_RESEARCH',
