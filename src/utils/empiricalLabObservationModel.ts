@@ -73,6 +73,8 @@ export interface MeasurementMethod {
   supersededDate?: string;
 }
 
+export type ActiveMatterChemistryScope = 'ANIONIC_ONLY' | 'MIXED_OR_CATIONIC' | 'UNKNOWN';
+
 export interface CompleteLaboratoryObservation {
   observationId: string;
   datasetId: string;
@@ -118,6 +120,12 @@ export interface CompleteLaboratoryObservation {
   };
   instrumentName?: string;
   instrumentId?: string;
+  /** Required for ISO 2271 because that method is not applicable when cationic surfactants are present. */
+  activeMatterChemistryScope?: ActiveMatterChemistryScope;
+  /** BOM/specification or other controlled evidence supporting the declared surfactant scope. */
+  activeMatterScopeEvidenceRef?: string;
+  /** Relative molecular mass used for the ISO 2271 anionic-active-matter result. */
+  activeMatterMolecularMassGPerMol?: number;
   operator: string;
   laboratoryName: string;
   laboratoryLocation?: string;
@@ -193,6 +201,50 @@ export class MeasurementMethodRegistry {
       replicateRequirements: 2,
       sourceProvenance: 'ASTM D1298-24 scope is crude petroleum and liquid petroleum products; not applicable to detergent formulas.',
       effectiveDate: '2024-01-01'
+    });
+
+    this.registerMethod({
+      methodId: 'INTERNAL-LIQUID-DENSITY-PYCNOMETER',
+      methodName: 'Internal finished-liquid density procedure using calibrated pycnometer',
+      standardOrganization: 'USER_DEFINED_METHOD',
+      standardNumber: 'INTERNAL-LIQUID-DENSITY-PYCNOMETER-v1',
+      propertyMeasured: 'Density',
+      applicableCategories: [
+        'LAUNDRY_LIQUID', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER',
+        'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER',
+        'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'
+      ],
+      sampleRequirements: 'Homogeneous finished liquid with visible entrained air removed by a documented conditioning step; do not use for powders, separated phases, or samples whose conditioning changes composition.',
+      units: ['g/cm³', 'g/mL'],
+      calculationMethod: 'At 25°C, determine net sample mass in a calibrated pycnometer and divide by its calibrated volume. Record three independent fills and report their mean as the observation.',
+      acceptanceCriteria: 'Record all three individual density readings, their mean, and standard deviation. This is an internal measurement procedure; product-specific release limits must be set separately.',
+      instrumentRequirements: 'Calibrated pycnometer with traceable volume and balance; record instrument IDs and calibration status.',
+      environmentalConditions: 'Sample and pycnometer equilibrated to 25.0°C ± 0.5°C; record actual sample temperature.',
+      replicateRequirements: 3,
+      sourceProvenance: 'Internal procedure documented in docs/EMPIRICAL_LAB_METHODS.md; not an ASTM or ISO standard.',
+      effectiveDate: '2026-10-20'
+    });
+
+    this.registerMethod({
+      methodId: 'ISO-2271',
+      methodName: 'Anionic-active matter in detergents by direct two-phase titration',
+      standardOrganization: 'ISO',
+      standardNumber: 'ISO 2271:1989',
+      propertyMeasured: 'Anionic Active Matter',
+      applicableCategories: [
+        'LAUNDRY_LIQUID', 'LAUNDRY_POWDER', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC',
+        'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER',
+        'GLASS_CLEANER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'
+      ],
+      sampleRequirements: 'Apply only when the product contains anionic surfactants and no cationic surfactants; record the known relative molecular mass used for reporting. Excludes FABRIC_SOFTENER category by default.',
+      units: ['%'],
+      calculationMethod: 'Follow the licensed ISO 2271:1989 direct two-phase titration procedure and report anionic-active matter as mass percent.',
+      acceptanceCriteria: 'The controlled formula/BOM scope evidence must confirm anionic-only surfactants and no cationic surfactant. Mixed, cationic, or unknown surfactant scope is ineligible.',
+      instrumentRequirements: 'Titration apparatus and traceable volumetric standardization required by the licensed ISO procedure.',
+      environmentalConditions: 'Follow the licensed ISO procedure and record preparation and test conditions in the raw evidence.',
+      replicateRequirements: 2,
+      sourceProvenance: 'ISO 2271:1989 scope and current status verified at https://www.iso.org/standard/7094.html; the standard itself is not reproduced here.',
+      effectiveDate: '1989-10-01'
     });
 
     this.registerMethod({
@@ -358,6 +410,31 @@ export function validateLaboratoryObservation(obs: Partial<CompleteLaboratoryObs
   if (obs.measuredProperty?.toLowerCase() === 'viscosity' && obs.testMethodId === 'ASTM-D2196' && (!obs.instrumentName || !obs.standardRef)) {
     errors.push('ASTM D2196 viscosity records require instrument details and the selected procedure/geometry reference.');
   }
+  if (obs.testMethodId === 'INTERNAL-LIQUID-DENSITY-PYCNOMETER') {
+    if (!obs.instrumentName || !obs.instrumentId) errors.push('Internal liquid density records require pycnometer and balance instrument names/IDs.');
+    if (obs.standardRef !== 'INTERNAL-LIQUID-DENSITY-PYCNOMETER-v1') errors.push('Internal liquid density records must cite standardRef INTERNAL-LIQUID-DENSITY-PYCNOMETER-v1.');
+    if (!['g/cm³', 'g/cm3', 'g/mL'].includes(obs.measurementUnit || '')) errors.push('Internal liquid density must be normalized and recorded in g/cm³ or g/mL.');
+    if (typeof obs.temperatureC === 'number' && Math.abs(obs.temperatureC - 25) > 0.5) errors.push('Internal liquid density protocol requires measurement at 25.0°C ± 0.5°C.');
+    if (!Array.isArray(obs.replicateValues) || obs.replicateValues.length < 3 || obs.replicateValues.some(value => typeof value !== 'number' || !Number.isFinite(value) || value <= 0)) {
+      errors.push('Internal liquid density records require three finite positive replicateValues from independent pycnometer fills.');
+    } else if (typeof obs.measuredValue === 'number') {
+      const mean = obs.replicateValues.reduce((sum, value) => sum + value, 0) / obs.replicateValues.length;
+      if (Math.abs(mean - obs.measuredValue) > 0.001) errors.push('Density measuredValue must match the mean of replicateValues within 0.001 g/cm³.');
+    }
+  }
+  if (obs.testMethodId === 'ISO-2271') {
+    if (obs.activeMatterChemistryScope !== 'ANIONIC_ONLY') errors.push('ISO 2271 applies only to anionic-active matter; confirm the formula contains no cationic surfactant.');
+    if (!obs.activeMatterScopeEvidenceRef) errors.push('ISO 2271 records require a controlled formula/BOM reference supporting the anionic-only chemistry scope.');
+    if (!obs.instrumentName || !obs.instrumentId) errors.push('ISO 2271 records require titration apparatus identity and ID.');
+    if (obs.standardRef !== 'ISO 2271:1989') errors.push('ISO 2271 records must cite standardRef ISO 2271:1989.');
+    if (!['%', 'mass %', 'wt%'].includes((obs.measurementUnit || '').trim().toLowerCase())) errors.push('ISO 2271 anionic-active matter must be reported as mass percent.');
+    if (typeof obs.activeMatterMolecularMassGPerMol !== 'number' || !Number.isFinite(obs.activeMatterMolecularMassGPerMol) || obs.activeMatterMolecularMassGPerMol <= 0) {
+      errors.push('ISO 2271 records require the known anionic active matter relative molecular mass in g/mol.');
+    }
+    if (obs.reviewDecision?.status !== 'ACCEPTED' || !obs.reviewDecision.reviewer || !obs.reviewDecision.reviewDate) {
+      errors.push('ISO 2271 anionic-only scope requires an ACCEPTED review with reviewer identity and review date before validation use.');
+    }
+  }
 
   // 3. Measurement Method & Range Validation
   if (!obs.testMethodId) {
@@ -369,7 +446,9 @@ export function validateLaboratoryObservation(obs: Partial<CompleteLaboratoryObs
     } else {
       const propertyAliases: Record<string, string[]> = {
         'pH Prediction': ['pH Prediction', 'pH'],
-        'Cleaning Score / CPI': ['Cleaning Score / CPI', 'Cleaning Score', 'CPI']
+        'Cleaning Score / CPI': ['Cleaning Score / CPI', 'Cleaning Score', 'CPI'],
+        'Active Matter': ['Active Matter', 'Anionic Active Matter'],
+        'Anionic Active Matter': ['Anionic Active Matter', 'Active Matter']
       };
       const acceptedNames = propertyAliases[method.propertyMeasured] || [method.propertyMeasured];
       if (obs.measuredProperty && !acceptedNames.some(name => name.toLowerCase() === obs.measuredProperty!.toLowerCase())) {

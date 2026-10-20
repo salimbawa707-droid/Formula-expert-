@@ -265,7 +265,7 @@ export class EmpiricalLabPersistenceService {
    */
   public static async exportDatasetAsCsv(datasetId: string): Promise<string> {
     const obs = this.memoryObservations.get(datasetId) || [];
-    if (obs.length === 0) return 'observationId,datasetId,batchId,productCategory,measuredProperty,measuredValue,measurementUnit,testMethodId,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,formulaFingerprint\n';
+    if (obs.length === 0) return 'observationId,datasetId,batchId,productCategory,measuredProperty,measuredValue,measurementUnit,testMethodId,standardRef,instrumentName,instrumentId,activeMatterChemistryScope,activeMatterScopeEvidenceRef,activeMatterMolecularMassGPerMol,reviewStatus,reviewer,reviewDate,reviewNotes,replicateValues,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,formulaFingerprint\n';
 
     const headers = [
       'observationId',
@@ -277,6 +277,17 @@ export class EmpiricalLabPersistenceService {
       'measuredValue',
       'measurementUnit',
       'testMethodId',
+      'standardRef',
+      'instrumentName',
+      'instrumentId',
+      'activeMatterChemistryScope',
+      'activeMatterScopeEvidenceRef',
+      'activeMatterMolecularMassGPerMol',
+      'reviewStatus',
+      'reviewer',
+      'reviewDate',
+      'reviewNotes',
+      'replicateValues',
       'waterHardnessPpm',
       'temperatureC',
       'dosageGramsPerL',
@@ -300,6 +311,17 @@ export class EmpiricalLabPersistenceService {
       o.measuredValue,
       o.measurementUnit,
       o.testMethodId,
+      o.standardRef || '',
+      o.instrumentName || '',
+      o.instrumentId || '',
+      o.activeMatterChemistryScope || '',
+      o.activeMatterScopeEvidenceRef || '',
+      o.activeMatterMolecularMassGPerMol ?? '',
+      o.reviewDecision?.status || '',
+      o.reviewDecision?.reviewer || '',
+      o.reviewDecision?.reviewDate || '',
+      o.reviewDecision?.notes || '',
+      (o.replicateValues || []).join('|'),
       o.waterProfile?.hardnessPpm ?? '',
       o.temperatureC,
       o.dosageGramsPerL,

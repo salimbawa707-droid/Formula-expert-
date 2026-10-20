@@ -356,10 +356,10 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     property: 'Density', predictionsMap: new Map(), observations: [], category: 'LAUNDRY_LIQUID'
   });
   assert(
-    'Density target remains unregistered while its configured product method is only a placeholder',
-    !densityWithoutProtocol.hasRegisteredTarget && densityWithoutProtocol.validationGateVerdict === 'DATA_PENDING',
+    'Density target is registered for liquids while real lab data is still pending',
+    densityWithoutProtocol.hasRegisteredTarget && densityWithoutProtocol.validationGateVerdict === 'DATA_PENDING',
     { hasRegisteredTarget: densityWithoutProtocol.hasRegisteredTarget, verdict: densityWithoutProtocol.validationGateVerdict },
-    { hasRegisteredTarget: false, verdict: 'DATA_PENDING' }
+    { hasRegisteredTarget: true, verdict: 'DATA_PENDING' }
   );
   const categoryScopedCleaningTarget = EmpiricalValidationEvaluationEngine.evaluatePropertyAgainstLabData({
     property: 'Cleaning Score / CPI', predictionsMap: new Map(), observations: []

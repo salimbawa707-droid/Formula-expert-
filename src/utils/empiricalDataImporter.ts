@@ -158,6 +158,11 @@ export class EmpiricalDataImporter {
 
       const testMethodId = getCol('testmethodid');
       if (!testMethodId) missingFields.push('testMethodId');
+      const rawReplicateValues = getCol('replicatevalues');
+      const replicateValues = rawReplicateValues
+        ? rawReplicateValues.split('|').map(value => Number(value.trim()))
+        : [measuredVal];
+      if (replicateValues.some(value => !Number.isFinite(value))) missingFields.push('replicateValues (pipe-separated finite numbers)');
 
       const rawHardness = getCol('waterhardnessppm');
       const hardnessPpm = parseFloat(rawHardness);
@@ -254,6 +259,18 @@ export class EmpiricalDataImporter {
         dosageGramsPerL: dosage,
         contactTimeMin,
         testMethodId,
+        standardRef: getCol('standardref') || undefined,
+        instrumentName: getCol('instrumentname') || undefined,
+        instrumentId: getCol('instrumentid') || undefined,
+        activeMatterChemistryScope: getCol('activematterchemistryscope')?.toUpperCase() as CompleteLaboratoryObservation['activeMatterChemistryScope'],
+        activeMatterScopeEvidenceRef: getCol('activematterscopeevidenceref') || undefined,
+        activeMatterMolecularMassGPerMol: getCol('activemattermolecularmassgpermol') ? Number(getCol('activemattermolecularmassgpermol')) : undefined,
+        reviewDecision: getCol('reviewstatus') ? {
+          status: getCol('reviewstatus').toUpperCase() as NonNullable<CompleteLaboratoryObservation['reviewDecision']>['status'],
+          reviewer: getCol('reviewer') || undefined,
+          reviewDate: getCol('reviewdate') || undefined,
+          notes: getCol('reviewnotes') || undefined
+        } : undefined,
         replicateNumber: replicate,
         measuredProperty,
         measuredValue: measuredVal,
@@ -262,7 +279,7 @@ export class EmpiricalDataImporter {
         rawMeasurementUnit: unit,
         normalizedMeasuredValue: measuredVal,
         normalizedMeasurementUnit: unit,
-        replicateValues: [measuredVal],
+        replicateValues,
         operator: getCol('operator') || defaultMetadata.operator,
         laboratoryName: getCol('laboratoryname') || defaultMetadata.laboratoryName,
         testDate,
@@ -426,6 +443,9 @@ export class EmpiricalDataImporter {
       const measuredVal = typeof item.measuredValue === 'number' ? item.measuredValue : parseFloat(item.measuredValue);
       const unit = item.measurementUnit || item.unit;
       const testMethodId = item.testMethodId || item.methodId || item.testMethod;
+      const replicateValues = Array.isArray(item.replicateValues)
+        ? item.replicateValues.map((value: unknown) => typeof value === 'number' ? value : Number(value))
+        : [measuredVal];
       const hardnessPpm = item.waterProfile?.hardnessPpm ?? item.waterHardnessPpm ?? parseFloat(item.hardness);
       const tempC = item.temperatureC ?? parseFloat(item.temperature);
       const dosage = item.dosageGramsPerL ?? parseFloat(item.dosage);
@@ -443,6 +463,7 @@ export class EmpiricalDataImporter {
       if (typeof measuredVal !== 'number' || isNaN(measuredVal) || !isFinite(measuredVal)) missing.push('measuredValue');
       if (!unit) missing.push('measurementUnit');
       if (!testMethodId) missing.push('testMethodId');
+      if (replicateValues.some((value: number) => !Number.isFinite(value))) missing.push('replicateValues (finite numbers)');
       if (typeof hardnessPpm !== 'number' || isNaN(hardnessPpm)) missing.push('waterHardnessPpm');
       if (typeof tempC !== 'number' || isNaN(tempC)) missing.push('temperatureC');
       if (typeof dosage !== 'number' || isNaN(dosage)) missing.push('dosageGramsPerL');
@@ -491,6 +512,18 @@ export class EmpiricalDataImporter {
         dosageGramsPerL: dosage,
         contactTimeMin,
         testMethodId,
+        standardRef: item.standardRef,
+        instrumentName: item.instrumentName,
+        instrumentId: item.instrumentId,
+        activeMatterChemistryScope: item.activeMatterChemistryScope,
+        activeMatterScopeEvidenceRef: item.activeMatterScopeEvidenceRef,
+        activeMatterMolecularMassGPerMol: item.activeMatterMolecularMassGPerMol,
+        reviewDecision: item.reviewDecision || (item.reviewStatus ? {
+          status: String(item.reviewStatus).toUpperCase() as NonNullable<CompleteLaboratoryObservation['reviewDecision']>['status'],
+          reviewer: item.reviewer,
+          reviewDate: item.reviewDate,
+          notes: item.reviewNotes
+        } : undefined),
         replicateNumber: replicate,
         measuredProperty: measuredProp,
         measuredValue: measuredVal,
@@ -499,7 +532,7 @@ export class EmpiricalDataImporter {
         rawMeasurementUnit: item.rawMeasurementUnit ?? unit,
         normalizedMeasuredValue: item.normalizedMeasuredValue ?? measuredVal,
         normalizedMeasurementUnit: item.normalizedMeasurementUnit ?? unit,
-        replicateValues: Array.isArray(item.replicateValues) ? item.replicateValues : [measuredVal],
+        replicateValues,
         operator: item.operator || defaultMetadata.operator,
         laboratoryName: item.laboratoryName || defaultMetadata.laboratoryName,
         testDate,

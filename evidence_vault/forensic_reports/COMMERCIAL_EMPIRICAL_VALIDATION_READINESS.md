@@ -9,7 +9,7 @@ Updated: 2026-10-20
 - Metrics are computed on a deterministic formula-group holdout. Calibration fingerprints are excluded from reported validation metrics. The commercial gate now requires 10 eligible formula fingerprints overall and at least 3 distinct formula fingerprints in the holdout; two-formula datasets cannot earn `LAB_VALIDATED`.
 - A 90% within-tolerance rate is a minimum validation target, not a measured result or guarantee. A `LAB_VALIDATED` result also requires at least 10 eligible formula fingerprints overall, 3 distinct formula fingerprints in the independent holdout, 10 independent holdout batches, and 30 comparable holdout observations.
 - A target is active only when its configured method is registered for that property and requested category; category-limited protocols cannot be pooled into an unscoped cross-category score. A target without an eligible registered method and acceptance threshold can show exploratory comparisons but cannot receive `LAB_VALIDATED` status.
-- Current registry coverage is incomplete: ASTM D1172 pH is registered for all 13 categories; ASTM D2196 viscosity is registered for 12 liquid categories; ASTM D3050 is a laundry-only screening method and cannot substantiate detergent ranking. The configured detergent-density method is still a placeholder, and the active-matter target's ISO 2271 method is not registered in the observation registry. Those targets therefore cannot currently receive `LAB_VALIDATED` status.
+- Current registry coverage is incomplete: ASTM D1172 pH is registered for all 13 categories; ASTM D2196 viscosity is registered for 12 liquid categories; ASTM D3050 is a laundry-only screening method and cannot substantiate detergent ranking. Finished-liquid density now has an explicitly internal calibrated-pycnometer method for the 12 liquid categories; laundry-powder bulk density remains a separate unregistered target. ISO 2271 is now registered as an anionic-active-matter method for eligible detergent categories, but an observation is rejected unless a controlled formula/BOM reference confirms anionic-only surfactants and no cationics. Neither registration supplies missing empirical data or product release limits.
 - No 90–95% accuracy claim is supported until matched, category-specific, independently held-out lab data meets the evidence gates. The currently catalogued 39 formulas do not constitute such a dataset.
 
 ## Data source and commercial-use gates
@@ -26,7 +26,7 @@ ASTM D1172-15(2024) is an active guide for preparing aqueous soap/detergent solu
 ## Remaining commercial release work
 
 1. Curate permitted source datasets with row-level citations, license, measured conditions, methods, uncertainty, and stable identifiers.
-2. Register category- and subclass-specific protocols/acceptance limits for the scorecard targets that currently have no standard configuration.
+2. Register category- and subclass-specific protocols/acceptance limits for remaining scorecard targets, including powder bulk density and product-specific limits; keep internal procedures distinct from ASTM/ISO standards.
 3. Collect matched lab runs across multiple independent formula fingerprints and manufacturing batches; retain raw evidence and review decisions.
 4. Run the held-out evaluations separately by category and property. Report observed coverage, uncertainty, within-tolerance percentage, MAE/RMSE, and out-of-domain limits.
 5. Complete jurisdiction-specific regulatory, label, claims, packaging, manufacturing, and safety review before calling the product commercially released.

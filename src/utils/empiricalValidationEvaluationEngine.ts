@@ -52,8 +52,8 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     minHoldoutFormulas: 3,
     minIndependentBatches: 10,
     minIndependentObservations: 30,
-    description: 'Finished-product density at a declared temperature using a product-appropriate registered protocol; ASTM D1298 is petroleum-only and is not accepted for detergents.',
-    testMethod: 'PRODUCT_DENSITY_METHOD_REQUIRED'
+    description: 'Finished homogeneous liquid density by the internal calibrated-pycnometer protocol at 25°C; powders remain a separate bulk-density target.',
+    testMethod: 'INTERNAL-LIQUID-DENSITY-PYCNOMETER'
   },
   'Active Matter': {
     targetId: 'target-active-matter',
@@ -65,7 +65,7 @@ export const CANONICAL_EMPIRICAL_TARGETS: Record<string, EmpiricalTargetConfig> 
     minHoldoutFormulas: 3,
     minIndependentBatches: 10,
     minIndependentObservations: 30,
-    description: 'Two-phase titration / analytical surfactant assay (ISO 2271 / ASTM D1681)',
+    description: 'ISO 2271 anionic-active matter assay; eligible only for anionic-only formulas with controlled BOM scope evidence.',
     testMethod: 'ISO-2271'
   },
   'Viscosity': {
@@ -185,6 +185,7 @@ function isObservationForProperty(measuredProperty: string, property: string): b
   const target = property.toLowerCase();
   if (target === 'pH Prediction'.toLowerCase()) return measured === 'ph' || measured === target;
   if (target === 'Cleaning Score / CPI'.toLowerCase()) return ['cleaning score / cpi', 'cleaning score', 'cpi'].includes(measured);
+  if (target === 'Active Matter'.toLowerCase()) return measured === 'active matter' || measured === 'anionic active matter';
   return measured === target;
 }
 

@@ -236,13 +236,8 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
   };
 
   const loadSampleCsvTemplate = () => {
-    const sample = `observationId,datasetId,batchId,sampleId,productCategory,measuredProperty,measuredValue,measurementUnit,testMethodId,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,formulaVersion,formulaFingerprint
-OBS-PH-001,DS-LAB-2026,BATCH-101,SMP-101-1,LAUNDRY_LIQUID,pH Prediction,8.45,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-10,1.0.0,FP-LAUN-A1B2C3D4
-OBS-PH-002,DS-LAB-2026,BATCH-101,SMP-101-2,LAUNDRY_LIQUID,pH Prediction,8.43,pH units,ASTM-D1172,150,25.0,2.0,15.0,2,2026-10-10,1.0.0,FP-LAUN-A1B2C3D4
-OBS-PH-003,DS-LAB-2026,BATCH-102,SMP-102-1,LAUNDRY_LIQUID,pH Prediction,8.52,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-10,1.0.0,FP-LAUN-A1B2C3D4
-OBS-PH-004,DS-LAB-2026,BATCH-103,SMP-103-1,LAUNDRY_LIQUID,pH Prediction,8.40,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-11,1.0.0,FP-LAUN-A1B2C3D4
-OBS-PH-005,DS-LAB-2026,BATCH-104,SMP-104-1,LAUNDRY_LIQUID,pH Prediction,8.48,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-11,1.0.0,FP-LAUN-A1B2C3D4
-OBS-PH-006,DS-LAB-2026,BATCH-105,SMP-105-1,LAUNDRY_LIQUID,pH Prediction,8.46,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-11,1.0.0,FP-LAUN-A1B2C3D4`;
+    const sample = `observationId,datasetId,batchId,sampleId,productCategory,measuredProperty,measuredValue,measurementUnit,testMethodId,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,formulaVersion,formulaFingerprint,standardRef,instrumentName,instrumentId,activeMatterChemistryScope,activeMatterScopeEvidenceRef,activeMatterMolecularMassGPerMol,reviewStatus,reviewer,reviewDate,reviewNotes,replicateValues,rawEvidenceRef
+OBS-PH-001,DS-LAB-2026,BATCH-101,SMP-101-1,LAUNDRY_LIQUID,pH Prediction,8.45,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-10,1.0.0,FP-LAUN-A1B2C3D4,,,,,,,,,,,`;
     setRawImportText(sample);
   };
 
