@@ -91,6 +91,26 @@ export interface UserSettingRecord {
   updatedAt: string;
 }
 
+/**
+ * A researched ingredient profile created when an ingredient is not already
+ * available in the local ingredient library. Values are only persisted when
+ * the research result carries source/provenance information.
+ */
+export interface ResearchedIngredientRecord {
+  id: string;
+  queryName: string;
+  canonicalName: string;
+  grade?: string;
+  parameters: Record<string, any>;
+  provenance: Record<string, any>;
+  sourceIds: string[];
+  sourceUrls: string[];
+  status: 'SOURCE_BACKED' | 'NEEDS_VERIFICATION' | 'CONFLICTING_EVIDENCE';
+  requiresUserApproval: boolean;
+  researchedAt: string;
+  updatedAt: string;
+}
+
 export class DetergentDatabase extends Dexie {
   formulas!: Table<FormulaRecord, string>;
   inventory!: Table<InventoryRecord, string>;
@@ -99,6 +119,7 @@ export class DetergentDatabase extends Dexie {
   formulaVersions!: Table<FormulaVersionRecord, string>;
   specRecords!: Table<SpecRecord, string>;
   userSettings!: Table<UserSettingRecord, string>;
+  researchedIngredients!: Table<ResearchedIngredientRecord, string>;
 
   constructor() {
     super('DetergentFormulaExpertDB');
@@ -111,6 +132,19 @@ export class DetergentDatabase extends Dexie {
       formulaVersions: 'id, formulaId, versionNumber, timestamp',
       specRecords: 'category, updatedAt',
       userSettings: 'key, updatedAt'
+    });
+
+    // v2 adds persistent researched-ingredient profiles without changing
+    // existing tables or records.
+    this.version(2).stores({
+      formulas: 'id, name, category, productType, isFavorite, updatedAt',
+      inventory: 'id, name, category, stockKg, updatedAt',
+      productionRuns: 'id, batchNumber, formulaId, date, status, createdAt',
+      labNotes: 'id, title, date, formulaId, createdAt',
+      formulaVersions: 'id, formulaId, versionNumber, timestamp',
+      specRecords: 'category, updatedAt',
+      userSettings: 'key, updatedAt',
+      researchedIngredients: 'id, queryName, canonicalName, grade, status, updatedAt'
     });
   }
 }
