@@ -480,6 +480,66 @@ export interface AuthenticatedUser {
   role: 'user' | 'admin';
 }
 
+export function matchesConfiguredSupabaseIssuer(issuer: string, projectUrl: string): boolean {
+  try {
+    const normalizedProjectUrl = new URL(projectUrl).toString().replace(/\/$/, '');
+    return issuer === `${normalizedProjectUrl}/auth/v1`;
+  } catch {
+    return false;
+  }
+}
+
+export async function verifySupabaseAccessToken(
+  token: string,
+  projectUrl: string,
+  anonKey: string,
+  fetcher: typeof fetch = fetch
+): Promise<{ valid: boolean; user?: AuthenticatedUser; error?: string }> {
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(projectUrl);
+  } catch {
+    return { valid: false, error: 'Supabase authentication is not configured with a valid project URL.' };
+  }
+
+  if (baseUrl.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production' && baseUrl.hostname === 'localhost')) {
+    return { valid: false, error: 'Supabase authentication requires a secure HTTPS project URL.' };
+  }
+  if (!anonKey.trim()) {
+    return { valid: false, error: 'Supabase authentication is not configured with a project API key.' };
+  }
+
+  const normalizedProjectUrl = baseUrl.toString().replace(/\/$/, '');
+  try {
+    const response = await fetcher(`${normalizedProjectUrl}/auth/v1/user`, {
+      method: 'GET',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) {
+      return { valid: false, error: 'Supabase rejected the authentication token.' };
+    }
+    const user = await response.json() as { id?: unknown; email?: unknown };
+    if (typeof user.id !== 'string' || !user.id.trim()) {
+      return { valid: false, error: 'Supabase returned an invalid authenticated user record.' };
+    }
+    return {
+      valid: true,
+      user: {
+        uid: user.id,
+        email: typeof user.email === 'string' ? user.email : undefined,
+        role: 'user',
+      },
+    };
+  } catch {
+    return { valid: false, error: 'Supabase authentication could not be verified.' };
+  }
+}
+
 /**
  * Server-side Token Verification
  * Uses the official Firebase Admin SDK to cryptographically verify ID tokens.
@@ -512,6 +572,20 @@ export async function verifyAuthToken(
     if (nowSec > payload.exp) {
       return { valid: false, error: 'Expired authentication token: Token has passed its exp timestamp.' };
     }
+  }
+
+  // Supabase access tokens are verified against the configured project's Auth API.
+  // Never trust decoded JWT claims or accept an arbitrary issuer as a verification URL.
+  if (typeof payload.iss === 'string' && payload.iss.endsWith('/auth/v1')) {
+    const projectUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+    const anonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+    if (!projectUrl || !anonKey) {
+      return { valid: false, error: 'Supabase token rejected: server-side Supabase project configuration is missing.' };
+    }
+    if (!matchesConfiguredSupabaseIssuer(payload.iss, projectUrl)) {
+      return { valid: false, error: 'Supabase token issuer does not match the configured project.' };
+    }
+    return verifySupabaseAccessToken(token, projectUrl, anonKey);
   }
 
   // Strictly isolated to genuine test processes running test scripts (never in production)

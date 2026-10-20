@@ -1,7 +1,7 @@
 # Forensic readiness audit
 
 **Audit date:** 2026-10-20  
-**Repository baseline:** `main` at `a9badc5`  
+**Repository baseline:** `main` at `d54c15d`
 **Scope:** Source-backed readiness review of the web/mobile application, 13-category formulation coverage, 39 bundled master formulas, empirical-validation boundaries, and available automated verification. This is not a certification, penetration test, production deployment review, or physical laboratory study.
 
 ## Findings
@@ -10,7 +10,7 @@
 
 - The product taxonomy defines 13 canonical categories. The 39 bundled master formulas cover all 13.
 - A fresh calculation audit produced 34 formulas with a `VALID` scientific quality-gate status and 5 with `LAB_VALIDATION_REQUIRED`. In all cases, those are software-calculated checks; they are not evidence that a finished product passed a physical lab test.
-- The master automated suite passed 127/127 modules and 4,023/4,023 assertions in this checkout. TypeScript `tsc --noEmit` completed successfully.
+- The master automated suite passed 127/127 modules and 4,028/4,028 assertions in this checkout. TypeScript `tsc --noEmit` completed successfully.
 - The cross-platform build-cleanup script was executed successfully. The production Vite build could not be verified in this restricted checkout: esbuild could not read a parent directory and could not load `vite.config.ts` (`Access is denied`). This is an environment limitation; it does not establish that the production build passes or fails in GitHub Actions.
 - The repository contains a GitHub Actions workflow intended to run typecheck, regression tests, production build, and an HTTP smoke test. Workflow results must be inspected in GitHub after the relevant push; they are not inferred from the workflow file existing.
 
@@ -25,14 +25,22 @@
 
 1. The 39-formula report no longer emits an unqualified `VALID` in its calculated-check summary. It now distinguishes calculated check status from `LAB_VALIDATION_REQUIRED` or `NOT_LAB_VALIDATED`.
 2. README test-suite documentation now reflects the latest observed run (127 modules) and points readers to the generated manifest for the current count rather than preserving a stale fixed number.
+3. Email authentication now fails closed when Supabase is unconfigured; it no longer fabricates successful local identities. Persisted profile metadata cannot restore authenticated status without a live provider session, and email confirmation is required before signup is treated as a signed-in session.
+4. Supabase/Firebase auth-state listeners are independently registered so enabling both providers does not suppress one listener. Protected API calls now send the active Supabase token when no Firebase token is present, and the server verifies Supabase identities with the configured Auth API.
+5. Account deletion now fails closed before deleting local data when no trusted identity-and-data deletion endpoint exists. The profile UI states that deletion is unavailable rather than claiming it will permanently delete data.
 
 ## Verification performed
 
 - `node_modules/.bin/tsc --noEmit`: passed.
-- `node_modules/.bin/tsx src/utils/test-calculations.ts`: passed, 127 modules / 4,023 assertions.
+- `node_modules/.bin/tsx src/utils/test-calculations.ts`: passed, 127 modules / 4,028 assertions.
 - `node_modules/.bin/tsx scripts/audit_39_current_status.ts`: passed; 39 formulas across all 13 categories, with 5 explicitly requiring laboratory validation.
 - `node scripts/clean-build.mjs`: passed.
 - `vite build`: not verified because the restricted environment denied esbuild access while loading the Vite config.
+
+## Additional release blockers discovered after the initial audit
+
+- A provider-aware account deletion implementation is still required before release; no client-side code can safely remove Supabase Auth identities or Firebase identities and their corresponding data as one verified operation.
+- The auth fixes have since passed an updated local regression run (127 modules / 4,028 assertions) and typecheck; CI and production HTTP smoke results still need verification after the commit is pushed.
 
 ## Conclusion
 

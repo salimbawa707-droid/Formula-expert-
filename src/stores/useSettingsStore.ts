@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db } from '../db/database';
 import { CloudSyncService } from '../services/cloudSync';
-import { supabase, isSupabaseConfigured, AuthService } from '../services/supabaseClient';
+import { supabase, isSupabaseConfigured, AuthService, clearPersistedAuthentication } from '../services/supabaseClient';
 import { 
   auth as firebaseAuth, 
   signInWithGoogle as firebaseSignInWithGoogle, 
@@ -109,7 +109,7 @@ interface SettingsStore {
 
   // Real Auth & Subscription Actions
   signIn: (email: string, password?: string, name?: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, company?: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, company?: string) => Promise<{ confirmationRequired: boolean }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   activate7DayTrial: () => Promise<void>;
@@ -152,7 +152,8 @@ const DEFAULT_PREFERENCES: AppPreferences = {
   theme: 'midnight',
 };
 
-let authListenerInitialized = false;
+let supabaseAuthListenerInitialized = false;
+let firebaseAuthListenerInitialized = false;
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
   profile: DEFAULT_PROFILE,
@@ -174,6 +175,10 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const prefRec = await db.userSettings.get('app_preferences');
 
       let currentProfile: UserProfile = profRec?.value ? { ...DEFAULT_PROFILE, ...profRec.value } : DEFAULT_PROFILE;
+      // A persisted profile is display data only. Authentication must be re-established
+      // from a live provider session on every startup; legacy local fallback profiles
+      // must never survive as authenticated identities.
+      currentProfile = clearPersistedAuthentication(currentProfile);
 
       // Check real Supabase session if configured
       if (isSupabaseConfigured()) {
@@ -213,8 +218,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
           }
 
           // Attach auth state change listener once
-          if (!authListenerInitialized) {
-            authListenerInitialized = true;
+          if (!supabaseAuthListenerInitialized) {
+            supabaseAuthListenerInitialized = true;
             supabase.auth.onAuthStateChange(async (event, newSession) => {
               if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (newSession?.user) {
@@ -245,8 +250,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       }
 
       // Attach Firebase Auth state change listener once
-      if (!authListenerInitialized) {
-        authListenerInitialized = true;
+      if (!firebaseAuthListenerInitialized) {
+        firebaseAuthListenerInitialized = true;
         onAuthStateChanged(firebaseAuth, async (fbUser) => {
           if (fbUser) {
             const updatedProf: Partial<UserProfile> = {
@@ -291,6 +296,17 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
                 isSyncing: false,
                 error: null,
               }
+            });
+          } else if (!isSupabaseConfigured()) {
+            const resetProfile: UserProfile = {
+              ...get().profile,
+              isAuthenticated: false,
+            };
+            set({ profile: resetProfile });
+            await db.userSettings.put({
+              key: 'user_profile',
+              value: resetProfile,
+              updatedAt: new Date().toISOString(),
             });
           }
         });
@@ -394,31 +410,27 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   },
 
   signIn: async (email: string, password?: string, name?: string) => {
-    if (isSupabaseConfigured() && password) {
-      const authRes = await AuthService.signInWithEmail(email, password);
-      if (!authRes.success) {
-        throw new Error(authRes.error || 'Failed to sign in with Supabase Auth.');
-      }
-      const user = authRes.user;
-      const derivedName = user?.user_metadata?.name || name || email.split('@')[0] || 'Lab Formulator';
-      const updated: Partial<UserProfile> = {
-        id: user?.id || `usr_${Date.now()}`,
-        email: user?.email || email,
-        name: derivedName,
-        company: user?.user_metadata?.company || get().profile.company || 'R&D Laboratory',
-        isAuthenticated: true,
-      };
-      await get().updateProfile(updated);
-      await get().triggerCloudSync();
-      return;
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail || !password?.trim()) {
+      throw new Error('Email and password are required.');
     }
-
-    // Local/Offline Fallback if no password or Supabase unconfigured
-    const derivedName = name || email.split('@')[0] || 'Lab Formulator';
+    if (!isSupabaseConfigured()) {
+      throw new Error('Email sign-in is unavailable because Supabase is not configured. Continue as a local guest or configure Supabase authentication.');
+    }
+    const authRes = await AuthService.signInWithEmail(normalizedEmail, password);
+    if (!authRes.success || !authRes.user || !authRes.session) {
+      throw new Error(authRes.error || 'Authentication did not return a valid user session.');
+    }
+    if (firebaseAuth.currentUser) {
+      await firebaseSignOutUser();
+    }
+    const user = authRes.user;
+    const derivedName = user.user_metadata?.name || name || normalizedEmail.split('@')[0] || 'Lab Formulator';
     const updated: Partial<UserProfile> = {
-      id: `usr_${Date.now()}`,
-      email,
+      id: user.id,
+      email: user.email || normalizedEmail,
       name: derivedName,
+      company: user.user_metadata?.company || get().profile.company || 'R&D Laboratory',
       isAuthenticated: true,
     };
     await get().updateProfile(updated);
@@ -426,40 +438,43 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   },
 
   signUp: async (email: string, password: string, name: string, company?: string) => {
-    if (isSupabaseConfigured()) {
-      const authRes = await AuthService.signUpWithEmail(email, password, name, company);
-      if (!authRes.success) {
-        throw new Error(authRes.error || 'Failed to sign up with Supabase Auth.');
-      }
-      const user = authRes.user;
-      const updated: Partial<UserProfile> = {
-        id: user?.id || `usr_${Date.now()}`,
-        email: user?.email || email,
-        name,
-        company: company || 'Detergent Lab',
-        isAuthenticated: true,
-      };
-      await get().updateProfile(updated);
-      await get().triggerCloudSync();
-      return;
+    const normalizedEmail = email.trim();
+    const normalizedName = name.trim();
+    if (!normalizedEmail || !password.trim() || !normalizedName) {
+      throw new Error('Name, email and password are required.');
     }
-
-    // Local mode fallback
+    if (!isSupabaseConfigured()) {
+      throw new Error('Account sign-up is unavailable because Supabase is not configured. Continue as a local guest or configure Supabase authentication.');
+    }
+    const authRes = await AuthService.signUpWithEmail(normalizedEmail, password, normalizedName, company?.trim());
+    if (!authRes.success || !authRes.user) {
+      throw new Error(authRes.error || 'Failed to create account.');
+    }
+    if (authRes.confirmationRequired || !authRes.session) {
+      return { confirmationRequired: true };
+    }
+    if (firebaseAuth.currentUser) {
+      await firebaseSignOutUser();
+    }
     const updated: Partial<UserProfile> = {
-      id: `usr_${Date.now()}`,
-      email,
-      name,
+      id: authRes.user.id,
+      email: authRes.user.email || normalizedEmail,
+      name: authRes.user.user_metadata?.name || normalizedName,
       company: company || 'Detergent Lab',
       isAuthenticated: true,
     };
     await get().updateProfile(updated);
     await get().triggerCloudSync();
+    return { confirmationRequired: false };
   },
 
   signInWithGoogle: async () => {
     try {
       const user = await firebaseSignInWithGoogle();
       if (user) {
+        if (isSupabaseConfigured()) {
+          await AuthService.signOut();
+        }
         const updated: Partial<UserProfile> = {
           id: user.uid,
           email: user.email || '',
@@ -685,8 +700,11 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   deleteAccount: async () => {
     const userId = get().profile.id;
+    const deletion = await AuthService.deleteAccount(userId);
+    if (!deletion.success) {
+      throw new Error(deletion.error || 'Account deletion could not be verified.');
+    }
     await CloudSyncService.purgeUserData(userId);
-    await AuthService.deleteAccount(userId);
     const resetProf: UserProfile = {
       ...DEFAULT_PROFILE,
       isAuthenticated: false,

@@ -36,7 +36,21 @@ export interface SupabaseAuthResult {
   success: boolean;
   user?: any;
   session?: any;
+  confirmationRequired?: boolean;
   error?: string;
+}
+
+export function createAuthUnavailableResult(provider: string): SupabaseAuthResult {
+  return {
+    success: false,
+    error: `${provider} authentication is unavailable because Supabase is not configured. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or continue using the app as a local guest.`,
+  };
+}
+
+export function clearPersistedAuthentication<T extends { isAuthenticated: boolean }>(
+  profile: T
+): Omit<T, 'isAuthenticated'> & { isAuthenticated: boolean } {
+  return { ...profile, isAuthenticated: false };
 }
 
 /**
@@ -53,14 +67,7 @@ export class AuthService {
     company?: string
   ): Promise<SupabaseAuthResult> {
     if (!isSupabaseConfigured()) {
-      return {
-        success: true,
-        user: {
-          id: `local_user_${Date.now()}`,
-          email,
-          user_metadata: { name, company: company || 'R&D Laboratory' },
-        },
-      };
+      return createAuthUnavailableResult('Email sign-up');
     }
 
     try {
@@ -84,6 +91,7 @@ export class AuthService {
         success: true,
         user: data.user,
         session: data.session,
+        confirmationRequired: Boolean(data.user && !data.session),
       };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to sign up.' };
@@ -95,14 +103,7 @@ export class AuthService {
    */
   public static async signInWithEmail(email: string, password: string): Promise<SupabaseAuthResult> {
     if (!isSupabaseConfigured()) {
-      return {
-        success: true,
-        user: {
-          id: `local_user_${Date.now()}`,
-          email,
-          user_metadata: { name: email.split('@')[0], company: 'R&D Laboratory' },
-        },
-      };
+      return createAuthUnavailableResult('Email sign-in');
     }
 
     try {
@@ -113,6 +114,9 @@ export class AuthService {
 
       if (error) {
         return { success: false, error: error.message };
+      }
+      if (!data.user || !data.session) {
+        return { success: false, error: 'Supabase did not return an authenticated user session.' };
       }
 
       return {
@@ -130,14 +134,7 @@ export class AuthService {
    */
   public static async signInWithGoogle(): Promise<SupabaseAuthResult> {
     if (!isSupabaseConfigured()) {
-      return {
-        success: true,
-        user: {
-          id: `google_local_${Date.now()}`,
-          email: 'chemist.google@rnd-lab.com',
-          user_metadata: { name: 'Google Chemist User', company: 'Google R&D Chemist' },
-        },
-      };
+      return createAuthUnavailableResult('Google sign-in');
     }
 
     try {
@@ -188,23 +185,13 @@ export class AuthService {
   /**
    * Delete account
    */
-  public static async deleteAccount(userId: string): Promise<{ success: boolean; error?: string }> {
+  public static async deleteAccount(_userId: string): Promise<{ success: boolean; error?: string }> {
     if (!isSupabaseConfigured()) {
-      return { success: true };
+      return createAuthUnavailableResult('Account deletion');
     }
-
-    try {
-      // In Supabase client, user cannot directly call admin.deleteUser from client side without RPC or backend function.
-      // We trigger an RPC or delete user's profile and data rows under RLS cascade.
-      const { error: profileErr } = await supabase.from('profiles').delete().eq('id', userId);
-      if (profileErr) {
-        console.warn('Profile deletion error:', profileErr);
-      }
-
-      await supabase.auth.signOut();
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || 'Failed to delete account' };
-    }
+    return {
+      success: false,
+      error: 'Secure account deletion is unavailable: a trusted server endpoint must delete the authentication identity and its data together. No account data was removed.',
+    };
   }
 }

@@ -153,7 +153,7 @@ export async function apiFetch(
     headers.set('Content-Type', 'application/json');
   }
 
-  // Automatically attach Bearer token from active Firebase auth session if available
+  // Attach the active Firebase token first, then fall back to a Supabase session.
   if (!headers.has('Authorization')) {
     try {
       const fbClient = await import('./firebaseClient').catch(() => null);
@@ -161,6 +161,13 @@ export async function apiFetch(
         const token = await fbClient.auth.currentUser.getIdToken();
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
+        }
+      }
+      if (!headers.has('Authorization')) {
+        const supabaseClient = await import('./supabaseClient').catch(() => null);
+        const { data } = await supabaseClient?.supabase.auth.getSession() ?? { data: { session: null } };
+        if (data.session?.access_token) {
+          headers.set('Authorization', `Bearer ${data.session.access_token}`);
         }
       }
     } catch {

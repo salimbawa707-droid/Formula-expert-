@@ -63,7 +63,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setLoading(true);
     setError(null);
     try {
-      await signUp(email, password, name, company);
+      const result = await signUp(email, password, name, company);
+      if (result.confirmationRequired) {
+        setSuccessMsg('Account created. Check your email and confirm it before signing in.');
+        setMode('signin');
+        setPassword('');
+        setLoading(false);
+        return;
+      }
       setSuccessMsg('Account created successfully!');
       setTimeout(() => {
         setLoading(false);
@@ -105,7 +112,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       onClose();
     } catch (err: any) {
       setLoading(false);
-      setError('Account deletion failed.');
+      setError(err?.message || 'Account deletion failed.');
     }
   };
 
@@ -151,6 +158,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
 
             <div className="space-y-3">
+              {error && (
+                <div className="p-3 rounded-lg bg-red-950/60 border border-red-800/60 text-red-300 text-xs">
+                  {error}
+                </div>
+              )}
               <button
                 onClick={handleSignOut}
                 className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all flex items-center justify-center gap-2 border border-slate-700"
@@ -171,7 +183,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     <ShieldAlert className="w-4 h-4" /> Permanent Action Notice
                   </div>
                   <p className="text-slate-300">
-                    This will permanently delete your account, synced formulas, and cloud backups per Google Play guidelines.
+                    A secure server-side account deletion endpoint is not configured yet. This action will not delete your account or data until that endpoint is available.
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -197,13 +209,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <div>
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-2">
-                <Sparkles className="w-3.5 h-3.5" /> Firebase Auth & Cloud Firestore
+                <Sparkles className="w-3.5 h-3.5" /> Account Authentication
               </div>
               <h3 className="text-xl font-bold text-white">
                 {mode === 'signin' ? 'Sign In to Your Account' : 'Create R&D Account'}
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Google Sign-in with Firebase Auth & persistent data storage in Firestore.
+                Google sign-in uses Firebase. Email and password sign-in requires configured Supabase. You can continue locally as a guest without signing in.
               </p>
             </div>
 

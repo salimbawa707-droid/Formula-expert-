@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-19T20:28:11.634Z",
+  "timestamp": "2026-10-20T04:38:30.172Z",
   "summary": {
     "discoveredCount": 127,
     "registeredCount": 127,
     "executedCount": 127,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4023,
-    "totalAssertionsPassed": 4023,
+    "totalAssertionsExecuted": 4028,
+    "totalAssertionsPassed": 4028,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -1131,9 +1131,9 @@
       "file": "securityFixes.regression.test.ts",
       "moduleName": "runSecurityFixesTestSuite",
       "executed": true,
-      "passedAssertions": 41,
+      "passedAssertions": 46,
       "failedAssertions": 0,
-      "totalAssertions": 41,
+      "totalAssertions": 46,
       "skipped": false
     },
     {

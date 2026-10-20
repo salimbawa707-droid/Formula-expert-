@@ -2,6 +2,11 @@
 
 ## Critical Production Environment Variables
 
+### 0. Supabase Authentication for Protected API Routes
+- `SUPABASE_URL` and `SUPABASE_ANON_KEY`: Server-side project URL and public anon key used to ask the configured Supabase Auth API to validate access tokens. `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are also accepted when the same `.env` is loaded by the server.
+- The anon key is not a service-role credential. Never place a Supabase service-role key in browser variables or `VITE_*` settings.
+- Firebase Google sessions continue to be verified with Firebase Admin. Email/password Supabase sessions are verified with the configured Supabase project; unconfigured or cross-project tokens fail closed.
+
 ### 1. Firebase Admin SDK
 - `FIREBASE_SERVICE_ACCOUNT_KEY`: Path to or stringified JSON of the Firebase service account credential for server-side cryptographic token verification (`verifyIdToken(token, true)`).
 - `GOOGLE_APPLICATION_CREDENTIALS`: Standard GCP service account credentials fallback.

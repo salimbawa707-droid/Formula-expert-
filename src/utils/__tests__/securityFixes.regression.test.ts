@@ -22,6 +22,8 @@
 
 import {
   verifyAuthToken,
+  verifySupabaseAccessToken,
+  matchesConfiguredSupabaseIssuer,
   authenticateUserMiddleware,
   requireAdminMiddleware,
   requireVerifiedBillingAuthMiddleware,
@@ -35,6 +37,7 @@ import {
   computeTokenFingerprint
 } from '../../services/durablePurchaseStore';
 import { google } from 'googleapis';
+import { clearPersistedAuthentication, createAuthUnavailableResult } from '../../services/supabaseClient';
 
 export interface SecurityFixesTestSummary {
   total: number;
@@ -62,6 +65,61 @@ export async function runSecurityFixesTestSuite(): Promise<SecurityFixesTestSumm
 
   // Reset test store before test execution
   DurablePurchaseStore.resetTestStore();
+
+  const unconfiguredAuth = createAuthUnavailableResult('Email sign-in');
+  assert(
+    'P0 Auth 1: Unconfigured authentication fails closed instead of creating a local fake identity',
+    unconfiguredAuth.success === false && !unconfiguredAuth.user && Boolean(unconfiguredAuth.error?.includes('not configured')),
+    unconfiguredAuth,
+    'failed result without a user identity'
+  );
+  const restoredLegacyProfile = clearPersistedAuthentication({ id: 'legacy-local-user', isAuthenticated: true });
+  assert(
+    'P0 Auth 2: A cached local profile cannot restore authenticated state without a live provider session',
+    restoredLegacyProfile.isAuthenticated === false && restoredLegacyProfile.id === 'legacy-local-user',
+    restoredLegacyProfile,
+    'same profile with authentication cleared'
+  );
+  let supabaseVerificationUrl = '';
+  let supabaseVerificationBearer = '';
+  const supabaseVerified = await verifySupabaseAccessToken(
+    'signed.supabase.token',
+    'https://example-project.supabase.co',
+    'public-anon-key',
+    async (input, init) => {
+      supabaseVerificationUrl = String(input);
+      supabaseVerificationBearer = new Headers(init?.headers).get('Authorization') || '';
+      return new Response(JSON.stringify({ id: 'verified-supabase-user', email: 'chemist@example.com' }), { status: 200 });
+    }
+  );
+  assert(
+    'P0 Auth 3: Supabase identity is accepted only after server-side Auth API verification',
+    supabaseVerified.valid && supabaseVerified.user?.uid === 'verified-supabase-user' &&
+      supabaseVerificationUrl === 'https://example-project.supabase.co/auth/v1/user' &&
+      supabaseVerificationBearer === 'Bearer signed.supabase.token',
+    { supabaseVerified, supabaseVerificationUrl, supabaseVerificationBearer },
+    'verified provider user and exact configured Auth endpoint'
+  );
+  assert(
+    'P0 Auth 4: Supabase JWT issuer must exactly match the configured project',
+    matchesConfiguredSupabaseIssuer('https://example-project.supabase.co/auth/v1', 'https://example-project.supabase.co') &&
+      !matchesConfiguredSupabaseIssuer('https://attacker-project.supabase.co/auth/v1', 'https://example-project.supabase.co') &&
+      !matchesConfiguredSupabaseIssuer('not-a-url', 'https://example-project.supabase.co'),
+    'same project accepted; foreign and malformed issuers rejected',
+    true
+  );
+  const rejectedSupabase = await verifySupabaseAccessToken(
+    'invalid.token',
+    'https://example-project.supabase.co',
+    'public-anon-key',
+    async () => new Response('{}', { status: 401 })
+  );
+  assert(
+    'P0 Auth 5: Supabase rejects invalid/expired tokens without creating an identity',
+    !rejectedSupabase.valid && !rejectedSupabase.user,
+    rejectedSupabase,
+    'invalid token rejected'
+  );
 
   // --------------------------------------------------------------------------
   // TEST GROUP 1: P0 Authentication Security & Token Claims Sanitization
