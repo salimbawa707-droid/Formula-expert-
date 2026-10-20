@@ -1,5 +1,6 @@
 declare module 'express' {
   interface Request {
+    [key: string]: any;
     body: any;
     headers: Record<string, string | string[] | undefined>;
     ip?: string;
@@ -11,6 +12,7 @@ declare module 'express' {
   }
 
   interface Response {
+    [key: string]: any;
     status(code: number): Response;
     json(body?: any): Response;
     send(body?: any): Response;
@@ -21,22 +23,30 @@ declare module 'express' {
 
   type NextFunction = (error?: any) => void;
 
+  interface Handler {
+    (req: Request, res: Response, next: NextFunction): any;
+  }
+
+  interface ErrorHandler {
+    (error: any, req: Request, res: Response, next: NextFunction): any;
+  }
+
   interface ExpressApplication {
     set(name: string, value: any): this;
-    use(...handlers: any[]): this;
-    get(path: string, ...handlers: any[]): this;
-    post(path: string, ...handlers: any[]): this;
-    put(path: string, ...handlers: any[]): this;
-    patch(path: string, ...handlers: any[]): this;
-    delete(path: string, ...handlers: any[]): this;
+    use(...handlers: (Handler | ErrorHandler)[]): this;
+    get(path: string, ...handlers: Handler[]): this;
+    post(path: string, ...handlers: Handler[]): this;
+    put(path: string, ...handlers: Handler[]): this;
+    patch(path: string, ...handlers: Handler[]): this;
+    delete(path: string, ...handlers: Handler[]): this;
     listen(...args: any[]): any;
   }
 
   interface ExpressFactory {
     (): ExpressApplication;
-    json(options?: any): any;
-    urlencoded(options?: any): any;
-    static(root: string): any;
+    json(options?: any): Handler;
+    urlencoded(options?: any): Handler;
+    static(root: string): Handler;
   }
 
   const express: ExpressFactory;
