@@ -1,4 +1,4 @@
-import { IngredientResearchService } from './ingredientResearchService';
+import { IngredientResearchService, ResearchRequest } from './ingredientResearchService';
 import { getAllUniversalIngredients, UniversalIngredient } from '../data/universalIngredientLibrary';
 
 export type IngredientResolutionStatus = 'LOCAL' | 'RESEARCHED' | 'NEEDS_VERIFICATION';
@@ -16,8 +16,6 @@ export interface ResolvedIngredient {
  * explicitly marked instead of being silently converted into numeric values.
  */
 export class ResearchedIngredientResolver {
-  private readonly research = new IngredientResearchService();
-
   resolveLocal(name: string): UniversalIngredient | null {
     const normalized = name.trim().toLowerCase();
     if (!normalized) return null;
@@ -30,8 +28,9 @@ export class ResearchedIngredientResolver {
     ) ?? null;
   }
 
-  async resolve(name: string): Promise<ResolvedIngredient> {
-    const local = this.resolveLocal(name);
+  async resolve(name: string, grade?: string, apiKey?: string): Promise<ResolvedIngredient> {
+    const cleanName = name.trim();
+    const local = this.resolveLocal(cleanName);
     if (local) {
       return {
         ingredient: local,
@@ -40,39 +39,39 @@ export class ResearchedIngredientResolver {
       };
     }
 
-    const researched = await this.research.researchMultiSource(name.trim());
+    const request: ResearchRequest = {
+      ingredientName: cleanName,
+      ...(grade ? { grade } : {})
+    };
 
-    if (!researched) {
+    const researched = await IngredientResearchService.researchMultiSource(request, apiKey);
+
+    if (!researched || researched.status === 'RESEARCH_UNAVAILABLE' || researched.sourcesRetrieved.length === 0) {
+      return this.buildNeedsVerification(cleanName, 'No sufficiently reliable source-backed research result was returned.');
+    }
+
+    if (researched.status === 'CONFLICTING_EVIDENCE') {
+      const ingredient = this.buildResearchedProfile(researched, cleanName);
       return {
         ingredient: {
-          id: `researched-${Date.now()}`,
-          name: name.trim(),
-          category: 'Additive',
-          casNumber: '',
-          inciName: name.trim(),
-          function: 'Unknown / Research Required',
-          activeDefault: 0,
-          activeMatter: undefined,
-          costPerKg: null,
-          hlb: null,
-          description: 'No sufficiently reliable source-backed profile was found.',
+          ...ingredient,
           provenance: {
-            sourceType: 'AI_RESEARCH',
-            source: 'Gemini grounded research',
-            verificationStatus: 'NEEDS_VERIFICATION',
-            notes: 'Do not use unknown quantitative properties for release calculations.'
-          },
-          unknownProperties: ['activeMatter', 'hlb', 'cmc', 'density', 'nvr', 'pKa']
+            ...ingredient.provenance,
+            verificationStatus: 'EVIDENCE_CONFLICT',
+            notes: 'Multiple sources conflict. Do not treat conflicting quantitative properties as verified.'
+          }
         },
         status: 'NEEDS_VERIFICATION',
-        reason: 'No sufficiently reliable source-backed research result was returned.'
+        reason: researched.notes || 'Research sources contain conflicting evidence.'
       };
     }
 
-    const profile = researched.ingredient;
-    const hasUnknownQuantities = !profile.activeMatter && profile.activeMatter !== 0 ||
+    const profile = this.buildResearchedProfile(researched, cleanName);
+    const hasUnknownQuantities = Boolean(
+      profile.activeMatter == null ||
       profile.hlb == null ||
-      profile.unknownProperties?.length;
+      (profile.unknownProperties && profile.unknownProperties.length > 0)
+    );
 
     return {
       ingredient: profile,
@@ -80,6 +79,70 @@ export class ResearchedIngredientResolver {
       reason: hasUnknownQuantities
         ? 'Research returned an incomplete profile; unresolved properties remain explicit.'
         : 'Ingredient profile was populated from the grounded research service.'
+    };
+  }
+
+  private buildResearchedProfile(result: Awaited<ReturnType<typeof IngredientResearchService.researchMultiSource>>, name: string): UniversalIngredient {
+    const parameters = result.propertiesExtracted || {};
+    const localResolved = result.resolvedName || name;
+    const activeMatter = typeof parameters.activeMatter === 'number' ? parameters.activeMatter : undefined;
+    const hlb = typeof parameters.hlb === 'number' ? parameters.hlb : null;
+    const unknownProperties = Object.entries(parameters)
+      .filter(([, value]) => value === null || value === undefined || value === '')
+      .map(([key]) => key);
+
+    return {
+      id: `researched-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+      name: localResolved,
+      category: 'Additive',
+      casNumber: typeof parameters.casNumber === 'string' ? parameters.casNumber : '',
+      inciName: typeof parameters.inciName === 'string' ? parameters.inciName : localResolved,
+      function: typeof parameters.function === 'string' ? parameters.function : 'Research-derived ingredient',
+      activeDefault: activeMatter ?? 0,
+      activeMatter,
+      costPerKg: typeof parameters.costPerKg === 'number' ? parameters.costPerKg : null,
+      hlb,
+      description: typeof parameters.description === 'string'
+        ? parameters.description
+        : 'Ingredient profile derived from source-backed research.',
+      provenance: {
+        sourceType: 'AI_RESEARCH',
+        source: 'Gemini grounded multi-source research',
+        verificationStatus: result.status === 'SUCCESS' ? 'SOURCE_BACKED' : 'NEEDS_VERIFICATION',
+        notes: `Research ID: ${result.researchId}; ${result.sourcesRetrieved.length} source(s) retrieved.`
+      },
+      unknownProperties: Array.from(new Set([
+        ...unknownProperties,
+        ...(activeMatter == null ? ['activeMatter'] : []),
+        ...(hlb == null ? ['hlb'] : [])
+      ]))
+    };
+  }
+
+  private buildNeedsVerification(name: string, reason: string): ResolvedIngredient {
+    return {
+      ingredient: {
+        id: `researched-${Date.now()}`,
+        name,
+        category: 'Additive',
+        casNumber: '',
+        inciName: name,
+        function: 'Unknown / Research Required',
+        activeDefault: 0,
+        activeMatter: undefined,
+        costPerKg: null,
+        hlb: null,
+        description: reason,
+        provenance: {
+          sourceType: 'AI_RESEARCH',
+          source: 'Gemini grounded research',
+          verificationStatus: 'NEEDS_VERIFICATION',
+          notes: 'Do not use unknown quantitative properties for release calculations.'
+        },
+        unknownProperties: ['activeMatter', 'hlb', 'cmc', 'density', 'nvr', 'pKa']
+      },
+      status: 'NEEDS_VERIFICATION',
+      reason
     };
   }
 }
