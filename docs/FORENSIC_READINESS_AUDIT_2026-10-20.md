@@ -11,7 +11,7 @@
 - The product taxonomy defines 13 canonical categories. The 39 bundled master formulas cover all 13.
 - A fresh calculation audit produced 34 formulas with a `VALID` scientific quality-gate status and 5 with `LAB_VALIDATION_REQUIRED`. In all cases, those are software-calculated checks; they are not evidence that a finished product passed a physical lab test.
 - The master automated suite passed 127/127 modules and 4,028/4,028 assertions in this checkout. TypeScript `tsc --noEmit` completed successfully.
-- The cross-platform build-cleanup script was executed successfully. The production Vite build could not be verified in this restricted checkout: esbuild could not read a parent directory and could not load `vite.config.ts` (`Access is denied`). This is an environment limitation; it does not establish that the production build passes or fails in GitHub Actions.
+- The cross-platform build-cleanup script was executed successfully. After switching the Vite config to ESM-safe path resolution, the production client build passed with Vite's runner config loader. The full server bundle was not verifiable in this restricted checkout because esbuild could not read an ancestor directory (`Access is denied`); GitHub Actions remains the authoritative full-build and HTTP smoke check.
 - The repository contains a GitHub Actions workflow intended to run typecheck, regression tests, production build, and an HTTP smoke test. Workflow results must be inspected in GitHub after the relevant push; they are not inferred from the workflow file existing.
 
 ### Readiness gaps that software changes cannot close by themselves
@@ -35,12 +35,14 @@
 - `node_modules/.bin/tsx src/utils/test-calculations.ts`: passed, 127 modules / 4,028 assertions.
 - `node_modules/.bin/tsx scripts/audit_39_current_status.ts`: passed; 39 formulas across all 13 categories, with 5 explicitly requiring laboratory validation.
 - `node scripts/clean-build.mjs`: passed.
-- `vite build`: not verified because the restricted environment denied esbuild access while loading the Vite config.
+- `vite build --configLoader runner`: passed; generated the production client bundle. Vite reported non-fatal vendor externalization, mixed dynamic/static import, and large main-chunk warnings.
+- `esbuild server.ts --bundle ...`: not verified because the restricted environment denied esbuild access to an ancestor directory before resolving the entrypoint.
 
 ## Additional release blockers discovered after the initial audit
 
 - Account deletion now has a provider-aware server endpoint, but must be deployed with the required Supabase service-role or Firebase Admin credentials and verified against the production schemas before release.
 - The auth fixes have since passed an updated local regression run (127 modules / 4,028 assertions) and typecheck; CI and production HTTP smoke results still need verification after the commit is pushed.
+- The Vite client build is now locally verified; full server build and HTTP smoke results still require the GitHub Actions runner because this shell's sandbox blocks esbuild's parent-directory read.
 
 ## Conclusion
 
