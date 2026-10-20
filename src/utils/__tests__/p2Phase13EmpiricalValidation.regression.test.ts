@@ -183,7 +183,7 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
       liquidLaundryPh?.readiness === 'READY' && liquidLaundryPh.protocolMethodId === 'ASTM-D1172' &&
       manualDishDensity?.readiness === 'METHOD_REQUIRED',
     { powderBulkDensity: powderBulkDensity?.readiness, liquidLaundryPh: liquidLaundryPh?.readiness, method: liquidLaundryPh?.protocolMethodId, manualDishDensity: manualDishDensity?.readiness },
-    { powderBulkDensity: 'METHOD_AND_PREDICTION_REQUIRED', liquidLaundryPh: 'READY', method: 'ASTM-D1172', manualDishDensity: 'METHOD_REQUIRED' }
+    { powderBulkDensity: 'METHOD_AND_PREDICTION_REQUIRED', liquidLaundryPh: 'READY', method: 'ASTM-D1172', manualDishDensity: 'READY' }
   );
 
   // 5. Grouped Dataset Splitting & Leakage Audit
