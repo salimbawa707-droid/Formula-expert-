@@ -46,6 +46,38 @@ async function main(): Promise<void> {
     IngredientResearchBridge.resolveForFormula = original;
   }
 
+  const calculationFormula: ActiveFormulaState = {
+    name: 'Deterministic calculation test',
+    batchSizeKg: 100,
+    ingredients: [
+      { name: 'Researched Surfactant', percent: 10, activeMatterPct: 70 },
+      { name: 'Water', percent: 90, activeMatterPct: 0 }
+    ]
+  };
+
+  const originalResolver = IngredientResearchBridge.resolveForFormula;
+  try {
+    IngredientResearchBridge.resolveForFormula = (async (name: string) => ({
+      ingredient: {
+        id: name === 'Researched Surfactant' ? 'research-1' : 'water-1',
+        name,
+        activePercent: name === 'Researched Surfactant' ? 70 : 0,
+        activeMatterPct: name === 'Researched Surfactant' ? 70 : 0,
+        category: name === 'Researched Surfactant' ? 'Anionic Surfactant' : 'Solvent / Carrier'
+      },
+      source: name === 'Researched Surfactant' ? 'WEB_RESEARCH' : 'LOCAL_LIBRARY',
+      requiresUserApproval: false
+    })) as typeof IngredientResearchBridge.resolveForFormula;
+
+    const result = await prepareFormulaForCalculation(calculationFormula);
+    assert(result.calculationReady, 'complete researched formula must be calculation-ready');
+    assert(result.activeMatterReport?.activeMatterStatus === 'COMPLETE', 'deterministic active matter report must be complete');
+    assert(result.activeMatterReport?.totalActiveMatter === 7, '10% raw at 70% active must produce 7% active matter');
+    assert(result.activeMatterReport?.totalBatchActiveKg === 7, '100 kg batch must contain 7 kg active matter');
+  } finally {
+    IngredientResearchBridge.resolveForFormula = originalResolver;
+  }
+
   console.log('formulaIngredientResearchPipeline.test: PASS');
 }
 
