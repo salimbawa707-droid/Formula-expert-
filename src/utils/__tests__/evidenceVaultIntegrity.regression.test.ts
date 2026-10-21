@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   validateDatasetFile,
   validateManifestToDisk,
@@ -77,22 +80,25 @@ export function runEvidenceVaultIntegrityTestSuite() {
   // =========================================================================
   // Requirement 2: Corrupted File Detection
   // =========================================================================
-  const corruptedPath = 'evidence_vault/corrupted_quarantine/Supplementary_SolutionFlowCurves.xlsx';
+  const corruptedFixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'evidence-vault-corrupt-fixture-'));
+  const corruptedPath = path.join(corruptedFixtureDir, 'invalid-workbook.xlsx');
+  fs.writeFileSync(corruptedPath, 'corrupted\\n', 'utf8');
   const corruptedResult = validateDatasetFile(corruptedPath, { md5: expectedMd5 });
   assert(
     '2. Corrupted File Detection',
-    'Quarantined 9-byte text stub fails ZIP header check and is classified as QUARANTINED_CORRUPTED',
+    'Ephemeral 9-byte text fixture fails ZIP header check and is classified as QUARANTINED_CORRUPTED',
     corruptedResult.valid === false && corruptedResult.status === 'QUARANTINED_CORRUPTED',
     corruptedResult.status,
     'QUARANTINED_CORRUPTED'
   );
   assert(
     '2. Corrupted File Detection',
-    'Quarantined stub size is exactly 9 bytes with isZipFormat=false',
+    'Ephemeral invalid fixture size is exactly 9 bytes with isZipFormat=false',
     corruptedResult.byteSize === 9 && corruptedResult.isZipFormat === false,
     corruptedResult.byteSize,
     9
   );
+  fs.rmSync(corruptedFixtureDir, { recursive: true, force: true });
 
   // =========================================================================
   // Requirement 3: Missing File Handling
