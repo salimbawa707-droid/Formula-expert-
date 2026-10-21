@@ -4,7 +4,7 @@
 **Component:** `evidence_vault/corrupted_quarantine/` and `evidence_vault/datasets/zenodo_18961871/`  
 **Dataset DOI:** [10.5281/zenodo.18961871](https://doi.org/10.5281/zenodo.18961871)  
 **Date:** 2026-10-19  
-**Status:** IMPLEMENTED, RECOVERED & VERIFIED  
+**Status:** HISTORICAL SNAPSHOT — CURRENT CHECKS MUST BE RE-RUN  
 
 ---
 
@@ -17,7 +17,7 @@ Two scientific evidence workbooks in the project's quarantine directory were con
 2. `evidence_vault/corrupted_quarantine/Supplementary_FilmThickness_v1.xlsx` (9 bytes)
 
 Pursuant to Issue 2 instructions and scientific integrity requirements:
-- Quarantined 9-byte stubs are preserved in `evidence_vault/corrupted_quarantine/` with an explicit audit manifest (`QUARANTINE_MANIFEST.md`).
+- The 9-byte stub files were subsequently removed from `evidence_vault/corrupted_quarantine/`; the quarantine ledger preserves their historical details.
 - Authentic original workbooks were obtained directly from official Zenodo repository endpoints (`https://zenodo.org/records/18961871/files/`).
 - Both candidates were strictly verified for non-empty readable ZIP/XLSX structure and exact cryptographic MD5 checksum match.
 - Zero data was fabricated, estimated, or imputed.
@@ -34,7 +34,7 @@ Pursuant to Issue 2 instructions and scientific integrity requirements:
 | **Authentic FlowCurves Original** | `evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx` | 22,280 B | `cd5bfd6e95fc65e412807d53935c2d96` | `cd5bfd6e95fc65e412807d53935c2d96` | `90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590` | True (`PK\x03\x04`) | **VERIFIED** |
 | **Authentic FilmThickness Original** | `evidence_vault/datasets/zenodo_18961871/Supplementary_FilmThickness_v1.xlsx` | 149,923 B | `bc9582baafecd6552f6014216a0844e6` | `bc9582baafecd6552f6014216a0844e6` | `170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428` | True (`PK\x03\x04`) | **VERIFIED** |
 
-Both downloaded files match their expected cryptographic hashes 100% bit-for-bit.
+At the time of this historical report, the recorded hashes matched. The current checkout must be verified by running `npm run verify:evidence`.
 
 ---
 
