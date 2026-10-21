@@ -2,9 +2,9 @@
   "generatedBy": "src/utils/openReferenceBenchmark.ts",
   "governance": "Component-level reference benchmark against published open data. Not matched finished-formula lab batches; does not grant LAB_VALIDATED status.",
   "datasetSha256": {
-    "ph_standards/iupac_2002_ph_standards.csv": "cff270c8803132434c520d4a371c128d7b5d16b35e2a776094514aea108e4e55",
-    "cmc_pure/psdi_nist_detergent_homolog_cmc.csv": "41c7b4feedfebb48121f60d6ef9aa36e1a6d5b5bb082b6c0344d0777938fc45d",
-    "cmc_mixed/p2surf_binary_mixture_cmc.csv": "d9b6ebb2e34f7ec1be4ea9a9ef799bbe0313c0c501c34a155be40cc0f7bbbe51"
+    "ph_standards/iupac_2002_ph_standards.csv": "b3fce32985f7d233fe747e59a6d1f76ac38d8acc0ab0f0344187ef57306f5338",
+    "cmc_pure/psdi_nist_detergent_homolog_cmc.csv": "13563be32e71480db812ea014ff9371988147921bbf85a5b93c2667942d1f72c",
+    "cmc_mixed/p2surf_binary_mixture_cmc.csv": "f269e73d3cdf35e064ee253295d1cf990322cc845d62a4f8bd2414ca21dd0b24"
   },
   "ph": {
     "totalStandards": 20,
