@@ -287,13 +287,13 @@ export function runEvidenceVaultIntegrityTestSuite() {
   );
   assert(
     '9. Reproducible Audit',
-    'Audit reconciles exactly 4 Zenodo workbooks, 2 quarantined stubs, and verifies manifest',
+    'Audit reconciles exactly 4 Zenodo workbooks, confirms quarantine stubs are absent, and verifies manifest',
     auditReport1.reconciledFilesCount === 4 &&
-    auditReport1.quarantinedStubsCount === 2 &&
+    auditReport1.quarantinedStubsCount === 0 &&
     auditReport1.verifiedFilesCount === 4 &&
     auditReport1.manifestConsistency === true,
-    auditReport1.manifestConsistency,
-    true
+    { quarantinedStubsCount: auditReport1.quarantinedStubsCount, verifiedFilesCount: auditReport1.verifiedFilesCount, manifestConsistency: auditReport1.manifestConsistency },
+    { quarantinedStubsCount: 0, verifiedFilesCount: 4, manifestConsistency: true }
   );
 
   // =========================================================================
