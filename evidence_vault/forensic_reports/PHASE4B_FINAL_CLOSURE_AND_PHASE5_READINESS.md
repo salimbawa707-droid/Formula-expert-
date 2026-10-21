@@ -45,7 +45,7 @@ The publisher article describes four UK washing-up liquids, 2 mL product in 300 
 - Parser runtime: bundled Python 3.12.14 with `openpyxl 3.1.5`; complete archive check: `zipfile.ZipFile.testzip()`.
 - Actual source audit: `python work/audit_zenodo_xlsx.py "C:\Users\nk\Downloads"` — four workbooks `PARSED`; all expected size/hash and Zenodo MD5 checks passed; all CRC and required XLSX-part checks passed.
 - Fail-closed tests: `python work/test_audit_zenodo_xlsx.py` — 3 tests passed. Missing files return `BLOCKED`; a malformed XLSX returns `FAIL`; real downloaded workbooks reconcile with pinned hashes and parser dimensions.
-- The local repository checkout was unavailable because authenticated Git clone failed; repository reads/writes used the connected GitHub integration. The project typecheck/test/build workflows were not rerun in this execution; a workflow run on the resulting repository commit is required for that evidence.
+- The local repository checkout was unavailable because authenticated Git clone failed; repository reads/writes used the connected GitHub integration. The project workflows passed on audit commit `b1efc0e3346d3621f1662f3d4b36b5668b4efdd1`: [Phase 4B Integrity and Build Gates](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39649144180) and [Engine verification](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39649143845). This follow-up adds the parser negative/positive tests to the Phase 4B workflow so CI checks actual workbook parsing as well as byte integrity; CI for this follow-up commit must finish before its parser gate is reported green.
 
 ## Gate disposition
 
