@@ -8,6 +8,11 @@
 
 This report records what was verified from the repository, completed GitHub Actions runs, repository audit records, and the public Zenodo record. It does not treat CI success as scientific validation. Earlier reports are historical unless their findings are explicitly reconfirmed below.
 
+
+## Commit and report revision reconciliation
+
+The evidence/code baseline assessed here is commit `c842b691584ec337408f238102e05c7a165ea1d1`. The report was first committed at `83288a0878f9599b1c6f022dace06376d219e7d4` and then extended with publisher-paper methods at `bc7e2633b313e80c3654877a3f04c010c78955cc`. GitHub's compare result shows these two commits added or amended only this report; they did not change application code or evidence bytes. The Phase 4B and Engine verification workflows passed on both report commits: [83288a0 Phase 4B](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39641017826), [83288a0 Engine](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39641017848), [bc7e263 Phase 4B](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39642738949), and [bc7e263 Engine](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39642738663). The last confirmed main SHA before this report revision was `bc7e2633b313e80c3654877a3f04c010c78955cc`. The SHA produced by this revision is recorded in Git history and delivery notes.
+
 ## Repository and software baseline
 
 At audit time, `main` pointed to `c842b691584ec337408f238102e05c7a165ea1d1`. The commit changed the evidence-vault regression assertion to expect zero current quarantine stubs and to report the actual reconciled counts.
