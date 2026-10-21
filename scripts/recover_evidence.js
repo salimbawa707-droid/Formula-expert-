@@ -262,7 +262,7 @@ Each canonical workbook candidate is checked against the ZIP signature, exact by
 
 ## 2. Before / After Status Audit
 
-| Workbook | Quarantine (Before) | Quarantine MD5 | Canonical Vault Location | File Size | Expected MD5 | Verified MD5 | Verification Verdict |
+| Workbook | Quarantine Path State | Quarantine MD5 | Canonical Vault Location | File Size | Expected MD5 | Verified MD5 | Verification Verdict |
 | :--- | :---: | :---: | :--- | :---: | :---: | :---: | :---: |
 `;
 
