@@ -178,11 +178,12 @@ export function buildEng002CatalogEligibilityReport(): Eng002CatalogEligibilityR
       decisionReason
     };
   });
-  const counts = {
-    FULLY_SUPPORTED: records.filter(r => r.eligibility === 'FULLY_SUPPORTED').length,
-    PARTIALLY_SUPPORTED: records.filter(r => r.eligibility === 'PARTIALLY_SUPPORTED').length,
-    INSUFFICIENT_INPUTS: records.filter(r => r.eligibility === 'INSUFFICIENT_INPUTS').length
+  const counts: Record<Eng002InputEligibility, number> = {
+    FULLY_SUPPORTED: 0,
+    PARTIALLY_SUPPORTED: 0,
+    INSUFFICIENT_INPUTS: 0
   };
+  for (const record of records) counts[record.eligibility] += 1;
   return {
     auditId: 'TASK5-ENG002-INPUT-PROVENANCE-v1',
     sourceCommit: 'fc0cf2c4412f532c4c3a4c1b4c10cd382f540d94',

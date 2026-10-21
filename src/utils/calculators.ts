@@ -839,14 +839,14 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
   };
   const resolved: Resolved[] = [];
   const reasons: string[] = [];
-  let hasAnionic = false, hasAmphoteric = false, hasNonionic = false, hasCationic = false, hasElectrolyte = false;
+  let hasAnionic = false, hasAmphoteric = false, hasElectrolyte = false;
 
   for (const ingredient of ingredients) {
     const name = String(ingredient?.name ?? '').trim();
     const category = String(ingredient?.category ?? '');
     const role = String(ingredient?.role ?? ingredient?.function ?? '');
     const { isSurfactant } = ActiveMatterEngine.classifySurfactantCharge(category, role, name);
-    const rawPctValue = ingredient?.percentage ?? ingredient?.percent ?? ingredient?.percentageInFormula;
+    const rawPctValue: unknown = ingredient?.percentage ?? ingredient?.percent ?? ingredient?.percentageInFormula;
     const rawPct = rawPctValue === undefined || rawPctValue === null || rawPctValue === '' ? NaN : Number(rawPctValue);
 
     if (!isSurfactant) {
@@ -877,7 +877,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
       reasons.push(`${name}: ${referenceResolution.reason}`);
       continue;
     }
-    const activeValue = ingredient.activeMatterPct ?? ingredient.activePercent ?? ingredient.activeMatterPurity;
+    const activeValue: unknown = ingredient.activeMatterPct ?? ingredient.activePercent ?? ingredient.activeMatterPurity;
     if (activeValue === undefined || activeValue === null || activeValue === '') {
       reasons.push(`${name}: active matter is missing; catalog fallbacks are not applied by the Clint calculation.`);
       continue;
@@ -905,8 +905,6 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     });
     if (reference.chargeClass === 'anionic') hasAnionic = true;
     if (reference.chargeClass === 'amphoteric') hasAmphoteric = true;
-    if (reference.chargeClass === 'nonionic') hasNonionic = true;
-    if (reference.chargeClass === 'cationic') hasCationic = true;
   }
 
   if (reasons.length > 0) return unavailable(reasons);
@@ -978,7 +976,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     idealPpm: Number(idealPpm.toFixed(3)),
     modelType: 'Ideal Mixed Pseudophase (Clint Model)',
     classification: 'Theoretical Ideal Baseline',
-    hasSynergyPair: (hasAnionic && hasAmphoteric) || (hasAnionic && hasNonionic) || (hasAnionic && hasCationic) || (hasCationic && hasNonionic),
+    hasSynergyPair: hasAnionic && hasAmphoteric,
     hasElectrolyteScreening: hasElectrolyte,
     components: resolvedComponents,
     evidenceRefs: Array.from(new Set(components.map(component => component.reference.evidence.evidenceId))),
