@@ -59,4 +59,4 @@ filename,local_bytes,computed_md5,computed_sha256,status
 "Supplementary_RheometerData_v2.xlsx",162970,"c9b5a9cde073eb7c58933eec37a559a6","073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70","VERIFIED"
 ```
 
-Quarantine ledger `evidence_vault/corrupted_quarantine/QUARANTINE_MANIFEST.md` remains intact, ensuring the application and calculation engines never treat quarantined files as valid experimental evidence.
+The quarantine ledger `evidence_vault/corrupted_quarantine/QUARANTINE_MANIFEST.md` remains as historical provenance. The invalid `.xlsx` stub files themselves are absent; tests should generate corrupt bytes in temporary fixtures.
