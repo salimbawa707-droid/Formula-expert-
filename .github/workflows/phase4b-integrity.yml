@@ -58,6 +58,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Check ENG-002 catalog provenance register and eligibility report
+        run: npx tsx evidence_vault/scripts/audit_eng002_catalog.ts --check
+
       - name: Verify canonical evidence workbook bytes
         run: npm run verify:evidence
 

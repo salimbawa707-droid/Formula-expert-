@@ -31,6 +31,12 @@ export interface FormulationIngredient {
   activePercent?: number;
   activeMatterPct?: number;
   activeMatterPurity?: number;
+  /** Classification for activeMatterPct; catalog defaults and unverified entries are never treated as assay evidence. */
+  activeMatterInputSource?: 'SOURCE_BACKED' | 'CATALOG_DEFAULT' | 'USER_ENTERED' | 'UNKNOWN';
+  /** Identifier for a linked lot-specific assay/CoA when activeMatterInputSource is SOURCE_BACKED. */
+  activeMatterEvidenceId?: string;
+  /** URL or repository-relative source location; presence is gated, content is reviewed separately. */
+  activeMatterEvidenceUrl?: string;
   costPerKg?: number | null;
   hlb?: number;
   hlbValue?: number;

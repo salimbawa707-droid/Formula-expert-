@@ -522,7 +522,12 @@ export default function FormulaExpert({
           category: selected.category,
           role: selected.category || selected.function || getAuditedIngredientCategory(selected.name),
           function: selected.function,
-          activeMatterPct: isUnknownActive ? 0 : (selected.activeDefault ?? selected.activeMatter ?? 100),
+          activeMatterPct: isUnknownActive ? undefined : (selected.activeDefault ?? selected.activeMatter),
+          activeMatterInputSource: isUnknownActive ? 'UNKNOWN' : (selected.activeDefault ?? selected.activeMatter) !== undefined ? 'CATALOG_DEFAULT' : 'UNKNOWN',
+          activeMatterEvidenceId: undefined,
+          activeMatterEvidenceUrl: undefined,
+          canonicalIngredientId: selected.id,
+          identityType: selected.identityType,
           costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
           hlb: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
           hlbValue: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
@@ -553,7 +558,13 @@ export default function FormulaExpert({
           if (matched) {
             const isUnknownActive = matched.id === 'aristo-9' || matched.unknownProperties?.includes('activeMatter');
             updated.name = matched.name;
-            updated.activeMatterPct = isUnknownActive ? 0 : (matched.activeDefault ?? 100);
+            const preserveUserActiveMatter = ing.activeMatterInputSource === 'USER_ENTERED';
+            updated.activeMatterPct = preserveUserActiveMatter ? ing.activeMatterPct : isUnknownActive ? undefined : matched.activeDefault;
+            updated.activeMatterInputSource = preserveUserActiveMatter ? 'USER_ENTERED' : isUnknownActive ? 'UNKNOWN' : matched.activeDefault !== undefined ? 'CATALOG_DEFAULT' : 'UNKNOWN';
+            updated.activeMatterEvidenceId = undefined;
+            updated.activeMatterEvidenceUrl = undefined;
+            updated.canonicalIngredientId = matched.id;
+            updated.identityType = matched.identityType;
             updated.category = matched.category;
             updated.role = matched.category || matched.function || getAuditedIngredientCategory(matched.name);
             updated.function = matched.function;
@@ -568,13 +579,25 @@ export default function FormulaExpert({
             updated.phMin = matched.phMin;
             updated.phMax = matched.phMax;
           } else {
-            const autoActive = getDefaultActiveMatter(val);
             const autoCat = getAuditedIngredientCategory(val);
-            updated.activeMatterPct = autoActive;
+            const hasUserEnteredActiveMatter = ing.activeMatterInputSource === 'USER_ENTERED';
+            updated.canonicalIngredientId = undefined;
+            updated.identityType = undefined;
+            updated.casNumber = undefined;
+            updated.inciName = undefined;
+            updated.activeMatterPct = hasUserEnteredActiveMatter ? ing.activeMatterPct : undefined;
+            updated.activeMatterInputSource = hasUserEnteredActiveMatter ? 'USER_ENTERED' : 'UNKNOWN';
+            updated.activeMatterEvidenceId = undefined;
+            updated.activeMatterEvidenceUrl = undefined;
             updated.role = autoCat;
-            // Retain user price
+            // Retain user-entered price
             updated.costPerKg = ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null;
           }
+        }
+        if (field === 'activeMatterPct' || field === 'activePercent' || field === 'activeMatterPurity') {
+          updated.activeMatterInputSource = 'USER_ENTERED';
+          updated.activeMatterEvidenceId = undefined;
+          updated.activeMatterEvidenceUrl = undefined;
         }
         return updated;
       })

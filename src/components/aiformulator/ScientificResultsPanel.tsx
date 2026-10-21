@@ -420,14 +420,16 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-mono font-extrabold text-white">
-                    {scientificResults.cmc ? Math.round(scientificResults.cmc.ppm) : "N/A"}
+                    {scientificResults.cmc?.available ? Math.round(scientificResults.cmc.ppm) : "Unavailable"}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">
-                    ppm ({scientificResults.cmc ? scientificResults.cmc.molar.toFixed(2) : "--"} mM)
+                    {scientificResults.cmc?.available ? `ppm (${scientificResults.cmc.molar.toFixed(2)} mM)` : "no prediction"}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
-                  Clint ideal pseudophase model{scientificResults.cmc?.hasSynergyPair ? " • Synergy detected" : ""}{scientificResults.cmc?.hasElectrolyteScreening ? " • Electrolyte present" : ""}. Real CMC may shift with electrolytes.
+                  {scientificResults.cmc?.available
+                    ? `Clint ideal pseudophase model • ${scientificResults.cmc.eligibilityStatus} input provenance${scientificResults.cmc.hasSynergyPair ? " • Synergy class present" : ""}${scientificResults.cmc.hasElectrolyteScreening ? " • Electrolyte present" : ""}. Real CMC may shift with formulation conditions.`
+                    : (scientificResults.cmc?.eligibilityReasons.join(' ') || 'Insufficient supported surfactant inputs for a CMC prediction.')}
                 </p>
               </>
             ) : (

@@ -200,25 +200,15 @@ export function runP1Phase1MasterTestSuite() {
   // =========================================================================
   // SECTION 4: MIXED CMC ENGINE (CLINT IDEAL MODEL & ACTIVE FRACTION)
   // =========================================================================
-  // SLES (CMC = 0.3 mM, MW = 380) + CAPB (CMC = 0.09 mM, MW = 342)
-  // Formula: 10% SLES 70% (7.0% active) + 5% CAPB 30% (1.5% active)
-  // Total active = 8.5%
-  // alpha_SLES = 7.0 / 8.5 = 0.8235
-  // alpha_CAPB = 1.5 / 8.5 = 0.1765
-  // 1/CMC_mix = (0.8235 / 0.3) + (0.1765 / 0.09) = 2.745 + 1.961 = 4.706
-  // CMC_mix = 1 / 4.706 = 0.2125 mM
+  // SLES and CAPB carry hardcoded heuristic parameters and have no exact, applicable pure-CMC/MW source record.
   const cmcFormula: FormulationIngredient[] = [
     { id: '1', name: 'SLES 70%', percentage: 10, activeMatterPct: 70 },
     { id: '2', name: 'CAPB 30%', percentage: 5, activeMatterPct: 30 },
     { id: '3', name: 'Water', percentage: 85, activeMatterPct: 0 }
   ];
   const cmcRes = calculateMixedCMC(cmcFormula);
-  assert(cmcRes !== null, 'Mixed CMC', 'CMC Result Generated');
-  if (cmcRes) {
-    assertNear('Mixed CMC', 'Ideal Mixed CMC Molar (mM)', cmcRes.molar, 0.212, 0.05);
-    assert(cmcRes.modelType.includes('Clint'), 'Mixed CMC', 'Model Identified as Clint Ideal Mixed Pseudophase');
-    assert(cmcRes.hasSynergyPair === true, 'Mixed CMC', 'Anionic-Amphoteric Synergy Flagged');
-  }
+  assert(!cmcRes.available && cmcRes.eligibilityStatus === 'INSUFFICIENT_INPUTS',
+    'Mixed CMC', 'Unsupported SLES/CAPB inputs produce an explicit unavailable result without a heuristic prediction');
 
   // =========================================================================
   // SECTION 5: CHELATION & HARD WATER STOICHIOMETRY & 300 PPM LOAD
