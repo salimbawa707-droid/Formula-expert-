@@ -241,7 +241,7 @@ def analyze_rows(source_rows: list[dict[str, str]], source_sha256: str) -> tuple
     ledger: list[dict] = []
     for record in self_rows:
         ledger.append(_ledger_row(record, None, "NON_BINARY_SINGLE_COMPONENT_RECORD", "EXCLUDED",
-                                  "Same SMILES in both source component fields; not a binary mixture system."))
+                                  "Same SMILES in both component fields; not a binary mixture system."))
     for item in parsed_rows:
         key = item["key"]
         sid = system_ids[key]
