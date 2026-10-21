@@ -67,6 +67,7 @@ export interface EngineRecord {
   id: string;
   name: string;
   category: string;
+  implementationStatus?: 'IMPLEMENTED' | 'UNAVAILABLE';
   sourceFile: string;
   entryPoint: string;
   inputs: { name: string; unit: string; description: string }[];

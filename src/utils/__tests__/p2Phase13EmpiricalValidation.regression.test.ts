@@ -221,6 +221,7 @@ export async function runP2Phase13EmpiricalValidationTestSuite(): Promise<{ tota
 
   // 8. Model Validation Status Gate (Strict 13-condition enforcement)
   const gateResFail = ModelValidationStatusGate.evaluateLabValidatedStatusGate({
+    engineImplementationAvailable: true,
     realLabDataAvailable: false, // missing real data
     completeProvenance: true,
     validMeasurementMethod: true,
@@ -378,8 +379,8 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     datasetVersion: 'NO-PREDICTION-v1'
   });
   assert(
-    'No comparable predictions return unavailable metrics and do not mark leakage audit as passed',
-    noPredictionEval.mae === null && noPredictionEval.rmse === null && !noPredictionEval.leakageAudit.passed,
+    'Missing prediction inputs yield no fabricated observation pairs or validation metrics',
+    noPredictionEval.comparisons.length === 0 && noPredictionEval.mae === null && noPredictionEval.rmse === null && !noPredictionEval.leakageAudit.passed,
     { mae: noPredictionEval.mae, rmse: noPredictionEval.rmse, leakageAuditPassed: noPredictionEval.leakageAudit.passed },
     { mae: null, rmse: null, leakageAuditPassed: false }
   );

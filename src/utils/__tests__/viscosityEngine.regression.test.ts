@@ -27,10 +27,10 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
   // --------------------------------------------------------------------------
   const waterReport = ViscosityEngine.evaluateViscosity([]);
   assert(
-    'Baseline water viscosity is 1 cPs Newtonian',
-    waterReport.viscosityCp === 1 && waterReport.behavior === 'Newtonian' && waterReport.rating === 'Water-Thin',
-    { cp: waterReport.viscosityCp, behavior: waterReport.behavior, rating: waterReport.rating },
-    { cp: 1, behavior: 'Newtonian', rating: 'Water-Thin' }
+    'Empty-ingredient water reference is not a measured formula result',
+    waterReport.viscosityCp === 1 && waterReport.behavior === 'Newtonian' && waterReport.rating === 'Water-Thin' && waterReport.dataSource === 'reference_baseline' && waterReport.modelMaturity === 'REFERENCE_BASELINE',
+    { cp: waterReport.viscosityCp, behavior: waterReport.behavior, rating: waterReport.rating, dataSource: waterReport.dataSource, modelMaturity: waterReport.modelMaturity },
+    { cp: 1, behavior: 'Newtonian', rating: 'Water-Thin', dataSource: 'reference_baseline' }
   );
 
   // --------------------------------------------------------------------------
@@ -50,19 +50,21 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
   });
 
   assert(
-    'Standard hand dishwash matches authoritative benchmark (2000 - 3200 cPs)',
-    dishwashReport.dataSource === 'measured_authoritative' &&
+    'Standard hand dishwash uses a reference benchmark, not measured formula data (2000 - 3200 cPs)',
+    dishwashReport.dataSource === 'reference_baseline' &&
     dishwashReport.viscosityCp >= 2000 &&
     dishwashReport.viscosityCp <= 3200 &&
     dishwashReport.behavior === 'Pseudoplastic (Shear-Thinning)',
     {
       dataSource: dishwashReport.dataSource,
+      modelMaturity: dishwashReport.modelMaturity,
       viscosityCp: dishwashReport.viscosityCp,
       behavior: dishwashReport.behavior,
       benchmark: dishwashReport.authoritativeMatch?.benchmarkName
     },
     {
-      dataSource: 'measured_authoritative',
+      dataSource: 'reference_baseline',
+      modelMaturity: 'REFERENCE_BASELINE',
       viscosityCp: '>= 2000 and <= 3200',
       behavior: 'Pseudoplastic (Shear-Thinning)'
     }
@@ -82,8 +84,9 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
   });
 
   assert(
-    'Glass cleaner matches authoritative water-thin benchmark (1 - 10 cPs)',
-    glassReport.dataSource === 'measured_authoritative' &&
+    'Glass cleaner uses a reference benchmark, not measured formula data (1 - 10 cPs)',
+    glassReport.dataSource === 'reference_baseline' &&
+    glassReport.modelMaturity === 'REFERENCE_BASELINE' &&
     glassReport.viscosityCp <= 10 &&
     glassReport.rating === 'Water-Thin' &&
     glassReport.behavior === 'Newtonian',
@@ -104,7 +107,9 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
 
   assert(
     'Xanthan gum imparts high yield stress and strong pseudoplasticity (n < 0.35)',
-    xanthanReport.shearProfile.flowIndexN <= 0.35 &&
+    xanthanReport.dataSource === 'model_derived' &&
+    xanthanReport.modelMaturity === 'SEMI_EMPIRICAL_SCREENING' &&
+    xanthanReport.shearProfile.flowIndexN <= 0.35,
     xanthanReport.shearProfile.yieldStressPa >= 1.0 &&
     xanthanReport.viscosityCp >= 2000,
     {

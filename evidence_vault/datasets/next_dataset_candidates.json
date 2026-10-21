@@ -35,18 +35,34 @@
     },
     {
       "id": "ENG-003",
-      "name": "RheologyViscosityEngine",
-      "sourcePath": "src/core/rheologyEngine.ts",
-      "predictedProperties": ["apparentViscosity", "flowBehaviorIndex (n)", "yieldStress (tau_0)"],
-      "requiredInputs": [
-        { "name": "shearRate", "unit": "1/s (0.1 to 1000)" },
-        { "name": "surfactantTotal", "unit": "% w/w" },
-        { "name": "naclElectrolyte", "unit": "% w/w" },
-        { "name": "associativePolymer", "unit": "% w/w" }
+      "name": "ViscosityEngine (Semi-empirical formulation screening)",
+      "sourcePath": "src/utils/viscosityEngine.ts",
+      "predictedProperties": [
+        "screening apparent viscosity (cP)",
+        "approximate shear-rate profile",
+        "reference baseline match (not a formula prediction)"
       ],
-      "models": ["Herschel-Bulkley flow curve", "Carreau-Yasuda model", "Salt-thickening quadratic polynomial"],
-      "existingEvidence": ["EVD-003 (Chitre et al. Shampoo Sci Data 2024 - uninspected)", "EVD-005 (RheoData - uninspected)"],
-      "missingEvidence": "Standard rotational shear flow curves (shear stress vs shear rate) on surfactant-thickened detergent solutions."
+      "requiredInputs": [
+        {
+          "name": "ingredient array",
+          "unit": "ingredient IDs, grades, percentages and active matter where available"
+        },
+        {
+          "name": "product category",
+          "unit": "optional category"
+        },
+        {
+          "name": "pH",
+          "unit": "optional pH"
+        }
+      ],
+      "models": [
+        "Semi-empirical ingredient-rule screening heuristics; not a fitted flow-curve model"
+      ],
+      "existingEvidence": [
+        "EVD-006 (Zenodo 18961871; descriptive measurements inspected; no direct formula prediction pairs)"
+      ],
+      "missingEvidence": "Identified formulations, condition-matched model predictions, independent calibration and validation observations, uncertainty and applicability evidence."
     },
     {
       "id": "ENG-004",
@@ -64,17 +80,17 @@
     },
     {
       "id": "ENG-005",
-      "name": "FoamKineticsEngine",
-      "sourcePath": "src/core/foamKineticsEngine.ts",
-      "predictedProperties": ["initialFoamVolume (V_0)", "foamHalfLife (t_1/2)", "soilDepressionFactor"],
-      "requiredInputs": [
-        { "name": "surfactantChassis", "unit": "composition matrix" },
-        { "name": "defomingSoilLoad", "unit": "ppm sebum / oil" },
-        { "name": "waterHardness", "unit": "ppm CaCO3" }
+      "name": "Foam Kinetics Engine (planned; unavailable)",
+      "sourcePath": null,
+      "predictedProperties": [],
+      "requiredInputs": [],
+      "models": [],
+      "existingEvidence": [
+        "EVD-006 (Zenodo 18961871; descriptive foam observations inspected, no executable ENG-005 implementation)"
       ],
-      "models": ["Bikerman dynamic foam generation equation", "Ross-Miles exponential decay model", "Gibbs-Marangoni lamellar drainage film equation"],
-      "existingEvidence": ["EVD-006 (Zenodo 18961871 - uninspected lead)"],
-      "missingEvidence": "Dynamic foam height time series, lamellar film drainage thickness, and bubble size distribution under controlled hardness."
+      "missingEvidence": "No implementation exists at audited HEAD. Dynamic foam output definitions, matched formulations and observations, calibration, independent validation, and uncertainty evidence remain absent.",
+      "implementationStatus": "UNAVAILABLE",
+      "sourcePathNote": "No implementation file or callable entry point found at audited main HEAD 479bf76417de4c598734ae8bd3ccf77f3e086f7d."
     },
     {
       "id": "ENG-006",
@@ -142,8 +158,8 @@
         "ingestionFeasibility": 98,
         "totalScore": 96.0
       },
-      "verdict": "SELECTED_NEXT_DATASET",
-      "rationale": "Directly targets the two zero-evidence engines (ENG-005 Foam Kinetics and ENG-003 Rheology). Small downloadable files (< 200 KB per table), verified MD5 checksums, CC-BY-4.0 license, and primary peer-reviewed experimental measurements on commercial household detergents."
+      "verdict": "INSPECTED_DESCRIPTIVE_DATASET_NOT_VALIDATION_READY",
+      "rationale": "Peer-reviewed descriptive measurements are present, but commercial formulation identities/compositions are undisclosed and no direct model prediction pairs exist. Dataset is useful for exploratory descriptive baselines only; it cannot validate ENG-003 or unavailable ENG-005."
     },
     {
       "candidateId": "CAND-02",
@@ -287,6 +303,8 @@
       }
     ],
     "ingestionStorageTarget": "data/evidence/zenodo_18961871/",
+    "readiness": "INSPECTED_DESCRIPTIVE_ONLY",
+    "note": "Not a validation dataset for current engines absent identified formula records and matched predictions. ENG-005 implementation is unavailable.",
     "requiredDependencies": ["xlsx (or python openpyxl via script) for parsing tabular sheets"]
   }
 }

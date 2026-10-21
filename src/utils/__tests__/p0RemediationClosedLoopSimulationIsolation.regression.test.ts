@@ -248,6 +248,7 @@ export function runP0RemediationClosedLoopTestSuite(): {
 
   // TEST 19: ModelValidationStatusGate blocks LAB_VALIDATED when real lab data is absent
   const gateRes = ModelValidationStatusGate.evaluateLabValidatedStatusGate({
+    engineImplementationAvailable: true,
     realLabDataAvailable: false,
     completeProvenance: false,
     validMeasurementMethod: false,

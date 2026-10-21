@@ -1,0 +1,532 @@
+{
+  "evaluation_id": "task2-water-reference-baseline-round1",
+  "status": "DESCRIPTIVE_BASELINE_ONLY_NO_MODEL_VALIDATION",
+  "source": {
+    "dataset": "Zenodo record 18961871",
+    "workbook": "Supplementary_SolutionFlowCurves.xlsx",
+    "worksheet": "SolutionFlowCurves",
+    "sha256": "90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590",
+    "license": "CC BY 4.0",
+    "unit_row": 2,
+    "source_rows": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46
+    ]
+  },
+  "model_reference": {
+    "repository_commit": "479bf76417de4c598734ae8bd3ccf77f3e086f7d",
+    "source_path": "src/utils/viscosityEngine.ts",
+    "source_blob_sha": "fd8fe360a9cf923953df561366c615d953a84701",
+    "application_entry_point": "ViscosityEngine.evaluateViscosity([])",
+    "observed_source_contract": "createWaterBaselineReport() in the audited 479bf76417de4c598734ae8bd3ccf77f3e086f7d source snapshot returns viscosityCp=1 at 25 C; that snapshot mislabeled the reference measured_authoritative, corrected to reference_baseline by Task 2A.",
+    "reference_value": 1.0,
+    "unit": "cP (mPa s)",
+    "classification": "reference_baseline_not_formula_prediction"
+  },
+  "matching": {
+    "variable": "dynamic viscosity",
+    "conversion": "Pa s * 1000 = cP",
+    "source_conditions": "Water_1 to Water_3 flow curves; measured temperature 19.99-20.00 C; shear rate is recorded per row",
+    "reference_condition": "25 C fixed pure-water reference",
+    "comparability": "descriptive_only_temperature_not_matched",
+    "eligible_for_direct_formula_prediction_validation": 0,
+    "formula_inputs_available_for_detergent_samples": false,
+    "eligible_for_descriptive_reference_baseline": 42,
+    "detergent_formula_rows_excluded": 168
+  },
+  "baseline_comparison": {
+    "classification": "DESCRIPTIVE_BASELINE_COMPARISON_NOT_MODEL_VALIDATION",
+    "pointwise_correlated_flow_curve_rows": {
+      "n": 42,
+      "mae_cP": 0.04742666666666667,
+      "rmse_cP": 0.08896565891773449,
+      "bias_predicted_minus_measured_cP": -0.028730476190476178
+    },
+    "curve_means_grouped_by_source_sample_label": {
+      "n": 3,
+      "mae_cP": 0.029615238095238066,
+      "rmse_cP": 0.04862620458609714,
+      "bias_predicted_minus_measured_cP": -0.028730476190476157
+    }
+  },
+  "model_validation_metrics": null,
+  "curves": {
+    "Water_1": {
+      "source_rows": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "row_count": 14,
+      "mean_observed_viscosity_cP": 1.0033735714285714,
+      "temperature_min_C": 20.0,
+      "temperature_max_C": 20.0,
+      "shear_rate_min_s-1": 1.0,
+      "shear_rate_max_s-1": 20.0,
+      "metrics_vs_reference": {
+        "n": 1,
+        "mae_cP": 0.0033735714285714202,
+        "rmse_cP": 0.0033735714285714202,
+        "bias_predicted_minus_measured_cP": -0.0033735714285714202
+      }
+    },
+    "Water_2": {
+      "source_rows": [
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "row_count": 14,
+      "mean_observed_viscosity_cP": 1.084145,
+      "temperature_min_C": 19.99,
+      "temperature_max_C": 20.0,
+      "shear_rate_min_s-1": 1.0,
+      "shear_rate_max_s-1": 20.0,
+      "metrics_vs_reference": {
+        "n": 1,
+        "mae_cP": 0.08414499999999991,
+        "rmse_cP": 0.08414499999999991,
+        "bias_predicted_minus_measured_cP": -0.08414499999999991
+      }
+    },
+    "Water_3": {
+      "source_rows": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "row_count": 14,
+      "mean_observed_viscosity_cP": 0.9986728571428571,
+      "temperature_min_C": 19.99,
+      "temperature_max_C": 20.0,
+      "shear_rate_min_s-1": 1.0,
+      "shear_rate_max_s-1": 20.0,
+      "metrics_vs_reference": {
+        "n": 1,
+        "mae_cP": 0.00132714285714286,
+        "rmse_cP": 0.00132714285714286,
+        "bias_predicted_minus_measured_cP": 0.00132714285714286
+      }
+    }
+  },
+  "lineage": [
+    {
+      "source_row": 3,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 1.0,
+      "observed_viscosity_Pa_s": 0.0010428,
+      "observed_viscosity_cP": 1.0428,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 4,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 1.26,
+      "observed_viscosity_Pa_s": 0.00094608,
+      "observed_viscosity_cP": 0.9460799999999999,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 5,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 1.58,
+      "observed_viscosity_Pa_s": 0.00092258,
+      "observed_viscosity_cP": 0.92258,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 6,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 2.0,
+      "observed_viscosity_Pa_s": 0.0010164,
+      "observed_viscosity_cP": 1.0164,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 7,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 2.51,
+      "observed_viscosity_Pa_s": 0.0010148,
+      "observed_viscosity_cP": 1.0148,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 8,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 3.16,
+      "observed_viscosity_Pa_s": 0.00095959,
+      "observed_viscosity_cP": 0.9595899999999999,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 9,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 3.98,
+      "observed_viscosity_Pa_s": 0.0010099,
+      "observed_viscosity_cP": 1.0099,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 10,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 5.01,
+      "observed_viscosity_Pa_s": 0.0010175,
+      "observed_viscosity_cP": 1.0174999999999998,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 11,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 6.31,
+      "observed_viscosity_Pa_s": 0.00099774,
+      "observed_viscosity_cP": 0.99774,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 12,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 7.94,
+      "observed_viscosity_Pa_s": 0.0010219,
+      "observed_viscosity_cP": 1.0219,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 13,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 10.0,
+      "observed_viscosity_Pa_s": 0.00099714,
+      "observed_viscosity_cP": 0.9971400000000001,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 14,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 12.6,
+      "observed_viscosity_Pa_s": 0.0010273,
+      "observed_viscosity_cP": 1.0273,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 15,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 15.9,
+      "observed_viscosity_Pa_s": 0.0010271,
+      "observed_viscosity_cP": 1.0271,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 16,
+      "sample_label": "Water_1",
+      "shear_rate_s-1": 20.0,
+      "observed_viscosity_Pa_s": 0.0010464,
+      "observed_viscosity_cP": 1.0464,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 18,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 1.0,
+      "observed_viscosity_Pa_s": 0.0014152,
+      "observed_viscosity_cP": 1.4152,
+      "temperature_C": 19.99
+    },
+    {
+      "source_row": 19,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 1.26,
+      "observed_viscosity_Pa_s": 0.0013047,
+      "observed_viscosity_cP": 1.3047,
+      "temperature_C": 19.99
+    },
+    {
+      "source_row": 20,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 1.59,
+      "observed_viscosity_Pa_s": 0.0010177,
+      "observed_viscosity_cP": 1.0177,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 21,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 2.0,
+      "observed_viscosity_Pa_s": 0.001047,
+      "observed_viscosity_cP": 1.047,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 22,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 2.51,
+      "observed_viscosity_Pa_s": 0.00096365,
+      "observed_viscosity_cP": 0.96365,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 23,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 3.16,
+      "observed_viscosity_Pa_s": 0.0010824,
+      "observed_viscosity_cP": 1.0824,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 24,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 3.98,
+      "observed_viscosity_Pa_s": 0.0010202,
+      "observed_viscosity_cP": 1.0202,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 25,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 5.01,
+      "observed_viscosity_Pa_s": 0.0010903,
+      "observed_viscosity_cP": 1.0903,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 26,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 6.31,
+      "observed_viscosity_Pa_s": 0.0010797,
+      "observed_viscosity_cP": 1.0797,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 27,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 7.94,
+      "observed_viscosity_Pa_s": 0.0010724,
+      "observed_viscosity_cP": 1.0724,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 28,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 10.0,
+      "observed_viscosity_Pa_s": 0.0010222,
+      "observed_viscosity_cP": 1.0222,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 29,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 12.6,
+      "observed_viscosity_Pa_s": 0.00099318,
+      "observed_viscosity_cP": 0.99318,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 30,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 15.9,
+      "observed_viscosity_Pa_s": 0.0010239,
+      "observed_viscosity_cP": 1.0238999999999998,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 31,
+      "sample_label": "Water_2",
+      "shear_rate_s-1": 20.0,
+      "observed_viscosity_Pa_s": 0.0010455,
+      "observed_viscosity_cP": 1.0455,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 33,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 1.0,
+      "observed_viscosity_Pa_s": 0.00090089,
+      "observed_viscosity_cP": 0.90089,
+      "temperature_C": 19.99
+    },
+    {
+      "source_row": 34,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 1.26,
+      "observed_viscosity_Pa_s": 0.00097626,
+      "observed_viscosity_cP": 0.9762599999999999,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 35,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 1.59,
+      "observed_viscosity_Pa_s": 0.00099368,
+      "observed_viscosity_cP": 0.99368,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 36,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 2.0,
+      "observed_viscosity_Pa_s": 0.0009945,
+      "observed_viscosity_cP": 0.9944999999999999,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 37,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 2.51,
+      "observed_viscosity_Pa_s": 0.0010079,
+      "observed_viscosity_cP": 1.0079,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 38,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 3.16,
+      "observed_viscosity_Pa_s": 0.0010177,
+      "observed_viscosity_cP": 1.0177,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 39,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 3.98,
+      "observed_viscosity_Pa_s": 0.00096755,
+      "observed_viscosity_cP": 0.9675499999999999,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 40,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 5.01,
+      "observed_viscosity_Pa_s": 0.00099508,
+      "observed_viscosity_cP": 0.99508,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 41,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 6.31,
+      "observed_viscosity_Pa_s": 0.0010188,
+      "observed_viscosity_cP": 1.0188000000000001,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 42,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 7.94,
+      "observed_viscosity_Pa_s": 0.00099946,
+      "observed_viscosity_cP": 0.99946,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 43,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 10.0,
+      "observed_viscosity_Pa_s": 0.0010344,
+      "observed_viscosity_cP": 1.0344,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 44,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 12.6,
+      "observed_viscosity_Pa_s": 0.0010148,
+      "observed_viscosity_cP": 1.0148,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 45,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 15.9,
+      "observed_viscosity_Pa_s": 0.001017,
+      "observed_viscosity_cP": 1.017,
+      "temperature_C": 20.0
+    },
+    {
+      "source_row": 46,
+      "sample_label": "Water_3",
+      "shear_rate_s-1": 20.0,
+      "observed_viscosity_Pa_s": 0.0010434,
+      "observed_viscosity_cP": 1.0434,
+      "temperature_C": 20.0
+    }
+  ],
+  "validation": {
+    "calibration_count": 0,
+    "held_out_count": 0,
+    "leakage_control": "No calibration or split was performed. Rows within each shear-rate curve were not treated as independent formula replicates; grouped curve summaries are reported separately.",
+    "uncertainty": "No confidence interval reported: three source-labelled water curves, no per-measurement uncertainty or independent replicate provenance established.",
+    "direct_model_validation": false,
+    "foam_model_comparison": "not performed: ENG-005 registry implementation path is absent from audited repository commit and no matching executable foam kinetics model was located."
+  }
+}
+

@@ -286,6 +286,7 @@ export class ModelValidationStatusGate {
    * strictly including Applicability Domain validation.
    */
   public static evaluateLabValidatedStatusGate(input: {
+    engineImplementationAvailable: boolean;
     realLabDataAvailable: boolean;
     completeProvenance: boolean;
     validMeasurementMethod: boolean;
@@ -303,6 +304,7 @@ export class ModelValidationStatusGate {
   }): { status: ModelValidationStatus15; reasons: string[] } {
     const failures: string[] = [];
 
+    if (!input.engineImplementationAvailable) failures.push('Registered engine implementation is unavailable or unverified.');
     if (!input.realLabDataAvailable) failures.push('Missing real laboratory data.');
     if (!input.completeProvenance) failures.push('Incomplete provenance metadata.');
     if (!input.validMeasurementMethod) failures.push('Unregistered or invalid measurement method.');

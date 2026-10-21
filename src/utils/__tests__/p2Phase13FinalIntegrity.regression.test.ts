@@ -32,6 +32,7 @@ import {
   ModelValidationStatusGate,
   FrozenModelVersion
 } from '../empiricalCalibrationEngine';
+import { INITIAL_VAULT_STATE } from '../../domain/vault/initialData';
 
 export interface P2Phase13Summary {
   passed: number;
@@ -272,8 +273,22 @@ OBS-DSVER-1,LAUNDRY_LIQUID,F-1,v2.1,BATCH-1,Cleaning Score,85.0,Score Index,ASTM
     pH: 12.0 // exceeds 9.5
   });
 
+  const registeredRheology = INITIAL_VAULT_STATE.engines.find(engine => engine.id === 'ENG-003');
+  const registeredFoam = INITIAL_VAULT_STATE.engines.find(engine => engine.id === 'ENG-005');
+  assert(
+    'TEST 7b',
+    'Registry points ENG-003 to its real implementation and marks ENG-005 unavailable',
+    registeredRheology?.implementationStatus === 'IMPLEMENTED' &&
+      registeredRheology.sourceFile === 'src/utils/viscosityEngine.ts' &&
+      registeredFoam?.implementationStatus === 'UNAVAILABLE' &&
+      registeredFoam.scientificMaturity === 'BLOCKED',
+    { rheology: registeredRheology?.sourceFile, foamStatus: registeredFoam?.implementationStatus },
+    { rheology: 'src/utils/viscosityEngine.ts', foamStatus: 'UNAVAILABLE' }
+  );
+
   // TEST 8: Outside-domain prediction cannot become LAB_VALIDATED
   const gateOutsideDomain = ModelValidationStatusGate.evaluateLabValidatedStatusGate({
+    engineImplementationAvailable: true,
     realLabDataAvailable: true,
     completeProvenance: true,
     validMeasurementMethod: true,
@@ -302,12 +317,39 @@ OBS-DSVER-1,LAUNDRY_LIQUID,F-1,v2.1,BATCH-1,Cleaning Score,85.0,Score Index,ASTM
     'VALIDATED_WITH_LIMITATIONS or VALIDATION_PENDING'
   );
 
+  // TEST 8b: An unavailable engine cannot pass the LAB_VALIDATED gate
+  const gateMissingImplementation = ModelValidationStatusGate.evaluateLabValidatedStatusGate({
+    engineImplementationAvailable: false,
+    realLabDataAvailable: true,
+    completeProvenance: true,
+    validMeasurementMethod: true,
+    sampleSufficiencyPassed: true,
+    leakageAuditPassed: true,
+    calibrationCompleted: true,
+    independentValidationCompleted: true,
+    requiredMetricsPassed: true,
+    uncertaintyEvaluated: true,
+    categoryScopeDefined: true,
+    limitationsDocumented: true,
+    modelVersionFrozen: true,
+    evidenceRecordsRetained: true,
+    applicabilityStatus: evalWithin.status
+  });
+  assert(
+    'TEST 8b',
+    'Unavailable engine implementation cannot pass LAB_VALIDATED gate',
+    gateMissingImplementation.status !== 'LAB_VALIDATED' && gateMissingImplementation.reasons.some(r => r.includes('implementation is unavailable')),
+    gateMissingImplementation.status,
+    'VALIDATION_PENDING or VALIDATED_WITH_LIMITATIONS'
+  );
+
   // TEST 9: Unknown domain returns APPLICABILITY_UNKNOWN
   const evalUnknown = HardenedEmpiricalAccuracyEngine.evaluateApplicabilityDomain(null, {
     productCategory: 'LAUNDRY_LIQUID'
   });
 
   const gateUnknownDomain = ModelValidationStatusGate.evaluateLabValidatedStatusGate({
+    engineImplementationAvailable: true,
     realLabDataAvailable: true,
     completeProvenance: true,
     validMeasurementMethod: true,

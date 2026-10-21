@@ -14,8 +14,8 @@ import { PHCalculationOptions } from '../domain/ph/types';
  * 1. Single Authoritative Source of Truth for Viscosity:
  *    - Replaces ad-hoc string and mock heuristics across the application.
  *    - Distinguishes explicitly between:
- *      * 'measured_authoritative': Direct empirical benchtop benchmark formulations
- *      * 'model_derived': Validated mechanistic models (micellar packing, polymer network, hydrotropes, Arrhenius temperature)
+ *      * 'reference_baseline': Named benchmark references, not measurements of the evaluated formula
+ *      * 'model_derived': Semi-empirical formula screening estimates; they are not lab-validated by this engine
  *      * 'unsupported': Dry powders, solid bars, anhydrous tablets, or incomplete non-fluid inputs
  * 
  * 2. Rheological Mechanisms Evaluated:
@@ -42,7 +42,7 @@ import { PHCalculationOptions } from '../domain/ph/types';
  * ============================================================================
  */
 
-export type ViscosityDataSource = 'measured_authoritative' | 'model_derived' | 'unsupported';
+export type ViscosityDataSource = 'reference_baseline' | 'model_derived' | 'unsupported';
 export type ViscosityConfidence = 'High' | 'Medium' | 'Low' | 'Unsupported';
 
 export type RheologyBehavior = 
@@ -134,7 +134,7 @@ export interface ViscosityReport {
   warnings: string[];
   recommendations: string[];
   assumedShearRate?: string;
-  modelMaturity?: string;
+  modelMaturity?: 'REFERENCE_BASELINE' | 'SEMI_EMPIRICAL_SCREENING';
   applicabilityDomain?: string;
   limitations?: string[];
   uncertainty?: {
@@ -657,7 +657,7 @@ export class ViscosityEngine {
     if (benchmarkMatch) {
       computedViscosityCp = benchmarkMatch.typicalCp;
       behavior = benchmarkMatch.behavior;
-      dataSource = 'measured_authoritative';
+      dataSource = 'reference_baseline';
       confidence = 'High';
       primaryMechanism = benchmarkMatch.hasPolymer ? 'Polymeric Chain Entanglement' : 'Micellar Rod / Salt Curve';
       diagnostics.push(`Matched authoritative benchmark: "${benchmarkMatch.benchmarkName}" (Reference: ${benchmarkMatch.typicalCp} cPs).`);
@@ -791,7 +791,7 @@ export class ViscosityEngine {
       warnings,
       recommendations,
       assumedShearRate: '~20 s^-1 (Standard Brookfield RVT @ 20 RPM)',
-      modelMaturity: 'SEMI_EMPIRICAL_SCREENING',
+      modelMaturity: benchmarkMatch ? 'REFERENCE_BASELINE' : 'SEMI_EMPIRICAL_SCREENING',
       applicabilityDomain: 'Aqueous fluid surfactant formulations at 4°C to 40°C',
       limitations: [
         'Single scalar viscosity assumes standard test shear rate condition (~20 s^-1 / Brookfield RVT @ 20 RPM at 25°C).',
@@ -861,7 +861,8 @@ export class ViscosityEngine {
       viscosityRange: '1 - 5 cPs',
       rating: 'Water-Thin',
       confidence: 'High',
-      dataSource: 'measured_authoritative',
+      dataSource: 'reference_baseline',
+      modelMaturity: 'REFERENCE_BASELINE',
       behavior: 'Newtonian',
       mechanism: 'Solvent / Dilute Aqueous',
       isFluid: true,

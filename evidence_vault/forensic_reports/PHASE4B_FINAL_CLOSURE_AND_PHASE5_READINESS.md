@@ -72,3 +72,27 @@ The publisher article describes four UK washing-up liquids, 2 mL product in 300 
 - `evidence_vault/forensic_reports/PHASE4B_FINAL_CLOSURE_AND_PHASE5_READINESS.md`
 
 
+
+
+## Task 2A — Repository integration and scientific defect closure
+
+**Audit baseline:** latest `main` before this change, `479bf76417de4c598734ae8bd3ccf77f3e086f7d`. **Decision:** Phase 4B remains **OPEN**; Phase 5 remains **LOCKED**.
+
+### Implementation and provenance audit
+
+- ENG-003 registry metadata previously pointed to missing `src/core/rheologyEngine.ts`. The verified implementation is `src/utils/viscosityEngine.ts`, `ViscosityEngine.evaluateViscosity(ingredients, options)`. It is recorded as semi-empirical screening. It accepts ingredient compositions and optional category/pH inputs; it does not predict the workbook’s formula-specific curve from measured rows. The registry now reflects the real entry point, output scope and lack of validation.
+- ENG-005 previously pointed to missing `src/core/foamKineticsEngine.ts` and a nonexistent callable entry point. The registry now explicitly marks it `UNAVAILABLE` and `BLOCKED`, with no executable inputs, outputs or equations represented as implemented. No stub was added.
+- Empty-input pure water and named benchmark-match outputs were labeled `measured_authoritative` in ENG-003. They are now `reference_baseline` with maturity `REFERENCE_BASELINE`. Formula-specific rule outputs remain `model_derived` with maturity `SEMI_EMPIRICAL_SCREENING`. Measured laboratory observations remain in the separate lab evidence schema with provenance `MEASURED`.
+- The lab-validation status gate now requires `engineImplementationAvailable`. An unavailable or unverified engine adds a blocking reason, even when every other gate prerequisite is true.
+
+### Baseline evidence (not model validation)
+
+The empty-ingredient water reference remains fixed at 1 cP at 25 C. In the SolutionFlowCurves workbook, the three water-labelled curves contain 42 points at 19.99–20.00 C. After converting measured viscosity from Pa·s to cP, the descriptive baseline comparison has pointwise MAE 0.04743 cP, RMSE 0.08897 cP and bias −0.02873 cP (reference minus measured). Grouping by the three curve labels gives n=3, MAE 0.02962 cP, RMSE 0.04863 cP and bias −0.02873 cP. The points within each curve are correlated; no confidence interval is claimed. Temperature is not matched. These values are explicitly classified as baseline comparison metrics, with no model-validation metrics recorded.
+
+The 168 A–D detergent product curve points remain ineligible because formulation composition/fingerprint is undisclosed. Calibration and independent holdout counts are zero. No detergent-formula prediction-to-observation pairs were generated. Rheometer and foam datasets remain observable/descriptive only. Bubble radii and film summaries retain formula transformation lineage and are not treated as independent raw measurements.
+
+### Reproducibility and tests
+
+The new `evidence_vault/scripts/evaluate_water_reference.py` checks the pinned source SHA-256, extracts all water-curve source rows, performs the Pa·s-to-cP conversion, and writes the baseline-only JSON artifact with row lineage. The paired regression tests assert baseline classification, null model-validation metrics, 42-point and grouped results, unit conversion, source hash, and zero formula-eligible pairs. TypeScript regression tests now assert water-reference provenance/maturity, preservation of semi-empirical formula outputs, registry availability states, unavailable-engine gate blocking, and no fabricated pairs when predictions are absent.
+
+The Phase 4B workflow runs the new evaluator and its regression tests before existing typecheck/test/build steps. The separate Engine verification workflow runs the repository regression suite, typecheck, production build and HTTP smoke test. Results for the final commit are recorded by its GitHub Actions runs; passing software tests do not close scientific validation gates.
