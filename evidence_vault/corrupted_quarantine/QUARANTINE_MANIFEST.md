@@ -6,8 +6,8 @@
 
 The two 9-byte files listed below were invalid text stubs, not scientific evidence. They have been removed from the repository after canonical workbook files were confirmed present at their official dataset paths. The stubs must not be restored or consumed by any calculation engine.
 
-- `Supplementary_SolutionFlowCurves.xlsx` — historical stub: 9 bytes, literal `corrupted\\n`
-- `Supplementary_FilmThickness_v1.xlsx` — historical stub: 9 bytes, literal `corrupted\\n`
+- `Supplementary_SolutionFlowCurves.xlsx` — historical stub: 9 bytes, literal `corrupted\n`
+- `Supplementary_FilmThickness_v1.xlsx` — historical stub: 9 bytes, literal `corrupted\n`
 
 ## Canonical files retained
 
