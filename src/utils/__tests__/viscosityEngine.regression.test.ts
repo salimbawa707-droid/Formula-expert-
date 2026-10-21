@@ -109,7 +109,7 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
     'Xanthan gum imparts high yield stress and strong pseudoplasticity (n < 0.35)',
     xanthanReport.dataSource === 'model_derived' &&
     xanthanReport.modelMaturity === 'SEMI_EMPIRICAL_SCREENING' &&
-    xanthanReport.shearProfile.flowIndexN <= 0.35,
+    xanthanReport.shearProfile.flowIndexN <= 0.35 &&
     xanthanReport.shearProfile.yieldStressPa >= 1.0 &&
     xanthanReport.viscosityCp >= 2000,
     {
