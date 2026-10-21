@@ -12,12 +12,12 @@
 
 ## 1. Executive Summary & Required Workbook Statuses
 
-Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live recovery from Zenodo was attempted, local canonical copies were cryptographically verified, and quarantined stubs were preserved without overwriting:
+Historical execution summary only: the original run inspected the workbooks and recorded matching checksums while the corrupt stubs still existed. The current repository must be rechecked using `npm run verify:evidence`; this report is not proof that the current checkout has passed that command.
 
 ### Supplementary_SolutionFlowCurves.xlsx
 - **Explicit Status:** **RECOVERED AND VERIFIED**
 - **Network Fetch Outcome:** `BLOCKED — ORIGINAL SOURCE UNAVAILABLE (HTTP 403 Forbidden)`
-- **Cryptographic Authenticity:** 100% Bit-for-bit exact match
+- **Historical cryptographic result:** reported as a bit-for-bit match in that execution; rerun the current integrity gate
 - **Historical Quarantine State:** 9-byte stub was present when this report was generated; it was subsequently removed
 
 ### Supplementary_FilmThickness_v1.xlsx
@@ -30,7 +30,7 @@ Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live re
 
 ## 2. Before / After Status Audit
 
-| Workbook | Quarantine (Before) | Quarantine MD5 | Canonical Vault Location | File Size | Expected MD5 | Verified MD5 | Verification Verdict |
+| Workbook | Historical quarantine state | Quarantine MD5 | Canonical Vault Location | File Size | Expected MD5 | Verified MD5 | Verification Verdict |
 | :--- | :---: | :---: | :--- | :---: | :---: | :---: | :---: |
 | **Supplementary_SolutionFlowCurves.xlsx** | 9 B (text stub) | `88ed91fad9...` | `evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx` | 22,280 B | `cd5bfd6e95...` | `cd5bfd6e95...` | **RECOVERED AND VERIFIED** |
 | **Supplementary_FilmThickness_v1.xlsx** | 9 B (text stub) | `88ed91fad9...` | `evidence_vault/datasets/zenodo_18961871/Supplementary_FilmThickness_v1.xlsx` | 149,923 B | `bc9582baaf...` | `bc9582baaf...` | **RECOVERED AND VERIFIED** |
