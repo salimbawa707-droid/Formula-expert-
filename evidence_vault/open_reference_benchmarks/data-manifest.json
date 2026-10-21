@@ -6,7 +6,7 @@
   "datasets": [
     {
       "path": "ph_standards/iupac_2002_ph_standards.csv",
-      "sha256": "cff270c8803132434c520d4a371c128d7b5d16b35e2a776094514aea108e4e55",
+      "sha256": "b3fce32985f7d233fe747e59a6d1f76ac38d8acc0ab0f0344187ef57306f5338",
       "rows": 20,
       "content": "Selected primary and secondary pH reference values (Tables 2 and 3) with engine recipe mapping and explicit coverage gaps.",
       "source": "R. P. Buck et al., Measurement of pH. Definition, standards, and procedures (IUPAC Recommendations 2002), Pure Appl. Chem. 74(11), 2169-2200 (2002)",
@@ -18,7 +18,7 @@
     },
     {
       "path": "cmc_pure/psdi_nist_detergent_homolog_cmc.csv",
-      "sha256": "41c7b4feedfebb48121f60d6ef9aa36e1a6d5b5bb082b6c0344d0777938fc45d",
+      "sha256": "13563be32e71480db812ea014ff9371988147921bbf85a5b93c2667942d1f72c",
       "rows": 63,
       "content": "Filtered slice of the PSDI/NIST NSRDS-36 CMC table: compounds 1 (SDS), 21 (DDAO), 51 (SDBS), 121 (C12 betaine), 279 (C12 BDDAC); no additives, molar units, 20-30 C, evaluation codes 1/2/3/P/L.",
       "source": "Frey, J. G.; Pearman-Kanza, S.; Munday, S.; Allam, T. Critical Micelle Concentration (CMC) Data Collection, PSDI (2024), digitising Mukerjee & Mysels, NSRDS-NBS 36 (1971)",
@@ -29,7 +29,7 @@
     },
     {
       "path": "cmc_mixed/p2surf_binary_mixture_cmc.csv",
-      "sha256": "d9b6ebb2e34f7ec1be4ea9a9ef799bbe0313c0c501c34a155be40cc0f7bbbe51",
+      "sha256": "f269e73d3cdf35e064ee253295d1cf990322cc845d62a4f8bd2414ca21dd0b24",
       "rows": 979,
       "content": "Binary surfactant mixture CMC values compiled from literature (SMILES, mole fraction, log10 CMC in micromolar).",
       "source": "Sandia National Laboratories P2SURF repository, file Mixture_surfactants_CMC/Case-1_Interpolating CMC at intermediate mole fraction/dataset/updated_CMC-Data-for-mixed-micelle.csv",
@@ -37,7 +37,7 @@
       "commit": "8aa90b9a9d1b2c51df5ce5ed1e863f81eff3f0e8",
       "relatedPaperDoi": "10.1186/s13321-025-01112-2",
       "license": "MIT (license text copied to cmc_mixed/P2SURF_LICENSE.txt)",
-      "transformation": "Verbatim copy."
+      "transformation": "Verbatim content copy; upstream CRLF line endings are stored as LF in this repository (hash basis is line-ending independent)."
     }
   ],
   "excludedSources": [
@@ -45,5 +45,6 @@
       "name": "SurfPro database",
       "reason": "CC BY-NC-SA licence is incompatible with commercial use; remains do-not-ingest per evidence_vault/datasets policy."
     }
-  ]
+  ],
+  "sha256Basis": "SHA-256 of file bytes after converting CRLF to LF (line-ending independent; verified by sha256File in src/utils/openReferenceBenchmark.ts)."
 }

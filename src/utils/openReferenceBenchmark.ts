@@ -49,8 +49,14 @@ export function parseCsv(text: string): Record<string, string>[] {
   return body.map(r => Object.fromEntries(header.map((h, idx) => [h, r[idx] ?? ''])));
 }
 
+/**
+ * SHA-256 over LF-normalised bytes (CRLF -> LF), so a checkout with Windows
+ * core.autocrlf or an LF-normalising patch tool verifies identically.
+ */
 export function sha256File(relativePath: string): string {
-  return crypto.createHash('sha256').update(fs.readFileSync(path.join(OPEN_REFERENCE_ROOT, relativePath))).digest('hex');
+  const raw = fs.readFileSync(path.join(OPEN_REFERENCE_ROOT, relativePath));
+  const normalised = Buffer.from(raw.toString('latin1').replace(/\r\n/g, '\n'), 'latin1');
+  return crypto.createHash('sha256').update(normalised).digest('hex');
 }
 
 function readCsv(relativePath: string): Record<string, string>[] {
