@@ -97,7 +97,41 @@ if (process.argv.includes('--write')) {
   const committedJson = fs.readFileSync(jsonPath, 'utf8');
   const committedCsv = fs.readFileSync(csvPath, 'utf8');
   if (committedJson !== json || committedCsv !== csv) {
-    console.error('ENG-002 catalog provenance artifacts do not match current catalog/source inputs. Run with --write and review the diff.');
+    console.error('ENG-002 catalog provenance artifacts differ from current catalog/source inputs.');
+    if (committedJson !== json) {
+      try {
+        const actual = JSON.parse(committedJson);
+        const expected = report;
+        const fields = ['auditId', 'sourceCommit', 'catalogRecordCount', 'counts', 'eligibilityRules', 'scope', 'auditScope', 'limitations'];
+        for (const field of fields) {
+          if (JSON.stringify(actual[field]) !== JSON.stringify((expected as any)[field])) {
+            console.error('JSON top-level mismatch: ' + field + '; actual=' + JSON.stringify(actual[field]) + '; expected=' + JSON.stringify((expected as any)[field]));
+            break;
+          }
+        }
+        const actualById = new Map((actual.records ?? []).map((record: any) => [record.canonicalIngredientId, record]));
+        const expectedById = new Map(report.records.map((record: any) => [record.canonicalIngredientId, record]));
+        for (const id of new Set([...actualById.keys(), ...expectedById.keys()])) {
+          const a: any = actualById.get(id);
+          const e: any = expectedById.get(id);
+          if (!a || !e) { console.error('JSON record presence mismatch: ' + id); break; }
+          const different = [...new Set([...Object.keys(a), ...Object.keys(e)])].filter(key => JSON.stringify(a[key]) !== JSON.stringify(e[key]));
+          if (different.length) { console.error('JSON record mismatch: ' + id + ' fields=' + different.join(',')); break; }
+        }
+      } catch (error) {
+        console.error('Committed JSON cannot be parsed: ' + String(error));
+      }
+    }
+    if (committedCsv !== csv) {
+      const actualLines = committedCsv.split('\n');
+      const expectedLines = csv.split('\n');
+      const line = Array.from({ length: Math.max(actualLines.length, expectedLines.length) }, (_, index) => index)
+        .find(index => actualLines[index] !== expectedLines[index]);
+      console.error('CSV first mismatch at line ' + (line === undefined ? 'unknown' : line + 1) +
+        '; actual=' + JSON.stringify(line === undefined ? '' : actualLines[line]?.slice(0, 300)) +
+        '; expected=' + JSON.stringify(line === undefined ? '' : expectedLines[line]?.slice(0, 300)));
+    }
+    console.error('Run with --write and review the resulting diff.');
     process.exitCode = 1;
   } else {
     console.log(JSON.stringify({ mode: 'check', catalogRecordCount: report.catalogRecordCount, counts: report.counts }));
