@@ -246,7 +246,7 @@ function generateReport(results) {
 
 ## 1. Executive Summary & Required Workbook Statuses
 
-Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live recovery from Zenodo was attempted, local canonical copies were cryptographically verified, and quarantined stubs were preserved without overwriting:
+Each canonical workbook candidate is checked against the ZIP signature, exact byte size, MD5, and SHA-256. Quarantine stubs are reported as present or absent based on the current filesystem; a missing candidate is never described as verified.
 
 `;
 
@@ -267,15 +267,15 @@ Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live re
 `;
 
   results.forEach(r => {
-    const qSize = r.quarantineState.exists ? `${r.quarantineState.size} B` : 'Missing';
+    const qSize = r.quarantineState.exists ? `${r.quarantineState.size} B` : 'ABSENT';
     const qMd5 = r.quarantineState.md5 ? `\`${r.quarantineState.md5.slice(0, 10)}...\`` : 'N/A';
-    const vSize = `${r.validationResult.actualSize.toLocaleString()} B`;
+    const vSize = r.validationResult.evaluated ? `${r.validationResult.actualSize.toLocaleString()} B` : 'NOT AVAILABLE';
     const expMd5 = `\`${r.workbook.expectedMd5.slice(0, 10)}...\``;
     const actMd5 = r.validationResult.actualMd5 ? `\`${r.validationResult.actualMd5.slice(0, 10)}...\`` : 'N/A';
     const verdict = `**${r.validationResult.verdict}**`;
     const relVault = path.relative('.', r.workbook.canonicalPath);
 
-    md += `| **${r.workbook.name}** | ${qSize} (text stub) | ${qMd5} | \`${relVault}\` | ${vSize} | ${expMd5} | ${actMd5} | ${verdict} |\n`;
+    md += `| **${r.workbook.name}** | ${qSize} | ${qMd5} | \`${relVault}\` | ${vSize} | ${expMd5} | ${actMd5} | ${verdict} |\\n`;
   });
 
   md += `
@@ -286,26 +286,21 @@ Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live re
 `;
 
   results.forEach(r => {
+    const qStatus = r.quarantineState.exists
+      ? `PRESENT (${r.quarantineState.size} bytes; excluded from calculations)`
+      : 'ABSENT (no quarantine stub file found)';
+    const checked = r.validationResult.evaluated;
     md += `### File: \`${r.workbook.name}\`
 
 - **Source URL:** \`${r.workbook.sourceUrl}\`
 - **Network Retrieval Outcome:** \`${r.networkStatus}\`
-  - *Observation:* Zenodo endpoint returned HTTP 403 Forbidden to automated containerized fetch requests without an interactive browser session or registered Zenodo API token.
-- **Quarantined File Audit:**
-  - Path: \`${path.relative('.', r.workbook.quarantinePath)}\`
-  - Size: ${r.quarantineState.size} bytes
-  - MD5: \`${r.quarantineState.md5}\`
-  - Content: \`"${r.quarantineState.contentPreview}"\`
-  - Status: **PRESERVED IN QUARANTINE** (Never overwritten, never promoted to calculation eligibility).
-- **Authentic Original Vault Verification:**
-  - Path: \`${path.relative('.', r.workbook.canonicalPath)}\`
-  - Byte Size: ${r.validationResult.actualSize} bytes (Expected: ${r.workbook.expectedSize} bytes) -> **MATCH**
-  - ZIP Format Header: \`PK\\x03\\x04\` -> **GENUINE READABLE XLSX ARCHIVE**
-  - Expected MD5: \`${r.workbook.expectedMd5}\`
-  - Actual MD5:   \`${r.validationResult.actualMd5}\` -> **EXACT MATCH**
-  - Expected SHA-256: \`${r.workbook.expectedSha256}\`
-  - Actual SHA-256:   \`${r.validationResult.actualSha256}\` -> **EXACT MATCH**
-  - Provenance Source: ${r.candidateSource}
+- **Quarantine Stub Audit:** ${qStatus}; path \`${path.relative('.', r.workbook.quarantinePath)}\`.
+- **Canonical Candidate:** \`${path.relative('.', r.workbook.canonicalPath)}\`
+- **Candidate Source:** ${r.candidateSource || 'NONE'}
+- **Byte Size:** ${checked ? `${r.validationResult.actualSize} bytes (expected ${r.workbook.expectedSize}) -> ${r.validationResult.sizeMatch ? 'PASS' : 'FAIL'}` : 'NOT CHECKED — no candidate bytes available'}
+- **ZIP Signature:** ${checked ? (r.validationResult.isZip ? 'PASS (PK\\x03\\x04)' : 'FAIL') : 'NOT CHECKED'}
+- **MD5:** expected \`${r.workbook.expectedMd5}\`; actual \`${r.validationResult.actualMd5 ?? 'N/A'}\` -> ${checked ? (r.validationResult.md5Match ? 'PASS' : 'FAIL') : 'NOT CHECKED'}
+- **SHA-256:** expected \`${r.workbook.expectedSha256}\`; actual \`${r.validationResult.actualSha256 ?? 'N/A'}\` -> ${checked ? (r.validationResult.sha256Match ? 'PASS' : 'FAIL') : 'NOT CHECKED'}
 
 `;
   });
@@ -316,7 +311,7 @@ Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live re
 
 In strict compliance with Step 4 of the Issue 2 protocol:
 1. **Zero Data Fabrication:** No rows, values, or experimental measurements have been reconstructed, estimated, interpolated, or manufactured.
-2. **Quarantine Invariant:** The corrupted 9-byte text files in \`evidence_vault/corrupted_quarantine/\` remain quarantined and are permanently disqualified from calculation pipelines.
+2. **Quarantine Invariant:** Corrupt workbook stubs are not required to remain in the repository. Invalid test bytes must be generated in a temporary fixture; missing quarantine paths are reported as ABSENT and never described as preserved.
 3. **Phase Governance:**
    - **Phase 4B:** Preserved as **ACTIVE / OPEN**.
    - **Phase 5:** Preserved as **STRICTLY LOCKED** pending full laboratory validation gates.
