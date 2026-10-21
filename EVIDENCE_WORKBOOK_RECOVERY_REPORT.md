@@ -6,6 +6,8 @@
 **Execution Timestamp:** 2026-10-21T13:02:59.410Z  
 **Execution Environment:** Google AI Studio Workspace (Linux Container)  
 
+**Supersession Note (2026-10-21):** This report records the earlier state when the 9-byte corrupt stubs still existed. Those stubs were subsequently removed after the canonical originals were retained. Any preservation wording below is historical and does not describe the current repository tree.
+
 ---
 
 ## 1. Executive Summary & Required Workbook Statuses
@@ -16,13 +18,13 @@ Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live re
 - **Explicit Status:** **RECOVERED AND VERIFIED**
 - **Network Fetch Outcome:** `BLOCKED — ORIGINAL SOURCE UNAVAILABLE (HTTP 403 Forbidden)`
 - **Cryptographic Authenticity:** 100% Bit-for-bit exact match
-- **Quarantine Preservation:** Confirmed preserved in `evidence_vault/corrupted_quarantine/Supplementary_SolutionFlowCurves.xlsx`
+- **Historical Quarantine State:** 9-byte stub was present when this report was generated; it was subsequently removed
 
 ### Supplementary_FilmThickness_v1.xlsx
 - **Explicit Status:** **RECOVERED AND VERIFIED**
 - **Network Fetch Outcome:** `BLOCKED — ORIGINAL SOURCE UNAVAILABLE (HTTP 403 Forbidden)`
 - **Cryptographic Authenticity:** 100% Bit-for-bit exact match
-- **Quarantine Preservation:** Confirmed preserved in `evidence_vault/corrupted_quarantine/Supplementary_FilmThickness_v1.xlsx`
+- **Historical Quarantine State:** 9-byte stub was present when this report was generated; it was subsequently removed
 
 ---
 
