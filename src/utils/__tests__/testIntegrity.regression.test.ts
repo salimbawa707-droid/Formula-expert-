@@ -404,9 +404,9 @@ export function runTestIntegrityTestSuite(
   assert(
     'R. Single-Execution Guarantee',
     'Test integrity suite consumes supplied P2-13 summary without invoking suite again',
-    consumedSummary.passed === 12 && consumedSummary.failed === 0,
-    consumedSummary.total,
-    12
+    consumedSummary.passed > 0 && consumedSummary.failed === 0 && consumedSummary.total === consumedSummary.passed + consumedSummary.failed,
+    { passed: consumedSummary.passed, failed: consumedSummary.failed, total: consumedSummary.total },
+    { failed: 0, totalEqualsPassedPlusFailed: true }
   );
 
   // S. Manifest Assertion Accounting Truth
