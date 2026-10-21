@@ -1,0 +1,43 @@
+{
+  "auditId": "TASK3-DATASET-APPLICABILITY-2026-10-22",
+  "repository": "https://github.com/salimbawa707-droid/Formula-expert-",
+  "startingMainSha": "7a977a427ffd02890376d52a3a3aec40bb640e72",
+  "acquisitionMode": "GitHub repository inspection only; no external data files downloaded during this task",
+  "newlyDownloadedFiles": [],
+  "externalCandidateFileStatus": "DOWNLOAD_NOT_VERIFIED",
+  "existingRepositoryDataManifests": [
+    {
+      "path": "evidence_vault/open_reference_benchmarks/data-manifest.json",
+      "verification": "Existing manifest with dataset file hashes; prior regression suite verifies files."
+    },
+    {
+      "path": "evidence_vault/datasets/source-register.csv",
+      "verification": "Existing source/rights and Task 2 workbook hashes; no new byte retrieval in Task 3."
+    },
+    {
+      "path": "evidence_vault/datasets/zenodo_18961871/data-manifest.json",
+      "verification": "Existing parser/hash record; Task 2 artifacts retained."
+    },
+    {
+      "path": "evidence_vault/datasets/psdi_cmc/data-manifest.json",
+      "verification": "Existing parsed source archive record; no new parse performed in Task 3."
+    }
+  ],
+  "parserResults": {
+    "externalCandidateFiles": "NOT_RUN_NOT_DOWNLOADED",
+    "existingRepositoryParserResults": "RETAINED_FROM_PRIOR_AUDITS; not rerun locally"
+  },
+  "newHashes": [],
+  "derivedDataPolicy": "No new normalized or prediction-observation rows created. Existing derived rows must retain source row, transformation, unit conversion, and sample/group identity.",
+  "evaluationMetrics": {
+    "task3NewMetrics": "NONE",
+    "reason": "No new matched predictions and observations were produced; existing component-level descriptive results are not relabeled."
+  },
+  "errorsAndLimitations": [
+    "Prior user permission response limited network action to GitHub inspection only; external dataset bytes were not retrieved.",
+    "Chitre item-level license and Zenodo foam candidate license are unverified.",
+    "Repository CI can run only after commit; no local clone or package install was performed."
+  ],
+  "phase4b": "OPEN",
+  "phase5": "LOCKED"
+}

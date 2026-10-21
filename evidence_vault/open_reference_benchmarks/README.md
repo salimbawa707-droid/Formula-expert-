@@ -8,7 +8,7 @@ Openly licensed, published measurement data used to check the app's calculation 
 |---|---|---|---|
 | `ph_standards/` | 20 IUPAC primary/secondary pH standard values (14 engine-supported) | Buck et al., *Pure Appl. Chem.* 74, 2169 (2002), DOI [10.1351/pac200274112169](https://doi.org/10.1351/pac200274112169) | Reproduction with attribution. © 2002 IUPAC |
 | `cmc_pure/` | 63 pure-surfactant CMC rows for SDS, DDAO, SDBS, C12 betaine, C12 BDDAC (20–30 °C, no additives) | PSDI digitisation of NIST NSRDS-NBS 36 (Mukerjee & Mysels 1971) | CC BY 4.0 |
-| `cmc_mixed/` | 979 binary-mixture CMC rows (65 systems with both pure endpoints) | Sandia P2SURF, commit `8aa90b9a`, [github.com/snlai4chembiogroup/P2SURF](https://github.com/snlai4chembiogroup/P2SURF); paper DOI 10.1186/s13321-025-01112-2 | MIT (`P2SURF_LICENSE.txt`) |
+| `cmc_mixed/` | 979 binary-mixture CMC rows (62 systems with both pure endpoints in the benchmark report; reconcile this count in the runner before treating it as a test invariant) | Sandia P2SURF, commit `8aa90b9a`, [github.com/snlai4chembiogroup/P2SURF](https://github.com/snlai4chembiogroup/P2SURF); paper DOI 10.1186/s13321-025-01112-2 | MIT (`P2SURF_LICENSE.txt`) |
 
 Excluded: SurfPro (CC BY-NC-SA, not usable in a commercial product).
 

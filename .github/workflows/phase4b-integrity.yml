@@ -34,6 +34,9 @@ jobs:
       - name: Test Zenodo XLSX parser against canonical workbooks
         run: python evidence_vault/scripts/test_audit_zenodo_xlsx.py evidence_vault/datasets/zenodo_18961871
 
+      - name: Test Task 3 dataset audit policy and artifacts
+        run: python evidence_vault/scripts/test_task3_dataset_audit.py
+
       - name: Reproduce Task 2 water-reference baseline
         run: python evidence_vault/scripts/evaluate_water_reference.py evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx evidence_vault/datasets/zenodo_18961871/task2_water_reference_baseline.json
 
