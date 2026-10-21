@@ -259,7 +259,7 @@ export function runVaultLogicTestSuite() {
   // 15. Issue 2: Scientific Evidence Vault Corrupted Workbook Quarantine & Recovery
   // Case 1: Quarantined 9-byte text files are rejected as invalid workbooks
   const qFlowCurves = verifyWorkbookAuthenticity(
-    'evidence_vault/corrupted_quarantine/Supplementary_SolutionFlowCurves.xlsx',
+    Buffer.from('corrupted\\n', 'utf8'),
     'cd5bfd6e95fc65e412807d53935c2d96'
   );
   assert(
@@ -269,7 +269,7 @@ export function runVaultLogicTestSuite() {
   );
 
   const qFilmThickness = verifyWorkbookAuthenticity(
-    'evidence_vault/corrupted_quarantine/Supplementary_FilmThickness_v1.xlsx',
+    Buffer.from('corrupted\\n', 'utf8'),
     'bc9582baafecd6552f6014216a0844e6'
   );
   assert(
@@ -324,11 +324,17 @@ export function runVaultLogicTestSuite() {
   // Case 5: Evidence manifests accurately reflect file state and quarantine ledger
   const manifestRaw = fs.readFileSync('evidence_vault/corrupted_quarantine/QUARANTINE_MANIFEST.md', 'utf8');
   assert(
+    manifestRaw.includes('STUBS_REMOVED_AFTER_CANONICAL_RECOVERY') &&
     manifestRaw.includes('Supplementary_FilmThickness_v1.xlsx') &&
-    manifestRaw.includes('Supplementary_SolutionFlowCurves.xlsx') &&
-    manifestRaw.includes('CORRUPTED_AWAITING_RECOVERY'),
+    manifestRaw.includes('Supplementary_SolutionFlowCurves.xlsx'),
     'Issue 2 Recovery',
-    'Quarantine manifest accurately identifies stubs and CORRUPTED_AWAITING_RECOVERY status'
+    'Quarantine ledger records removal of corrupt stubs after canonical recovery'
+  );
+  assert(
+    !fs.existsSync('evidence_vault/corrupted_quarantine/Supplementary_SolutionFlowCurves.xlsx') &&
+    !fs.existsSync('evidence_vault/corrupted_quarantine/Supplementary_FilmThickness_v1.xlsx'),
+    'Issue 2 Recovery',
+    'Corrupt workbook stubs are not retained as files in the quarantine directory'
   );
 
   // Case 6: Scientific calculations do not silently consume corrupted or unverified files
