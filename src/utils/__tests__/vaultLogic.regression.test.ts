@@ -259,7 +259,7 @@ export function runVaultLogicTestSuite() {
   // 15. Issue 2: Scientific Evidence Vault Corrupted Workbook Quarantine & Recovery
   // Case 1: Quarantined 9-byte text files are rejected as invalid workbooks
   const qFlowCurves = verifyWorkbookAuthenticity(
-    Buffer.from('corrupted\n', 'utf8'),
+    Buffer.from('corrupted', 'utf8'),
     'cd5bfd6e95fc65e412807d53935c2d96'
   );
   assert(
@@ -269,7 +269,7 @@ export function runVaultLogicTestSuite() {
   );
 
   const qFilmThickness = verifyWorkbookAuthenticity(
-    Buffer.from('corrupted\n', 'utf8'),
+    Buffer.from('corrupted', 'utf8'),
     'bc9582baafecd6552f6014216a0844e6'
   );
   assert(
