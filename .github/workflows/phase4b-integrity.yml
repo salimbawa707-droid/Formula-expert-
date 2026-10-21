@@ -37,6 +37,12 @@ jobs:
       - name: Test Task 3 dataset audit policy and artifacts
         run: python evidence_vault/scripts/test_task3_dataset_audit.py
 
+      - name: Reproduce ENG-002 ideal Clint benchmark and verify committed outputs
+        run: python evidence_vault/scripts/benchmark_clint_cmc.py --check
+
+      - name: Test ENG-002 Clint benchmark controls and dataset grouping
+        run: python evidence_vault/scripts/test_benchmark_clint_cmc.py
+
       - name: Reproduce Task 2 water-reference baseline
         run: python evidence_vault/scripts/evaluate_water_reference.py evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx evidence_vault/datasets/zenodo_18961871/task2_water_reference_baseline.json
 

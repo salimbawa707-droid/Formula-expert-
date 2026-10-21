@@ -1,0 +1,187 @@
+{
+  "benchmark_id": "ENG-002-CLINT-P2SURF-v1",
+  "benchmark_scope": "component-level ideal Clint equation benchmark within systems with observed pure endpoints; not finished detergent formula validation",
+  "source": {
+    "file": "evidence_vault/open_reference_benchmarks/cmc_mixed/p2surf_binary_mixture_cmc.csv",
+    "upstream_commit": "8aa90b9a9d1b2c51df5ce5ed1e863f81eff3f0e8",
+    "sha256": "f269e73d3cdf35e064ee253295d1cf990322cc845d62a4f8bd2414ca21dd0b24",
+    "hash_basis": "SHA-256 after CRLF-to-LF normalization; checked against the pre-existing data-manifest.json.",
+    "columns": [
+      "smile_A",
+      "mol_fraction_A",
+      "smile_B",
+      "mol_fraction_B",
+      "logCMC"
+    ],
+    "unit": "log10(CMC / uM)"
+  },
+  "method": {
+    "equation": "CMC_mix = 1 / (x1/CMC1 + x2/CMC2)",
+    "endpoint_source": "Pure-component endpoint rows from the same P2SURF system, at component mole fraction 1 and 0.",
+    "conversion": "CMC_uM = 10 ** log10_CMC_uM; prediction is in uM; log error is log10(prediction_uM) - source_logCMC.",
+    "fraction_sum_tolerance": 0.00101,
+    "fraction_rule": "Validate the two reported source fractions then normalize each by their reported sum; preserve raw values in the ledger.",
+    "grouping": "Exact unordered source-SMILES pair; no chemical canonicalization. Group IDs follow sorted pair order.",
+    "duplicate_rule": "Duplicate endpoint/composition records block the system because replicate identity is not given.",
+    "baseline": "No second baseline used; no independent baseline was pre-specified for this equation benchmark.",
+    "evaluation_design": "Within-system interpolation using same-system measured pure endpoints as equation inputs. No system or external holdout; source experiment/study identifiers are absent."
+  },
+  "counts": {
+    "source_rows_inspected": 979,
+    "nonbinary_same_smiles_rows": 480,
+    "binary_systems": 65,
+    "binary_source_rows": 499,
+    "systems_with_both_single_endpoints": 62,
+    "systems_excluded_missing_endpoint": 3,
+    "rows_in_systems_missing_endpoint": 28,
+    "eligible_endpoint_rows_not_scored": 124,
+    "eligible_mixture_observations": 347,
+    "composition_sum_rounding_rows": 4,
+    "exact_duplicate_source_rows": 0,
+    "invalid_systems": 0,
+    "ambiguous_duplicate_systems": 0
+  },
+  "metrics": {
+    "pooled_observation_level": {
+      "observation_count": 347,
+      "mae_uM": 6323.868447652127,
+      "rmse_uM": 15343.97877763577,
+      "mean_signed_error_uM": 5975.076919989262,
+      "mae_log10": 0.5702164332154883,
+      "mean_signed_error_log10": 0.5477991189394512,
+      "error_sign": "prediction minus observation",
+      "linear_unit": "uM",
+      "log_unit": "log10 ratio"
+    },
+    "macro_mean_of_eligible_system_metrics": {
+      "mae_uM": 6264.606952762098,
+      "rmse_uM": 6714.953588666623,
+      "mean_signed_error_uM": 5867.211295876085,
+      "mae_log10": 0.5434168160974292,
+      "mean_signed_error_log10": 0.5115616661761027
+    },
+    "eligible_system_groups": 62,
+    "scored_observations": 347,
+    "by_pair_class": [
+      {
+        "pair_class": "anionic-anionic",
+        "system_groups": 7,
+        "observation_count": 41,
+        "mae_uM": 18792.615294933774,
+        "rmse_uM": 36087.84612280317,
+        "mean_signed_error_uM": 17139.745583724118,
+        "mae_log10": 0.06979604700420218,
+        "mean_signed_error_log10": 0.041662694131870466
+      },
+      {
+        "pair_class": "anionic-cationic",
+        "system_groups": 16,
+        "observation_count": 113,
+        "mae_uM": 5857.9391894739065,
+        "rmse_uM": 10410.242263472412,
+        "mean_signed_error_uM": 5857.575567228119,
+        "mae_log10": 1.133014924966253,
+        "mean_signed_error_log10": 1.130261824717596
+      },
+      {
+        "pair_class": "anionic-nonionic",
+        "system_groups": 16,
+        "observation_count": 89,
+        "mae_uM": 4062.7556834443662,
+        "rmse_uM": 5522.066495850087,
+        "mean_signed_error_uM": 3731.242874730375,
+        "mae_log10": 0.32135244761428355,
+        "mean_signed_error_log10": 0.2996849509065576
+      },
+      {
+        "pair_class": "anionic-zwitterionic",
+        "system_groups": 3,
+        "observation_count": 11,
+        "mae_uM": 2501.797108276229,
+        "rmse_uM": 2624.0612520890395,
+        "mean_signed_error_uM": 2501.797108276229,
+        "mae_log10": 0.8911769618264583,
+        "mean_signed_error_log10": 0.8911769618264583
+      },
+      {
+        "pair_class": "cationic-cationic",
+        "system_groups": 5,
+        "observation_count": 31,
+        "mae_uM": 1264.4608273793567,
+        "rmse_uM": 1986.8294960952683,
+        "mean_signed_error_uM": 1262.423190440398,
+        "mae_log10": 0.0676780383885637,
+        "mean_signed_error_log10": 0.06744418772774739
+      },
+      {
+        "pair_class": "cationic-nonionic",
+        "system_groups": 8,
+        "observation_count": 35,
+        "mae_uM": 8999.44504591581,
+        "rmse_uM": 19336.866243159122,
+        "mean_signed_error_uM": 8993.41777632984,
+        "mae_log10": 0.6459170838246984,
+        "mean_signed_error_log10": 0.6448269110814111
+      },
+      {
+        "pair_class": "cationic-zwitterionic",
+        "system_groups": 5,
+        "observation_count": 15,
+        "mae_uM": 1226.3888829757823,
+        "rmse_uM": 1932.9869118442784,
+        "mean_signed_error_uM": -313.07043164934174,
+        "mae_log10": 0.24635869047326828,
+        "mean_signed_error_log10": -0.03802784188536143
+      },
+      {
+        "pair_class": "nonionic-nonionic",
+        "system_groups": 2,
+        "observation_count": 12,
+        "mae_uM": 21.523026201136812,
+        "rmse_uM": 30.82029019330134,
+        "mean_signed_error_uM": -7.748786307659077,
+        "mae_log10": 0.014080498220362059,
+        "mean_signed_error_log10": 0.007861360799224356
+      }
+    ]
+  },
+  "exclusions": {
+    "same_smiles_nonbinary_rows": 480,
+    "missing_endpoint_systems": [
+      {
+        "system_id": "P2S-030",
+        "rows": 9,
+        "reason": "MISSING_PURE_ENDPOINT_COMPONENT_2"
+      },
+      {
+        "system_id": "P2S-031",
+        "rows": 10,
+        "reason": "MISSING_PURE_ENDPOINT_COMPONENT_2"
+      },
+      {
+        "system_id": "P2S-032",
+        "rows": 9,
+        "reason": "MISSING_PURE_ENDPOINT_COMPONENT_2"
+      }
+    ],
+    "eligible_pure_endpoint_rows": "Equation inputs only; never scored as mixed observations.",
+    "other_rows": 152
+  },
+  "status": {
+    "engine_maturity": "MODEL_PREDICTION",
+    "benchmark_result": "COMPONENT_LEVEL_REFERENCE_BENCHMARK",
+    "empirical_calibration": "NOT_ESTABLISHED",
+    "lab_validated": false,
+    "pristine_untouched_test": false,
+    "phase4b": "OPEN",
+    "phase5": "LOCKED"
+  },
+  "limitations": [
+    "P2SURF is a literature compilation; the CSV does not carry primary-study identifiers or method details for individual rows.",
+    "The high-level calculateMixedCMC catalog does not map every P2SURF SMILES to app ingredient defaults; this benchmark exercises the ideal equation with measured same-system endpoints.",
+    "Measured pure endpoints are equation inputs from the same system; this is not an independent unseen-system holdout.",
+    "Experimental conditions are heterogeneous and are not fully specified in the CSV.",
+    "The mixed-CMC benchmark has already been reported and regression-tested in this repository; this is not a pristine untouched test set.",
+    "No confidence intervals or second-baseline comparison were calculated."
+  ]
+}

@@ -26,3 +26,5 @@ npm test                                      # includes the regression suite
 - P2SURF CMC units are log10(µM). Charge class is inferred from formal charges on the largest SMILES fragment.
 
 Full results: [`../forensic_reports/OPEN_REFERENCE_BENCHMARK_REPORT.md`](../forensic_reports/OPEN_REFERENCE_BENCHMARK_REPORT.md).
+
+The ENG-002 ideal Clint equation benchmark, its source-row ledger and per-system results are documented in [`../forensic_reports/TASK4_ENG002_CLINT_CMC_BENCHMARK.md`](../forensic_reports/TASK4_ENG002_CLINT_CMC_BENCHMARK.md). Reproduce and verify it with `python evidence_vault/scripts/benchmark_clint_cmc.py --check`; see the report for the component-level scope and limitations.

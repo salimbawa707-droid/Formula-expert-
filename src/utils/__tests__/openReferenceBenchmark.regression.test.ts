@@ -11,6 +11,7 @@ import path from 'path';
 import {
   OPEN_REFERENCE_FILES,
   OPEN_REFERENCE_ROOT,
+  parseCsv,
   runMixedCmcBenchmark,
   runPhStandardsBenchmark,
   runPureCmcBenchmark,
@@ -83,6 +84,29 @@ export function runOpenReferenceBenchmarkTestSuite(): { total: number; passed: n
       !!constant && Math.abs(constant.medianLogBias - c.medianLogBias) < 0.006 && constant.points === c.points && constant.systems === c.systems,
       c, constant);
   }
+
+  // --- Task 4 paired P2SURF rows evaluated through the app's Clint helper -----
+  const clintLedgerPath = path.join(OPEN_REFERENCE_ROOT, 'cmc_mixed', 'ideal_clint_pair_ledger.csv');
+  const clintLedger = parseCsv(fs.readFileSync(clintLedgerPath, 'utf8'));
+  const clintPairs = clintLedger.filter(r => r.decision === 'INCLUDED' && r.row_role === 'MIXTURE_OBSERVATION');
+  assert('Task 4 ledger includes 347 eligible mixture observations and excludes endpoint inputs from scoring',
+    clintPairs.length === 347 && clintLedger.filter(r => r.row_role === 'PURE_ENDPOINT_INPUT').length === 124,
+    { mixtures: clintPairs.length, endpoints: clintLedger.filter(r => r.row_role === 'PURE_ENDPOINT_INPUT').length },
+    { mixtures: 347, endpoints: 124 });
+  for (const row of clintPairs) {
+    const appPrediction = idealMixedCmcFromMoleFractions([
+      { moleFraction: Number(row.normalized_x1), cmc: Number(row.pure_cmc_component_1_uM) },
+      { moleFraction: Number(row.normalized_x2), cmc: Number(row.pure_cmc_component_2_uM) }
+    ]);
+    const ledgerPrediction = Number(row.prediction_cmc_uM);
+    assert(`App Clint helper reproduces ${row.source_record_id} from its linked P2SURF endpoints`,
+      Number.isFinite(appPrediction) && Math.abs(appPrediction - ledgerPrediction) <= Math.max(1e-8, ledgerPrediction * 1e-12),
+      appPrediction, ledgerPrediction);
+  }
+  assert('Task 4 pair ledger preserves the source dataset row count and leaves incomplete endpoint systems excluded',
+    clintLedger.length === 979 && clintLedger.filter(r => r.decision === 'EXCLUDED' && r.exclusion_reason.includes('MISSING_PURE_ENDPOINT')).length === 28,
+    { rows: clintLedger.length, missingEndpointRows: clintLedger.filter(r => r.decision === 'EXCLUDED' && r.exclusion_reason.includes('MISSING_PURE_ENDPOINT')).length },
+    { rows: 979, missingEndpointRows: 28 });
 
   // --- Mole-fraction behaviour of the app's mixed-CMC calculation ------------
   assert('idealMixedCmcFromMoleFractions returns the pure value for a single component',
