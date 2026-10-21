@@ -82,7 +82,7 @@ export function runEvidenceVaultIntegrityTestSuite() {
   // =========================================================================
   const corruptedFixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'evidence-vault-corrupt-fixture-'));
   const corruptedPath = path.join(corruptedFixtureDir, 'invalid-workbook.xlsx');
-  fs.writeFileSync(corruptedPath, 'corrupted\n', 'utf8');
+  fs.writeFileSync(corruptedPath, 'corrupted', 'utf8');
   const corruptedResult = validateDatasetFile(corruptedPath, { md5: expectedMd5 });
   assert(
     '2. Corrupted File Detection',
