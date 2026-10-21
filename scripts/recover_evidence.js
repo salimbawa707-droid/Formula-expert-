@@ -275,7 +275,7 @@ Each canonical workbook candidate is checked against the ZIP signature, exact by
     const verdict = `**${r.validationResult.verdict}**`;
     const relVault = path.relative('.', r.workbook.canonicalPath);
 
-    md += `| **${r.workbook.name}** | ${qSize} | ${qMd5} | \`${relVault}\` | ${vSize} | ${expMd5} | ${actMd5} | ${verdict} |\\n`;
+    md += `| **${r.workbook.name}** | ${qSize} | ${qMd5} | \`${relVault}\` | ${vSize} | ${expMd5} | ${actMd5} | ${verdict} |\n`;
   });
 
   md += `
