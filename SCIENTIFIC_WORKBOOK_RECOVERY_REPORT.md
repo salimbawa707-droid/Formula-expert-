@@ -8,6 +8,8 @@
 
 ---
 
+**Status supersession note (2026-10-21):** This report is a historical snapshot. The two corrupt 9-byte quarantine stubs described below have since been removed after canonical workbook recovery. The canonical files remain at `evidence_vault/datasets/zenodo_18961871/`; the quarantine stub paths no longer exist.
+
 ## 1. Executive Summary
 
 Two scientific evidence workbooks in the project's quarantine directory were confirmed to be corrupted 9-byte text stubs containing the literal ASCII string `"corrupted\n"`:
