@@ -352,7 +352,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "aristo-9",
     "name": "Aristo 9 (Multipurpose Detergent Additive)",
     "category": "Additive & Performance",
-    "casNumber": "PROPRIETARY-BLEND",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Proprietary Enzyme & Thickener Blend",
     "function": "Multipurpose Detergent Additive & Viscosity/Enzyme Booster",
     "activeDefault": 0,
@@ -1000,7 +1002,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "sodium-sesquicarbonate",
     "name": "Sodium Sesquicarbonate",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer",
     "activeDefault": 100,
@@ -1264,7 +1266,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pvno-40",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor",
     "activeDefault": 40,
@@ -1324,7 +1326,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pxs-40",
     "name": "Potassium Xylene Sulfonate 40% (PXS)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope",
     "activeDefault": 40,
@@ -1480,7 +1482,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "liquitint-blue",
     "name": "Liquitint Blue HP",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye",
     "activeDefault": 100,
@@ -3472,7 +3476,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "sodium-sesquicarbonate-tech",
     "name": "Sodium Sesquicarbonate (Technical Grade)",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - Industrial Tech Grade",
     "activeDefault": 100,
@@ -3484,7 +3488,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "sodium-sesquicarbonate-pure",
     "name": "Sodium Sesquicarbonate (High Purity / R&D Grade)",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - High Purity Grade",
     "activeDefault": 100,
@@ -3496,7 +3500,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "sodium-sesquicarbonate-sol",
     "name": "Sodium Sesquicarbonate (Custom Concentrated Solution)",
     "category": "Alkaline Builder",
-    "casNumber": "533-96-5",
+    "casNumber": "533-96-0",
     "inciName": "Sodium Sesquicarbonate",
     "function": "Crystalline Alkaline Buffer - Ready Blend Solution",
     "activeDefault": 50,
@@ -4264,7 +4268,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pvno-40-tech",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide) (Technical Grade)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - Industrial Tech Grade",
     "activeDefault": 40,
@@ -4276,7 +4280,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pvno-40-pure",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide) (High Purity / R&D Grade)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - High Purity Grade",
     "activeDefault": 40,
@@ -4288,7 +4292,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pvno-40-sol",
     "name": "PVNO 40% Liquid (Polyvinylpyridine N-Oxide) (Custom Concentrated Solution)",
     "category": "Polymer & Thickener",
-    "casNumber": "26837-43-8",
+    "casNumber": "26715-00-4",
     "inciName": "Polyvinylpyridine N-Oxide",
     "function": "Premium Dye Transfer Inhibitor - Ready Blend Solution",
     "activeDefault": 20,
@@ -4444,7 +4448,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pxs-40-tech",
     "name": "Potassium Xylene Sulfonate 40% (PXS) (Technical Grade)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - Industrial Tech Grade",
     "activeDefault": 40,
@@ -4456,7 +4460,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pxs-40-pure",
     "name": "Potassium Xylene Sulfonate 40% (PXS) (High Purity / R&D Grade)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - High Purity Grade",
     "activeDefault": 40,
@@ -4468,7 +4472,7 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "pxs-40-sol",
     "name": "Potassium Xylene Sulfonate 40% (PXS) (Custom Concentrated Solution)",
     "category": "Solvent & Hydrotrope",
-    "casNumber": "30348-70-4",
+    "casNumber": "30346-73-7",
     "inciName": "Potassium Xylene Sulfonate",
     "function": "High Solubility Potassium Hydrotrope - Ready Blend Solution",
     "activeDefault": 20,
@@ -4912,7 +4916,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "liquitint-blue-tech",
     "name": "Liquitint Blue HP (Technical Grade)",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - Industrial Tech Grade",
     "activeDefault": 100,
@@ -4924,7 +4930,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "liquitint-blue-pure",
     "name": "Liquitint Blue HP (High Purity / R&D Grade)",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - High Purity Grade",
     "activeDefault": 100,
@@ -4936,7 +4944,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "liquitint-blue-sol",
     "name": "Liquitint Blue HP (Custom Concentrated Solution)",
     "category": "Optical Brightener & Dye",
-    "casNumber": "PROPRIETARY",
+    "casNumber": null,
+    "identityType": "PROPRIETARY_BLEND",
+    "casStatus": "PROPRIETARY",
     "inciName": "Colorant",
     "function": "Non-Staining Polymeric Blue Dye - Ready Blend Solution",
     "activeDefault": 50,
@@ -5416,7 +5426,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "perfume-compound",
     "name": "Commercial Perfume & Essential Fragrance Compound",
     "category": "Additive & Performance",
-    "casNumber": "N/A",
+    "casNumber": null,
+    "identityType": "MULTI_COMPONENT_MIXTURE",
+    "casStatus": "NOT_APPLICABLE_MIXTURE",
     "inciName": "Parfum",
     "function": "Long-Lasting Aesthetic Fragrance",
     "activeDefault": 100,
@@ -5428,7 +5440,9 @@ var UNIVERSAL_INGREDIENTS = [
     "id": "dye-colorant",
     "name": "Aesthetic Colorant & Liquid Dye Solution",
     "category": "Optical Brightener & Dye",
-    "casNumber": "N/A",
+    "casNumber": null,
+    "identityType": "MULTI_COMPONENT_MIXTURE",
+    "casStatus": "NOT_APPLICABLE_MIXTURE",
     "inciName": "Colorant (CI Blend)",
     "function": "Visual Product Identity Colorant",
     "activeDefault": 100,
@@ -5564,6 +5578,9 @@ function getIngredientAliasKeywords(item) {
   if (cas === "6132-04-3" || name.includes("sodium citrate")) {
     aliases += " sodium citrate trisodium citrate";
   }
+  if (cas === "144-55-8" || id === "sodium-bicarbonate" || id === "sodium-bicarbonate-tech" || id === "sodium-bicarbonate-pure" || id === "sodium-bicarbonate-sol" || name === "sodium bicarbonate" || name === "baking soda" || name.startsWith("sodium bicarbonate (baking soda)")) {
+    aliases += " sodium bicarbonate baking soda bicarb nahco3 bicarbonate of soda";
+  }
   return aliases;
 }
 function searchUniversalIngredients(query, category) {
@@ -5608,6 +5625,16 @@ var DetergentDatabase = class extends import_dexie.default {
       formulaVersions: "id, formulaId, versionNumber, timestamp",
       specRecords: "category, updatedAt",
       userSettings: "key, updatedAt"
+    });
+    this.version(2).stores({
+      formulas: "id, name, category, productType, isFavorite, updatedAt",
+      inventory: "id, name, category, stockKg, updatedAt",
+      productionRuns: "id, batchNumber, formulaId, date, status, createdAt",
+      labNotes: "id, title, date, formulaId, createdAt",
+      formulaVersions: "id, formulaId, versionNumber, timestamp",
+      specRecords: "category, updatedAt",
+      userSettings: "key, updatedAt",
+      researchedIngredients: "id, queryName, canonicalName, grade, status, updatedAt"
     });
   }
 };
@@ -5751,11 +5778,16 @@ var ActiveMatterEngine = class {
     const isSolvent = this.isSolventIngredient(rawName, rawCategory, rawRole);
     const explicitActive = ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? ing?.activePct ?? ing?.purity;
     let canonicalMatch;
-    if (ing?.id) {
+    if (ing?.canonicalIngredientId) {
+      canonicalMatch = UNIVERSAL_INGREDIENTS.find((u) => u.id === ing.canonicalIngredientId);
+    }
+    if (!canonicalMatch && ing?.id) {
       canonicalMatch = UNIVERSAL_INGREDIENTS.find((u) => u.id === ing.id);
     }
     if (!canonicalMatch && rawName) {
-      canonicalMatch = UNIVERSAL_INGREDIENTS.find((u) => u.name.toLowerCase() === lowerName);
+      canonicalMatch = UNIVERSAL_INGREDIENTS.find(
+        (u) => u.name.toLowerCase() === lowerName || (lowerName === "sodium bicarbonate" || lowerName === "baking soda") && u.id === "sodium-bicarbonate"
+      );
     }
     const resolvedCategory = canonicalMatch?.category || rawCategory || (isWater ? "Solvent / Carrier" : isSolvent ? "Solvent" : "Additive");
     const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName);
@@ -7501,6 +7533,982 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
   }
 };
 
+// src/services/durablePurchaseStore.ts
+var import_crypto = __toESM(require("crypto"), 1);
+var import_app = require("firebase-admin/app");
+var import_firestore = require("firebase-admin/firestore");
+var import_fs = __toESM(require("fs"), 1);
+
+// firebase-applet-config.json
+var firebase_applet_config_default = {
+  projectId: "imagined-zone-cv4kj",
+  appId: "1:678655473700:web:d29cf4d8feff5e983240b1",
+  apiKey: "AIzaSyCSoBbyRjYpzWIjsHbKLAfgWbh6SxcONMc",
+  authDomain: "imagined-zone-cv4kj.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-formulaexpert-1b72894a-9fa1-4c13-a705-8b8d50c5196c",
+  storageBucket: "imagined-zone-cv4kj.firebasestorage.app",
+  messagingSenderId: "678655473700",
+  measurementId: "",
+  oAuthClientId: "678655473700-c21bjeiv33paeqeia7aa7um22mh85aia.apps.googleusercontent.com",
+  recaptchaSiteKey: ""
+};
+
+// src/services/durablePurchaseStore.ts
+function computeTokenFingerprint(token) {
+  if (!token || typeof token !== "string") return "";
+  return import_crypto.default.createHash("sha256").update(token.trim()).digest("hex");
+}
+var adminFirestoreInstance = null;
+function getDurableFirestore() {
+  if (adminFirestoreInstance) return adminFirestoreInstance;
+  try {
+    let app2;
+    if ((0, import_app.getApps)().length > 0) {
+      app2 = (0, import_app.getApp)();
+    } else {
+      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (serviceAccountKey) {
+        let certObj;
+        if (serviceAccountKey.trim().startsWith("{")) {
+          certObj = JSON.parse(serviceAccountKey);
+        } else if (import_fs.default.existsSync(serviceAccountKey)) {
+          certObj = JSON.parse(import_fs.default.readFileSync(serviceAccountKey, "utf8"));
+        }
+        if (certObj) {
+          app2 = (0, import_app.initializeApp)({
+            credential: (0, import_app.cert)(certObj),
+            projectId: certObj.project_id || firebase_applet_config_default.projectId
+          });
+        } else {
+          app2 = (0, import_app.initializeApp)({ projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj" });
+        }
+      } else {
+        app2 = (0, import_app.initializeApp)({ projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj" });
+      }
+    }
+    const databaseId = firebase_applet_config_default.firestoreDatabaseId;
+    adminFirestoreInstance = databaseId ? (0, import_firestore.getFirestore)(app2, databaseId) : (0, import_firestore.getFirestore)(app2);
+    return adminFirestoreInstance;
+  } catch (err) {
+    console.warn("[DurablePurchaseStore] Admin Firestore unavailable:", err?.message || err);
+    return null;
+  }
+}
+var testMemoryStore = /* @__PURE__ */ new Map();
+function isGenuineTestEnvironment() {
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.NODE_ENV === "test" || Boolean(process.argv && process.argv.some((a) => a.includes("test") || a.includes("test-calculations"))) || process.env.JEST_WORKER_ID !== void 0 || process.env.VITEST !== void 0;
+}
+var DurablePurchaseStore = class {
+  static {
+    this.COLLECTION_NAME = "purchase_grants";
+  }
+  /**
+   * Resets the test memory store. Only permitted in test processes.
+   */
+  static resetTestStore() {
+    if (isGenuineTestEnvironment()) {
+      testMemoryStore.clear();
+    }
+  }
+  /**
+   * Checks whether a purchase token has been registered, verifying user account ownership.
+   * Concurrency-safe: checks durable store by token fingerprint.
+   */
+  static async checkReplay(purchaseToken, targetUserId) {
+    const fingerprint = computeTokenFingerprint(purchaseToken);
+    if (!fingerprint) {
+      return { allowed: false, isExistingGrant: false, error: "Empty or invalid purchase token." };
+    }
+    if (!targetUserId || targetUserId === "anonymous_client") {
+      return { allowed: false, isExistingGrant: false, error: "Missing or anonymous user ID." };
+    }
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      const existing = testMemoryStore.get(fingerprint);
+      if (existing) {
+        if (existing.userId !== targetUserId) {
+          return {
+            allowed: false,
+            isExistingGrant: true,
+            error: "Purchase token replay detected: This token was already bound to a different user account."
+          };
+        }
+        return { allowed: true, isExistingGrant: true, grant: existing };
+      }
+      return { allowed: true, isExistingGrant: false };
+    }
+    const firestore = getDurableFirestore();
+    if (!firestore) {
+      return {
+        allowed: false,
+        isExistingGrant: false,
+        error: "Durable storage configuration missing. Fail-closed: Cannot perform replay verification."
+      };
+    }
+    try {
+      const docRef = firestore.collection(this.COLLECTION_NAME).doc(fingerprint);
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        if (data.userId !== targetUserId) {
+          return {
+            allowed: false,
+            isExistingGrant: true,
+            error: "Purchase token replay detected: This token was already bound to a different user account."
+          };
+        }
+        return { allowed: true, isExistingGrant: true, grant: data };
+      }
+      return { allowed: true, isExistingGrant: false };
+    } catch (err) {
+      return {
+        allowed: false,
+        isExistingGrant: false,
+        error: `Durable replay store query failed: ${err.message || "Unknown Firestore error"}`
+      };
+    }
+  }
+  /**
+   * Atomically records a verified purchase grant bound to the user ID.
+   * Uses Firestore transactions in production to guarantee atomic write and prevent concurrent race conditions.
+   */
+  static async recordGrant(grantData) {
+    const fingerprint = computeTokenFingerprint(grantData.purchaseToken);
+    if (!fingerprint) {
+      return { success: false, error: "Invalid token fingerprint." };
+    }
+    const nowIso = (/* @__PURE__ */ new Date()).toISOString();
+    const record = {
+      tokenFingerprint: fingerprint,
+      userId: grantData.userId,
+      productId: grantData.productId,
+      packageName: grantData.packageName,
+      subscriptionState: grantData.subscriptionState,
+      expiryTimeMillis: grantData.expiryTimeMillis,
+      verifiedAt: Date.now(),
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      const existing = testMemoryStore.get(fingerprint);
+      if (existing && existing.userId !== grantData.userId) {
+        return {
+          success: false,
+          error: "Concurrent race condition: Purchase token was claimed by another account."
+        };
+      }
+      testMemoryStore.set(fingerprint, record);
+      return { success: true, grant: record };
+    }
+    const firestore = getDurableFirestore();
+    if (!firestore) {
+      return {
+        success: false,
+        error: "Durable storage configuration missing. Fail-closed: Cannot record purchase grant."
+      };
+    }
+    try {
+      const docRef = firestore.collection(this.COLLECTION_NAME).doc(fingerprint);
+      await firestore.runTransaction(async (transaction) => {
+        const docSnap = await transaction.get(docRef);
+        if (docSnap.exists) {
+          const existing = docSnap.data();
+          if (existing.userId !== grantData.userId) {
+            throw new Error("Purchase token replay detected: This token was already bound to a different user account.");
+          }
+          transaction.update(docRef, {
+            subscriptionState: grantData.subscriptionState,
+            expiryTimeMillis: grantData.expiryTimeMillis,
+            verifiedAt: Date.now(),
+            updatedAt: nowIso
+          });
+        } else {
+          transaction.set(docRef, record);
+        }
+      });
+      return { success: true, grant: record };
+    } catch (err) {
+      return {
+        success: false,
+        error: `Transaction failed during purchase grant persistence: ${err.message || "Firestore transaction error"}`
+      };
+    }
+  }
+  /**
+   * Lists active, unexpired purchase grants owned by a user.
+   * Never returns purchase token material; stored records contain only token fingerprints.
+   */
+  static async listActiveGrantsForUser(userId) {
+    if (!userId || userId === "anonymous_client") {
+      return { available: false, grants: [] };
+    }
+    let records;
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      records = Array.from(testMemoryStore.values()).filter((record) => record.userId === userId);
+    } else {
+      const firestore = getDurableFirestore();
+      if (!firestore) return { available: false, grants: [] };
+      try {
+        const snapshot = await firestore.collection(this.COLLECTION_NAME).where("userId", "==", userId).get();
+        records = snapshot.docs.map((doc) => doc.data());
+      } catch {
+        return { available: false, grants: [] };
+      }
+    }
+    const now = Date.now();
+    const activeStates = /* @__PURE__ */ new Set([
+      "SUBSCRIPTION_STATE_ACTIVE",
+      "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+      "SUBSCRIPTION_STATE_CANCELED"
+    ]);
+    return {
+      available: true,
+      grants: records.filter(
+        (record) => Number.isFinite(record.expiryTimeMillis) && record.expiryTimeMillis > now && activeStates.has(record.subscriptionState)
+      )
+    };
+  }
+  /**
+   * Retrieves a grant record by purchase token.
+   */
+  static async getGrant(purchaseToken) {
+    const fingerprint = computeTokenFingerprint(purchaseToken);
+    if (!fingerprint) return null;
+    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      return testMemoryStore.get(fingerprint) || null;
+    }
+    const firestore = getDurableFirestore();
+    if (!firestore) return null;
+    try {
+      const docSnap = await firestore.collection(this.COLLECTION_NAME).doc(fingerprint).get();
+      if (!docSnap.exists) return null;
+      return docSnap.data();
+    } catch {
+      return null;
+    }
+  }
+};
+
+// server.ts
+var import_auth2 = require("firebase-admin/auth");
+
+// src/services/serverSecurity.ts
+var import_app2 = require("firebase-admin/app");
+var import_auth = require("firebase-admin/auth");
+var import_googleapis = require("googleapis");
+var import_fs2 = __toESM(require("fs"), 1);
+var InMemoryRateLimiter = class {
+  constructor() {
+    this.tracker = /* @__PURE__ */ new Map();
+    this.lastCleanup = Date.now();
+  }
+  /**
+   * Cleans up expired rate-limit records every 5 minutes to prevent memory leaks
+   */
+  cleanup() {
+    const now = Date.now();
+    if (now - this.lastCleanup < 3e5) return;
+    this.lastCleanup = now;
+    for (const [key, record] of this.tracker.entries()) {
+      if (now > record.resetAt) {
+        this.tracker.delete(key);
+      }
+    }
+  }
+  check(ip, maxRequests, windowMs) {
+    this.cleanup();
+    const now = Date.now();
+    const record = this.tracker.get(ip);
+    if (!record || now > record.resetAt) {
+      this.tracker.set(ip, { count: 1, resetAt: now + windowMs });
+      return { allowed: true, remaining: maxRequests - 1, resetInMs: windowMs };
+    }
+    if (record.count >= maxRequests) {
+      return { allowed: false, remaining: 0, resetInMs: Math.max(0, record.resetAt - now) };
+    }
+    record.count++;
+    return { allowed: true, remaining: maxRequests - record.count, resetInMs: Math.max(0, record.resetAt - now) };
+  }
+  reset(ip) {
+    if (ip) {
+      this.tracker.delete(ip);
+    } else {
+      this.tracker.clear();
+    }
+  }
+};
+var serverRateLimiter = new InMemoryRateLimiter();
+function getClientIp(req) {
+  if (req.ip) {
+    return req.ip;
+  }
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    const firstIp = forwarded.split(",")[0].trim();
+    if (firstIp && /^[0-9a-fA-F:.]+$/.test(firstIp)) {
+      return firstIp;
+    }
+  }
+  return req.socket.remoteAddress || "127.0.0.1";
+}
+function rateLimitMiddleware(options) {
+  const { maxRequests, windowMs, endpointName = "Endpoint" } = options;
+  return (req, res, next) => {
+    const clientIp = getClientIp(req);
+    const key = `${endpointName}:${clientIp}`;
+    const result = serverRateLimiter.check(key, maxRequests, windowMs);
+    res.setHeader("X-RateLimit-Limit", maxRequests);
+    res.setHeader("X-RateLimit-Remaining", result.remaining);
+    res.setHeader("X-RateLimit-Reset", Math.ceil(result.resetInMs / 1e3));
+    res.setHeader("X-RateLimit-Scope", "instance-memory-single-process");
+    if (!result.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil(result.resetInMs / 1e3));
+      res.setHeader("Retry-After", retryAfterSec);
+      res.status(429).json({
+        error: `Too many requests to ${endpointName}. Rate limit exceeded.`,
+        retryAfterSeconds: retryAfterSec
+      });
+      return;
+    }
+    next();
+  };
+}
+function payloadSizeValidator(maxBytes = 25e4) {
+  return (req, res, next) => {
+    const contentLength = req.headers["content-length"];
+    if (contentLength && parseInt(contentLength, 10) > maxBytes) {
+      res.status(413).json({
+        error: `Payload too large. Maximum allowed request size is ${Math.round(maxBytes / 1024)} KB.`
+      });
+      return;
+    }
+    if (req.body && typeof req.body === "object") {
+      try {
+        const bodyStr = JSON.stringify(req.body);
+        if (bodyStr.length > maxBytes) {
+          res.status(413).json({
+            error: `Request body exceeds maximum size limit of ${Math.round(maxBytes / 1024)} KB.`
+          });
+          return;
+        }
+      } catch {
+      }
+    }
+    next();
+  };
+}
+function sanitizeErrorMessage(err) {
+  if (!err) return "An unexpected error occurred.";
+  const msg = typeof err === "string" ? err : err.message || "Operation failed.";
+  let cleanMsg = msg.replace(/AIza[0-9A-Za-z-_]{20,50}/g, "[REDACTED_KEY]").replace(/\/app\/[a-zA-Z0-9_\-\.\/]+/g, "[REDACTED_PATH]").replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[REDACTED_EMAIL]");
+  return cleanMsg;
+}
+function normalizeOrigin(originStr) {
+  if (!originStr || typeof originStr !== "string") return null;
+  const trimmed = originStr.trim();
+  if (!trimmed || trimmed === "null") return null;
+  try {
+    const url = new URL(trimmed);
+    const protocol = url.protocol.toLowerCase();
+    if (protocol !== "http:" && protocol !== "https:" && protocol !== "capacitor:" && protocol !== "ionic:") {
+      return null;
+    }
+    if (url.username || url.password) {
+      return null;
+    }
+    if (url.search || url.hash) {
+      return null;
+    }
+    if (url.pathname && url.pathname !== "/") {
+      return null;
+    }
+    if ((protocol === "http:" || protocol === "https:") && !url.hostname) {
+      return null;
+    }
+    if (protocol === "capacitor:" || protocol === "ionic:") {
+      const host = (url.hostname || url.host || "localhost").toLowerCase();
+      return `${protocol}//${host}`;
+    }
+    return url.origin.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+function isOriginAllowed(origin, allowedOrigins, isExplicitAllowlist = false) {
+  if (!origin || typeof origin !== "string") return false;
+  const trimmedOrigin = origin.trim();
+  if (!trimmedOrigin) return false;
+  if (trimmedOrigin === "null") {
+    return allowedOrigins.includes("null");
+  }
+  const normalizedReqOrigin = normalizeOrigin(trimmedOrigin);
+  if (!normalizedReqOrigin) {
+    return false;
+  }
+  const normalizedAllowedSet = /* @__PURE__ */ new Set();
+  let hasWildcard = false;
+  for (const entry of allowedOrigins) {
+    if (!entry || typeof entry !== "string") continue;
+    const trimmedEntry = entry.trim();
+    if (trimmedEntry === "*") {
+      hasWildcard = true;
+      continue;
+    }
+    if (trimmedEntry === "null") {
+      normalizedAllowedSet.add("null");
+      continue;
+    }
+    const norm = normalizeOrigin(trimmedEntry);
+    if (norm) {
+      normalizedAllowedSet.add(norm);
+    }
+  }
+  if (hasWildcard) {
+    return true;
+  }
+  if (normalizedAllowedSet.has(normalizedReqOrigin)) {
+    return true;
+  }
+  if (isExplicitAllowlist) {
+    return false;
+  }
+  const isDevOrTest = process.env.NODE_ENV !== "production";
+  if (isDevOrTest) {
+    try {
+      const url = new URL(normalizedReqOrigin);
+      const host = url.hostname.toLowerCase();
+      if ((host === "localhost" || host === "127.0.0.1") && (url.protocol === "http:" || url.protocol === "https:")) {
+        return true;
+      }
+      if (url.protocol === "capacitor:" || url.protocol === "ionic:") {
+        return true;
+      }
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+function corsMiddleware(customAllowedOrigins) {
+  const envOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
+  const hasCustom = Boolean(customAllowedOrigins && customAllowedOrigins.length > 0);
+  const hasEnv = envOrigins.length > 0;
+  const isExplicit = hasCustom || hasEnv;
+  const defaultOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "capacitor://localhost",
+    "ionic://localhost",
+    "http://localhost"
+  ];
+  if (process.env.APP_URL) {
+    const normAppUrl = normalizeOrigin(process.env.APP_URL);
+    if (normAppUrl && !defaultOrigins.includes(normAppUrl)) {
+      defaultOrigins.push(normAppUrl);
+    }
+  }
+  const allowedOrigins = hasCustom ? customAllowedOrigins : hasEnv ? envOrigins : defaultOrigins;
+  return (req, res, next) => {
+    const origin = req.headers.origin;
+    if (!origin) {
+      next();
+      return;
+    }
+    res.setHeader("Vary", "Origin");
+    const isAllowed = isOriginAllowed(origin, allowedOrigins, isExplicit);
+    if (!isAllowed) {
+      if (req.method === "OPTIONS") {
+        res.status(403).json({ error: "CORS policy violation: Origin not allowed." });
+        return;
+      }
+      const requestPath = req.path || req.url || "";
+      const isStaticAsset = Boolean(requestPath && !requestPath.startsWith("/api"));
+      if (isStaticAsset && process.env.NODE_ENV !== "production") {
+        next();
+        return;
+      }
+      res.status(403).json({ error: "CORS policy violation: Origin not allowed." });
+      return;
+    }
+    const normalizedReqOrigin = normalizeOrigin(origin) || origin;
+    const hasWildcardAllow = allowedOrigins.includes("*");
+    if (hasWildcardAllow) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", normalizedReqOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+    next();
+  };
+}
+var firebaseAdminApp = null;
+function getFirebaseAdminApp() {
+  if (!firebaseAdminApp) {
+    if ((0, import_app2.getApps)().length > 0) {
+      firebaseAdminApp = (0, import_app2.getApp)();
+    } else {
+      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (serviceAccountKey) {
+        try {
+          let certObj;
+          if (serviceAccountKey.trim().startsWith("{")) {
+            certObj = JSON.parse(serviceAccountKey);
+          } else if (import_fs2.default.existsSync(serviceAccountKey)) {
+            certObj = JSON.parse(import_fs2.default.readFileSync(serviceAccountKey, "utf8"));
+          }
+          if (certObj) {
+            firebaseAdminApp = (0, import_app2.initializeApp)({
+              credential: (0, import_app2.cert)(certObj),
+              projectId: certObj.project_id || firebase_applet_config_default.projectId
+            });
+          }
+        } catch (e) {
+          console.error("[serverSecurity] Failed to parse Firebase service account credentials:", e);
+        }
+      }
+      if (!firebaseAdminApp) {
+        firebaseAdminApp = (0, import_app2.initializeApp)({
+          projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj"
+        });
+      }
+    }
+  }
+  return firebaseAdminApp;
+}
+function parseJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonStr = Buffer.from(base64, "base64").toString("utf8");
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+function matchesConfiguredSupabaseIssuer(issuer, projectUrl) {
+  try {
+    const normalizedProjectUrl = new URL(projectUrl).toString().replace(/\/$/, "");
+    return issuer === `${normalizedProjectUrl}/auth/v1`;
+  } catch {
+    return false;
+  }
+}
+async function verifySupabaseAccessToken(token, projectUrl, anonKey, fetcher = fetch) {
+  let baseUrl;
+  try {
+    baseUrl = new URL(projectUrl);
+  } catch {
+    return { valid: false, error: "Supabase authentication is not configured with a valid project URL." };
+  }
+  if (baseUrl.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && baseUrl.hostname === "localhost")) {
+    return { valid: false, error: "Supabase authentication requires a secure HTTPS project URL." };
+  }
+  if (!anonKey.trim()) {
+    return { valid: false, error: "Supabase authentication is not configured with a project API key." };
+  }
+  const normalizedProjectUrl = baseUrl.toString().replace(/\/$/, "");
+  try {
+    const response = await fetcher(`${normalizedProjectUrl}/auth/v1/user`, {
+      method: "GET",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json"
+      },
+      signal: AbortSignal.timeout(5e3)
+    });
+    if (!response.ok) {
+      return { valid: false, error: "Supabase rejected the authentication token." };
+    }
+    const user = await response.json();
+    if (typeof user.id !== "string" || !user.id.trim()) {
+      return { valid: false, error: "Supabase returned an invalid authenticated user record." };
+    }
+    return {
+      valid: true,
+      user: {
+        uid: user.id,
+        email: typeof user.email === "string" ? user.email : void 0,
+        role: "user"
+      }
+    };
+  } catch {
+    return { valid: false, error: "Supabase authentication could not be verified." };
+  }
+}
+async function verifyAuthToken(token) {
+  if (!token || typeof token !== "string" || !token.trim()) {
+    return { valid: false, error: "Missing or empty authentication token." };
+  }
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return { valid: false, error: "Malformed authentication token: Unable to decode JWT structure." };
+  }
+  const payload = parseJwtPayload(token);
+  if (!payload) {
+    return { valid: false, error: "Malformed authentication token: Unable to decode JWT payload." };
+  }
+  if (payload.exp && typeof payload.exp === "number") {
+    const nowSec = Math.floor(Date.now() / 1e3);
+    if (nowSec > payload.exp) {
+      return { valid: false, error: "Expired authentication token: Token has passed its exp timestamp." };
+    }
+  }
+  if (typeof payload.iss === "string" && payload.iss.endsWith("/auth/v1")) {
+    const projectUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").trim();
+    const anonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "").trim();
+    if (!projectUrl || !anonKey) {
+      return { valid: false, error: "Supabase token rejected: server-side Supabase project configuration is missing." };
+    }
+    if (!matchesConfiguredSupabaseIssuer(payload.iss, projectUrl)) {
+      return { valid: false, error: "Supabase token issuer does not match the configured project." };
+    }
+    return verifySupabaseAccessToken(token, projectUrl, anonKey);
+  }
+  const isTestProcess = isGenuineTestEnvironment() && payload.iss === "https://securetoken.google.com/test-project";
+  if (isTestProcess) {
+    const uid = payload.user_id || payload.sub || payload.uid;
+    if (!uid || typeof uid !== "string") {
+      return { valid: false, error: "Invalid token claims: Token missing user identifier (sub/user_id)." };
+    }
+    const role = payload.admin === true || payload["https://detergentlab.internal/admin"] === true ? "admin" : "user";
+    return {
+      valid: true,
+      user: { uid, email: payload.email, role }
+    };
+  }
+  try {
+    const adminApp = getFirebaseAdminApp();
+    const auth = (0, import_auth.getAuth)(adminApp);
+    const decodedToken = await auth.verifyIdToken(token, true);
+    const uid = decodedToken.uid;
+    if (!uid) {
+      return { valid: false, error: "Cryptographic verification failed: Missing uid in decoded token." };
+    }
+    const role = decodedToken.admin === true || decodedToken.role === "admin" ? "admin" : "user";
+    return {
+      valid: true,
+      user: {
+        uid,
+        email: decodedToken.email,
+        role
+      }
+    };
+  } catch (err) {
+    return {
+      valid: false,
+      error: `Cryptographic token verification failed: ${sanitizeErrorMessage(err)}`
+    };
+  }
+}
+function authenticateUserMiddleware(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({
+      error: "Authentication required: Missing Authorization header with Bearer token."
+    });
+    return;
+  }
+  const token = authHeader.substring(7).trim();
+  verifyAuthToken(token).then((result) => {
+    if (!result.valid || !result.user) {
+      res.status(401).json({
+        error: result.error || "Authentication failed: Invalid or expired token."
+      });
+      return;
+    }
+    req.user = result.user;
+    next();
+  }).catch((err) => {
+    res.status(401).json({
+      error: `Authentication error: ${sanitizeErrorMessage(err)}`
+    });
+  });
+}
+function requireAdminMiddleware(req, res, next) {
+  const user = req.user;
+  if (!user || user.role !== "admin") {
+    res.status(403).json({
+      error: "Forbidden: Endpoint requires administrator privileges."
+    });
+    return;
+  }
+  next();
+}
+function verifyUserOwnership(authenticatedUid, targetUserId) {
+  if (!authenticatedUid || !targetUserId) return false;
+  return authenticatedUid === targetUserId;
+}
+var ALLOWED_PLAY_PRODUCT_IDS = [
+  "com.detergentlab.pro.monthly",
+  "com.detergentlab.pro.yearly",
+  "com.detergentlab.team.yearly"
+];
+var CANONICAL_PACKAGE_NAME = "com.detergentrnd.formulaexpert";
+function requireVerifiedBillingAuthMiddleware(req, res, next) {
+  const user = req.user;
+  if (!user || !user.uid || user.uid === "anonymous_client") {
+    res.status(401).json({
+      error: "Verified authentication required for billing. Anonymous or unauthenticated requests are strictly prohibited.",
+      status: "UNVERIFIED"
+    });
+    return;
+  }
+  next();
+}
+async function verifyGooglePlayPurchase(request) {
+  const { packageName, productId, purchaseToken, userId } = request;
+  if (packageName !== CANONICAL_PACKAGE_NAME) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: `Invalid application package name: '${packageName}'. Expected '${CANONICAL_PACKAGE_NAME}'.`
+    };
+  }
+  if (!ALLOWED_PLAY_PRODUCT_IDS.includes(productId)) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: `Unrecognized product ID: '${productId}'. Must be one of: ${ALLOWED_PLAY_PRODUCT_IDS.join(", ")}.`
+    };
+  }
+  if (!purchaseToken || typeof purchaseToken !== "string" || purchaseToken.trim().length === 0) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: "Empty or invalid purchase token."
+    };
+  }
+  if (!userId || typeof userId !== "string" || userId.trim().length === 0 || userId === "anonymous_client") {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: "Missing or anonymous user ID. Purchases must be bound to a verified authenticated account."
+    };
+  }
+  const replayCheck = await DurablePurchaseStore.checkReplay(purchaseToken, userId);
+  if (!replayCheck.allowed) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: replayCheck.error || "Durable purchase token replay check failed. Access denied (fail-closed)."
+    };
+  }
+  const hasPlayCredentials = Boolean(
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS
+  );
+  if (!hasPlayCredentials) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: "Google Play Developer API service account credentials (GOOGLE_PLAY_SERVICE_ACCOUNT_KEY) are not configured on the server. Live verification BLOCKED (fail-closed)."
+    };
+  }
+  try {
+    const androidpublisher = import_googleapis.google.androidpublisher("v3");
+    let credentialsObj;
+    const keyEnv = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (keyEnv) {
+      if (keyEnv.trim().startsWith("{")) {
+        credentialsObj = JSON.parse(keyEnv);
+      } else if (import_fs2.default.existsSync(keyEnv)) {
+        credentialsObj = JSON.parse(import_fs2.default.readFileSync(keyEnv, "utf8"));
+      }
+    }
+    const auth = new import_googleapis.google.auth.GoogleAuth({
+      credentials: credentialsObj,
+      scopes: ["https://www.googleapis.com/auth/androidpublisher"]
+    });
+    const authClient = await auth.getClient();
+    const playRes = await androidpublisher.purchases.subscriptionsv2.get({
+      packageName,
+      token: purchaseToken,
+      auth: authClient
+    });
+    const sub = playRes.data;
+    if (!sub) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: "Empty response received from Google Play Developer API."
+      };
+    }
+    const matchedItem = sub.lineItems?.find((item) => item.productId === productId);
+    if (!matchedItem) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        error: `Purchased product mismatch: line item '${productId}' not found in Google Play receipt.`
+      };
+    }
+    const expiryTimeIso = matchedItem.expiryTime;
+    const expiryTimeMillis = expiryTimeIso ? new Date(expiryTimeIso).getTime() : 0;
+    const nowMs = Date.now();
+    if (!expiryTimeMillis || isNaN(expiryTimeMillis) || expiryTimeMillis <= nowMs) {
+      return {
+        verified: false,
+        status: "EXPIRED",
+        productId,
+        userId,
+        error: "Subscription has expired or lacks a valid future expiry timestamp."
+      };
+    }
+    const allowedStates = [
+      "SUBSCRIPTION_STATE_ACTIVE",
+      "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+      "SUBSCRIPTION_STATE_CANCELED"
+    ];
+    const currentState = sub.subscriptionState;
+    if (!currentState || !allowedStates.includes(currentState)) {
+      return {
+        verified: false,
+        status: currentState === "SUBSCRIPTION_STATE_EXPIRED" ? "EXPIRED" : "UNVERIFIED",
+        productId,
+        userId,
+        error: `Google Play subscription state '${currentState || "UNKNOWN"}' is not permitted or unrecognized. Access denied (fail-closed).`
+      };
+    }
+    let recordResult;
+    try {
+      recordResult = await DurablePurchaseStore.recordGrant({
+        purchaseToken,
+        userId,
+        productId,
+        packageName,
+        subscriptionState: sub.subscriptionState || "SUBSCRIPTION_STATE_ACTIVE",
+        expiryTimeMillis
+      });
+    } catch (storeErr) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        productId,
+        userId,
+        error: `Durable store grant persistence threw an exception: ${sanitizeErrorMessage(storeErr)}`
+      };
+    }
+    if (!recordResult || !recordResult.success || !recordResult.grant) {
+      return {
+        verified: false,
+        status: "UNVERIFIED",
+        productId,
+        userId,
+        error: recordResult?.error || "Durable purchase grant recording failed or was rejected. Access denied (fail-closed)."
+      };
+    }
+    return {
+      verified: true,
+      status: "ACTIVE",
+      productId,
+      userId
+    };
+  } catch (apiErr) {
+    return {
+      verified: false,
+      status: "UNVERIFIED",
+      error: `Google Play Developer API verification failed: ${sanitizeErrorMessage(apiErr)}`
+    };
+  }
+}
+function runStartupSecurityDiagnostics() {
+  const hasFirebase = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  const hasPlay = Boolean(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  const hasFirestore = Boolean(getFirebaseAdminApp());
+  console.log("--- STARTUP SECURITY & BILLING DIAGNOSTICS ---");
+  console.log(`Firebase Admin Auth: ${hasFirebase ? "Configured (Service Account)" : "Default (Applet Config Project ID)"}`);
+  console.log(`Firestore Database: ${hasFirestore ? "Available" : "Unconfigured"}`);
+  console.log(`Google Play Developer API: ${hasPlay ? "Configured" : "Missing Credentials (Fail-Closed Active)"}`);
+  console.log(`Policy: STRICT_FAIL_CLOSED_SERVER_VERIFIED`);
+  console.log("----------------------------------------------");
+  return {
+    firebaseAdminConfigured: hasFirebase,
+    firestoreConfigured: hasFirestore,
+    playBillingConfigured: hasPlay,
+    policy: "STCRIPTION_STATE_STRICT_FAIL_CLOSED"
+  };
+}
+function validatePort(portVal) {
+  if (portVal === void 0 || portVal === null) return 3e3;
+  const num = typeof portVal === "number" ? portVal : parseInt(String(portVal).trim(), 10);
+  if (isNaN(num) || num < 1 || num > 65535) {
+    return 3e3;
+  }
+  return num;
+}
+function isApiKeyConfigured(apiKey) {
+  if (!apiKey || typeof apiKey !== "string") return false;
+  const trimmed = apiKey.trim();
+  if (trimmed.length < 10) return false;
+  const placeholderPatterns = [
+    "MY_GEMINI_API_KEY",
+    "YOUR_API_KEY",
+    "placeholder",
+    "undefined",
+    "null",
+    "YOUR_KEY_HERE",
+    "API_KEY_HERE"
+  ];
+  if (placeholderPatterns.some((p) => trimmed.toLowerCase() === p.toLowerCase())) {
+    return false;
+  }
+  return true;
+}
+function resolveGeminiModel(customModel) {
+  const DEFAULT_MODEL = "gemini-3.8-flash";
+  const candidate = customModel || process.env.GEMINI_MODEL;
+  if (!candidate || typeof candidate !== "string" || !candidate.trim()) {
+    return DEFAULT_MODEL;
+  }
+  return candidate.trim();
+}
+function resolveTrustProxy(trustVal) {
+  if (trustVal === void 0 || trustVal === null || trustVal === "") {
+    return 1;
+  }
+  const trimmed = String(trustVal).trim().toLowerCase();
+  if (trimmed === "true") {
+    return 1;
+  }
+  if (trimmed === "false" || trimmed === "0") {
+    return false;
+  }
+  const parsedNum = parseInt(trimmed, 10);
+  if (!isNaN(parsedNum) && String(parsedNum) === trimmed) {
+    return parsedNum;
+  }
+  return trustVal;
+}
+function securityHeadersMiddleware() {
+  return (_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  };
+}
+function validateEnvironmentConfig() {
+  const port = validatePort(process.env.PORT);
+  const model = resolveGeminiModel();
+  const trustProxy = resolveTrustProxy(process.env.TRUST_PROXY);
+  const hasGeminiKey = isApiKeyConfigured(process.env.GEMINI_API_KEY);
+  const hasFirebaseCredentials = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  return {
+    port,
+    model,
+    trustProxy,
+    hasGeminiKey,
+    hasFirebaseCredentials
+  };
+}
+
 // src/domain/ph/acidBaseDataModel.ts
 var AUTHORITATIVE_ACID_BASE_REGISTRY = {
   // --------------------------------------------------------------------------
@@ -8302,739 +9310,64 @@ function calculateReactiveEquivalents(profile, rawMassKg) {
   };
 }
 
-// src/services/serverSecurity.ts
-var import_app2 = require("firebase-admin/app");
-var import_auth = require("firebase-admin/auth");
-var import_googleapis = require("googleapis");
-var import_fs2 = __toESM(require("fs"), 1);
-
-// firebase-applet-config.json
-var firebase_applet_config_default = {
-  projectId: "imagined-zone-cv4kj",
-  appId: "1:678655473700:web:d29cf4d8feff5e983240b1",
-  apiKey: "AIzaSyCSoBbyRjYpzWIjsHbKLAfgWbh6SxcONMc",
-  authDomain: "imagined-zone-cv4kj.firebaseapp.com",
-  firestoreDatabaseId: "ai-studio-formulaexpert-1b72894a-9fa1-4c13-a705-8b8d50c5196c",
-  storageBucket: "imagined-zone-cv4kj.firebasestorage.app",
-  messagingSenderId: "678655473700",
-  measurementId: "",
-  oAuthClientId: "678655473700-c21bjeiv33paeqeia7aa7um22mh85aia.apps.googleusercontent.com",
-  recaptchaSiteKey: ""
-};
-
-// src/services/durablePurchaseStore.ts
-var import_crypto = __toESM(require("crypto"), 1);
-var import_app = require("firebase-admin/app");
-var import_firestore = require("firebase-admin/firestore");
-var import_fs = __toESM(require("fs"), 1);
-function computeTokenFingerprint(token) {
-  if (!token || typeof token !== "string") return "";
-  return import_crypto.default.createHash("sha256").update(token.trim()).digest("hex");
-}
-var adminFirestoreInstance = null;
-function getDurableFirestore() {
-  if (adminFirestoreInstance) return adminFirestoreInstance;
-  try {
-    let app2;
-    if ((0, import_app.getApps)().length > 0) {
-      app2 = (0, import_app.getApp)();
-    } else {
-      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-      if (serviceAccountKey) {
-        let certObj;
-        if (serviceAccountKey.trim().startsWith("{")) {
-          certObj = JSON.parse(serviceAccountKey);
-        } else if (import_fs.default.existsSync(serviceAccountKey)) {
-          certObj = JSON.parse(import_fs.default.readFileSync(serviceAccountKey, "utf8"));
-        }
-        if (certObj) {
-          app2 = (0, import_app.initializeApp)({
-            credential: (0, import_app.cert)(certObj),
-            projectId: certObj.project_id || firebase_applet_config_default.projectId
-          });
-        } else {
-          app2 = (0, import_app.initializeApp)({ projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj" });
-        }
-      } else {
-        app2 = (0, import_app.initializeApp)({ projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj" });
-      }
-    }
-    const databaseId = firebase_applet_config_default.firestoreDatabaseId;
-    adminFirestoreInstance = databaseId ? (0, import_firestore.getFirestore)(app2, databaseId) : (0, import_firestore.getFirestore)(app2);
-    return adminFirestoreInstance;
-  } catch (err) {
-    console.warn("[DurablePurchaseStore] Admin Firestore unavailable:", err?.message || err);
-    return null;
-  }
-}
-var testMemoryStore = /* @__PURE__ */ new Map();
-function isGenuineTestEnvironment() {
-  if (process.env.NODE_ENV === "production") return false;
-  return process.env.NODE_ENV === "test" || Boolean(process.argv && process.argv.some((a) => a.includes("test") || a.includes("test-calculations"))) || process.env.JEST_WORKER_ID !== void 0 || process.env.VITEST !== void 0;
-}
-var DurablePurchaseStore = class {
-  static {
-    this.COLLECTION_NAME = "purchase_grants";
-  }
-  /**
-   * Resets the test memory store. Only permitted in test processes.
-   */
-  static resetTestStore() {
-    if (isGenuineTestEnvironment()) {
-      testMemoryStore.clear();
-    }
-  }
-  /**
-   * Checks whether a purchase token has been registered, verifying user account ownership.
-   * Concurrency-safe: checks durable store by token fingerprint.
-   */
-  static async checkReplay(purchaseToken, targetUserId) {
-    const fingerprint = computeTokenFingerprint(purchaseToken);
-    if (!fingerprint) {
-      return { allowed: false, isExistingGrant: false, error: "Empty or invalid purchase token." };
-    }
-    if (!targetUserId || targetUserId === "anonymous_client") {
-      return { allowed: false, isExistingGrant: false, error: "Missing or anonymous user ID." };
-    }
-    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      const existing = testMemoryStore.get(fingerprint);
-      if (existing) {
-        if (existing.userId !== targetUserId) {
-          return {
-            allowed: false,
-            isExistingGrant: true,
-            error: "Purchase token replay detected: This token was already bound to a different user account."
-          };
-        }
-        return { allowed: true, isExistingGrant: true, grant: existing };
-      }
-      return { allowed: true, isExistingGrant: false };
-    }
-    const firestore = getDurableFirestore();
-    if (!firestore) {
-      return {
-        allowed: false,
-        isExistingGrant: false,
-        error: "Durable storage configuration missing. Fail-closed: Cannot perform replay verification."
-      };
-    }
-    try {
-      const docRef = firestore.collection(this.COLLECTION_NAME).doc(fingerprint);
-      const docSnap = await docRef.get();
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        if (data.userId !== targetUserId) {
-          return {
-            allowed: false,
-            isExistingGrant: true,
-            error: "Purchase token replay detected: This token was already bound to a different user account."
-          };
-        }
-        return { allowed: true, isExistingGrant: true, grant: data };
-      }
-      return { allowed: true, isExistingGrant: false };
-    } catch (err) {
-      return {
-        allowed: false,
-        isExistingGrant: false,
-        error: `Durable replay store query failed: ${err.message || "Unknown Firestore error"}`
-      };
-    }
-  }
-  /**
-   * Atomically records a verified purchase grant bound to the user ID.
-   * Uses Firestore transactions in production to guarantee atomic write and prevent concurrent race conditions.
-   */
-  static async recordGrant(grantData) {
-    const fingerprint = computeTokenFingerprint(grantData.purchaseToken);
-    if (!fingerprint) {
-      return { success: false, error: "Invalid token fingerprint." };
-    }
-    const nowIso = (/* @__PURE__ */ new Date()).toISOString();
-    const record = {
-      tokenFingerprint: fingerprint,
-      userId: grantData.userId,
-      productId: grantData.productId,
-      packageName: grantData.packageName,
-      subscriptionState: grantData.subscriptionState,
-      expiryTimeMillis: grantData.expiryTimeMillis,
-      verifiedAt: Date.now(),
-      createdAt: nowIso,
-      updatedAt: nowIso
-    };
-    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      const existing = testMemoryStore.get(fingerprint);
-      if (existing && existing.userId !== grantData.userId) {
-        return {
-          success: false,
-          error: "Concurrent race condition: Purchase token was claimed by another account."
-        };
-      }
-      testMemoryStore.set(fingerprint, record);
-      return { success: true, grant: record };
-    }
-    const firestore = getDurableFirestore();
-    if (!firestore) {
-      return {
-        success: false,
-        error: "Durable storage configuration missing. Fail-closed: Cannot record purchase grant."
-      };
-    }
-    try {
-      const docRef = firestore.collection(this.COLLECTION_NAME).doc(fingerprint);
-      await firestore.runTransaction(async (transaction) => {
-        const docSnap = await transaction.get(docRef);
-        if (docSnap.exists) {
-          const existing = docSnap.data();
-          if (existing.userId !== grantData.userId) {
-            throw new Error("Purchase token replay detected: This token was already bound to a different user account.");
-          }
-          transaction.update(docRef, {
-            subscriptionState: grantData.subscriptionState,
-            expiryTimeMillis: grantData.expiryTimeMillis,
-            verifiedAt: Date.now(),
-            updatedAt: nowIso
-          });
-        } else {
-          transaction.set(docRef, record);
-        }
-      });
-      return { success: true, grant: record };
-    } catch (err) {
-      return {
-        success: false,
-        error: `Transaction failed during purchase grant persistence: ${err.message || "Firestore transaction error"}`
-      };
-    }
-  }
-  /**
-   * Retrieves a grant record by purchase token.
-   */
-  static async getGrant(purchaseToken) {
-    const fingerprint = computeTokenFingerprint(purchaseToken);
-    if (!fingerprint) return null;
-    if (isGenuineTestEnvironment() && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      return testMemoryStore.get(fingerprint) || null;
-    }
-    const firestore = getDurableFirestore();
-    if (!firestore) return null;
-    try {
-      const docSnap = await firestore.collection(this.COLLECTION_NAME).doc(fingerprint).get();
-      if (!docSnap.exists) return null;
-      return docSnap.data();
-    } catch {
-      return null;
-    }
-  }
-};
-
-// src/services/serverSecurity.ts
-var InMemoryRateLimiter = class {
-  constructor() {
-    this.tracker = /* @__PURE__ */ new Map();
-    this.lastCleanup = Date.now();
-  }
-  /**
-   * Cleans up expired rate-limit records every 5 minutes to prevent memory leaks
-   */
-  cleanup() {
-    const now = Date.now();
-    if (now - this.lastCleanup < 3e5) return;
-    this.lastCleanup = now;
-    for (const [key, record] of this.tracker.entries()) {
-      if (now > record.resetAt) {
-        this.tracker.delete(key);
-      }
-    }
-  }
-  check(ip, maxRequests, windowMs) {
-    this.cleanup();
-    const now = Date.now();
-    const record = this.tracker.get(ip);
-    if (!record || now > record.resetAt) {
-      this.tracker.set(ip, { count: 1, resetAt: now + windowMs });
-      return { allowed: true, remaining: maxRequests - 1, resetInMs: windowMs };
-    }
-    if (record.count >= maxRequests) {
-      return { allowed: false, remaining: 0, resetInMs: Math.max(0, record.resetAt - now) };
-    }
-    record.count++;
-    return { allowed: true, remaining: maxRequests - record.count, resetInMs: Math.max(0, record.resetAt - now) };
-  }
-  reset(ip) {
-    if (ip) {
-      this.tracker.delete(ip);
-    } else {
-      this.tracker.clear();
-    }
-  }
-};
-var serverRateLimiter = new InMemoryRateLimiter();
-function getClientIp(req) {
-  if (req.ip) {
-    return req.ip;
-  }
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string") {
-    const firstIp = forwarded.split(",")[0].trim();
-    if (firstIp && /^[0-9a-fA-F:.]+$/.test(firstIp)) {
-      return firstIp;
-    }
-  }
-  return req.socket.remoteAddress || "127.0.0.1";
-}
-function rateLimitMiddleware(options) {
-  const { maxRequests, windowMs, endpointName = "Endpoint" } = options;
-  return (req, res, next) => {
-    const clientIp = getClientIp(req);
-    const key = `${endpointName}:${clientIp}`;
-    const result = serverRateLimiter.check(key, maxRequests, windowMs);
-    res.setHeader("X-RateLimit-Limit", maxRequests);
-    res.setHeader("X-RateLimit-Remaining", result.remaining);
-    res.setHeader("X-RateLimit-Reset", Math.ceil(result.resetInMs / 1e3));
-    res.setHeader("X-RateLimit-Scope", "instance-memory-single-process");
-    if (!result.allowed) {
-      const retryAfterSec = Math.max(1, Math.ceil(result.resetInMs / 1e3));
-      res.setHeader("Retry-After", retryAfterSec);
-      res.status(429).json({
-        error: `Too many requests to ${endpointName}. Rate limit exceeded.`,
-        retryAfterSeconds: retryAfterSec
-      });
-      return;
-    }
-    next();
-  };
-}
-function payloadSizeValidator(maxBytes = 25e4) {
-  return (req, res, next) => {
-    const contentLength = req.headers["content-length"];
-    if (contentLength && parseInt(contentLength, 10) > maxBytes) {
-      res.status(413).json({
-        error: `Payload too large. Maximum allowed request size is ${Math.round(maxBytes / 1024)} KB.`
-      });
-      return;
-    }
-    if (req.body && typeof req.body === "object") {
-      try {
-        const bodyStr = JSON.stringify(req.body);
-        if (bodyStr.length > maxBytes) {
-          res.status(413).json({
-            error: `Request body exceeds maximum size limit of ${Math.round(maxBytes / 1024)} KB.`
-          });
-          return;
-        }
-      } catch {
-      }
-    }
-    next();
-  };
-}
-function sanitizeErrorMessage(err) {
-  if (!err) return "An unexpected error occurred.";
-  const msg = typeof err === "string" ? err : err.message || "Operation failed.";
-  let cleanMsg = msg.replace(/AIza[0-9A-Za-z-_]{20,50}/g, "[REDACTED_KEY]").replace(/\/app\/[a-zA-Z0-9_\-\.\/]+/g, "[REDACTED_PATH]").replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[REDACTED_EMAIL]");
-  return cleanMsg;
-}
-function isOriginAllowed(origin, allowedOrigins, isExplicitAllowlist) {
-  if (!origin) return true;
-  if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) return true;
-  if (isExplicitAllowlist) {
-    return false;
-  }
-  try {
-    const url = new URL(origin);
-    const host = url.hostname.toLowerCase();
-    if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".run.app") || host.endsWith(".google.com") || host.endsWith(".googleusercontent.com") || url.protocol === "capacitor:" || url.protocol === "ionic:") {
-      return true;
-    }
-  } catch {
-    return false;
-  }
-  return false;
-}
-function corsMiddleware(customAllowedOrigins) {
-  const envOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
-  const defaultOrigins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "capacitor://localhost",
-    "ionic://localhost",
-    "http://localhost"
-  ];
-  const allowedOrigins = customAllowedOrigins && customAllowedOrigins.length > 0 ? customAllowedOrigins : envOrigins.length > 0 ? envOrigins : defaultOrigins;
-  const isExplicit = Boolean(customAllowedOrigins && customAllowedOrigins.length > 0);
-  return (req, res, next) => {
-    const origin = req.headers.origin;
-    if (!origin) {
-      next();
-      return;
-    }
-    const isAllowed = isOriginAllowed(origin, allowedOrigins, isExplicit);
-    if (isAllowed) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-      res.setHeader("Access-Control-Max-Age", "86400");
-    }
-    if (req.method === "OPTIONS") {
-      if (!isAllowed) {
-        res.status(403).json({ error: "CORS policy violation: Origin not allowed." });
-        return;
-      }
-      res.status(204).end();
-      return;
-    }
-    const requestPath = req.path || req.url || "";
-    const isStaticAsset = Boolean(requestPath && !requestPath.startsWith("/api"));
-    if (isStaticAsset) {
-      if (!isAllowed) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-      }
-      next();
-      return;
-    }
-    if (!isAllowed) {
-      res.status(403).json({ error: "CORS policy violation: Origin not allowed." });
-      return;
-    }
-    next();
-  };
-}
-var firebaseAdminApp = null;
-function getFirebaseAdminApp() {
-  if (!firebaseAdminApp) {
-    if ((0, import_app2.getApps)().length > 0) {
-      firebaseAdminApp = (0, import_app2.getApp)();
-    } else {
-      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-      if (serviceAccountKey) {
-        try {
-          let certObj;
-          if (serviceAccountKey.trim().startsWith("{")) {
-            certObj = JSON.parse(serviceAccountKey);
-          } else if (import_fs2.default.existsSync(serviceAccountKey)) {
-            certObj = JSON.parse(import_fs2.default.readFileSync(serviceAccountKey, "utf8"));
-          }
-          if (certObj) {
-            firebaseAdminApp = (0, import_app2.initializeApp)({
-              credential: (0, import_app2.cert)(certObj),
-              projectId: certObj.project_id || firebase_applet_config_default.projectId
-            });
-          }
-        } catch (e) {
-          console.error("[serverSecurity] Failed to parse Firebase service account credentials:", e);
-        }
-      }
-      if (!firebaseAdminApp) {
-        firebaseAdminApp = (0, import_app2.initializeApp)({
-          projectId: firebase_applet_config_default.projectId || "imagined-zone-cv4kj"
-        });
-      }
-    }
-  }
-  return firebaseAdminApp;
-}
-function parseJwtPayload(token) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const jsonStr = Buffer.from(base64, "base64").toString("utf8");
-    return JSON.parse(jsonStr);
-  } catch {
-    return null;
-  }
-}
-async function verifyAuthToken(token) {
-  if (!token || typeof token !== "string" || !token.trim()) {
-    return { valid: false, error: "Missing or empty authentication token." };
-  }
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    return { valid: false, error: "Malformed authentication token: Unable to decode JWT structure." };
-  }
-  const payload = parseJwtPayload(token);
-  if (!payload) {
-    return { valid: false, error: "Malformed authentication token: Unable to decode JWT payload." };
-  }
-  if (payload.exp && typeof payload.exp === "number") {
-    const nowSec = Math.floor(Date.now() / 1e3);
-    if (nowSec > payload.exp) {
-      return { valid: false, error: "Expired authentication token: Token has passed its exp timestamp." };
-    }
-  }
-  const isTestProcess = isGenuineTestEnvironment() && payload.iss === "https://securetoken.google.com/test-project";
-  if (isTestProcess) {
-    const uid = payload.user_id || payload.sub || payload.uid;
-    if (!uid || typeof uid !== "string") {
-      return { valid: false, error: "Invalid token claims: Token missing user identifier (sub/user_id)." };
-    }
-    const role = payload.admin === true || payload["https://detergentlab.internal/admin"] === true ? "admin" : "user";
-    return {
-      valid: true,
-      user: { uid, email: payload.email, role }
-    };
-  }
-  try {
-    const adminApp = getFirebaseAdminApp();
-    const auth = (0, import_auth.getAuth)(adminApp);
-    const decodedToken = await auth.verifyIdToken(token, true);
-    const uid = decodedToken.uid;
-    if (!uid) {
-      return { valid: false, error: "Cryptographic verification failed: Missing uid in decoded token." };
-    }
-    const role = decodedToken.admin === true || decodedToken.role === "admin" ? "admin" : "user";
-    return {
-      valid: true,
-      user: {
-        uid,
-        email: decodedToken.email,
-        role
-      }
-    };
-  } catch (err) {
-    return {
-      valid: false,
-      error: `Cryptographic token verification failed: ${sanitizeErrorMessage(err)}`
-    };
-  }
-}
-function authenticateUserMiddleware(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({
-      error: "Authentication required: Missing Authorization header with Bearer token."
-    });
-    return;
-  }
-  const token = authHeader.substring(7).trim();
-  verifyAuthToken(token).then((result) => {
-    if (!result.valid || !result.user) {
-      res.status(401).json({
-        error: result.error || "Authentication failed: Invalid or expired token."
-      });
-      return;
-    }
-    req.user = result.user;
-    next();
-  }).catch((err) => {
-    res.status(401).json({
-      error: `Authentication error: ${sanitizeErrorMessage(err)}`
-    });
-  });
-}
-function requireAdminMiddleware(req, res, next) {
-  const user = req.user;
-  if (!user || user.role !== "admin") {
-    res.status(403).json({
-      error: "Forbidden: Endpoint requires administrator privileges."
-    });
-    return;
-  }
-  next();
-}
-function verifyUserOwnership(authenticatedUid, targetUserId) {
-  if (!authenticatedUid || !targetUserId) return false;
-  return authenticatedUid === targetUserId;
-}
-var ALLOWED_PLAY_PRODUCT_IDS = [
-  "com.detergentlab.pro.monthly",
-  "com.detergentlab.pro.yearly",
-  "com.detergentlab.team.yearly"
-];
-var CANONICAL_PACKAGE_NAME = "com.detergentrnd.formulaexpert";
-function requireVerifiedBillingAuthMiddleware(req, res, next) {
-  const user = req.user;
-  if (!user || !user.uid || user.uid === "anonymous_client") {
-    res.status(401).json({
-      error: "Verified authentication required for billing. Anonymous or unauthenticated requests are strictly prohibited.",
-      status: "UNVERIFIED"
-    });
-    return;
-  }
-  next();
-}
-async function verifyGooglePlayPurchase(request) {
-  const { packageName, productId, purchaseToken, userId } = request;
-  if (packageName !== CANONICAL_PACKAGE_NAME) {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: `Invalid application package name: '${packageName}'. Expected '${CANONICAL_PACKAGE_NAME}'.`
-    };
-  }
-  if (!ALLOWED_PLAY_PRODUCT_IDS.includes(productId)) {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: `Unrecognized product ID: '${productId}'. Must be one of: ${ALLOWED_PLAY_PRODUCT_IDS.join(", ")}.`
-    };
-  }
-  if (!purchaseToken || typeof purchaseToken !== "string" || purchaseToken.trim().length === 0) {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: "Empty or invalid purchase token."
-    };
-  }
-  if (!userId || typeof userId !== "string" || userId.trim().length === 0 || userId === "anonymous_client") {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: "Missing or anonymous user ID. Purchases must be bound to a verified authenticated account."
-    };
-  }
-  const replayCheck = await DurablePurchaseStore.checkReplay(purchaseToken, userId);
-  if (!replayCheck.allowed) {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: replayCheck.error || "Durable purchase token replay check failed. Access denied (fail-closed)."
-    };
-  }
-  const hasPlayCredentials = Boolean(
-    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS
-  );
-  if (!hasPlayCredentials) {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: "Google Play Developer API service account credentials (GOOGLE_PLAY_SERVICE_ACCOUNT_KEY) are not configured on the server. Live verification BLOCKED (fail-closed)."
-    };
-  }
-  try {
-    const androidpublisher = import_googleapis.google.androidpublisher("v3");
-    let credentialsObj;
-    const keyEnv = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-    if (keyEnv) {
-      if (keyEnv.trim().startsWith("{")) {
-        credentialsObj = JSON.parse(keyEnv);
-      } else if (import_fs2.default.existsSync(keyEnv)) {
-        credentialsObj = JSON.parse(import_fs2.default.readFileSync(keyEnv, "utf8"));
-      }
-    }
-    const auth = new import_googleapis.google.auth.GoogleAuth({
-      credentials: credentialsObj,
-      scopes: ["https://www.googleapis.com/auth/androidpublisher"]
-    });
-    const authClient = await auth.getClient();
-    const playRes = await androidpublisher.purchases.subscriptionsv2.get({
-      packageName,
-      token: purchaseToken,
-      auth: authClient
-    });
-    const sub = playRes.data;
-    if (!sub) {
-      return {
-        verified: false,
-        status: "UNVERIFIED",
-        error: "Empty response received from Google Play Developer API."
-      };
-    }
-    const matchedItem = sub.lineItems?.find((item) => item.productId === productId);
-    if (!matchedItem) {
-      return {
-        verified: false,
-        status: "UNVERIFIED",
-        error: `Purchased product mismatch: line item '${productId}' not found in Google Play receipt.`
-      };
-    }
-    const expiryTimeIso = matchedItem.expiryTime;
-    const expiryTimeMillis = expiryTimeIso ? new Date(expiryTimeIso).getTime() : 0;
-    const nowMs = Date.now();
-    if (!expiryTimeMillis || isNaN(expiryTimeMillis) || expiryTimeMillis <= nowMs) {
-      return {
-        verified: false,
-        status: "EXPIRED",
-        productId,
-        userId,
-        error: "Subscription has expired or lacks a valid future expiry timestamp."
-      };
-    }
-    const allowedStates = [
-      "SUBSCRIPTION_STATE_ACTIVE",
-      "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
-      "SUBSCRIPTION_STATE_CANCELED"
-    ];
-    const currentState = sub.subscriptionState;
-    if (!currentState || !allowedStates.includes(currentState)) {
-      return {
-        verified: false,
-        status: currentState === "SUBSCRIPTION_STATE_EXPIRED" ? "EXPIRED" : "UNVERIFIED",
-        productId,
-        userId,
-        error: `Google Play subscription state '${currentState || "UNKNOWN"}' is not permitted or unrecognized. Access denied (fail-closed).`
-      };
-    }
-    let recordResult;
-    try {
-      recordResult = await DurablePurchaseStore.recordGrant({
-        purchaseToken,
-        userId,
-        productId,
-        packageName,
-        subscriptionState: sub.subscriptionState || "SUBSCRIPTION_STATE_ACTIVE",
-        expiryTimeMillis
-      });
-    } catch (storeErr) {
-      return {
-        verified: false,
-        status: "UNVERIFIED",
-        productId,
-        userId,
-        error: `Durable store grant persistence threw an exception: ${sanitizeErrorMessage(storeErr)}`
-      };
-    }
-    if (!recordResult || !recordResult.success || !recordResult.grant) {
-      return {
-        verified: false,
-        status: "UNVERIFIED",
-        productId,
-        userId,
-        error: recordResult?.error || "Durable purchase grant recording failed or was rejected. Access denied (fail-closed)."
-      };
-    }
-    return {
-      verified: true,
-      status: "ACTIVE",
-      productId,
-      userId
-    };
-  } catch (apiErr) {
-    return {
-      verified: false,
-      status: "UNVERIFIED",
-      error: `Google Play Developer API verification failed: ${sanitizeErrorMessage(apiErr)}`
-    };
-  }
-}
-function runStartupSecurityDiagnostics() {
-  const hasFirebase = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
-  const hasPlay = Boolean(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS);
-  const hasFirestore = Boolean(getFirebaseAdminApp());
-  console.log("--- STARTUP SECURITY & BILLING DIAGNOSTICS ---");
-  console.log(`Firebase Admin Auth: ${hasFirebase ? "Configured (Service Account)" : "Default (Applet Config Project ID)"}`);
-  console.log(`Firestore Database: ${hasFirestore ? "Available" : "Unconfigured"}`);
-  console.log(`Google Play Developer API: ${hasPlay ? "Configured" : "Missing Credentials (Fail-Closed Active)"}`);
-  console.log(`Policy: STRICT_FAIL_CLOSED_SERVER_VERIFIED`);
-  console.log("----------------------------------------------");
-  return {
-    firebaseAdminConfigured: hasFirebase,
-    firestoreConfigured: hasFirestore,
-    playBillingConfigured: hasPlay,
-    policy: "STCRIPTION_STATE_STRICT_FAIL_CLOSED"
-  };
-}
-
 // server.ts
 import_dotenv.default.config();
 var app = (0, import_express.default)();
-var PORT = 3e3;
-app.set("trust proxy", 1);
+var PORT = validatePort(process.env.PORT);
+var GEMINI_MODEL = resolveGeminiModel();
+app.set("trust proxy", resolveTrustProxy(process.env.TRUST_PROXY));
+app.use(securityHeadersMiddleware());
 app.use(corsMiddleware());
 app.use(import_express.default.json({ limit: "1mb" }));
+app.delete("/api/account", authenticateUserMiddleware, rateLimitMiddleware({ maxRequests: 3, windowMs: 6e4, endpointName: "Account deletion" }), async (req, res) => {
+  const user = req.user;
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const claims = parseJwtPayload(token);
+  if (!user?.uid || !claims) return res.status(401).json({ success: false, error: "Authenticated account could not be confirmed." });
+  try {
+    if (typeof claims.iss === "string" && claims.iss.endsWith("/auth/v1")) {
+      const projectUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").trim().replace(/\/$/, "");
+      const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+      if (!projectUrl || !serviceKey) return res.status(503).json({ success: false, error: "Supabase account deletion is not configured on the server (SUPABASE_SERVICE_ROLE_KEY missing)." });
+      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+      for (const table of ["formulas", "lab_notes", "inventory", "production_runs"]) {
+        const cleanup = await fetch(`${projectUrl}/rest/v1/${table}?user_id=eq.${encodeURIComponent(user.uid)}`, {
+          method: "DELETE",
+          headers: { ...headers, Prefer: "return=minimal" },
+          signal: AbortSignal.timeout(1e4)
+        });
+        if (!cleanup.ok) throw new Error(`Could not remove account data from ${table} (HTTP ${cleanup.status}).`);
+      }
+      const profileCleanup = await fetch(`${projectUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user.uid)}`, {
+        method: "DELETE",
+        headers: { ...headers, Prefer: "return=minimal" },
+        signal: AbortSignal.timeout(1e4)
+      });
+      if (!profileCleanup.ok) throw new Error(`Could not remove account profile (HTTP ${profileCleanup.status}).`);
+      const deleted = await fetch(`${projectUrl}/auth/v1/admin/users/${encodeURIComponent(user.uid)}`, {
+        method: "DELETE",
+        headers,
+        signal: AbortSignal.timeout(1e4)
+      });
+      if (!deleted.ok) throw new Error(`Supabase could not delete the authentication identity (HTTP ${deleted.status}).`);
+      return res.json({ success: true });
+    }
+    const firestore = getDurableFirestore();
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      return res.status(503).json({ success: false, error: "Firebase account deletion requires server-side Firebase Admin credentials." });
+    }
+    if (!firestore) return res.status(503).json({ success: false, error: "Firebase account data store is unavailable." });
+    const app2 = getFirebaseAdminApp();
+    const auth = (0, import_auth2.getAuth)(app2);
+    await firestore.recursiveDelete(firestore.doc(`users/${user.uid}`));
+    await auth.deleteUser(user.uid);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("[AccountDeletion] Deletion failed:", sanitizeErrorMessage(err));
+    return res.status(500).json({ success: false, error: sanitizeErrorMessage(err) || "Account deletion failed; no success was confirmed." });
+  }
+});
 var lastAIOperationSuccess = null;
 var lastAIOperationTimestamp = null;
 var lastAIOperationError = null;
@@ -9047,7 +9380,7 @@ async function probeGeminiHealth() {
   try {
     const response = await Promise.race([
       client.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: GEMINI_MODEL,
         contents: "Respond with the single word: OK"
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout contacting Gemini API (3000ms limit)")), 3e3))
@@ -9071,10 +9404,10 @@ var aiClient = null;
 function getAIClient() {
   if (!aiClient) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && apiKey.trim() && apiKey !== "MY_GEMINI_API_KEY") {
+    if (isApiKeyConfigured(apiKey)) {
       try {
         aiClient = new import_genai2.GoogleGenAI({
-          apiKey,
+          apiKey: apiKey.trim(),
           httpOptions: {
             headers: {
               "User-Agent": "aistudio-build"
@@ -9082,7 +9415,7 @@ function getAIClient() {
           }
         });
       } catch (e) {
-        console.error("Failed to initialize Google Gen AI client:", e);
+        console.error("Failed to initialize Google Gen AI client:", sanitizeErrorMessage(e));
       }
     }
   }
@@ -9201,7 +9534,7 @@ ${JSON.stringify(context || {})}`;
     });
     return;
   } catch (error) {
-    console.error("All AI models and fallbacks failed in chat:", error);
+    console.error("All AI models and fallbacks failed in chat:", sanitizeErrorMessage(error));
     res.json({
       reply: domainExpertFallback(message, context),
       mode: "Auto Fallback (Quota / Network Resilient)",
@@ -9212,43 +9545,47 @@ ${JSON.stringify(context || {})}`;
   }
 });
 app.get("/api/ai/chemistry-status", async (req, res) => {
-  const client = getAIClient();
-  const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-  if (req.query.probe === "true" && hasKey) {
-    await probeGeminiHealth();
-  }
-  let reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
-  if (!hasKey) {
-    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
-  } else if (lastAIOperationSuccess === true) {
-    reachability = "TESTED_SUCCESS";
-  } else if (lastAIOperationSuccess === false) {
-    reachability = "UNREACHABLE";
-  } else {
-    reachability = "CONFIGURED_UNTESTED";
-  }
-  const isOperational = reachability === "TESTED_SUCCESS";
-  res.json({
-    activeModel: hasKey ? "gemini-3.8-flash" : "Deterministic Chemical R&D Engine (Local Core)",
-    provider: "Google Gemini 3.8 Flash (AI Studio)",
-    status: reachability,
-    isOperational,
-    apiKeyConfigured: hasKey,
-    clientInitialized: Boolean(client),
-    reachability,
-    fallbackMode: !isOperational,
-    lastTestedAt: lastAIOperationTimestamp,
-    chemistryCapabilities: {
-      surfactantScience: "Anionic, Amphoteric, Non-ionic, Cationic, Biosurfactants (APG)",
-      stoichiometricNeutralization: "LABSA + NaOH/KOH/TEA exact molar ratios",
-      rheologyElectrolyteCurve: "NaCl micellar expansion, salting-out curves & polymer thickening",
-      chelationHardWater: "GLDA, MGDA, Sodium Gluconate, STPP, Zeolites (ppm CaCO3)",
-      phaseStabilityHlb: "HLB 1.0 - 20.0, Krafft point, cloud point, hydrotropes (SXS, PG)",
-      enzymePreservativeStability: "Protease/Amylase stabilizers & pH preservative windows",
-      troubleshooting: "Cloudiness, phase separation, viscosity drop, odor, foaming control",
-      multilingualSupport: ["English", "Hindi (\u0939\u093F\u0928\u094D\u0926\u0940)", "Hinglish", "Gujarati", "Marathi"]
+  try {
+    const client = getAIClient();
+    const hasKey = isApiKeyConfigured(process.env.GEMINI_API_KEY);
+    if (req.query.probe === "true" && hasKey) {
+      await probeGeminiHealth();
     }
-  });
+    let reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+    if (!hasKey) {
+      reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+    } else if (lastAIOperationSuccess === true) {
+      reachability = "TESTED_SUCCESS";
+    } else if (lastAIOperationSuccess === false) {
+      reachability = "UNREACHABLE";
+    } else {
+      reachability = "CONFIGURED_UNTESTED";
+    }
+    const isOperational = reachability === "TESTED_SUCCESS";
+    res.json({
+      activeModel: hasKey ? GEMINI_MODEL : "Deterministic Chemical R&D Engine (Local Core)",
+      provider: `Google Gemini (${GEMINI_MODEL})`,
+      status: reachability,
+      isOperational,
+      apiKeyConfigured: hasKey,
+      clientInitialized: Boolean(client),
+      reachability,
+      fallbackMode: !isOperational,
+      lastTestedAt: lastAIOperationTimestamp,
+      chemistryCapabilities: {
+        surfactantScience: "Anionic, Amphoteric, Non-ionic, Cationic, Biosurfactants (APG)",
+        stoichiometricNeutralization: "LABSA + NaOH/KOH/TEA exact molar ratios",
+        rheologyElectrolyteCurve: "NaCl micellar expansion, salting-out curves & polymer thickening",
+        chelationHardWater: "GLDA, MGDA, Sodium Gluconate, STPP, Zeolites (ppm CaCO3)",
+        phaseStabilityHlb: "HLB 1.0 - 20.0, Krafft point, cloud point, hydrotropes (SXS, PG)",
+        enzymePreservativeStability: "Protease/Amylase stabilizers & pH preservative windows",
+        troubleshooting: "Cloudiness, phase separation, viscosity drop, odor, foaming control",
+        multilingualSupport: ["English", "Hindi (\u0939\u093F\u0928\u094D\u0926\u0940)", "Hinglish", "Gujarati", "Marathi"]
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: sanitizeErrorMessage(err) });
+  }
 });
 app.post(
   "/api/ai/research-ingredient",
@@ -9412,9 +9749,27 @@ function enforcePreservativeConstraints(formula) {
         ...safePreservative,
         percentage: currentIng.percentage > 0 ? currentIng.percentage : safePreservative.percentage
       };
+      if (Array.isArray(formula.manufacturingMethod)) {
+        const preservativeNames = /sodium benzoate|potassium sorbate|benzyl alcohol|kathon(?:\s*cg)?|formalin|dmdm hydantoin|phenoxyethanol/gi;
+        formula.manufacturingMethod = formula.manufacturingMethod.map(
+          (step) => typeof step === "string" ? step.replace(preservativeNames, safePreservative.name) : step
+        );
+      }
+      if (!Array.isArray(formula.commonMistakes)) formula.commonMistakes = [];
+      formula.commonMistakes.push(
+        `Preservative changed to ${safePreservative.name} for pH compatibility; confirm supplier directions, legal suitability, dose, and preservation efficacy with a qualified review and challenge testing.`
+      );
     }
   } else {
     formula.ingredients.push(safePreservative);
+    if (!Array.isArray(formula.manufacturingMethod)) formula.manufacturingMethod = [];
+    formula.manufacturingMethod.push(
+      `Add the listed preservative (${safePreservative.name}) only as directed by its supplier; verify efficacy with a preservation challenge test.`
+    );
+    if (!Array.isArray(formula.commonMistakes)) formula.commonMistakes = [];
+    formula.commonMistakes.push(
+      `Preservative was added automatically; confirm supplier directions, legal suitability, dose, and preservation efficacy with a qualified review and challenge testing.`
+    );
   }
   return formula;
 }
@@ -10015,20 +10370,13 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
     ];
     ingredients = ingredients.filter((ing) => {
       const nameL = ing.name.toLowerCase();
-      return allowedWords.some((token) => {
-        if (token.length <= 4) {
-          const regex = new RegExp(`\\b${token}\\b|${token}`, "i");
-          return regex.test(nameL);
-        }
-        return nameL.includes(token);
-      });
+      return allowedWords.some((token) => token.length > 0 && nameL.includes(token));
     });
     if (ingredients.length <= 1) {
-      ingredients = [
-        { name: "SLES (70%)", percentage: grade === "Premium" ? 15 : grade === "Standard" ? 10 : 6, role: "Primary Surfactant", costPerKg: null, activeMatterPct: 70, hlbValue: 13 },
-        { name: "Sodium Chloride (Salt)", percentage: 1.5, role: "Viscosity Builder", costPerKg: null, activeMatterPct: 0, hlbValue: null },
-        { name: "Demineralized Water (DM Water)", percentage: 0, role: "Solvent Carrier", costPerKg: null, activeMatterPct: 0, hlbValue: null }
-      ];
+      return res.status(422).json({
+        success: false,
+        error: "The available-ingredient list does not contain enough compatible materials to build a fallback formula. No unlisted ingredients were added. Add the raw materials you want to use and try again."
+      });
     }
   }
   let initialNonWaterSum = 0;
@@ -10153,6 +10501,16 @@ app.post("/api/ai/formulate", authenticateUserMiddleware, payloadSizeValidator(1
   }
   if (!client) {
     const balancedMock = enforceFormulaMassBalance(mockFormula);
+    const unverifiedPH = "Unverified offline estimate; measure in a lab";
+    balancedMock.estimatedPH = unverifiedPH;
+    balancedMock.properties = {
+      ...balancedMock.properties,
+      pH: unverifiedPH
+    };
+    if (!Array.isArray(balancedMock.commonMistakes)) balancedMock.commonMistakes = [];
+    balancedMock.commonMistakes.push(
+      "Offline demo values are illustrative only. The requested target pH is not a measured or calculated result; verify pH with a calibrated meter and adjust through controlled lab trials."
+    );
     return res.json({
       success: true,
       mode: "Demo/Offline Mode",
@@ -10417,7 +10775,7 @@ Output ONLY raw JSON. No markdown formatting, no backticks, no wrap. Just the JS
     });
     return;
   } catch (error) {
-    console.error("All AI models failed in Formulation Generator, activating audited chemistry fallback:", error);
+    console.error("All AI models failed in Formulation Generator, activating audited chemistry fallback:", sanitizeErrorMessage(error));
     if (mode === "check") {
       const checkedFallback = analyzeUserFormulaFallback(inputIngredients || [], productType, grade, targetCost);
       res.json({
@@ -10550,7 +10908,7 @@ Do not include markdown code block formatting or backticks. Return raw JSON text
     });
     return;
   } catch (error) {
-    console.error("All AI models failed in Troubleshooting API, activating chemistry rules fallback:", error);
+    console.error("All AI models failed in Troubleshooting API, activating chemistry rules fallback:", sanitizeErrorMessage(error));
     res.json({
       success: true,
       mode: "Chemical R&D Rules Fallback (Quota Protected)",
@@ -10656,7 +11014,7 @@ No markdown formatting, raw JSON only.`;
     });
     return;
   } catch (err) {
-    console.error("Formula recommendations fallback error:", err);
+    console.error("Formula recommendations fallback error:", sanitizeErrorMessage(err));
     res.json({
       success: true,
       recommendations: predefinedAnalyzerFallback(),
@@ -10667,58 +11025,62 @@ No markdown formatting, raw JSON only.`;
   }
 });
 app.get("/api/ai/status", async (req, res) => {
-  const providers = AiFallbackService.getProvidersStatus();
-  const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-  const client = getAIClient();
-  if (req.query.probe === "true" && hasKey) {
-    await probeGeminiHealth();
+  try {
+    const providers = AiFallbackService.getProvidersStatus();
+    const hasKey = isApiKeyConfigured(process.env.GEMINI_API_KEY);
+    const client = getAIClient();
+    if (req.query.probe === "true" && hasKey) {
+      await probeGeminiHealth();
+    }
+    let reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+    if (!hasKey) {
+      reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
+    } else if (lastAIOperationSuccess === true) {
+      reachability = "TESTED_SUCCESS";
+    } else if (lastAIOperationSuccess === false) {
+      reachability = "UNREACHABLE";
+    } else {
+      reachability = "CONFIGURED_UNTESTED";
+    }
+    const isOperational = reachability === "TESTED_SUCCESS";
+    const comboState = hasKey ? isOperational ? "Omni Dynamic Router (Configured & Tested Operational)" : "Omni Dynamic Router (Configured - Awaiting Live Probe)" : "Deterministic Offline Core (Active Fallback)";
+    res.json({
+      status: "ok",
+      gateway: "Omni Unified Endpoint",
+      combo: comboState,
+      apiKeyConfigured: hasKey,
+      clientInitialized: Boolean(client),
+      reachability,
+      providerReachable: isOperational,
+      lastTestedAt: lastAIOperationTimestamp,
+      providers,
+      pipeline: [
+        { step: 1, route: "Omni Combo Primary", model: GEMINI_MODEL, description: "Flagship Fast Reasoning via Omni" },
+        { step: 2, route: "Omni Interactions API", model: "gemini-omni-1.1-flash", description: "Omni Model Interactions Route" },
+        { step: 3, route: "Omni Combo Fast Failover", model: "gemini-3.1-flash-lite", description: "Low-Latency Dynamic Failover" },
+        { step: 4, route: "Omni Combo Alias Route", model: "gemini-flash-latest", description: "High-Availability Redundancy Alias" },
+        { step: 5, route: "Deterministic Chemistry Engine", model: "Stoichiometric & Physics Rules", description: "Zero-Credit & Offline Resilient Fallback" }
+      ],
+      supportedLogicalProfiles: [
+        "OpenAI / GPT-4o & GPT-4o-mini",
+        "Anthropic / Claude 3.7 Sonnet & 3.5 Haiku",
+        "DeepSeek-V3 & DeepSeek-R1",
+        "Moonshot / Kimi 8k/32k",
+        "Google Gemini Flash & Pro"
+      ],
+      features: [
+        "Single Gateway Omni Endpoint Architecture",
+        "Dynamic Account & Model Routing via Omni Combo",
+        "Zero External Provider Keys Required in UI",
+        "Automatic 429 Quota & Rate Limit Protection",
+        "Omni Model Interactions API Support",
+        "Deterministic Stoichiometric Formula Balancing",
+        "Continuous Offline Workflow Guarantee"
+      ]
+    });
+  } catch (err) {
+    res.status(500).json({ error: sanitizeErrorMessage(err) });
   }
-  let reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
-  if (!hasKey) {
-    reachability = "DETERMINISTIC_FALLBACK_ACTIVE";
-  } else if (lastAIOperationSuccess === true) {
-    reachability = "TESTED_SUCCESS";
-  } else if (lastAIOperationSuccess === false) {
-    reachability = "UNREACHABLE";
-  } else {
-    reachability = "CONFIGURED_UNTESTED";
-  }
-  const isOperational = reachability === "TESTED_SUCCESS";
-  const comboState = hasKey ? isOperational ? "Omni Dynamic Router (Configured & Tested Operational)" : "Omni Dynamic Router (Configured - Awaiting Live Probe)" : "Deterministic Offline Core (Active Fallback)";
-  res.json({
-    status: "ok",
-    gateway: "Omni Unified Endpoint",
-    combo: comboState,
-    apiKeyConfigured: hasKey,
-    clientInitialized: Boolean(client),
-    reachability,
-    providerReachable: isOperational,
-    lastTestedAt: lastAIOperationTimestamp,
-    providers,
-    pipeline: [
-      { step: 1, route: "Omni Combo Primary", model: "gemini-3.7-flash", description: "Flagship Fast Reasoning via Omni" },
-      { step: 2, route: "Omni Interactions API", model: "gemini-omni-1.1-flash", description: "Omni Model Interactions Route" },
-      { step: 3, route: "Omni Combo Fast Failover", model: "gemini-3.1-flash-lite", description: "Low-Latency Dynamic Failover" },
-      { step: 4, route: "Omni Combo Alias Route", model: "gemini-flash-latest", description: "High-Availability Redundancy Alias" },
-      { step: 5, route: "Deterministic Chemistry Engine", model: "Stoichiometric & Physics Rules", description: "Zero-Credit & Offline Resilient Fallback" }
-    ],
-    supportedLogicalProfiles: [
-      "OpenAI / GPT-4o & GPT-4o-mini",
-      "Anthropic / Claude 3.7 Sonnet & 3.5 Haiku",
-      "DeepSeek-V3 & DeepSeek-R1",
-      "Moonshot / Kimi 8k/32k",
-      "Google Gemini Flash & Pro"
-    ],
-    features: [
-      "Single Gateway Omni Endpoint Architecture",
-      "Dynamic Account & Model Routing via Omni Combo",
-      "Zero External Provider Keys Required in UI",
-      "Automatic 429 Quota & Rate Limit Protection",
-      "Omni Model Interactions API Support",
-      "Deterministic Stoichiometric Formula Balancing",
-      "Continuous Offline Workflow Guarantee"
-    ]
-  });
 });
 app.post(
   "/api/billing/verify-purchase",
@@ -10727,29 +11089,33 @@ app.post(
   payloadSizeValidator(5e4),
   rateLimitMiddleware({ maxRequests: 15, windowMs: 6e4, endpointName: "Billing Verification" }),
   async (req, res) => {
-    const { packageName, productId, purchaseToken } = req.body || {};
-    const authenticatedUser = req.user;
-    const userId = authenticatedUser.uid;
-    const result = await verifyGooglePlayPurchase({
-      packageName: packageName || CANONICAL_PACKAGE_NAME,
-      productId: productId || "",
-      purchaseToken: purchaseToken || "",
-      userId
-    });
-    if (!result.verified) {
-      return res.status(result.error?.includes("credentials") ? 503 : 400).json({
-        verified: false,
-        error: result.error || "Purchase verification failed.",
-        status: result.status
+    try {
+      const { packageName, productId, purchaseToken } = req.body || {};
+      const authenticatedUser = req.user;
+      const userId = authenticatedUser.uid;
+      const result = await verifyGooglePlayPurchase({
+        packageName: packageName || CANONICAL_PACKAGE_NAME,
+        productId: productId || "",
+        purchaseToken: purchaseToken || "",
+        userId
       });
+      if (!result.verified) {
+        return res.status(result.error?.includes("credentials") ? 503 : 400).json({
+          verified: false,
+          error: result.error || "Purchase verification failed.",
+          status: result.status
+        });
+      }
+      return res.json({
+        verified: true,
+        status: result.status,
+        productId: result.productId,
+        userId: result.userId,
+        entitlementGranted: true
+      });
+    } catch (err) {
+      return res.status(500).json({ verified: false, error: sanitizeErrorMessage(err) });
     }
-    return res.json({
-      verified: true,
-      status: result.status,
-      productId: result.productId,
-      userId: result.userId,
-      entitlementGranted: true
-    });
   }
 );
 app.get(
@@ -10758,17 +11124,33 @@ app.get(
   requireVerifiedBillingAuthMiddleware,
   rateLimitMiddleware({ maxRequests: 30, windowMs: 6e4, endpointName: "Subscription Status" }),
   async (req, res) => {
-    const user = req.user;
-    const hasCredentials = Boolean(
-      process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS
-    );
-    return res.json({
-      gatewayConfigured: hasCredentials,
-      supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
-      policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
-      userId: user.uid,
-      activeSubscriptions: 0
-    });
+    try {
+      const user = req.user;
+      const hasCredentials = Boolean(
+        process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_APPLICATION_CREDENTIALS
+      );
+      const subscriptionLookup = await DurablePurchaseStore.listActiveGrantsForUser(user.uid);
+      if (!subscriptionLookup.available) {
+        return res.status(503).json({
+          error: "Subscription status is temporarily unavailable because the verified purchase store could not be read."
+        });
+      }
+      const activeSubscriptions = subscriptionLookup.grants.map((grant) => ({
+        productId: grant.productId,
+        status: grant.subscriptionState,
+        expiresAt: new Date(grant.expiryTimeMillis).toISOString()
+      }));
+      return res.json({
+        gatewayConfigured: hasCredentials,
+        supportedProducts: ALLOWED_PLAY_PRODUCT_IDS,
+        policy: "STRICT_FAIL_CLOSED_SERVER_VERIFIED",
+        userId: user.uid,
+        activeSubscriptions: activeSubscriptions.length,
+        subscriptions: activeSubscriptions
+      });
+    } catch (err) {
+      return res.status(500).json({ error: sanitizeErrorMessage(err) });
+    }
   }
 );
 app.post(
@@ -10809,6 +11191,11 @@ app.get("/detergent-formula-expert-release.apk", (_req, res) => {
     return res.status(404).send("APK file not found");
   }
 });
+app.use((err, _req, res, _next) => {
+  const sanitized = sanitizeErrorMessage(err);
+  const statusCode = typeof err.status === "number" && err.status >= 400 && err.status < 600 ? err.status : 500;
+  res.status(statusCode).json({ error: sanitized });
+});
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await (0, import_vite.createServer)({
@@ -10826,6 +11213,7 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Detergent R&D Expert server running on http://0.0.0.0:${PORT}`);
     runStartupSecurityDiagnostics();
+    validateEnvironmentConfig();
   });
 }
 startServer();

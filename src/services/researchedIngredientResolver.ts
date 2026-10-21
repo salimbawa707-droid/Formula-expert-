@@ -1,5 +1,5 @@
 import { IngredientResearchService, ResearchRequest } from './ingredientResearchService';
-import { getAllUniversalIngredients, UniversalIngredient } from '../data/universalIngredientLibrary';
+import { getAllUniversalIngredients, searchUniversalIngredients, UniversalIngredient } from '../data/universalIngredientLibrary';
 
 export type IngredientResolutionStatus = 'LOCAL' | 'RESEARCHED' | 'NEEDS_VERIFICATION';
 
@@ -12,14 +12,27 @@ export interface ResolvedIngredient {
 /** Resolves local ingredients first, then uses grounded research without inventing constants. */
 export class ResearchedIngredientResolver {
   resolveLocal(name: string): UniversalIngredient | null {
-    const normalized = name.trim().toLowerCase();
-    if (!normalized) return null;
-    return getAllUniversalIngredients().find((item) =>
+    const clean = name.trim();
+    if (!clean) return null;
+    const normalized = clean.toLowerCase();
+    const direct = getAllUniversalIngredients().find((item) =>
       item.name.trim().toLowerCase() === normalized ||
       item.id.trim().toLowerCase() === normalized ||
       item.inciName?.trim().toLowerCase() === normalized ||
       item.casNumber?.trim().toLowerCase() === normalized
-    ) ?? null;
+    );
+    if (direct) return direct;
+
+    const searchMatches = searchUniversalIngredients(clean);
+    if (searchMatches.length > 0) {
+      const top = searchMatches[0];
+      const words = top.name.toLowerCase().split(/[\s,()%-]+/);
+      if (words.includes(normalized) || top.id.toLowerCase().split('-')[0] === normalized) {
+        return top;
+      }
+    }
+
+    return null;
   }
 
   async resolve(name: string, grade?: string, apiKey?: string): Promise<ResolvedIngredient> {

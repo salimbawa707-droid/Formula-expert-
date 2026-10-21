@@ -1,7 +1,7 @@
 import { db, ResearchedIngredientRecord } from '../db/database';
 import { FormulationIngredient } from '../types';
 import { IngredientResearchService, MultiSourceResearchResult } from './ingredientResearchService';
-import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS, searchUniversalIngredients } from '../data/universalIngredientLibrary';
 
 /**
  * Runtime bridge between the local ingredient library, Gemini-grounded research,
@@ -18,10 +18,23 @@ export class IngredientResearchBridge {
   ]);
 
   private static localIngredient(name: string) {
-    const normalized = this.normalize(name);
-    return UNIVERSAL_INGREDIENTS.find((ingredient) => [
+    const clean = name.trim();
+    if (!clean) return null;
+    const normalized = clean.toLowerCase();
+    const direct = UNIVERSAL_INGREDIENTS.find((ingredient) => [
       ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName, ingredient.casNumber
-    ].filter(Boolean).some((candidate) => this.normalize(String(candidate)) === normalized)) || null;
+    ].filter(Boolean).some((candidate) => this.normalize(String(candidate)) === this.normalize(clean))) || null;
+    if (direct) return direct;
+
+    const matches = searchUniversalIngredients(clean);
+    if (matches.length > 0) {
+      const top = matches[0];
+      const words = top.name.toLowerCase().split(/[\s,()%-]+/);
+      if (words.includes(normalized) || top.id.toLowerCase().split('-')[0] === normalized) {
+        return top;
+      }
+    }
+    return null;
   }
 
   private static isBlockedSourceDomain(url: string | null | undefined): boolean {
@@ -136,7 +149,12 @@ export class IngredientResearchBridge {
     }
 
     const key = `${this.normalize(name)}|${this.normalize(options?.grade || '')}`;
-    const cached = await db.researchedIngredients.get(key);
+    let cached: ResearchedIngredientRecord | undefined;
+    try {
+      cached = await db.researchedIngredients.get(key);
+    } catch {
+      cached = undefined;
+    }
     if (cached) {
       const persistedProvenance = Array.isArray(cached.provenance) ? cached.provenance : [];
       const cachedResearch: MultiSourceResearchResult = {
@@ -226,7 +244,11 @@ export class IngredientResearchBridge {
       researchedAt: now,
       updatedAt: now
     };
-    await db.researchedIngredients.put(record);
+    try {
+      await db.researchedIngredients.put(record);
+    } catch {
+      // Ignored in environments where IndexedDB is unavailable (e.g. Node test runners)
+    }
     return {
       ingredient: this.toFormulaIngredient(name, research, record),
       source: 'WEB_RESEARCH',
