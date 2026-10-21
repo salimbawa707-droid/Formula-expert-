@@ -1,85 +1,74 @@
-# Phase 4B Scientific Closure and Phase 5 Readiness
+# Phase 4B Scientific Closure and Phase 5 Readiness — Zenodo XLSX Audit Update
 
 **Audit date:** 2026-10-21  
-**Repository:** https://github.com/salimbawa707-droid/Formula-expert-  
-**Branch:** `main`  
-**Audited source commit:** `c842b691584ec337408f238102e05c7a165ea1d1`  
-**Decision:** Phase 4B remains **OPEN**; Phase 5 remains **LOCKED**.
+**Audited repository baseline:** `main` at `ca37d5df501dbe5d3ef94015963c839face21cf4`  
+**Source:** [Zenodo record 18961871](https://zenodo.org/records/18961871), DOI [10.5281/zenodo.18961871](https://doi.org/10.5281/zenodo.18961871)  
+**Decision:** Phase 4B remains **OPEN**; Phase 5 remains **LOCKED**. No model maturity or empirical-accuracy claim is changed.
 
-This report records what was verified from the repository, completed GitHub Actions runs, repository audit records, and the public Zenodo record. It does not treat CI success as scientific validation. Earlier reports are historical unless their findings are explicitly reconfirmed below.
+This update supersedes current-state workbook, parser, and license statements in earlier report text where they conflict with the checks below. Round-five JSON and CSV remain historical artifacts; they are not rewritten.
 
+## Actual bytes and source identity
 
-## Commit and report revision reconciliation
+The four tabular workbooks were obtained through Zenodo's official record download links and parsed from their actual local bytes. Zenodo API metadata was read at `https://zenodo.org/api/records/18961871`; it gives `license.id = cc-by-4.0` and file-level MD5 values. The downloaded byte sizes, MD5s, and SHA-256s match both the record metadata (MD5/size) and the repository's pinned identities. Download completed in the browser; an HTTP status code was not exposed by that download UI, so this report does not assign one.
 
-The evidence/code baseline assessed here is commit `c842b691584ec337408f238102e05c7a165ea1d1`. The report was first committed at `83288a0878f9599b1c6f022dace06376d219e7d4` and then extended with publisher-paper methods at `bc7e2633b313e80c3654877a3f04c010c78955cc`. GitHub's compare result shows these two commits added or amended only this report; they did not change application code or evidence bytes. The Phase 4B and Engine verification workflows passed on both report commits: [83288a0 Phase 4B](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39641017826), [83288a0 Engine](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39641017848), [bc7e263 Phase 4B](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39642738949), and [bc7e263 Engine](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39642738663). The last confirmed main SHA before this report revision was `bc7e2633b313e80c3654877a3f04c010c78955cc`. The SHA produced by this revision is recorded in Git history and delivery notes.
+| Workbook | Bytes | MD5 | SHA-256 | ZIP CRC | openpyxl | Sheets / used ranges |
+|---|---:|---|---|---|---|---|
+| `Supplementary_SolutionFlowCurves.xlsx` | 22,280 | `cd5bfd6e95fc65e412807d53935c2d96` | `90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590` | PASS | PASS | `SolutionFlowCurves` A1:H226 |
+| `Supplementary_FilmThickness_v1.xlsx` | 149,923 | `bc9582baafecd6552f6014216a0844e6` | `170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428` | PASS | PASS | `Data` A1:S2396 |
+| `Supplementary_BubbleSizes_v1.xlsx` | 557,745 | `9fcfe68a37d2d92a7999569a07908854` | `9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad` | PASS | PASS | `20min` A1:H4407; `30min` A1:H2386 |
+| `Supplementary_RheometerData_v2.xlsx` | 162,970 | `c9b5a9cde073eb7c58933eec37a559a6` | `073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70` | PASS | PASS | `Contents` A1:C8; `AmpSwps_all` A1:K301; `FrqSwps_all` A1:K241; `FoamD_AmpSwpTest` A1:K201; `FoamA_SteadyYield` A1:I92; `SteadyShear_5` and `SteadyShear_1` A1:I733 each |
 
-## Repository and software baseline
+The raw downloads were not modified. The parser audit records SHA-256/MD5, expected-value comparisons, ZIP members and CRC result, sheet state/dimensions, observed rows, typed-cell counts, formula counts and samples, errors, non-finite values, hidden rows/columns, merged ranges, and duplicate full-row excesses. Full cell formula lists are represented by counts and bounded samples to keep the manifest reviewable.
 
-At audit time, `main` pointed to `c842b691584ec337408f238102e05c7a165ea1d1`. The commit changed the evidence-vault regression assertion to expect zero current quarantine stubs and to report the actual reconciled counts.
+`Microscope_Images.zip` is listed by Zenodo at 895,495,945 bytes with MD5 `b0ae3ce3c90f074361e4f72c9230a5f6`. It was not found as a tracked dataset artifact in the repository search and was not downloaded or validated in this tabular-workbook run. The manifest marks it `NOT_DOWNLOADED`; no archive-integrity claim is made.
 
-The following workflows completed successfully for that exact commit:
+## Parser findings and historical reconciliation
 
-- [Phase 4B Integrity and Build Gates](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39639084126): dependency installation, canonical workbook byte-integrity script, TypeScript typecheck, project test suite, and production build all passed.
-- [Engine verification](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39639084123): dependency installation, typecheck, regression suite, production build, and production HTTP smoke test all passed.
+The current source bytes prove that `Supplementary_SolutionFlowCurves.xlsx` is a readable XLSX workbook. Its only sheet has 226 rows by 8 columns, including the header and unit rows; 210 rows contain numeric values. The `round5_integrity_verification.json` status `CORRUPTED` is stale for current source bytes. That round-five JSON and its associated ledger are preserved as historical evidence. The round-six manifest and observation ledger supersede them for current parser/count claims.
 
-These results support software correctness checks on the audited commit. They do not establish source licensing, scientific applicability, or model accuracy. This audit did not run the project locally or inspect a local working tree.
+The round-six ledger reports actual nonempty rows and typed cells separately; formula cells are not counted as numeric measurements. It records 210 numeric-bearing rows for SolutionFlowCurves; 2,394 for FilmThickness; 4,405 and 2,384 for BubbleSizes at 20 and 30 minutes; and 288, 225, 192, 88, 720, and 720 numeric-bearing rows respectively for the six RheometerData measurement sheets. The Contents sheet has no numeric-bearing rows. Duplicate full-row matches are reported, never dropped. A duplicate excess is not treated as proof of independent replicates.
 
-## Dataset record and provenance
+Headers and unit rows are retained verbatim in the machine-readable ledger. Notable content: SolutionFlowCurves has shear rate, stress, viscosity, torque, and temperature fields; FilmThickness contains four groups of Image/Number/Length_px measurements and formula-derived thickness summaries; BubbleSizes contains pixel area and formula-derived radius in mm, with foam labels A–D and worksheet times 20min/30min; RheometerData contains amplitude/frequency sweep, steady-yield, and steady-shear fields with the headers and units shown in the ledger. Rheometer unit strings, including [N·m], [°], and [Pa·s], are preserved verbatim in the JSON manifest.
 
-The primary record is [Zenodo record 18961871](https://zenodo.org/records/18961871), DOI [10.5281/zenodo.18961871](https://doi.org/10.5281/zenodo.18961871). The record identifies the dataset as “Rheometer methods for characterising and comparing foams: an example using household detergents,” by Ceri Allgood and Thomas Jones, published 2026-07-02 in connection with a 2026 *Rheologica Acta* article. Zenodo describes supplementary bubble sizes measured in MATLAB, film thicknesses measured manually in ImageJ, raw rheometer sweeps, and flow curves for washing-up liquid solutions and pure water.
+## License and reuse
 
-The Zenodo record lists the two canonical workbook filenames, file sizes rounded to 22.3 kB and 149.9 kB, and MD5 values matching the repository's pinned values. This supports source-file identity, but this audit did not independently download and hash the source bytes.
+The Zenodo API record metadata and public record page explicitly identify the dataset license as **Creative Commons Attribution 4.0 International (CC BY 4.0)**. This supports reuse, including commercial reuse, subject to the license's attribution and other terms. This is dataset-level evidence, distinct from the publisher article's license. The registry now records that license evidence. The microscope archive's bytes were not downloaded, but it is listed under the same Zenodo dataset record; its file contents and hash remain unverified locally.
 
-The record's Rights section has no license value displayed. Commercial reuse and redistribution permission are therefore **UNCONFIRMED**. Public access is not a reuse license. The workbooks must not be treated as cleared for redistribution on this evidence.
+## Scientific applicability and limits
 
-## Canonical workbook status
+The round-six engine mapping is restricted to variables actually observed in workbook headers and unit rows. It removes unsupported mappings of the solution flow curves to concentration-dependent CMC and chelation/titration outcomes. The flow-curve sheet has no concentration series or divalent-ion titration field. The bubble radius values are formulas derived from pixel areas; two worksheet time points do not establish persistent bubble trajectories or a validated coarsening rate. Film thickness summaries are formulas based on pixel lengths and the embedded scale factor `1095`; the formulas are not independent laboratory observations. Rheology sheets expose measured sweep/flow variables, but no model comparison, held-out evaluation, or metrics were calculated here.
 
-The existing Phase 4B workflow passed its `scripts/verify_evidence_integrity.js` step on the audited commit. That script compares local bytes to pinned byte-size, MD5, and SHA-256 expectations and checks the ZIP local-file signature; it also checks that the two named quarantine stubs are absent.
+The publisher article describes four UK washing-up liquids, 2 mL product in 300 mL deionised water, ambient 19–22 °C, and an Anton Paar MCR702e with Powder Rheometry Flow Cell. Exact commercial formulations are undisclosed. Its wide-gap steady-shear foam experiment cannot be interpreted as foam viscosity because only part of the sample sheared. These context details do not fill missing workbook fields or validate app predictions. The data support structural inspection and may support later matched-observable evaluation after row lineage and model applicability review. They do not validate finished detergent recipes, cleaning performance, CMC, chelation, laundry detergency, or broad product categories.
 
-| Workbook | Expected bytes | MD5 | SHA-256 | CI integrity script | Full XLSX parser audit |
-|---|---:|---|---|---|---|
-| `Supplementary_SolutionFlowCurves.xlsx` | 22,280 | `cd5bfd6e95fc65e412807d53935c2d96` | `90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590` | PASS on audited commit | NOT RUN |
-| `Supplementary_FilmThickness_v1.xlsx` | 149,923 | `bc9582baafecd6552f6014216a0844e6` | `170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428` | PASS on audited commit | NOT RUN |
+## Checks run
 
-A ZIP signature does not establish that all XLSX ZIP entries are intact or that workbook XML is readable by an XLSX parser. Sheet dimensions, headers, units, cell types, missingness, duplicate observations, and malformed records remain unaudited in this execution. The prior recovery report documents that direct Zenodo downloads returned HTTP 403 at the time of that report; the Zenodo page currently corroborates the MD5 values, but no fresh byte-for-byte source download was performed here.
+- Parser runtime: bundled Python 3.12.14 with `openpyxl 3.1.5`; complete archive check: `zipfile.ZipFile.testzip()`.
+- Actual source audit: `python work/audit_zenodo_xlsx.py "C:\Users\nk\Downloads"` — four workbooks `PARSED`; all expected size/hash and Zenodo MD5 checks passed; all CRC and required XLSX-part checks passed.
+- Fail-closed tests: `python work/test_audit_zenodo_xlsx.py` — 3 tests passed. Missing files return `BLOCKED`; a malformed XLSX returns `FAIL`; real downloaded workbooks reconcile with pinned hashes and parser dimensions.
+- The local repository checkout was unavailable because authenticated Git clone failed; repository reads/writes used the connected GitHub integration. The project typecheck/test/build workflows were not rerun in this execution; a workflow run on the resulting repository commit is required for that evidence.
 
-The 2026-10-21 remediation report and the recovery report contain historical statements that need to be read with their supersession notes. Current CI's stub-absence check and the current regression expectation of zero stubs supersede earlier statements that the two stubs remain present.
+## Gate disposition
 
-## Scientific applicability and model evidence
-
-The Zenodo record supports that these are published measurements from a household dishwashing-liquid foam/rheology study. It describes the observable types and some measurement methods, but this audit did not inspect the workbook cells or recover full experimental conditions, replicate structure, units, and row-to-source lineage.
-
-The repository's `round5_engine_validation_mapping.csv` maps some measurements to rheology and foam model outputs, while explicitly stating limitations. These data can only support a matched observable within the reported experimental system after content and applicability review. Film thickness and solution flow curves do not directly validate cleaning or detergency performance. No independent held-out model metrics were established by this audit, and no model is promoted to a higher scientific maturity.
-
-The repository's `source-register.csv` continues to record the Zenodo entries as pending license/schema review. That conservative status is consistent with the blank rights field and the missing parser/content audit. Existing historic observation ledgers and model mappings are not substitutes for an independent leakage-safe validation evaluation.
-
-## Acceptance gates
-
-| Gate | Status | Evidence and remaining work |
+| Gate | Status | Finding |
 |---|---|---|
-| Canonical file byte integrity | **PASS (CI scope)** | Existing verifier passed for both pinned files on the audited commit. Independently reacquire/hash source bytes if required for provenance closure. |
-| Full XLSX container and parser validity | **BLOCKED** | Current gate checks ZIP signature, not complete ZIP integrity or XLSX parser readability. Parse both workbooks and record workbook parts and parser results. |
-| Authentic source confirmation | **PARTIAL** | Zenodo metadata lists filenames and matching MD5 values; direct source bytes were not freshly retrieved and compared. |
-| Provenance completeness | **BLOCKED** | Recover and record complete methods, conditions, sample/replicate structure, and row/cell lineage. |
-| License and commercial reuse | **BLOCKED** | Zenodo Rights field is blank; obtain authoritative license/permission before redistribution or commercial reuse. |
-| Scientific content and applicability | **BLOCKED** | Inspect actual workbook cells and qualify each supported observable and domain. Do not infer detergency performance. |
-| Transformation traceability | **BLOCKED** | Any normalized output needs immutable raw inputs, documented transformations, units, source-row lineage, and hashes. |
-| Empirical model validation | **BLOCKED** | No independent, leakage-safe held-out validation metrics were produced by this audit. Keep existing maturity statuses. |
-| Software regression, typecheck, build | **PASS on audited commit** | Both named CI workflows passed; see links above. |
-| Report/registry consistency | **PARTIAL** | Current stub status is corrected in the latest test; historical recovery narratives and dataset/engine identifiers require ongoing reconciliation. |
-| Required CI on audited source commit | **PASS** | Both named workflows completed successfully for `c842b691584ec337408f238102e05c7a165ea1d1`. |
+| Four canonical XLSX source identities | **PASS** | Downloaded bytes match Zenodo size/MD5 and repository MD5/SHA-256. |
+| Complete ZIP CRC and XLSX parsing | **PASS** | All four workbooks pass CRC and openpyxl parse. |
+| Current SolutionFlow corruption claim | **SUPERSEDED** | Fresh source bytes parse; historical round-five record remains unchanged. |
+| Dataset license | **PASS (record metadata)** | CC BY 4.0 verified from Zenodo API metadata. Attribution required. |
+| Microscope image archive bytes | **NOT RUN** | 895 MB source listed, not downloaded; no local byte or archive check. |
+| Observation lineage and experimental conditions | **PARTIAL** | Workbook fields enumerated; row-level scientific interpretation and complete condition linkage remain open. |
+| Engine applicability and empirical validation | **NOT RUN / OPEN** | No predictions, held-out metrics, or model validation produced. |
+| Software tests, typecheck, build, production smoke | **NOT RUN in this execution** | Existing prior CI results apply to earlier commits only; require fresh workflow evidence for the update commit. |
+| Phase 4B / Phase 5 | **OPEN / LOCKED** | Scientific applicability and validation gates remain unresolved. |
 
-## Closure decision and next evidence
+## Current artifacts
 
-Phase 4B is **OPEN** because parser validity, complete scientific content/applicability review, licensing, and independent model validation remain unresolved. Phase 5 is **LOCKED**. No phase flag or model maturity status is changed by this report.
+- `evidence_vault/scripts/audit_zenodo_xlsx.py`
+- `evidence_vault/scripts/test_audit_zenodo_xlsx.py`
+- `evidence_vault/datasets/zenodo_18961871/round6_parser_audit.json`
+- `evidence_vault/datasets/zenodo_18961871/round6_observation_ledger.csv`
+- `evidence_vault/datasets/zenodo_18961871/round6_engine_validation_mapping.csv`
+- `evidence_vault/datasets/source-register.csv`
+- `evidence_vault/forensic_reports/PHASE4B_FINAL_CLOSURE_AND_PHASE5_READINESS.md`
 
-To reconsider closure, provide a parser-backed audit of the canonical workbooks, authoritative license or written reuse permission, complete experimental metadata and row-level provenance, and independent validation evidence for any model claim. Then reconcile the canonical registries and rerun all required workflows on the resulting commit.
 
-
-## Publisher-paper cross-check (2026-10-21)
-
-The publisher article is [Allgood, Jones, and Boothroyd, “Rheometer methods for characterising and comparing foams: an example using household detergents,” *Rheologica Acta* 65 (2026), 819–834](https://doi.org/10.1007/s00397-026-01584-5). The article record identifies the paper as CC BY 4.0; this is a license for the article and does not, by itself, resolve the separate Zenodo dataset's blank Rights field or prove that the workbooks may be redistributed independently.
-
-The article describes four foams made from UK washing-up liquids, using 2 mL of product in 300 mL deionised water. Foam tests used ambient laboratory temperatures of 19–22 °C. The exact commercial formulations are undisclosed. The rheometer was an Anton Paar MCR702e with a Powder Rheometry Flow Cell. The paper cautions that its wide-gap steady-shear foam tests cannot be interpreted as foam viscosity because only part of the foam sample sheared. These conditions narrow the potential applicability: relevant only to matching foam/rheology observables for similar dishwashing-liquid foam systems; they do not establish general household detergent, laundry, or cleaning-performance validity. [Publisher article and methods](https://link.springer.com/article/10.1007/s00397-026-01584-5)
-
-The Zenodo dataset record lists Ceri Allgood and Thomas Jones as dataset creators. The article additionally credits Stephen C. Boothroyd. These are distinct metadata roles, not a conflict. The Zenodo page describes the solution flow curves as measurements on washing-up liquid solutions and pure water; actual sheet labels, units, sample identities, and conditions still require parser inspection before a quantitative model comparison.
