@@ -293,7 +293,7 @@ def analyze_rows(source_rows: list[dict[str, str]], source_sha256: str) -> tuple
     eligible_systems = [row for row in system_rows if row["eligible_observation_count"] > 0]
     pooled = _metrics(all_scored)
     macro_keys = ("mae_uM", "rmse_uM", "mean_signed_error_uM", "mae_log10", "mean_signed_error_log10")
-    macro = {key: sum(row[key] for row in eligible_systems) / len(eligible_systems) for key in macro_keys}
+    macro = {key: (sum(row[key] for row in eligible_systems) / len(eligible_systems) if eligible_systems else None) for key in macro_keys}
     class_summary = []
     for pair_class in sorted({r["pair_class"] for r in all_scored}):
         class_rows = [r for sid in scored_by_system for r in scored_by_system[sid] if r["pair_class"] == pair_class]
