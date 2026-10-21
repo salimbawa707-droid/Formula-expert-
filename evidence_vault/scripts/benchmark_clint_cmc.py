@@ -251,7 +251,7 @@ def analyze_rows(source_rows: list[dict[str, str]], source_sha256: str) -> tuple
         is_endpoint2 = item["x2"] == 1.0 and item["x1"] == 0.0
         if refs and (is_endpoint1 or is_endpoint2):
             role, decision = "PURE_ENDPOINT_INPUT", "NOT_SCORED_ENDPOINT_INPUT"
-            row_reason = "Pure-component endpoint is an equation input, never a mixed-CMC target."
+            row_reason = "Pure-component endpoints are equation inputs, never mixed-observation targets."
         elif status_reason:
             role = "UNPAIRED_PURE_ENDPOINT" if is_endpoint1 or is_endpoint2 else "MIXTURE_OBSERVATION"
             decision, row_reason = "EXCLUDED", status_reason
