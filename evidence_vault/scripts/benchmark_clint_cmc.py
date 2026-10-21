@@ -420,7 +420,7 @@ def _ledger_row(raw: dict, assignment: dict | None, role: str, decision: str, re
         "prediction_unit": "uM",
         "decision": decision,
         "exclusion_reason": reason,
-        "lineage_note": "Record ID is a deterministic 1-based data-record position; source CSV has no original record identifier.",
+        "lineage_note": "Record IDs are deterministic 1-based data-record positions in the repository CSV (CSV row includes header); the source file has no original record ID.",
     }
 
 
