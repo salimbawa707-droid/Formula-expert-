@@ -1,0 +1,45 @@
+name: Phase 4B Integrity and Build Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase4b-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Evidence integrity, typecheck, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify canonical evidence workbook bytes
+        run: npm run verify:evidence
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Run project test suite
+        run: npm test
+
+      - name: Production build
+        run: npm run build
