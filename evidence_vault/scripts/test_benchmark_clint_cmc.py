@@ -62,6 +62,7 @@ class ClintBenchmarkTests(unittest.TestCase):
         ]
         ledger, systems, result = benchmark.analyze_rows(source, "fixture")
         self.assertEqual(result["counts"]["eligible_mixture_observations"], 0)
+        self.assertIsNone(result["metrics"]["macro_mean_of_eligible_system_metrics"]["mae_uM"])
         self.assertEqual(systems[0]["exclusion_reason"], "MISSING_PURE_ENDPOINT_COMPONENT_2")
         self.assertTrue(all(r["decision"] == "EXCLUDED" for r in ledger))
         self.assertTrue(all(r["prediction_cmc_uM"] in ("", None) for r in ledger))
