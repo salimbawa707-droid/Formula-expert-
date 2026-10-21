@@ -1,6 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { getProductCategory } from '../domain/productTaxonomy';
-import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference } from '../data/experimentalReferenceData';
+import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference, OPEN_BENCHMARK_IDEAL_MIXING_BIAS } from '../data/experimentalReferenceData';
 import { calculatePHAdvanced, calculateNeutralization as calcNeutAuthoritative } from './pHEngine';
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from '../domain/ph/acidBaseDataModel';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
@@ -686,8 +686,22 @@ export function getIngredientCmcData(name: string): (SurfactantCmcEntry & { matc
   if (n.includes('span 80') || n.includes('sorbitan oleate')) {
     return { cmcMolar: 0.03, cmcPpm: 13, type: 'nonionic', standardMw: 428, matchedKey: 'Span 80' };
   }
-  if (n.includes('amine oxide') || n.includes('lauramine oxide') || n.includes('cao') || n.includes('cocamidopropylamine oxide')) {
+  if (n.includes('cocamidopropylamine oxide') || n.includes('cao')) {
+    // Unsourced legacy default retained for amidopropyl amine oxide; no curated open reference row yet.
     return { cmcMolar: 0.20, cmcPpm: 46, type: 'amphoteric', standardMw: 230, matchedKey: 'Amine Oxide' };
+  }
+  if (n.includes('amine oxide') || n.includes('lauramine oxide') || n.includes('dodecylamine oxide') || n.includes('ddao')) {
+    const referenceEvidence = PURE_SURFACTANT_CMC_REFERENCES.AMINE_OXIDE_C12;
+    const cmcMolar = referenceEvidence.valueMolar * 1000;
+    const standardMw = 229.4; // C14H31NO, dimethyldodecylamine oxide
+    return {
+      cmcMolar,
+      cmcPpm: Number((cmcMolar * standardMw).toFixed(1)),
+      type: 'amphoteric',
+      standardMw,
+      matchedKey: 'Amine Oxide (C12, NIST-sourced)',
+      referenceEvidence
+    };
   }
   return null;
 }
@@ -701,11 +715,42 @@ export interface MixedCmcResult {
   classification: string;
   hasSynergyPair: boolean;
   hasElectrolyteScreening: boolean;
-  components: Array<{ name: string; activeFraction: number; cmcMolar: number; cmcPpm: number; type: string; referenceEvidence?: PureSurfactantCmcReference }>;
+  components: Array<{ name: string; activeFraction: number; moleFraction?: number; cmcMolar: number; cmcPpm: number; type: string; referenceEvidence?: PureSurfactantCmcReference }>;
   evidenceRefs: string[];
+  /** Observed ideal-rule bias for this charge-pair class in the open P2SURF binary-mixture benchmark; informational only. */
+  openBenchmarkNonIdeality?: string;
   confidence: 'Higher Confidence' | 'Moderate Confidence' | 'Lower Confidence';
   limitation: string;
   labValidationGuidance: string;
+}
+
+/**
+ * Clint ideal mixed-micelle rule on a surfactant mole-fraction basis:
+ * 1 / CMC_mix = sum(alpha_i / CMC_i). Units of CMC are preserved.
+ * Benchmarked against open binary-mixture data in
+ * evidence_vault/open_reference_benchmarks/cmc_mixed (see scripts/open-reference-benchmark.ts).
+ */
+export function idealMixedCmcFromMoleFractions(components: Array<{ moleFraction: number; cmc: number }>): number {
+  const valid = components.filter(c => c.moleFraction > 0 && c.cmc > 0 && Number.isFinite(c.cmc));
+  const total = valid.reduce((sum, c) => sum + c.moleFraction, 0);
+  if (valid.length === 0 || total <= 0) return 0;
+  const inverse = valid.reduce((sum, c) => sum + (c.moleFraction / total) / c.cmc, 0);
+  return inverse > 0 ? 1 / inverse : 0;
+}
+
+function describeOpenBenchmarkNonIdeality(types: string[]): string | undefined {
+  const charged = (t: string) => (t === 'amphoteric' ? 'zwitterionic' : t);
+  const unique = Array.from(new Set(types.map(charged))).sort();
+  if (unique.length < 2) return undefined;
+  const notes: string[] = [];
+  for (let i = 0; i < unique.length; i++) {
+    for (let j = i + 1; j < unique.length; j++) {
+      const key = `${unique[i]}-${unique[j]}`;
+      const entry = OPEN_BENCHMARK_IDEAL_MIXING_BIAS[key];
+      if (entry) notes.push(`${key}: ideal rule overestimated measured mixed CMC by median ${entry.medianLogBias.toFixed(2)} log10 units (~${Math.pow(10, entry.medianLogBias).toFixed(1)}x, n=${entry.points} points / ${entry.systems} systems)`);
+    }
+  }
+  return notes.length ? `Open P2SURF binary-mixture benchmark (literature data, MIT-licensed release): ${notes.join('; ')}. Treat the ideal value as an upper bound for these pair classes.` : undefined;
 }
 
 export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCmcResult | null {
@@ -716,6 +761,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
   let hasAnionic = false;
   let hasAmphoteric = false;
   let hasNonionic = false;
+  let hasCationic = false;
   let hasElectrolyte = false;
 
   for (const ing of safeIngs) {
@@ -741,6 +787,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
       if (cmcData.type === 'anionic') hasAnionic = true;
       if (cmcData.type === 'amphoteric') hasAmphoteric = true;
       if (cmcData.type === 'nonionic') hasNonionic = true;
+      if (cmcData.type === 'cationic') hasCationic = true;
     }
 
     if (
@@ -757,15 +804,24 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     return null;
   }
 
-  let inverseCmcSum = 0;
+  // Clint's ideal mixed-micelle rule is defined on SURFACTANT MOLE FRACTIONS
+  // (1/CMC_mix = sum(alpha_i / CMC_i)). Active mass percentages are converted to
+  // moles with each entry's standard molecular weight before mixing.
+  const totalActiveMoles = components.reduce((sum, c) => sum + c.activePct / Math.max(1, c.mw), 0);
+  const moleFractions = components.map(c => (c.activePct / Math.max(1, c.mw)) / totalActiveMoles);
+  const idealMolarFromMoleFractions = idealMixedCmcFromMoleFractions(
+    components.map((c, i) => ({ moleFraction: moleFractions[i], cmc: c.cmcMolar }))
+  );
+  const inverseCmcSum = idealMolarFromMoleFractions > 0 ? 1 / idealMolarFromMoleFractions : 0;
   let weightedMw = 0;
-  const resolvedComponents = components.map(c => {
+  const resolvedComponents = components.map((c, i) => {
     const fraction = c.activePct / totalActiveSurfactantPct;
-    inverseCmcSum += fraction / c.cmcMolar;
-    weightedMw += fraction * c.mw;
+    const moleFraction = moleFractions[i];
+    weightedMw += moleFraction * c.mw;
     return {
       name: c.name,
       activeFraction: Number(fraction.toFixed(3)),
+      moleFraction: Number(moleFraction.toFixed(3)),
       cmcMolar: c.cmcMolar,
       cmcPpm: c.cmcPpm,
       type: c.type,
@@ -779,7 +835,9 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
   const avgMw = weightedMw > 0 ? weightedMw : 320;
   const idealPpm = idealMolar * avgMw; // mM (mmol/L) * g/mol = mg/L = ppm
 
-  const hasSynergyPair = (hasAnionic && hasAmphoteric) || (hasAnionic && hasNonionic);
+  const hasSynergyPair = (hasAnionic && hasAmphoteric) || (hasAnionic && hasNonionic) || (hasAnionic && hasCationic) || (hasCationic && hasNonionic);
+  const pairClasses = Array.from(new Set(components.map(c => c.type)));
+  const openBenchmarkNonIdeality = describeOpenBenchmarkNonIdeality(pairClasses);
   const confidence: 'Higher Confidence' | 'Moderate Confidence' | 'Lower Confidence' =
     components.length === 1 ? 'Higher Confidence' : (hasElectrolyte ? 'Moderate Confidence' : 'Moderate Confidence');
 
@@ -795,7 +853,8 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     components: resolvedComponents,
     evidenceRefs: Array.from(new Set(components.map(c => c.referenceEvidence?.evidenceId).filter((id): id is string => Boolean(id)))),
     confidence,
-    limitation: 'Clint ideal mixed-pseudophase calculation assumes zero excess free energy of mixing (β = 0). Synergistic headgroup interactions and electrolyte screening typically depress experimental benchtop CMC below this ideal baseline.',
+    openBenchmarkNonIdeality,
+    limitation: 'Clint ideal mixed-pseudophase calculation (surfactant mole-fraction basis) assumes zero excess free energy of mixing (β = 0). Synergistic headgroup interactions and electrolyte screening typically depress experimental benchtop CMC below this ideal baseline.' + (openBenchmarkNonIdeality ? ` ${openBenchmarkNonIdeality}` : ''),
     labValidationGuidance: 'Surface tensiometry (Wilhelmy plate / du Noüy ring equilibrium surface tension vs log-concentration isotherm) recommended for experimental CMC determination.'
   };
 }

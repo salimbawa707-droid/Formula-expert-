@@ -1,6 +1,6 @@
 # Commercial Empirical Validation Readiness
 
-Updated: 2026-10-20
+Updated: 2026-10-21
 
 ## What the app can claim today
 
@@ -18,6 +18,12 @@ Updated: 2026-10-20
 - PSDI's historical CMC collection declares CC BY 4.0, but the archived audit still reports unresolved references, malformed codes, and a compound identity conflict. Its README keeps it in raw archive only; it must not be treated as a cleared model benchmark until those records are reconciled.
 - Zenodo 18961871 rheology/foam workbooks remain quarantined for rights, schema, conditions, and row-to-measurement lineage checks. Their specialized observables cannot validate complete detergent recipes by themselves.
 - Published values and open data are reference evidence, not a substitute for controlled product-lab measurements. Import provenance now defaults to unknown, fabricated lab/operator names and evidence IDs are not generated, and real-lab imports require a raw evidence reference. Unregistered test methods are review-only.
+
+## Open-reference component benchmarks (2026-10-21)
+
+- The pH, pure-CMC and mixed-CMC engines are now benchmarked against openly licensed published measurements: IUPAC 2002 pH standards (© 2002 IUPAC), a filtered PSDI/NIST CMC homolog slice (CC BY 4.0) and Sandia P2SURF binary-mixture CMC data (MIT). See `open_reference_benchmarks/` and [`OPEN_REFERENCE_BENCHMARK_REPORT.md`](./OPEN_REFERENCE_BENCHMARK_REPORT.md).
+- Result: the Davies pH model is within 0.015 pH of the six supported 25 °C standards after an activity-model fix. The ideal mixed-CMC rule is accurate for same-charge pairs but overestimates anionic+cationic, anionic+amphoteric and anionic+nonionic mixtures by about 15x, 9x and 1.9x.
+- These are component-level reference checks. They do not change `REAL_LAB_DATA_COUNT = 0` and cannot earn `LAB_VALIDATED`.
 
 ## Standard method notes
 

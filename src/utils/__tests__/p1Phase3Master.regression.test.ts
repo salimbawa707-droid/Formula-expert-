@@ -170,11 +170,14 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
     { evidenceRefs: ['PSDI-CMC-C1-66007-25C'], temperatureC: 25 }
   );
 
-  // Binary Surfactant Mixture:
-  // Component A: LABSA (MW=320, CMC=1.2 mM), active fraction alpha_1 = 0.5
-  // Component B: LAE-9 (MW=580, CMC=0.05 mM), active fraction alpha_2 = 0.5
-  // Clint Ideal: 1/CMC_mix = (0.5 / 1.2) + (0.5 / 0.05) = 0.4167 + 10 = 10.4167
-  // CMC_mix = 1 / 10.4167 = 0.096 mM
+  // Binary Surfactant Mixture (Clint rule on SURFACTANT MOLE FRACTIONS):
+  // Component A: LABSA (MW=320, CMC=1.2 mM), 5.0% active -> 0.015625 mol/100 g
+  // Component B: LAE-9 (MW=580, CMC=0.05 mM), 5.0% active -> 0.008621 mol/100 g
+  // alpha_1 = 0.6444, alpha_2 = 0.3556
+  // Clint Ideal: 1/CMC_mix = (0.6444 / 1.2) + (0.3556 / 0.05) = 0.537 + 7.112 = 7.649
+  // CMC_mix = 1 / 7.649 = 0.131 mM
+  // (The earlier 0.096 mM expectation mixed MASS fractions, which is dimensionally
+  //  inconsistent with Clint's derivation; corrected after the open P2SURF benchmark.)
   const binaryCmcFormula: FormulationIngredient[] = [
     { name: 'LABSA 96%', percentage: 5.208, activeMatterPct: 96, category: 'Anionic Surfactant' }, // 5.0% active
     { name: 'Alcohol Ethoxylate (LAE-9)', percentage: 5.0, activeMatterPct: 100, category: 'Nonionic Surfactant' } // 5.0% active
@@ -182,7 +185,7 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
   const cmcResult = calculateMixedCMC(binaryCmcFormula);
   assert('Mixed CMC Calculation Succeeded', cmcResult !== null, cmcResult !== null, true);
   if (cmcResult) {
-    assert('Clint Ideal Mixed CMC Molar Value (~0.096 mM)', Math.abs(cmcResult.molar - 0.096) < 0.01, cmcResult.molar, 0.096);
+    assert('Clint Ideal Mixed CMC Molar Value on mole-fraction basis (~0.131 mM)', Math.abs(cmcResult.molar - 0.131) < 0.01, cmcResult.molar, 0.131);
     assert('Synergy Pair Flagged (Anionic + Nonionic)', cmcResult.hasSynergyPair === true, cmcResult.hasSynergyPair, true);
     assert('Model Type is Clint Ideal Mixed Pseudophase', cmcResult.modelType.includes('Clint Model'), true, true);
     assert('Limitation Explains Beta=0 Assumption', cmcResult.limitation.includes('β = 0'), true, true);

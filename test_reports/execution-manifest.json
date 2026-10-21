@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-21T09:03:00.007Z",
+  "timestamp": "2026-10-21T12:07:43.325Z",
   "summary": {
-    "discoveredCount": 127,
-    "registeredCount": 127,
-    "executedCount": 127,
+    "discoveredCount": 128,
+    "registeredCount": 128,
+    "executedCount": 128,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4028,
-    "totalAssertionsPassed": 4028,
+    "totalAssertionsExecuted": 4075,
+    "totalAssertionsPassed": 4075,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -288,6 +288,15 @@
       "passedAssertions": 42,
       "failedAssertions": 0,
       "totalAssertions": 42,
+      "skipped": false
+    },
+    {
+      "file": "openReferenceBenchmark.regression.test.ts",
+      "moduleName": "runOpenReferenceBenchmarkTestSuite",
+      "executed": true,
+      "passedAssertions": 47,
+      "failedAssertions": 0,
+      "totalAssertions": 47,
       "skipped": false
     },
     {

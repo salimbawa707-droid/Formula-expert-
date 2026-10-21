@@ -1,0 +1,49 @@
+{
+  "manifestVersion": "1.0.0",
+  "createdAt": "2026-10-21",
+  "purpose": "Openly licensed published measurement data used to benchmark the app's pH, pure-CMC and mixed-CMC engines (scripts/open-reference-benchmark.ts; src/utils/__tests__/openReferenceBenchmark.regression.test.ts).",
+  "governance": "Component-level reference benchmark only. These are not matched finished-formula lab batches, do not count toward REAL_LAB_DATA_COUNT, and never set LAB_VALIDATED.",
+  "datasets": [
+    {
+      "path": "ph_standards/iupac_2002_ph_standards.csv",
+      "sha256": "cff270c8803132434c520d4a371c128d7b5d16b35e2a776094514aea108e4e55",
+      "rows": 20,
+      "content": "Selected primary and secondary pH reference values (Tables 2 and 3) with engine recipe mapping and explicit coverage gaps.",
+      "source": "R. P. Buck et al., Measurement of pH. Definition, standards, and procedures (IUPAC Recommendations 2002), Pure Appl. Chem. 74(11), 2169-2200 (2002)",
+      "doi": "10.1351/pac200274112169",
+      "sourceUrl": "https://publications.iupac.org/pac/2002/pdf/7411x2169.pdf",
+      "license": "IUPAC reproduction notice: republication or reproduction permitted without prior permission provided the source is acknowledged with full reference and the copyright symbol, the name IUPAC and the year.",
+      "copyrightNotice": "\u00a9 2002 IUPAC",
+      "transformation": "Numeric values transcribed; engine_recipe and mapping_note columns added by this repository."
+    },
+    {
+      "path": "cmc_pure/psdi_nist_detergent_homolog_cmc.csv",
+      "sha256": "41c7b4feedfebb48121f60d6ef9aa36e1a6d5b5bb082b6c0344d0777938fc45d",
+      "rows": 63,
+      "content": "Filtered slice of the PSDI/NIST NSRDS-36 CMC table: compounds 1 (SDS), 21 (DDAO), 51 (SDBS), 121 (C12 betaine), 279 (C12 BDDAC); no additives, molar units, 20-30 C, evaluation codes 1/2/3/P/L.",
+      "source": "Frey, J. G.; Pearman-Kanza, S.; Munday, S.; Allam, T. Critical Micelle Concentration (CMC) Data Collection, PSDI (2024), digitising Mukerjee & Mysels, NSRDS-NBS 36 (1971)",
+      "parentFile": "evidence_vault/datasets/psdi_cmc/NIST_Table_of_Critical_Micelle_Concentration_Values.csv",
+      "sourceUrl": "https://nvlpubs.nist.gov/nistpubs/Legacy/NSRDS/nbsnsrds36.pdf",
+      "license": "CC BY 4.0",
+      "transformation": "Row filter plus app mapping columns (app_cmc_key, app_ingredient_probe_name, structural_relationship, evidence_tier)."
+    },
+    {
+      "path": "cmc_mixed/p2surf_binary_mixture_cmc.csv",
+      "sha256": "d9b6ebb2e34f7ec1be4ea9a9ef799bbe0313c0c501c34a155be40cc0f7bbbe51",
+      "rows": 979,
+      "content": "Binary surfactant mixture CMC values compiled from literature (SMILES, mole fraction, log10 CMC in micromolar).",
+      "source": "Sandia National Laboratories P2SURF repository, file Mixture_surfactants_CMC/Case-1_Interpolating CMC at intermediate mole fraction/dataset/updated_CMC-Data-for-mixed-micelle.csv",
+      "sourceUrl": "https://github.com/snlai4chembiogroup/P2SURF",
+      "commit": "8aa90b9a9d1b2c51df5ce5ed1e863f81eff3f0e8",
+      "relatedPaperDoi": "10.1186/s13321-025-01112-2",
+      "license": "MIT (license text copied to cmc_mixed/P2SURF_LICENSE.txt)",
+      "transformation": "Verbatim copy."
+    }
+  ],
+  "excludedSources": [
+    {
+      "name": "SurfPro database",
+      "reason": "CC BY-NC-SA licence is incompatible with commercial use; remains do-not-ingest per evidence_vault/datasets policy."
+    }
+  ]
+}

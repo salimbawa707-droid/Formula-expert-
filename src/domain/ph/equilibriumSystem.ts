@@ -80,18 +80,15 @@ export class EquilibriumSystem {
     ions: Array<{ concentrationMolar: number; charge: number }>;
   } {
     const Kw = ActivityModel.getWaterAutoionizationKw(temperatureC);
-    const hConc = Math.pow(10, -pH);
-    const ohConc = Kw / Math.max(1e-15, hConc);
+    const actModel = (composition as any).activityModel ?? 'davies';
+    // pH is defined on the activity scale (pH = -lg aH, IUPAC 2002). Concentrations
+    // are recovered from activities through the single-ion activity coefficient below.
+    const aH = Math.pow(10, -pH);
 
-    let posCharge = hConc;
-    let negCharge = ohConc;
-
-    const ions: Array<{ concentrationMolar: number; charge: number }> = [
-      { concentrationMolar: hConc, charge: 1 },
-      { concentrationMolar: ohConc, charge: -1 }
-    ];
-
-    const speciationList: ChemicalFamilySpeciation[] = [];
+    // Fully dissociated (strong) ions are independent of pH and of the activity model.
+    let strongPos = 0;
+    let strongNeg = 0;
+    const strongIons: Array<{ concentrationMolar: number; charge: number }> = [];
 
     let totalNa = 0;
     let totalK = 0;
@@ -106,6 +103,9 @@ export class EquilibriumSystem {
     for (const ing of composition.ingredients) {
       if (!ing.isRecognized || !ing.resolvedSpecies || ing.molarity <= 0) continue;
       const sp = ing.resolvedSpecies;
+
+      // Solvent water is not a solute ion and must never enter charge or ionic-strength sums.
+      if (sp.speciesId === 'water') continue;
 
       // 1. Strong bases
       if (sp.speciesId === 'naoh') {
@@ -123,20 +123,21 @@ export class EquilibriumSystem {
         totalSO4 += ing.molarity;
         totalStrongAcidMoles += ing.molarity * 2;
       } else if (sp.speciesId === 'nitric_acid') {
-        negCharge += ing.molarity;
+        strongNeg += ing.molarity;
         totalStrongAcidMoles += ing.molarity;
-        ions.push({ concentrationMolar: ing.molarity, charge: -1 });
+        strongIons.push({ concentrationMolar: ing.molarity, charge: -1 });
       } else if (sp.speciesId === 'sulfamic_acid') {
-        negCharge += ing.molarity;
+        strongNeg += ing.molarity;
         totalStrongAcidMoles += ing.molarity;
-        ions.push({ concentrationMolar: ing.molarity, charge: -1 });
+        strongIons.push({ concentrationMolar: ing.molarity, charge: -1 });
       } else if (sp.speciesId === 'sodium_bisulfate') {
         totalNa += ing.molarity;
         totalSO4 += ing.molarity;
         totalStrongAcidMoles += ing.molarity;
       } else if (sp.speciesId === 'methanesulfonic_acid') {
-        negCharge += ing.molarity;
+        strongNeg += ing.molarity;
         totalStrongAcidMoles += ing.molarity;
+        strongIons.push({ concentrationMolar: ing.molarity, charge: -1 });
       }
       // 3. LABSA (Sulfonic acid surfactant)
       else if (sp.speciesId === 'labsa') {
@@ -178,124 +179,145 @@ export class EquilibriumSystem {
     }
 
     if (totalNa > 0) {
-      posCharge += totalNa;
-      ions.push({ concentrationMolar: totalNa, charge: 1 });
+      strongPos += totalNa;
+      strongIons.push({ concentrationMolar: totalNa, charge: 1 });
     }
     if (totalK > 0) {
-      posCharge += totalK;
-      ions.push({ concentrationMolar: totalK, charge: 1 });
+      strongPos += totalK;
+      strongIons.push({ concentrationMolar: totalK, charge: 1 });
     }
-
     if (totalCl > 0) {
-      negCharge += totalCl;
-      ions.push({ concentrationMolar: totalCl, charge: -1 });
+      strongNeg += totalCl;
+      strongIons.push({ concentrationMolar: totalCl, charge: -1 });
     }
     if (totalSO4 > 0) {
-      negCharge += totalSO4 * 2;
-      ions.push({ concentrationMolar: totalSO4, charge: -2 });
+      strongNeg += totalSO4 * 2;
+      strongIons.push({ concentrationMolar: totalSO4, charge: -2 });
     }
     if (totalLABSAnion > 0) {
-      negCharge += totalLABSAnion;
-      ions.push({ concentrationMolar: totalLABSAnion, charge: -1 });
+      strongNeg += totalLABSAnion;
+      strongIons.push({ concentrationMolar: totalLABSAnion, charge: -1 });
     }
 
-    // Recalculate ionic strength dynamically during iterations to compute Davies activity coefficient
-    let strongIonsSum = 0;
-    if (totalNa > 0) strongIonsSum += totalNa;
-    if (totalK > 0) strongIonsSum += totalK;
-    if (totalCl > 0) strongIonsSum += totalCl;
-    if (totalSO4 > 0) strongIonsSum += totalSO4 * 4;
-    if (totalLABSAnion > 0) strongIonsSum += totalLABSAnion;
+    /**
+     * Speciation of H+/OH- and every weak acid/base family for a given monovalent
+     * activity coefficient gamma1 (gamma_z = gamma1^(z^2) for Davies/Debye-Hückel forms).
+     *
+     * Mixed (practical) dissociation constants on the activity pH scale:
+     *  - Polyprotic step n, H(n-1)A^(n-1)- <=> H+ + A^n- : pKa'_n = pKa_n + (2n - 1) lg gamma1
+     *  - Amine BH+ <=> B + H+                            : pKa'   = pKa   - lg gamma1
+     */
+    const speciate = (gamma1: number) => {
+      const logGamma1 = Math.log10(gamma1);
+      const hConc = aH / gamma1;
+      const ohConc = Kw / (Math.max(1e-300, aH) * gamma1);
 
-    for (const key of Object.keys(familyMolarities)) {
-      strongIonsSum += familyMolarities[key].totalMolarity;
-    }
-    const I = 0.5 * strongIonsSum;
-    const actModel = (composition as any).activityModel ?? 'davies';
-    const gamma1 = actModel === 'ideal' ? 1.0 : ActivityModel.daviesGamma(I, 1, temperatureC);
+      let posCharge = strongPos + hConc;
+      let negCharge = strongNeg + ohConc;
+      const ions: Array<{ concentrationMolar: number; charge: number }> = [
+        { concentrationMolar: hConc, charge: 1 },
+        { concentrationMolar: ohConc, charge: -1 },
+        ...strongIons
+      ];
+      const speciationList: ChemicalFamilySpeciation[] = [];
 
-    for (const key of Object.keys(familyMolarities)) {
-      const { definition: sp, totalMolarity } = familyMolarities[key];
-      if (totalMolarity <= 0) continue;
+      for (const key of Object.keys(familyMolarities)) {
+        const { definition: sp, totalMolarity } = familyMolarities[key];
+        if (totalMolarity <= 0) continue;
 
-      if (sp.family === 'AMINE_BASE' && sp.pKaConjugate) {
-        const amine = EquilibriumSystem.calculateAmineProtonation(sp.pKaConjugate, pH);
-        const bhMolarity = totalMolarity * amine.fractionProtonated;
-        posCharge += bhMolarity;
-        ions.push({ concentrationMolar: bhMolarity, charge: 1 });
+        if (sp.family === 'AMINE_BASE' && sp.pKaConjugate) {
+          const amine = EquilibriumSystem.calculateAmineProtonation(sp.pKaConjugate - logGamma1, pH);
+          const bhMolarity = totalMolarity * amine.fractionProtonated;
+          posCharge += bhMolarity;
+          ions.push({ concentrationMolar: bhMolarity, charge: 1 });
 
-        speciationList.push({
-          familyType: sp.family,
-          displayName: sp.displayName,
-          totalMolarity,
-          species: [
-            { speciesName: `${sp.displayName} (Neutral B)`, charge: 0, fraction: amine.fractionNeutral, molarConcentration: totalMolarity * amine.fractionNeutral },
-            { speciesName: `${sp.displayName} (Protonated BH+)`, charge: 1, fraction: amine.fractionProtonated, molarConcentration: bhMolarity }
-          ],
-          netChargeContribution: bhMolarity
-        });
-      } else if (sp.pKa && sp.pKa.length > 0) {
-        // Appapparent step constant correction based on activity coefficient gamma1
-        const logGamma1 = Math.log10(gamma1);
-        const correctedPKa = sp.pKa.map((pk: number, idx: number) => {
-          const step = idx + 1;
-          return pk + 2 * step * logGamma1;
-        });
-        const alphas = EquilibriumSystem.calculatePolyproticAlphas(correctedPKa, pH);
-        let familyNegCharge = 0;
-        const speciesDetails: SpeciationFraction[] = [];
+          speciationList.push({
+            familyType: sp.family,
+            displayName: sp.displayName,
+            totalMolarity,
+            species: [
+              { speciesName: `${sp.displayName} (Neutral B)`, charge: 0, fraction: amine.fractionNeutral, molarConcentration: totalMolarity * amine.fractionNeutral },
+              { speciesName: `${sp.displayName} (Protonated BH+)`, charge: 1, fraction: amine.fractionProtonated, molarConcentration: bhMolarity }
+            ],
+            netChargeContribution: bhMolarity
+          });
+        } else if (sp.pKa && sp.pKa.length > 0) {
+          const correctedPKa = sp.pKa.map((pk: number, idx: number) => {
+            const step = idx + 1;
+            return pk + (2 * step - 1) * logGamma1;
+          });
+          const alphas = EquilibriumSystem.calculatePolyproticAlphas(correctedPKa, pH);
+          let familyNegCharge = 0;
+          const speciesDetails: SpeciationFraction[] = [];
 
-        for (let k = 0; k < alphas.length; k++) {
-          const frac = alphas[k];
-          const c_k = totalMolarity * frac;
-          const charge = -k;
+          for (let k = 0; k < alphas.length; k++) {
+            const frac = alphas[k];
+            const c_k = totalMolarity * frac;
+            const charge = -k;
 
-          if (charge !== 0 && c_k > 0) {
-            familyNegCharge += Math.abs(charge) * c_k;
-            ions.push({ concentrationMolar: c_k, charge });
+            if (charge !== 0 && c_k > 0) {
+              familyNegCharge += Math.abs(charge) * c_k;
+              ions.push({ concentrationMolar: c_k, charge });
+            }
+
+            let sName = `H${alphas.length - 1 - k}A^(${charge})`;
+            if (sp.family === 'CARBONATE') {
+              sName = k === 0 ? 'H2CO3 / CO2(aq)' : (k === 1 ? 'HCO3- (Bicarbonate)' : 'CO3(2-) (Carbonate)');
+            } else if (sp.family === 'CITRATE') {
+              sName = k === 0 ? 'H3Cit (Citric Acid)' : (k === 1 ? 'H2Cit- (Monovalent)' : (k === 2 ? 'HCit(2-) (Divalent)' : 'Cit(3-) (Citrate)'));
+            } else if (sp.family === 'PHOSPHATE') {
+              sName = k === 0 ? 'H3PO4' : (k === 1 ? 'H2PO4-' : (k === 2 ? 'HPO4(2-)' : 'PO4(3-)'));
+            } else if (sp.family === 'SILICATE') {
+              sName = k === 0 ? 'H2SiO3' : (k === 1 ? 'HSiO3-' : 'SiO3(2-)');
+            } else if (sp.family === 'CARBOXYLIC_WEAK_ACID') {
+              sName = k === 0 ? 'HA (Free Acid)' : 'A- (Carboxylate Anion)';
+            }
+
+            speciesDetails.push({
+              speciesName: sName,
+              charge,
+              fraction: frac,
+              molarConcentration: c_k
+            });
           }
 
-          let sName = `H${alphas.length - 1 - k}A^(${charge})`;
-          if (sp.family === 'CARBONATE') {
-            sName = k === 0 ? 'H2CO3 / CO2(aq)' : (k === 1 ? 'HCO3- (Bicarbonate)' : 'CO3(2-) (Carbonate)');
-          } else if (sp.family === 'CITRATE') {
-            sName = k === 0 ? 'H3Cit (Citric Acid)' : (k === 1 ? 'H2Cit- (Monovalent)' : (k === 2 ? 'HCit(2-) (Divalent)' : 'Cit(3-) (Citrate)'));
-          } else if (sp.family === 'PHOSPHATE') {
-            sName = k === 0 ? 'H3PO4' : (k === 1 ? 'H2PO4-' : (k === 2 ? 'HPO4(2-)' : 'PO4(3-)'));
-          } else if (sp.family === 'SILICATE') {
-            sName = k === 0 ? 'H2SiO3' : (k === 1 ? 'HSiO3-' : 'SiO3(2-)');
-          } else if (sp.family === 'CARBOXYLIC_WEAK_ACID') {
-            sName = k === 0 ? 'HA (Free Acid)' : 'A- (Carboxylate Anion)';
-          }
+          negCharge += familyNegCharge;
 
-          speciesDetails.push({
-            speciesName: sName,
-            charge,
-            fraction: frac,
-            molarConcentration: c_k
+          speciationList.push({
+            familyType: sp.family,
+            displayName: sp.displayName,
+            totalMolarity,
+            species: speciesDetails,
+            netChargeContribution: -familyNegCharge
           });
         }
+      }
 
-        negCharge += familyNegCharge;
+      return { posCharge, negCharge, ions, speciationList };
+    };
 
-        speciationList.push({
-          familyType: sp.family,
-          displayName: sp.displayName,
-          totalMolarity,
-          species: speciesDetails,
-          netChargeContribution: -familyNegCharge
-        });
+    // Ideal model: gamma = 1. Non-ideal models: self-consistent ionic strength
+    // I = 0.5 * sum(c_i z_i^2) over charged solute species only (fixed-point iteration).
+    let gamma1 = 1.0;
+    let state = speciate(gamma1);
+    if (actModel !== 'ideal') {
+      for (let iter = 0; iter < 8; iter++) {
+        const I = ActivityModel.calculateIonicStrength(state.ions);
+        const nextGamma = ActivityModel.getIonActivityCoefficient(I, 1, actModel, temperatureC).gamma;
+        if (Math.abs(nextGamma - gamma1) < 1e-7) break;
+        gamma1 = nextGamma;
+        state = speciate(gamma1);
       }
     }
 
-    const residual = posCharge - negCharge;
+    const residual = state.posCharge - state.negCharge;
 
     return {
       residual,
-      positiveCharge: posCharge,
-      negativeCharge: negCharge,
-      speciation: speciationList,
-      ions
+      positiveCharge: state.posCharge,
+      negativeCharge: state.negCharge,
+      speciation: state.speciationList,
+      ions: state.ions
     };
   }
 

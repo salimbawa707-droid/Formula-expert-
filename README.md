@@ -70,7 +70,7 @@ npm run dev
 
 ## 🧪 Testing & Verification
 
-The platform maintains a master regression and integrity suite covering scientific engines, security middleware, and offline caching policies. The latest verified run in this repository executed 127 modules; the runner reports the current count in its execution manifest:
+The platform maintains a master regression and integrity suite covering scientific engines, security middleware, and offline caching policies. The latest verified run in this repository executed 128 modules; the runner reports the current count in its execution manifest:
 
 ```bash
 # Run full master test suite
@@ -78,7 +78,12 @@ npm test
 
 # Run TypeScript typecheck across all modules
 npm run typecheck
+
+# Benchmark engines against open published measurements (IUPAC pH, NIST/PSDI CMC, P2SURF mixtures)
+npm run benchmark:open-reference
 ```
+
+Open-reference benchmark results and data provenance: `evidence_vault/forensic_reports/OPEN_REFERENCE_BENCHMARK_REPORT.md`. These are component-level checks, not finished-formula lab validation.
 
 The master test runner produces a deterministic JSON manifest at `test_reports/execution-manifest.json` ensuring 100% agreement between disk discovery, registration, and live assertion execution.
 
