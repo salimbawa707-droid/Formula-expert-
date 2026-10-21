@@ -203,7 +203,7 @@ async function runRecovery() {
       console.log(`         MD5: ${validationResult.actualMd5} (Expected: ${wb.expectedMd5}) -> ${validationResult.md5Match ? 'PASS' : 'FAIL'}`);
       console.log(`         SHA-256: ${validationResult.actualSha256} -> ${validationResult.sha256Match ? 'PASS' : 'FAIL'}`);
 
-      if (validationResult.isZip && validationResult.md5Match) {
+      if (validationResult.isZip && validationResult.sizeMatch && validationResult.md5Match && validationResult.sha256Match) {
         validationResult.verdict = 'RECOVERED AND VERIFIED';
         // If downloaded from live network and passed verification, ensure canonical path is updated
         if (candidateSource === 'LIVE_ZENODO_DOWNLOAD') {
@@ -254,8 +254,8 @@ Pursuant to Issue 2 instructions, each corrupted workbook was inspected, live re
     md += `### ${r.workbook.name}\n`;
     md += `- **Explicit Status:** **${r.validationResult.verdict}**\n`;
     md += `- **Network Fetch Outcome:** \`${r.networkStatus}\`\n`;
-    md += `- **Cryptographic Authenticity:** ${r.validationResult.md5Match ? '100% Bit-for-bit exact match' : 'MISMATCH / UNVERIFIED'}\n`;
-    md += `- **Quarantine Preservation:** Confirmed preserved in \`${path.relative('.', r.workbook.quarantinePath)}\`\n\n`;
+    md += `- **Cryptographic Authenticity:** ${r.validationResult.isZip && r.validationResult.sizeMatch && r.validationResult.md5Match && r.validationResult.sha256Match ? 'PASS — ZIP signature, exact byte size, MD5, and SHA-256 all match' : 'FAIL — one or more integrity checks failed'}\n`;
+    md += `- **Quarantine Stub:** ${r.quarantineState.exists ? `PRESENT (${r.quarantineState.size} bytes; excluded from calculations)` : 'ABSENT'} at \`${path.relative('.', r.workbook.quarantinePath)}\`\n\n`;
   });
 
   md += `---
