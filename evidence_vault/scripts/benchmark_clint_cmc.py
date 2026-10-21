@@ -326,7 +326,7 @@ def analyze_rows(source_rows: list[dict[str, str]], source_sha256: str) -> tuple
     }
     result = {
         "benchmark_id": "ENG-002-CLINT-P2SURF-v1",
-        "benchmark_scope": "Component-level ideal Clint equation benchmark within systems with observed pure endpoints; not finished detergent formula validation.",
+        "benchmark_scope": "component-level ideal Clint equation benchmark within systems with observed pure endpoints; not finished detergent formula validation",
         "source": {
             "file": f"evidence_vault/open_reference_benchmarks/{RELATIVE_DATA}",
             "upstream_commit": UPSTREAM_COMMIT,
