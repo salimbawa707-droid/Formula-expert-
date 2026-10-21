@@ -36,3 +36,11 @@ ASTM D1172-15(2024) is an active guide for preparing aqueous soap/detergent solu
 3. Collect matched lab runs across multiple independent formula fingerprints and manufacturing batches; retain raw evidence and review decisions.
 4. Run the held-out evaluations separately by category and property. Report observed coverage, uncertainty, within-tolerance percentage, MAE/RMSE, and out-of-domain limits.
 5. Complete jurisdiction-specific regulatory, label, claims, packaging, manufacturing, and safety review before calling the product commercially released.
+
+
+## ENG-002 surfactant identity and input provenance (Task 5; 2026-10-22)
+
+- Audited `main` baseline `fc0cf2c4412f532c4c3a4c1b4c10cd382f540d94`. The canonical ingredient catalog has 162 surfactant records: 0 fully supported by catalog-linked identity and lot-level input evidence, 8 conditionally partial SLS/SDS records, and 154 blocked for insufficient or ambiguous pure-CMC/MW applicability. Record-level decisions and source details are in `datasets/eng002_catalog_eligibility_report.json` and `datasets/eng002_surfactant_input_provenance.csv`.
+- The calculation now requires exact canonical chemical identity or CAS plus `SINGLE_SUBSTANCE`, a traceable pure-component CMC/MW pair, valid as-supplied mass dose and explicit active matter. It does not use general active-matter fallbacks, omit unsupported surfactants, or substitute broad catalog-name heuristics. Missing and explicit-zero active matter yield distinct unavailable reasons. Duplicate exact chemical aliases aggregate before mole-fraction calculation.
+- Legacy name-based CMC/MW numbers remain identified as `HEURISTIC_SCREENING` for descriptive compatibility only. The broad commercial amine-oxide mapping is not admitted as the pure C12 DDAO input; catalog SLS values use the PSDI/NIST pure SDS reference at 25 °C and catalog active matter remains an unverified default absent a lot-specific assay/CoA.
+- This input gate does not calibrate the ideal Clint model and does not validate any finished detergent formula. The Task 4 P2SURF comparison remains a same-system equation benchmark only. ENG-002 remains `MODEL_PREDICTION`; Phase 4B remains **OPEN** and Phase 5 remains **LOCKED**.

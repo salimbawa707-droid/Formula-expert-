@@ -36,6 +36,7 @@ import { runP1Phase1MasterTestSuite } from './__tests__/p1Phase1Master.regressio
 import { runP1Phase2ChelationTestSuite } from './__tests__/p1Phase2Chelation.regression.test';
 import { runP1Phase3MasterTestSuite } from './__tests__/p1Phase3Master.regression.test';
 import { runOpenReferenceBenchmarkTestSuite } from './__tests__/openReferenceBenchmark.regression.test';
+import { runEng002InputProvenanceTestSuite } from './__tests__/eng002InputProvenance.test';
 import { runP1Phase4PerformanceTestSuite } from './__tests__/p1Phase4Performance.regression.test';
 import { runP1Phase4HardeningTestSuite } from './__tests__/p1Phase4Hardening.regression.test';
 import { runP1Phase5ScientificQualityGateTestSuite } from './__tests__/p1Phase5ScientificQualityGate.regression.test';
@@ -168,6 +169,7 @@ const p1Phase1Summary = runP1Phase1MasterTestSuite();
 const p1Phase2Summary = runP1Phase2ChelationTestSuite();
 const p1Phase3Summary = runP1Phase3MasterTestSuite();
 const openReferenceBenchmarkSummary = runOpenReferenceBenchmarkTestSuite();
+const eng002InputProvenanceSummary = runEng002InputProvenanceTestSuite();
 const p1Phase4Summary = runP1Phase4PerformanceTestSuite();
 const p1Phase4HardeningSummary = runP1Phase4HardeningTestSuite();
 const p1Phase5Summary = runP1Phase5ScientificQualityGateTestSuite();
@@ -362,6 +364,8 @@ console.log(`Phase P1.2 Chelation & Hard-Water Validation Master: ${p1Phase2Summ
 console.log(`Phase P1.3 Surfactant Science, HLB, CMC & Rheology Master: ${p1Phase3Summary.passed}/${p1Phase3Summary.total} PASS`);
 console.log(`Open-Reference Empirical Benchmark (IUPAC pH, PSDI/NIST CMC, P2SURF mixtures): ${openReferenceBenchmarkSummary.passed}/${openReferenceBenchmarkSummary.total} PASS`);
 openReferenceBenchmarkSummary.results.filter(r => !r.passed).forEach(r => console.log(`  ❌ ${r.name}: ${r.message}`));
+console.log(`ENG-002 Input Provenance: ${eng002InputProvenanceSummary.passed}/${eng002InputProvenanceSummary.total} PASS`);
+eng002InputProvenanceSummary.results.filter(r => !r.passed).forEach(r => console.log(`  ❌ ${r.name}: expected ${JSON.stringify(r.expected)}, got ${JSON.stringify(r.actual)}`));
 console.log(`Phase P1.4 Performance Prediction, Cleaning & KPI Master: ${p1Phase4Summary.passed}/${p1Phase4Summary.total} PASS`);
 console.log(`Phase P1.4 Hardening — Scientific Integrity Gate: ${p1Phase4HardeningSummary.passed}/${p1Phase4HardeningSummary.total} PASS`);
 console.log(`Phase P1.5 Scientific Quality Gate & Specification Master: ${p1Phase5Summary.passed}/${p1Phase5Summary.total} PASS`);
@@ -433,6 +437,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'p1Phase2Chelation.regression.test.ts', moduleName: 'runP1Phase2ChelationTestSuite', executed: true, passedAssertions: p1Phase2Summary.passed, failedAssertions: p1Phase2Summary.failed, totalAssertions: p1Phase2Summary.total, skipped: false },
   { file: 'p1Phase3Master.regression.test.ts', moduleName: 'runP1Phase3MasterTestSuite', executed: true, passedAssertions: p1Phase3Summary.passed, failedAssertions: p1Phase3Summary.failed, totalAssertions: p1Phase3Summary.total, skipped: false },
   { file: 'openReferenceBenchmark.regression.test.ts', moduleName: 'runOpenReferenceBenchmarkTestSuite', executed: true, passedAssertions: openReferenceBenchmarkSummary.passed, failedAssertions: openReferenceBenchmarkSummary.failed, totalAssertions: openReferenceBenchmarkSummary.total, skipped: false },
+  { file: 'eng002InputProvenance.test.ts', moduleName: 'runEng002InputProvenanceTestSuite', executed: true, passedAssertions: eng002InputProvenanceSummary.passed, failedAssertions: eng002InputProvenanceSummary.failed, totalAssertions: eng002InputProvenanceSummary.total, skipped: false },
   { file: 'p1Phase4Performance.regression.test.ts', moduleName: 'runP1Phase4PerformanceTestSuite', executed: true, passedAssertions: p1Phase4Summary.passed, failedAssertions: p1Phase4Summary.failed, totalAssertions: p1Phase4Summary.total, skipped: false },
   { file: 'p1Phase4Hardening.regression.test.ts', moduleName: 'runP1Phase4HardeningTestSuite', executed: true, passedAssertions: p1Phase4HardeningSummary.passed, failedAssertions: p1Phase4HardeningSummary.failed, totalAssertions: p1Phase4HardeningSummary.total, skipped: false },
   { file: 'p1Phase5ScientificQualityGate.regression.test.ts', moduleName: 'runP1Phase5ScientificQualityGateTestSuite', executed: true, passedAssertions: p1Phase5Summary.passed, failedAssertions: p1Phase5Summary.failed, totalAssertions: p1Phase5Summary.total, skipped: false },

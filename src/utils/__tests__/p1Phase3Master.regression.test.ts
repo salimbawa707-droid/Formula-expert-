@@ -159,46 +159,44 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
     { cmcPpm: sourcedSlsCmc?.cmcPpm, reference: sourcedSlsCmc?.referenceEvidence?.sourceReferenceCode },
     { cmcPpm: 2364.1, reference: '66007' }
   );
-  const sourcedSlsMixture = calculateMixedCMC([
-    { name: 'Sodium dodecyl sulfate', percentage: 10, activeMatterPct: 100, category: 'Anionic Surfactant' }
-  ]);
+  const sourcedSlsMixture = calculateMixedCMC([{
+    id: 'sls-row',
+    canonicalIngredientId: 'sls-needles',
+    name: 'Sodium dodecyl sulfate',
+    percentage: 10,
+    activeMatterPct: 100,
+    activeMatterInputSource: 'USER_ENTERED',
+    casNumber: '151-21-3',
+    category: 'Anionic Surfactant'
+  }]);
   assert(
-    'Mixed CMC engine carries pure-input evidence through its output contract',
-    sourcedSlsMixture?.evidenceRefs.includes('PSDI-CMC-C1-66007-25C') === true &&
+    'Mixed CMC engine carries pure-input evidence through a provenance-gated output',
+    sourcedSlsMixture.available && sourcedSlsMixture.evidenceRefs.includes('PSDI-CMC-C1-66007-25C') &&
       sourcedSlsMixture.components[0]?.referenceEvidence?.temperatureC === 25,
-    { evidenceRefs: sourcedSlsMixture?.evidenceRefs, temperatureC: sourcedSlsMixture?.components[0]?.referenceEvidence?.temperatureC },
+    sourcedSlsMixture.available ? { evidenceRefs: sourcedSlsMixture.evidenceRefs, temperatureC: sourcedSlsMixture.components[0]?.referenceEvidence.temperatureC } : sourcedSlsMixture.eligibilityReasons,
     { evidenceRefs: ['PSDI-CMC-C1-66007-25C'], temperatureC: 25 }
   );
 
-  // Binary Surfactant Mixture (Clint rule on SURFACTANT MOLE FRACTIONS):
-  // Component A: LABSA (MW=320, CMC=1.2 mM), 5.0% active -> 0.015625 mol/100 g
-  // Component B: LAE-9 (MW=580, CMC=0.05 mM), 5.0% active -> 0.008621 mol/100 g
-  // alpha_1 = 0.6444, alpha_2 = 0.3556
-  // Clint Ideal: 1/CMC_mix = (0.6444 / 1.2) + (0.3556 / 0.05) = 0.537 + 7.112 = 7.649
-  // CMC_mix = 1 / 7.649 = 0.131 mM
-  // (The earlier 0.096 mM expectation mixed MASS fractions, which is dimensionally
-  //  inconsistent with Clint's derivation; corrected after the open P2SURF benchmark.)
+  // Legacy LABSA and LAE-9 values remain heuristic screening lookups and are not admitted to formula prediction.
   const binaryCmcFormula: FormulationIngredient[] = [
-    { name: 'LABSA 96%', percentage: 5.208, activeMatterPct: 96, category: 'Anionic Surfactant' }, // 5.0% active
-    { name: 'Alcohol Ethoxylate (LAE-9)', percentage: 5.0, activeMatterPct: 100, category: 'Nonionic Surfactant' } // 5.0% active
+    { name: 'LABSA 96%', percentage: 5.208, activeMatterPct: 96, category: 'Anionic Surfactant' },
+    { name: 'Alcohol Ethoxylate (LAE-9)', percentage: 5.0, activeMatterPct: 100, category: 'Nonionic Surfactant' }
   ];
   const cmcResult = calculateMixedCMC(binaryCmcFormula);
-  assert('Mixed CMC Calculation Succeeded', cmcResult !== null, cmcResult !== null, true);
-  if (cmcResult) {
-    assert('Clint Ideal Mixed CMC Molar Value on mole-fraction basis (~0.131 mM)', Math.abs(cmcResult.molar - 0.131) < 0.01, cmcResult.molar, 0.131);
-    assert('Synergy Pair Flagged (Anionic + Nonionic)', cmcResult.hasSynergyPair === true, cmcResult.hasSynergyPair, true);
-    assert('Model Type is Clint Ideal Mixed Pseudophase', cmcResult.modelType.includes('Clint Model'), true, true);
-    assert('Limitation Explains Beta=0 Assumption', cmcResult.limitation.includes('β = 0'), true, true);
-    assert('Lab Validation Guidance Present', cmcResult.labValidationGuidance.includes('tensiometry'), true, true);
-  }
+  assert('Unmatched LABSA/LAE-9 pure-CMC and MW inputs are explicitly unavailable',
+    !cmcResult.available && cmcResult.eligibilityStatus === 'INSUFFICIENT_INPUTS',
+    cmcResult.available ? cmcResult.components : cmcResult.eligibilityReasons,
+    'INSUFFICIENT_INPUTS');
 
   // Electrolyte Screening Effect Detection
   const cmcWithElectrolyte: FormulationIngredient[] = [
-    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { id: 'sls-row', canonicalIngredientId: 'sls-needles', name: 'SLS 95% Needles', casNumber: '151-21-3', percentage: 10, activeMatterPct: 95, category: 'Anionic Surfactant' },
     { name: 'Sodium Chloride', percentage: 1.5, category: 'Viscosity Modifier' }
   ];
   const cmcSaltRes = calculateMixedCMC(cmcWithElectrolyte);
-  assert('Electrolyte Screening Detected in CMC Engine', cmcSaltRes?.hasElectrolyteScreening === true, cmcSaltRes?.hasElectrolyteScreening, true);
+  assert('Electrolyte screening is surfaced on the supported SLS component calculation',
+    cmcSaltRes.available && cmcSaltRes.hasElectrolyteScreening === true,
+    cmcSaltRes.available ? cmcSaltRes.hasElectrolyteScreening : cmcSaltRes.eligibilityReasons, true);
 
   // --------------------------------------------------------------------------
   // TOPIC 10 & 11: Surfactant Compatibility & Interaction Risks

@@ -211,8 +211,8 @@ export function runIngredientIntelligenceSearchRemediationTestSuite(): TestSuite
   ]);
   assert(
     '4. Unknown Ingredient Integrity',
-    '18. Unknown non-surfactant ingredient does not assign arbitrary CMC/HLB',
-    cmcUnknown === null || (cmcUnknown as any).molar === 0
+    '18. Unknown non-surfactant ingredient returns explicit insufficient-input CMC status',
+    !cmcUnknown.available && cmcUnknown.eligibilityStatus === 'INSUFFICIENT_INPUTS'
   );
 
   // =========================================================================

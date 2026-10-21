@@ -26,10 +26,7 @@ export {
   validateCategoryCompatibility
 };
 
-export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: number } | null => {
-  const data = getIngredientCmcData(name);
-  return data ? { cmcMolar: data.cmcMolar, cmcPpm: data.cmcPpm } : null;
-};
+export const getIngredientCmc = (name: string) => getIngredientCmcData(name);
 
 export const calculateMixedCmc = (ingredients: any[]) => {
   return calculateMixedCMC(ingredients);

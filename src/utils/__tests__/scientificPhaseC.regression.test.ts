@@ -168,14 +168,14 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
   assert('12. HLB Blending', 'T12: Correct Emulsification Region (Extended Ionic Surfactant / Hydrotropic)', t12Res.emulsionRegion.length > 0, true, true);
 
   // =========================================================================
-  // 13. Mixed CMC Calculation (Clint Ideal Pseudophase 1/CMC_mix = Σ α_i/CMC_i)
+  // 13. Mixed CMC does not substitute unverified commercial CMC/MW defaults.
   // =========================================================================
   const t13Res = calculateMixedCMC([
-    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70 }, // CMC ≈ 0.30 g/L (70% weight fraction of surfactant)
-    { name: 'LAE-7', percentage: 3, activeMatterPct: 100 }      // CMC ≈ 0.05 g/L (30% weight fraction of surfactant)
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { name: 'LAE-7', percentage: 3, activeMatterPct: 100, category: 'Nonionic Surfactant' }
   ]);
-  assert('13. Clint Mixed CMC', 'T13: Clint mixed CMC resolved successfully', t13Res !== null && t13Res.ppm > 0, true, true);
-  assertNear('13. Clint Mixed CMC', 'T13: Ideal mixed CMC ppm', t13Res ? t13Res.ppm : 0, 120, 80);
+  assert('13. Clint Mixed CMC', 'T13: Unsupported SLES/LAE inputs return explicit insufficient-input status',
+    !t13Res.available && t13Res.eligibilityStatus === 'INSUFFICIENT_INPUTS', true, true);
 
   // =========================================================================
   // 14. Viscosity Salt Curve (Micellar growth, plateau, salting-out collapse)

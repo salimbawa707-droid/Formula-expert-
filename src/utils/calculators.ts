@@ -1,4 +1,5 @@
 import { FormulationIngredient } from '../types';
+import { resolveEng002PureComponent, type Eng002PureComponentReference, type ActiveMatterInputSource } from './eng002InputProvenance';
 import { getProductCategory } from '../domain/productTaxonomy';
 import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference, OPEN_BENCHMARK_IDEAL_MIXING_BIAS } from '../data/experimentalReferenceData';
 import { calculatePHAdvanced, calculateNeutralization as calcNeutAuthoritative } from './pHEngine';
@@ -626,13 +627,14 @@ export function scaleFormula(ingredients: FormulationIngredient[], batchSizeKg: 
 
 export interface SurfactantCmcEntry {
   cmcMolar: number; // in mM
-  cmcPpm: number;
+  cmcPpm: number; // mg/L, assuming dilute aqueous density
   type: 'anionic' | 'nonionic' | 'amphoteric' | 'cationic';
-  standardMw: number;
+  standardMw: number; // g/mol
   referenceEvidence?: PureSurfactantCmcReference;
+  dataProvenance?: 'SOURCE_BACKED' | 'HEURISTIC_SCREENING';
 }
 
-export function getIngredientCmcData(name: string): (SurfactantCmcEntry & { matchedKey: string }) | null {
+function getLegacyIngredientCmcData(name: string): (SurfactantCmcEntry & { matchedKey: string }) | null {
   const n = (name || '').toLowerCase();
   if (n.includes('labsa') || n.includes('acid slurry') || n.includes('sulfonic acid') || n.includes('linear alkylbenzene')) {
     return { cmcMolar: 1.2, cmcPpm: 384, type: 'anionic', standardMw: 320, matchedKey: 'LABSA' };
@@ -706,7 +708,25 @@ export function getIngredientCmcData(name: string): (SurfactantCmcEntry & { matc
   return null;
 }
 
+/**
+ * Legacy name lookup retained for compatibility and descriptive reference comparisons.
+ * Values without a curated experimental record are explicitly heuristic and are never
+ * admitted to the application-facing Clint prediction gate below.
+ */
+export function getIngredientCmcData(name: string): (SurfactantCmcEntry & { matchedKey: string }) | null {
+  const entry = getLegacyIngredientCmcData(name);
+  if (!entry) return null;
+  return {
+    ...entry,
+    dataProvenance: entry.referenceEvidence ? 'SOURCE_BACKED' : 'HEURISTIC_SCREENING'
+  };
+}
+
 export interface MixedCmcResult {
+  available: true;
+  eligibilityStatus: 'FULLY_SUPPORTED' | 'PARTIALLY_SUPPORTED';
+  eligibilityReasons: string[];
+
   molar: number; // in mM
   ppm: number;
   idealMolar: number;
@@ -715,7 +735,7 @@ export interface MixedCmcResult {
   classification: string;
   hasSynergyPair: boolean;
   hasElectrolyteScreening: boolean;
-  components: Array<{ name: string; activeFraction: number; moleFraction?: number; cmcMolar: number; cmcPpm: number; type: string; referenceEvidence?: PureSurfactantCmcReference }>;
+  components: Array<{ name: string; canonicalChemicalKey: string; contributingIngredientIds: string[]; activeFraction: number; activeMassPct: number; moleFraction: number; molecularWeightGPerMol: number; cmcMolar: number; cmcPpm: number; type: string; activeMatterInputSource: ActiveMatterInputSource; referenceEvidence: PureSurfactantCmcReference }>;
   evidenceRefs: string[];
   /** Observed ideal-rule bias for this charge-pair class in the open P2SURF binary-mixture benchmark; informational only. */
   openBenchmarkNonIdeality?: string;
@@ -724,18 +744,60 @@ export interface MixedCmcResult {
   labValidationGuidance: string;
 }
 
+export interface MixedCmcUnavailableResult {
+  available: false;
+  eligibilityStatus: 'INSUFFICIENT_INPUTS';
+  eligibilityReasons: string[];
+  components: [];
+  modelType: 'Ideal Mixed Pseudophase (Clint Model)';
+  classification: 'UNAVAILABLE';
+}
+
+export type MixedCmcCalculationResult = MixedCmcResult | MixedCmcUnavailableResult;
+
 /**
  * Clint ideal mixed-micelle rule on a surfactant mole-fraction basis:
  * 1 / CMC_mix = sum(alpha_i / CMC_i). Units of CMC are preserved.
  * Benchmarked against open binary-mixture data in
  * evidence_vault/open_reference_benchmarks/cmc_mixed (see scripts/open-reference-benchmark.ts).
  */
-export function idealMixedCmcFromMoleFractions(components: Array<{ moleFraction: number; cmc: number }>): number {
-  const valid = components.filter(c => c.moleFraction > 0 && c.cmc > 0 && Number.isFinite(c.cmc));
-  const total = valid.reduce((sum, c) => sum + c.moleFraction, 0);
-  if (valid.length === 0 || total <= 0) return 0;
-  const inverse = valid.reduce((sum, c) => sum + (c.moleFraction / total) / c.cmc, 0);
-  return inverse > 0 ? 1 / inverse : 0;
+export const CMC_MOLE_FRACTION_SUM_TOLERANCE = 0.00101;
+
+export interface ClintComponentInput {
+  moleFraction: number;
+  cmc: number;
+  cmcUnit?: 'mM' | 'M';
+}
+
+/**
+ * Clint ideal mixed-micelle rule. CMC inputs may be supplied in M or mM and are
+ * normalized to mM. Fractions must sum to 1 within the documented 0.00101 tolerance.
+ */
+export function idealMixedCmcFromMoleFractions(components: ClintComponentInput[]): number {
+  if (!Array.isArray(components) || components.length === 0) {
+    throw new RangeError('At least one component is required for a Clint calculation.');
+  }
+  for (const [index, component] of components.entries()) {
+    if (!Number.isFinite(component.moleFraction) || component.moleFraction < 0 || component.moleFraction > 1) {
+      throw new RangeError(`Component ${index + 1} has an invalid mole fraction.`);
+    }
+    if (!Number.isFinite(component.cmc) || component.cmc <= 0) {
+      throw new RangeError(`Component ${index + 1} has a missing, non-finite, or non-positive pure CMC.`);
+    }
+    if (component.cmcUnit !== undefined && component.cmcUnit !== 'M' && component.cmcUnit !== 'mM') {
+      throw new RangeError(`Component ${index + 1} has an unsupported CMC unit.`);
+    }
+  }
+  const total = components.reduce((sum, component) => sum + component.moleFraction, 0);
+  if (total <= 0 || Math.abs(total - 1) > CMC_MOLE_FRACTION_SUM_TOLERANCE) {
+    throw new RangeError(`Mole fractions must sum to 1 within ±${CMC_MOLE_FRACTION_SUM_TOLERANCE}; received ${total}.`);
+  }
+  const inverse = components.reduce((sum, component) => {
+    const cmcMmolL = component.cmcUnit === 'M' ? component.cmc * 1000 : component.cmc;
+    return sum + (component.moleFraction / total) / cmcMmolL;
+  }, 0);
+  if (!Number.isFinite(inverse) || inverse <= 0) throw new RangeError('Clint inverse CMC sum is invalid.');
+  return 1 / inverse;
 }
 
 function describeOpenBenchmarkNonIdeality(types: string[]): string | undefined {
@@ -753,109 +815,175 @@ function describeOpenBenchmarkNonIdeality(types: string[]): string | undefined {
   return notes.length ? `Open P2SURF binary-mixture benchmark (literature data, MIT-licensed release): ${notes.join('; ')}. Treat the ideal value as an upper bound for these pair classes.` : undefined;
 }
 
-export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCmcResult | null {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  let totalActiveSurfactantPct = 0;
-  const components: Array<{ name: string; activePct: number; cmcMolar: number; cmcPpm: number; type: string; mw: number; referenceEvidence?: PureSurfactantCmcReference }> = [];
+export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCmcCalculationResult {
+  const unavailable = (eligibilityReasons: string[]): MixedCmcUnavailableResult => ({
+    available: false,
+    eligibilityStatus: 'INSUFFICIENT_INPUTS',
+    eligibilityReasons: Array.from(new Set(eligibilityReasons)),
+    components: [],
+    modelType: 'Ideal Mixed Pseudophase (Clint Model)',
+    classification: 'UNAVAILABLE'
+  });
+  if (!Array.isArray(ingredients)) return unavailable(['Formula ingredients are missing or not an array.']);
 
-  let hasAnionic = false;
-  let hasAmphoteric = false;
-  let hasNonionic = false;
-  let hasCationic = false;
-  let hasElectrolyte = false;
+  type Resolved = {
+    reference: Eng002PureComponentReference;
+    name: string;
+    id: string;
+    rawPct: number;
+    activeMatterPct: number;
+    activeMassPct: number;
+    activeMatterInputSource: ActiveMatterInputSource;
+    activeMatterEvidenceId?: string;
+    activeMatterEvidenceUrl?: string;
+  };
+  const resolved: Resolved[] = [];
+  const reasons: string[] = [];
+  let hasAnionic = false, hasAmphoteric = false, hasElectrolyte = false;
 
-  for (const ing of safeIngs) {
-    const name = ing?.name || '';
-    const n = name.toLowerCase();
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
-    const active = Number(ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? getDefaultActiveMatter(ing)) / 100;
-    const activePct = pct * active;
+  for (const ingredient of ingredients) {
+    const name = String(ingredient?.name ?? '').trim();
+    const category = String(ingredient?.category ?? '');
+    const role = String(ingredient?.role ?? ingredient?.function ?? '');
+    const { isSurfactant } = ActiveMatterEngine.classifySurfactantCharge(category, role, name);
+    const rawPctValue: unknown = ingredient?.percentage ?? ingredient?.percent ?? ingredient?.percentageInFormula;
+    const rawPct = rawPctValue === undefined || rawPctValue === null || rawPctValue === '' ? NaN : Number(rawPctValue);
 
-    const cmcData = getIngredientCmcData(name);
-    if (cmcData && activePct > 0) {
-      totalActiveSurfactantPct += activePct;
-      components.push({
-        name,
-        activePct,
-        cmcMolar: cmcData.cmcMolar,
-        cmcPpm: cmcData.cmcPpm,
-        type: cmcData.type,
-        mw: cmcData.standardMw,
-        referenceEvidence: cmcData.referenceEvidence
-      });
-
-      if (cmcData.type === 'anionic') hasAnionic = true;
-      if (cmcData.type === 'amphoteric') hasAmphoteric = true;
-      if (cmcData.type === 'nonionic') hasNonionic = true;
-      if (cmcData.type === 'cationic') hasCationic = true;
-    }
-
-    if (
-      n.includes('salt') || n.includes('sodium chloride') || n.includes('sulfate') ||
-      n.includes('carbonate') || n.includes('citrate') || n.includes('stpp') || n.includes('soda ash')
-    ) {
-      if (pct >= 0.5) {
+    if (!isSurfactant) {
+      if (!Number.isFinite(rawPct) || rawPct < 0 || rawPct > 100) {
+        if (rawPctValue !== undefined && rawPctValue !== null && rawPctValue !== '') {
+          reasons.push(`${name || 'Unnamed ingredient'} has invalid formula mass percentage ${String(rawPctValue)}; expected 0–100% w/w.`);
+        }
+      }
+      const n = name.toLowerCase();
+      if ((n.includes('salt') || n.includes('sodium chloride') || n.includes('sulfate') || n.includes('carbonate') || n.includes('citrate') || n.includes('stpp') || n.includes('soda ash')) && Number.isFinite(rawPct) && rawPct >= 0.5) {
         hasElectrolyte = true;
       }
+      continue;
     }
+
+    if (!Number.isFinite(rawPct)) {
+      reasons.push(`${name || 'Unnamed surfactant'} is missing a numeric as-supplied formula dose (% w/w).`);
+      continue;
+    }
+    if (rawPct < 0 || rawPct > 100) {
+      reasons.push(`${name} has invalid formula mass percentage ${rawPct}; expected 0–100% w/w.`);
+      continue;
+    }
+    if (rawPct === 0) continue;
+
+    const referenceResolution = resolveEng002PureComponent(ingredient);
+    if (!referenceResolution.supported) {
+      reasons.push(`${name}: ${referenceResolution.reason}`);
+      continue;
+    }
+    const activeValue: unknown = ingredient.activeMatterPct ?? ingredient.activePercent ?? ingredient.activeMatterPurity;
+    if (activeValue === undefined || activeValue === null || activeValue === '') {
+      reasons.push(`${name}: active matter is missing; catalog fallbacks are not applied by the Clint calculation.`);
+      continue;
+    }
+    const activeMatterPct = Number(activeValue);
+    if (!Number.isFinite(activeMatterPct) || activeMatterPct < 0 || activeMatterPct > 100) {
+      reasons.push(`${name}: active matter ${String(activeValue)} is invalid; expected 0–100% w/w.`);
+      continue;
+    }
+    if (activeMatterPct === 0) {
+      reasons.push(`${name}: active matter was explicitly entered as 0%, so no positive surfactant mass is available for Clint calculation.`);
+      continue;
+    }
+    const reference = referenceResolution.reference;
+    const source = (ingredient as FormulationIngredient & { activeMatterInputSource?: ActiveMatterInputSource }).activeMatterInputSource ?? 'UNKNOWN';
+    const evidenceId = (ingredient as FormulationIngredient & { activeMatterEvidenceId?: string }).activeMatterEvidenceId;
+    const evidenceUrl = (ingredient as FormulationIngredient & { activeMatterEvidenceUrl?: string }).activeMatterEvidenceUrl;
+    const rawIdentityId = String(ingredient.canonicalIngredientId ?? ingredient.id ?? name);
+    resolved.push({
+      reference, name, id: rawIdentityId, rawPct, activeMatterPct,
+      activeMassPct: rawPct * activeMatterPct / 100,
+      activeMatterInputSource: source,
+      activeMatterEvidenceId: evidenceId,
+      activeMatterEvidenceUrl: evidenceUrl
+    });
+    if (reference.chargeClass === 'anionic') hasAnionic = true;
+    if (reference.chargeClass === 'amphoteric') hasAmphoteric = true;
   }
 
-  if (totalActiveSurfactantPct <= 0 || components.length === 0) {
-    return null;
+  if (reasons.length > 0) return unavailable(reasons);
+  if (resolved.length === 0) {
+    return unavailable(['No positive-dose surfactant with a supported exact identity, pure CMC, molecular weight, and explicit active-matter input was found.']);
   }
 
-  // Clint's ideal mixed-micelle rule is defined on SURFACTANT MOLE FRACTIONS
-  // (1/CMC_mix = sum(alpha_i / CMC_i)). Active mass percentages are converted to
-  // moles with each entry's standard molecular weight before mixing.
-  const totalActiveMoles = components.reduce((sum, c) => sum + c.activePct / Math.max(1, c.mw), 0);
-  const moleFractions = components.map(c => (c.activePct / Math.max(1, c.mw)) / totalActiveMoles);
-  const idealMolarFromMoleFractions = idealMixedCmcFromMoleFractions(
-    components.map((c, i) => ({ moleFraction: moleFractions[i], cmc: c.cmcMolar }))
-  );
-  const inverseCmcSum = idealMolarFromMoleFractions > 0 ? 1 / idealMolarFromMoleFractions : 0;
-  let weightedMw = 0;
-  const resolvedComponents = components.map((c, i) => {
-    const fraction = c.activePct / totalActiveSurfactantPct;
-    const moleFraction = moleFractions[i];
-    weightedMw += moleFraction * c.mw;
-    return {
-      name: c.name,
-      activeFraction: Number(fraction.toFixed(3)),
-      moleFraction: Number(moleFraction.toFixed(3)),
-      cmcMolar: c.cmcMolar,
-      cmcPpm: c.cmcPpm,
-      type: c.type,
-      referenceEvidence: c.referenceEvidence
+  // Aggregate duplicate ingredient rows and equivalent exact aliases by chemical identity.
+  const grouped = new Map<string, { reference: Eng002PureComponentReference; names: Set<string>; ids: Set<string>; activeMassPct: number; activeSources: Set<ActiveMatterInputSource>; hasSourceEvidence: boolean }>();
+  for (const item of resolved) {
+    const key = item.reference.chemicalKey;
+    const current = grouped.get(key) ?? {
+      reference: item.reference, names: new Set<string>(), ids: new Set<string>(),
+      activeMassPct: 0, activeSources: new Set<ActiveMatterInputSource>(), hasSourceEvidence: true
     };
-  });
-
-  if (inverseCmcSum <= 0) return null;
-
-  const idealMolar = 1 / inverseCmcSum; // in mM
-  const avgMw = weightedMw > 0 ? weightedMw : 320;
-  const idealPpm = idealMolar * avgMw; // mM (mmol/L) * g/mol = mg/L = ppm
-
-  const hasSynergyPair = (hasAnionic && hasAmphoteric) || (hasAnionic && hasNonionic) || (hasAnionic && hasCationic) || (hasCationic && hasNonionic);
-  const pairClasses = Array.from(new Set(components.map(c => c.type)));
+    current.names.add(item.name);
+    current.ids.add(item.id);
+    current.activeMassPct += item.activeMassPct;
+    current.activeSources.add(item.activeMatterInputSource);
+    current.hasSourceEvidence = current.hasSourceEvidence &&
+      item.activeMatterInputSource === 'SOURCE_BACKED' && Boolean(item.activeMatterEvidenceId?.trim()) && Boolean(item.activeMatterEvidenceUrl?.trim());
+    grouped.set(key, current);
+  }
+  const components = Array.from(grouped.entries()).map(([key, item]) => ({
+    key, ...item,
+    molecularWeight: item.reference.molecularWeightGPerMol,
+    cmcMmolL: item.reference.cmcMolar * 1000
+  }));
+  const totalActiveMass = components.reduce((sum, component) => sum + component.activeMassPct, 0);
+  const moleAmounts = components.map(component => component.activeMassPct / component.molecularWeight);
+  const totalMoles = moleAmounts.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(totalActiveMass) || totalActiveMass <= 0 || !Number.isFinite(totalMoles) || totalMoles <= 0) {
+    return unavailable(['Active surfactant mass or mole total is non-positive or non-finite.']);
+  }
+  const moleFractions = moleAmounts.map(value => value / totalMoles);
+  const idealMolar = idealMixedCmcFromMoleFractions(components.map((component, index) => ({
+    moleFraction: moleFractions[index], cmc: component.cmcMmolL, cmcUnit: 'mM'
+  })));
+  const weightedMw = components.reduce((sum, component, index) => sum + moleFractions[index] * component.molecularWeight, 0);
+  const idealPpm = idealMolar * weightedMw;
+  const resolvedComponents = components.map((component, index) => ({
+    name: Array.from(component.names).join(' / '),
+    canonicalChemicalKey: component.key,
+    contributingIngredientIds: Array.from(component.ids).sort(),
+    activeFraction: Number((component.activeMassPct / totalActiveMass).toFixed(6)),
+    activeMassPct: Number(component.activeMassPct.toFixed(6)),
+    moleFraction: Number(moleFractions[index].toFixed(6)),
+    molecularWeightGPerMol: component.molecularWeight,
+    cmcMolar: component.cmcMmolL,
+    cmcPpm: Number((component.cmcMmolL * component.molecularWeight).toFixed(3)),
+    type: component.reference.chargeClass,
+    activeMatterInputSource: component.activeSources.size === 1 ? Array.from(component.activeSources)[0] : 'USER_ENTERED' as ActiveMatterInputSource,
+    referenceEvidence: component.reference.evidence
+  }));
+  const allInputsSourceBacked = components.every(component => component.hasSourceEvidence);
+  const eligibilityReasons = allInputsSourceBacked
+    ? ['Exact chemical identities and pure-component CMC/MW references are traceable; each active-matter input has a linked source record/URL (metadata presence only; source contents are not re-verified by the calculator). The output remains an ideal-model prediction, not formula validation.']
+    : ['Exact chemical identities and pure-component CMC/MW references are source-backed, but at least one active-matter value is a catalog default, user-entered, or provenance-unspecified without a linked assay/CoA record/URL.'];
+  const pairClasses = Array.from(new Set(components.map(component => component.reference.chargeClass)));
   const openBenchmarkNonIdeality = describeOpenBenchmarkNonIdeality(pairClasses);
-  const confidence: 'Higher Confidence' | 'Moderate Confidence' | 'Lower Confidence' =
-    components.length === 1 ? 'Higher Confidence' : (hasElectrolyte ? 'Moderate Confidence' : 'Moderate Confidence');
 
   return {
-    molar: Number(idealMolar.toFixed(3)),
-    ppm: Number(idealPpm.toFixed(1)),
-    idealMolar: Number(idealMolar.toFixed(3)),
-    idealPpm: Number(idealPpm.toFixed(1)),
+    available: true,
+    eligibilityStatus: allInputsSourceBacked ? 'FULLY_SUPPORTED' : 'PARTIALLY_SUPPORTED',
+    eligibilityReasons,
+    molar: Number(idealMolar.toFixed(6)),
+    ppm: Number(idealPpm.toFixed(3)),
+    idealMolar: Number(idealMolar.toFixed(6)),
+    idealPpm: Number(idealPpm.toFixed(3)),
     modelType: 'Ideal Mixed Pseudophase (Clint Model)',
     classification: 'Theoretical Ideal Baseline',
-    hasSynergyPair,
+    hasSynergyPair: hasAnionic && hasAmphoteric,
     hasElectrolyteScreening: hasElectrolyte,
     components: resolvedComponents,
-    evidenceRefs: Array.from(new Set(components.map(c => c.referenceEvidence?.evidenceId).filter((id): id is string => Boolean(id)))),
-    confidence,
+    evidenceRefs: Array.from(new Set(components.map(component => component.reference.evidence.evidenceId))),
     openBenchmarkNonIdeality,
-    limitation: 'Clint ideal mixed-pseudophase calculation (surfactant mole-fraction basis) assumes zero excess free energy of mixing (β = 0). Synergistic headgroup interactions and electrolyte screening typically depress experimental benchtop CMC below this ideal baseline.' + (openBenchmarkNonIdeality ? ` ${openBenchmarkNonIdeality}` : ''),
-    labValidationGuidance: 'Surface tensiometry (Wilhelmy plate / du Noüy ring equilibrium surface tension vs log-concentration isotherm) recommended for experimental CMC determination.'
+    confidence: 'Lower Confidence',
+    limitation: 'Component-level ideal Clint model only. Applicability is restricted to exact supported species and explicit active matter. Matrix conditions, pH/speciation, ionic strength, homolog composition and non-ideal interactions are not comprehensively modeled; no finished-formula validation is implied.' + (openBenchmarkNonIdeality ? ` ${openBenchmarkNonIdeality}` : ''),
+    labValidationGuidance: 'Measure equilibrium surface tension against log concentration for the exact formula, solvent, temperature, pH, ionic strength and protocol before making empirical claims.'
   };
 }
 
@@ -918,10 +1046,7 @@ export function getPHConfidenceAndAssumptions(
   };
 }
 
-export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: number } | null => {
-  const data = getIngredientCmcData(name);
-  return data ? { cmcMolar: data.cmcMolar, cmcPpm: data.cmcPpm } : null;
-};
+export const getIngredientCmc = (name: string) => getIngredientCmcData(name);
 
 export const calculateMixedCmc = (ingredients: any[]) => {
   return calculateMixedCMC(ingredients);

@@ -19,7 +19,6 @@ import {
 } from '../openReferenceBenchmark';
 import { OPEN_BENCHMARK_IDEAL_MIXING_BIAS } from '../../data/experimentalReferenceData';
 import { calculateMixedCMC, getIngredientCmcData, idealMixedCmcFromMoleFractions } from '../calculators';
-import { FormulationIngredient } from '../../types';
 
 export interface OpenReferenceTestResult {
   name: string;
@@ -113,19 +112,28 @@ export function runOpenReferenceBenchmarkTestSuite(): { total: number; passed: n
     Math.abs(idealMixedCmcFromMoleFractions([{ moleFraction: 1, cmc: 8.2 }]) - 8.2) < 1e-9, idealMixedCmcFromMoleFractions([{ moleFraction: 1, cmc: 8.2 }]), 8.2);
   const equimolar = idealMixedCmcFromMoleFractions([{ moleFraction: 0.5, cmc: 1 }, { moleFraction: 0.5, cmc: 4 }]);
   assert('Equimolar Clint mix of 1 and 4 mM is 1.6 mM', Math.abs(equimolar - 1.6) < 1e-9, equimolar, 1.6);
-  const ing = (name: string, percentage: number, activeMatterPct: number, category: string): FormulationIngredient =>
-    ({ id: name, name, percentage, activeMatterPct, category });
-  const mix = calculateMixedCMC([
-    ing('Sodium Lauryl Sulfate (SLS)', 10, 100, 'Anionic Surfactant'),
-    ing('Lauramine Oxide', 10, 100, 'Amphoteric Surfactant'),
-    ing('Deionized Water', 80, 100, 'Solvent')
-  ]);
-  const sls = mix?.components.find(c => c.name.includes('Sodium Lauryl'));
-  const expectedSlsMoleFraction = (10 / 288.3) / (10 / 288.3 + 10 / 229.4);
-  assert('Mixed CMC reports surfactant mole fractions (equal mass SLS + DDAO)',
-    !!sls && sls.moleFraction !== undefined && Math.abs(sls.moleFraction - expectedSlsMoleFraction) < 0.01, sls?.moleFraction, Number(expectedSlsMoleFraction.toFixed(3)));
-  assert('Anionic + amphoteric mixture carries the open-benchmark non-ideality note',
-    !!mix?.openBenchmarkNonIdeality && mix.openBenchmarkNonIdeality.includes('anionic-zwitterionic'), mix?.openBenchmarkNonIdeality, 'contains anionic-zwitterionic');
+  const mix = calculateMixedCMC([{
+    id: 'formula-row-sls',
+    canonicalIngredientId: 'sls-needles',
+    name: 'SLS 95% Needles (Sodium Lauryl Sulfate)',
+    category: 'Anionic Surfactant',
+    casNumber: '151-21-3',
+    percentage: 10,
+    activeMatterPct: 100,
+    activeMatterInputSource: 'USER_ENTERED'
+  }]);
+  const sls = mix.available ? mix.components.find(c => c.canonicalChemicalKey === 'SDS') : undefined;
+  assert('Exact catalog SLS identity resolves to the source-backed pure-component CMC',
+    mix.available && !!sls && sls.moleFraction === 1, mix.available ? sls : mix.eligibilityReasons, 'SDS component at x=1');
+  assert('Name-only commercial amine oxide cannot silently inherit the pure C12 DDAO reference',
+    !calculateMixedCMC([{
+      id: 'formula-row-oxide',
+      name: 'Lauramine Oxide',
+      category: 'Nonionic Surfactant',
+      casNumber: '1643-20-5',
+      percentage: 10,
+      activeMatterPct: 30
+    }]).available, 'blocked', 'identity metadata required');
 
   const passed = results.filter(r => r.passed).length;
   return { total: results.length, passed, failed: results.length - passed, results };
