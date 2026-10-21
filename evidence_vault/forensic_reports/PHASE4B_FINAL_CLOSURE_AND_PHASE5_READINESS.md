@@ -69,3 +69,12 @@ The repository's `source-register.csv` continues to record the Zenodo entries as
 Phase 4B is **OPEN** because parser validity, complete scientific content/applicability review, licensing, and independent model validation remain unresolved. Phase 5 is **LOCKED**. No phase flag or model maturity status is changed by this report.
 
 To reconsider closure, provide a parser-backed audit of the canonical workbooks, authoritative license or written reuse permission, complete experimental metadata and row-level provenance, and independent validation evidence for any model claim. Then reconcile the canonical registries and rerun all required workflows on the resulting commit.
+
+
+## Publisher-paper cross-check (2026-10-21)
+
+The publisher article is [Allgood, Jones, and Boothroyd, “Rheometer methods for characterising and comparing foams: an example using household detergents,” *Rheologica Acta* 65 (2026), 819–834](https://doi.org/10.1007/s00397-026-01584-5). The article record identifies the paper as CC BY 4.0; this is a license for the article and does not, by itself, resolve the separate Zenodo dataset's blank Rights field or prove that the workbooks may be redistributed independently.
+
+The article describes four foams made from UK washing-up liquids, using 2 mL of product in 300 mL deionised water. Foam tests used ambient laboratory temperatures of 19–22 °C. The exact commercial formulations are undisclosed. The rheometer was an Anton Paar MCR702e with a Powder Rheometry Flow Cell. The paper cautions that its wide-gap steady-shear foam tests cannot be interpreted as foam viscosity because only part of the foam sample sheared. These conditions narrow the potential applicability: relevant only to matching foam/rheology observables for similar dishwashing-liquid foam systems; they do not establish general household detergent, laundry, or cleaning-performance validity. [Publisher article and methods](https://link.springer.com/article/10.1007/s00397-026-01584-5)
+
+The Zenodo dataset record lists Ceri Allgood and Thomas Jones as dataset creators. The article additionally credits Stephen C. Boothroyd. These are distinct metadata roles, not a conflict. The Zenodo page describes the solution flow curves as measurements on washing-up liquid solutions and pure water; actual sheet labels, units, sample identities, and conditions still require parser inspection before a quantitative model comparison.
