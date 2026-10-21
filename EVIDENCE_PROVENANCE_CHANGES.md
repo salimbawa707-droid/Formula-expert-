@@ -11,16 +11,16 @@
 
 ## 1. Overview of Changes
 
-This document records the provenance, manifest entries, directory mappings, and licence information for the two recovered scientific evidence workbooks in accordance with Step 3 ("Integrate Safely") of the Issue 2 protocol.
+This document records the provenance, manifest entries, directory mappings, and licence information for the two recovered scientific evidence workbooks in accordance with Step 3 ("Integrate Safely") of the Issue 2 protocol. The corrupt 9-byte quarantine stubs were removed after canonical recovery; references below to their old paths are historical only.
 
 ---
 
 ## 2. Evidence Directory Structure & Mapping
 
-| File Name | Original Source URL | Quarantined Path | Canonical Vault Path | Status |
+| File Name | Original Source URL | Historical Quarantine Path | Canonical Vault Path | Current Status |
 | :--- | :--- | :--- | :--- | :---: |
-| `Supplementary_SolutionFlowCurves.xlsx` | `https://zenodo.org/records/18961871/files/Supplementary_SolutionFlowCurves.xlsx?download=1` | `evidence_vault/corrupted_quarantine/Supplementary_SolutionFlowCurves.xlsx` | `evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx` | **RECOVERED & VERIFIED** |
-| `Supplementary_FilmThickness_v1.xlsx` | `https://zenodo.org/records/18961871/files/Supplementary_FilmThickness_v1.xlsx?download=1` | `evidence_vault/corrupted_quarantine/Supplementary_FilmThickness_v1.xlsx` | `evidence_vault/datasets/zenodo_18961871/Supplementary_FilmThickness_v1.xlsx` | **RECOVERED & VERIFIED** |
+| `Supplementary_SolutionFlowCurves.xlsx` | `https://zenodo.org/records/18961871/files/Supplementary_SolutionFlowCurves.xlsx?download=1` | Removed 9-byte stub | `evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx` | **CANONICAL RETAINED; STUB REMOVED** |
+| `Supplementary_FilmThickness_v1.xlsx` | `https://zenodo.org/records/18961871/files/Supplementary_FilmThickness_v1.xlsx?download=1` | Removed 9-byte stub | `evidence_vault/datasets/zenodo_18961871/Supplementary_FilmThickness_v1.xlsx` | **CANONICAL RETAINED; STUB REMOVED** |
 
 ---
 
