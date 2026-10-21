@@ -10,7 +10,7 @@
  * 
  * Safety invariants:
  * - Quarantined corrupted files are NEVER overwritten if checksums fail.
- * - Quarantined files remain preserved for auditability.
+ * - Quarantine stubs are not evidence and may be removed after canonical originals pass every integrity check.
  * - No experimental data is fabricated or imputed.
  */
 
