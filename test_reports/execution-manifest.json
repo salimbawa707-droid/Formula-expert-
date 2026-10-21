@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-21T13:03:51.637Z",
+  "timestamp": "2026-10-21T15:35:26.910Z",
   "summary": {
-    "discoveredCount": 128,
-    "registeredCount": 128,
-    "executedCount": 128,
+    "discoveredCount": 129,
+    "registeredCount": 129,
+    "executedCount": 129,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4075,
-    "totalAssertionsPassed": 4075,
+    "totalAssertionsExecuted": 4099,
+    "totalAssertionsPassed": 4099,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -1152,6 +1152,15 @@
       "passedAssertions": 98,
       "failedAssertions": 0,
       "totalAssertions": 98,
+      "skipped": false
+    },
+    {
+      "file": "evidenceVaultIntegrity.regression.test.ts",
+      "moduleName": "runEvidenceVaultIntegrityTestSuite",
+      "executed": true,
+      "passedAssertions": 24,
+      "failedAssertions": 0,
+      "totalAssertions": 24,
       "skipped": false
     },
     {

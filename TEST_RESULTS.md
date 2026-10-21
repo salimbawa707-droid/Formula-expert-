@@ -11,14 +11,14 @@
 
 | Metric | Result |
 | :--- | :--- |
-| **Discovered Test Modules on Disk** | 128 |
-| **Registered Test Modules** | 128 |
-| **Executed Test Modules** | 128 |
+| **Discovered Test Modules on Disk** | 129 |
+| **Registered Test Modules** | 129 |
+| **Executed Test Modules** | 129 |
 | **Skipped Test Modules** | 0 |
 | **Failed Test Modules** | 0 |
 | **Test Integrity Failures** | 0 |
-| **Total Assertions Executed** | **4,075** |
-| **Total Assertions Passed** | **4,075** |
+| **Total Assertions Executed** | **4,099** |
+| **Total Assertions Passed** | **4,099** |
 | **Total Assertions Failed** | **0** |
 | **Overall Pass Rate** | **100.0%** |
 
@@ -28,6 +28,7 @@
 
 | Module / Subsystem | Assertions | Status |
 | :--- | :---: | :---: |
+| **Evidence Vault Integrity & Gatekeeper** (`evidenceVaultIntegrity.regression.test.ts`) | 24 / 24 | **PASS** |
 | **Server Security & Truthful AI Health** (`serverSecurityAndTruthfulHealth.test.ts`) | 62 / 62 | **PASS** |
 | **Scientific Roadmap & Evidence Vault Regression** (`vaultLogic.regression.test.ts`) | 98 / 98 | **PASS** |
 | **Security Fixes & Billing Replay Protection** (`securityFixes.regression.test.ts`) | 41 / 41 | **PASS** |

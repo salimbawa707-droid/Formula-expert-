@@ -38,6 +38,22 @@ The following files were modified or created as part of the Detergent Formula Ex
 - Added Section 15 with 8 automated regression assertions verifying: rejection of quarantined 9-byte stubs, verification of authentic Zenodo workbooks (`Supplementary_SolutionFlowCurves.xlsx` and `Supplementary_FilmThickness_v1.xlsx`), quarantine retention on checksum mismatch, explicit `BLOCKED_UNAVAILABLE` on missing files, and zero calculation consumption of unverified workbooks.
 - Total assertions in suite increased from 90 to 98 (all 98 passing).
 
+### `src/utils/vault/evidenceVaultIntegrityValidator.ts` (Phase 4-B Step 1)
+- Implemented `validateDatasetFile()` covering valid files, corrupted files, missing files, and malformed checksums.
+- Implemented `validateManifestToDisk()` performing manifest-to-disk row-level size and MD5 reconciliation.
+- Implemented `detectDuplicateDatasets()` flagging identical hash collisions across dataset IDs.
+- Implemented `isDatasetEligibleForCalculations()` barring quarantined and unverified evidence from calculations.
+- Implemented `validateDatasetProvenance()` enforcing DOI/sourceUrl presence, verified license status, and authoritative status.
+- Implemented `generateReproducibleAudit()` generating deterministic, bit-reproducible evidence vault status reports.
+
+### `src/utils/__tests__/evidenceVaultIntegrity.regression.test.ts` (Phase 4-B Step 1)
+- Added dedicated test suite with 24 targeted assertions covering all 9 integrity requirements and Phase 5 gatekeeper invariants.
+- Verified 100% pass rate (24/24 assertions passing).
+
+### `src/utils/test-calculations.ts`
+- Registered `evidenceVaultIntegrity.regression.test.ts` in master test runner `executionMap`.
+- Updated total assertion accounting to 4,099 assertions across 129 modules.
+
 ### `scripts/recover_evidence.js` (Issue 2)
 - Added Node.js utility script executing HTTP/HTTPS retrieval attempt from Zenodo Record 18961871 URLs, redirect handling, MD5 and SHA-256 calculation, ZIP structure inspection, error handling preventing overwrites of quarantined stubs, and logging to `EVIDENCE_WORKBOOK_RECOVERY_REPORT.md`.
 

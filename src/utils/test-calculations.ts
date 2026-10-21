@@ -130,6 +130,7 @@ import { runApiBaseAndBillingSecurityTestSuite } from './__tests__/apiBaseAndBil
 import { runAuthAndRouteMatrixTestSuite } from './__tests__/authAndRouteMatrix.regression.test';
 import { runSecurityFixesTestSuite } from './__tests__/securityFixes.regression.test';
 import { runVaultLogicTestSuite } from './__tests__/vaultLogic.regression.test';
+import { runEvidenceVaultIntegrityTestSuite } from './__tests__/evidenceVaultIntegrity.regression.test';
 import { finalizeMasterTestRun } from './masterTestFinalizer';
 
 const phSummary = runRegressionTestSuite();
@@ -263,6 +264,7 @@ const apiBaseBillingSummary = await runApiBaseAndBillingSecurityTestSuite();
 const authAndRouteMatrixSummary = await runAuthAndRouteMatrixTestSuite();
 const securityFixesSummary = await runSecurityFixesTestSuite();
 const vaultLogicSummary = runVaultLogicTestSuite();
+const evidenceVaultIntegritySummary = runEvidenceVaultIntegrityTestSuite();
 
 if (phSummary.failed > 0) {
   console.log('Failed pHEngine legacy tests:');
@@ -526,6 +528,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'authAndRouteMatrix.regression.test.ts', moduleName: 'runAuthAndRouteMatrixTestSuite', executed: true, passedAssertions: authAndRouteMatrixSummary.passed, failedAssertions: authAndRouteMatrixSummary.failed, totalAssertions: authAndRouteMatrixSummary.total, skipped: false },
   { file: 'securityFixes.regression.test.ts', moduleName: 'runSecurityFixesTestSuite', executed: true, passedAssertions: securityFixesSummary.passed, failedAssertions: securityFixesSummary.failed, totalAssertions: securityFixesSummary.total, skipped: false },
   { file: 'vaultLogic.regression.test.ts', moduleName: 'runVaultLogicTestSuite', executed: true, passedAssertions: vaultLogicSummary.passed, failedAssertions: vaultLogicSummary.failed, totalAssertions: vaultLogicSummary.total, skipped: false },
+  { file: 'evidenceVaultIntegrity.regression.test.ts', moduleName: 'runEvidenceVaultIntegrityTestSuite', executed: true, passedAssertions: evidenceVaultIntegritySummary.passed, failedAssertions: evidenceVaultIntegritySummary.failed, totalAssertions: evidenceVaultIntegritySummary.total, skipped: false },
   { file: 'formulaLabValidationStatus.test.ts', moduleName: 'formulaLabValidationStatusSelfTest', executed: true, passedAssertions: 6, failedAssertions: 0, totalAssertions: 6, skipped: false },
   { file: 'testIntegrity.regression.test.ts', moduleName: 'runTestIntegrityTestSuite', executed: true, passedAssertions: 25, failedAssertions: 0, totalAssertions: 25, skipped: false }
 ];
