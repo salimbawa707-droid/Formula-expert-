@@ -38,6 +38,9 @@ The following files were modified or created as part of the Detergent Formula Ex
 - Added Section 15 with 8 automated regression assertions verifying: rejection of quarantined 9-byte stubs, verification of authentic Zenodo workbooks (`Supplementary_SolutionFlowCurves.xlsx` and `Supplementary_FilmThickness_v1.xlsx`), quarantine retention on checksum mismatch, explicit `BLOCKED_UNAVAILABLE` on missing files, and zero calculation consumption of unverified workbooks.
 - Total assertions in suite increased from 90 to 98 (all 98 passing).
 
+### `scripts/recover_evidence.js` (Issue 2)
+- Added Node.js utility script executing HTTP/HTTPS retrieval attempt from Zenodo Record 18961871 URLs, redirect handling, MD5 and SHA-256 calculation, ZIP structure inspection, error handling preventing overwrites of quarantined stubs, and logging to `EVIDENCE_WORKBOOK_RECOVERY_REPORT.md`.
+
 ### `src/components/ScientificRoadmapVault.tsx`
 - Removed unused imports and fixed type contracts.
 - Updated `Header.onOpenImport` to route to `'backup'` tab.
@@ -50,11 +53,15 @@ The following files were modified or created as part of the Detergent Formula Ex
 
 ## 2. New Deliverable Documentation Files
 
+- `scripts/recover_evidence.js`: Node.js utility script executing the recovery and validation flow for Issue 2.
+- `EVIDENCE_WORKBOOK_RECOVERY_REPORT.md`: Comprehensive audit report on Issue 2 workbook recovery, cryptographic verification, before/after status, and remaining blockers.
+- `EVIDENCE_PROVENANCE_CHANGES.md`: Manifest and provenance records, source URL mappings, and CC-BY-4.0 licensing references.
+- `EVIDENCE_WORKBOOK_TEST_RESULTS.md`: Exact commands, executed test cases, actual test outputs, and blocked checks for Issue 2.
 - `CORS_REMEDIATION_REPORT.md`: Comprehensive report on root cause, before/after behavior matrix, and exact changes for Issue 1.
 - `CORS_TEST_RESULTS.md`: Detailed test results and verification matrix for all 14 CORS test cases and 126 test modules.
-- `SCIENTIFIC_WORKBOOK_RECOVERY_REPORT.md`: Comprehensive audit report on Issue 2 workbook recovery, cryptographic verification, and scientific governance invariants.
+- `SCIENTIFIC_WORKBOOK_RECOVERY_REPORT.md`: Audit report on Issue 2 workbook recovery, cryptographic verification, and scientific governance invariants.
 - `CORRECTION_AUDIT_REPORT.md`: Comprehensive audit report covering all findings, root causes, evidence, corrections, and test results.
 - `CHANGED_FILES.md`: Detailed list of changed files and changes made (this file).
-- `TEST_RESULTS.md`: Detailed test run results and execution matrix (4,003 / 4,003 assertions passed).
+- `TEST_RESULTS.md`: Detailed test run results and execution matrix (4,075 / 4,075 assertions passed across 128 modules).
 - `ROLLBACK.md`: Step-by-step rollback procedures.
 - `detergent-formula-expert-corrected-source.zip`: Corrected application source bundle excluding `.git`, `node_modules`, build artifacts, and local secrets.

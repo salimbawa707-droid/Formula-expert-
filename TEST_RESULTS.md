@@ -11,14 +11,14 @@
 
 | Metric | Result |
 | :--- | :--- |
-| **Discovered Test Modules on Disk** | 126 |
-| **Registered Test Modules** | 126 |
-| **Executed Test Modules** | 126 |
+| **Discovered Test Modules on Disk** | 128 |
+| **Registered Test Modules** | 128 |
+| **Executed Test Modules** | 128 |
 | **Skipped Test Modules** | 0 |
 | **Failed Test Modules** | 0 |
 | **Test Integrity Failures** | 0 |
-| **Total Assertions Executed** | **4,003** |
-| **Total Assertions Passed** | **4,003** |
+| **Total Assertions Executed** | **4,075** |
+| **Total Assertions Passed** | **4,075** |
 | **Total Assertions Failed** | **0** |
 | **Overall Pass Rate** | **100.0%** |
 
