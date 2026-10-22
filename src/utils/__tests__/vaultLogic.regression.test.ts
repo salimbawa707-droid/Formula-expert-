@@ -305,6 +305,68 @@ export function runVaultLogicTestSuite() {
     'Negative column missingCount is rejected for a dataset that actually contains columns'
   );
 
+  const unknownMissingCount = JSON.parse(exported);
+  const unknownColumnDataset = unknownMissingCount.datasets.find(
+    (dataset: any) => Array.isArray(dataset.columns) && dataset.columns.length > 0
+  );
+  if (unknownColumnDataset) unknownColumnDataset.columns[0].missingCount = null;
+  const unknownMissingCountResult = validateAndParseVaultJSON(JSON.stringify(unknownMissingCount));
+  assert(
+    Boolean(unknownColumnDataset) && unknownMissingCountResult.valid === true,
+    'Null Versus Zero',
+    'Unknown missing-value count is represented as null and remains valid'
+  );
+
+  const zeroMissingCount = JSON.parse(exported);
+  const zeroColumnDataset = zeroMissingCount.datasets.find(
+    (dataset: any) => Array.isArray(dataset.columns) && dataset.columns.length > 0
+  );
+  if (zeroColumnDataset) zeroColumnDataset.columns[0].missingCount = 0;
+  const zeroMissingCountResult = validateAndParseVaultJSON(JSON.stringify(zeroMissingCount));
+  assert(
+    Boolean(zeroColumnDataset) && zeroMissingCountResult.valid === true,
+    'Null Versus Zero',
+    'Known zero missing-value count remains distinct from unknown null'
+  );
+
+  const legacyLicenseMetadata = JSON.parse(exported);
+  for (const evidenceRecord of legacyLicenseMetadata.evidence) {
+    delete evidenceRecord.licenseReviewStatus;
+    delete evidenceRecord.licenseEvidenceReference;
+    delete evidenceRecord.licenseReviewedAt;
+    delete evidenceRecord.licenseRestrictions;
+  }
+  const legacyLicenseResult = validateAndParseVaultJSON(JSON.stringify(legacyLicenseMetadata));
+  assert(legacyLicenseResult.valid === true, 'License Integrity', 'Missing license review metadata is safely normalized');
+  assert(
+    legacyLicenseResult.parsedState?.evidence.every(e => e.licenseReviewStatus === 'UNREVIEWED'),
+    'License Integrity',
+    'A license string alone never implies commercial reuse permission'
+  );
+
+  const unsubstantiatedCommercialPermission = JSON.parse(exported);
+  unsubstantiatedCommercialPermission.evidence[0].licenseReviewStatus = 'PERMITTED_FOR_COMMERCIAL_REUSE';
+  unsubstantiatedCommercialPermission.evidence[0].licenseEvidenceReference = null;
+  unsubstantiatedCommercialPermission.evidence[0].licenseReviewedAt = null;
+  const unsubstantiatedCommercialResult = validateAndParseVaultJSON(JSON.stringify(unsubstantiatedCommercialPermission));
+  assert(
+    unsubstantiatedCommercialResult.valid === false,
+    'License Integrity',
+    'Commercial permission without evidence reference and review date is rejected'
+  );
+
+  const structurallyCompleteLicenseReview = JSON.parse(exported);
+  structurallyCompleteLicenseReview.evidence[0].licenseReviewStatus = 'PERMITTED_FOR_COMMERCIAL_REUSE';
+  structurallyCompleteLicenseReview.evidence[0].licenseEvidenceReference = 'https://example.invalid/license-review-fixture';
+  structurallyCompleteLicenseReview.evidence[0].licenseReviewedAt = '2026-10-23T00:00:00Z';
+  structurallyCompleteLicenseReview.evidence[0].licenseRestrictions = ['Test fixture only; not a real clearance'];
+  const structurallyCompleteLicenseResult = validateAndParseVaultJSON(JSON.stringify(structurallyCompleteLicenseReview));
+  assert(
+    structurallyCompleteLicenseResult.valid === true,
+    'License Integrity',
+    'Structurally complete review metadata is accepted without claiming the license itself was externally verified'
+  );
+
   const missingRequiredCollection = JSON.parse(exported);
   delete missingRequiredCollection.pricingRecords;
   const missingRequiredCollectionResult = validateAndParseVaultJSON(JSON.stringify(missingRequiredCollection));
