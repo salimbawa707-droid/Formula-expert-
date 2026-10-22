@@ -56,6 +56,6 @@ The paper reports DFA100 testing with 50 cm³ solution, air flow 0.5 dm³/min fo
 - CI commit verified: `331a802c5b7076daf3eb019d679def696fb93309`.
 - Phase 4B workflow run: https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39833740971 — successful; evidence integrity, Round-6 reconciliation, RepOD acquisition/parsing, TypeScript typecheck, project tests, and production build passed.
 - Engine verification run: https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39833740911 — successful; typecheck, regression suite, production build, and HTTP smoke test passed.
-- Dataset author clarification on the RH concentration unit and Vmax meaning is still **PENDING**. No author response or contact is claimed in this audit. An email draft exists, but it has not been sent.
+- No author email has been sent, and one is not required for the current safe use of this dataset as auxiliary-only evidence. RH concentration-unit and Vmax semantics remain explicitly unresolved; raw headers/values are preserved and the dataset is excluded from model validation.
 - Independent replicate/sample count remains `null`; no row count or “at least three repeats” statement is promoted to an exact independent sample count.
-- Closure decision: **Phase 4B OPEN; Phase 5 LOCKED** until source clarification and all other formal closure criteria are satisfied.
+- Closure decision: **Phase 4B OPEN; Phase 5 LOCKED** until the remaining formal closure criteria are satisfied. Author clarification is not a prerequisite for retaining this dataset as auxiliary-only evidence because the ambiguities are documented and no engine eligibility is granted.
