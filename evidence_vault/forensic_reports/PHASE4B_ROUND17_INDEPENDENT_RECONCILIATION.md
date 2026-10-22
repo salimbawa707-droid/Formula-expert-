@@ -17,6 +17,15 @@ Prior Round-5 artifacts and later parser artifacts use different counting defini
 3. The script is non-destructive in `--check` mode. Without `--check`, it writes a separate Round-17 JSON report and Markdown report; it does not rewrite historical Round-5 or Round-6 artifacts.
 4. Added the check to `.github/workflows/phase4b-integrity.yml`, so a pull request can execute it on a clean GitHub Actions runner.
 
+
+## Additional Phase 4B dataset-acquisition and app-vault work
+
+- Corrected the app vault's SurfPro dataset license text: the dataset is CC BY-NC-SA 4.0 per its data repository license and is not cleared for commercial reuse absent separate permission. A software-code license must not be presented as a blanket license for the dataset.
+- Corrected the EVD-006/DS-002 description for Zenodo 18961871 to match the actual 2026 household-detergent foam/rheology dataset and its four supplementary XLSX workbooks. The app vault now points to the local evidence-vault directory and records the data as numerically inspected but deficient for formula-level prediction pairs.
+- Added RepOD DOI 10.18150/MKCDUM as a CC BY 4.0 auxiliary foamability/stability source in the app evidence vault and candidate inventory. It remains explicitly NOT_DOWNLOADED/UNINSPECTED, has no sample count, and is not marked eligible for model validation.
+- Added `evidence_vault/scripts/acquire_repod_foam.py`, which downloads the official ODS via the RepOD Dataverse API, verifies the published MD5, computes SHA-256, checks archive integrity, parses worksheet values, exports per-sheet CSV files, and writes a provenance manifest. The acquisition has not yet been executed successfully in this session; therefore no raw ODS bytes, new file hashes, or new observation counts are claimed.
+- Added a Python syntax-check step for the acquisition and reconciliation scripts to the Phase 4B CI workflow.
+
 ## Evidence boundary
 
 The Round-6 CSV currently records 11,626 rows containing numeric values across the eleven worksheets. This is a spreadsheet-row metric, not a validated count of physical observations. The historical 27,982 aggregate is preserved as a published/source-reported claim and remains **NOT INDEPENDENTLY RECONCILED TO ROW-LEVEL PHYSICAL OBSERVATIONS** until the counting unit and source-row lineage are demonstrated for each measurement type.
