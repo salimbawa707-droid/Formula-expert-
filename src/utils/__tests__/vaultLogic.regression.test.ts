@@ -350,6 +350,12 @@ export function runVaultLogicTestSuite() {
 
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
+  if (failedCount > 0) {
+    console.error('[VAULT REGRESSION FAILURE DETAILS]');
+    for (const failure of results.filter(r => !r.passed)) {
+      console.error(JSON.stringify(failure));
+    }
+  }
 
   console.log('--------------------------------------------------------------------------------');
   console.log(`TOTAL VAULT REGRESSION TESTS: ${results.length}`);
