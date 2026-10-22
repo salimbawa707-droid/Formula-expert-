@@ -330,7 +330,7 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     }
   }
 
-  const checkUniqueIds = (key: string, label: string) => {
+  const checkUniqueIds = (key: string, label: string, idField = 'id') => {
     if (!Array.isArray(parsed[key])) return;
     const ids = new Set<string>();
     parsed[key].forEach((item: Record<string, any>, index: number) => {
@@ -350,7 +350,7 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   checkUniqueIds('datasets', 'Dataset');
   checkUniqueIds('audits', 'Audit');
   checkUniqueIds('prompts', 'Prompt');
-  checkUniqueIds('pricingRecords', 'Pricing record');
+  checkUniqueIds('pricingRecords', 'Pricing record', 'ingredientId');
   checkUniqueIds('activeBlockers', 'Active blocker');
 
   if (Array.isArray(parsed.phases)) {
