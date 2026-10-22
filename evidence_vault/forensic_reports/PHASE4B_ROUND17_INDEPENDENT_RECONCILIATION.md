@@ -3,7 +3,7 @@
 **Date:** 2026-10-22  
 **Repository baseline:** `43a9d76540c6e86d0d0c1d411856aa05ba0476f5`  
 **Working branch:** `phase4b-ledger-reconciliation-2026-10-22`  
-**Status:** IMPLEMENTED IN BRANCH; REPOD ACQUISITION RETRY PENDING  
+**Status:** IMPLEMENTED; REPOD ACQUISITION AND PARSING VERIFIED IN CI  
 **Governance:** Phase 4B OPEN; Phase 5 LOCKED
 
 ## Why this task exists
@@ -22,8 +22,8 @@ Prior Round-5 artifacts and later parser artifacts use different counting defini
 
 - Corrected the app vault's SurfPro dataset license text: the dataset is CC BY-NC-SA 4.0 per its data repository license and is not cleared for commercial reuse absent separate permission. A software-code license must not be presented as a blanket license for the dataset.
 - Corrected the EVD-006/DS-002 description for Zenodo 18961871 to match the actual 2026 household-detergent foam/rheology dataset and its four supplementary XLSX workbooks. The app vault now points to the local evidence-vault directory and records the data as numerically inspected but deficient for formula-level prediction pairs.
-- Added RepOD DOI 10.18150/MKCDUM as a CC BY 4.0 auxiliary foamability/stability source in the app evidence vault and candidate inventory. It remains explicitly NOT_DOWNLOADED/UNINSPECTED, has no sample count, and is not marked eligible for model validation.
-- Added `evidence_vault/scripts/acquire_repod_foam.py`, which downloads the official ODS via the canonical file-specific RepOD Dataverse endpoint (`https://repod.icm.edu.pl/api/access/datafile/48206`), verifies the published MD5, computes SHA-256, checks archive integrity, parses worksheet values, exports per-sheet CSV files, and writes a provenance manifest. In CI, the official download passed the published MD5 check and the ODS archive reached worksheet parsing, but parsing failed on a valid repeated blank-column run of 16,361 cells. The parser now allows bounded ODS repeated-cell counts and trims only trailing blank padding; the retry must still pass before normalized data and row counts are claimed.
+- Added RepOD DOI 10.18150/MKCDUM as a CC BY 4.0 auxiliary foamability/stability source in the app evidence vault and candidate inventory. The official ODS has been downloaded, MD5-verified, parsed, and normalized in CI. It has no defensible independent sample count and is not eligible for model validation.
+- Added `evidence_vault/scripts/acquire_repod_foam.py`, which downloads the official ODS via the canonical file-specific RepOD Dataverse endpoint (`https://repod.icm.edu.pl/api/access/datafile/48206`), verifies the published MD5, computes SHA-256, checks archive integrity, parses worksheet values, exports per-sheet CSV files, and writes a provenance manifest. The official download passed the published MD5 check, archive integrity validation, worksheet parsing, and normalized CSV export in the latest CI run. The parser bounds repeated-cell expansion and trims only trailing blank padding, preserving internal blank cells.
 - Added a Python syntax-check step for the acquisition and reconciliation scripts to the Phase 4B CI workflow.
 
 ## Evidence boundary
@@ -36,11 +36,11 @@ Formula-derived bubble-radius and film-thickness cells must not be counted as in
 
 - Script and workflow changes are committed to the working branch.
 - The first CI run exposed five parser-semantic differences: cached/formula numeric-cell counts and effective worksheet dimensions differed from the older parser's ledger. These are now classified as explicit warnings, while hash, CRC, missing-sheet and actual row-ledger mismatches remain hard failures.
-- The first regression run also exposed an outdated test that assumed every dataset was uninspected. The test now asserts that DS-002 is parser-inspected but still lacks a reconciled physical-observation count and is ineligible for formula-level validation; DS-005 remains uninspected pending acquisition.
-- CI Round-17 reconciliation passed with file integrity PASS, 11 worksheets, zero hard failures and five parser-semantics warnings. The RepOD download verified the published MD5 but the first parser attempt rejected a valid 16,361-column repeated blank-cell run; the parser has been corrected to trim trailing blank padding and the new CI retry must pass before claiming RepOD parsing is verified.
+- The first regression run also exposed an outdated test that assumed every dataset was uninspected. The test asserts that DS-002 is numerically inspected but still lacks a reconciled physical-observation count and is ineligible for formula-level validation; DS-005 is also numerically inspected, while its independent sample count remains null.
+- Latest CI on PR head `5113a8eb15742aadd223ce87429080ad69725994` passed both Phase 4B Integrity and Build Gates and Engine verification. Round-17 reconciliation passed with file integrity PASS, 11 worksheets, zero hard failures and five parser-semantics warnings. RepOD download, published-MD5 verification, ODS parsing, normalized CSV export, typecheck, regression tests, production build, and HTTP smoke test passed. See https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39835300576 and https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39835300209.
 - If the CI check exposes a discrepancy, correct the parser/artifact mapping based on raw workbook evidence; do not edit expected counts to force a pass.
 - No engine is promoted to `LAB_VALIDATED` by this task.
-- Phase 4B remains OPEN and Phase 5 remains LOCKED.
+- The RepOD author response is not a prerequisite for safely retaining this dataset as auxiliary, non-validation evidence: unresolved unit/variable semantics are documented, raw labels and values are preserved, and engine eligibility remains empty. Phase 4B remains OPEN because the historical physical-observation aggregate is still not reconciled to row-level experimental lineage; Phase 5 remains LOCKED.
 
 ## Acceptance criteria
 
