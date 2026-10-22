@@ -150,7 +150,6 @@ def main():
     write_csv(FOUT,["filename","sheet","formula_cell","formula","formula_precedents","cached_value","raw_input_cell","raw_input_value","relationship","interpretation"],formulas)
     write_csv(COUT,["category","filename","sheet","source_row","source_record_id","group_id","raw_record_count","derived_record_count","status","notes"],categories)
     write_csv(ROUT,["filename","sheet","row","test_raw","test_effective","point_no","time","frequency","shear_rate","shear_stress","viscosity","source_cells"],rheo)
-    write_csv(XOUT,["claim","historical_count","source_count","delta_source_minus_historical","status","notes"],crosswalk)
     first3=flow+film+raw_total; full=first3+rheo_total; headline=27982; needed=headline-first3
     crosswalk=[
       {"claim":"solution_flow_curves","historical_count":212,"source_count":flow,"delta_source_minus_historical":flow-212,"status":"REPRODUCED" if flow==212 else "MISMATCH","notes":"Complete numeric point rows."},
@@ -160,6 +159,7 @@ def main():
       {"claim":"bubble_sizes_30min","historical_count":9509,"source_count":bubble_stats.get("30min",{}).get("raw_area_cells",0),"delta_source_minus_historical":bubble_stats.get("30min",{}).get("raw_area_cells",0)-9509,"status":"MISMATCH","notes":"Raw numeric area cells in 30min sheet."},
       {"claim":"rheometer","historical_count":739,"source_count":rheo_total,"delta_source_minus_historical":rheo_total-739,"status":"NOT_REPRODUCED","notes":"Numeric Point No. rows across six worksheets; spacer rows excluded."},
       {"claim":"grand_total","historical_count":headline,"source_count":full,"delta_source_minus_historical":full-headline,"status":"NOT_REPRODUCED","notes":"Mixed category measurement units; arithmetic comparison only."}]
+    write_csv(XOUT,["claim","historical_count","source_count","delta_source_minus_historical","status","notes"],crosswalk)
     duplicate_keys=sum(len(v["duplicate_test_point_keys"]) for v in sheet_stats.values())
     checks={
       "solution_flow_points_212": flow==212,
