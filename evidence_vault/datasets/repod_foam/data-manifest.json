@@ -40,7 +40,7 @@
       "blankCells": 56,
       "sourceConcentrationLabel": "c RH [mol/L]",
       "observedConcentrationRange": "0.1 to 600 (numeric values)",
-      "unitConflict": "Values align with published mg/dm3 concentration ranges, while workbook header says mol/L; do not silently relabel or convert.",
+      "unitConflict": "Workbook header says mol/L, but published article figure captions report RH concentrations in mg/dm³. Preserve raw header and numeric values unchanged; treat mg/dm³ as the publication-supported interpretation pending author confirmation.",
       "conditions": [
         "cPLL=0",
         "cPLL=100 mg/L"
@@ -87,7 +87,7 @@
   "numericalValidationReadiness": "DEFICIENT",
   "limitations": [
     "Worksheet row counts are not independent experimental observation counts.",
-    "PLL_RH concentration header conflicts with observed numeric range and publication units.",
+    "PLL_RH workbook header conflicts with publication figure-caption units; raw label and values are preserved pending author confirmation.",
     "Workbook says Vmax [mL]/maximum foam volume while article discusses foam height.",
     "Do not impute blank standard deviations as zero.",
     "No raw replicate rows or matched detergent formula inputs/predictions are available."
