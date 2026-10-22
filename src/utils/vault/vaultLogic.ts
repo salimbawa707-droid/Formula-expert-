@@ -334,17 +334,18 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     if (!Array.isArray(parsed[key])) return;
     const ids = new Set<string>();
     parsed[key].forEach((item: Record<string, any>, index: number) => {
-      if (!isNonEmptyString(item.id)) {
-        errors.push(`${label} at index ${index} is missing a stable ID.`);
-      } else if (ids.has(item.id)) {
-        errors.push(`Duplicate ${label.toLowerCase()} ID detected: ${item.id}`);
+      const identity = item[idField];
+      if (!isNonEmptyString(identity)) {
+        errors.push(`${label} at index ${index} is missing stable key ${idField}.`);
+      } else if (ids.has(identity)) {
+        errors.push(`Duplicate ${label.toLowerCase()} key detected: ${identity}`);
       } else {
-        ids.add(item.id);
+        ids.add(identity);
       }
     });
   };
 
-  checkUniqueIds('phases', 'Phase');
+  checkUniqueIds('phases', 'Phase', 'phaseId');
   checkUniqueIds('engines', 'Engine');
   checkUniqueIds('evidence', 'Evidence record');
   checkUniqueIds('datasets', 'Dataset');
