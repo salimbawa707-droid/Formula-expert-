@@ -1102,7 +1102,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       applicableEngineIds: [],
       numericalValidationReadiness: 'DEFICIENT',
       inspectionStatus: 'NUMERICALLY_INSPECTED',
-      inspectionNotes: 'Auxiliary mechanistic dataset only. Unit/variable conflicts remain: PLL_RH column is labeled mol/L but values align with publication mg/dm3; workbook Vmax is mL while paper describes foam height. Actual independent observation count remains null; never count worksheet rows or repeated measurements as independent samples. Not eligible for ENG-005 validation because domain mismatch and executable predictor are absent.',
+      inspectionNotes: 'Auxiliary mechanistic dataset only. Unit/variable conflicts remain: PLL_RH column is labeled mol/L but article figure captions report RH concentrations in mg/dm³; workbook Vmax is mL while paper describes foam height. Actual independent observation count remains null; never count worksheet rows or repeated measurements as independent samples. Not eligible for ENG-005 validation because domain mismatch and executable predictor are absent.',
     },
   ],
   audits: [
