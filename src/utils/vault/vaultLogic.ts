@@ -377,6 +377,10 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   checkUniqueIds('prompts', 'Prompt');
   checkUniqueIds('pricingRecords', 'Pricing record', 'ingredientId');
   checkUniqueIds('activeBlockers', 'Active blocker');
+  checkUniqueIds('inventoryMetrics', 'Inventory metric');
+  checkUniqueIds('historicalReconciliations', 'Historical reconciliation');
+  checkUniqueIds('daviesActivityModels', 'Davies activity model');
+  checkUniqueIds('surfactantPhaseProperties', 'Surfactant phase property');
 
   if (Array.isArray(parsed.phases)) {
     const validPhaseStatuses = new Set(['CLOSED', 'ACTIVE', 'LOCKED', 'PENDING_REVIEW']);
