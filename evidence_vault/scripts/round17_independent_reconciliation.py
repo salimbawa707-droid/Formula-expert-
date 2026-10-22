@@ -103,6 +103,7 @@ def main() -> int:
             failures.append(f"SHA256_MISMATCH: {filename}")
         if not raw.startswith(b"PK\x03\x04"):
             failures.append(f"NOT_XLSX_ZIP_SIGNATURE: {filename}")
+        zip_integrity_ok = False
         try:
             with zipfile.ZipFile(path) as archive:
                 bad_member = archive.testzip()
@@ -112,6 +113,7 @@ def main() -> int:
                 required = {"[Content_Types].xml", "xl/workbook.xml"}
                 if not required.issubset(names):
                     failures.append(f"MISSING_XLSX_PARTS: {filename}")
+                zip_integrity_ok = bad_member is None and required.issubset(names)
         except zipfile.BadZipFile:
             failures.append(f"INVALID_ZIP: {filename}")
 
