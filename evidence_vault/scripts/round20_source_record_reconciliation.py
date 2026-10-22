@@ -145,12 +145,21 @@ def main():
     write_csv(COUT,["category","filename","sheet","source_row","source_record_id","group_id","raw_record_count","derived_record_count","status","notes"],categories)
     write_csv(ROUT,["filename","sheet","row","test_raw","test_effective","point_no","time","frequency","shear_rate","shear_stress","viscosity","source_cells"],rheo)
     first3=flow+film+raw_total; full=first3+rheo_total; headline=27982; needed=headline-first3
+    duplicate_keys=sum(len(v["duplicate_test_point_keys"]) for v in sheet_stats.values())
+    checks={
+      "solution_flow_points_212": flow==212,
+      "film_feature_measurements_7522": film==7522,
+      "bubble_area_formula_pairs_19509": raw_total==rad_total==matched==19509,
+      "rheometer_point_rows_2233": rheo_total==2233,
+      "rheometer_test_groups_62": sum(v["test_groups"] for v in sheet_stats.values())==62,
+      "no_duplicate_point_keys_within_test": duplicate_keys==0,
+    }
     report={"audit_id":"PHASE4B-ROUND20-SOURCE-RECORD-RECONCILIATION","decision":"FIRST_THREE_COMPONENTS_REPRODUCED_RHEOMETER_739_NOT_REPRODUCED",
       "governance":{"phase4b":"OPEN","phase5":"LOCKED"},
       "historical_claim":{"headline":headline,"reported_components":{"solution_flow_curves":212,"film_thickness":7522,"bubble_sizes":19509,"rheometer":739},
         "reconciled_first_three_sum":first3,"rheometer_needed_to_reach_headline":needed,"rheometer_source_point_rows":rheo_total,
         "all_category_record_sum":full,"all_category_sum_minus_headline":full-headline,"headline_reproduced":False},
-      "counts":{"solution_flow_curve_points":flow,"film_feature_measurements":film,"bubble_raw_area_cells":raw_total,
+      "integrity_gate":{"status":"PASS" if all(checks.values()) else "FAIL","checks":checks,"duplicate_test_point_key_groups":duplicate_keys},\n      "counts":{"solution_flow_curve_points":flow,"film_feature_measurements":film,"bubble_raw_area_cells":raw_total,
         "bubble_derived_radius_formula_cells":rad_total,"bubble_matched_pairs":matched,"rheometer_point_rows":rheo_total,
         "rheometer_test_groups":sum(v["test_groups"] for v in sheet_stats.values()),"formula_dependency_records":len(formulas),
         "film_summary_formula_cells":film_formula},
