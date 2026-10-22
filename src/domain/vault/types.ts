@@ -1,4 +1,4 @@
-export const VAULT_SCHEMA_VERSION = '1.0.0';
+export const VAULT_SCHEMA_VERSION = '1.1.0';
 
 export type ScientificMaturityStatus =
   | 'UNVERIFIED'
@@ -237,9 +237,73 @@ export interface ActiveBlocker {
   phaseId: string;
 }
 
+export type InventoryMetricCategory = 'FLOW' | 'FILM' | 'BUBBLE' | 'RHEOMETER' | 'HISTORICAL' | 'MIXED';
+
+export type InventoryMetricVerificationStatus = 'REPORTED_UNVERIFIED' | 'REPRODUCIBLE' | 'UNRESOLVED';
+
+export interface InventoryMetricRecord {
+  id: string;
+  category: InventoryMetricCategory;
+  metricKey: string;
+  value: number | null;
+  unit: string;
+  countingUnit: string;
+  verificationStatus: InventoryMetricVerificationStatus;
+  sourceReference: string;
+  notes: string;
+}
+
+export interface HistoricalReconciliationRecord {
+  id: string;
+  claimValue: number | null;
+  claimUnit: string;
+  reconciliationStatus: 'UNRESOLVED' | 'RECONCILED';
+  sourceReference: string;
+  relatedMetricIds: string[];
+  comparisonAggregateValue: number | null;
+  notes: string;
+}
+
+export interface DaviesActivityModelRecord {
+  id: string;
+  modelName: string;
+  modelVersion: string;
+  temperatureK: number | null;
+  ionicStrengthM: number | null;
+  speciesCharges: number[];
+  applicabilityStatus: 'WITHIN_DOCUMENTED_DOMAIN' | 'OUTSIDE_DOCUMENTED_DOMAIN' | 'UNKNOWN';
+  sourceReference: string;
+  assumptions: string[];
+  notes: string;
+}
+
+export interface SurfactantPhasePropertyRecord {
+  id: string;
+  surfactantId: string | null;
+  reportedName: string;
+  composition: string | null;
+  propertyName: 'KRAFFT_POINT';
+  value: number | null;
+  unit: string;
+  concentration: number | null;
+  concentrationUnit: string | null;
+  solutionComposition: string | null;
+  measurementMethod: string | null;
+  valueOrigin: 'MEASURED' | 'REPORTED' | 'ESTIMATED' | 'IMPUTED' | 'MODEL_PREDICTED' | 'UNKNOWN';
+  evidenceStatus: 'UNVERIFIED' | 'SOURCE_REVIEWED' | 'BLOCKED';
+  uncertaintyValue: number | null;
+  uncertaintyUnit: string | null;
+  sourceReference: string;
+  notes: string;
+}
+
 export interface VaultState {
   version: string;
   exportedAt?: string;
+  inventoryMetrics: InventoryMetricRecord[];
+  historicalReconciliations: HistoricalReconciliationRecord[];
+  daviesActivityModels: DaviesActivityModelRecord[];
+  surfactantPhaseProperties: SurfactantPhasePropertyRecord[];
   phases: ProjectPhase[];
   engines: EngineRecord[];
   evidence: EvidenceRecord[];
