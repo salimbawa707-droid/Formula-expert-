@@ -37,9 +37,11 @@ import {
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
 const STORAGE_KEY = 'DETERGENT_FORMULA_EXPERT_VAULT_STATE_V1';
+const RECOVERY_NOTICE_KEY = `${STORAGE_KEY}_RECOVERY_NOTICE`;
 
 export const ScientificRoadmapVault: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [storageRecoveryNotice, setStorageRecoveryNotice] = useState<string | null>(null);
 
   // Invalid persisted state is quarantined before any automatic write can replace it.
   const skipInitialPersistence = useRef(false);
@@ -57,14 +59,26 @@ export const ScientificRoadmapVault: React.FC = () => {
         // Preserve the original bytes for recovery before falling back to the canonical seed.
         skipInitialPersistence.current = true;
         const quarantineKey = `${STORAGE_KEY}_QUARANTINED_${Date.now()}`;
+        let quarantineSaved = false;
         try {
           localStorage.setItem(quarantineKey, saved);
+          quarantineSaved = true;
           console.error('Saved Evidence Vault state failed validation and was preserved under:', quarantineKey, validation.errors);
         } catch (preservationError) {
-          console.error('Saved Evidence Vault state is invalid and could not be copied to quarantine. Automatic initial persistence is suppressed to avoid overwriting the original backup.', {
+          console.error('Saved Evidence Vault state is invalid and could not be copied to quarantine. Automatic initial persistence is suppressed for the initial recovery render.', {
             validationErrors: validation.errors,
             preservationError,
           });
+        }
+        try {
+          localStorage.setItem(
+            RECOVERY_NOTICE_KEY,
+            quarantineSaved
+              ? `The saved Evidence Vault backup failed structural validation. The original data was preserved in browser storage under ${quarantineKey}; the app loaded the canonical baseline. Export or inspect the recovery copy before continuing.`
+              : 'The saved Evidence Vault backup failed structural validation and could not be copied to a recovery key. The original value has not been overwritten during this initial render. Export or recover it before continuing.'
+          );
+        } catch (noticeError) {
+          console.warn('Could not persist the Evidence Vault recovery notice:', noticeError);
         }
       }
     } catch (e) {
@@ -99,6 +113,18 @@ export const ScientificRoadmapVault: React.FC = () => {
       console.error('LocalStorage write failed:', e);
     }
   }, [state]);
+
+  useEffect(() => {
+    try {
+      const notice = localStorage.getItem(RECOVERY_NOTICE_KEY);
+      if (notice) {
+        setStorageRecoveryNotice(notice);
+        localStorage.removeItem(RECOVERY_NOTICE_KEY);
+      }
+    } catch (e) {
+      console.warn('Could not read Evidence Vault recovery notice:', e);
+    }
+  }, []);
 
   // Modal states
   const [selectedEngine, setSelectedEngine] = useState<EngineRecord | null>(null);
@@ -199,6 +225,18 @@ export const ScientificRoadmapVault: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
+        {storageRecoveryNotice && (
+          <div role="alert" className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-700 bg-amber-950/60 p-4 text-sm text-amber-100">
+            <div>{storageRecoveryNotice}</div>
+            <button
+              type="button"
+              onClick={() => setStorageRecoveryNotice(null)}
+              className="shrink-0 rounded border border-amber-700 px-2 py-1 text-xs hover:bg-amber-900"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {activeTab === 'dashboard' && (
           <DashboardView
             state={state}
