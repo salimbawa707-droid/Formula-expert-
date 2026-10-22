@@ -162,7 +162,7 @@ def main():
     write_csv(XOUT,["claim","historical_count","source_count","delta_source_minus_historical","status","notes"],crosswalk)
     duplicate_keys=sum(len(v["duplicate_test_point_keys"]) for v in sheet_stats.values())
     checks={
-      "solution_flow_points_212": flow==212,
+      "solution_flow_points_210": flow==210,
       "film_feature_measurements_7522": film==7522,
       "bubble_area_formula_pairs_19509": raw_total==rad_total==matched==19509,
       "rheometer_point_rows_2233": rheo_total==2233,
@@ -195,8 +195,8 @@ def main():
       f"| Bubble sizes | {raw_total:,} | Raw area entries paired with formula-derived radius values |",
       f"| Rheometer | {rheo_total:,} | Numeric Point No. rows across six worksheets |",
       f"| **All category records summed** | **{full:,}** | Mixed measurement units; not asserted as independent experiments |",
-      "","## Historical headline reconciliation","","The first three components sum to **27,243** at aggregate level, but the bubble worksheet split differs: historical values are 10,000 (20 min) and 9,509 (30 min), while raw area cells are 13,388 and 6,121 respectively. The aggregate bubble total still sums to 19,509, but the per-sheet lineage does not reproduce the published split. The historical headline of 27,982 therefore requires exactly **739** rheometer records. The source workbooks contain **2,233** numeric Point No. rows across **62** test groups; no explicit source-row mapping supports 739. Summing all four category ledgers yields **29,476**, or **1,494 above** the headline. This arithmetic is not a claim that all categories are independent experiments.",
-      "","## Key lineage findings","","- Solution flow: 212 complete numeric point records across 15 named curves.",
+      "","## Historical headline reconciliation","","The first three source components sum to **27,241** using 210 reconciled solution-flow rows, 7,522 film features, and 19,509 bubble pairs. This differs from the historical flow count of 212 by two records. The bubble worksheet split also differs: historical values are 10,000 (20 min) and 9,509 (30 min), while raw area cells are 13,388 and 6,121 respectively. The aggregate bubble total still sums to 19,509, but the per-sheet lineage does not reproduce the published split. Using source-reconciled flow rows, the historical headline of 27,982 requires exactly **741** rheometer records. The source workbooks contain **2,233** numeric Point No. rows across **62** test groups; no explicit source-row mapping supports the historical 739. Summing all four category ledgers yields **29,474**, or **1,492 above** the headline. This arithmetic is not a claim that all categories are independent experiments.",
+      "- Solution flow: 210 complete numeric point records across 15 named curves; historical count 212 is not reproduced (difference -2).",
       "- Film thickness: 7,522 numeric Length_px feature records. Repeated Image IDs are group labels; this is not 7,522 unique images.",
       "- Bubble sizes: 19,509 raw numeric area cells match 19,509 radius formulas by source-cell reference. The source split is 13,388 (20 min) and 6,121 (30 min), not the historical 10,000 / 9,509 split. Count each paired feature once, not twice.",
       "- Rheometer: point counts by worksheet are 288, 225, 192, 88, 720 and 720. Blank spacer rows are excluded; test labels are forward-filled for grouping.",
