@@ -321,6 +321,18 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     };
   }
 
+  // Absence of license-review metadata is conservatively normalized to UNREVIEWED.
+  // A license string or matching checksum is never interpreted as commercial clearance.
+  if (Array.isArray(parsed.evidence)) {
+    parsed.evidence = parsed.evidence.map((record: unknown) => isRecord(record) ? {
+      licenseReviewStatus: 'UNREVIEWED',
+      licenseEvidenceReference: null,
+      licenseReviewedAt: null,
+      licenseRestrictions: [],
+      ...record,
+    } : record);
+  }
+
   const requiredArrays = [
     'phases', 'engines', 'evidence', 'datasets', 'audits', 'prompts', 'pricingRecords', 'activeBlockers',
     'inventoryMetrics', 'historicalReconciliations', 'daviesActivityModels', 'surfactantPhaseProperties'
@@ -421,8 +433,8 @@ export function validateAndParseVaultJSON(jsonStr: string): {
             errors.push(`Dataset ${dataset.id || index} column ${columnIndex} must be an object.`);
             return;
           }
-          if (!Number.isSafeInteger(column.missingCount) || column.missingCount < 0) {
-            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} missingCount must be a known non-negative integer in schema 1.1.0; do not use zero as an unknown placeholder.`);
+          if (column.missingCount !== null && (!Number.isSafeInteger(column.missingCount) || column.missingCount < 0)) {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} missingCount must be null (unknown) or a non-negative safe integer; zero means a known zero-missing count.`);
           }
           if (typeof column.name !== 'string' || typeof column.unit !== 'string' || typeof column.isExperimental !== 'boolean') {
             errors.push(`Dataset ${dataset.id || index} column ${columnIndex} has invalid name, unit, or isExperimental field.`);
@@ -443,6 +455,23 @@ export function validateAndParseVaultJSON(jsonStr: string): {
       }
       if (!isNullableNonNegativeInteger(evidence.sampleCount)) {
         errors.push(`Evidence record ${evidence.id || index} sampleCount must be null (unknown) or a non-negative safe integer.`);
+      }
+      if (!['UNREVIEWED', 'REVIEW_PENDING', 'PERMITTED_FOR_COMMERCIAL_REUSE', 'RESTRICTED', 'UNKNOWN'].includes(evidence.licenseReviewStatus)) {
+        errors.push(`Evidence record ${evidence.id || index} has an invalid licenseReviewStatus.`);
+      }
+      if (evidence.licenseEvidenceReference !== null && typeof evidence.licenseEvidenceReference !== 'string') {
+        errors.push(`Evidence record ${evidence.id || index} licenseEvidenceReference must be null or a string.`);
+      }
+      if (evidence.licenseReviewedAt !== null && (typeof evidence.licenseReviewedAt !== 'string' || !Number.isFinite(Date.parse(evidence.licenseReviewedAt)))) {
+        errors.push(`Evidence record ${evidence.id || index} licenseReviewedAt must be null or a valid date string.`);
+      }
+      if (!Array.isArray(evidence.licenseRestrictions) || !evidence.licenseRestrictions.every((item: unknown) => typeof item === 'string')) {
+        errors.push(`Evidence record ${evidence.id || index} licenseRestrictions must be an array of strings.`);
+      }
+      if (['PERMITTED_FOR_COMMERCIAL_REUSE', 'RESTRICTED'].includes(evidence.licenseReviewStatus) &&
+          (typeof evidence.licenseEvidenceReference !== 'string' || evidence.licenseEvidenceReference.trim().length === 0 ||
+           typeof evidence.licenseReviewedAt !== 'string' || !Number.isFinite(Date.parse(evidence.licenseReviewedAt)))) {
+        errors.push(`Evidence record ${evidence.id || index} cannot be marked permitted/restricted without a license evidence reference and review date.`);
       }
       for (const key of ['measuredVariables', 'units', 'supportedEngineIds', 'supportedClaims', 'applicabilityMismatches', 'limitations', 'followUpActions']) {
         if (!Array.isArray(evidence[key]) || !evidence[key].every((item: unknown) => typeof item === 'string')) {
