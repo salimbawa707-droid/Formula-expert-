@@ -124,7 +124,7 @@ export function runVaultLogicTestSuite() {
   assert(ds005?.actualColumnCount === 23, 'Dataset Inspection', 'DS-005 normalized worksheet schema has 23 columns');
   assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
   assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
-  assert(Boolean(ds005?.inspectionNotes?.includes('unit conflict')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
+  assert(Boolean(ds005?.inspectionNotes?.includes('unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
   for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => ds.id !== 'DS-002')) {
     assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
   }
