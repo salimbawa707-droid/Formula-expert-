@@ -18,7 +18,7 @@ RHEO_CSV = OUT / "PHASE4B_ROUND19_RHEOMETER_TEST_POINT_LINEAGE.csv"
 JSON_REPORT = OUT / "PHASE4B_ROUND19_RAW_WORKBOOK_LINEAGE.json"
 MD_REPORT = OUT / "PHASE4B_ROUND19_RAW_WORKBOOK_LINEAGE.md"
 CELL_HEADERS = ["filename","sheet","cell","row","column","cell_type","value_repr","formula","lineage_class"]
-IMAGE_HEADERS = ["filename","sheet","row","image_group","number","length_px","film_thickness_um","record_status","source_cells"]
+IMAGE_HEADERS = ["filename","sheet","row","image_group","image_id","number","length_px","film_thickness_um","record_status","source_cells"]
 RHEO_HEADERS = ["filename","sheet","row","test","point_no","time","frequency","shear_rate","shear_stress","viscosity","record_status","source_cells"]
 
 def safe(value: Any) -> str:
@@ -53,15 +53,15 @@ def image_lineage(filename: str, ws):
     if "filmthickness" not in filename.lower(): return []
     out = []
     groups = [(1,2,3,"Foam A"),(4,5,6,"Foam B"),(7,8,9,"Foam C"),(10,11,12,"Foam D")]
-    for r in range(1, ws.max_row+1):
+    for r in range(3, ws.max_row+1):
         for ic,nc,lc,label in groups:
             image, number, length = ws.cell(r,ic).value, ws.cell(r,nc).value, ws.cell(r,lc).value
             if image is None and number is None and length is None: continue
-            if r <= 2 and any(isinstance(v,str) and v.strip().lower() in {"image","number","length_px"} for v in (image,number,length)): continue
+            if r < 3: continue
             derived = [f"{ws.cell(r,c).coordinate}={safe(ws.cell(r,c).value)}"
                        for c in range(13,ws.max_column+1) if ws.cell(r,c).value is not None]
             out.append({"filename":filename,"sheet":ws.title,"row":r,"image_group":label,
-              "number":safe(number),"length_px":safe(length),"film_thickness_um":";".join(derived),
+              "image_id":safe(image),"number":safe(number),"length_px":safe(length),"film_thickness_um":";".join(derived),
               "record_status":"TRACEABLE_IMAGE_ROW" if image is not None else "INCOMPLETE_NO_IMAGE_ID",
               "source_cells":f"{ws.cell(r,ic).coordinate};{ws.cell(r,nc).coordinate};{ws.cell(r,lc).coordinate}"})
     return out
