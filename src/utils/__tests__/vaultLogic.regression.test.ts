@@ -227,9 +227,18 @@ export function runVaultLogicTestSuite() {
   assert(fractionalCountResult.valid === false, 'Count Validation', 'Fractional dataset column count is rejected');
 
   const negativeMissingCount = JSON.parse(exported);
-  negativeMissingCount.datasets[0].columns[0].missingCount = -1;
+  const columnBearingDataset = negativeMissingCount.datasets.find(
+    (dataset: any) => Array.isArray(dataset.columns) && dataset.columns.length > 0
+  );
+  if (columnBearingDataset) {
+    columnBearingDataset.columns[0].missingCount = -1;
+  }
   const negativeMissingCountResult = validateAndParseVaultJSON(JSON.stringify(negativeMissingCount));
-  assert(negativeMissingCountResult.valid === false, 'Count Validation', 'Negative column missingCount is rejected');
+  assert(
+    Boolean(columnBearingDataset) && negativeMissingCountResult.valid === false,
+    'Count Validation',
+    'Negative column missingCount is rejected for a dataset that actually contains columns'
+  );
 
   const missingRequiredCollection = JSON.parse(exported);
   delete missingRequiredCollection.pricingRecords;
