@@ -194,6 +194,12 @@ def main() -> int:
         "licenseSource": LANDING_URL,
         "accessedAtUtc": datetime.now(timezone.utc).isoformat(),
         "sourceFile": str(raw_path.relative_to(ROOT)),
+        "repositorySourceFileStatus": "RAW ODS IS NOT TRACKED IN GIT; it is acquired during CI and included in the phase4b-repod-foam-audit workflow artifact.",
+        "workflowArtifact": {
+            "name": "phase4b-repod-foam-audit",
+            "retentionDays": 30,
+            "purpose": "Preserve the raw source ODS and generated normalized audit outputs from each CI run.",
+        },
         "sourceBytes": len(raw),
         "md5": md5,
         "sha256": sha256,
