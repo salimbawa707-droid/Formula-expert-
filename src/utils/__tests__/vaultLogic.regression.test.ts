@@ -425,5 +425,8 @@ export function runVaultLogicTestSuite() {
 }
 
 if (process.argv[1] && process.argv[1].includes('vaultLogic.regression.test')) {
-  runVaultLogicTestSuite();
+  const summary = runVaultLogicTestSuite();
+  if (summary.failed > 0) {
+    process.exitCode = 1;
+  }
 }
