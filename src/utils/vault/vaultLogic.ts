@@ -269,7 +269,10 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
 }
 
 /**
- * Validates JSON backup schema and detects duplicate IDs
+ * Validates a vault backup against the currently supported persisted schema.
+ *
+ * Important: validation is structural only. It never promotes scientific maturity,
+ * licenses, provenance, or phase status. Unsupported schema versions fail closed.
  */
 export function validateAndParseVaultJSON(jsonStr: string): {
   valid: boolean;
@@ -277,90 +280,157 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   parsedState?: VaultState;
 } {
   const errors: string[] = [];
+  let parsed: unknown;
 
-  let parsed: any;
   try {
     parsed = JSON.parse(jsonStr);
-  } catch (err: any) {
-    return { valid: false, errors: [`JSON Parse error: ${err.message}`] };
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return { valid: false, errors: [`JSON Parse error: ${detail}`] };
   }
 
-  if (!parsed || typeof parsed !== 'object') {
-    return { valid: false, errors: ['Parsed content is not an object.'] };
+  const isRecord = (value: unknown): value is Record<string, any> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+  const isNonEmptyString = (value: unknown): value is string =>
+    typeof value === 'string' && value.trim().length > 0;
+  const isNullableNonNegativeInteger = (value: unknown): boolean =>
+    value === null || (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0);
+
+  if (!isRecord(parsed)) {
+    return { valid: false, errors: ['Parsed content is not a JSON object.'] };
   }
 
-  if (!parsed.version) {
-    errors.push('Missing schema version field in backup.');
+  if (parsed.version !== '1.0.0') {
+    errors.push('Unsupported or missing vault schema version. Supported version: 1.0.0. Export or migrate the backup using a compatible app version.');
   }
 
-  if (!Array.isArray(parsed.phases)) {
-    errors.push('Missing or invalid phases array.');
-  }
-
-  if (!Array.isArray(parsed.engines)) {
-    errors.push('Missing or invalid engines array.');
-  }
-
-  if (!Array.isArray(parsed.evidence)) {
-    errors.push('Missing or invalid evidence array.');
-  }
-
-  if (!Array.isArray(parsed.datasets)) {
-    errors.push('Missing or invalid datasets array.');
-  }
-
-  if (!Array.isArray(parsed.audits)) {
-    errors.push('Missing or invalid audits array.');
-  }
-
-  if (!Array.isArray(parsed.prompts)) {
-    errors.push('Missing or invalid prompts array.');
-  }
-
-  // Duplicate ID checks
-  if (Array.isArray(parsed.engines)) {
-    const ids = new Set<string>();
-    for (const eng of parsed.engines) {
-      if (!eng.id) errors.push('Engine missing stable ID.');
-      else if (ids.has(eng.id)) errors.push(`Duplicate engine ID detected: ${eng.id}`);
-      else ids.add(eng.id);
+  const requiredArrays = ['phases', 'engines', 'evidence', 'datasets', 'audits', 'prompts', 'pricingRecords', 'activeBlockers'];
+  for (const key of requiredArrays) {
+    if (!Array.isArray(parsed[key])) {
+      errors.push(`Missing or invalid ${key} array.`);
+    } else if (!parsed[key].every(isRecord)) {
+      errors.push(`${key} must contain only JSON objects.`);
     }
   }
 
-  if (Array.isArray(parsed.evidence)) {
-    const ids = new Set<string>();
-    for (const ev of parsed.evidence) {
-      if (!ev.id) errors.push('Evidence record missing ID.');
-      else if (ids.has(ev.id)) errors.push(`Duplicate evidence ID detected: ${ev.id}`);
-      else ids.add(ev.id);
+  if (!isRecord(parsed.engineCountDiscrepancy)) {
+    errors.push('Missing or invalid engineCountDiscrepancy object.');
+  } else {
+    for (const key of ['claimedA', 'reconciledFiles', 'claimedSubmodules']) {
+      const value = parsed.engineCountDiscrepancy[key];
+      if (!Number.isSafeInteger(value) || value < 0) {
+        errors.push(`engineCountDiscrepancy.${key} must be a non-negative integer.`);
+      }
     }
+    if (parsed.engineCountDiscrepancy.status !== 'REPORTED_UNVERIFIED') {
+      errors.push('engineCountDiscrepancy.status must remain REPORTED_UNVERIFIED unless the domain model explicitly changes.');
+    }
+    if (typeof parsed.engineCountDiscrepancy.notes !== 'string') {
+      errors.push('engineCountDiscrepancy.notes must be a string.');
+    }
+  }
+
+  const checkUniqueIds = (key: string, label: string) => {
+    if (!Array.isArray(parsed[key])) return;
+    const ids = new Set<string>();
+    parsed[key].forEach((item: Record<string, any>, index: number) => {
+      if (!isNonEmptyString(item.id)) {
+        errors.push(`${label} at index ${index} is missing a stable ID.`);
+      } else if (ids.has(item.id)) {
+        errors.push(`Duplicate ${label.toLowerCase()} ID detected: ${item.id}`);
+      } else {
+        ids.add(item.id);
+      }
+    });
+  };
+
+  checkUniqueIds('phases', 'Phase');
+  checkUniqueIds('engines', 'Engine');
+  checkUniqueIds('evidence', 'Evidence record');
+  checkUniqueIds('datasets', 'Dataset');
+  checkUniqueIds('audits', 'Audit');
+  checkUniqueIds('prompts', 'Prompt');
+  checkUniqueIds('pricingRecords', 'Pricing record');
+  checkUniqueIds('activeBlockers', 'Active blocker');
+
+  if (Array.isArray(parsed.phases)) {
+    const validPhaseStatuses = new Set(['CLOSED', 'ACTIVE', 'LOCKED', 'PENDING_REVIEW']);
+    const validVerificationStatuses = new Set(['UNESTABLISHED', 'CONFIRMED', 'REJECTED']);
+    parsed.phases.forEach((phase: Record<string, any>, index: number) => {
+      if (!isNonEmptyString(phase.phaseId)) errors.push(`Phase at index ${index} is missing phaseId.`);
+      if (!validPhaseStatuses.has(phase.status)) errors.push(`Phase ${phase.id || index} has an invalid status.`);
+      if (typeof phase.reportedClosed !== 'boolean') errors.push(`Phase ${phase.id || index} reportedClosed must be boolean.`);
+      if (!validVerificationStatuses.has(phase.independentVerificationStatus)) {
+        errors.push(`Phase ${phase.id || index} has an invalid independentVerificationStatus.`);
+      }
+      if (!Array.isArray(phase.blockers) || !Array.isArray(phase.keyDeliverables)) {
+        errors.push(`Phase ${phase.id || index} must contain blockers and keyDeliverables arrays.`);
+      }
+    });
   }
 
   if (Array.isArray(parsed.datasets)) {
-    const ids = new Set<string>();
-    for (const ds of parsed.datasets) {
-      if (!ds.id) errors.push('Dataset record missing ID.');
-      else if (ids.has(ds.id)) errors.push(`Duplicate dataset ID detected: ${ds.id}`);
-      else ids.add(ds.id);
-    }
+    parsed.datasets.forEach((dataset: Record<string, any>, index: number) => {
+      for (const key of ['actualRowCount', 'actualColumnCount']) {
+        if (!isNullableNonNegativeInteger(dataset[key])) {
+          errors.push(`Dataset ${dataset.id || index} ${key} must be null (unknown) or a non-negative safe integer (known count).`);
+        }
+      }
+      if (!Array.isArray(dataset.columns)) {
+        errors.push(`Dataset ${dataset.id || index} columns must be an array.`);
+      } else {
+        dataset.columns.forEach((column: unknown, columnIndex: number) => {
+          if (!isRecord(column)) {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} must be an object.`);
+            return;
+          }
+          if (!Number.isSafeInteger(column.missingCount) || column.missingCount < 0) {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} missingCount must be a known non-negative integer in schema 1.0.0; do not use zero as an unknown placeholder.`);
+          }
+          if (typeof column.name !== 'string' || typeof column.unit !== 'string' || typeof column.isExperimental !== 'boolean') {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} has invalid name, unit, or isExperimental field.`);
+          }
+        });
+      }
+      if (typeof dataset.inspectionStatus !== 'string') {
+        errors.push(`Dataset ${dataset.id || index} inspectionStatus must be a string.`);
+      }
+    });
   }
 
-  // Check pricing records preservation rule:
-  // If pricingRecords exists, check that prices can be null
+  if (Array.isArray(parsed.evidence)) {
+    parsed.evidence.forEach((evidence: Record<string, any>, index: number) => {
+      if (!isNullableNonNegativeInteger(evidence.sampleCount)) {
+        errors.push(`Evidence record ${evidence.id || index} sampleCount must be null (unknown) or a non-negative safe integer.`);
+      }
+      for (const key of ['measuredVariables', 'units', 'supportedEngineIds', 'supportedClaims', 'applicabilityMismatches', 'limitations', 'followUpActions']) {
+        if (!Array.isArray(evidence[key]) || !evidence[key].every((item: unknown) => typeof item === 'string')) {
+          errors.push(`Evidence record ${evidence.id || index} ${key} must be an array of strings.`);
+        }
+      }
+    });
+  }
+
   if (Array.isArray(parsed.pricingRecords)) {
-    const hasNullPriced = parsed.pricingRecords.some(
-      (p: any) => p.pricePerKg === null || p.priceStatus === 'UNKNOWN_NULL'
-    );
-    if (!hasNullPriced) {
-      // Warning or check
-    }
+    parsed.pricingRecords.forEach((pricing: Record<string, any>, index: number) => {
+      if (pricing.pricePerKg !== null && (typeof pricing.pricePerKg !== 'number' || !Number.isFinite(pricing.pricePerKg) || pricing.pricePerKg < 0)) {
+        errors.push(`Pricing record ${pricing.id || pricing.ingredientId || index} pricePerKg must be null (unknown) or a finite non-negative number.`);
+      }
+      if (!['CONFIRMED', 'UNKNOWN_NULL', 'MARKET_ESTIMATE'].includes(pricing.priceStatus)) {
+        errors.push(`Pricing record ${pricing.id || pricing.ingredientId || index} has an invalid priceStatus.`);
+      }
+      if (pricing.pricePerKg === null && pricing.priceStatus === 'CONFIRMED') {
+        errors.push(`Pricing record ${pricing.ingredientId || index} cannot be CONFIRMED while pricePerKg is null.`);
+      }
+    });
   }
 
   if (errors.length > 0) {
     return { valid: false, errors };
   }
 
-  return { valid: true, errors: [], parsedState: parsed as VaultState };
+  // Structural validation does not alter maturity, evidence status, licensing, or phase state.
+  return { valid: true, errors: [], parsedState: parsed as unknown as VaultState };
 }
 
 /**
