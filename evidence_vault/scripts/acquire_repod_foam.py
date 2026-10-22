@@ -21,10 +21,7 @@ from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "evidence_vault" / "datasets" / "repod_foam"
-SOURCE_URL = (
-    "https://repod.icm.edu.pl/api/access/datafile/:persistentId/"
-    "?persistentId=doi%3A10.18150%2FMKCDUM"
-)
+SOURCE_URL = "https://repod.icm.edu.pl/api/access/datafile/48206"
 LANDING_URL = "https://repod.icm.edu.pl/dataset.xhtml?persistentId=doi%3A10.18150%2FMKCDUM"
 DOI = "10.18150/MKCDUM"
 EXPECTED_FILENAME = "DFA_data.ods"
