@@ -210,6 +210,71 @@ export function runVaultLogicTestSuite() {
   const unsupportedVersionResult = validateAndParseVaultJSON(JSON.stringify(unsupportedVersion));
   assert(unsupportedVersionResult.valid === false, 'Schema Versioning', 'Unsupported schema version is rejected instead of being cast as current state');
 
+  const legacyV1State = JSON.parse(exported);
+  legacyV1State.version = '1.0.0';
+  delete legacyV1State.inventoryMetrics;
+  delete legacyV1State.historicalReconciliations;
+  delete legacyV1State.daviesActivityModels;
+  delete legacyV1State.surfactantPhaseProperties;
+  const legacyMigrationResult = validateAndParseVaultJSON(JSON.stringify(legacyV1State));
+  assert(legacyMigrationResult.valid === true, 'Schema Migration', 'Valid v1.0.0 backup migrates without losing core records');
+  assert(legacyMigrationResult.parsedState?.version === '1.1.0', 'Schema Migration', 'Legacy backup is upgraded to schema v1.1.0');
+  assert((legacyMigrationResult.parsedState?.inventoryMetrics.length || 0) >= 5, 'Schema Migration', 'Migration adds only explicitly reported inventory metrics');
+  assert(legacyMigrationResult.parsedState?.historicalReconciliations[0]?.reconciliationStatus === 'UNRESOLVED', 'Schema Migration', 'Historical 27,982 claim remains unresolved after migration');
+  assert(legacyMigrationResult.parsedState?.datasets.every(ds => ds.actualRowCount === null), 'Schema Migration', 'Unknown dataset row counts remain null after migration');
+  assert(canUnlockPhase5(legacyMigrationResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Schema Migration', 'Migration cannot unlock Phase 5');
+
+  const optionalScientificExtensions = JSON.parse(exported);
+  optionalScientificExtensions.daviesActivityModels.push({
+    id: 'DAVIES-TEST-UNKNOWN',
+    modelName: 'Davies activity coefficient model',
+    modelVersion: 'test-fixture',
+    temperatureK: null,
+    ionicStrengthM: null,
+    speciesCharges: [],
+    applicabilityStatus: 'UNKNOWN',
+    sourceReference: 'test fixture only; no scientific evidence asserted',
+    assumptions: [],
+    notes: 'Null parameters are intentionally unknown; this is not a model result.',
+  });
+  optionalScientificExtensions.surfactantPhaseProperties.push({
+    id: 'KRAFFT-TEST-UNKNOWN',
+    surfactantId: null,
+    reportedName: 'Commercial surfactant mixture (identity incomplete)',
+    composition: null,
+    propertyName: 'KRAFFT_POINT',
+    value: null,
+    unit: '°C',
+    concentration: null,
+    concentrationUnit: null,
+    solutionComposition: null,
+    measurementMethod: null,
+    valueOrigin: 'UNKNOWN',
+    evidenceStatus: 'UNVERIFIED',
+    uncertaintyValue: null,
+    uncertaintyUnit: null,
+    sourceReference: 'test fixture only; no scientific evidence asserted',
+    notes: 'No Krafft-point measurement is asserted.',
+  });
+  const optionalExtensionsResult = validateAndParseVaultJSON(JSON.stringify(optionalScientificExtensions));
+  assert(optionalExtensionsResult.valid === true, 'Optional Scientific Modules', 'Davies and Krafft records support explicitly unknown values and incomplete mixture identity');
+
+  const invalidDavies = JSON.parse(exported);
+  invalidDavies.daviesActivityModels.push({
+    id: 'DAVIES-TEST-NEGATIVE-I',
+    modelName: 'Davies activity coefficient model',
+    modelVersion: 'test-fixture',
+    temperatureK: 298.15,
+    ionicStrengthM: -0.1,
+    speciesCharges: [-1, 1],
+    applicabilityStatus: 'UNKNOWN',
+    sourceReference: 'test fixture only',
+    assumptions: [],
+    notes: 'Invalid negative ionic strength.',
+  });
+  const invalidDaviesResult = validateAndParseVaultJSON(JSON.stringify(invalidDavies));
+  assert(invalidDaviesResult.valid === false, 'Optional Scientific Modules', 'Negative ionic strength is rejected without imposing a universal upper cutoff');
+
   const knownZeroCounts = JSON.parse(exported);
   knownZeroCounts.datasets[0].actualRowCount = 0;
   knownZeroCounts.datasets[0].actualColumnCount = 0;
