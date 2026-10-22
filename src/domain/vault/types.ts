@@ -100,6 +100,10 @@ export interface EvidenceRecord {
   originalUrl: string;
   repositoryUrl?: string;
   license: string;
+  licenseReviewStatus?: 'UNREVIEWED' | 'REVIEW_PENDING' | 'PERMITTED_FOR_COMMERCIAL_REUSE' | 'RESTRICTED' | 'UNKNOWN';
+  licenseEvidenceReference?: string | null;
+  licenseReviewedAt?: string | null;
+  licenseRestrictions?: string[];
   datasetVersion?: string;
   fileName?: string;
   fileFormat?: string;
@@ -125,7 +129,7 @@ export interface EvidenceRecord {
 export interface DatasetColumn {
   name: string;
   unit: string;
-  missingCount: number;
+  missingCount: number | null; // NULL when missingness has not been inspected; zero means measured zero missing values.
   isExperimental: boolean;
 }
 
