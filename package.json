@@ -13,7 +13,7 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "benchmark:open-reference": "tsx scripts/open-reference-benchmark.ts",
-    "test": "tsx src/utils/test-calculations.ts && tsx src/services/formulaIngredientResearchPipeline.test.ts && tsx src/services/ingredientResearchController.test.ts && tsx src/services/researchedIngredientResolver.test.ts",
+    "test": "tsx src/utils/test-calculations.ts && tsx src/services/formulaIngredientResearchPipeline.test.ts && tsx src/services/ingredientResearchController.test.ts && tsx src/services/researchedIngredientResolver.test.ts && tsx src/utils/__tests__/vaultLogic.regression.test.ts",
     "test:aggregate": "npm run typecheck && npm test",
     "build:android": "python3 scripts/build_release_apk.py",
     "verify:evidence": "node scripts/verify_evidence_integrity.js"
