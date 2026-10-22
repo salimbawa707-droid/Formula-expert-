@@ -68,7 +68,7 @@ jobs:
         run: python evidence_vault/scripts/round17_independent_reconciliation.py --check
 
       - name: Syntax-check reproducible acquisition and reconciliation scripts
-        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py
+        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py evidence_vault/scripts/round20_source_record_reconciliation.py
 
       - name: Reconcile historical 27,982 aggregate claims without inferring physical counts
         run: python evidence_vault/scripts/round18_historical_aggregate_reconciliation.py
@@ -88,6 +88,23 @@ jobs:
             evidence_vault/forensic_reports/PHASE4B_ROUND19_CELL_FORMULA_LINEAGE.csv
             evidence_vault/forensic_reports/PHASE4B_ROUND19_IMAGE_MEASUREMENT_LINEAGE.csv
             evidence_vault/forensic_reports/PHASE4B_ROUND19_RHEOMETER_TEST_POINT_LINEAGE.csv
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Reconcile source records, formula dependencies and grouped rheometer points
+        run: python evidence_vault/scripts/round20_source_record_reconciliation.py
+
+      - name: Preserve Round-20 source-record reconciliation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4b-round20-source-record-reconciliation
+          path: |
+            evidence_vault/forensic_reports/PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.md
+            evidence_vault/forensic_reports/PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.json
+            evidence_vault/forensic_reports/PHASE4B_ROUND20_FORMULA_DEPENDENCY_LEDGER.csv
+            evidence_vault/forensic_reports/PHASE4B_ROUND20_CATEGORY_RECORD_RECONCILIATION.csv
+            evidence_vault/forensic_reports/PHASE4B_ROUND20_RHEOMETER_GROUPED_POINT_LEDGER.csv
           if-no-files-found: error
           retention-days: 30
 
