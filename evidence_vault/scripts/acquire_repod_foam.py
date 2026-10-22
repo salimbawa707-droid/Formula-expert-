@@ -32,8 +32,9 @@ NS = {
     "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
     "text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
 }
-MAX_REPEATED_CELLS = 10000
+MAX_REPEATED_CELLS = 100000
 MAX_REPEATED_ROWS = 100000
+MAX_EXPANDED_ROW_WIDTH = 100000
 
 
 def expanded_count(raw: str | None, limit: int, label: str) -> int:
@@ -117,8 +118,13 @@ def parse_ods(path: Path, out_dir: Path) -> list[dict]:
                     )
                     value = cell_value(cell)
                     values.extend([value] * repeat)
-                    if len(values) > MAX_REPEATED_CELLS:
+                    if len(values) > MAX_EXPANDED_ROW_WIDTH:
                         raise ValueError(f"Unusually wide row in {sheet_name}")
+                # ODS writers may encode thousands of trailing blank columns as a
+                # repeated empty cell. Trim only trailing empty padding; preserve
+                # blank columns that occur before a later non-empty cell.
+                while values and values[-1] == "":
+                    values.pop()
                 if not values:
                     continue
                 max_cols = max(max_cols, len(values))
