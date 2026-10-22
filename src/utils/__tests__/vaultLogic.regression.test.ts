@@ -339,7 +339,7 @@ export function runVaultLogicTestSuite() {
   const legacyLicenseResult = validateAndParseVaultJSON(JSON.stringify(legacyLicenseMetadata));
   assert(legacyLicenseResult.valid === true, 'License Integrity', 'Missing license review metadata is safely normalized');
   assert(
-    legacyLicenseResult.parsedState?.evidence.every(e => e.licenseReviewStatus === 'UNREVIEWED'),
+    Boolean(legacyLicenseResult.parsedState?.evidence.every(e => e.licenseReviewStatus === 'UNREVIEWED')),
     'License Integrity',
     'A license string alone never implies commercial reuse permission'
   );
