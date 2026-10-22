@@ -64,6 +64,9 @@ jobs:
       - name: Verify canonical evidence workbook bytes
         run: npm run verify:evidence
 
+      - name: Independently reconcile Round-6 workbook ledger and parser artifacts
+        run: python evidence_vault/scripts/round17_independent_reconciliation.py --check
+
       - name: TypeScript typecheck
         run: npm run typecheck
 
