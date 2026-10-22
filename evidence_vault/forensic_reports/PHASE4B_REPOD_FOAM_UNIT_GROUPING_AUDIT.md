@@ -20,7 +20,7 @@ Each worksheet has paired blocks for the polyelectrolyte concentration 0 vs 100 
 
 | Field | PGA_LAE | PLL_RH | Audit interpretation |
 |---|---|---|---|
-| Surfactant concentration | Header says mol/L; 1e-6 to 1e-3 | Header says mol/L; values 0.1 to 600 | PLL_RH label conflicts with values and published concentration ranges, which are consistent with mg/dm³ (mg/L). Do not silently relabel or convert raw values. |
+| Surfactant concentration | Header says mol/L; 1e-6 to 1e-3 | Header says mol/L; values 0.1 to 600 | The article's figure captions report RH concentrations in mg/dm³; the workbook header c RH [mol/L] conflicts. Preserve raw header and numeric values; record mg/dm³ as the publication-supported interpretation pending author confirmation. |
 | Vmax | `Vmax [mL]` | `Vmax [mL]` | Workbook group heading says “Maximum foam volume”; article discusses maximum foam height. This dimensional/terminology conflict remains unresolved. |
 | Foam half-lifetime | `t [sec]` | `t [sec]` | Seconds as explicitly labeled. |
 | Bickerman foaminess | `Σ [sec]` | `Σ [sec]` | Seconds as explicitly labeled; blank standard-deviation positions are not zero values. |
