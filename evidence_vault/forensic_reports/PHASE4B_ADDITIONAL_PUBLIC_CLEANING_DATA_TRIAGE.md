@@ -1,0 +1,42 @@
+# Phase 4B — Additional Public Cleaning-Evidence Triage
+
+**Audit date:** 2026-10-23  
+**Purpose:** Screen additional public sources for commercial-use compatibility and whether their measured outcome matches laundry detergent formulation validation.
+
+## Candidate decisions
+
+| Source | Licence / access evidence | What it actually measures | Decision for the commercial Detergent Formula Expert |
+|---|---|---|---|
+| **Primary Washing Effect of Powder and Liquid Detergents** (Pušić et al., *Tekstil*, 2006) | Publisher page states CC BY 4.0. https://tekstil.hist.hr/index.php/tekstil/article/view/3174 | Primary washing effect of powder/liquid detergents against multiple stains on cotton and polyester/cotton fabrics at 60 °C; remission/whiteness outcomes. Also reports wastewater parameters. | **Candidate, but numeric extraction BLOCKED in this pass.** Publisher metadata confirms CC BY 4.0 and identifies the PDF as Croatian. The publisher page timed out when opened; ResearchGate lists a PDF but its download link returned 404. The full paper/tables were therefore not inspected. Do not register table values, infer values from the abstract, or treat summary claims as individual observations until a readable source PDF is obtained. |
+| **A universal method for determining the detergent effect of surfactants** (Bejczi et al., *MethodsX*, 2024; DOI 10.1016/j.mex.2024.102755) | Open-access article states CC BY-NC 4.0. https://doi.org/10.1016/j.mex.2024.102755 | Describes a method for comparing removal of an oil-based contaminant from a solid surface; the article explicitly states no data were used for the research. | **Not eligible for commercial reuse as an article-derived commercial dataset under the stated NC licence; also no dataset to ingest.** Method may inform future independently authored test-protocol design, but obtain legal review before adapting licensed text/figures. |
+| **EPA SARS-CoV-2 Surface Cleaning Dataset** (DOI 10.23719/1527855) | Public data.gov record links a spreadsheet and an EPA ScienceHub licence: https://catalog.data.gov/dataset/sars-cov-2-surface-cleaning-dataset and https://pasteur.epa.gov/license/sciencehub-license.html | Infectious SARS-CoV-2 reduction on surfaces after wiping, with/without detergent pre-wetting; outcomes include log reduction under specified soil/simulated-saliva, surface and wet/dry conditions. | **Separate domain; not a laundry cleaning-performance target.** Do not train or validate laundry formulation scores from viral log-reduction outcomes. Public access does not by itself settle redistribution/commercial reuse; terms must be reviewed before any reuse. |
+| **EPA Cleaning against MHV dataset** (DOI 10.23719/1523025) | Public data.gov record links an XLSX and EPA ScienceHub licence: https://catalog.data.gov/dataset/cleaning-against-mhv-dataset | Cleaning efficacy against a viral surrogate on porous/non-porous surfaces. | Same exclusion: viral removal is not fabric-soil removal or formulation performance; licence terms need review before reuse. |
+| **Laundry detergent vibrational spectroscopy vs consumer experience** (Muetzel et al., 2025; DOI 10.1002/asia.202401457) | Publisher/repository record identifies CC BY-NC. https://doi.org/10.1002/asia.202401457 | Spectroscopic fingerprints of powder/liquid laundry detergents, with consumer/community wash-performance ratings. | **Not cleared for commercial data/model reuse under NC licence without separate permission.** It may be scientifically interesting, but spectroscopy/consumer ratings are not direct quantitative soil-removal measurements. |
+| **Design and performance optimisation of detergent product containing binary mixture of anionic-nonionic surfactants** (Heliyon, 2020; DOI 10.1016/j.heliyon.2020.e03861) | Publisher lists CC BY-NC-ND 4.0. https://doi.org/10.1016/j.heliyon.2020.e03861 | Surfactant property prediction and hypothetical formulation design; reported work includes computationally predicted properties, not a public direct-cleaning benchmark dataset. | **Exclude from commercial ingestion/training** absent permission; ND restriction also makes adaptation problematic. Predicted values must not be relabeled as measured observations. |
+
+## Key distinctions
+
+1. **Publicly accessible is not the same as commercially reusable.** Respect the source-specific licence, terms, attribution requirements and any upstream restrictions.
+2. **A method paper is not a dataset.** Bejczi et al. explicitly report that no data were used in the research; its method is not a source of raw validation observations.
+3. **Endpoint mismatch matters.** Viral log reduction after surface wiping, spectroscopy, surface tension, foam persistence, and fabric-soil removal are distinct targets. They must not be pooled into one cleaning score without a validated, pre-specified mapping.
+4. **Measured vs predicted stays explicit.** Modelled/predicted property values and consumer ratings cannot be relabeled as laboratory measurements of cleaning performance.
+5. **2006 Tekstil access log:** publisher metadata says the article is in *Tekstil* 55(1), pages 11–18, published 2006-01-31; the abstract describes cotton and polyester/cotton fabrics, eight soil types, washing at 60 °C, remission/whiteness and wastewater parameters. These are metadata/abstract facts only, not extracted table observations. On 2026-10-23, opening the publisher page timed out and the ResearchGate PDF link returned 404. Full text, numeric tables, units beyond the abstract, detergent dose/concentration, wash time, liquor ratio, replicate counts, uncertainty, and numeric results remain UNVERIFIED. No numeric table values were ingested. Next action: obtain a readable publisher PDF or author/institutional copy, then transcribe only explicit source values with page/table/row, unit, material/soil, detergent and dose, wash conditions, replicate/variance details, and a separate provenance record.
+
+| **Effective Detergency Determination for Single Polymeric Fibers Using Confocal Microscopy** (Hu et al., *Polymers*, 2023; DOI 10.3390/polym15153314) | Publisher states CC BY 4.0. https://www.mdpi.com/2073-4360/15/15/3314 | Measured oil removal using confocal microscopy on single cotton/viscose/polyester fibres, plus separate cotton-fabric laundering measurements. The full-text methods/results report conditions and aggregate values. | **Source reviewed as an alternate commercial-use candidate.** A dedicated audit report records source-reported values, conditions, approximation status and limitations. Screening/descriptive use only; no engine eligibility or canonical app ingestion. See `PHASE4B_CC_BY_ALTERNATE_DETERGENCY_DATASET_AUDIT.md`. |
+
+## Phase gates
+
+- Phase 4B: **OPEN**.
+- Phase 5: **LOCKED**.
+- No source promoted to engine eligibility by this triage.
+- No LAB_VALIDATED or 95–98% accuracy claim is supported by this source-screening pass.
+
+
+## 2006 Tekstil source-access audit
+
+- Publisher metadata/search result: https://www.tekstil.hist.hr/index.php/tekstil/article/view/3174
+- ResearchGate record: https://www.researchgate.net/publication/289141170_Primary_washing_effect_of_powder_and_liquid_detergents
+- Access attempts: publisher page open timed out; ResearchGate full-text PDF link returned 404. These failures do not prove the PDF is unavailable elsewhere.
+- Verified from accessible abstract only: cotton and polyester/cotton fabrics; coffee, wine, cacao, blood, oil, lipstick, ketchup and shoe polish; wash temperature 60 °C; remission-based washing/whiteness evaluation; wastewater parameters named as pH, AOX, anionic surfactant quantity, chlorine, COD and BOD.
+- Not verified: numeric table entries, units/scale for remission, detergent dose, wash time, liquor ratio, water hardness, instrument/model, replication, SD/SE/error bars, sample counts, and per-condition outcomes.
+- Data-ingestion decision: **NO DATA INGESTED**. No numeric values were inferred from the abstract or graphs. This paper is not yet an eligible numeric validation dataset in the app.

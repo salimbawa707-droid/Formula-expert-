@@ -1,0 +1,101 @@
+{
+  "datasetId": "DS-REPOD-FOAM-MKCDUM",
+  "title": "Foamability and foam stability — polyelectrolyte/surfactant mixture",
+  "authors": "Dominik Kosior et al.",
+  "year": 2024,
+  "doi": "10.18150/MKCDUM",
+  "articleDoi": "10.3390/min14111110",
+  "landingPage": "https://repod.icm.edu.pl/dataset.xhtml?persistentId=doi%3A10.18150%2FMKCDUM",
+  "downloadUrl": "https://repod.icm.edu.pl/api/access/datafile/48206",
+  "license": "CC BY 4.0",
+  "sourceFile": "evidence_vault/datasets/repod_foam/raw/DFA_data.ods",
+  "repositorySourceFileStatus": "RAW ODS IS NOT TRACKED IN GIT; it is acquired during CI and included in the phase4b-repod-foam-audit workflow artifact.",
+  "workflowArtifact": {
+    "name": "phase4b-repod-foam-audit",
+    "retentionDays": 30,
+    "purpose": "Preserve the raw source ODS and generated normalized audit outputs from each CI run."
+  },
+  "sourceBytes": 18531,
+  "md5": "9bee2b49dd1a55822203e10641694c46",
+  "sha256": "3665c4386fbf75537744823246a2857fd34eceb297057d6a372c29490d56cfaf",
+  "parseStatus": "DOWNLOADED_AND_PARSED",
+  "parser": "Python standard library ZIP/XML parser; expands repeated cells/rows and preserves internal blanks; trailing empty padding trimmed.",
+  "sheets": [
+    {
+      "sheetName": "PGA_LAE",
+      "normalizedCsv": "evidence_vault/datasets/repod_foam/normalized/PGA_LAE.csv",
+      "expandedRowsIncludingTwoHeaderRows": 12,
+      "headerRows": 2,
+      "concentrationLevels": 10,
+      "columnCount": 23,
+      "blankCells": 47,
+      "sourceConcentrationLabel": "c LAE [mol/L]",
+      "observedConcentrationRange": "1e-6 to 1e-3 mol/L",
+      "conditions": [
+        "cPGA=0",
+        "cPGA=100 mg/L"
+      ]
+    },
+    {
+      "sheetName": "PLL_RH",
+      "normalizedCsv": "evidence_vault/datasets/repod_foam/normalized/PLL_RH.csv",
+      "expandedRowsIncludingTwoHeaderRows": 15,
+      "headerRows": 2,
+      "concentrationLevels": 13,
+      "columnCount": 23,
+      "blankCells": 56,
+      "sourceConcentrationLabel": "c RH [mol/L]",
+      "observedConcentrationRange": "0.1 to 600 (numeric values)",
+      "unitConflict": "Workbook header says mol/L, but published article figure captions report RH concentrations in mg/dm³. Preserve raw header and numeric values unchanged; document mg/dm³ as the publication-supported interpretation without applying a conversion. Author confirmation is optional while the dataset remains excluded from model validation.",
+      "conditions": [
+        "cPLL=0",
+        "cPLL=100 mg/L"
+      ]
+    }
+  ],
+  "schemaAudit": {
+    "outputs": [
+      "Vmax [mL] (workbook says maximum foam volume; paper discusses height)",
+      "t [sec] (foam half-lifetime)",
+      "Σ [sec] (Bickerman foaminess)",
+      "f [sec2/mm] (foam production)"
+    ],
+    "standardDeviationAvailableFor": [
+      "Vmax",
+      "foam half-lifetime"
+    ],
+    "standardDeviationMissingFor": [
+      "Bickerman foaminess",
+      "foam production"
+    ],
+    "blankCellsAreMissingNotZero": true,
+    "sourceVariableConflict": "Vmax volume-versus-height unresolved",
+    "independentSampleCount": null,
+    "rawReplicateRowsAvailable": false,
+    "publicationSaysReplicatesAtLeast": 3,
+    "replicateCountPerRow": null,
+    "conditionsGroupedBy": [
+      "surfactant concentration level",
+      "polyelectrolyte concentration 0 vs 100 mg/L"
+    ],
+    "additionalPH10RHConditionMapping": "Publication discusses pH 10 RH measurements; exact workbook row mapping unresolved."
+  },
+  "protocol": {
+    "instrument": "Dynamic Foam Analyzer DFA100",
+    "sampleVolume": "50 cm3",
+    "airFlow": "0.5 dm3/min for 20 s",
+    "roomTemperature": "21 ± 3 °C",
+    "typicalPH": "5.6–6.0 unless otherwise stated"
+  },
+  "intendedUse": "Auxiliary mechanistic foamability/stability evidence only; not a commercial laundry-detergent formula validation set.",
+  "labValidationStatus": "NOT_LAB_VALIDATED",
+  "engineEligibility": [],
+  "numericalValidationReadiness": "DEFICIENT",
+  "limitations": [
+    "Worksheet row counts are not independent experimental observation counts.",
+    "PLL_RH workbook header conflicts with publication figure-caption units; raw label and values are preserved pending author confirmation.",
+    "Workbook says Vmax [mL]/maximum foam volume while article discusses foam height; unresolved and not silently corrected.",
+    "Do not impute blank standard deviations as zero.",
+    "No raw replicate rows or matched detergent formula inputs/predictions are available."
+  ]
+}
