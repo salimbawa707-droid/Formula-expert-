@@ -15,6 +15,7 @@ RHEO="Supplementary_RheometerData_v2.xlsx"
 FOUT=OUT/"PHASE4B_ROUND20_FORMULA_DEPENDENCY_LEDGER.csv"
 COUT=OUT/"PHASE4B_ROUND20_CATEGORY_RECORD_RECONCILIATION.csv"
 ROUT=OUT/"PHASE4B_ROUND20_RHEOMETER_GROUPED_POINT_LEDGER.csv"
+XOUT=OUT/"PHASE4B_ROUND20_HISTORICAL_CLAIM_CROSSWALK.csv"
 JOUT=OUT/"PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.json"
 MOUT=OUT/"PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.md"
 
@@ -68,6 +69,11 @@ def main():
                       "raw_input_value":safe(av),"relationship":"MATCHED_RAW_AREA_TO_DERIVED_RADIUS" if ok else "UNRESOLVED",
                       "interpretation":"Count paired source feature once; derived radius is not an additional independent observation."})
         bubble_stats[ws.title]={"raw_area_cells":raw,"derived_radius_formula_cells":rad,"matched_pairs":pair}
+        categories.append({"category":"bubble_area_radius_pair_by_sheet","filename":BUBBLES,"sheet":ws.title,"source_row":"",
+          "source_record_id":f"{ws.title}!A3:H{ws.max_row}","group_id":ws.title,
+          "raw_record_count":raw,"derived_record_count":rad,
+          "status":"RECONCILED" if raw==rad==pair else "PAIRING_GAP",
+          "notes":"Sheet-specific raw area/formula-radius pairs; historical per-sheet split compared separately."})
     categories.append({"category":"bubble_area_radius_pair","filename":BUBBLES,"sheet":"all","source_row":"",
       "source_record_id":"A:D raw areas paired with E:H formulas, row 3 onward","group_id":"20min and 30min",
       "raw_record_count":raw_total,"derived_record_count":rad_total,
@@ -143,18 +149,18 @@ def main():
 
     write_csv(FOUT,["filename","sheet","formula_cell","formula","formula_precedents","cached_value","raw_input_cell","raw_input_value","relationship","interpretation"],formulas)
     write_csv(COUT,["category","filename","sheet","source_row","source_record_id","group_id","raw_record_count","derived_record_count","status","notes"],categories)
-    write_csv(ROUT,["filename","sheet","row","test_raw","test_effective","point_no","time","frequency","shear_rate","shear_stress","viscosity","source_cells"],rheo)
-    first3=flow+film+raw_total; full=first3+rheo_total; headline=27982; needed=headline-first3
+    write_csv(ROUT,["filename","sheet","row","test_raw","test_effective","point_no","time","frequency","shear_rate","shear_stress","viscosity","source_cells"],rheo)\n    write_csv(XOUT,["claim","historical_count","source_count","delta_source_minus_historical","status","notes"],crosswalk)
+    first3=flow+film+raw_total; full=first3+rheo_total; headline=27982; needed=headline-first3\n    crosswalk=[\n      {"claim":"solution_flow_curves","historical_count":212,"source_count":flow,"delta_source_minus_historical":flow-212,"status":"REPRODUCED" if flow==212 else "MISMATCH","notes":"Complete numeric point rows."},\n      {"claim":"film_thickness_total","historical_count":7522,"source_count":film,"delta_source_minus_historical":film-7522,"status":"REPRODUCED" if film==7522 else "MISMATCH","notes":"Feature records, not unique images."},\n      {"claim":"bubble_sizes_total","historical_count":19509,"source_count":raw_total,"delta_source_minus_historical":raw_total-19509,"status":"AGGREGATE_MATCH_TIME_SPLIT_MISMATCH" if raw_total==19509 else "MISMATCH","notes":"Historical split says 20min=10000, 30min=9509; raw source split is 20min=13388, 30min=6121."},\n      {"claim":"bubble_sizes_20min","historical_count":10000,"source_count":bubble_stats.get("20min",{}).get("raw_area_cells",0),"delta_source_minus_historical":bubble_stats.get("20min",{}).get("raw_area_cells",0)-10000,"status":"MISMATCH","notes":"Raw numeric area cells in 20min sheet."},\n      {"claim":"bubble_sizes_30min","historical_count":9509,"source_count":bubble_stats.get("30min",{}).get("raw_area_cells",0),"delta_source_minus_historical":bubble_stats.get("30min",{}).get("raw_area_cells",0)-9509,"status":"MISMATCH","notes":"Raw numeric area cells in 30min sheet."},\n      {"claim":"rheometer","historical_count":739,"source_count":rheo_total,"delta_source_minus_historical":rheo_total-739,"status":"NOT_REPRODUCED","notes":"Numeric Point No. rows across six worksheets; spacer rows excluded."},\n      {"claim":"grand_total","historical_count":headline,"source_count":full,"delta_source_minus_historical":full-headline,"status":"NOT_REPRODUCED","notes":"Mixed category measurement units; arithmetic comparison only."}]
     duplicate_keys=sum(len(v["duplicate_test_point_keys"]) for v in sheet_stats.values())
     checks={
       "solution_flow_points_212": flow==212,
       "film_feature_measurements_7522": film==7522,
       "bubble_area_formula_pairs_19509": raw_total==rad_total==matched==19509,
       "rheometer_point_rows_2233": rheo_total==2233,
-      "rheometer_test_groups_62": sum(v["test_groups"] for v in sheet_stats.values())==62,
+      "rheometer_test_groups_62": sum(v["test_groups"] for v in sheet_stats.values())==62,\n      "bubble_20min_raw_area_cells_13388": bubble_stats.get("20min",{}).get("raw_area_cells")==13388,\n      "bubble_30min_raw_area_cells_6121": bubble_stats.get("30min",{}).get("raw_area_cells")==6121,
       "no_duplicate_point_keys_within_test": duplicate_keys==0,
     }
-    report={"audit_id":"PHASE4B-ROUND20-SOURCE-RECORD-RECONCILIATION","decision":"FIRST_THREE_COMPONENTS_REPRODUCED_RHEOMETER_739_NOT_REPRODUCED",
+    report={"audit_id":"PHASE4B-ROUND20-SOURCE-RECORD-RECONCILIATION","decision":"BUBBLE_TIME_SPLIT_AND_RHEOMETER_739_NOT_REPRODUCED",
       "governance":{"phase4b":"OPEN","phase5":"LOCKED"},
       "historical_claim":{"headline":headline,"reported_components":{"solution_flow_curves":212,"film_thickness":7522,"bubble_sizes":19509,"rheometer":739},
         "reconciled_first_three_sum":first3,"rheometer_needed_to_reach_headline":needed,"rheometer_source_point_rows":rheo_total,
@@ -164,28 +170,28 @@ def main():
         "bubble_derived_radius_formula_cells":rad_total,"bubble_matched_pairs":matched,"rheometer_point_rows":rheo_total,
         "rheometer_test_groups":sum(v["test_groups"] for v in sheet_stats.values()),"formula_dependency_records":len(formulas),
         "film_summary_formula_cells":film_formula},
-      "workbooks":meta,"outputs":[FOUT.name,COUT.name,ROUT.name],
+      "workbooks":meta,"outputs":[FOUT.name,COUT.name,ROUT.name,XOUT.name],\n      "historical_claim_crosswalk":crosswalk,
       "limits":["Formula references are text-parsed, not a complete Excel dependency engine.",
         "Rheometer point rows are source rows, not automatically independent experiments.",
         "Historical rheometer 739 count has no demonstrated mapping to the raw point ledger.",
         "No engine is promoted to LAB_VALIDATED."]}
     JOUT.write_text(json.dumps(report,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
-    lines=["# Phase 4B Round-20 — Source Record Reconciliation","","**Decision:** First three historical components reproduced; rheometer 739 claim not reproduced.",
+    lines=["# Phase 4B Round-20 — Source Record Reconciliation","","**Decision:** Aggregate bubble total matches, but its 20/30-minute split and rheometer 739 claim are not reproduced.",
       "**Governance:** Phase 4B OPEN; Phase 5 LOCKED.","","## Reconciled source counts","","| Category | Source count | Unit |","|---|---:|---|",
       f"| Solution flow curves | {flow:,} | Complete numeric point rows across named curves |",
       f"| Film thickness | {film:,} | Image-derived feature/length records; not distinct images |",
       f"| Bubble sizes | {raw_total:,} | Raw area entries paired with formula-derived radius values |",
       f"| Rheometer | {rheo_total:,} | Numeric Point No. rows across six worksheets |",
       f"| **All category records summed** | **{full:,}** | Mixed measurement units; not asserted as independent experiments |",
-      "","## Historical headline reconciliation","","The first three components sum to **27,243**. The historical headline of 27,982 therefore requires exactly **739** rheometer records. The source workbooks contain **2,233** numeric Point No. rows across **62** test groups; no explicit source-row mapping supports 739. Summing all four category ledgers yields **29,476**, or **1,494 above** the headline. This arithmetic is not a claim that all categories are independent experiments.",
+      "","## Historical headline reconciliation","","The first three components sum to **27,243** at aggregate level, but the bubble worksheet split differs: historical values are 10,000 (20 min) and 9,509 (30 min), while raw area cells are 13,388 and 6,121 respectively. The aggregate bubble total still sums to 19,509, but the per-sheet lineage does not reproduce the published split. The historical headline of 27,982 therefore requires exactly **739** rheometer records. The source workbooks contain **2,233** numeric Point No. rows across **62** test groups; no explicit source-row mapping supports 739. Summing all four category ledgers yields **29,476**, or **1,494 above** the headline. This arithmetic is not a claim that all categories are independent experiments.",
       "","## Key lineage findings","","- Solution flow: 212 complete numeric point records across 15 named curves.",
       "- Film thickness: 7,522 numeric Length_px feature records. Repeated Image IDs are group labels; this is not 7,522 unique images.",
-      "- Bubble sizes: 19,509 raw numeric area cells match 19,509 radius formulas by source-cell reference. Count each paired feature once, not twice.",
+      "- Bubble sizes: 19,509 raw numeric area cells match 19,509 radius formulas by source-cell reference. The source split is 13,388 (20 min) and 6,121 (30 min), not the historical 10,000 / 9,509 split. Count each paired feature once, not twice.",
       "- Rheometer: point counts by worksheet are 288, 225, 192, 88, 720 and 720. Blank spacer rows are excluded; test labels are forward-filled for grouping.",
       "- The historical rheometer per-sheet figures mix counting rules: some include two header/unit rows, while the 731 steady-shear value includes spacer rows and does not equal numeric Point No. records.",
       "","## Decision","","27,982 is **not independently reproduced**. Keep it as a historical unresolved claim. Phase 4B stays OPEN, Phase 5 stays LOCKED, and no engine is promoted to LAB_VALIDATED.",
       "","## Machine-readable outputs","","- PHASE4B_ROUND20_FORMULA_DEPENDENCY_LEDGER.csv","- PHASE4B_ROUND20_CATEGORY_RECORD_RECONCILIATION.csv",
-      "- PHASE4B_ROUND20_RHEOMETER_GROUPED_POINT_LEDGER.csv","- PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.json"]
+      "- PHASE4B_ROUND20_RHEOMETER_GROUPED_POINT_LEDGER.csv","- PHASE4B_ROUND20_HISTORICAL_CLAIM_CROSSWALK.csv","- PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.json"]
     MOUT.write_text("\n".join(lines)+"\n",encoding="utf-8")
     print(json.dumps({"decision":report["decision"],"counts":report["counts"],"historical_claim":report["historical_claim"]},indent=2))
     return 0
