@@ -333,7 +333,11 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   const checkUniqueIds = (key: string, label: string, idField = 'id') => {
     if (!Array.isArray(parsed[key])) return;
     const ids = new Set<string>();
-    parsed[key].forEach((item: Record<string, any>, index: number) => {
+    parsed[key].forEach((item: unknown, index: number) => {
+      if (!isRecord(item)) {
+        errors.push(`${label} at index ${index} must be an object.`);
+        return;
+      }
       const identity = item[idField];
       if (!isNonEmptyString(identity)) {
         errors.push(`${label} at index ${index} is missing stable key ${idField}.`);
@@ -357,7 +361,11 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   if (Array.isArray(parsed.phases)) {
     const validPhaseStatuses = new Set(['CLOSED', 'ACTIVE', 'LOCKED', 'PENDING_REVIEW']);
     const validVerificationStatuses = new Set(['UNESTABLISHED', 'CONFIRMED', 'REJECTED']);
-    parsed.phases.forEach((phase: Record<string, any>, index: number) => {
+    parsed.phases.forEach((phase: unknown, index: number) => {
+      if (!isRecord(phase)) {
+        errors.push(`Phase at index ${index} must be an object.`);
+        return;
+      }
       if (!isNonEmptyString(phase.phaseId)) errors.push(`Phase at index ${index} is missing phaseId.`);
       if (!validPhaseStatuses.has(phase.status)) errors.push(`Phase ${phase.id || index} has an invalid status.`);
       if (typeof phase.reportedClosed !== 'boolean') errors.push(`Phase ${phase.id || index} reportedClosed must be boolean.`);
@@ -371,7 +379,11 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   }
 
   if (Array.isArray(parsed.datasets)) {
-    parsed.datasets.forEach((dataset: Record<string, any>, index: number) => {
+    parsed.datasets.forEach((dataset: unknown, index: number) => {
+      if (!isRecord(dataset)) {
+        errors.push(`Dataset at index ${index} must be an object.`);
+        return;
+      }
       for (const key of ['actualRowCount', 'actualColumnCount']) {
         if (!isNullableNonNegativeInteger(dataset[key])) {
           errors.push(`Dataset ${dataset.id || index} ${key} must be null (unknown) or a non-negative safe integer (known count).`);
@@ -400,7 +412,11 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   }
 
   if (Array.isArray(parsed.evidence)) {
-    parsed.evidence.forEach((evidence: Record<string, any>, index: number) => {
+    parsed.evidence.forEach((evidence: unknown, index: number) => {
+      if (!isRecord(evidence)) {
+        errors.push(`Evidence record at index ${index} must be an object.`);
+        return;
+      }
       if (!isNullableNonNegativeInteger(evidence.sampleCount)) {
         errors.push(`Evidence record ${evidence.id || index} sampleCount must be null (unknown) or a non-negative safe integer.`);
       }
@@ -413,7 +429,11 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   }
 
   if (Array.isArray(parsed.pricingRecords)) {
-    parsed.pricingRecords.forEach((pricing: Record<string, any>, index: number) => {
+    parsed.pricingRecords.forEach((pricing: unknown, index: number) => {
+      if (!isRecord(pricing)) {
+        errors.push(`Pricing record at index ${index} must be an object.`);
+        return;
+      }
       if (pricing.pricePerKg !== null && (typeof pricing.pricePerKg !== 'number' || !Number.isFinite(pricing.pricePerKg) || pricing.pricePerKg < 0)) {
         errors.push(`Pricing record ${pricing.id || pricing.ingredientId || index} pricePerKg must be null (unknown) or a finite non-negative number.`);
       }
