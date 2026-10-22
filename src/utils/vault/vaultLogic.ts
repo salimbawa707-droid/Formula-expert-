@@ -1,8 +1,10 @@
+import { VAULT_SCHEMA_VERSION } from '../../domain/vault/types.ts';
 import type {
   VaultState,
   EngineRecord,
   DatasetRecord,
 } from '../../domain/vault/types.ts';
+import { INITIAL_HISTORICAL_RECONCILIATIONS, INITIAL_INVENTORY_METRICS } from '../../domain/vault/schemaDefaults.ts';
 
 export interface VaultMetrics {
   currentPhaseId: string;
@@ -280,7 +282,7 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   parsedState?: VaultState;
 } {
   const errors: string[] = [];
-  let parsed: unknown;
+  let parsed: any;
 
   try {
     parsed = JSON.parse(jsonStr);
@@ -300,11 +302,29 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     return { valid: false, errors: ['Parsed content is not a JSON object.'] };
   }
 
-  if (parsed.version !== '1.0.0') {
-    errors.push('Unsupported or missing vault schema version. Supported version: 1.0.0. Export or migrate the backup using a compatible app version.');
+  if (parsed.version !== '1.0.0' && parsed.version !== VAULT_SCHEMA_VERSION) {
+    errors.push(`Unsupported or missing vault schema version. Supported versions: 1.0.0 (migrated automatically) and ${VAULT_SCHEMA_VERSION}.`);
+  } else if (parsed.version === '1.0.0') {
+    // Additive, lossless migration: preserve all existing v1.0.0 fields and fill only
+    // the newly introduced extension collections. Unknown future versions fail closed.
+    parsed = {
+      ...parsed,
+      version: VAULT_SCHEMA_VERSION,
+      inventoryMetrics: Array.isArray(parsed.inventoryMetrics)
+        ? parsed.inventoryMetrics
+        : INITIAL_INVENTORY_METRICS.map(record => ({ ...record })),
+      historicalReconciliations: Array.isArray(parsed.historicalReconciliations)
+        ? parsed.historicalReconciliations
+        : INITIAL_HISTORICAL_RECONCILIATIONS.map(record => ({ ...record, relatedMetricIds: [...record.relatedMetricIds] })),
+      daviesActivityModels: Array.isArray(parsed.daviesActivityModels) ? parsed.daviesActivityModels : [],
+      surfactantPhaseProperties: Array.isArray(parsed.surfactantPhaseProperties) ? parsed.surfactantPhaseProperties : [],
+    };
   }
 
-  const requiredArrays = ['phases', 'engines', 'evidence', 'datasets', 'audits', 'prompts', 'pricingRecords', 'activeBlockers'];
+  const requiredArrays = [
+    'phases', 'engines', 'evidence', 'datasets', 'audits', 'prompts', 'pricingRecords', 'activeBlockers',
+    'inventoryMetrics', 'historicalReconciliations', 'daviesActivityModels', 'surfactantPhaseProperties'
+  ];
   for (const key of requiredArrays) {
     if (!Array.isArray(parsed[key])) {
       errors.push(`Missing or invalid ${key} array.`);
@@ -398,7 +418,7 @@ export function validateAndParseVaultJSON(jsonStr: string): {
             return;
           }
           if (!Number.isSafeInteger(column.missingCount) || column.missingCount < 0) {
-            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} missingCount must be a known non-negative integer in schema 1.0.0; do not use zero as an unknown placeholder.`);
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} missingCount must be a known non-negative integer in schema 1.1.0; do not use zero as an unknown placeholder.`);
           }
           if (typeof column.name !== 'string' || typeof column.unit !== 'string' || typeof column.isExperimental !== 'boolean') {
             errors.push(`Dataset ${dataset.id || index} column ${columnIndex} has invalid name, unit, or isExperimental field.`);
@@ -446,12 +466,117 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     });
   }
 
+  if (Array.isArray(parsed.inventoryMetrics)) {
+    parsed.inventoryMetrics.forEach((metric: unknown, index: number) => {
+      if (!isRecord(metric)) {
+        errors.push(`Inventory metric at index ${index} must be an object.`);
+        return;
+      }
+      if (!['FLOW', 'FILM', 'BUBBLE', 'RHEOMETER', 'HISTORICAL', 'MIXED'].includes(metric.category)) {
+        errors.push(`Inventory metric ${metric.id || index} has an invalid category.`);
+      }
+      if (!isNonEmptyString(metric.metricKey) || !isNonEmptyString(metric.unit) ||
+          !isNonEmptyString(metric.countingUnit) || !isNonEmptyString(metric.sourceReference) ||
+          typeof metric.notes !== 'string') {
+        errors.push(`Inventory metric ${metric.id || index} is missing metric, unit, provenance, or notes metadata.`);
+      }
+      if (metric.value !== null && (!Number.isSafeInteger(metric.value) || metric.value < 0)) {
+        errors.push(`Inventory metric ${metric.id || index} value must be null or a non-negative safe integer.`);
+      }
+      if (!['REPORTED_UNVERIFIED', 'REPRODUCIBLE', 'UNRESOLVED'].includes(metric.verificationStatus)) {
+        errors.push(`Inventory metric ${metric.id || index} has an invalid verificationStatus.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.historicalReconciliations)) {
+    parsed.historicalReconciliations.forEach((record: unknown, index: number) => {
+      if (!isRecord(record)) {
+        errors.push(`Historical reconciliation at index ${index} must be an object.`);
+        return;
+      }
+      for (const key of ['claimValue', 'comparisonAggregateValue']) {
+        if (record[key] !== null && (!Number.isSafeInteger(record[key]) || record[key] < 0)) {
+          errors.push(`Historical reconciliation ${record.id || index} ${key} must be null or a non-negative safe integer.`);
+        }
+      }
+      if (!['UNRESOLVED', 'RECONCILED'].includes(record.reconciliationStatus)) {
+        errors.push(`Historical reconciliation ${record.id || index} has an invalid reconciliationStatus.`);
+      }
+      if (!isNonEmptyString(record.claimUnit) || !isNonEmptyString(record.sourceReference) ||
+          typeof record.notes !== 'string' || !Array.isArray(record.relatedMetricIds) ||
+          !record.relatedMetricIds.every((id: unknown) => typeof id === 'string')) {
+        errors.push(`Historical reconciliation ${record.id || index} has invalid unit, provenance, notes, or relatedMetricIds.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.daviesActivityModels)) {
+    parsed.daviesActivityModels.forEach((model: unknown, index: number) => {
+      if (!isRecord(model)) {
+        errors.push(`Davies activity model at index ${index} must be an object.`);
+        return;
+      }
+      if (!isNonEmptyString(model.modelName) || !isNonEmptyString(model.modelVersion) ||
+          !isNonEmptyString(model.sourceReference) || typeof model.notes !== 'string' ||
+          !Array.isArray(model.assumptions) || !model.assumptions.every((item: unknown) => typeof item === 'string') ||
+          !Array.isArray(model.speciesCharges) || !model.speciesCharges.every((charge: unknown) => Number.isInteger(charge))) {
+        errors.push(`Davies activity model ${model.id || index} has invalid model, provenance, assumption, or charge metadata.`);
+      }
+      if (model.temperatureK !== null && (typeof model.temperatureK !== 'number' || !Number.isFinite(model.temperatureK) || model.temperatureK <= 0)) {
+        errors.push(`Davies activity model ${model.id || index} temperatureK must be null or a positive finite number.`);
+      }
+      if (model.ionicStrengthM !== null && (typeof model.ionicStrengthM !== 'number' || !Number.isFinite(model.ionicStrengthM) || model.ionicStrengthM < 0)) {
+        errors.push(`Davies activity model ${model.id || index} ionicStrengthM must be null or a non-negative finite number.`);
+      }
+      if (!['WITHIN_DOCUMENTED_DOMAIN', 'OUTSIDE_DOCUMENTED_DOMAIN', 'UNKNOWN'].includes(model.applicabilityStatus)) {
+        errors.push(`Davies activity model ${model.id || index} has an invalid applicabilityStatus.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.surfactantPhaseProperties)) {
+    parsed.surfactantPhaseProperties.forEach((property: unknown, index: number) => {
+      if (!isRecord(property)) {
+        errors.push(`Surfactant phase property at index ${index} must be an object.`);
+        return;
+      }
+      if (property.surfactantId !== null && typeof property.surfactantId !== 'string') {
+        errors.push(`Surfactant phase property ${property.id || index} surfactantId must be null or a string.`);
+      }
+      if (property.composition !== null && typeof property.composition !== 'string') {
+        errors.push(`Surfactant phase property ${property.id || index} composition must be null or a string.`);
+      }
+      if (property.value !== null && (typeof property.value !== 'number' || !Number.isFinite(property.value))) {
+        errors.push(`Surfactant phase property ${property.id || index} value must be null or a finite number.`);
+      }
+      if (property.concentration !== null && (typeof property.concentration !== 'number' || !Number.isFinite(property.concentration) || property.concentration < 0)) {
+        errors.push(`Surfactant phase property ${property.id || index} concentration must be null or a non-negative finite number.`);
+      }
+      if (property.uncertaintyValue !== null && (typeof property.uncertaintyValue !== 'number' || !Number.isFinite(property.uncertaintyValue) || property.uncertaintyValue < 0)) {
+        errors.push(`Surfactant phase property ${property.id || index} uncertaintyValue must be null or a non-negative finite number.`);
+      }
+      if (property.propertyName !== 'KRAFFT_POINT' || !isNonEmptyString(property.reportedName) ||
+          !isNonEmptyString(property.unit) || !isNonEmptyString(property.sourceReference) ||
+          typeof property.notes !== 'string' ||
+          !['MEASURED', 'REPORTED', 'ESTIMATED', 'IMPUTED', 'MODEL_PREDICTED', 'UNKNOWN'].includes(property.valueOrigin) ||
+          !['UNVERIFIED', 'SOURCE_REVIEWED', 'BLOCKED'].includes(property.evidenceStatus)) {
+        errors.push(`Surfactant phase property ${property.id || index} has invalid identity, unit, provenance, origin, or evidence status.`);
+      }
+      for (const key of ['concentrationUnit', 'solutionComposition', 'measurementMethod', 'uncertaintyUnit']) {
+        if (property[key] !== null && typeof property[key] !== 'string') {
+          errors.push(`Surfactant phase property ${property.id || index} ${key} must be null or a string.`);
+        }
+      }
+    });
+  }
+
   if (errors.length > 0) {
     return { valid: false, errors };
   }
 
   // Structural validation does not alter maturity, evidence status, licensing, or phase state.
-  return { valid: true, errors: [], parsedState: parsed as unknown as VaultState };
+  return { valid: true, errors: [], parsedState: parsed as VaultState };
 }
 
 /**
