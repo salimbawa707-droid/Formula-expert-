@@ -219,8 +219,8 @@ def main() -> int:
         },
         "unitAudit": {
             "PGA_LAE_concentration": "Workbook label c LAE [mol/L], observed range 1e-6 to 1e-3 mol/L.",
-            "PLL_RH_concentration": "Workbook label c RH [mol/L] conflicts with values 0.1–600; published article figure captions report RH concentrations in mg/dm³. Preserve raw header and values unchanged; record mg/dm³ as publication-supported interpretation pending author confirmation.",
-            "Vmax": "Workbook says Maximum foam volume and Vmax [mL], while paper describes maximum foam height; source-variable meaning unresolved.",
+            "PLL_RH_concentration": "Workbook label c RH [mol/L] conflicts with values 0.1–600; published article figure captions report RH concentrations in mg/dm³. Preserve raw header and values unchanged; document mg/dm³ as publication-supported interpretation without applying a conversion. Author confirmation is optional while the dataset is excluded from model validation.",
+            "Vmax": "Workbook says Maximum foam volume and Vmax [mL], while paper describes maximum foam height; source-variable meaning unresolved and not silently corrected.",
             "foam_half_lifetime": "t [sec] as workbook-labelled.",
             "bickerman_foaminess": "Σ [sec] as workbook-labelled.",
             "foam_production": "f [sec2/mm] as workbook-labelled.",
