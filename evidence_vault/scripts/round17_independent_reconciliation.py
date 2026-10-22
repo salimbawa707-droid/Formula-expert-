@@ -256,7 +256,7 @@ def main() -> int:
             "bytes": len(raw),
             "md5": md5,
             "sha256": sha256,
-            "zip_integrity": "PASS" if not zipfile.BadZipFile else "UNVERIFIED",
+            "zip_integrity": "PASS" if zip_integrity_ok else "FAIL",
             "sheets": file_sheets,
         })
 
