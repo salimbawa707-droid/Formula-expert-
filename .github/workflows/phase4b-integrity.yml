@@ -105,6 +105,7 @@ jobs:
             evidence_vault/forensic_reports/PHASE4B_ROUND20_FORMULA_DEPENDENCY_LEDGER.csv
             evidence_vault/forensic_reports/PHASE4B_ROUND20_CATEGORY_RECORD_RECONCILIATION.csv
             evidence_vault/forensic_reports/PHASE4B_ROUND20_RHEOMETER_GROUPED_POINT_LEDGER.csv
+            evidence_vault/forensic_reports/PHASE4B_ROUND20_HISTORICAL_CLAIM_CROSSWALK.csv
           if-no-files-found: error
           retention-days: 30
 
