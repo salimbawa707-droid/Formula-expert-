@@ -67,19 +67,28 @@ jobs:
       - name: Independently reconcile Round-6 workbook ledger and parser artifacts
         run: python evidence_vault/scripts/round17_independent_reconciliation.py --check
 
-      - name: Syntax-check reproducible external dataset acquisition and reconciliation scripts
-        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py
+      - name: Syntax-check reproducible acquisition and reconciliation scripts
+        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py
 
       - name: Reconcile historical 27,982 aggregate claims without inferring physical counts
         run: python evidence_vault/scripts/round18_historical_aggregate_reconciliation.py
 
-      - name: Preserve Round-18 accounting audit report
+      - name: Extract raw workbook cell, formula, image and rheometer lineage
+        run: python evidence_vault/scripts/round19_raw_workbook_lineage.py
+
+      - name: Preserve Round-18 and Round-19 reconciliation artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phase4b-round18-accounting-audit
-          path: evidence_vault/forensic_reports/PHASE4B_ROUND18_HISTORICAL_AGGREGATE_RECONCILIATION.json
-          if-no-files-found: ignore
+          name: phase4b-round18-round19-lineage-audit
+          path: |
+            evidence_vault/forensic_reports/PHASE4B_ROUND18_HISTORICAL_AGGREGATE_RECONCILIATION.json
+            evidence_vault/forensic_reports/PHASE4B_ROUND19_RAW_WORKBOOK_LINEAGE.md
+            evidence_vault/forensic_reports/PHASE4B_ROUND19_RAW_WORKBOOK_LINEAGE.json
+            evidence_vault/forensic_reports/PHASE4B_ROUND19_CELL_FORMULA_LINEAGE.csv
+            evidence_vault/forensic_reports/PHASE4B_ROUND19_IMAGE_MEASUREMENT_LINEAGE.csv
+            evidence_vault/forensic_reports/PHASE4B_ROUND19_RHEOMETER_TEST_POINT_LINEAGE.csv
+          if-no-files-found: error
           retention-days: 30
 
       - name: Acquire and validate official RepOD foam dataset
