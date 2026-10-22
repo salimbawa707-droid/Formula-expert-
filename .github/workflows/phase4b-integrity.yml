@@ -94,6 +94,9 @@ jobs:
       - name: Reconcile source records, formula dependencies and grouped rheometer points
         run: python evidence_vault/scripts/round20_source_record_reconciliation.py
 
+      - name: Test Round-20 historical-claim and scientific-governance invariants
+        run: python evidence_vault/scripts/test_round20_source_record_reconciliation.py
+
       - name: Preserve Round-20 source-record reconciliation artifacts
         if: always()
         uses: actions/upload-artifact@v4
