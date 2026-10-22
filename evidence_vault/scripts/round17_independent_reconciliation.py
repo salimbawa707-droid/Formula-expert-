@@ -101,7 +101,7 @@ def main() -> int:
             failures.append(f"MD5_MISMATCH: {filename}")
         if sha256 != pinned["sha256"]:
             failures.append(f"SHA256_MISMATCH: {filename}")
-        if not raw.startswith(b"PK\\x03\\x04"):
+        if not raw.startswith(b"PK\x03\x04"):
             failures.append(f"NOT_XLSX_ZIP_SIGNATURE: {filename}")
         try:
             with zipfile.ZipFile(path) as archive:
