@@ -39,7 +39,7 @@ The paper reports DFA100 testing with 50 cm³ solution, air flow 0.5 dm³/min fo
 
 ## App metadata decision
 
-- EVD-012 is now `NUMERICALLY_INSPECTED`; download status is `DOWNLOADED_AND_PARSED`.
+- EVD-012 is now `NUMERICALLY_INSPECTED`; app-schema `downloadStatus` is `DOWNLOADED` (worksheet parsing is independently evidenced by the acquisition manifest and passing CI).
 - DS-005 records the actual file hashes and 23-column worksheet schema; `actualColumnCount = 23`.
 - `actualRowCount` and `sampleCount` remain null because worksheet rows are not independent experiments and raw replicate lineage is absent.
 - Numerical validation readiness is `DEFICIENT`; applicable engine list remains empty.
@@ -50,3 +50,12 @@ The paper reports DFA100 testing with 50 cm³ solution, air flow 0.5 dm³/min fo
 - Official RepOD dataset page and file-level CC BY 4.0 license: https://repod.icm.edu.pl/dataset.xhtml?persistentId=doi%3A10.18150%2FMKCDUM
 - Kosior et al. (2024), *Minerals* 14(11), 1110, DOI: https://doi.org/10.3390/min14111110
 - Methods report the DFA100 procedure and at-least-three repeats; article conditions and variable semantics are not used to overwrite conflicting raw workbook labels.
+
+## Follow-up status — CI and author clarification
+
+- CI commit verified: `331a802c5b7076daf3eb019d679def696fb93309`.
+- Phase 4B workflow run: https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39833740971 — successful; evidence integrity, Round-6 reconciliation, RepOD acquisition/parsing, TypeScript typecheck, project tests, and production build passed.
+- Engine verification run: https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/39833740911 — successful; typecheck, regression suite, production build, and HTTP smoke test passed.
+- Dataset author clarification on the RH concentration unit and Vmax meaning is still **PENDING**. No author response or contact is claimed in this audit. An email draft exists, but it has not been sent.
+- Independent replicate/sample count remains `null`; no row count or “at least three repeats” statement is promoted to an exact independent sample count.
+- Closure decision: **Phase 4B OPEN; Phase 5 LOCKED** until source clarification and all other formal closure criteria are satisfied.
