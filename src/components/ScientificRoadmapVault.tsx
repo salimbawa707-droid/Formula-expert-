@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   VaultState,
   EngineRecord,
@@ -17,6 +17,7 @@ import {
   PromptRecord
 } from '../domain/vault/types';
 import { INITIAL_VAULT_STATE } from '../domain/vault/initialData';
+import { validateAndParseVaultJSON } from '../utils/vault/vaultLogic';
 import { Header, ActiveTab } from './vault/VaultHeader';
 import { DashboardView } from './vault/DashboardView';
 import { RoadmapView } from './vault/RoadmapView';
@@ -40,18 +41,35 @@ const STORAGE_KEY = 'DETERGENT_FORMULA_EXPERT_VAULT_STATE_V1';
 export const ScientificRoadmapVault: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
 
-  // Load from isolated localStorage or canonical initial seed
+  // Invalid persisted state is quarantined before any automatic write can replace it.
+  const skipInitialPersistence = useRef(false);
+
+  // Load from isolated localStorage only after the same structural validation used by JSON import.
   const [state, setState] = useState<VaultState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.version && parsed.phases && parsed.engines) {
-          return parsed;
+        const validation = validateAndParseVaultJSON(saved);
+        if (validation.valid && validation.parsedState) {
+          return validation.parsedState;
+        }
+
+        // Preserve the original bytes for recovery before falling back to the canonical seed.
+        skipInitialPersistence.current = true;
+        const quarantineKey = `${STORAGE_KEY}_QUARANTINED_${Date.now()}`;
+        try {
+          localStorage.setItem(quarantineKey, saved);
+          console.error('Saved Evidence Vault state failed validation and was preserved under:', quarantineKey, validation.errors);
+        } catch (preservationError) {
+          console.error('Saved Evidence Vault state is invalid and could not be copied to quarantine. Automatic initial persistence is suppressed to avoid overwriting the original backup.', {
+            validationErrors: validation.errors,
+            preservationError,
+          });
         }
       }
     } catch (e) {
-      console.warn('Could not load from localStorage, using canonical initial seed:', e);
+      skipInitialPersistence.current = true;
+      console.warn('Could not read saved Evidence Vault state. Automatic initial persistence is suppressed until state recovery:', e);
     }
     return INITIAL_VAULT_STATE;
   });
@@ -68,6 +86,13 @@ export const ScientificRoadmapVault: React.FC = () => {
 
   // Sync to isolated localStorage
   useEffect(() => {
+    if (skipInitialPersistence.current) {
+      // Do not overwrite a failed backup during the first render. A subsequent user state
+      // change may persist the recovered state; the original invalid bytes were quarantined
+      // when possible and remain untouched during this initial recovery render.
+      skipInitialPersistence.current = false;
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
