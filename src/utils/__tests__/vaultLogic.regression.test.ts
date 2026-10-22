@@ -109,11 +109,20 @@ export function runVaultLogicTestSuite() {
   assert(Boolean(blocker?.title.includes('SurfPro')), 'Active Blockers', 'BLK-001 references SurfPro');
   assert(Boolean(blocker?.environmentLimitation.includes('Google AI Studio runtime')), 'Active Blockers', 'BLK-001 records runtime limitation');
 
-  // 4. Experimental dataset inspection count remains strictly zero initially
-  assert(metrics.experimentalDatasetsNumericallyInspected === 0, 'Dataset Inspection', 'Inspected datasets count is 0');
-  for (const ds of INITIAL_VAULT_STATE.datasets) {
-    assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount is null`);
-    assert(ds.inspectionStatus === 'UNINSPECTED', 'Dataset Inspection', `Dataset ${ds.id} is UNINSPECTED`);
+  // 4. Dataset inspection states must reflect the evidence vault's current source audit.
+  // DS-002 is numerically inspected at workbook/parser level, but it is NOT a count of
+  // independent physical observations and is NOT eligible for formula-level validation.
+  const ds002 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-002');
+  assert(Boolean(ds002), 'Dataset Inspection', 'DS-002 descriptive rheology dataset exists');
+  assert(ds002?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-002 source workbooks are parser-inspected');
+  assert(ds002?.actualRowCount === null, 'Dataset Inspection', 'DS-002 physical observation count remains unresolved');
+  assert(ds002?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-002 is not formula-validation-ready');
+  const ds005 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-005');
+  assert(Boolean(ds005), 'Dataset Inspection', 'DS-005 RepOD source is registered');
+  assert(ds005?.inspectionStatus === 'UNINSPECTED', 'Dataset Inspection', 'DS-005 remains uninspected until raw acquisition');
+  assert(ds005?.actualRowCount === null, 'Dataset Inspection', 'DS-005 row count remains null until acquisition');
+  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => ds.id !== 'DS-002')) {
+    assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
   }
 
   // 5. Missing prices remain strictly null, never coerced to 0.00
