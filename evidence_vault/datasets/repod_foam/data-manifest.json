@@ -9,6 +9,12 @@
   "downloadUrl": "https://repod.icm.edu.pl/api/access/datafile/48206",
   "license": "CC BY 4.0",
   "sourceFile": "evidence_vault/datasets/repod_foam/raw/DFA_data.ods",
+  "repositorySourceFileStatus": "RAW ODS IS NOT TRACKED IN GIT; it is acquired during CI and included in the phase4b-repod-foam-audit workflow artifact.",
+  "workflowArtifact": {
+    "name": "phase4b-repod-foam-audit",
+    "retentionDays": 30,
+    "purpose": "Preserve the raw source ODS and generated normalized audit outputs from each CI run."
+  },
   "sourceBytes": 18531,
   "md5": "9bee2b49dd1a55822203e10641694c46",
   "sha256": "3665c4386fbf75537744823246a2857fd34eceb297057d6a372c29490d56cfaf",
