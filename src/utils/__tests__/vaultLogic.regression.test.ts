@@ -204,6 +204,46 @@ export function runVaultLogicTestSuite() {
   const missingResult = validateAndParseVaultJSON(missingArrays);
   assert(missingResult.valid === false, 'Import Error Handling', 'Missing arrays detected as invalid');
 
+  // 11b. Versioned schema, count semantics, and non-promotion invariants
+  const unsupportedVersion = JSON.parse(exported);
+  unsupportedVersion.version = '2.1.0';
+  const unsupportedVersionResult = validateAndParseVaultJSON(JSON.stringify(unsupportedVersion));
+  assert(unsupportedVersionResult.valid === false, 'Schema Versioning', 'Unsupported schema version is rejected instead of being cast as current state');
+
+  const knownZeroCounts = JSON.parse(exported);
+  knownZeroCounts.datasets[0].actualRowCount = 0;
+  knownZeroCounts.datasets[0].actualColumnCount = 0;
+  const knownZeroResult = validateAndParseVaultJSON(JSON.stringify(knownZeroCounts));
+  assert(knownZeroResult.valid === true, 'Null Versus Zero', 'Known zero row/column counts remain valid distinct values');
+
+  const negativeCount = JSON.parse(exported);
+  negativeCount.datasets[0].actualRowCount = -1;
+  const negativeCountResult = validateAndParseVaultJSON(JSON.stringify(negativeCount));
+  assert(negativeCountResult.valid === false, 'Count Validation', 'Negative dataset row count is rejected');
+
+  const fractionalCount = JSON.parse(exported);
+  fractionalCount.datasets[0].actualColumnCount = 1.5;
+  const fractionalCountResult = validateAndParseVaultJSON(JSON.stringify(fractionalCount));
+  assert(fractionalCountResult.valid === false, 'Count Validation', 'Fractional dataset column count is rejected');
+
+  const negativeMissingCount = JSON.parse(exported);
+  negativeMissingCount.datasets[0].columns[0].missingCount = -1;
+  const negativeMissingCountResult = validateAndParseVaultJSON(JSON.stringify(negativeMissingCount));
+  assert(negativeMissingCountResult.valid === false, 'Count Validation', 'Negative column missingCount is rejected');
+
+  const missingRequiredCollection = JSON.parse(exported);
+  delete missingRequiredCollection.pricingRecords;
+  const missingRequiredCollectionResult = validateAndParseVaultJSON(JSON.stringify(missingRequiredCollection));
+  assert(missingRequiredCollectionResult.valid === false, 'Structural Validation', 'Missing pricingRecords collection is rejected');
+
+  const maturityInput = JSON.parse(exported);
+  maturityInput.engines[0].scientificMaturity = 'LAB_VALIDATED';
+  const maturityResult = validateAndParseVaultJSON(JSON.stringify(maturityInput));
+  assert(maturityResult.valid === true, 'Scientific Status Integrity', 'Structurally valid record can be inspected without automatic status mutation');
+  assert(maturityResult.parsedState?.engines[0].scientificMaturity === 'LAB_VALIDATED', 'Scientific Status Integrity', 'Validator preserves supplied maturity value and does not silently promote or downgrade it');
+  assert(canUnlockPhase5(maturityResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Scientific Status Integrity', 'Changing one engine maturity field cannot bypass Phase 5 gate');
+
+
   // 12. Duplicate Evidence and Dataset IDs detected
   const stateCopy = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   stateCopy.evidence.push({ ...stateCopy.evidence[0] });
