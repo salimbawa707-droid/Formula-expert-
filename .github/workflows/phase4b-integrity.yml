@@ -67,6 +67,9 @@ jobs:
       - name: Independently reconcile Round-6 workbook ledger and parser artifacts
         run: python evidence_vault/scripts/round17_independent_reconciliation.py --check
 
+      - name: Syntax-check reproducible external dataset acquisition script
+        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py
+
       - name: TypeScript typecheck
         run: npm run typecheck
 
