@@ -20,7 +20,7 @@ def make_rows():
                 )
                 dosage_unit = "" if condition == "before" else unit
                 rows.append({
-                    "source_id": "PUSIC2006",
+                    "source_id": f"PUSIC2006-T{table}-{condition}-{stain}",
                     "paper_citation": "Pusic et al. (2006), Tekstil 55(1), 11-18",
                     "publisher_url": "https://www.tekstil.hist.hr/index.php/tekstil/article/view/3174",
                     "pdf_url": "https://tekstil.hist.hr/index.php/tekstil/article/download/3174/3174/3174",
@@ -88,6 +88,13 @@ class PusicValidationTests(unittest.TestCase):
     def test_rejects_same_person_claimed_as_both_reviewers(self):
         rows = make_rows()
         rows[0]["reviewer_2"] = rows[0]["reviewer_1"]
+        errors = validator.validate_rows(rows)
+        self.assertTrue(any("different identity" in e for e in errors))
+        self.assertTrue(any("second review gate not met" in e for e in errors))
+
+    def test_rejects_same_reviewer_identity_with_different_case(self):
+        rows = make_rows()
+        rows[0]["reviewer_2"] = "REVIEWER-A"
         errors = validator.validate_rows(rows)
         self.assertTrue(any("different identity" in e for e in errors))
         self.assertTrue(any("second review gate not met" in e for e in errors))
