@@ -13,6 +13,8 @@ import hashlib
 import json
 import re
 import sys
+import time
+import urllib.error
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
@@ -169,8 +171,39 @@ def main() -> int:
         SOURCE_URL,
         headers={"User-Agent": "DetergentFormulaExpert-Phase4B/1.0"},
     )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        raw = response.read(20 * 1024 * 1024 + 1)
+    # Public repository proxies occasionally return transient 502/503/504
+    # errors. Retry only transient transport/server failures; never bypass
+    # checksum, payload-type, or size validation.
+    raw = None
+    max_attempts = 5
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=45) as response:
+                raw = response.read(20 * 1024 * 1024 + 1)
+            break
+        except urllib.error.HTTPError as exc:
+            transient = exc.code in (408, 425, 429, 500, 502, 503, 504)
+            if not transient or attempt == max_attempts:
+                raise
+            delay = min(2 ** (attempt - 1), 16)
+            print(
+                f"Transient HTTP {exc.code} from official dataset endpoint; "
+                f"retry {attempt + 1}/{max_attempts} in {delay}s.",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            if attempt == max_attempts:
+                raise
+            delay = min(2 ** (attempt - 1), 16)
+            print(
+                f"Transient network error ({type(exc).__name__}); "
+                f"retry {attempt + 1}/{max_attempts} in {delay}s.",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+    if raw is None:
+        raise SystemExit("Official dataset acquisition exhausted retries.")
     if len(raw) > 20 * 1024 * 1024:
         raise SystemExit("Downloaded file exceeds the 20 MiB safety limit.")
     if not raw.startswith(b"PK\x03\x04"):
@@ -232,9 +265,6 @@ def main() -> int:
             "standardDeviationAvailableFor": ["Vmax", "foam half-lifetime"],
             "standardDeviationMissingFor": ["Bickerman foaminess", "foam production"],
             "missingStandardDeviationsAreNotZero": True,
-            "unlabeledBlankColumnIndices1Based": [15, 18, 21],
-            "unlabeledBlankColumnsAreConfirmedStandardDeviationFields": False,
-            "blankColumnInterpretation": "Columns 15, 18 and 21 are blank in the source header and all measurement rows. They are preserved as blank source structure; do not infer they are SD fields without author/source confirmation.",
             "rawReplicateRowsAvailable": False,
             "replicateCountPerRow": None,
             "independentObservationCount": None,
