@@ -1,6 +1,6 @@
 # Phase 4B — Pušić (2006) Tables 5–8 Verification Contract
 
-**Status:** OPEN — protocol added; numerical CSV not yet ingested; no values independently verified by this change.
+**Status:** OPEN — 144-row source-extracted CSV is now present at `evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv`; a same-reviewer second visual QA pass is documented separately, but independent second review is still pending.
 
 ## Scope
 
