@@ -1,0 +1,56 @@
+name: Pušić R460 extraction review gates
+
+on:
+  pull_request:
+    branches:
+      - main
+      - phase4b-schema-design-review-v2-2
+    paths:
+      - 'evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv'
+      - 'evidence_vault/review_workbooks/pusic_2006_independent_blind_review_template.csv'
+      - 'evidence_vault/scripts/*pusic*'
+      - '.github/workflows/pusic-r460-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pusic-review:
+    name: Validate source extraction and independent-review safeguards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run validator regression tests
+        run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
+      - name: Run blind-review comparator regression tests
+        run: python evidence_vault/scripts/test_compare_pusic_independent_review.py
+      - name: Assert unreviewed production CSV remains blocked
+        run: |
+          set +e
+          python evidence_vault/scripts/validate_pusic_2006_r460.py evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv > /tmp/pusic-validation.json
+          status=$?
+          set -e
+          cat /tmp/pusic-validation.json
+          if [ "$status" -eq 0 ]; then
+            echo "ERROR: unreviewed extraction unexpectedly passed the strict independent-review gate"
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          with open('/tmp/pusic-validation.json', encoding='utf-8') as f:
+              report = json.load(f)
+          assert report['row_count'] == 144, report
+          assert report['validation'] == 'FAIL', report
+          assert report['scientific_status'] == 'SOURCE_EXTRACTED_PENDING_SECOND_REVIEW', report
+          assert report['lab_validated'] is False, report
+          assert report['phase4b'] == 'OPEN' and report['phase5'] == 'LOCKED', report
+          assert any('second review gate not met' in e for e in report['errors']), report
+          print('PASS: strict gate correctly blocks the unreviewed source extraction.')
+          PY
