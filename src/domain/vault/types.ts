@@ -268,6 +268,27 @@ export interface HistoricalReconciliationRecord {
   notes: string;
 }
 
+export interface DaviesModelCoefficientRecord {
+  /** Model-specific coefficient name (for example, the symbol used by the cited equation). */
+  name: string;
+  /** Null until a traceable source establishes the numeric value; never default unknown coefficients to zero. */
+  value: number | null;
+  /** Explicit units or "dimensionless" as supported by the source. */
+  unit: string;
+  valueOrigin: 'SOURCE_REPORTED' | 'CALCULATED_FROM_SOURCE' | 'ESTIMATED' | 'UNKNOWN';
+  sourceReference: string;
+  notes: string;
+}
+
+export interface DaviesIonConditionRecord {
+  /** Chemical species identity as stated by the source; do not infer identity from charge alone. */
+  species: string;
+  charge: number;
+  /** Null when species concentration is not provided for the evaluated condition. */
+  concentrationM: number | null;
+  sourceReference: string;
+}
+
 export interface DaviesActivityModelRecord {
   id: string;
   modelName: string;
@@ -275,7 +296,11 @@ export interface DaviesActivityModelRecord {
   temperatureK: number | null;
   ionicStrengthM: number | null;
   speciesCharges: number[];
+  /** Optional additive detail for traceable coefficient and condition records. */
+  coefficients?: DaviesModelCoefficientRecord[];
+  ionConditions?: DaviesIonConditionRecord[];
   applicabilityStatus: 'WITHIN_DOCUMENTED_DOMAIN' | 'OUTSIDE_DOCUMENTED_DOMAIN' | 'UNKNOWN';
+  applicabilityEvidenceReference?: string | null;
   sourceReference: string;
   assumptions: string[];
   notes: string;
