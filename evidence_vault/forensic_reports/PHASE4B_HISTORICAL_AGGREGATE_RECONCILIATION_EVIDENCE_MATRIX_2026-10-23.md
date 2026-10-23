@@ -63,3 +63,10 @@ The workflow binds its emitted counts and generated ledgers to these exact bytes
 This matrix is an evidence inventory and discrepancy statement, not a phase-closure certificate. It does not close the aggregate reconciliation blockers, does not promote any model to `LAB_VALIDATED`, does not establish a predictive-accuracy percentage, and does not unlock Phase 5.
 
 **Current gate: Phase 4B OPEN; Phase 5 LOCKED.**
+
+
+## Source-mapping disposition addendum (2026-10-23)
+
+The category-level source mapping and evidence gaps are now explicitly documented in [PHASE4B_HISTORICAL_COUNT_MAPPING_RESOLUTION_2026-10-23.md](./PHASE4B_HISTORICAL_COUNT_MAPPING_RESOLUTION_2026-10-23.md). It identifies that the historical flow value 212 matches nonempty rows, not complete numeric point rows (210); 7,522 is a multi-group image-feature count rather than a unique-image count; the bubble total matches only when raw area cells are counted once and the historical 20/30-minute split remains unsupported; and rheometer 739 has no source-row crosswalk (current structural inventory is 2,233 numeric Point No. rows, while Round-5 per-sheet claims sum to 1,532). The earlier Round-5 report has been marked as superseded where it asserted 27,982 “physical observations.”
+
+This is a completed evidence-based disposition, **not** a fabricated row-level mapping: the historical source-cell list and counting script for the disputed values were not found in the available repository evidence. If those original inclusion/exclusion rules cannot be recovered, 27,982 remains unreproduced.
