@@ -1,49 +1,45 @@
-# Pušić et al. (2006) — First Numeric Table Extraction
+# Pušić et al. (2006) — Numeric Table Extraction Report
 
-**Status:** SOURCE_ACCESS_CONFIRMED; manual transcription findings documented; dataset CSV NOT YET COMMITTED. Any transcription must remain SOURCE_EXTRACTED_PENDING_SECOND_REVIEW until an independent second pass is complete. The attempted large CSV write was blocked, so this report must not be interpreted as saying the numeric table is already ingested into the repository.
+**Status:** 144 readings transcribed from the user-uploaded source PDF, printed page 13, Tables 5–8. Repository CSV added. Independent second review is still pending; the dataset remains `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW`. This does not close Phase 4B or unlock Phase 5.
 
 ## Source identity and reuse
 
 - Citation: Pušić, T.; Šostar Turk, S.; Soljačić, I.; Tarbuk, A.; Fijan, R.; Arnuš, S. (2006). “Primary Washing Effect of Powder and Liquid Detergents.” *Tekstil* 55(1), 11–18.
 - Publisher landing page: https://www.tekstil.hist.hr/index.php/tekstil/article/view/3174
-- PDF used for extraction: https://tekstil.hist.hr/index.php/tekstil/article/download/3174/3174/3174
-- License stated by publisher: Creative Commons Attribution 4.0 International (CC BY 4.0). Preserve citation and attribution with all reuse.
-- The publisher PDF was available and inspected visually; printed page 13 contains Tables 5–8.
+- PDF URL: https://tekstil.hist.hr/index.php/tekstil/article/download/3174/3174/3174
+- The publisher page states Creative Commons Attribution 4.0 International (CC BY 4.0). Preserve attribution and license details in downstream reuse.
+- Source used in this extraction: PDF uploaded by the user in this conversation. The table image was visually inspected at printed page 13.
 
-## What was extracted
+## Repository dataset
 
-A tidy long-format CSV was transcribed from Tables 5–8 on printed page 13: **144 values** = 4 tables × 4 conditions (before washing plus three detergent dosages) × 9 columns (eight stain classes plus the “Standard” fabric-control column).
+- CSV: `evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv`
+- 144 rows: 4 tables × 4 conditions (before wash plus three dosage conditions) × 9 columns (eight stain classes plus the Standard fabric-control column).
+- Table 5: cotton, powder detergent, 30/40/45 g/kg.
+- Table 6: polyester/cotton 50:50, powder detergent, 30/40/45 g/kg.
+- Table 7: cotton, liquid detergent, 17.5/25/35 mL/kg.
+- Table 8: polyester/cotton 50:50, liquid detergent, 17.5/25/35 mL/kg.
+- Columns preserve black coffee, red wine, cocoa, blood, pumpkin-seed oil, lipstick, pureed tomato, shoe cream and Standard fabric control.
+- Measurement is the paper's source label `R460 nm`; the table header does not state a physical unit. The CSV uses `R460_nm` and explicitly marks the unit as unspecified. Values use decimal points as CSV numeric notation; no percentages or derived scores are created.
+- Baseline values are stored as condition `before` with blank dosage. Standard is retained as a separate control, not a stain class.
+- Structural checks performed on the local CSV: 144 rows, 36 rows per table, 144 unique table/condition/stain keys, all measurement values finite, no invented unit label.
 
-- Table 5: cotton fabric, powder detergent, 30/40/45 g/kg.
-- Table 6: polyester/cotton 50:50 fabric, powder detergent, 30/40/45 g/kg.
-- Table 7: cotton fabric, liquid detergent, 17.5/25/35 mL/kg.
-- Table 8: polyester/cotton 50:50 fabric, liquid detergent, 17.5/25/35 mL/kg.
-- Stains/labels: black coffee, red wine, cocoa, blood, pumpkin-seed oil, lipstick, pureed tomato, shoe cream; plus a “Standard” fabric control.
-- Measurement is the source-reported spectral remission/reflectance at 460 nm (the paper labels it R460 nm). The tables do not explicitly specify a physical unit in the table header, so the dataset stores SOURCE_LABEL_R460_NM_UNIT_UNSPECIFIED and does not invent a percentage unit.
-- “Before” values are baseline readings; dosage is blank for those rows. “Standard” is preserved as its own control category.
-- Values are transcribed as printed with decimal points used as CSV numeric notation. No stain-removal percentages, normalized scores, or derived values have been computed.
+## Review state and anomalies
 
-## Important caveats and anomalies
+1. **Independent second review is pending.** The CSV intentionally leaves `reviewer_2` and `review_match` blank. Do not mark the strict review gate as passed until another reviewer verifies each value against the source.
+2. Two blood entries are flagged for focused recheck but are preserved exactly as printed: Table 5, cotton/powder, 45 g/kg = 57.46; Table 6, polyester/cotton/powder, 45 g/kg = 69.19. Do not silently “correct” these values.
+3. The paper reports summarized readings, not raw replicate-level data or per-value uncertainty for these tables.
+4. The paper describes a specific protocol: 60 °C wash temperature, 65 L drum volume, 0.88 kg ballast fabric, 0.12 kg stained cloth, liquor ratio 1:5, initial temperature 22 °C, 18.8 min wash and 7 min rinse; reported water hardness is 1.45 °dH.
+5. R460 is an optical remission/reflectance measure. Do not reinterpret it as percent soil removal or use it to calibrate Cleaning Score/CPI without a validated mapping method and suitable protocol-specific validation.
+6. This dataset is source-extracted evidence, not laboratory validation of any current formula and not a basis for an unsupported model-accuracy claim.
 
-1. **Not raw replicate-level data.** The paper reports summarized readings, not row-level replicate measurements or per-value uncertainty for these tables. The CSV sets replicate_data_available=NO.
-2. **No automatic formula/Cleaning Score calibration.** The data are source-extracted measurements under this specific washing setup, not universal detergent-performance labels. Test conditions described in the paper include 60 °C wash temperature, 65 L drum volume, 0.88 kg ballast fabric, 0.12 kg stain cloth, liquor ratio 1:5, initial temperature 22 °C, 18.8 min wash and 7 min rinse; the reported water hardness is 1.45 °dH.
-3. **Do not treat R460 as percentage soil removal.** Reflectance/remission is an optical measurement, and a formula to derive removal would require a validated method and suitable baseline/control handling.
-4. **Potential source anomaly preserved:** Table 5, blood-stained cotton, powder at 45 g/kg is printed as 57.46; Table 6 blood-stained polyester/cotton at 45 g/kg is 69.19. These values are not “corrected”; they must be checked against the page image in the second review.
-5. **Control-column interpretation:** the “Standard” column is retained separately as a fabric-control reading and must not be treated as another stain class.
-6. **Second review is pending.** Every value needs a separate verification pass against the original PDF, ideally by a second reviewer or reproducible digitization. Until then the rows remain source-extracted, not lab-validated.
+## Required next steps
 
-## Next review checklist
+- Complete a separate second-pass review of all 144 cells against printed page 13.
+- Confirm table mapping, dosage labels, decimals and all nine columns per condition.
+- Recheck the flagged blood readings; preserve printed values unless an erratum or author confirmation establishes otherwise.
+- Fill reviewer metadata only after a genuine independent review and record any disagreements transparently.
+- Do not include this dataset in held-out model validation until provenance, review and applicability checks are satisfied.
 
-- Recheck all 144 values against printed Table 5–8 cells and the PDF page image.
-- Confirm fabric descriptions and table-to-condition mapping.
-- Check decimal transcription and source spelling/translation.
-- Specifically inspect the 57.46 and 69.19 blood-stain entries and retain source values unless an erratum or author confirmation establishes otherwise.
-- Register the CSV as SOURCE_EXTRACTED_PENDING_SECOND_REVIEW; do not include it in held-out model validation partitions or claim empirical accuracy.
-- Only after independent verification, consider promotion to SOURCE_BACKED evidence with protocol-specific applicability metadata; it still does not by itself justify LAB_VALIDATED.
+## Phase gate
 
-## Output
-
-- PHASE4B_PUSIC_2006_TABLES_5_8_EXTRACTION_REPORT.md — committed source-access and transcription-scope report.
-- The 144-value tidy CSV is **not currently present in the GitHub branch**; do not treat the values as ingested. The prior attempt to write the large CSV was blocked. The CSV must be added through an approved, supported write path and then independently reviewed.
-
-No phase gate is changed by this extraction. Phase 4B remains open until its full acceptance criteria and historical reconciliation are satisfied; Phase 5 remains locked.
+No gate has been changed. Phase 4B remains **OPEN** pending independent verification and the separate historical reconciliation acceptance criteria. Phase 5 remains **LOCKED**.
