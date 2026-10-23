@@ -36,9 +36,22 @@ This report reconciles the historical aggregate claims against the Round-18 and 
 3. `evidence_vault/scripts/round20_source_record_reconciliation.py` crosswalks the historical claim to source-cell counts, pairs raw bubble areas with formula-derived radii, and creates grouped rheometer point ledgers.
 4. Round-20 output report names are emitted by the script at run time, including `PHASE4B_ROUND20_SOURCE_RECORD_RECONCILIATION.md/.json`, the category reconciliation CSV, formula dependency ledger, rheometer grouped-point ledger, and historical claim crosswalk CSV. The report must be generated from the exact checked-out workbook artifacts before treating its output files as a fresh run result.
 
+## Source workbook integrity cross-reference
+
+The repository's prior numerical inspection / provenance report records these source artifact identities (the values below are **recorded in the repository report**, not freshly recomputed in this PR run):
+
+| Workbook | Bytes | Recorded MD5 | Recorded SHA-256 |
+|---|---:|---|---|
+| Supplementary_SolutionFlowCurves.xlsx | 22,280 | cd5bfd6e95fc65e412807d53935c2d96 | 90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590 |
+| Supplementary_FilmThickness_v1.xlsx | 149,923 | bc9582baafecd6552f6014216a0844e6 | 170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428 |
+| Supplementary_BubbleSizes_v1.xlsx | 557,745 | 9fcfe68a37d2d92a7999569a07908854 | 9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad |
+| Supplementary_RheometerData_v2.xlsx | 162,970 | c9b5a9cde073eb7c58933eec37a559a6 | 073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70 |
+
+The recorded report marks these digests as matching the publisher's MD5 and the repository's calculated SHA-256. To make a new run reproducible, the CI job must bind its emitted counts and generated ledgers to these exact bytes and retain the run/commit identifier. A prior integrity report is provenance evidence, not proof that this PR reran the scripts.
+
 ## Outstanding blockers
 
-- Preserve the exact source workbook bytes and record verified SHA-256 hashes for the same commit/run that generated the reconciliation artifacts.
+- Execute Round-20 against the exact checked-out source workbook bytes above and preserve the generated JSON/CSV outputs together with the commit/run identifier. The current PR has not run this script in the available execution environment.
 - Independently verify the 210 vs historical 212 solution-flow discrepancy against the original source and historical counting definition.
 - Resolve the bubble 20/30-minute allocation from documented source-row/cell lineage; matching only the combined total is insufficient.
 - Find a documented historical mapping/counting rule for rheometer 739, and explain the 1,532 per-sheet claim and 2,233 numeric-point-row count without silently deduplicating or discarding rows.
