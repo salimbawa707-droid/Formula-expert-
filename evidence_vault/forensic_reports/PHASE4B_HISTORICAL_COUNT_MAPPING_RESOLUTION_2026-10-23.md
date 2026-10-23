@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-10-23  
 **Scope:** Historical 27,982 aggregate for Zenodo 10.5281/zenodo.18961871  
-**Decision:** `BLOCKED_UNRESOLVED_HISTORICAL_AGGREGATE`  
+**Decision:** `HISTORICAL_27_982_CLAIM_REJECTED_AS_VERIFIED_OBSERVATION_COUNT`  
 **Governance:** Phase 4B OPEN; Phase 5 LOCKED
 
 ## Executive disposition
@@ -43,9 +43,9 @@ The CI regression gate verifies source bytes and structural counts. This does no
 - Keeping the first three source-defined counts and solving for the rheometer count would require `27,982 - (210 + 7,522 + 19,509) = 741`. No source mapping supports 741.
 - Round-5 rheometer worksheet claims sum to 1,532, while current numeric Point No. rows sum to 2,233. These are distinct counting rules, not interchangeable estimates.
 
-## Required evidence to close the historical mapping
+## Final disposition and optional historical reconstruction
 
-The historical aggregate cannot be “resolved” by choosing one of the conflicting totals. To establish a defensible final count, an evidence owner must provide or locate:
+**The actionable scientific decision is final:** do not accept 27,982 as a verified physical-observation count. This closes the decision on the claim using available evidence; it does not reconstruct what the original author intended. The following items would be needed only if the project later chooses to reconstruct that historical intention:
 
 1. The original counting worksheet/script or notebook that generated 212, 7,522, 10,000, 9,509 and 739, with source-cell references and inclusion/exclusion rules.
 2. The source-level row/cell IDs included in the historical bubble 20-min/30-min subsets.
@@ -65,7 +65,7 @@ The same dispositions are recorded in `PHASE4B_HISTORICAL_COUNT_MAPPING_LEDGER_2
 
 ## Gate
 
-**Historical aggregate mapping: OPEN / BLOCKED.**  
+**Historical 27,982 claim disposition: CLOSED — rejected as a verified physical-observation count; retained only as unreproduced historical arithmetic.**  
 **Pušić 144-value independent transcription review: PENDING.**  
-**Phase 4B: OPEN. Phase 5: LOCKED.**  
+**Phase 4B: OPEN for the separate Pušić independent-review gate and other acceptance criteria. Phase 5: LOCKED.**  
 No model is promoted to `LAB_VALIDATED`; no accuracy claim is made.
