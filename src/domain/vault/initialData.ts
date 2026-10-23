@@ -1,8 +1,14 @@
+import { VAULT_SCHEMA_VERSION } from './types.ts';
 import type { VaultState } from './types.ts';
+import { INITIAL_HISTORICAL_RECONCILIATIONS, INITIAL_INVENTORY_METRICS } from './schemaDefaults.ts';
 
 export const INITIAL_VAULT_STATE: VaultState = {
-  version: '1.0.0',
+  version: VAULT_SCHEMA_VERSION,
   exportedAt: '2026-10-17T13:56:00Z',
+  inventoryMetrics: INITIAL_INVENTORY_METRICS,
+  historicalReconciliations: INITIAL_HISTORICAL_RECONCILIATIONS,
+  daviesActivityModels: [],
+  surfactantPhaseProperties: [],
   engineCountDiscrepancy: {
     claimedA: 64,
     reconciledFiles: 59,

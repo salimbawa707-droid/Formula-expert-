@@ -1,8 +1,10 @@
+import { VAULT_SCHEMA_VERSION } from '../../domain/vault/types.ts';
 import type {
   VaultState,
   EngineRecord,
   DatasetRecord,
 } from '../../domain/vault/types.ts';
+import { INITIAL_HISTORICAL_RECONCILIATIONS, INITIAL_INVENTORY_METRICS } from '../../domain/vault/schemaDefaults.ts';
 
 export interface VaultMetrics {
   currentPhaseId: string;
@@ -269,7 +271,10 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
 }
 
 /**
- * Validates JSON backup schema and detects duplicate IDs
+ * Validates a vault backup against the currently supported persisted schema.
+ *
+ * Important: validation is structural only. It never promotes scientific maturity,
+ * licenses, provenance, or phase status. Unsupported schema versions fail closed.
  */
 export function validateAndParseVaultJSON(jsonStr: string): {
   valid: boolean;
@@ -277,89 +282,333 @@ export function validateAndParseVaultJSON(jsonStr: string): {
   parsedState?: VaultState;
 } {
   const errors: string[] = [];
-
   let parsed: any;
+
   try {
     parsed = JSON.parse(jsonStr);
-  } catch (err: any) {
-    return { valid: false, errors: [`JSON Parse error: ${err.message}`] };
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return { valid: false, errors: [`JSON Parse error: ${detail}`] };
   }
 
-  if (!parsed || typeof parsed !== 'object') {
-    return { valid: false, errors: ['Parsed content is not an object.'] };
+  const isRecord = (value: unknown): value is Record<string, any> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+  const isNonEmptyString = (value: unknown): value is string =>
+    typeof value === 'string' && value.trim().length > 0;
+  const isNullableNonNegativeInteger = (value: unknown): boolean =>
+    value === null || (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0);
+
+  if (!isRecord(parsed)) {
+    return { valid: false, errors: ['Parsed content is not a JSON object.'] };
   }
 
-  if (!parsed.version) {
-    errors.push('Missing schema version field in backup.');
+  if (parsed.version !== '1.0.0' && parsed.version !== VAULT_SCHEMA_VERSION) {
+    errors.push(`Unsupported or missing vault schema version. Supported versions: 1.0.0 (migrated automatically) and ${VAULT_SCHEMA_VERSION}.`);
+  } else if (parsed.version === '1.0.0') {
+    // Additive, lossless migration: preserve all existing v1.0.0 fields and fill only
+    // the newly introduced extension collections. Unknown future versions fail closed.
+    parsed = {
+      ...parsed,
+      version: VAULT_SCHEMA_VERSION,
+      inventoryMetrics: Array.isArray(parsed.inventoryMetrics)
+        ? parsed.inventoryMetrics
+        : INITIAL_INVENTORY_METRICS.map(record => ({ ...record })),
+      historicalReconciliations: Array.isArray(parsed.historicalReconciliations)
+        ? parsed.historicalReconciliations
+        : INITIAL_HISTORICAL_RECONCILIATIONS.map(record => ({ ...record, relatedMetricIds: [...record.relatedMetricIds] })),
+      daviesActivityModels: Array.isArray(parsed.daviesActivityModels) ? parsed.daviesActivityModels : [],
+      surfactantPhaseProperties: Array.isArray(parsed.surfactantPhaseProperties) ? parsed.surfactantPhaseProperties : [],
+    };
   }
 
-  if (!Array.isArray(parsed.phases)) {
-    errors.push('Missing or invalid phases array.');
-  }
-
-  if (!Array.isArray(parsed.engines)) {
-    errors.push('Missing or invalid engines array.');
-  }
-
-  if (!Array.isArray(parsed.evidence)) {
-    errors.push('Missing or invalid evidence array.');
-  }
-
-  if (!Array.isArray(parsed.datasets)) {
-    errors.push('Missing or invalid datasets array.');
-  }
-
-  if (!Array.isArray(parsed.audits)) {
-    errors.push('Missing or invalid audits array.');
-  }
-
-  if (!Array.isArray(parsed.prompts)) {
-    errors.push('Missing or invalid prompts array.');
-  }
-
-  // Duplicate ID checks
-  if (Array.isArray(parsed.engines)) {
-    const ids = new Set<string>();
-    for (const eng of parsed.engines) {
-      if (!eng.id) errors.push('Engine missing stable ID.');
-      else if (ids.has(eng.id)) errors.push(`Duplicate engine ID detected: ${eng.id}`);
-      else ids.add(eng.id);
-    }
-  }
-
+  // Absence of license-review metadata is conservatively normalized to UNREVIEWED.
+  // A license string or matching checksum is never interpreted as commercial clearance.
   if (Array.isArray(parsed.evidence)) {
-    const ids = new Set<string>();
-    for (const ev of parsed.evidence) {
-      if (!ev.id) errors.push('Evidence record missing ID.');
-      else if (ids.has(ev.id)) errors.push(`Duplicate evidence ID detected: ${ev.id}`);
-      else ids.add(ev.id);
+    parsed.evidence = parsed.evidence.map((record: unknown) => isRecord(record) ? {
+      licenseReviewStatus: 'UNREVIEWED',
+      licenseEvidenceReference: null,
+      licenseReviewedAt: null,
+      licenseRestrictions: [],
+      ...record,
+    } : record);
+  }
+
+  const requiredArrays = [
+    'phases', 'engines', 'evidence', 'datasets', 'audits', 'prompts', 'pricingRecords', 'activeBlockers',
+    'inventoryMetrics', 'historicalReconciliations', 'daviesActivityModels', 'surfactantPhaseProperties'
+  ];
+  for (const key of requiredArrays) {
+    if (!Array.isArray(parsed[key])) {
+      errors.push(`Missing or invalid ${key} array.`);
+    } else if (!parsed[key].every(isRecord)) {
+      errors.push(`${key} must contain only JSON objects.`);
     }
+  }
+
+  if (!isRecord(parsed.engineCountDiscrepancy)) {
+    errors.push('Missing or invalid engineCountDiscrepancy object.');
+  } else {
+    for (const key of ['claimedA', 'reconciledFiles', 'claimedSubmodules']) {
+      const value = parsed.engineCountDiscrepancy[key];
+      if (!Number.isSafeInteger(value) || value < 0) {
+        errors.push(`engineCountDiscrepancy.${key} must be a non-negative integer.`);
+      }
+    }
+    if (parsed.engineCountDiscrepancy.status !== 'REPORTED_UNVERIFIED') {
+      errors.push('engineCountDiscrepancy.status must remain REPORTED_UNVERIFIED unless the domain model explicitly changes.');
+    }
+    if (typeof parsed.engineCountDiscrepancy.notes !== 'string') {
+      errors.push('engineCountDiscrepancy.notes must be a string.');
+    }
+  }
+
+  const checkUniqueIds = (key: string, label: string, idField = 'id') => {
+    if (!Array.isArray(parsed[key])) return;
+    const ids = new Set<string>();
+    parsed[key].forEach((item: unknown, index: number) => {
+      if (!isRecord(item)) {
+        errors.push(`${label} at index ${index} must be an object.`);
+        return;
+      }
+      const identity = item[idField];
+      if (!isNonEmptyString(identity)) {
+        errors.push(`${label} at index ${index} is missing stable key ${idField}.`);
+      } else if (ids.has(identity)) {
+        errors.push(`Duplicate ${label.toLowerCase()} key detected: ${identity}`);
+      } else {
+        ids.add(identity);
+      }
+    });
+  };
+
+  checkUniqueIds('phases', 'Phase', 'phaseId');
+  checkUniqueIds('engines', 'Engine');
+  checkUniqueIds('evidence', 'Evidence record');
+  checkUniqueIds('datasets', 'Dataset');
+  checkUniqueIds('audits', 'Audit');
+  checkUniqueIds('prompts', 'Prompt');
+  checkUniqueIds('pricingRecords', 'Pricing record', 'ingredientId');
+  checkUniqueIds('activeBlockers', 'Active blocker');
+  checkUniqueIds('inventoryMetrics', 'Inventory metric');
+  checkUniqueIds('historicalReconciliations', 'Historical reconciliation');
+  checkUniqueIds('daviesActivityModels', 'Davies activity model');
+  checkUniqueIds('surfactantPhaseProperties', 'Surfactant phase property');
+
+  if (Array.isArray(parsed.phases)) {
+    const validPhaseStatuses = new Set(['CLOSED', 'ACTIVE', 'LOCKED', 'PENDING_REVIEW']);
+    const validVerificationStatuses = new Set(['UNESTABLISHED', 'CONFIRMED', 'REJECTED']);
+    parsed.phases.forEach((phase: unknown, index: number) => {
+      if (!isRecord(phase)) {
+        errors.push(`Phase at index ${index} must be an object.`);
+        return;
+      }
+      if (!isNonEmptyString(phase.phaseId)) errors.push(`Phase at index ${index} is missing phaseId.`);
+      if (!validPhaseStatuses.has(phase.status)) errors.push(`Phase ${phase.id || index} has an invalid status.`);
+      if (typeof phase.reportedClosed !== 'boolean') errors.push(`Phase ${phase.id || index} reportedClosed must be boolean.`);
+      if (!validVerificationStatuses.has(phase.independentVerificationStatus)) {
+        errors.push(`Phase ${phase.id || index} has an invalid independentVerificationStatus.`);
+      }
+      if (!Array.isArray(phase.blockers) || !Array.isArray(phase.keyDeliverables)) {
+        errors.push(`Phase ${phase.id || index} must contain blockers and keyDeliverables arrays.`);
+      }
+    });
   }
 
   if (Array.isArray(parsed.datasets)) {
-    const ids = new Set<string>();
-    for (const ds of parsed.datasets) {
-      if (!ds.id) errors.push('Dataset record missing ID.');
-      else if (ids.has(ds.id)) errors.push(`Duplicate dataset ID detected: ${ds.id}`);
-      else ids.add(ds.id);
-    }
+    parsed.datasets.forEach((dataset: unknown, index: number) => {
+      if (!isRecord(dataset)) {
+        errors.push(`Dataset at index ${index} must be an object.`);
+        return;
+      }
+      for (const key of ['actualRowCount', 'actualColumnCount']) {
+        if (!isNullableNonNegativeInteger(dataset[key])) {
+          errors.push(`Dataset ${dataset.id || index} ${key} must be null (unknown) or a non-negative safe integer (known count).`);
+        }
+      }
+      if (!Array.isArray(dataset.columns)) {
+        errors.push(`Dataset ${dataset.id || index} columns must be an array.`);
+      } else {
+        dataset.columns.forEach((column: unknown, columnIndex: number) => {
+          if (!isRecord(column)) {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} must be an object.`);
+            return;
+          }
+          if (column.missingCount !== null && (!Number.isSafeInteger(column.missingCount) || column.missingCount < 0)) {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} missingCount must be null (unknown) or a non-negative safe integer; zero means a known zero-missing count.`);
+          }
+          if (typeof column.name !== 'string' || typeof column.unit !== 'string' || typeof column.isExperimental !== 'boolean') {
+            errors.push(`Dataset ${dataset.id || index} column ${columnIndex} has invalid name, unit, or isExperimental field.`);
+          }
+        });
+      }
+      if (typeof dataset.inspectionStatus !== 'string') {
+        errors.push(`Dataset ${dataset.id || index} inspectionStatus must be a string.`);
+      }
+    });
   }
 
-  // Check pricing records preservation rule:
-  // If pricingRecords exists, check that prices can be null
+  if (Array.isArray(parsed.evidence)) {
+    parsed.evidence.forEach((evidence: unknown, index: number) => {
+      if (!isRecord(evidence)) {
+        errors.push(`Evidence record at index ${index} must be an object.`);
+        return;
+      }
+      if (!isNullableNonNegativeInteger(evidence.sampleCount)) {
+        errors.push(`Evidence record ${evidence.id || index} sampleCount must be null (unknown) or a non-negative safe integer.`);
+      }
+      if (!['UNREVIEWED', 'REVIEW_PENDING', 'PERMITTED_FOR_COMMERCIAL_REUSE', 'RESTRICTED', 'UNKNOWN'].includes(evidence.licenseReviewStatus)) {
+        errors.push(`Evidence record ${evidence.id || index} has an invalid licenseReviewStatus.`);
+      }
+      if (evidence.licenseEvidenceReference !== null && typeof evidence.licenseEvidenceReference !== 'string') {
+        errors.push(`Evidence record ${evidence.id || index} licenseEvidenceReference must be null or a string.`);
+      }
+      if (evidence.licenseReviewedAt !== null && (typeof evidence.licenseReviewedAt !== 'string' || !Number.isFinite(Date.parse(evidence.licenseReviewedAt)))) {
+        errors.push(`Evidence record ${evidence.id || index} licenseReviewedAt must be null or a valid date string.`);
+      }
+      if (!Array.isArray(evidence.licenseRestrictions) || !evidence.licenseRestrictions.every((item: unknown) => typeof item === 'string')) {
+        errors.push(`Evidence record ${evidence.id || index} licenseRestrictions must be an array of strings.`);
+      }
+      if (['PERMITTED_FOR_COMMERCIAL_REUSE', 'RESTRICTED'].includes(evidence.licenseReviewStatus) &&
+          (typeof evidence.licenseEvidenceReference !== 'string' || evidence.licenseEvidenceReference.trim().length === 0 ||
+           typeof evidence.licenseReviewedAt !== 'string' || !Number.isFinite(Date.parse(evidence.licenseReviewedAt)))) {
+        errors.push(`Evidence record ${evidence.id || index} cannot be marked permitted/restricted without a license evidence reference and review date.`);
+      }
+      for (const key of ['measuredVariables', 'units', 'supportedEngineIds', 'supportedClaims', 'applicabilityMismatches', 'limitations', 'followUpActions']) {
+        if (!Array.isArray(evidence[key]) || !evidence[key].every((item: unknown) => typeof item === 'string')) {
+          errors.push(`Evidence record ${evidence.id || index} ${key} must be an array of strings.`);
+        }
+      }
+    });
+  }
+
   if (Array.isArray(parsed.pricingRecords)) {
-    const hasNullPriced = parsed.pricingRecords.some(
-      (p: any) => p.pricePerKg === null || p.priceStatus === 'UNKNOWN_NULL'
-    );
-    if (!hasNullPriced) {
-      // Warning or check
-    }
+    parsed.pricingRecords.forEach((pricing: unknown, index: number) => {
+      if (!isRecord(pricing)) {
+        errors.push(`Pricing record at index ${index} must be an object.`);
+        return;
+      }
+      if (pricing.pricePerKg !== null && (typeof pricing.pricePerKg !== 'number' || !Number.isFinite(pricing.pricePerKg) || pricing.pricePerKg < 0)) {
+        errors.push(`Pricing record ${pricing.id || pricing.ingredientId || index} pricePerKg must be null (unknown) or a finite non-negative number.`);
+      }
+      if (!['CONFIRMED', 'UNKNOWN_NULL', 'MARKET_ESTIMATE'].includes(pricing.priceStatus)) {
+        errors.push(`Pricing record ${pricing.id || pricing.ingredientId || index} has an invalid priceStatus.`);
+      }
+      if (pricing.pricePerKg === null && pricing.priceStatus === 'CONFIRMED') {
+        errors.push(`Pricing record ${pricing.ingredientId || index} cannot be CONFIRMED while pricePerKg is null.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.inventoryMetrics)) {
+    parsed.inventoryMetrics.forEach((metric: unknown, index: number) => {
+      if (!isRecord(metric)) {
+        errors.push(`Inventory metric at index ${index} must be an object.`);
+        return;
+      }
+      if (!['FLOW', 'FILM', 'BUBBLE', 'RHEOMETER', 'HISTORICAL', 'MIXED'].includes(metric.category)) {
+        errors.push(`Inventory metric ${metric.id || index} has an invalid category.`);
+      }
+      if (!isNonEmptyString(metric.metricKey) || !isNonEmptyString(metric.unit) ||
+          !isNonEmptyString(metric.countingUnit) || !isNonEmptyString(metric.sourceReference) ||
+          typeof metric.notes !== 'string') {
+        errors.push(`Inventory metric ${metric.id || index} is missing metric, unit, provenance, or notes metadata.`);
+      }
+      if (metric.value !== null && (!Number.isSafeInteger(metric.value) || metric.value < 0)) {
+        errors.push(`Inventory metric ${metric.id || index} value must be null or a non-negative safe integer.`);
+      }
+      if (!['REPORTED_UNVERIFIED', 'REPRODUCIBLE', 'UNRESOLVED'].includes(metric.verificationStatus)) {
+        errors.push(`Inventory metric ${metric.id || index} has an invalid verificationStatus.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.historicalReconciliations)) {
+    parsed.historicalReconciliations.forEach((record: unknown, index: number) => {
+      if (!isRecord(record)) {
+        errors.push(`Historical reconciliation at index ${index} must be an object.`);
+        return;
+      }
+      for (const key of ['claimValue', 'comparisonAggregateValue']) {
+        if (record[key] !== null && (!Number.isSafeInteger(record[key]) || record[key] < 0)) {
+          errors.push(`Historical reconciliation ${record.id || index} ${key} must be null or a non-negative safe integer.`);
+        }
+      }
+      if (!['UNRESOLVED', 'RECONCILED'].includes(record.reconciliationStatus)) {
+        errors.push(`Historical reconciliation ${record.id || index} has an invalid reconciliationStatus.`);
+      }
+      if (!isNonEmptyString(record.claimUnit) || !isNonEmptyString(record.sourceReference) ||
+          typeof record.notes !== 'string' || !Array.isArray(record.relatedMetricIds) ||
+          !record.relatedMetricIds.every((id: unknown) => typeof id === 'string')) {
+        errors.push(`Historical reconciliation ${record.id || index} has invalid unit, provenance, notes, or relatedMetricIds.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.daviesActivityModels)) {
+    parsed.daviesActivityModels.forEach((model: unknown, index: number) => {
+      if (!isRecord(model)) {
+        errors.push(`Davies activity model at index ${index} must be an object.`);
+        return;
+      }
+      if (!isNonEmptyString(model.modelName) || !isNonEmptyString(model.modelVersion) ||
+          !isNonEmptyString(model.sourceReference) || typeof model.notes !== 'string' ||
+          !Array.isArray(model.assumptions) || !model.assumptions.every((item: unknown) => typeof item === 'string') ||
+          !Array.isArray(model.speciesCharges) || !model.speciesCharges.every((charge: unknown) => Number.isInteger(charge))) {
+        errors.push(`Davies activity model ${model.id || index} has invalid model, provenance, assumption, or charge metadata.`);
+      }
+      if (model.temperatureK !== null && (typeof model.temperatureK !== 'number' || !Number.isFinite(model.temperatureK) || model.temperatureK <= 0)) {
+        errors.push(`Davies activity model ${model.id || index} temperatureK must be null or a positive finite number.`);
+      }
+      if (model.ionicStrengthM !== null && (typeof model.ionicStrengthM !== 'number' || !Number.isFinite(model.ionicStrengthM) || model.ionicStrengthM < 0)) {
+        errors.push(`Davies activity model ${model.id || index} ionicStrengthM must be null or a non-negative finite number.`);
+      }
+      if (!['WITHIN_DOCUMENTED_DOMAIN', 'OUTSIDE_DOCUMENTED_DOMAIN', 'UNKNOWN'].includes(model.applicabilityStatus)) {
+        errors.push(`Davies activity model ${model.id || index} has an invalid applicabilityStatus.`);
+      }
+    });
+  }
+
+  if (Array.isArray(parsed.surfactantPhaseProperties)) {
+    parsed.surfactantPhaseProperties.forEach((property: unknown, index: number) => {
+      if (!isRecord(property)) {
+        errors.push(`Surfactant phase property at index ${index} must be an object.`);
+        return;
+      }
+      if (property.surfactantId !== null && typeof property.surfactantId !== 'string') {
+        errors.push(`Surfactant phase property ${property.id || index} surfactantId must be null or a string.`);
+      }
+      if (property.composition !== null && typeof property.composition !== 'string') {
+        errors.push(`Surfactant phase property ${property.id || index} composition must be null or a string.`);
+      }
+      if (property.value !== null && (typeof property.value !== 'number' || !Number.isFinite(property.value))) {
+        errors.push(`Surfactant phase property ${property.id || index} value must be null or a finite number.`);
+      }
+      if (property.concentration !== null && (typeof property.concentration !== 'number' || !Number.isFinite(property.concentration) || property.concentration < 0)) {
+        errors.push(`Surfactant phase property ${property.id || index} concentration must be null or a non-negative finite number.`);
+      }
+      if (property.uncertaintyValue !== null && (typeof property.uncertaintyValue !== 'number' || !Number.isFinite(property.uncertaintyValue) || property.uncertaintyValue < 0)) {
+        errors.push(`Surfactant phase property ${property.id || index} uncertaintyValue must be null or a non-negative finite number.`);
+      }
+      if (property.propertyName !== 'KRAFFT_POINT' || !isNonEmptyString(property.reportedName) ||
+          !isNonEmptyString(property.unit) || !isNonEmptyString(property.sourceReference) ||
+          typeof property.notes !== 'string' ||
+          !['MEASURED', 'REPORTED', 'ESTIMATED', 'IMPUTED', 'MODEL_PREDICTED', 'UNKNOWN'].includes(property.valueOrigin) ||
+          !['UNVERIFIED', 'SOURCE_REVIEWED', 'BLOCKED'].includes(property.evidenceStatus)) {
+        errors.push(`Surfactant phase property ${property.id || index} has invalid identity, unit, provenance, origin, or evidence status.`);
+      }
+      for (const key of ['concentrationUnit', 'solutionComposition', 'measurementMethod', 'uncertaintyUnit']) {
+        if (property[key] !== null && typeof property[key] !== 'string') {
+          errors.push(`Surfactant phase property ${property.id || index} ${key} must be null or a string.`);
+        }
+      }
+    });
   }
 
   if (errors.length > 0) {
     return { valid: false, errors };
   }
 
+  // Structural validation does not alter maturity, evidence status, licensing, or phase state.
   return { valid: true, errors: [], parsedState: parsed as VaultState };
 }
 

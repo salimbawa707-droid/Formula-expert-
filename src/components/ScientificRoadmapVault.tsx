@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   VaultState,
   EngineRecord,
@@ -17,6 +17,7 @@ import {
   PromptRecord
 } from '../domain/vault/types';
 import { INITIAL_VAULT_STATE } from '../domain/vault/initialData';
+import { validateAndParseVaultJSON } from '../utils/vault/vaultLogic';
 import { Header, ActiveTab } from './vault/VaultHeader';
 import { DashboardView } from './vault/DashboardView';
 import { RoadmapView } from './vault/RoadmapView';
@@ -36,22 +37,53 @@ import {
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
 const STORAGE_KEY = 'DETERGENT_FORMULA_EXPERT_VAULT_STATE_V1';
+const RECOVERY_NOTICE_KEY = `${STORAGE_KEY}_RECOVERY_NOTICE`;
 
 export const ScientificRoadmapVault: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [storageRecoveryNotice, setStorageRecoveryNotice] = useState<string | null>(null);
 
-  // Load from isolated localStorage or canonical initial seed
+  // Invalid persisted state is quarantined before any automatic write can replace it.
+  const skipInitialPersistence = useRef(false);
+
+  // Load from isolated localStorage only after the same structural validation used by JSON import.
   const [state, setState] = useState<VaultState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.version && parsed.phases && parsed.engines) {
-          return parsed;
+        const validation = validateAndParseVaultJSON(saved);
+        if (validation.valid && validation.parsedState) {
+          return validation.parsedState;
+        }
+
+        // Preserve the original bytes for recovery before falling back to the canonical seed.
+        skipInitialPersistence.current = true;
+        const quarantineKey = `${STORAGE_KEY}_QUARANTINED_${Date.now()}`;
+        let quarantineSaved = false;
+        try {
+          localStorage.setItem(quarantineKey, saved);
+          quarantineSaved = true;
+          console.error('Saved Evidence Vault state failed validation and was preserved under:', quarantineKey, validation.errors);
+        } catch (preservationError) {
+          console.error('Saved Evidence Vault state is invalid and could not be copied to quarantine. Automatic initial persistence is suppressed for the initial recovery render.', {
+            validationErrors: validation.errors,
+            preservationError,
+          });
+        }
+        try {
+          localStorage.setItem(
+            RECOVERY_NOTICE_KEY,
+            quarantineSaved
+              ? `The saved Evidence Vault backup failed structural validation. The original data was preserved in browser storage under ${quarantineKey}; the app loaded the canonical baseline. Export or inspect the recovery copy before continuing.`
+              : 'The saved Evidence Vault backup failed structural validation and could not be copied to a recovery key. The original value has not been overwritten during this initial render. Export or recover it before continuing.'
+          );
+        } catch (noticeError) {
+          console.warn('Could not persist the Evidence Vault recovery notice:', noticeError);
         }
       }
     } catch (e) {
-      console.warn('Could not load from localStorage, using canonical initial seed:', e);
+      skipInitialPersistence.current = true;
+      console.warn('Could not read saved Evidence Vault state. Automatic initial persistence is suppressed until state recovery:', e);
     }
     return INITIAL_VAULT_STATE;
   });
@@ -68,12 +100,31 @@ export const ScientificRoadmapVault: React.FC = () => {
 
   // Sync to isolated localStorage
   useEffect(() => {
+    if (skipInitialPersistence.current) {
+      // Do not overwrite a failed backup during the first render. A subsequent user state
+      // change may persist the recovered state; the original invalid bytes were quarantined
+      // when possible and remain untouched during this initial recovery render.
+      skipInitialPersistence.current = false;
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       console.error('LocalStorage write failed:', e);
     }
   }, [state]);
+
+  useEffect(() => {
+    try {
+      const notice = localStorage.getItem(RECOVERY_NOTICE_KEY);
+      if (notice) {
+        setStorageRecoveryNotice(notice);
+        localStorage.removeItem(RECOVERY_NOTICE_KEY);
+      }
+    } catch (e) {
+      console.warn('Could not read Evidence Vault recovery notice:', e);
+    }
+  }, []);
 
   // Modal states
   const [selectedEngine, setSelectedEngine] = useState<EngineRecord | null>(null);
@@ -174,6 +225,18 @@ export const ScientificRoadmapVault: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
+        {storageRecoveryNotice && (
+          <div role="alert" className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-700 bg-amber-950/60 p-4 text-sm text-amber-100">
+            <div>{storageRecoveryNotice}</div>
+            <button
+              type="button"
+              onClick={() => setStorageRecoveryNotice(null)}
+              className="shrink-0 rounded border border-amber-700 px-2 py-1 text-xs hover:bg-amber-900"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {activeTab === 'dashboard' && (
           <DashboardView
             state={state}

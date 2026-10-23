@@ -204,6 +204,182 @@ export function runVaultLogicTestSuite() {
   const missingResult = validateAndParseVaultJSON(missingArrays);
   assert(missingResult.valid === false, 'Import Error Handling', 'Missing arrays detected as invalid');
 
+  // 11b. Versioned schema, count semantics, and non-promotion invariants
+  const unsupportedVersion = JSON.parse(exported);
+  unsupportedVersion.version = '2.1.0';
+  const unsupportedVersionResult = validateAndParseVaultJSON(JSON.stringify(unsupportedVersion));
+  assert(unsupportedVersionResult.valid === false, 'Schema Versioning', 'Unsupported schema version is rejected instead of being cast as current state');
+
+  const legacyV1State = JSON.parse(exported);
+  legacyV1State.version = '1.0.0';
+  delete legacyV1State.inventoryMetrics;
+  delete legacyV1State.historicalReconciliations;
+  delete legacyV1State.daviesActivityModels;
+  delete legacyV1State.surfactantPhaseProperties;
+  const legacyMigrationResult = validateAndParseVaultJSON(JSON.stringify(legacyV1State));
+  assert(legacyMigrationResult.valid === true, 'Schema Migration', 'Valid v1.0.0 backup migrates without losing core records');
+  assert(legacyMigrationResult.parsedState?.version === '1.1.0', 'Schema Migration', 'Legacy backup is upgraded to schema v1.1.0');
+  assert((legacyMigrationResult.parsedState?.inventoryMetrics.length || 0) >= 5, 'Schema Migration', 'Migration adds only explicitly reported inventory metrics');
+  assert(legacyMigrationResult.parsedState?.historicalReconciliations[0]?.reconciliationStatus === 'UNRESOLVED', 'Schema Migration', 'Historical 27,982 claim remains unresolved after migration');
+  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.actualRowCount === null)), 'Schema Migration', 'Unknown dataset row counts remain null after migration');
+  assert(canUnlockPhase5(legacyMigrationResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Schema Migration', 'Migration cannot unlock Phase 5');
+
+  const optionalScientificExtensions = JSON.parse(exported);
+  optionalScientificExtensions.daviesActivityModels.push({
+    id: 'DAVIES-TEST-UNKNOWN',
+    modelName: 'Davies activity coefficient model',
+    modelVersion: 'test-fixture',
+    temperatureK: null,
+    ionicStrengthM: null,
+    speciesCharges: [],
+    applicabilityStatus: 'UNKNOWN',
+    sourceReference: 'test fixture only; no scientific evidence asserted',
+    assumptions: [],
+    notes: 'Null parameters are intentionally unknown; this is not a model result.',
+  });
+  optionalScientificExtensions.surfactantPhaseProperties.push({
+    id: 'KRAFFT-TEST-UNKNOWN',
+    surfactantId: null,
+    reportedName: 'Commercial surfactant mixture (identity incomplete)',
+    composition: null,
+    propertyName: 'KRAFFT_POINT',
+    value: null,
+    unit: '°C',
+    concentration: null,
+    concentrationUnit: null,
+    solutionComposition: null,
+    measurementMethod: null,
+    valueOrigin: 'UNKNOWN',
+    evidenceStatus: 'UNVERIFIED',
+    uncertaintyValue: null,
+    uncertaintyUnit: null,
+    sourceReference: 'test fixture only; no scientific evidence asserted',
+    notes: 'No Krafft-point measurement is asserted.',
+  });
+  const optionalExtensionsResult = validateAndParseVaultJSON(JSON.stringify(optionalScientificExtensions));
+  assert(optionalExtensionsResult.valid === true, 'Optional Scientific Modules', 'Davies and Krafft records support explicitly unknown values and incomplete mixture identity');
+
+  const invalidDavies = JSON.parse(exported);
+  invalidDavies.daviesActivityModels.push({
+    id: 'DAVIES-TEST-NEGATIVE-I',
+    modelName: 'Davies activity coefficient model',
+    modelVersion: 'test-fixture',
+    temperatureK: 298.15,
+    ionicStrengthM: -0.1,
+    speciesCharges: [-1, 1],
+    applicabilityStatus: 'UNKNOWN',
+    sourceReference: 'test fixture only',
+    assumptions: [],
+    notes: 'Invalid negative ionic strength.',
+  });
+  const invalidDaviesResult = validateAndParseVaultJSON(JSON.stringify(invalidDavies));
+  assert(invalidDaviesResult.valid === false, 'Optional Scientific Modules', 'Negative ionic strength is rejected without imposing a universal upper cutoff');
+
+  const knownZeroCounts = JSON.parse(exported);
+  knownZeroCounts.datasets[0].actualRowCount = 0;
+  knownZeroCounts.datasets[0].actualColumnCount = 0;
+  const knownZeroResult = validateAndParseVaultJSON(JSON.stringify(knownZeroCounts));
+  assert(knownZeroResult.valid === true, 'Null Versus Zero', 'Known zero row/column counts remain valid distinct values');
+
+  const negativeCount = JSON.parse(exported);
+  negativeCount.datasets[0].actualRowCount = -1;
+  const negativeCountResult = validateAndParseVaultJSON(JSON.stringify(negativeCount));
+  assert(negativeCountResult.valid === false, 'Count Validation', 'Negative dataset row count is rejected');
+
+  const fractionalCount = JSON.parse(exported);
+  fractionalCount.datasets[0].actualColumnCount = 1.5;
+  const fractionalCountResult = validateAndParseVaultJSON(JSON.stringify(fractionalCount));
+  assert(fractionalCountResult.valid === false, 'Count Validation', 'Fractional dataset column count is rejected');
+
+  const negativeMissingCount = JSON.parse(exported);
+  const columnBearingDataset = negativeMissingCount.datasets.find(
+    (dataset: any) => Array.isArray(dataset.columns) && dataset.columns.length > 0
+  );
+  if (columnBearingDataset) {
+    columnBearingDataset.columns[0].missingCount = -1;
+  }
+  const negativeMissingCountResult = validateAndParseVaultJSON(JSON.stringify(negativeMissingCount));
+  assert(
+    Boolean(columnBearingDataset) && negativeMissingCountResult.valid === false,
+    'Count Validation',
+    'Negative column missingCount is rejected for a dataset that actually contains columns'
+  );
+
+  const unknownMissingCount = JSON.parse(exported);
+  const unknownColumnDataset = unknownMissingCount.datasets.find(
+    (dataset: any) => Array.isArray(dataset.columns) && dataset.columns.length > 0
+  );
+  if (unknownColumnDataset) unknownColumnDataset.columns[0].missingCount = null;
+  const unknownMissingCountResult = validateAndParseVaultJSON(JSON.stringify(unknownMissingCount));
+  assert(
+    Boolean(unknownColumnDataset) && unknownMissingCountResult.valid === true,
+    'Null Versus Zero',
+    'Unknown missing-value count is represented as null and remains valid'
+  );
+
+  const zeroMissingCount = JSON.parse(exported);
+  const zeroColumnDataset = zeroMissingCount.datasets.find(
+    (dataset: any) => Array.isArray(dataset.columns) && dataset.columns.length > 0
+  );
+  if (zeroColumnDataset) zeroColumnDataset.columns[0].missingCount = 0;
+  const zeroMissingCountResult = validateAndParseVaultJSON(JSON.stringify(zeroMissingCount));
+  assert(
+    Boolean(zeroColumnDataset) && zeroMissingCountResult.valid === true,
+    'Null Versus Zero',
+    'Known zero missing-value count remains distinct from unknown null'
+  );
+
+  const legacyLicenseMetadata = JSON.parse(exported);
+  for (const evidenceRecord of legacyLicenseMetadata.evidence) {
+    delete evidenceRecord.licenseReviewStatus;
+    delete evidenceRecord.licenseEvidenceReference;
+    delete evidenceRecord.licenseReviewedAt;
+    delete evidenceRecord.licenseRestrictions;
+  }
+  const legacyLicenseResult = validateAndParseVaultJSON(JSON.stringify(legacyLicenseMetadata));
+  assert(legacyLicenseResult.valid === true, 'License Integrity', 'Missing license review metadata is safely normalized');
+  assert(
+    Boolean(legacyLicenseResult.parsedState?.evidence.every(e => e.licenseReviewStatus === 'UNREVIEWED')),
+    'License Integrity',
+    'A license string alone never implies commercial reuse permission'
+  );
+
+  const unsubstantiatedCommercialPermission = JSON.parse(exported);
+  unsubstantiatedCommercialPermission.evidence[0].licenseReviewStatus = 'PERMITTED_FOR_COMMERCIAL_REUSE';
+  unsubstantiatedCommercialPermission.evidence[0].licenseEvidenceReference = null;
+  unsubstantiatedCommercialPermission.evidence[0].licenseReviewedAt = null;
+  const unsubstantiatedCommercialResult = validateAndParseVaultJSON(JSON.stringify(unsubstantiatedCommercialPermission));
+  assert(
+    unsubstantiatedCommercialResult.valid === false,
+    'License Integrity',
+    'Commercial permission without evidence reference and review date is rejected'
+  );
+
+  const structurallyCompleteLicenseReview = JSON.parse(exported);
+  structurallyCompleteLicenseReview.evidence[0].licenseReviewStatus = 'PERMITTED_FOR_COMMERCIAL_REUSE';
+  structurallyCompleteLicenseReview.evidence[0].licenseEvidenceReference = 'https://example.invalid/license-review-fixture';
+  structurallyCompleteLicenseReview.evidence[0].licenseReviewedAt = '2026-10-23T00:00:00Z';
+  structurallyCompleteLicenseReview.evidence[0].licenseRestrictions = ['Test fixture only; not a real clearance'];
+  const structurallyCompleteLicenseResult = validateAndParseVaultJSON(JSON.stringify(structurallyCompleteLicenseReview));
+  assert(
+    structurallyCompleteLicenseResult.valid === true,
+    'License Integrity',
+    'Structurally complete review metadata is accepted without claiming the license itself was externally verified'
+  );
+
+  const missingRequiredCollection = JSON.parse(exported);
+  delete missingRequiredCollection.pricingRecords;
+  const missingRequiredCollectionResult = validateAndParseVaultJSON(JSON.stringify(missingRequiredCollection));
+  assert(missingRequiredCollectionResult.valid === false, 'Structural Validation', 'Missing pricingRecords collection is rejected');
+
+  const maturityInput = JSON.parse(exported);
+  maturityInput.engines[0].scientificMaturity = 'LAB_VALIDATED';
+  const maturityResult = validateAndParseVaultJSON(JSON.stringify(maturityInput));
+  assert(maturityResult.valid === true, 'Scientific Status Integrity', 'Structurally valid record can be inspected without automatic status mutation');
+  assert(maturityResult.parsedState?.engines[0].scientificMaturity === 'LAB_VALIDATED', 'Scientific Status Integrity', 'Validator preserves supplied maturity value and does not silently promote or downgrade it');
+  assert(canUnlockPhase5(maturityResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Scientific Status Integrity', 'Changing one engine maturity field cannot bypass Phase 5 gate');
+
+
   // 12. Duplicate Evidence and Dataset IDs detected
   const stateCopy = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   stateCopy.evidence.push({ ...stateCopy.evidence[0] });
@@ -385,5 +561,8 @@ export function runVaultLogicTestSuite() {
 }
 
 if (process.argv[1] && process.argv[1].includes('vaultLogic.regression.test')) {
-  runVaultLogicTestSuite();
+  const summary = runVaultLogicTestSuite();
+  if (summary.failed > 0) {
+    process.exitCode = 1;
+  }
 }

@@ -1,4 +1,4 @@
-export const VAULT_SCHEMA_VERSION = '1.0.0';
+export const VAULT_SCHEMA_VERSION = '1.1.0';
 
 export type ScientificMaturityStatus =
   | 'UNVERIFIED'
@@ -100,6 +100,10 @@ export interface EvidenceRecord {
   originalUrl: string;
   repositoryUrl?: string;
   license: string;
+  licenseReviewStatus?: 'UNREVIEWED' | 'REVIEW_PENDING' | 'PERMITTED_FOR_COMMERCIAL_REUSE' | 'RESTRICTED' | 'UNKNOWN';
+  licenseEvidenceReference?: string | null;
+  licenseReviewedAt?: string | null;
+  licenseRestrictions?: string[];
   datasetVersion?: string;
   fileName?: string;
   fileFormat?: string;
@@ -125,7 +129,7 @@ export interface EvidenceRecord {
 export interface DatasetColumn {
   name: string;
   unit: string;
-  missingCount: number;
+  missingCount: number | null; // NULL when missingness has not been inspected; zero means measured zero missing values.
   isExperimental: boolean;
 }
 
@@ -237,9 +241,98 @@ export interface ActiveBlocker {
   phaseId: string;
 }
 
+export type InventoryMetricCategory = 'FLOW' | 'FILM' | 'BUBBLE' | 'RHEOMETER' | 'HISTORICAL' | 'MIXED';
+
+export type InventoryMetricVerificationStatus = 'REPORTED_UNVERIFIED' | 'REPRODUCIBLE' | 'UNRESOLVED';
+
+export interface InventoryMetricRecord {
+  id: string;
+  category: InventoryMetricCategory;
+  metricKey: string;
+  value: number | null;
+  unit: string;
+  countingUnit: string;
+  verificationStatus: InventoryMetricVerificationStatus;
+  sourceReference: string;
+  notes: string;
+}
+
+export interface HistoricalReconciliationRecord {
+  id: string;
+  claimValue: number | null;
+  claimUnit: string;
+  reconciliationStatus: 'UNRESOLVED' | 'RECONCILED';
+  sourceReference: string;
+  relatedMetricIds: string[];
+  comparisonAggregateValue: number | null;
+  notes: string;
+}
+
+export interface DaviesModelCoefficientRecord {
+  /** Model-specific coefficient name (for example, the symbol used by the cited equation). */
+  name: string;
+  /** Null until a traceable source establishes the numeric value; never default unknown coefficients to zero. */
+  value: number | null;
+  /** Explicit units or "dimensionless" as supported by the source. */
+  unit: string;
+  valueOrigin: 'SOURCE_REPORTED' | 'CALCULATED_FROM_SOURCE' | 'ESTIMATED' | 'UNKNOWN';
+  sourceReference: string;
+  notes: string;
+}
+
+export interface DaviesIonConditionRecord {
+  /** Chemical species identity as stated by the source; do not infer identity from charge alone. */
+  species: string;
+  charge: number;
+  /** Null when species concentration is not provided for the evaluated condition. */
+  concentrationM: number | null;
+  sourceReference: string;
+}
+
+export interface DaviesActivityModelRecord {
+  id: string;
+  modelName: string;
+  modelVersion: string;
+  temperatureK: number | null;
+  ionicStrengthM: number | null;
+  speciesCharges: number[];
+  /** Optional additive detail for traceable coefficient and condition records. */
+  coefficients?: DaviesModelCoefficientRecord[];
+  ionConditions?: DaviesIonConditionRecord[];
+  applicabilityStatus: 'WITHIN_DOCUMENTED_DOMAIN' | 'OUTSIDE_DOCUMENTED_DOMAIN' | 'UNKNOWN';
+  applicabilityEvidenceReference?: string | null;
+  sourceReference: string;
+  assumptions: string[];
+  notes: string;
+}
+
+export interface SurfactantPhasePropertyRecord {
+  id: string;
+  surfactantId: string | null;
+  reportedName: string;
+  composition: string | null;
+  propertyName: 'KRAFFT_POINT';
+  value: number | null;
+  unit: string;
+  concentration: number | null;
+  concentrationUnit: string | null;
+  solutionComposition: string | null;
+  measurementMethod: string | null;
+  valueOrigin: 'MEASURED' | 'REPORTED' | 'ESTIMATED' | 'IMPUTED' | 'MODEL_PREDICTED' | 'UNKNOWN';
+  evidenceStatus: 'UNVERIFIED' | 'SOURCE_REVIEWED' | 'BLOCKED';
+  uncertaintyValue: number | null;
+  uncertaintyUnit: string | null;
+  sourceReference: string;
+  notes: string;
+}
+
 export interface VaultState {
   version: string;
   exportedAt?: string;
+  inventoryMetrics: InventoryMetricRecord[];
+  historicalReconciliations: HistoricalReconciliationRecord[];
+  daviesActivityModels: DaviesActivityModelRecord[];
+  surfactantPhaseProperties: SurfactantPhasePropertyRecord[];
   phases: ProjectPhase[];
   engines: EngineRecord[];
   evidence: EvidenceRecord[];
