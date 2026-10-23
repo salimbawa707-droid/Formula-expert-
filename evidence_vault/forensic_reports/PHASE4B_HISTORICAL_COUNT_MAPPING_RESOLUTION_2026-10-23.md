@@ -59,6 +59,10 @@ If the original mapping cannot be found, preserve 27,982 as an unreproduced hist
 
 The 144 Pušić et al. (2006) R460 readings are a separate transcription-verification task. The repository's blind review template remains intentionally blank. An AI-generated or same-operator comparison is not a genuine independent human review and must not be represented as one. The values remain `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW` until a distinct human reviewer transcribes from the publisher's PDF and the comparator passes.
 
+## Machine-readable ledger
+
+The same dispositions are recorded in `PHASE4B_HISTORICAL_COUNT_MAPPING_LEDGER_2026-10-23.csv`. Its `accepted_as_independent_physical_observation_count` field is `false` for every historical/source-defined category because the current structural counts do not establish a common, validated physical-observation unit.
+
 ## Gate
 
 **Historical aggregate mapping: OPEN / BLOCKED.**  
