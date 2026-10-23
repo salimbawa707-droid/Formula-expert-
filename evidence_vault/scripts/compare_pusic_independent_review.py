@@ -18,7 +18,7 @@ ID = "source_id"
 VALUE = "measurement_value"
 REVIEW_VALUE = "independent_transcribed_value"
 REVIEWER = "independent_reviewer"
-REQUIRED_SOURCE = {ID, VALUE}
+REQUIRED_SOURCE = {ID, VALUE, "reviewer_1"}
 REQUIRED_REVIEW = {ID, REVIEW_VALUE, REVIEWER}
 
 
@@ -90,6 +90,11 @@ def compare_rows(source_rows: list[dict[str, str]], review_rows: list[dict[str, 
             reviewers.add(reviewer)
         else:
             errors.append(f"{key}: independent_reviewer is blank")
+        source_reviewer = src.get("reviewer_1", "").strip()
+        if not source_reviewer:
+            errors.append(f"{key}: source reviewer_1 is blank; independence cannot be checked")
+        elif reviewer and reviewer.casefold() == source_reviewer.casefold():
+            errors.append(f"{key}: independent_reviewer matches source reviewer_1; review is not independent")
         raw = rev[REVIEW_VALUE].strip()
         if not raw:
             missing_values.append(key)
