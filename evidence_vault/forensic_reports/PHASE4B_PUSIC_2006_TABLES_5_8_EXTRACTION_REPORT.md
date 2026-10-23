@@ -1,6 +1,6 @@
 # Pušić et al. (2006) — First Numeric Table Extraction
 
-**Status:** SOURCE_EXTRACTED_PENDING_SECOND_REVIEW — numeric transcription started; independent second-pass verification remains required before this is accepted as validated evidence or used for model calibration.
+**Status:** SOURCE_ACCESS_CONFIRMED; manual transcription findings documented; dataset CSV NOT YET COMMITTED. Any transcription must remain SOURCE_EXTRACTED_PENDING_SECOND_REVIEW until an independent second pass is complete. The attempted large CSV write was blocked, so this report must not be interpreted as saying the numeric table is already ingested into the repository.
 
 ## Source identity and reuse
 
@@ -43,7 +43,7 @@ A tidy long-format CSV was transcribed from Tables 5–8 on printed page 13: **1
 
 ## Output
 
-- PHASE4B_PUSIC_2006_TABLES_5_8_SOURCE_EXTRACTED.csv — 144 transcribed rows, each with table number, fabric, detergent type, dosage, stain/control label, source page, measurement definition, extraction status and caveat.
-- PHASE4B_PUSIC_2006_TABLES_5_8_EXTRACTION_REPORT.md — this report.
+- PHASE4B_PUSIC_2006_TABLES_5_8_EXTRACTION_REPORT.md — committed source-access and transcription-scope report.
+- The 144-value tidy CSV is **not currently present in the GitHub branch**; do not treat the values as ingested. The prior attempt to write the large CSV was blocked. The CSV must be added through an approved, supported write path and then independently reviewed.
 
 No phase gate is changed by this extraction. Phase 4B remains open until its full acceptance criteria and historical reconciliation are satisfied; Phase 5 remains locked.
