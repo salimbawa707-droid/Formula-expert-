@@ -85,6 +85,13 @@ class PusicValidationTests(unittest.TestCase):
         errors = validator.validate_rows(rows)
         self.assertTrue(any("second review gate not met" in e for e in errors))
 
+    def test_rejects_same_person_claimed_as_both_reviewers(self):
+        rows = make_rows()
+        rows[0]["reviewer_2"] = rows[0]["reviewer_1"]
+        errors = validator.validate_rows(rows)
+        self.assertTrue(any("different identity" in e for e in errors))
+        self.assertTrue(any("second review gate not met" in e for e in errors))
+
     def test_rejects_nonfinite_measurement(self):
         rows = make_rows()
         rows[0]["measurement_value"] = "nan"
