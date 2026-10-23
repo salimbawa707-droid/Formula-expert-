@@ -116,8 +116,12 @@ def validate_rows(rows: list[dict[str, str]]) -> list[str]:
             if dosage_unit != unit:
                 _fail(errors, index, f"{condition} dosage unit for table {table} must be {unit}")
 
-        if row["reviewer_1"].strip() and row["reviewer_2"].strip() and row["review_match"].strip().lower() == "true":
+        if (row["reviewer_1"].strip() and row["reviewer_2"].strip()
+                and row["reviewer_1"].strip().casefold() != row["reviewer_2"].strip().casefold()
+                and row["review_match"].strip().lower() == "true"):
             review_complete += 1
+        elif row["review_match"].strip().lower() == "true" and row["reviewer_1"].strip().casefold() == row["reviewer_2"].strip().casefold():
+            _fail(errors, index, "reviewer_2 must be a different identity from reviewer_1")
 
     for table, count in table_counts.items():
         if count != 36:
