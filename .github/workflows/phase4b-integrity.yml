@@ -124,11 +124,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      # Keep local code-quality gates running even if the external RepOD host is unavailable.
+      # The acquisition step remains required and a failed download still fails this job;
+      # these always() conditions only prevent unrelated checks from being skipped.
       - name: TypeScript typecheck
+        if: always()
         run: npm run typecheck
 
       - name: Run project test suite
+        if: always()
         run: npm test
 
       - name: Production build
+        if: always()
         run: npm run build
