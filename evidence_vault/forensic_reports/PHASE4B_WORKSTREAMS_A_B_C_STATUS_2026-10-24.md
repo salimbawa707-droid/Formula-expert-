@@ -53,6 +53,7 @@ Implementation reference: PR #7, `src/domain/vault/types.ts`, `src/domain/vault/
 CI was rechecked on the exact current commits created for this A/B/C follow-up:
 
 - PR #9 report commit `a7d1c153c0467ee2045616d57000bc03a1ca6a16`: Engine verification run [40010481554](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010481554) **SUCCESS**; Phase 4B Integrity and Build Gates run [40010481673](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010481673) **SUCCESS**. Evidence integrity, source byte/count reconciliation, official RepOD acquisition, typecheck, tests and production build passed.
+- **Latest PR #9 head `610a47d27f90286bb8947f0ac2352ef4f81e1f9e`:** Engine verification run [40011916574](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40011916574) **SUCCESS** (typecheck, regression suite, production build, production HTTP smoke test); Phase 4B Integrity and Build Gates run [40011916582](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40011916582) **SUCCESS** (source workbook byte checks, Round-20 reconciliation, official RepOD acquisition, historical-count reconciliation, typecheck, tests, production build).
 - PR #7 schema commit `d3409268d2f81097cc4d71ab61490999c09534c1`: Engine verification run [40010530550](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010530550) **SUCCESS**; Phase 4B Integrity and Build Gates run [40010530745](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010530745) **SUCCESS**. The Pušić-specific workflow was **SKIPPED** as intended by its branch filter, not failed.
 
 These results establish code/test/source-integrity checks on these commits only. They do not establish independent human transcription review or resolve missing historical source mapping.
@@ -73,9 +74,14 @@ Therefore:
 - [x] Unsupported 951 adjustment rejected; no fabricated replacement aggregate.
 - [x] Optional Davies parameter collection separated from inventory metrics in PR #7 schema branch.
 - [x] Latest PR #9 CI green on the recorded head.
-- [ ] Original historical count crosswalk recovered, or explicitly retained as unreproducible.
+- [x] Historical count crosswalk not present; the 27,982 claim is explicitly retained as unreproduced and not accepted as a verified physical-observation total.
 - [ ] Independent human PDF review of all 144 Pušić values completed and recorded.
 - [ ] Remaining Phase 4B acceptance criteria and independent sign-off completed.
 - [ ] Phase 5/6 unlock criteria independently approved.
 
 **Final disposition:** The assistant-executable reconciliation and safeguard work has been carried as far as available repository evidence allows. The remaining open items require source artifacts not present in the repository and/or a genuinely separate human reviewer; they must not be “completed” by guessing or self-approval.
+
+
+## Follow-up verification — 2026-10-24
+
+After the report's earlier draft, both required CI workflows completed successfully on the latest PR #9 head `610a47d27f90286bb8947f0ac2352ef4f81e1f9e` (runs `40011916574` and `40011916582`). The Pušić review-gate workflow also remains green on commit `bfcdc66ae48eafd8c58822e5e7e4bb355d477337` (run `39965675012`), confirming the validator/comparator guardrails; it does **not** supply the missing independent human review. No merge, scientific promotion, or phase unlock was performed.
