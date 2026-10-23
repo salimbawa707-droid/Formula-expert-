@@ -13,7 +13,7 @@ def fixtures():
     review = []
     for i in range(144):
         key = f"record_{i:03d}"
-        source.append({"source_id": key, "measurement_value": f"{i}.25"})
+        source.append({"source_id": key, "measurement_value": f"{i}.25", "reviewer_1": "source-extractor"})
         review.append({"source_id": key, "independent_transcribed_value": f"{i}.25",
                        "independent_reviewer": "independent-reviewer"})
     return source, review
@@ -46,6 +46,13 @@ class IndependentReviewComparisonTests(unittest.TestCase):
         result = module.compare_rows(source, review)
         self.assertEqual(result["validation"], "FAIL")
         self.assertTrue(any("independent_reviewer is blank" in e for e in result["errors"]))
+
+    def test_fails_when_same_person_claimed_as_independent_reviewer(self):
+        source, review = fixtures()
+        review[0]["independent_reviewer"] = "SOURCE-EXTRACTOR"
+        result = module.compare_rows(source, review)
+        self.assertEqual(result["validation"], "FAIL")
+        self.assertTrue(any("not independent" in e for e in result["errors"]))
 
     def test_fails_duplicate_source_id(self):
         source, review = fixtures()
