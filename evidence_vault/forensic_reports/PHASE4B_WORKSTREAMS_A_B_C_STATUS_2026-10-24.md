@@ -50,7 +50,12 @@ Implementation reference: PR #7, `src/domain/vault/types.ts`, `src/domain/vault/
 
 ## C. Phase-gate decision
 
-The latest recorded CI on PR #9 head `af0fc9a5384540e4fb5073528318d6560832a3a0` passed the Phase 4B Integrity and Build Gates and Engine Verification workflows. The integrity workflow's source-byte/count checks, external RepOD acquisition/validation, typecheck, tests, and production build passed. These are software and source-integrity checks only.
+CI was rechecked on the exact current commits created for this A/B/C follow-up:
+
+- PR #9 report commit `a7d1c153c0467ee2045616d57000bc03a1ca6a16`: Engine verification run [40010481554](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010481554) **SUCCESS**; Phase 4B Integrity and Build Gates run [40010481673](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010481673) **SUCCESS**. Evidence integrity, source byte/count reconciliation, official RepOD acquisition, typecheck, tests and production build passed.
+- PR #7 schema commit `d3409268d2f81097cc4d71ab61490999c09534c1`: Engine verification run [40010530550](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010530550) **SUCCESS**; Phase 4B Integrity and Build Gates run [40010530745](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/40010530745) **SUCCESS**. The Pušić-specific workflow was **SKIPPED** as intended by its branch filter, not failed.
+
+These results establish code/test/source-integrity checks on these commits only. They do not establish independent human transcription review or resolve missing historical source mapping.
 
 The Pušić R460 dataset has 144 extracted values, but its genuinely independent human source-PDF review is still pending. `reviewer_2` and `review_match` must remain blank until a separate human reviewer completes the comparison. AI rechecking is not independent human sign-off. The values remain `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW`, not `LAB_VALIDATED`.
 
