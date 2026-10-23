@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   pusic-review:
-    if: ${{ hashFiles('evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv') != '' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.number == 8 }}
     name: Validate source extraction and independent-review safeguards
     runs-on: ubuntu-latest
     timeout-minutes: 5
