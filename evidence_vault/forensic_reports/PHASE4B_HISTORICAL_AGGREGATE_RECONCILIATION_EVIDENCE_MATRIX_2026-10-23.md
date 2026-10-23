@@ -38,7 +38,7 @@ This report reconciles the historical aggregate claims against the Round-18 and 
 
 ## Source workbook integrity cross-reference
 
-The repository's prior numerical inspection / provenance report records these source artifact identities (the values below are **recorded in the repository report**, not freshly recomputed in this PR run):
+The source artifact identities below were independently rechecked by the Round-20 workflow on PR head `af6264bb5ba269319defab07058f1fdceaba0818`, and are enforced by `evidence_vault/scripts/test_round20_source_record_reconciliation.py` (integrity run `39969059207`):
 
 | Workbook | Bytes | Recorded MD5 | Recorded SHA-256 |
 |---|---:|---|---|
@@ -47,11 +47,11 @@ The repository's prior numerical inspection / provenance report records these so
 | Supplementary_BubbleSizes_v1.xlsx | 557,745 | 9fcfe68a37d2d92a7999569a07908854 | 9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad |
 | Supplementary_RheometerData_v2.xlsx | 162,970 | c9b5a9cde073eb7c58933eec37a559a6 | 073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70 |
 
-The recorded report marks these digests as matching the publisher's MD5 and the repository's calculated SHA-256. To make a new run reproducible, the CI job must bind its emitted counts and generated ledgers to these exact bytes and retain the run/commit identifier. A prior integrity report is provenance evidence, not proof that this PR reran the scripts.
+The workflow binds its emitted counts and generated ledgers to these exact bytes and retains the run/commit identifier in Actions. The checksum/count assertion and Round-20 artifact-preservation steps both passed. The remaining blockers below concern historical interpretation, count definitions, and independent review—not whether the current PR executed the structural reconciliation.
 
 ## Outstanding blockers
 
-- Execute Round-20 against the exact checked-out source workbook bytes above and preserve the generated JSON/CSV outputs together with the commit/run identifier. The current PR has not run this script in the available execution environment.
+- Round-20 has now executed in GitHub Actions on PR head `af6264bb5ba269319defab07058f1fdceaba0818` (integrity run `39969059207`). The new regression gate passed exact workbook byte identity, emitted report identity, structural counts, and the explicit unresolved-headline/phase-governance checks. Generated JSON/CSV outputs were retained as workflow artifacts for that run. This establishes reproducible structural reconciliation for that commit, not resolution of the historical count.
 - Independently verify the 210 vs historical 212 solution-flow discrepancy against the original source and historical counting definition.
 - Resolve the bubble 20/30-minute allocation from documented source-row/cell lineage; matching only the combined total is insufficient.
 - Find a documented historical mapping/counting rule for rheometer 739, and explain the 1,532 per-sheet claim and 2,233 numeric-point-row count without silently deduplicating or discarding rows.
