@@ -7,6 +7,10 @@
 
 ---
 
+> **SUPERSEDES THE COUNT-CONCLUSION IN THIS HISTORICAL REPORT (2026-10-23):** The statement below that 27,982 is an exact reconciled total of “physical observations” is not supported by the workbook source lineage. Later Round-18/19/20 audits found conflicting counting units and source counts. Treat this document as a record of the earlier claim and methodology, not as accepted proof that the 27,982 physical-observation total is valid. The source-mapping disposition is documented in `PHASE4B_HISTORICAL_COUNT_MAPPING_RESOLUTION_2026-10-23.md`. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+---
+
 ## Executive Summary
 
 This Round-5 audit provides the definitive, read-only forensic ledger for Zenodo Record 18961871. It resolves previous observation-count discrepancies, provides exact integer counts per worksheet without vague estimates, re-hashes all file binaries independently, and formally separates **File-Integrity PASS** from **Scientific-Validation Readiness**.
