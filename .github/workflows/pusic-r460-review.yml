@@ -27,14 +27,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validate the committed 144-row source extraction
-        run: |
-          python evidence_vault/scripts/validate_pusic_2006_r460.py evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv
-        continue-on-error: true
       - name: Run validator regression tests
-        run: python -m unittest evidence_vault/scripts/test_validate_pusic_2006_r460.py
+        run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
       - name: Run blind-review comparator regression tests
-        run: python -m unittest evidence_vault/scripts/test_compare_pusic_independent_review.py
+        run: python evidence_vault/scripts/test_compare_pusic_independent_review.py
       - name: Assert unreviewed production CSV remains blocked
         run: |
           set +e
