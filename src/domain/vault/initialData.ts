@@ -14,7 +14,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
     reconciledFiles: 59,
     claimedSubmodules: 97,
     status: 'REPORTED_UNVERIFIED',
-    notes: 'Scoped source-tree audit at 891466265b3a8a6e01a6aab2c64da310116b302b: the legacy engines_reconciled.list contains 59 unique existing paths but is not a complete engine inventory; the repository has 54 source modules with Engine in the filename outside UI components (57 including 3 UI components), 79 broad engine/calculator/router/workflow candidate files, and 6 top-level ENG-001..ENG-006 vault registry records. These are different units and must not be summed or equated. The cited original Audit Report A (64) and Initial Architecture Spec (97) were not located, so those historical claims remain unverified. See evidence_vault/forensic_reports/ENGINE_COUNT_RECONCILIATION_2026-10-25.md and evidence_vault/scripts/verify_engine_inventory.mjs.',
+    notes: 'Scoped source-tree audit at 891466265b3a8a6e01a6aab2c64da310116b302b: the legacy engines_reconciled.list contains 59 unique existing paths but is not a complete engine inventory; the repository has 62 source modules with Engine in the filename outside UI components (65 including 3 UI components), 94 broad engine/calculator/router/workflow candidate files, and 6 top-level ENG-001..ENG-006 vault registry records. These are different units and must not be summed or equated. The cited original Audit Report A (64) and Initial Architecture Spec (97) were not located, so those historical claims remain unverified. See evidence_vault/forensic_reports/ENGINE_COUNT_RECONCILIATION_2026-10-25.md and evidence_vault/scripts/verify_engine_inventory.mjs.',
   },
   activeBlockers: [
     {
