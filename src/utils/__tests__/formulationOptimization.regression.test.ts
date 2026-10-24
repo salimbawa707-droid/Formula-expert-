@@ -235,6 +235,14 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     `pH: ${candEval.metrics.pH}, Active: ${candEval.metrics.activeSurfactantPercentage}%, CPI: ${candEval.metrics.cpi}, Gate: ${candEval.qualityGateStatus}`
   );
 
+  assert(
+    candEval.cmcAssessment !== undefined &&
+    typeof candEval.cmcAssessment.available === 'boolean' &&
+    !('cmc' in candEval.objectives),
+    'Test 12b: CMC assessment flows with candidate as diagnostic only, never as an objective',
+    `CMC status: ${candEval.cmcAssessment?.available ? candEval.cmcAssessment.classification : 'UNAVAILABLE'}; objective keys: ${Object.keys(candEval.objectives).join(', ')}`
+  );
+
   // 12. Pareto Dominance Logic
   const candA: ParetoCandidate = {
     candidateId: 'A',
