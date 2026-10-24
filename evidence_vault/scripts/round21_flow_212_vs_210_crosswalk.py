@@ -85,7 +85,7 @@ def main() -> int:
     report = {
         "audit_id": "PHASE4B-FLOW-212-VS-210-SOURCE-ROW-CROSSWALK",
         "source": {"filename": SOURCE.name, "sheet": SHEET, "sha256": digest,
-                   "source_range_scanned": f"A3:H{ws.max_row}"},
+                   "source_range_scanned": f"A3:H{max_row}"},
         "counts": {"historical_nonempty_row_count": nonempty_rows,
                    "complete_numeric_flow_points": complete_points,
                    "nonempty_rows_not_complete_numeric_points": incomplete_nonempty,
