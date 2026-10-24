@@ -178,9 +178,9 @@ def main():
                 "not_established": "No original count script, workbook-cell inclusion map, or author rule establishes that headers were included."
             },
             {
-                "observation": "Each steady-shear sheet spans 731 worksheet rows after its detected header, but only 721 rows are populated and only 720 have numeric Point No. values.",
+                "observation": "Each steady-shear sheet spans 732 worksheet rows after its detected header, but only 721 rows are populated and only 720 have numeric Point No. values.",
                 "status": "SOURCE_STRUCTURE_REPRODUCED_ORIGINAL_INTENT_UNKNOWN",
-                "possible_explanation": "The historical combined 731 is close to the 732-row worksheet span but is not exactly reproduced; the historical counting rule remains unknown.",
+                "possible_explanation": "The historical combined 731 is not exactly reproduced by the 732-row worksheet span or the 720 numeric points per sheet; the historical counting rule remains unknown.",
                 "not_established": "This does not establish which sheet, whether both sheets were intended, or how 739 was derived; row-span matching is not a measurement-count reconciliation."
             },
             {
