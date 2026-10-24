@@ -115,7 +115,7 @@ def result(errors, matches, mismatches, common):
             "common_source_ids":common, "errors":errors,
             "scientific_status":"AI_VERIFIED_SOURCE_BACKED" if not errors else "AI_VERIFICATION_PENDING",
             "lab_validated":False,
-            "phase4b":"PUCIC_SOURCE_COMPARISON_SUBGATE_PASS_ONLY" if not errors else "OPEN",
+            "phase4b":"PUSIC_SOURCE_COMPARISON_SUBGATE_PASS_ONLY" if not errors else "OPEN",
             "phase5":"LOCKED"}
 
 def main(argv):
