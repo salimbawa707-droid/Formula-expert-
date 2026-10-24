@@ -29,6 +29,7 @@ import { FormulationIngredient } from '../../types';
 import { ProductCategoryId, normalizeProductCategory } from '../../domain/productTaxonomy';
 import { isPowderCategory } from '../formulationEngineRouter';
 import { calculateFormulaCost } from '../costingEngine';
+import { calculateMixedCMC, type MixedCmcCalculationResult } from '../calculators';
 import {
   MasterScientificQualityGateReport,
   FinalFormulaStatus,
@@ -103,6 +104,8 @@ export interface ParetoCandidate {
   provenance?: any;
   executionTrace?: ScientificExecutionTrace;
   stageDiagnostics?: StageDiagnostic[];
+  /** Diagnostic only: never used as an optimization objective or evidence of lab validation. */
+  cmcAssessment?: MixedCmcCalculationResult;
 }
 
 export type CostComparisonStatus = 'COMPARABLE' | 'INCOMPLETE_COST_COMPARISON';
@@ -273,6 +276,7 @@ export function evaluateCandidateFormulation(
   qualityGateStatus: FinalFormulaStatus;
   isFeasible: boolean;
   orchestratorResult: CanonicalFormulaEvaluationResult;
+  cmcAssessment: MixedCmcCalculationResult;
 } {
   const categoryId = normalizeProductCategory(categoryInput);
   const isPowder = isPowderCategory(categoryId);
@@ -302,6 +306,23 @@ export function evaluateCandidateFormulation(
   };
 
   const orchestratorResult = FormulaScientificOrchestrator.evaluate(canonicalInput);
+
+  // Diagnostic-only CMC data flow. This is not a Pareto objective and cannot
+  // improve candidate rank. Any calculation failure remains explicitly unavailable.
+  const cmcAssessment: MixedCmcCalculationResult = (() => {
+    try {
+      return calculateMixedCMC(ingredients);
+    } catch {
+      return {
+        available: false,
+        eligibilityStatus: 'INSUFFICIENT_INPUTS',
+        eligibilityReasons: ['CMC diagnostic calculation failed; no value was substituted.'],
+        components: [],
+        modelType: 'Ideal Mixed Pseudophase (Clint Model)',
+        classification: 'UNAVAILABLE',
+      };
+    }
+  })();
 
   // 2. Authoritative Mass Balance
   const totalMass = orchestratorResult.massBalance.totalPercentage;
@@ -401,6 +422,7 @@ export function evaluateCandidateFormulation(
     qualityGateStatus,
     isFeasible,
     orchestratorResult,
+    cmcAssessment,
   };
 }
 
@@ -700,6 +722,7 @@ export async function runFormulationOptimization(
     provenance: baselineEval.orchestratorResult.provenance,
     executionTrace: baselineEval.orchestratorResult.executionTrace,
     stageDiagnostics: baselineEval.orchestratorResult.stageDiagnostics,
+    cmcAssessment: baselineEval.cmcAssessment,
   };
   currentPopulation.push(baselineCandidate);
   allCandidates.push(baselineCandidate);
@@ -731,6 +754,7 @@ export async function runFormulationOptimization(
       provenance: evaluated.orchestratorResult.provenance,
       executionTrace: evaluated.orchestratorResult.executionTrace,
       stageDiagnostics: evaluated.orchestratorResult.stageDiagnostics,
+      cmcAssessment: evaluated.cmcAssessment,
     };
     currentPopulation.push(candidate);
     allCandidates.push(candidate);
@@ -800,6 +824,7 @@ export async function runFormulationOptimization(
         provenance: evalRes.orchestratorResult.provenance,
         executionTrace: evalRes.orchestratorResult.executionTrace,
         stageDiagnostics: evalRes.orchestratorResult.stageDiagnostics,
+        cmcAssessment: evalRes.cmcAssessment,
       };
 
       offspringPool.push(offspring);
