@@ -74,6 +74,7 @@ def main() -> int:
             "nonempty_cells": ";".join(f"{ws.cell(r,c).coordinate}={safe(values[c-1])}"
                                         for c in range(1, 9) if values[c-1] is not None),
         })
+    max_row = ws.max_row
     workbook.close()
 
     OUT.mkdir(parents=True, exist_ok=True)
