@@ -14,6 +14,10 @@ class CorrectionSafetyTests(unittest.TestCase):
         self.assertIn('"UNAVAILABLE"', source)
         self.assertIn('"MODEL_NOT_WIRED"', source)
         self.assertIn('"MODEL_PREDICTION_NOT_LAB_VALIDATED"', source)
+        self.assertNotIn('"PUBLISHED_MODEL" | "ESTIMATED" | "LAB_VALIDATED"', source)
+        self.assertIn("validConfidence", source)
+        self.assertIn("validAdapterMetadata", source)
+        self.assertIn("typeof c.smiles !== \"string\"", source)
         self.assertNotIn("value: 1.0, // mM — placeholder", source)
         self.assertNotIn("value: 1.2,", source)
 
