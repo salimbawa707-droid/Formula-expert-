@@ -31,6 +31,12 @@ jobs:
       - name: Install XLSX parser
         run: python -m pip install openpyxl==3.1.5
 
+      - name: Validate Pušić AI source comparison ledger
+        run: python evidence_vault/scripts/validate_pusic_ai_evidence.py evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv evidence_vault/review_workbooks/pusic_2006_ai_visual_comparison_144.csv
+
+      - name: Test Pušić AI evidence validator
+        run: python evidence_vault/scripts/test_validate_pusic_ai_evidence.py
+
       - name: Test Zenodo XLSX parser against canonical workbooks
         run: python evidence_vault/scripts/test_audit_zenodo_xlsx.py evidence_vault/datasets/zenodo_18961871
 
