@@ -320,7 +320,7 @@ export function evaluateCandidateFormulation(
   const activeSurfactantsPct = orchestratorResult.activeMatterResult.totalSurfactantActivePct;
 
   // 5. Authoritative pH Engine v2
-  const finalPH = orchestratorResult.pHResult.ph ?? 7.0;
+  const finalPH = orchestratorResult.pHResult.ph ?? Number.NaN; // Missing pH remains unavailable; never substitute a plausible value.
 
   // 6. Authoritative Chelation / Hardness Capacity
   const waterHardnessCapacityPpm = Number((orchestratorResult.hardnessResult?.maxSupportedPpm || 0).toFixed(1));
