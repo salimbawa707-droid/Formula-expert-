@@ -1,5 +1,7 @@
 # PHASE 4B — EVIDENCE VAULT DATASET REGISTER UPDATE
 
+> **Supersession / current-state notice (2026-10-24):** This is a historical inspection report, not proof that the raw CSV is present in current `main` or that commercial reuse is permitted. The upstream SurfPro repository's dataset `LICENSE.md` states `CC BY-NC-SA 4.0`; the Zenodo rights field is blank. Commercial reuse is **NOT CLEARED** without separate written permission. The historical `READY` and `RESOLVED` labels below are superseded by the current vault state: DS-001 readiness is `DEFICIENT`, BLK-001 remains open because raw CSVs are absent from current `main`, and Phase 4B remains OPEN / Phase 5 LOCKED.
+
 **Record Target:** Dataset `DS-001` & Evidence `EVD-002`  
 **Dataset Name:** SurfPro Surfactant Property (SURFPRO) Experimental Database (Zenodo Record 15861809)  
 **Execution Timestamp:** 2026-10-17T21:32:51.862Z  
@@ -17,7 +19,7 @@
 | **Direct Download URL** | `https://zenodo.org/api/records/15861809/files/S129_SURFPRO.csv/content` |
 | **Concept DOI / Permanent Link** | `10.5281/zenodo.14512419` / `10.5281/zenodo.15861809` |
 | **Primary Peer-Reviewed Citation** | Hödl, C., et al. (2025). *SURFPRO: a curated database of surfactants and their physical properties*. **Digital Discovery**, 4, 393–406. DOI: [10.1039/D4DD00393D](https://doi.org/10.1039/D4DD00393D). |
-| **Licensing & Reuse Rights** | Creative Commons Attribution 4.0 International (`CC-BY-4.0`) |
+| **Licensing & Reuse Rights** | Upstream repository `LICENSE.md`: `CC BY-NC-SA 4.0`; Zenodo rights field blank. Commercial reuse is not cleared without separate written permission. |
 | **Attribution Requirement** | "Hödl, C., et al. (2025). SURFPRO Database, Zenodo, DOI: 10.5281/zenodo.15861809" |
 | **Retrieved Master Filename** | `S129_SURFPRO.csv` |
 | **Retrieved Byte Size** | **799,214 bytes** (~780.48 KB) |
@@ -80,7 +82,7 @@ The physical dataset register for record `DS-001` is formally updated from `UNIN
   "designation": "BENCHMARK",
   "originalSourceMapping": "Zenodo Record 15861809 / Hödl et al. (2025) Digital Discovery",
   "applicableEngineIds": ["ENG-002"],
-  "numericalValidationReadiness": "READY",
+  "numericalValidationReadiness": "DEFICIENT",
   "inspectionStatus": "NUMERICALLY_INSPECTED",
   "inspectedBy": "Independent Scientific & Forensic Code Auditor",
   "inspectionDate": "2026-10-17",
@@ -126,12 +128,12 @@ The corresponding Evidence Vault lead `EVD-002` is updated:
 
 - **Blocker ID:** `BLK-001`
 - **Previous Description:** *"The SurfPro ZIP is not available in the Google AI Studio runtime workspace. No experimental dataset has been numerically inspected according to the latest report."*
-- **Resolution Status:** **REMEDIATED & RESOLVED**.
+- **Resolution Status:** **HISTORICALLY REPORTED AS RESOLVED; CURRENT MAIN REPRODUCIBILITY BLOCKER OPEN**.
 - **Technical Basis for Resolution:**
   1. The 421 MB zip download blocker was disproven by direct inspection of Zenodo API metadata.
-  2. The canonical file `S129_SURFPRO.csv` (780 KB) was successfully downloaded to `data/evidence/surfpro/S129_SURFPRO.csv`.
-  3. The MD5 checksum `e5bcd1bbab2fc56717a3cd6a0cf1c152` matches published deposit metadata bit-for-bit.
-  4. Numerical inspection is complete: 1,624 master records and 223 benchmark detergent records verified.
+  2. A historical audit reported downloading the canonical `S129_SURFPRO.csv` (780 KB); the raw CSV is absent from current `main`, so a fresh reproduction has not been demonstrated from the current checkout.
+  3. Historical inspection reports record MD5 `e5bcd1bbab2fc56717a3cd6a0cf1c152` and SHA-256 `316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841`; those values must be recomputed from a newly acquired file before the current reproducibility blocker can be cleared.
+  4. Historical counts of 1,624 master records and 223 filtered records are retained as historical evidence, not a fresh current-main reproduction or proof of finished-formula validation.
 
 ---
 
