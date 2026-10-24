@@ -1002,7 +1002,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       columns: [],
       experimentalVsImputedNotes: 'Historical Round-2 audit inspected the SURFPRO master database and extracted 223 detergent-active records. This is component-level pure-surfactant property evidence, not matched mixed-formula validation. Raw source CSVs are absent from current main and must be re-acquired for a fresh reproducibility run.',
       duplicateOverlapCheck: 'Historical audit reported 1,624 unique InChIKeys in master and 223 unique InChIKeys in slice; reproduce after re-acquisition.',
-      designation: 'REFERENCE_DATABASE',
+      designation: 'BENCHMARK',
       originalSourceMapping: 'Zenodo Deposit 15861809 / BigChemistry-RobotLab; historical evidence in PHASE4B_SURFPRO_ARTIFACT_AUDIT_02.md',
       applicableEngineIds: ['ENG-002'],
       numericalValidationReadiness: 'DEFICIENT',
