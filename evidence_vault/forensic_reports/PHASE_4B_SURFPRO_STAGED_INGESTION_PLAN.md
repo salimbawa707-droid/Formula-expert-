@@ -1,4 +1,4 @@
-# PHASE 4B — SURFPRO STAGED DATASET INGESTION PLAN
+# PHASE 4B — SURFPRO STAGED DATASET ASSESSMENT PLAN
 
 **Project:** Detergent Formula Expert — Scientific Roadmap & Evidence Vault  
 **Phase:** Phase 4B — Comprehensive Real Scientific Evidence Inventory (ACTIVE / OPEN)  
@@ -32,7 +32,9 @@ Phase 5 remains **STRICTLY LOCKED**. This document outlines the staged retrieval
 - **Concept DOI:** `10.5281/zenodo.14512419`
 - **Publication Date:** 2025-01-14
 - **Publisher / Depository:** Zenodo Open Repository
-- **License:** Creative Commons Attribution 4.0 International (`CC-BY-4.0`)
+- **Zenodo rights metadata:** blank / no license declared in this record’s rights field.
+- **Repository data license:** `CC BY-NC-SA 4.0` in the upstream SurfPro repository’s `LICENSE.md`; this is non-commercial and share-alike.
+- **Commercial-use disposition:** NOT CLEARED. Do not bundle, mirror, redistribute, or use this dataset in the commercial app/model without separate written permission from the rights holder.
 - **Primary Scientific Publication:**  
   Hödl, C., et al. (2025). *SURFPRO: a curated database of surfactants and their physical properties*. **Digital Discovery**, 4, 393–406. DOI: [10.1039/D4DD00393D](https://doi.org/10.1039/D4DD00393D).
 
@@ -51,7 +53,7 @@ Phase 5 remains **STRICTLY LOCKED**. This document outlines the staged retrieval
 - **URL:** `https://github.com/BigChemistry-RobotLab/SurfPro`
 - **Default Branch:** `main`
 - **Repository Size:** 8,027 KB (~8 MB)
-- **License:** No assertion in GitHub metadata; underlying data published under CC-BY 4.0 on Zenodo.
+- **License:** The upstream repository contains a dataset `LICENSE.md` stating `CC BY-NC-SA 4.0`. The Zenodo record’s rights field is blank; do not infer CC-BY from the article or software code license.
 
 #### GitHub `data/` Directory Manifest
 | Filename | Exact Size (Bytes) | Row Count | Checksum (SHA-256) | Scientific Characterization | Suitability for Engine Validation |
@@ -95,11 +97,11 @@ The candidate dataset must provide **empirical measurements** with:
 
 ---
 
-## 4. Task 3: Ingestion Plan for Candidate Datasets
+## 4. Task 3: Restricted Evidence Assessment (No Commercial Ingestion)
 
-We recommend a two-tier staged ingestion plan:
+The earlier proposed ingestion plan is superseded because the dataset repository’s `CC BY-NC-SA 4.0` terms do not authorize commercial reuse. The following steps are for provenance review and non-commercial audit only; they are not approval to copy the dataset into the commercial app, product bundle, or model-training corpus.
 
-### 4.1 Tier 1: Canonical Master Archive Ingestion (`S129_SURFPRO.csv`)
+### 4.1 Tier 1: Canonical Source Identity (metadata only unless permission is obtained)
 - **Official Download URL:** `https://zenodo.org/api/records/15861809/files/S129_SURFPRO.csv/content`
 - **Filename:** `S129_SURFPRO.csv`
 - **Expected File Size:** `799,214 bytes` (~780 KB)
@@ -107,12 +109,12 @@ We recommend a two-tier staged ingestion plan:
   - Published MD5: `e5bcd1bbab2fc56717a3cd6a0cf1c152`
   - Independently Computed SHA-256: `316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841`
 - **Storage Location in Vault:** `data/evidence/surfpro/S129_SURFPRO.csv`
-- **License:** Creative Commons Attribution 4.0 International (`CC-BY-4.0`)
+- **License disposition:** `CC BY-NC-SA 4.0` asserted by upstream repository; Zenodo rights field blank. Commercial reuse is not cleared.
 - **Fidelity:** 100% faithful to the official Zenodo deposit.
 
 ---
 
-### 4.2 Tier 2: The Smallest Self-Contained Experimental Detergent Slice
+### 4.2 Tier 2: Historical 223-record slice (audit reference only; do not re-ingest commercially)
 To eliminate noise from non-detergent industrial chemicals (e.g. 588 gemini cationic phase-transfer catalysts), we specify a deterministic, non-imputed extract:
 
 - **Target Slice Name:** `surfpro_detergent_experimental_slice_v1.csv`
@@ -147,14 +149,14 @@ To eliminate noise from non-detergent industrial chemicals (e.g. 588 gemini cati
   22. `Ref_Gamma_max`: Primary reference for surface excess
   23. `Ref_Area_min`: Primary reference for minimum area
 
-#### Engine Applicability Mapping
+#### Scientific Applicability (not commercial-ingestion authorization)
 | Engine ID | Engine Name | Input Variables from Slice | Engine Prediction vs Reference Output |
 |---|---|---|---|
 | `ENG-002` | `SurfactantMicellizationEngine` | Surfactant type, `Molecular_Weight`, `SMILES`, $T$ | Predicts $\text{CMC}$ ($mol/L$) and $\gamma_{\text{cmc}}$ ($mN/m$). Evaluates against experimental `CMC` and `AW_ST_CMC`. |
 | `ENG-001` | `PHEngineV2` | Anionic headgroup dissociation, `InChIKey`, $T$ | Cross-references ionic charge state and counterion activity coefficient $\gamma_i$ against experimental surfactant types. |
 | `ENG-005` | `FoamKineticsEngine` | `AW_ST_CMC`, `Pi_CMC`, `Area_min` | Uses equilibrium surface tension $\gamma$ and surface pressure $\Pi$ to evaluate Marangoni film stability. |
 
-#### Slice Fidelity & Integrity Guarantees
+#### Slice Fidelity & Integrity Checks (historical evidence only)
 - **No Imputation:** Only rows where both `CMC` and `AW_ST_CMC` were physically measured and published with an explicit literature DOI are included.
 - **No Transformation:** Column values are copied verbatim from the Zenodo release; no values are rounded, normalized, or imputed.
 - **Traceable Script:** Extraction script will be version-controlled in `/src/scripts/extract_surfpro_slice.py` or `.ts`.
@@ -181,6 +183,6 @@ In strict accordance with the mandatory scientific rules:
 
 ## 6. Actionable Next Steps
 
-1. **Awaiting Review:** Await formal review of this Phase 4B Staged Ingestion Plan.
-2. **Execute Ingestion:** Upon approval, download `S129_SURFPRO.csv`, verify SHA-256 (`316a1366...`), extract the 223-row detergent slice, and commit the numerical inspection record into `DatasetRegister` (`DS-001`).
-3. **Blocker Closure:** Formally close Blocker `BLK-001` by updating its resolution record with the verified 780 KB canonical dataset details.
+1. **Do not commercially ingest:** Do not download/mirror/commit the restricted CSV into the commercial application or model-training corpus unless separate written permission authorizes that use.
+2. **If permission is obtained:** archive the permission, scope, term, attribution, redistribution and derivative-work conditions; then use a reproducible acquisition script to verify MD5 `e5bcd1bbab2fc56717a3cd6a0cf1c152`, SHA-256 `316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841`, 1,624 records, and the historical 223-record slice.
+3. **Blocker disposition:** Do not close `BLK-001` merely because historical hashes/counts are documented. It may be resolved only when the chosen reproducibility path is documented and legally permitted (e.g. explicit permission or a suitable independently licensed source).
