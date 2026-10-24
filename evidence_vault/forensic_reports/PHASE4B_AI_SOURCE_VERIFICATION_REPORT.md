@@ -1,27 +1,28 @@
-# Phase 4B AI-assisted source verification report
+# Phase 4B — Pušić (2006) AI Evidence Ledger Audit
 
-**Status:** AI visual comparison recorded; gate policy update proposed in this branch. Not yet merged.
+**Status:** Recorded comparison ledger passes structural/value-consistency checks; publisher-source transcription is not independently re-performed by CI.  
+**Governance:** Phase 4B OPEN; Phase 5 LOCKED.
 
-## Evidence summary
-- Source: Pušić et al. (2006), *Primary Washing Effect of Powder and Liquid Detergents*, printed page 13, Tables 5–8.
-- Expected records: 144 (4 tables × 4 conditions × 9 columns).
-- Comparison ledger rows: 144.
-- Recorded matches: 144.
-- Recorded mismatches: 0.
-- Table counts: 36 each for Tables 5, 6, 7, 8.
-- Explicitly rechecked anomaly-prone values: Table 5 blood at 45 g/kg = 57.46; Table 6 blood at 45 g/kg = 69.19.
+## Scope
 
-## Interpretation
-This is an AI-assisted visual transcription comparison against the publisher's printed table image. It checks the values transcribed from the source, not detergent efficacy or experimental reproducibility. These summarized R460 nm readings are not raw replicate-level measurements and must not be labeled LAB_VALIDATED. The source table does not specify a measurement unit; retain UNIT_UNSPECIFIED_IN_SOURCE_TABLE.
+Source: Pušić et al. (2006), “Primary Washing Effect of Powder and Liquid Detergents,” *Tekstil* 55(1), 11–18. Publisher landing page: https://tekstil.hist.hr/index.php/tekstil/article/view/3174. PDF: https://tekstil.hist.hr/index.php/tekstil/article/download/3174/3174/3174. The ledger covers printed page 13, Tables 5–8.
 
-## Audit limitations
-The ledger records the existing source CSV value and the AI visual transcription side by side. It is evidence of this comparison pass, not proof of universal OCR accuracy. The source PDF and printed page image should remain archived with checksums; future revisions must rerun the comparison script and preserve mismatch records rather than force values to match.
+## What is checked by automation
 
-## Proposed status taxonomy
-- AI_VERIFIED_SOURCE_BACKED: source reading matched to the published table image with traceable evidence.
-- AI_PREDICTED: model-generated estimate for an unknown/missing value; never substitute for a source-extracted measurement.
-- UNRESOLVED: illegible or conflicting evidence.
-- LAB_VALIDATED: reserved for actual laboratory measurements and validation evidence; this paper transcription alone cannot grant it.
+- The source dataset and comparison ledger each contain 144 records.
+- Table mapping, source IDs, conditions, stain/control labels, dosage conventions, finite numeric values, uniqueness, and unit-unspecified status are checked.
+- The comparison ledger records 144 rows with matching `source_csv_value` and `ai_visual_value` and no recorded mismatches.
+- Regression tests ensure malformed records and mismatches fail validation.
+- These checks validate the recorded ledger's internal consistency and schema. They do **not** independently inspect the publisher PDF image, run OCR against the PDF, or prove that the stored `ai_visual_value` was independently transcribed from the image.
 
-## Phase gate
-Phase 4B should close only after schema, mapping, dosage, uniqueness, finite-value and ledger coverage checks pass. Phase 5 may then open under the revised AI-verification policy, with this report and ledger retained. Do not claim independent human review.
+## Scientific interpretation
+
+The reported 144/144 matches are a recorded AI-assisted comparison claim, not an independently reproducible source-image verification result. The publisher's table uses the label R460 nm; its table header does not specify a measurement unit. Retain `UNIT_UNSPECIFIED_IN_SOURCE_TABLE`. These are summarized source readings, not raw replicate-level measurements.
+
+Do not infer stain removal, cleaning score, CPI, normalized performance, or missing values from these readings during ingestion. Do not label this evidence `LAB_VALIDATED`. `AI_PREDICTED` values must never replace source-extracted values.
+
+## Gate interpretation
+
+Passing this validator means only that the Pušić evidence ledger satisfies its programmed structural and consistency checks. It does not close Phase 4B, confirm independent verification, reconcile the repository-wide accounting/provenance ledgers, or unlock Phase 5. The validator therefore always reports Phase 5 as `LOCKED`.
+
+**Master status: Phase 4B OPEN; Phase 5 LOCKED.**
