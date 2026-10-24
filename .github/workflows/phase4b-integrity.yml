@@ -80,7 +80,7 @@ jobs:
         run: python evidence_vault/scripts/round17_independent_reconciliation.py --check
 
       - name: Syntax-check reproducible acquisition and reconciliation scripts
-        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py evidence_vault/scripts/round20_source_record_reconciliation.py evidence_vault/scripts/test_round20_source_record_reconciliation.py
+        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py evidence_vault/scripts/round20_source_record_reconciliation.py evidence_vault/scripts/test_round20_source_record_reconciliation.py evidence_vault/scripts/round22_bubble_size_time_split_crosswalk.py evidence_vault/scripts/test_round22_bubble_size_time_split_crosswalk.py
 
       - name: Reconcile historical 27,982 aggregate claims without inferring physical counts
         run: python evidence_vault/scripts/round18_historical_aggregate_reconciliation.py
@@ -138,6 +138,23 @@ jobs:
           path: |
             evidence_vault/forensic_reports/PHASE4B_FLOW_212_VS_210_SOURCE_ROW_CROSSWALK.csv
             evidence_vault/forensic_reports/PHASE4B_FLOW_212_VS_210_SOURCE_ROW_CROSSWALK.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Export exact bubble-size 20/30-minute source-cell crosswalk
+        run: python evidence_vault/scripts/round22_bubble_size_time_split_crosswalk.py
+
+      - name: Test bubble-size time split, source-cell lineage and no double-counting
+        run: python evidence_vault/scripts/test_round22_bubble_size_time_split_crosswalk.py
+
+      - name: Preserve bubble-size source-cell crosswalk
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4b-bubble-size-time-split-crosswalk
+          path: |
+            evidence_vault/forensic_reports/PHASE4B_BUBBLE_20_30MIN_CELL_CROSSWALK.csv
+            evidence_vault/forensic_reports/PHASE4B_BUBBLE_20_30MIN_CELL_CROSSWALK.json
           if-no-files-found: error
           retention-days: 30
 
