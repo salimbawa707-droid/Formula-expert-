@@ -18,6 +18,7 @@ HISTORICAL_PER_SHEET = {
     "FoamD_AmpSwpTest": 194,
     "FoamA_SteadyYield": 90,
 }
+HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET = {"SteadyShear_5": 722, "SteadyShear_1": 722}
 HISTORICAL_STEADY_SHEAR_COMBINED = 731
 HISTORICAL_FILE_LEVEL = 739
 
@@ -80,11 +81,18 @@ def main():
         total_numeric += numeric_points
         total_groups += len(groups)
         historical = HISTORICAL_PER_SHEET.get(ws.title)
+        historical_round4 = HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET.get(ws.title)
         if historical is not None:
             delta = historical - numeric_points
             historical_pattern = (
                 "HISTORICAL_COUNT_EQUALS_NUMERIC_POINTS_PLUS_TWO_POSSIBLE_HEADER_INCLUSION"
                 if delta == 2 else "NO_SIMPLE_PLUS_TWO_MATCH"
+            )
+        elif historical_round4 is not None:
+            delta = historical_round4 - numeric_points
+            historical_pattern = (
+                "ROUND4_STEADY_SHEAR_CLAIM_EQUALS_NUMERIC_POINTS_PLUS_TWO_PATTERN_ONLY"
+                if delta == 2 else "ROUND4_STEADY_SHEAR_COUNT_MISMATCH"
             )
         elif ws.title in ("SteadyShear_5", "SteadyShear_1"):
             delta = None
@@ -109,6 +117,7 @@ def main():
             "forward_filled_test_groups": len(groups),
             "distinct_point_numbers_across_groups_not_a_unique_measurement_count": len(point_numbers),
             "duplicate_test_point_keys": len(duplicate_keys),
+            "historical_round4_per_sheet_count": historical_round4 if historical_round4 is not None else "",
             "historical_round5_per_sheet_count": historical if historical is not None else "",
             "historical_minus_numeric_points": delta if delta is not None else "",
             "historical_pattern_diagnostic": historical_pattern,
@@ -128,6 +137,38 @@ def main():
             "test_groups_across_sheets": total_groups,
             "historical_file_level_claim": HISTORICAL_FILE_LEVEL,
             "numeric_rows_minus_historical_739": total_numeric - HISTORICAL_FILE_LEVEL,
+        },
+        "historical_arithmetic_checks": {
+            "round5_four_non_steady_sheet_claims": {
+                "components": HISTORICAL_PER_SHEET,
+                "sum": sum(HISTORICAL_PER_SHEET.values()),
+                "source_numeric_rows": sum(row["numeric_point_rows"] for row in rows if row["sheet"] in HISTORICAL_PER_SHEET),
+                "source_test_groups": sum(row["forward_filled_test_groups"] for row in rows if row["sheet"] in HISTORICAL_PER_SHEET)
+            },
+            "round4_steady_shear_per_sheet_claims": {
+                "components": HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET,
+                "sum": sum(HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET.values()),
+                "source_numeric_rows": sum(row["numeric_point_rows"] for row in rows if row["sheet"] in HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET),
+                "source_test_groups": sum(row["forward_filled_test_groups"] for row in rows if row["sheet"] in HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET)
+            },
+            "round5_steady_shear_combined_claim": HISTORICAL_STEADY_SHEAR_COMBINED,
+            "historical_file_level_claim": HISTORICAL_FILE_LEVEL,
+            "arithmetic_coincidence": {
+                "equation": "sum of four Round-5 non-steady sheet claims minus all six sheet test groups",
+                "left_component_sum": sum(HISTORICAL_PER_SHEET.values()),
+                "group_count_scope": "all six measurement sheets",
+                "group_count": total_groups,
+                "result": sum(HISTORICAL_PER_SHEET.values()) - total_groups,
+                "equals_739": sum(HISTORICAL_PER_SHEET.values()) - total_groups == HISTORICAL_FILE_LEVEL,
+                "status": "ARITHMETIC_COINCIDENCE_SCOPE_MISMATCH_NOT_A_VALIDATED_COUNTING_RULE",
+                "why_not_valid": "The 801 sum covers four non-steady sheets while the 62 groups cover all six sheets; no source or historical method authorizes subtracting these differently scoped units."
+            },
+            "steady_shear_conflict": {
+                "round4_per_sheet_sum": sum(HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET.values()),
+                "round5_combined_claim": HISTORICAL_STEADY_SHEAR_COMBINED,
+                "source_numeric_point_rows_across_both_sheets": sum(row["numeric_point_rows"] for row in rows if row["sheet"] in HISTORICAL_ROUND4_STEADY_SHEAR_PER_SHEET),
+                "status": "CONFLICTING_HISTORICAL_COUNTS_NOT_RECONCILED"
+            }
         },
         "historical_count_hypotheses": [
             {
