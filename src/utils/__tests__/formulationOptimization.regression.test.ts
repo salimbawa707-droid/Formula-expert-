@@ -52,6 +52,7 @@ import { analyzeReformulationFeedback } from '../optimization/reformulationFeedb
 import { modelManufacturingProcess } from '../manufacturing/processModelingEngine';
 import { FORMULAS } from '../../data/formulas';
 import { FormulationIngredient } from '../../types';
+import { evaluateCmcObjectiveEligibility } from '../optimization/cmcObjectiveEligibilityGate';
 
 export interface TestResultSummary {
   passed: number;
@@ -241,6 +242,45 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     !('cmc' in candEval.objectives),
     'Test 12b: CMC assessment flows with candidate as diagnostic only, never as an objective',
     `CMC status: ${candEval.cmcAssessment?.available ? candEval.cmcAssessment.classification : 'UNAVAILABLE'}; objective keys: ${Object.keys(candEval.objectives).join(', ')}`
+  );
+
+  const blockedCmcGate = evaluateCmcObjectiveEligibility(undefined);
+  assert(
+    blockedCmcGate.eligible === false &&
+    blockedCmcGate.status === 'BLOCKED' &&
+    blockedCmcGate.reasons.length > 0,
+    'Test 12c: CMC objective eligibility fails closed when evidence manifest is missing',
+    blockedCmcGate.reasons.join('; ')
+  );
+
+  const incompleteCmcGate = evaluateCmcObjectiveEligibility({
+    targetKind: 'MULTICOMPONENT_MIXTURE',
+    unit: 'mM',
+    temperatureC: 25,
+    methodId: 'example-protocol',
+    canonicalIdentityResolved: true,
+    activeMatterInputsSourceBacked: true,
+    applicabilityDomainPassed: true,
+    sourceProvenanceAndLicenseVerified: true,
+    independentSourceReviewPassed: true,
+    heldOutStudyCount: 1,
+    studyLevelLeakageProtectionPassed: true,
+    baselineComparisonPassed: true,
+    predeclaredAcceptanceThresholdsPassed: true,
+    mae: 0.1,
+    rmse: 0.2,
+    signedBias: 0,
+    uncertaintyCalibrated: true,
+    modelArtifactVerified: true,
+    datasetVersionCurrent: true,
+    explicitOptIn: false,
+  });
+  assert(
+    incompleteCmcGate.eligible === false &&
+    incompleteCmcGate.status === 'BLOCKED' &&
+    incompleteCmcGate.reasons.some(reason => reason.includes('explicitly enabled')),
+    'Test 12d: CMC objective remains blocked without explicit opt-in',
+    incompleteCmcGate.reasons.join('; ')
   );
 
   // 12. Pareto Dominance Logic
