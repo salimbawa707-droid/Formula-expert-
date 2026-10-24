@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Export exact source-row crosswalk for historical 212 vs 210 solution-flow counts.
+"""Export source-row crosswalk and test the historical 212 vs 210 flow-count claim.
 
-A nonempty spreadsheet row is not automatically a complete numeric flow point.
-This audit preserves row/cell lineage and never invents or fills missing values.
+The canonical workbook must determine observed counts; historical numbers are not
+forced into the output. This audit never imputes missing values.
 """
 from __future__ import annotations
-
 import csv
 import hashlib
 import json
@@ -22,14 +21,11 @@ HEADERS = ["filename", "sheet", "source_row", "source_record_id", "curve_label_r
            "point_value_raw", "numeric_point", "numeric_measurement_cells",
            "complete_numeric_point", "classification", "nonempty_cells"]
 
-
 def is_number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
-
 def safe(value):
     return "" if value is None else str(value).replace("\r", "\\r").replace("\n", "\\n")
-
 
 def main() -> int:
     if not SOURCE.is_file():
@@ -39,77 +35,66 @@ def main() -> int:
     if SHEET not in workbook.sheetnames:
         raise AssertionError(f"Expected worksheet {SHEET!r}; found {workbook.sheetnames!r}")
     ws = workbook[SHEET]
-    rows = []
-    nonempty_rows = 0
-    complete_points = 0
-    incomplete_nonempty = 0
-    curve_labels = set()
-
+    rows, curve_labels = [], set()
     for r in range(3, ws.max_row + 1):
         values = [ws.cell(r, c).value for c in range(1, 9)]
         if not any(v is not None and str(v).strip() for v in values):
             continue
-        nonempty_rows += 1
         label, point, *measurements = values
         numeric_point = is_number(point)
-        numeric_cells = [f"{ws.cell(r, c).coordinate}={safe(ws.cell(r, c).value)}"
-                         for c in range(2, 9) if is_number(ws.cell(r, c).value)]
+        numeric_cells = [f"{ws.cell(r,c).coordinate}={safe(ws.cell(r,c).value)}"
+                         for c in range(2, 9) if is_number(ws.cell(r,c).value)]
         complete = numeric_point and len(measurements) == 6 and all(is_number(v) for v in measurements)
-        if complete:
-            complete_points += 1
-            classification = "COMPLETE_NUMERIC_FLOW_POINT"
-        else:
-            incomplete_nonempty += 1
-            classification = "NONEMPTY_ROW_NOT_COMPLETE_NUMERIC_POINT"
         if label is not None and str(label).strip():
             curve_labels.add(str(label).strip())
         rows.append({
             "filename": SOURCE.name, "sheet": SHEET, "source_row": r,
-            "source_record_id": f"{SHEET}!A{r}:H{r}",
-            "curve_label_raw": safe(label), "point_value_raw": safe(point),
-            "numeric_point": str(numeric_point).lower(),
+            "source_record_id": f"{SHEET}!A{r}:H{r}", "curve_label_raw": safe(label),
+            "point_value_raw": safe(point), "numeric_point": str(numeric_point).lower(),
             "numeric_measurement_cells": ";".join(numeric_cells),
             "complete_numeric_point": str(complete).lower(),
-            "classification": classification,
+            "classification": "COMPLETE_NUMERIC_FLOW_POINT" if complete else "NONEMPTY_ROW_NOT_COMPLETE_NUMERIC_POINT",
             "nonempty_cells": ";".join(f"{ws.cell(r,c).coordinate}={safe(values[c-1])}"
                                         for c in range(1, 9) if values[c-1] is not None),
         })
     max_row = ws.max_row
     workbook.close()
-
+    nonempty_rows = len(rows)
+    complete_points = sum(row["complete_numeric_point"] == "true" for row in rows)
+    incomplete_rows = nonempty_rows - complete_points
     OUT.mkdir(parents=True, exist_ok=True)
     with CSV_OUT.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=HEADERS)
         writer.writeheader()
         writer.writerows(rows)
-
     report = {
         "audit_id": "PHASE4B-FLOW-212-VS-210-SOURCE-ROW-CROSSWALK",
         "source": {"filename": SOURCE.name, "sheet": SHEET, "sha256": digest,
                    "source_range_scanned": f"A3:H{max_row}"},
-        "counts": {"historical_nonempty_row_count": nonempty_rows,
+        "counts": {"observed_nonempty_rows": nonempty_rows,
                    "complete_numeric_flow_points": complete_points,
-                   "nonempty_rows_not_complete_numeric_points": incomplete_nonempty,
+                   "nonempty_rows_not_complete_numeric_points": incomplete_rows,
                    "distinct_nonblank_curve_labels_seen": len(curve_labels)},
-        "claim_disposition": {
-            "historical_212_is_complete_numeric_point_count": nonempty_rows == 212 and complete_points == 212,
-            "historical_212_matches_nonempty_rows": nonempty_rows == 212,
-            "source_defined_210_complete_numeric_points": complete_points == 210,
-            "historical_212_to_complete_210_difference": nonempty_rows - complete_points,
-            "interpretation": "Nonempty-row count and complete numeric point count are different units; only complete numeric point rows qualify under this structural rule."
+        "historical_claim_reconciliation": {
+            "historical_claimed_nonempty_rows": 212,
+            "historical_claimed_complete_points": 210,
+            "observed_rows_match_historical_212": nonempty_rows == 212,
+            "observed_complete_points_match_historical_210": complete_points == 210,
+            "historical_row_count_minus_observed_rows": 212 - nonempty_rows,
+            "disposition": "PARTIALLY_RECONCILED" if complete_points == 210 and nonempty_rows != 212 else ("RECONCILED" if nonempty_rows == 212 and complete_points == 210 else "NOT_REPRODUCED"),
+            "interpretation": "The workbook scan independently observes rows and complete points. A historical 212-row claim is not treated as proven when the canonical worksheet does not contain that many nonempty data rows."
         },
         "governance": {"phase4b": "OPEN", "phase5": "LOCKED"},
         "limitations": [
-            "This is a structural row classification, not proof of independent physical experiments.",
+            "Structural row classification does not prove independent physical experiments.",
             "No missing or nonnumeric values are imputed.",
-            "The crosswalk does not resolve the historical author's intended inclusion rule unless the original counting script is found."
+            "The original author's intended counting rule remains unresolved unless the original count script or a source artifact explaining the extra two rows is found."
         ],
         "csv_output": CSV_OUT.name
     }
     JSON_OUT.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False))
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
