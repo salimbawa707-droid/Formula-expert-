@@ -1,6 +1,6 @@
 # Phase 4B — Pušić (2006) Tables 5–8 AI Verification Contract
 
-**Status:** AI-assisted source verification recorded in branch `phase4b-ai-verification-gate`; merge and automated gate validation are still pending.
+**Status:** AI-assisted source verification merged to `main` via PR #14 (merge commit `7cb57d4c9a7f784fff4c3b4cf049d6eb91d140af`). The dedicated AI evidence validator and its regression tests passed in GitHub Actions run 153. The wider master Phase 4B gate remains OPEN because separate repository-wide provenance/accounting blockers remain unresolved.
 
 ## Scope
 Transcribe printed page 13, Tables 5–8 of Pušić et al. (2006), “Primary Washing Effect of Powder and Liquid Detergents,” *Tekstil* 55(1), 11–18. Publisher source: https://tekstil.hist.hr/index.php/tekstil/article/view/3174 . Preserve attribution and source URL with redistributed records.
@@ -38,4 +38,4 @@ The ledger records the existing source CSV value and the AI visual transcription
 8. Source attribution and source PDF/image checksums are retained in the evidence vault when available.
 9. Do not claim independent human review or `LAB_VALIDATED`.
 
-Phase 4B may close and Phase 5 may open only after the revised automated validator and regression tests pass against both the production CSV and comparison ledger. Until then, Phase 4B remains OPEN and Phase 5 remains LOCKED.
+The Pušić-specific AI evidence sub-gate passed in CI. This does not by itself close the repository-wide Phase 4B gate: `canUnlockPhase5()` still requires authoritative provenance VERIFIED, raw numeric accounting RECONCILED, cross-artifact ledger CONSISTENT, all vault datasets numerically inspected, no open HIGH/CRITICAL findings, no active Phase 4B blockers, and the phase record CLOSED/reportedClosed. The existing historical 27,982 physical-observation aggregate remains not independently reconciled to row-level physical observations (see `PHASE4B_ROUND17_INDEPENDENT_RECONCILIATION.md`). Therefore the master Phase 4B remains OPEN and Phase 5 remains LOCKED.
