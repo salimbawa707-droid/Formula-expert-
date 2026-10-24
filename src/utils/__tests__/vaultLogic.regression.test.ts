@@ -108,7 +108,7 @@ export function runVaultLogicTestSuite() {
   assert(Boolean(blocker), 'Active Blockers', 'BLK-001 exists');
   assert(Boolean(blocker?.title.includes('raw artifact missing from current main')), 'Active Blockers', 'BLK-001 describes current raw-artifact reproducibility gap');
   assert(Boolean(blocker?.workaroundOrNextAction.includes('e5bcd1bbab2fc56717a3cd6a0cf1c152')), 'Active Blockers', 'BLK-001 pins the published SURFPRO checksum');
-  assert(!blocker?.environmentLimitation.includes('never inspected'), 'Active Blockers', 'BLK-001 does not erase historical inspection evidence');
+  assert(Boolean(blocker?.environmentLimitation.includes('no longer accurately described as “never inspected”')), 'Active Blockers', 'BLK-001 preserves historical inspection evidence while noting current artifact absence');
 
   // DS-001 was historically inspected and checksum-verified, but raw CSV artifacts
   // are absent from current main. Keep the inspection fact separate from reproducibility.
@@ -233,7 +233,7 @@ export function runVaultLogicTestSuite() {
   assert(legacyMigrationResult.parsedState?.version === '1.1.0', 'Schema Migration', 'Legacy backup is upgraded to schema v1.1.0');
   assert((legacyMigrationResult.parsedState?.inventoryMetrics.length || 0) >= 5, 'Schema Migration', 'Migration adds only explicitly reported inventory metrics');
   assert(legacyMigrationResult.parsedState?.historicalReconciliations[0]?.reconciliationStatus === 'UNRESOLVED', 'Schema Migration', 'Historical 27,982 claim remains unresolved after migration');
-  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.actualRowCount === null)), 'Schema Migration', 'Unknown dataset row counts remain null after migration');
+  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' || ds.actualRowCount === null)), 'Schema Migration', 'Unknown dataset row counts remain null while historical DS-001 inspection count is preserved');
   assert(canUnlockPhase5(legacyMigrationResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Schema Migration', 'Migration cannot unlock Phase 5');
 
   const optionalScientificExtensions = JSON.parse(exported);
