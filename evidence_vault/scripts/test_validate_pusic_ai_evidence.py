@@ -39,6 +39,15 @@ class ValidatorTests(unittest.TestCase):
         s,l=fixture(); l[0]["verification_method"]=""; self.assertEqual(MOD.validate(s,l)["validation"],"FAIL")
     def test_lab_validated_never_granted(self):
         s,l=fixture(); r=MOD.validate(s,l); self.assertFalse(r["lab_validated"]); self.assertEqual(r["scientific_status"],"AI_VERIFIED_SOURCE_BACKED")
+    def test_subgate_pass_never_unlocks_master_phase5(self):
+        s,l=fixture(); r=MOD.validate(s,l)
+        self.assertEqual(r["validation"], "PASS")
+        self.assertEqual(r["phase4b"], "PUSIC_SOURCE_COMPARISON_SUBGATE_PASS_ONLY")
+        self.assertEqual(r["phase5"], "LOCKED")
+    def test_failed_comparison_keeps_master_gate_open(self):
+        s,l=fixture(); l[0]["ai_visual_value"]="999"; r=MOD.validate(s,l)
+        self.assertEqual(r["phase4b"], "OPEN")
+        self.assertEqual(r["phase5"], "LOCKED")
     def test_bad_unit_claim_fails(self):
         s,l=fixture(); s[0]["measurement_unit_status"]="percent"; self.assertEqual(MOD.validate(s,l)["validation"],"FAIL")
     def test_wrong_page_fails(self):
