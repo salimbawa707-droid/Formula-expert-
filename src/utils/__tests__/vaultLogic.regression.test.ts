@@ -199,9 +199,10 @@ export function runVaultLogicTestSuite() {
   const serialized = JSON.stringify(INITIAL_VAULT_STATE);
   const parsed = JSON.parse(serialized);
   assert(parsed.datasets.length === INITIAL_VAULT_STATE.datasets.length, 'Roundtrip Preservation', 'Dataset length preserved');
-  for (const ds of parsed.datasets) {
+  for (const ds of parsed.datasets.filter((ds: any) => ds.id !== 'DS-001')) {
     assert(ds.actualRowCount === null, 'Roundtrip Preservation', `Dataset ${ds.id} rowCount remains null`);
   }
+  assert(parsed.datasets.find((ds: any) => ds.id === 'DS-001')?.actualRowCount === 1624, 'Roundtrip Preservation', 'Historical DS-001 master-record count survives roundtrip');
   const unpricedLAS = parsed.pricingRecords.find((p: any) => p.ingredientId === 'ING-SPECIAL-004');
   assert(Boolean(unpricedLAS), 'Roundtrip Preservation', 'Unpriced ingredient found');
   assert(unpricedLAS?.pricePerKg === null, 'Roundtrip Preservation', 'Price remains strictly null');
