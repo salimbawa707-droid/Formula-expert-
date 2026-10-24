@@ -159,7 +159,7 @@ export const EnginesView: React.FC<EnginesViewProps> = ({
               Anti-Hallucination Inventory Rule:
             </span>
             <p className="text-slate-300">
-              Do not treat the legacy 59-path list as the total engine count. The source audit distinguishes 54 Engine-named source modules outside UI components, 57 including three UI components, 79 broad engine/calculator/router/workflow candidates, and six top-level vault registry records. Historical 64/97 claims lack their original source artifacts. See the dated reconciliation report.
+              Do not treat the legacy 59-path list as the total engine count. The source audit distinguishes 62 Engine-named source files outside UI components, 65 including three UI components, 94 broad engine/calculator/router/workflow candidates, and six top-level vault registry records. Historical 64/97 claims lack their original source artifacts. See the dated reconciliation report.
             </p>
           </div>
         </div>
