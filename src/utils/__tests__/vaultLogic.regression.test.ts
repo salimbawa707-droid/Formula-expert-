@@ -106,8 +106,19 @@ export function runVaultLogicTestSuite() {
   // 3. SurfPro retrieval blocker BLK-001 is recorded
   const blocker = INITIAL_VAULT_STATE.activeBlockers.find(b => b.id === 'BLK-001');
   assert(Boolean(blocker), 'Active Blockers', 'BLK-001 exists');
-  assert(Boolean(blocker?.title.includes('SurfPro')), 'Active Blockers', 'BLK-001 references SurfPro');
-  assert(Boolean(blocker?.environmentLimitation.includes('Google AI Studio runtime')), 'Active Blockers', 'BLK-001 records runtime limitation');
+  assert(Boolean(blocker?.title.includes('raw artifact missing from current main')), 'Active Blockers', 'BLK-001 describes current raw-artifact reproducibility gap');
+  assert(Boolean(blocker?.workaroundOrNextAction.includes('e5bcd1bbab2fc56717a3cd6a0cf1c152')), 'Active Blockers', 'BLK-001 pins the published SURFPRO checksum');
+  assert(!blocker?.environmentLimitation.includes('never inspected'), 'Active Blockers', 'BLK-001 does not erase historical inspection evidence');
+
+  // DS-001 was historically inspected and checksum-verified, but raw CSV artifacts
+  // are absent from current main. Keep the inspection fact separate from reproducibility.
+  const ds001 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-001');
+  assert(Boolean(ds001), 'Dataset Inspection', 'DS-001 SURFPRO dataset exists');
+  assert(ds001?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-001 historical numerical inspection is preserved');
+  assert(ds001?.actualRowCount === 1624, 'Dataset Inspection', 'DS-001 master-record count is recorded as database rows, not formula observations');
+  assert(ds001?.actualColumnCount === 31, 'Dataset Inspection', 'DS-001 master schema width is recorded');
+  assert(ds001?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-001 remains ineligible for mixed-formula validation');
+  assert(Boolean(ds001?.sha256Hash === '316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841'), 'Dataset Inspection', 'DS-001 historical SHA-256 is preserved');
 
   // 4. Dataset inspection states must reflect the evidence vault's current source audit.
   // DS-002 is numerically inspected at workbook/parser level, but it is NOT a count of
@@ -125,7 +136,7 @@ export function runVaultLogicTestSuite() {
   assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
   assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
   assert(Boolean(ds005?.inspectionNotes?.includes('Unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
-  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => ds.id !== 'DS-002')) {
+  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => ds.id !== 'DS-001' && ds.id !== 'DS-002')) {
     assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
   }
 
