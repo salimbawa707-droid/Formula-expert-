@@ -90,7 +90,7 @@ def main():
             delta = None
             historical_pattern = (
                 "731_MATCHES_WORKSHEET_ROW_SPAN_AFTER_HEADER_BUT_INCLUDES_BLANK_ROWS"
-                if populated_data_rows == HISTORICAL_STEADY_SHEAR_COMBINED
+                if (ws.max_row - header) == HISTORICAL_STEADY_SHEAR_COMBINED
                 else "NO_MATCH_TO_HISTORICAL_COMBINED_731"
             )
         else:
