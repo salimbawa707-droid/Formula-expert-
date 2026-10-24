@@ -14,7 +14,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
     reconciledFiles: 59,
     claimedSubmodules: 97,
     status: 'REPORTED_UNVERIFIED',
-    notes: 'Historical audits variously claimed 64 engines (Audit Report A), 59 distinct implementation files (Source Tree Reconciliation v2), and 97 modular sub-engines (Initial Architecture Spec). Status remains REPORTED_UNVERIFIED until reconciled file-by-file against https://github.com/salimbawa707-droid/Formula-expert-.git.',
+    notes: 'Scoped source-tree audit at 891466265b3a8a6e01a6aab2c64da310116b302b: the legacy engines_reconciled.list contains 59 unique existing paths but is not a complete engine inventory; the repository has 62 source modules with Engine in the filename outside UI components (65 including 3 UI components), 94 broad engine/calculator/router/workflow candidate files, and 6 top-level ENG-001..ENG-006 vault registry records. These are different units and must not be summed or equated. The cited original Audit Report A (64) and Initial Architecture Spec (97) were not located, so those historical claims remain unverified. See evidence_vault/forensic_reports/ENGINE_COUNT_RECONCILIATION_2026-10-25.md and evidence_vault/scripts/verify_engine_inventory.mjs.',
   },
   activeBlockers: [
     {
@@ -161,7 +161,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       blockers: [
         'SurfPro ZIP archive unavailable in Google AI Studio environment (BLK-001).',
         'Zenodo 18961871 tabular workbooks are parsed, but no eligible formula-prediction comparisons exist for ENG-003/ENG-005 (BLK-002).',
-        'Discrepancy between 64, 59, and 97 reported engines unresolved against repository source files.',
+        'Historical 64 and 97 claims lack their original source artifacts; the legacy 59-path list is incomplete and not a total engine count. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md.',
       ],
       description: 'Current active phase. Ingests 11 real scientific evidence leads, establishes the empirical dataset register, verifies data provenance, reconciles the 59 engine source files, and mandates physical numerical inspection before any engine is marked ready for validation.',
       keyDeliverables: [

@@ -233,33 +233,8 @@ export const ReconcileEnginesModal: React.FC<ReconcileModalProps> = ({
   const [fileCount, setFileCount] = useState(discrepancy.reconciledFiles);
   const [notesInput, setNotesInput] = useState('');
 
-  // The 59 distinct implementation files from Formula-expert- repository scan
-  const reconciledFilesList = [
-    { file: 'src/core/phEngineV2.ts', category: 'pH & Buffer Equilibrium', entry: 'calculateFormulationPH' },
-    { file: 'src/core/surfactantMicellizationEngine.ts', category: 'Surfactant & Micellization', entry: 'computeMixedCMC' },
-    { file: 'src/core/rheologyEngine.ts', category: 'Rheology & Viscosity', entry: 'estimateViscosityProfile' },
-    { file: 'src/core/builderChelationEngine.ts', category: 'Builder Chelation', entry: 'solveChelationEquilibrium' },
-    { file: 'src/core/foamKineticsEngine.ts', category: 'Foam Dynamics & Stability', entry: 'simulateFoamProfile' },
-    { file: 'src/core/costingIntegrityEngine.ts', category: 'Costing & Yield Integrity', entry: 'computeBatchCostAndPreserveNulls' },
-    { file: 'src/core/cloudPointEngine.ts', category: 'Phase Stability & Cloud Point', entry: 'predictCloudPoint' },
-    { file: 'src/core/krafftTemperatureEngine.ts', category: 'Phase Stability & Krafft Point', entry: 'calculateKrafftPoint' },
-    { file: 'src/core/bleachStabilityEngine.ts', category: 'Oxidative Bleach System', entry: 'calculatePeracidHalfLife' },
-    { file: 'src/core/enzymeKineticsEngine.ts', category: 'Enzyme Stabilization', entry: 'estimateProteaseResidualActivity' },
-    { file: 'src/core/fabricSubstantivityEngine.ts', category: 'Conditioning & Substantivity', entry: 'calculateCationicAdsorption' },
-    { file: 'src/core/solubilizationKineticsEngine.ts', category: 'Soil Removal Mechanisms', entry: 'computeOilySoilDetergency' },
-    { file: 'src/core/particulateDispersionEngine.ts', category: 'Builder Chelation & Anti-Redeposition', entry: 'calculateZetaPotentialDeposition' },
-    { file: 'src/core/preservativeEfficacyEngine.ts', category: 'Microbiological Preservation', entry: 'calculateAwAndKillRate' },
-    { file: 'src/core/interfacialTensionEngine.ts', category: 'Surfactant & Micellization', entry: 'computeDynamicIFT' },
-    { file: 'src/core/emulsificationIndexEngine.ts', category: 'Emulsion & Microemulsion', entry: 'predictHLBTemperature' },
-    { file: 'src/core/surfactantPackingParameterEngine.ts', category: 'Surfactant & Micellization', entry: 'calculateCriticalPackingParameter' },
-    { file: 'src/core/saltCurveViscosityEngine.ts', category: 'Rheology & Viscosity', entry: 'modelSaltThickeningPeak' },
-    { file: 'src/core/yieldStressSuspensionEngine.ts', category: 'Rheology & Viscosity', entry: 'verifyParticleSuspensionStability' },
-    { file: 'src/core/polyacrylateBindingEngine.ts', category: 'Builder Chelation', entry: 'modelPolymerCalciumComplexation' },
-    { file: 'src/core/soilSaponificationEngine.ts', category: 'Alkaline Cleaning', entry: 'calculateTriglycerideHydrolysisRate' },
-    { file: 'src/core/surfactantToxicityModel.ts', category: 'Ecotoxicity & Biodegradability', entry: 'predictAquaticToxicityLC50' },
-    { file: 'src/core/aerobicBiodegradationEngine.ts', category: 'Ecotoxicity & Biodegradability', entry: 'calculateOECD301Decay' },
-    { file: 'src/core/waterHardnessSpeciationEngine.ts', category: 'Water Chemistry & Hardness', entry: 'solveDivalentIonDistribution' },
-  ];
+  // This is only the legacy list's entry count, not a verified total engine count.
+  const legacyInventoryEntryCount = 59;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -286,48 +261,32 @@ export const ReconcileEnginesModal: React.FC<ReconcileModalProps> = ({
             Source Reconciliation Findings:
           </div>
           <p>
-            Audit Report A cited <strong>64 engines</strong>, while the initial architectural spec described{' '}
-            <strong>97 sub-modules</strong>. Direct static file enumeration of{' '}
-            <code className="text-slate-200 font-mono">salimbawa707-droid/Formula-expert-</code> reveals{' '}
-            <strong>59 distinct implementation files</strong> in <code className="text-slate-200 font-mono">src/core/</code>.
+            The legacy <code className="text-slate-200 font-mono">engines_reconciled.list</code> has{' '}
+            <strong>59 unique existing paths</strong>, but it is not a complete engine inventory. A source-tree scan found
+            <strong> 62 source modules with Engine in the filename outside UI components</strong> (65 including three UI components),
+            <strong> 94 broad engine/calculator/router/workflow candidate files</strong>, and <strong>6 top-level ENG-001…ENG-006 vault records</strong>.
+            These are different counting units, not competing totals. The historical 64 and 97 claims cannot be verified because their original source artifacts were not found.
           </p>
           <p className="text-amber-200 font-mono text-[11px]">
-            Preservation Status: Count remains REPORTED_UNVERIFIED until verified against the git HEAD tree.
+            Status: legacy list count is reproducible; total-engine definition and historical 64/97 claims remain UNRESOLVED. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md.
           </p>
         </div>
 
-        {/* List of 59 files scan */}
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between text-slate-400 font-semibold">
-            <span>Reconciled Implementation Files ({reconciledFilesList.length} Sample Shown)</span>
-            <span className="font-mono text-[11px]">59 Distinct Files in Tree</span>
+            <span>Legacy list entries (not total engine count)</span>
+            <span className="font-mono text-[11px]">{legacyInventoryEntryCount} unique paths</span>
           </div>
-
-          <div className="max-h-60 overflow-y-auto space-y-1 p-2 bg-slate-950 rounded-lg border border-slate-800">
-            {reconciledFilesList.map((item, idx) => (
-              <div
-                key={idx}
-                className="p-2 bg-slate-900/60 rounded flex items-center justify-between font-mono text-[11px]"
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <span className="text-slate-500">{String(idx + 1).padStart(2, '0')}.</span>
-                  <span className="text-slate-200">{item.file}</span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-slate-400 text-[10px]">{item.category}</span>
-                  <span className="text-cyan-400 text-[10px] bg-cyan-950 px-1.5 py-0.5 rounded">
-                    {item.entry}()
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-slate-300 space-y-1.5">
+            <p>The old sample list in this modal pointed to <code>src/core/</code>, which does not exist in the audited repository tree. Those sample paths have been removed from the display.</p>
+            <p>Use the committed inventory script and reconciliation report for reproducible counts and their definitions. Do not save 59 as the total number of engines.</p>
           </div>
         </div>
 
         <div className="space-y-3 pt-2 border-t border-slate-800 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-400 mb-1">Verified File Count</label>
+              <label className="block text-slate-400 mb-1">Legacy List Entry Count (not total engines)</label>
               <input
                 type="number"
                 value={fileCount}
