@@ -34,8 +34,28 @@ import {
 
 dotenv.config();
 
+function resolveServerPort(): number {
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    return validatePort(process.argv[portArgIndex + 1]);
+  }
+  const pArgIndex = process.argv.indexOf('-p');
+  if (pArgIndex !== -1 && process.argv[pArgIndex + 1]) {
+    return validatePort(process.argv[pArgIndex + 1]);
+  }
+  if (process.env.APP_PORT) {
+    return validatePort(process.env.APP_PORT);
+  }
+  // In development, dev server must always listen on port 3000.
+  // When PORT is set (e.g. 8080) for Nginx, the Express server runs on 3000 behind it.
+  if (process.env.NODE_ENV !== 'production') {
+    return 3000;
+  }
+  return validatePort(process.env.PORT);
+}
+
 const app = express();
-const PORT = validatePort(process.env.PORT);
+const PORT = resolveServerPort();
 const GEMINI_MODEL = resolveGeminiModel();
 
 app.set("trust proxy", resolveTrustProxy(process.env.TRUST_PROXY));

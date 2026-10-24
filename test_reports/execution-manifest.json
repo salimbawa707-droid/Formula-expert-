@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-21T15:35:26.910Z",
+  "timestamp": "2026-10-23T22:11:27.940Z",
   "summary": {
-    "discoveredCount": 129,
-    "registeredCount": 129,
-    "executedCount": 129,
+    "discoveredCount": 130,
+    "registeredCount": 130,
+    "executedCount": 130,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4099,
-    "totalAssertionsPassed": 4099,
+    "totalAssertionsExecuted": 4503,
+    "totalAssertionsPassed": 4503,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -267,9 +267,9 @@
       "file": "p1Phase1Master.regression.test.ts",
       "moduleName": "runP1Phase1MasterTestSuite",
       "executed": true,
-      "passedAssertions": 108,
+      "passedAssertions": 105,
       "failedAssertions": 0,
-      "totalAssertions": 108,
+      "totalAssertions": 105,
       "skipped": false
     },
     {
@@ -285,18 +285,27 @@
       "file": "p1Phase3Master.regression.test.ts",
       "moduleName": "runP1Phase3MasterTestSuite",
       "executed": true,
-      "passedAssertions": 42,
+      "passedAssertions": 37,
       "failedAssertions": 0,
-      "totalAssertions": 42,
+      "totalAssertions": 37,
       "skipped": false
     },
     {
       "file": "openReferenceBenchmark.regression.test.ts",
       "moduleName": "runOpenReferenceBenchmarkTestSuite",
       "executed": true,
-      "passedAssertions": 47,
+      "passedAssertions": 396,
       "failedAssertions": 0,
-      "totalAssertions": 47,
+      "totalAssertions": 396,
+      "skipped": false
+    },
+    {
+      "file": "eng002InputProvenance.test.ts",
+      "moduleName": "runEng002InputProvenanceTestSuite",
+      "executed": true,
+      "passedAssertions": 31,
+      "failedAssertions": 0,
+      "totalAssertions": 31,
       "skipped": false
     },
     {
@@ -852,9 +861,9 @@
       "file": "scientificPhaseC.regression.test.ts",
       "moduleName": "runScientificPhaseCTests",
       "executed": true,
-      "passedAssertions": 37,
+      "passedAssertions": 36,
       "failedAssertions": 0,
-      "totalAssertions": 37,
+      "totalAssertions": 36,
       "skipped": false
     },
     {
@@ -1068,9 +1077,9 @@
       "file": "p2Phase13FinalIntegrity.regression.test.ts",
       "moduleName": "runP2Phase13FinalIntegrityTestSuite",
       "executed": true,
-      "passedAssertions": 12,
+      "passedAssertions": 14,
       "failedAssertions": 0,
-      "totalAssertions": 12,
+      "totalAssertions": 14,
       "skipped": false
     },
     {
@@ -1149,9 +1158,9 @@
       "file": "vaultLogic.regression.test.ts",
       "moduleName": "runVaultLogicTestSuite",
       "executed": true,
-      "passedAssertions": 98,
+      "passedAssertions": 129,
       "failedAssertions": 0,
-      "totalAssertions": 98,
+      "totalAssertions": 129,
       "skipped": false
     },
     {
