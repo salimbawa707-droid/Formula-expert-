@@ -35,7 +35,7 @@ def main() -> int:
     if not SOURCE.is_file():
         raise FileNotFoundError(f"Canonical source workbook missing: {SOURCE}")
     digest = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
-    workbook = load_workbook(SOURCE, data_only=False, read_only=True)
+    workbook = load_workbook(SOURCE, data_only=False, read_only=False)
     if SHEET not in workbook.sheetnames:
         raise AssertionError(f"Expected worksheet {SHEET!r}; found {workbook.sheetnames!r}")
     ws = workbook[SHEET]
