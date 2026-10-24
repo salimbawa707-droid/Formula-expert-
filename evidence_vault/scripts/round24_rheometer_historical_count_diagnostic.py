@@ -91,8 +91,8 @@ def main():
         elif historical_round4 is not None:
             delta = historical_round4 - numeric_points
             historical_pattern = (
-                "ROUND4_STEADY_SHEAR_CLAIM_EQUALS_NUMERIC_POINTS_PLUS_TWO_PATTERN_ONLY"
-                if delta == 2 else "ROUND4_STEADY_SHEAR_COUNT_MISMATCH"
+                "ROUND4_CLAIM_PLUS_TWO_PATTERN_ONLY; NO_EXACT_MATCH_HISTORICAL_731_VS_732_WORKSHEET_ROW_SPAN"
+                if delta == 2 else "ROUND4_STEADY_SHEAR_COUNT_MISMATCH; NO_EXACT_MATCH_HISTORICAL_731"
             )
         elif ws.title in ("SteadyShear_5", "SteadyShear_1"):
             delta = None
