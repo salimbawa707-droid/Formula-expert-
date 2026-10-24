@@ -263,8 +263,8 @@ export const ReconcileEnginesModal: React.FC<ReconcileModalProps> = ({
           <p>
             The legacy <code className="text-slate-200 font-mono">engines_reconciled.list</code> has{' '}
             <strong>59 unique existing paths</strong>, but it is not a complete engine inventory. A source-tree scan found
-            <strong> 54 source modules with Engine in the filename outside UI components</strong> (57 including three UI components),
-            <strong> 79 broad engine/calculator/router/workflow candidate files</strong>, and <strong>6 top-level ENG-001…ENG-006 vault records</strong>.
+            <strong> 62 source modules with Engine in the filename outside UI components</strong> (65 including three UI components),
+            <strong> 94 broad engine/calculator/router/workflow candidate files</strong>, and <strong>6 top-level ENG-001…ENG-006 vault records</strong>.
             These are different counting units, not competing totals. The historical 64 and 97 claims cannot be verified because their original source artifacts were not found.
           </p>
           <p className="text-amber-200 font-mono text-[11px]">
