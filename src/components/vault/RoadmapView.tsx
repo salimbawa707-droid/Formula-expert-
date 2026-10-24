@@ -187,7 +187,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                         <span>Engine Inventory Reconciliation &amp; Blocker Tracking</span>
                       </div>
                       <p className="text-slate-300">
-                        The source audit separates four non-equivalent counts: 59 unique paths in the legacy list, 54 Engine-named source modules outside UI components (57 including UI components), 79 broad source candidates, and six top-level vault registry records. The historical 64 and 97 claims remain unverified because their original source artifacts were not found. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md.
+                        The source audit separates four non-equivalent counts: 59 unique paths in the legacy list, 62 Engine-named source files outside UI components (65 including UI components), 94 broad source candidates, and six top-level vault registry records. The historical 64 and 97 claims remain unverified because their original source artifacts were not found. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md.
                       </p>
                       <p className="text-rose-300 font-medium">
                         Latest reported blocker: The SurfPro ZIP is not available in the Google AI Studio runtime
