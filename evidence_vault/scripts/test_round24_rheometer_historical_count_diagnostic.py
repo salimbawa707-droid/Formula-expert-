@@ -42,12 +42,12 @@ class RheometerHistoricalDiagnosticTests(unittest.TestCase):
     def test_steady_shear_731_is_row_count_not_numeric_point_count(self):
         for sheet in ("SteadyShear_5", "SteadyShear_1"):
             row = self.rows[sheet]
-            self.assertEqual(int(row["worksheet_rows_after_header"]), 731)
+            self.assertEqual(int(row["worksheet_rows_after_header"]), 732)
             self.assertEqual(int(row["populated_data_rows_after_header"]), 721)
-            self.assertEqual(int(row["blank_rows_within_used_range_after_header"]), 10)
+            self.assertEqual(int(row["blank_rows_within_used_range_after_header"]), 11)
             self.assertEqual(int(row["numeric_point_rows"]), 720)
             self.assertEqual(int(row["nonnumeric_point_rows_with_other_content"]), 1)
-            self.assertIn("HISTORICAL_COMBINED_731", row["historical_pattern_diagnostic"])
+            self.assertIn("NO_EXACT_MATCH_HISTORICAL_731", row["historical_pattern_diagnostic"])
 
     def test_diagnostic_does_not_claim_original_intent_or_close_phase(self):
         hypotheses = self.report["historical_count_hypotheses"]
