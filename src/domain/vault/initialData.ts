@@ -615,7 +615,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       doi: '10.5281/zenodo.15861809',
       originalUrl: 'https://zenodo.org/records/15861809',
       repositoryUrl: 'https://github.com/BigChemistry-RobotLab/SurfPro',
-      license: 'Creative Commons Attribution 4.0 International (CC-BY-4.0)',
+      license: 'Dataset license: CC BY-NC-SA 4.0 per upstream SurfPro repository LICENSE.md; Zenodo rights field blank; NOT cleared for commercial reuse without separate written permission.',
       datasetVersion: 'zenodo-record-15861809',
       fileName: 'surfpro_experimental_tensiometry_v1.zip',
       fileFormat: 'ZIP archive containing CSV and HDF5 tables',
