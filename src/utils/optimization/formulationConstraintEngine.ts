@@ -371,7 +371,7 @@ export function evaluateFormulationConstraints(
 
       case 'PH_RANGE': {
         val = Number.isFinite(metrics.pH) ? metrics.pH : 'PH_UNAVAILABLE';
-        rangeDisplay = `${c.targetMin ?? '-'} - `${c.targetMax ?? '-'}`;
+        rangeDisplay = String(c.targetMin ?? '-') + ' - ' + String(c.targetMax ?? '-');
         if (!Number.isFinite(metrics.pH)) {
           isSatisfied = false;
           deviation = 1.0;
@@ -379,11 +379,11 @@ export function evaluateFormulationConstraints(
         } else if (c.targetMin !== undefined && metrics.pH < c.targetMin) {
           isSatisfied = false;
           deviation = (c.targetMin - metrics.pH) / Math.max(1.0, c.targetMin);
-          msg = `pH `${metrics.pH.toFixed(2)}` is below minimum (`${c.targetMin}`).`;
+          msg = 'pH ' + metrics.pH.toFixed(2) + ' is below minimum (' + c.targetMin + ').';
         } else if (c.targetMax !== undefined && metrics.pH > c.targetMax) {
           isSatisfied = false;
           deviation = (metrics.pH - c.targetMax) / Math.max(1.0, c.targetMax);
-          msg = `pH `${metrics.pH.toFixed(2)}` is above maximum (`${c.targetMax}`).`;
+          msg = 'pH ' + metrics.pH.toFixed(2) + ' is above maximum (' + c.targetMax + ').';
         }
         break;
       }
