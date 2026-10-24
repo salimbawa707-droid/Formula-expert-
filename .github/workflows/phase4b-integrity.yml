@@ -23,6 +23,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify reconciled engine inventory counts
+        run: node evidence_vault/scripts/verify_engine_inventory.mjs
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
