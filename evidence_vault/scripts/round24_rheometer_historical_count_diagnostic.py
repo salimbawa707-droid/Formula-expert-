@@ -89,7 +89,7 @@ def main():
         elif ws.title in ("SteadyShear_5", "SteadyShear_1"):
             delta = None
             historical_pattern = (
-                "731_MATCHES_POPULATED_DATA_ROWS_IN_EACH_SINGLE_STEADY_SHEAR_SHEET_BUT_NOT_NUMERIC_POINT_ROWS"
+                "731_MATCHES_WORKSHEET_ROW_SPAN_AFTER_HEADER_BUT_INCLUDES_BLANK_ROWS"
                 if populated_data_rows == HISTORICAL_STEADY_SHEAR_COMBINED
                 else "NO_MATCH_TO_HISTORICAL_COMBINED_731"
             )
@@ -100,7 +100,9 @@ def main():
             "sheet": ws.title,
             "header_row": header,
             "last_populated_row": ws.max_row,
+            "worksheet_rows_after_header": ws.max_row - header,
             "populated_data_rows_after_header": populated_data_rows,
+            "blank_rows_within_used_range_after_header": (ws.max_row - header) - populated_data_rows,
             "numeric_point_rows": numeric_points,
             "nonnumeric_point_rows_with_other_content": nonnumeric_point_rows,
             "explicit_test_label_rows": explicit_test_label_rows,
@@ -135,10 +137,10 @@ def main():
                 "not_established": "No original count script, workbook-cell inclusion map, or author rule establishes that headers were included."
             },
             {
-                "observation": "Each steady-shear sheet has 731 populated data rows after its detected header, but only 720 numeric Point No. rows.",
+                "observation": "Each steady-shear sheet spans 731 worksheet rows after its detected header, but only 721 rows are populated and only 720 have numeric Point No. values.",
                 "status": "SOURCE_STRUCTURE_REPRODUCED_ORIGINAL_INTENT_UNKNOWN",
-                "possible_explanation": "The historical combined 731 may have counted populated rows from one sheet rather than numeric points across both sheets.",
-                "not_established": "This does not establish which sheet, whether both sheets were intended, or how 739 was derived."
+                "possible_explanation": "The historical combined 731 may reflect the used worksheet row span of a single steady-shear sheet, including blank/spacer rows, rather than numeric points across both sheets.",
+                "not_established": "This does not establish which sheet, whether both sheets were intended, or how 739 was derived; row-span matching is not a measurement-count reconciliation."
             },
             {
                 "observation": "Historical file-level 739 is not reproduced by the source-level numeric Point No. ledger.",
