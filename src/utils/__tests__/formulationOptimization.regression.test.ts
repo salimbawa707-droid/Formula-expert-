@@ -149,6 +149,16 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     `Feasible: ${evalBadPH.isHardFeasible}`
   );
 
+  // Missing scientific pH must not be replaced with a plausible neutral value.
+  const mockMetricsMissingPH = { ...mockMetricsPass, pH: Number.NaN };
+  const evalMissingPH = evaluateFormulationConstraints(liquidConstraints, mockMetricsMissingPH);
+  const missingPHItem = evalMissingPH.results.find(r => r.type === 'PH_RANGE');
+  assert(
+    !evalMissingPH.isHardFeasible && missingPHItem?.currentValue === 'PH_UNAVAILABLE' && !missingPHItem.isSatisfied,
+    'Test 6b: Missing/non-finite pH fails the applicable hard constraint instead of passing silently',
+    `Feasible: ${evalMissingPH.isHardFeasible}, pH status: ${missingPHItem?.currentValue}`
+  );
+
   // 7. Active Matter Range Evaluation
   const mockMetricsLowActive = { ...mockMetricsPass, activeSurfactantPercentage: 3.0 }; // below laundry standard
   const evalLowActive = evaluateFormulationConstraints(liquidConstraints, mockMetricsLowActive);
