@@ -118,6 +118,7 @@ export function runVaultLogicTestSuite() {
   assert(ds001?.actualRowCount === 1624, 'Dataset Inspection', 'DS-001 master-record count is recorded as database rows, not formula observations');
   assert(ds001?.actualColumnCount === 31, 'Dataset Inspection', 'DS-001 master schema width is recorded');
   assert(ds001?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-001 remains ineligible for mixed-formula validation');
+  assert(ds001?.designation === 'BENCHMARK', 'Dataset Inspection', 'DS-001 uses a supported dataset designation');
   assert(Boolean(ds001?.sha256Hash === '316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841'), 'Dataset Inspection', 'DS-001 historical SHA-256 is preserved');
 
   // 4. Dataset inspection states must reflect the evidence vault's current source audit.
