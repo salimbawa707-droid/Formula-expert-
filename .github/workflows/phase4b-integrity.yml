@@ -124,6 +124,23 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Export exact source-row crosswalk for historical 212 vs 210 flow counts
+        run: python evidence_vault/scripts/round21_flow_212_vs_210_crosswalk.py
+
+      - name: Test solution-flow source-row crosswalk and count semantics
+        run: python evidence_vault/scripts/test_round21_flow_212_vs_210_crosswalk.py
+
+      - name: Preserve solution-flow 212 vs 210 source-row crosswalk
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4b-flow-212-vs-210-source-row-crosswalk
+          path: |
+            evidence_vault/forensic_reports/PHASE4B_FLOW_212_VS_210_SOURCE_ROW_CROSSWALK.csv
+            evidence_vault/forensic_reports/PHASE4B_FLOW_212_VS_210_SOURCE_ROW_CROSSWALK.json
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Acquire and validate official RepOD foam dataset
         run: python evidence_vault/scripts/acquire_repod_foam.py
 
