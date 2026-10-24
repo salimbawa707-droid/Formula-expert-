@@ -2,7 +2,7 @@
  * Fail-closed CMC reference contract. No model is bundled or invoked here.
  * Inject a real verified adapter only after provenance and applicability checks.
  */
-export type CmcEvidenceLevel = "PUBLISHED_MODEL" | "ESTIMATED" | "LAB_VALIDATED";
+export type CmcEvidenceLevel = "PUBLISHED_MODEL" | "ESTIMATED";
 export type CmcPrediction =
   | { status: "AVAILABLE"; value: number; unit: "mM"; method: string;
       evidenceLevel: CmcEvidenceLevel; confidence: "high" | "medium" | "low";
@@ -28,9 +28,13 @@ export function validateCmcInputs(components: readonly CmcComponent[], temperatu
     errors.push("temperature_C must be finite and above absolute zero.");
   let sum = 0;
   components.forEach((c, i) => {
-    if (!c.smiles?.trim()) errors.push(`Component ${i + 1} has no SMILES identity.`);
+    if (!c || typeof c !== "object") {
+      errors.push(`Component ${i + 1} must be an object.`);
+      return;
+    }
+    if (typeof c.smiles !== "string" || !c.smiles.trim()) errors.push(`Component ${i + 1} has no SMILES identity.`);
     if (!positiveFinite(c.moleFraction)) errors.push(`Component ${i + 1} moleFraction must be finite and positive.`);
-    sum += c.moleFraction;
+    if (Number.isFinite(c.moleFraction)) sum += c.moleFraction;
   });
   if (components.length && (!Number.isFinite(sum) || Math.abs(sum - 1) > 1e-6))
     errors.push("Component mole fractions must sum to 1 within 1e-6.");
@@ -50,7 +54,11 @@ export async function predictCMC(
     evidenceLevel: "UNKNOWN", warnings: ["MODEL_NOT_WIRED", "NO_NUMERICAL_PREDICTION_RETURNED"] };
   try {
     const out = await options.adapter.predict(components, temperature);
-    if (!positiveFinite(out.value_mM) || !out.sourceCitation?.trim() ||
+    const validConfidence = out.confidence === "high" || out.confidence === "medium" || out.confidence === "low";
+    const validAdapterMetadata = typeof options.adapter.method === "string" && options.adapter.method.trim().length > 0 &&
+      typeof options.adapter.modelVersion === "string" && options.adapter.modelVersion.trim().length > 0;
+    if (!positiveFinite(out.value_mM) || typeof out.sourceCitation !== "string" || !out.sourceCitation.trim() ||
+        !validConfidence || !validAdapterMetadata ||
         (out.uncertainty !== undefined && (!Number.isFinite(out.uncertainty) || out.uncertainty < 0))) {
       return { status: "UNAVAILABLE", reason: "Model output failed value/provenance validation.",
         evidenceLevel: "UNKNOWN", warnings: ["MODEL_OUTPUT_REJECTED"] };
