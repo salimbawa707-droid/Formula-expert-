@@ -42,7 +42,7 @@ class ValidatorTests(unittest.TestCase):
     def test_subgate_pass_never_unlocks_master_phase5(self):
         s,l=fixture(); r=MOD.validate(s,l)
         self.assertEqual(r["validation"], "PASS")
-        self.assertEqual(r["phase4b"], "PUCIC_SOURCE_COMPARISON_SUBGATE_PASS_ONLY")
+        self.assertEqual(r["phase4b"], "PUSIC_SOURCE_COMPARISON_SUBGATE_PASS_ONLY")
         self.assertEqual(r["phase5"], "LOCKED")
     def test_failed_comparison_keeps_master_gate_open(self):
         s,l=fixture(); l[0]["ai_visual_value"]="999"; r=MOD.validate(s,l)
