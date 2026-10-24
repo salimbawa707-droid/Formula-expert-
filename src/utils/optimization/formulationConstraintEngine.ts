@@ -370,20 +370,23 @@ export function evaluateFormulationConstraints(
       }
 
       case 'PH_RANGE': {
-        val = metrics.pH;
-        rangeDisplay = `${c.targetMin ?? '-'} - ${c.targetMax ?? '-'}`;
-        if (c.targetMin !== undefined && metrics.pH < c.targetMin) {
+        val = Number.isFinite(metrics.pH) ? metrics.pH : 'PH_UNAVAILABLE';
+        rangeDisplay = `${c.targetMin ?? '-'} - `${c.targetMax ?? '-'}`;
+        if (!Number.isFinite(metrics.pH)) {
+          isSatisfied = false;
+          deviation = 1.0;
+          msg = 'pH is unavailable or non-finite; applicable pH constraint cannot be verified.';
+        } else if (c.targetMin !== undefined && metrics.pH < c.targetMin) {
           isSatisfied = false;
           deviation = (c.targetMin - metrics.pH) / Math.max(1.0, c.targetMin);
-          msg = `pH ${metrics.pH.toFixed(2)} is below minimum (${c.targetMin}).`;
+          msg = `pH `${metrics.pH.toFixed(2)}` is below minimum (`${c.targetMin}`).`;
         } else if (c.targetMax !== undefined && metrics.pH > c.targetMax) {
           isSatisfied = false;
           deviation = (metrics.pH - c.targetMax) / Math.max(1.0, c.targetMax);
-          msg = `pH ${metrics.pH.toFixed(2)} is above maximum (${c.targetMax}).`;
+          msg = `pH `${metrics.pH.toFixed(2)}` is above maximum (`${c.targetMax}`).`;
         }
         break;
       }
-
       case 'ACTIVE_MATTER_RANGE': {
         val = metrics.activeSurfactantPercentage;
         rangeDisplay = `${c.targetMin ?? '-'}% - ${c.targetMax ?? '-'}%`;
