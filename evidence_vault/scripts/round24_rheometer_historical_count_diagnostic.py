@@ -89,7 +89,7 @@ def main():
         elif ws.title in ("SteadyShear_5", "SteadyShear_1"):
             delta = None
             historical_pattern = (
-                "731_MATCHES_WORKSHEET_ROW_SPAN_AFTER_HEADER_BUT_INCLUDES_BLANK_ROWS"
+                "NO_EXACT_MATCH_HISTORICAL_731_VS_732_WORKSHEET_ROW_SPAN"
                 if (ws.max_row - header) == HISTORICAL_STEADY_SHEAR_COMBINED
                 else "NO_MATCH_TO_HISTORICAL_COMBINED_731"
             )
@@ -139,7 +139,7 @@ def main():
             {
                 "observation": "Each steady-shear sheet spans 731 worksheet rows after its detected header, but only 721 rows are populated and only 720 have numeric Point No. values.",
                 "status": "SOURCE_STRUCTURE_REPRODUCED_ORIGINAL_INTENT_UNKNOWN",
-                "possible_explanation": "The historical combined 731 may reflect the used worksheet row span of a single steady-shear sheet, including blank/spacer rows, rather than numeric points across both sheets.",
+                "possible_explanation": "The historical combined 731 is close to the 732-row worksheet span but is not exactly reproduced; the historical counting rule remains unknown.",
                 "not_established": "This does not establish which sheet, whether both sheets were intended, or how 739 was derived; row-span matching is not a measurement-count reconciliation."
             },
             {
