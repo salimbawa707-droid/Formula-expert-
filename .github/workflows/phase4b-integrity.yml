@@ -37,6 +37,9 @@ jobs:
       - name: Test Pušić AI evidence validator
         run: python evidence_vault/scripts/test_validate_pusic_ai_evidence.py
 
+      - name: Test strict Pušić R460 independent-review gate
+        run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
+
       - name: Test Zenodo XLSX parser against canonical workbooks
         run: python evidence_vault/scripts/test_audit_zenodo_xlsx.py evidence_vault/datasets/zenodo_18961871
 
