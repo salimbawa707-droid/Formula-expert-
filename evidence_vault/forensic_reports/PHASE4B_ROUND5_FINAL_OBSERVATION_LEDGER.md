@@ -25,9 +25,9 @@ In Round-4, a preliminary grand total of 27,996 observations was cited, while th
 
 At the time, this report asserted that the discrepancy was resolved. Later source-cell audits did not reproduce that claim. The table below is preserved as the historical ledger, not as an accepted current count reconciliation.
 
-### Explicit Arithmetic Ledger of Exact Observations
+### Historical Arithmetic Ledger (Counts Not Accepted as Verified Physical Observations)
 
-| Workbook Filename | Worksheet Name | Total Rows | Header Rows | Metadata / Blank Rows | Exact Valid Physical Observations | Counting Definition & Exclusion Rationale |
+| Workbook Filename | Worksheet Name | Total Rows (historical) | Header Rows (historical) | Metadata / Blank Rows (historical) | Historical count claim (not verified) | Historical counting rationale (not accepted as validated) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`Supplementary_SolutionFlowCurves.xlsx`** | `SolutionFlowCurves` | 226 | 2 | 12 | **212** | Each valid numerical row representing shear rate ($\dot{\gamma}$), shear stress ($\sigma$), and viscosity ($\eta$). Excludes 2 header rows and 12 blank/metadata rows. |
 | **`Supplementary_FilmThickness_v1.xlsx`** | `Data` | 2,396 | 1 | 0 | **7,522** | Published author count of individual optical interference lamella thickness measurements. Excludes 1 header row. |
