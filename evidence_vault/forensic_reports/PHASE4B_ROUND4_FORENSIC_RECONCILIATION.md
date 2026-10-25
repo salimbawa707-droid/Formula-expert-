@@ -15,7 +15,7 @@
 
 This Round-4 Forensic Reconciliation report provides a strict, independent byte-level audit of all files associated with Zenodo Record 18961871 in the Evidence Vault (`data/evidence/zenodo_18961871/`). 
 
-In response to previous audit discrepancies regarding file sizes and observation accounting, this audit re-extracted and re-hashed all four workbooks; its historical count interpretations were later found not to reconcile directly from raw disk bytes using an independent Node.js forensic script (`scripts/round4_forensic_audit.mjs`). 
+In response to previous audit discrepancies regarding file sizes and observation accounting, this audit re-extracted and re-hashed all four workbooks directly from raw disk bytes using an independent Node.js forensic script (`scripts/round4_forensic_audit.mjs`). Later source-level audits found that the historical count interpretations did not reconcile. 
 
 **Historical decision (superseded):** PASS was reported at the time. Later audits found that the observation-count discrepancies were not resolved; only the pinned workbook byte-integrity findings remain separately verifiable.
 
@@ -91,7 +91,7 @@ Mapping between ingested Zenodo 18961871 experimental datasets and the applicati
 
 ## 5. Governance & Final Decision
 
-- **Phase 4B Status:** ACTIVE / OPEN (All integrity discrepancies investigated and resolved).
+- **Phase 4B Status:** ACTIVE / OPEN (Pinned workbook byte integrity was checked; historical count discrepancies remain unresolved).
 - **Phase 5 Status:** STRICTLY LOCKED.
 - **Historical Final Audit Decision (superseded by later source reconciliation):** **PASS** — not evidence that historical count reconciliation remains accepted.
 
