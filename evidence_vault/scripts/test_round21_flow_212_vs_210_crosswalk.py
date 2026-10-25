@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for observed source rows and historical 212 vs 210 claims."""
+"""Regression tests for flow worksheet header rows vs measured point rows."""
 import csv
 import json
 import subprocess
@@ -24,16 +24,20 @@ class FlowCountCrosswalkTests(unittest.TestCase):
         with CSV_OUT.open(encoding="utf-8", newline="") as handle:
             cls.rows = list(csv.DictReader(handle))
 
-    def test_observed_counts_are_not_forced_to_historical_claim(self):
+    def test_header_rows_explain_212_vs_210_structurally(self):
         counts = self.report["counts"]
-        self.assertEqual(counts["observed_nonempty_rows"], len(self.rows))
+        self.assertEqual(counts["nonempty_header_rows"], 2)
+        self.assertEqual(counts["header_row_numbers"], [1, 2])
+        self.assertEqual(counts["observed_nonempty_data_rows"], 210)
         self.assertEqual(counts["complete_numeric_flow_points"], 210)
-        self.assertEqual(counts["nonempty_rows_not_complete_numeric_points"], len(self.rows) - 210)
+        self.assertEqual(counts["nonempty_data_rows_not_complete_numeric_points"], 0)
+        self.assertEqual(counts["observed_nonempty_worksheet_rows_including_headers"], 212)
         historical = self.report["historical_claim_reconciliation"]
-        self.assertFalse(historical["observed_rows_match_historical_212"])
-        self.assertTrue(historical["observed_complete_points_match_historical_210"])
-        self.assertEqual(historical["historical_row_count_minus_observed_rows"], 2)
-        self.assertEqual(historical["disposition"], "PARTIALLY_RECONCILED")
+        self.assertTrue(historical["worksheet_rows_including_headers_match_212"])
+        self.assertTrue(historical["data_points_match_210"])
+        self.assertTrue(historical["header_rows_account_for_difference"])
+        self.assertEqual(historical["disposition"], "STRUCTURALLY_RECONCILED_HEADER_ROWS_INCLUDED")
+        self.assertIn("not proof", historical["interpretation"].lower())
 
     def test_crosswalk_rows_have_stable_source_cell_lineage(self):
         self.assertEqual(len(self.rows), 210)
@@ -49,6 +53,7 @@ class FlowCountCrosswalkTests(unittest.TestCase):
         text = " ".join(self.report["limitations"]).lower()
         self.assertIn("no missing or nonnumeric values are imputed", text)
         self.assertIn("does not prove independent physical experiments", text)
+        self.assertIn("must not be described as 212 measured flow points", text)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
