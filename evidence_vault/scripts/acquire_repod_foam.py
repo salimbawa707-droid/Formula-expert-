@@ -240,7 +240,7 @@ def main() -> int:
         "sheets": sheets,
         "intendedUse": "Auxiliary mechanistic foamability/stability evidence only; systems are PGA/LAE and PLL/rhamnolipid mixtures, not commercial laundry-detergent formula validation.",
         "labValidationStatus": "NOT_LAB_VALIDATED",
-        "engineEligibility": "NOT_ELIGIBLE_FOR_ENG005_UNTIL_EXECUTABLE_PREDICTOR_AND_INPUT/CONDITION_MATCHING_EXIST",
+        "engineEligibilityNote": "Not eligible for ENG-005 until an executable predictor and matched inputs/conditions exist.",
         "publication": {
             "doi": "10.3390/min14111110",
             "source": "Kosior et al., Minerals 14(11), 1110 (2024)",
