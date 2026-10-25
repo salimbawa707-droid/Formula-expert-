@@ -49,6 +49,28 @@ class RheometerHistoricalDiagnosticTests(unittest.TestCase):
             self.assertEqual(int(row["nonnumeric_point_rows_with_other_content"]), 1)
             self.assertIn("NO_EXACT_MATCH_HISTORICAL_731", row["historical_pattern_diagnostic"])
 
+    def test_round4_round5_conflict_and_739_arithmetic_coincidence_are_explicit(self):
+        checks = self.report["historical_arithmetic_checks"]
+        nonsteady = checks["round5_four_non_steady_sheet_claims"]
+        self.assertEqual(nonsteady["sum"], 801)
+        self.assertEqual(nonsteady["source_numeric_rows"], 793)
+        self.assertEqual(nonsteady["source_test_groups"], 38)
+
+        steady = checks["round4_steady_shear_per_sheet_claims"]
+        self.assertEqual(steady["components"], {"SteadyShear_5": 722, "SteadyShear_1": 722})
+        self.assertEqual(steady["sum"], 1444)
+        self.assertEqual(steady["source_numeric_rows"], 1440)
+        self.assertEqual(steady["source_test_groups"], 24)
+        self.assertEqual(checks["round5_steady_shear_combined_claim"], 731)
+
+        coincidence = checks["arithmetic_coincidence"]
+        self.assertEqual(coincidence["left_component_sum"], 801)
+        self.assertEqual(coincidence["group_count"], 62)
+        self.assertEqual(coincidence["result"], 739)
+        self.assertTrue(coincidence["equals_739"])
+        self.assertEqual(coincidence["status"], "ARITHMETIC_COINCIDENCE_SCOPE_MISMATCH_NOT_A_VALIDATED_COUNTING_RULE")
+        self.assertIn("no source or historical method authorizes", coincidence["why_not_valid"])
+
     def test_diagnostic_does_not_claim_original_intent_or_close_phase(self):
         hypotheses = self.report["historical_count_hypotheses"]
         self.assertEqual(hypotheses[0]["status"], "ARITHMETIC_PATTERN_ONLY_NOT_PROOF")
