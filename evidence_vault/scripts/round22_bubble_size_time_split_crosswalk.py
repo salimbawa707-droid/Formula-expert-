@@ -2,6 +2,7 @@
 """Cell-level audit of bubble area measurements and formula-derived radii by time sheet."""
 from __future__ import annotations
 import csv, hashlib, json, re
+from itertools import combinations
 from pathlib import Path
 from openpyxl import load_workbook
 
@@ -36,6 +37,7 @@ def main():
     for sheet, historical_count in TIME_SHEETS.items():
         ws, vs = wf[sheet], wv[sheet]
         raw_count = formula_count = matched = 0
+        column_counts = {col: 0 for col in "ABCD"}
         for row in range(3, ws.max_row + 1):
             for raw_col, radius_col in zip("ABCD", "EFGH"):
                 raw = ws[f"{raw_col}{row}"]
@@ -43,6 +45,7 @@ def main():
                 if not is_number(raw.value):
                     continue
                 raw_count += 1
+                column_counts[raw_col] += 1
                 refs = precedents(str(formula.value)) if formula.data_type == "f" else []
                 matched_here = formula.data_type == "f" and (raw_col, str(row)) in refs
                 if formula.data_type == "f":
@@ -60,12 +63,37 @@ def main():
                 })
         by_sheet[sheet] = {
             "observed_raw_numeric_area_cells": raw_count,
+            "raw_area_numeric_cells_by_column": column_counts,
             "formula_cells_in_radius_columns_on_rows_scanned": formula_count,
             "matched_raw_to_radius_formula_pairs": matched,
             "historical_claimed_count": historical_count,
             "observed_minus_historical": raw_count - historical_count,
             "historical_count_reproduced": raw_count == historical_count,
         }
+    # Search all eight source columns for arithmetic-only subset matches to the
+    # historical 10,000 / 9,509 split. A match is a lead, never proof of intent.
+    all_columns = {f"{sheet}!{col}": count
+                   for sheet, stats in by_sheet.items()
+                   for col, count in stats["raw_area_numeric_cells_by_column"].items()}
+    keys = list(all_columns)
+    subsets_10000, subsets_9509 = [], []
+    for size in range(1, len(keys) + 1):
+        for chosen in combinations(keys, size):
+            subtotal = sum(all_columns[k] for k in chosen)
+            if subtotal == 10000:
+                subsets_10000.append(list(chosen))
+            if subtotal == 9509:
+                subsets_9509.append(list(chosen))
+    paired_subset_hypotheses = []
+    target_set = set(keys)
+    for chosen_20 in subsets_10000:
+        remainder = sorted(target_set - set(chosen_20))
+        if sum(all_columns[k] for k in remainder) == 9509:
+            paired_subset_hypotheses.append({
+                "20min_claim_candidate_columns": chosen_20,
+                "30min_claim_candidate_columns": remainder,
+                "status": "ARITHMETIC_ONLY_NOT_EVIDENCE_OF_HISTORICAL_RULE"
+            })
     wf.close(); wv.close()
     OUT.mkdir(parents=True, exist_ok=True)
     with CSV_OUT.open("w", newline="", encoding="utf-8") as f:
@@ -76,6 +104,14 @@ def main():
         "audit_id":"PHASE4B-BUBBLE-20-30MIN-CELL-CROSSWALK",
         "source":{"filename":SOURCE.name,"sha256":digest,"sheets":list(TIME_SHEETS)},
         "sheet_counts":by_sheet,
+        "historical_split_column_hypothesis_search": {
+            "source_column_numeric_counts": all_columns,
+            "subset_count_matching_10000": len(subsets_10000),
+            "subset_count_matching_9509": len(subsets_9509),
+            "complementary_partition_count_matching_both": len(paired_subset_hypotheses),
+            "complementary_partitions": paired_subset_hypotheses,
+            "interpretation": "Column-subset arithmetic is diagnostic only. It cannot establish that the historical count used these columns or that the subset corresponds to a physical time point."
+        },
         "aggregate":{"raw_numeric_area_cells":total,"matched_formula_pairs":total_matched,
                      "historical_aggregate_claim":19509,"aggregate_reproduced":total == 19509,
                      "formula_dependency_pairs_counted_as_independent_observations":False},
