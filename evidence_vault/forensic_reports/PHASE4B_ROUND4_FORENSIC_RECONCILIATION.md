@@ -55,7 +55,7 @@ Observation counts were recomputed independently using structural sheet parsing 
    - Total Bubble Observations: **19,509 individual bubble area/radius measurements** tracking coarsening kinetics and Sauter mean diameter ($d_{32}$).
 4. **Rheometer Data (`Supplementary_RheometerData_v2.xlsx`)**:
    - Sheets: `Contents`, `AmpSwps_all`, `FrqSwps_all`, `FoamD_AmpSwpTest`, `FoamA_SteadyYield`, `SteadyShear_5`, `SteadyShear_1`.
-   - Total Sweep / Flow Curve Points: **739+ valid physical observation points** tracking storage modulus ($G'$), loss modulus ($G''$), yield stress ($\tau_y$), and steady shear viscosity.
+   - Earlier unverified file-level claim: **739+ points**. Later source-level parsing finds 2,233 numeric `Point No.` rows across the six measurement sheets; neither count proves independent physical observations without a documented unit-of-count rule.
 
 **Historical aggregate claim (superseded):** **27,996 physical data points**. Later source-level audits do not validate this as a comparable or independent physical-observation total.
 
