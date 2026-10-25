@@ -86,6 +86,11 @@ class RepODFoamAuditTests(unittest.TestCase):
                 self.assertEqual(rows[1][17], "")
                 self.assertEqual(rows[1][20], "")
 
+    def test_manifest_generator_has_unique_engine_eligibility_key(self):
+        source = (ROOT / "evidence_vault/scripts/acquire_repod_foam.py").read_text(encoding="utf-8")
+        self.assertEqual(source.count('"engineEligibility":'), 1)
+        self.assertIn('"engineEligibilityNote":', source)
+
     def test_unknown_replicate_counts_and_no_engine_promotion(self):
         self.assertIsNone(self.manifest["groupingAudit"]["replicateCountPerRow"])
         self.assertIsNone(self.manifest["groupingAudit"]["independentObservationCount"])
