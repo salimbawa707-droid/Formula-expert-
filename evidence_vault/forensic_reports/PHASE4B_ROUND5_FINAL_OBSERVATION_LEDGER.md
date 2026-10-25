@@ -13,17 +13,17 @@
 
 ## Executive Summary
 
-This Round-5 audit provides the definitive, read-only forensic ledger for Zenodo Record 18961871. It resolves previous observation-count discrepancies, provides exact integer counts per worksheet without vague estimates, re-hashes all file binaries independently, and formally separates **File-Integrity PASS** from **Scientific-Validation Readiness**.
+This is a historical Round-5 report. Later source-level audits supersede its observation-count conclusions: the file-integrity findings may remain useful, but the claimed row counts and their interpretation as independent physical observations are not accepted as reconciled. The current workbook crosswalk finds 2,233 numeric rheometer Point No. rows, 210 complete numeric solution-flow points, and unresolved bubble time-split and historical-count discrepancies.
 
-**Gate Status:** **FILE INTEGRITY PASS | SCIENTIFIC VALIDATION READY FOR PROSPECTIVE EVALUATION | PHASE 5 REMAINS STRICTLY LOCKED.**
+**Historical report status:** FILE INTEGRITY PASS (where checksums match) | HISTORICAL AGGREGATE NOT REPRODUCED | PHASE 4B OPEN | PHASE 5 LOCKED.
 
 ---
 
-## A. Resolution of the Observation-Count Discrepancy
+## A. Historical Observation-Count Claims (Superseded; Not Reconciled)
 
 In Round-4, a preliminary grand total of 27,996 observations was cited, while the sum of component categories (Solution Flow: 212, Film Thickness: 7,522, Bubble Sizes: 19,509, Rheometer: 739) equaled 27,982 (a 14-observation discrepancy). 
 
-This Round-5 audit resolves this discrepancy through an explicit arithmetic ledger across all worksheets.
+At the time, this report asserted that the discrepancy was resolved. Later source-cell audits did not reproduce that claim. The table below is preserved as the historical ledger, not as an accepted current count reconciliation.
 
 ### Explicit Arithmetic Ledger of Exact Observations
 
@@ -38,13 +38,13 @@ This Round-5 audit resolves this discrepancy through an explicit arithmetic ledg
 | **`Supplementary_RheometerData_v2.xlsx`** | `FrqSwps_all` | 241 | 1 | 14 | **227** | Frequency sweep measurement points. Excludes header and blank rows. |
 | **`Supplementary_RheometerData_v2.xlsx`** | `FoamD_AmpSwpTest` | 201 | 1 | 6 | **194** | Foam D specific amplitude sweep points. Excludes header and blank rows. |
 | **`Supplementary_RheometerData_v2.xlsx`** | `FoamA_SteadyYield` | 92 | 2 | 0 | **90** | Foam A steady shear yield stress points. Excludes 2 header rows. |
-| **`Supplementary_RheometerData_v2.xlsx`** | `SteadyShear_5` & `SteadyShear_1` | 1,466 | 4 | 20 | **731** | Steady shear flow curve points across replicates (reconciled exact sum). Excludes headers, blanks, and summary cells. |
-| **TOTALS** | **All Workbooks** | **11,723** | **15** | **68** | **27,982** | **Exact Reconciled Grand Total (Zero Double-Counting Verified)** |
+| **`Supplementary_RheometerData_v2.xlsx`** | `SteadyShear_5` & `SteadyShear_1` | 1,466 (historical claim) | 4 (historical claim) | 20 (historical claim) | **731 (historical claim; not reproduced)** | Historical Round-5 combined claim conflicts with Round-4's 722 + 722 and current source parsing (720 numeric points per sheet). No validated inclusion/deduplication rule. |
+| **TOTALS** | **All Workbooks** | **11,723 (historical ledger)** | **15 (historical ledger)** | **68 (historical ledger)** | **27,982 (historical arithmetic claim; not validated)** | **Not a verified physical-observation total; component units and source counts are inconsistent.** |
 
-### Double-Counting & Independence Check
+### Historical Double-Counting & Independence Assertions (Not Independently Established)
 - **Time Points:** 20-minute and 30-minute bubble size measurements are distinct physical states of aging foam, stored in separate worksheets (`20min` and `30min`), and counted independently without overlap.
-- **Replicates:** Experimental replicates (e.g., A1-D3) are recorded as separate rows within sweep worksheets and represent distinct physical sample tests.
-- **Resolution:** The historical 27,996 figure was an unverified ceiling estimate from draft metadata; the exact, audited, reproducible integer count is **27,982 physical observations**.
+- **Replicates:** The earlier report asserted that replicate rows represent distinct physical sample tests. Current workbook structure alone does not prove independent experimental units or authorize adding all rows as independent observations.
+- **Resolution:** Neither 27,996 nor 27,982 is accepted as a verified count of independent physical observations. The component sum 212 + 7,522 + 19,509 + 739 is arithmetic only; source-level audits find 210 complete numeric flow points and 2,233 numeric rheometer points, while the bubble time split remains unresolved.
 
 ---
 
@@ -79,7 +79,7 @@ Ingesting a dataset establishes **File Integrity** and **Dataset Usability**, bu
 ## D. Final Decision & Governance
 
 1. **File Integrity Status:** **PASS**. All 4 canonical files verified bit-for-bit.
-2. **Observation Ledger Status:** **RECONCILED**. Exact grand total of **27,982 physical observations** established with zero double-counting.
+2. **Observation Ledger Status:** **HISTORICAL CLAIM NOT REPRODUCED**. The total 27,982 is not established as a count of physical observations; double-counting and unit-of-count rules remain unresolved.
 3. **Scientific Validation Readiness:** **READY FOR PROSPECTIVE EVALUATION**. Engines ENG-003 and ENG-005 possess direct validation targets, but **none** are classified as `LAB_VALIDATED`.
 4. **Gate Status:**
    - **Phase 4B:** **ACTIVE / OPEN** (Audit completed successfully).
