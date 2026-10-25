@@ -27,6 +27,20 @@ class BubbleTimeSplitTests(unittest.TestCase):
         self.assertEqual(self.report["aggregate"]["matched_formula_pairs"],19509)
         self.assertEqual(self.report["disposition"],"AGGREGATE_MATCH_TIME_SPLIT_MISMATCH")
 
+    def test_column_counts_and_historical_subset_search_are_reproducible(self):
+        sheets = self.report["sheet_counts"]
+        for sheet in ("20min", "30min"):
+            column_counts = sheets[sheet]["raw_area_numeric_cells_by_column"]
+            self.assertEqual(set(column_counts), set("ABCD"))
+            self.assertEqual(sum(column_counts.values()), sheets[sheet]["observed_raw_numeric_area_cells"])
+        search = self.report["historical_split_column_hypothesis_search"]
+        self.assertEqual(sum(search["source_column_numeric_counts"].values()), 19509)
+        self.assertEqual(
+            search["complementary_partition_count_matching_both"],
+            len(search["complementary_partitions"]),
+        )
+        self.assertIn("cannot establish", search["interpretation"])
+
     def test_each_raw_cell_has_unique_lineage_and_no_double_count(self):
         ids=[(r["sheet"],r["raw_area_cell"]) for r in self.rows]
         self.assertEqual(len(ids),19509)
