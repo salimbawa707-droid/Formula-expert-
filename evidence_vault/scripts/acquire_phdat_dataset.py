@@ -87,7 +87,7 @@ def main():
     metadata_bytes = fetch(API_URL, MAX_META)
     metadata = json.loads(metadata_bytes.decode("utf-8"))
     title = str(metadata.get("title", ""))
-    if "surfactant" not in title.lower() or not ("phase" in title.lower() or "phdat" in title.lower()):
+    if title.strip().lower() != "phdat" and ("surfactant" not in title.lower() or "phase" not in title.lower()):
         raise ValueError(f"Unexpected title for Figshare item {ARTICLE_ID}: {title!r}")
     source_files = metadata.get("files") or []
     if not source_files:
