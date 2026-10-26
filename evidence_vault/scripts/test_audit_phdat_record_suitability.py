@@ -45,7 +45,20 @@ class PhDatSuitabilityTests(unittest.TestCase):
         raw,label,identity=self.base()
         row=MODULE.classify_record("1",raw,label,identity,True)
         self.assertTrue(row["duplicate_smiles_group"])
+        self.assertEqual(row["tier"],"B_REQUIRES_TARGETED_REVIEW")
         self.assertIn("DUPLICATE_SMILES_GROUP_REQUIRES_SOURCE_LEVEL_REVIEW",row["reasons"])
+
+    def test_repeated_source_label_mapping_blocks_tier_a(self):
+        raw,label,identity=self.base(); label["duplicate_source_label_count"]="1"
+        row=MODULE.classify_record("1",raw,label,identity)
+        self.assertEqual(row["tier"],"B_REQUIRES_TARGETED_REVIEW")
+        self.assertIn("REPEATED_SOURCE_LABEL_MAPPING_NEEDS_REVIEW",row["reasons"])
+
+    def test_repeated_dataset_label_mapping_blocks_tier_a(self):
+        raw,label,identity=self.base(); label["duplicate_dataset_label_count"]="1"
+        row=MODULE.classify_record("1",raw,label,identity)
+        self.assertEqual(row["tier"],"B_REQUIRES_TARGETED_REVIEW")
+        self.assertIn("REPEATED_DATASET_LABEL_MAPPING_NEEDS_REVIEW",row["reasons"])
 
     def test_source_and_figure_required(self):
         raw,label,identity=self.base(); raw["Source"]=""; raw["Figure"]=""
