@@ -80,7 +80,7 @@ jobs:
         run: python evidence_vault/scripts/round17_independent_reconciliation.py --check
 
       - name: Syntax-check reproducible acquisition and reconciliation scripts
-        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/acquire_phdat_dataset.py evidence_vault/scripts/test_acquire_phdat_dataset.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py evidence_vault/scripts/round20_source_record_reconciliation.py evidence_vault/scripts/test_round20_source_record_reconciliation.py evidence_vault/scripts/round22_bubble_size_time_split_crosswalk.py evidence_vault/scripts/test_round22_bubble_size_time_split_crosswalk.py evidence_vault/scripts/round23_rheometer_739_source_crosswalk.py evidence_vault/scripts/test_round23_rheometer_739_source_crosswalk.py evidence_vault/scripts/round24_rheometer_historical_count_diagnostic.py evidence_vault/scripts/test_round24_rheometer_historical_count_diagnostic.py evidence_vault/scripts/round25_bubble_historical_split_diagnostic.py evidence_vault/scripts/test_round25_bubble_historical_split_diagnostic.py evidence_vault/scripts/audit_phdat_label_provenance.py evidence_vault/scripts/test_audit_phdat_label_provenance.py
+        run: python -m py_compile evidence_vault/scripts/acquire_repod_foam.py evidence_vault/scripts/acquire_phdat_dataset.py evidence_vault/scripts/test_acquire_phdat_dataset.py evidence_vault/scripts/round17_independent_reconciliation.py evidence_vault/scripts/round18_historical_aggregate_reconciliation.py evidence_vault/scripts/round19_raw_workbook_lineage.py evidence_vault/scripts/round20_source_record_reconciliation.py evidence_vault/scripts/test_round20_source_record_reconciliation.py evidence_vault/scripts/round22_bubble_size_time_split_crosswalk.py evidence_vault/scripts/test_round22_bubble_size_time_split_crosswalk.py evidence_vault/scripts/round23_rheometer_739_source_crosswalk.py evidence_vault/scripts/test_round23_rheometer_739_source_crosswalk.py evidence_vault/scripts/round24_rheometer_historical_count_diagnostic.py evidence_vault/scripts/test_round24_rheometer_historical_count_diagnostic.py evidence_vault/scripts/round25_bubble_historical_split_diagnostic.py evidence_vault/scripts/test_round25_bubble_historical_split_diagnostic.py evidence_vault/scripts/audit_phdat_label_provenance.py evidence_vault/scripts/test_audit_phdat_label_provenance.py evidence_vault/scripts/audit_phdat_identity_applicability.py evidence_vault/scripts/test_audit_phdat_identity_applicability.py
 
       - name: Reconcile historical 27,982 aggregate claims without inferring physical counts
         run: python evidence_vault/scripts/round18_historical_aggregate_reconciliation.py
@@ -236,6 +236,12 @@ jobs:
       - name: Test PhDat label provenance audit
         run: python evidence_vault/scripts/test_audit_phdat_label_provenance.py
 
+      - name: Audit PhDat catalog identity and applicability without auto-mapping
+        run: python evidence_vault/scripts/audit_phdat_identity_applicability.py
+
+      - name: Test PhDat identity and applicability guardrails
+        run: python evidence_vault/scripts/test_audit_phdat_identity_applicability.py
+
       - name: Preserve PhDat source and audit outputs
         if: always()
         uses: actions/upload-artifact@v4
@@ -247,6 +253,9 @@ jobs:
             evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.json
             evidence_vault/forensic_reports/PHASE4B_PHDAT_LABEL_PROVENANCE_AUDIT.json
             evidence_vault/forensic_reports/PHASE4B_PHDAT_LABEL_PROVENANCE_BY_RECORD.csv
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_IDENTITY_APPLICABILITY_AUDIT.md
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_IDENTITY_APPLICABILITY_AUDIT.json
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_IDENTITY_CANDIDATES_BY_RECORD.csv
           if-no-files-found: ignore
           retention-days: 30
 
