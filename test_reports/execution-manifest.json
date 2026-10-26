@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-23T22:11:27.940Z",
+  "timestamp": "2026-10-24T15:02:10.241Z",
   "summary": {
     "discoveredCount": 130,
     "registeredCount": 130,
     "executedCount": 130,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4503,
-    "totalAssertionsPassed": 4503,
+    "totalAssertionsExecuted": 4510,
+    "totalAssertionsPassed": 4510,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -1158,9 +1158,9 @@
       "file": "vaultLogic.regression.test.ts",
       "moduleName": "runVaultLogicTestSuite",
       "executed": true,
-      "passedAssertions": 129,
+      "passedAssertions": 136,
       "failedAssertions": 0,
-      "totalAssertions": 129,
+      "totalAssertions": 136,
       "skipped": false
     },
     {
