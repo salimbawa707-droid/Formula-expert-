@@ -62,6 +62,8 @@ class Round20ReconciliationTests(unittest.TestCase):
         claim = self.report["historical_claim"]
         self.assertEqual(claim["all_category_record_sum"], 29474)
         self.assertEqual(claim["all_category_sum_minus_headline"], 1492)
+        self.assertIn("not a count of unit-mismatch or ingestion-blocker cases", claim["difference_interpretation"])
+        self.assertIn("not a count of 1,492 unit-mismatch or ingestion-blocker cases", self.markdown)
         self.assertIn("not asserted as independent experiments", self.markdown)
 
     def test_historical_bubble_split_and_rheometer_claim_remain_unresolved(self):
