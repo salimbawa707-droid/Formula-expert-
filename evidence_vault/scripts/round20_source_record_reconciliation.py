@@ -152,7 +152,7 @@ def main():
     write_csv(ROUT,["filename","sheet","row","test_raw","test_effective","point_no","time","frequency","shear_rate","shear_stress","viscosity","source_cells"],rheo)
     first3=flow+film+raw_total; full=first3+rheo_total; headline=27982; needed=headline-first3
     crosswalk=[
-      {"claim":"solution_flow_curves","historical_count":212,"source_count":flow,"delta_source_minus_historical":flow-212,"status":"REPRODUCED" if flow==212 else "MISMATCH","notes":"Complete numeric point rows."},
+      {"claim":"solution_flow_curves","historical_count":212,"source_count":flow,"delta_source_minus_historical":flow-212,"status":"STRUCTURAL_HEADER_INCLUSIVE_COUNT_ONLY" if flow==210 else "MISMATCH","notes":"Round-21 source crosswalk identifies 210 complete numeric data points plus two nonempty header rows = 212 nonempty worksheet rows. Do not describe 212 as measured points; original author intent remains unconfirmed."},
       {"claim":"film_thickness_total","historical_count":7522,"source_count":film,"delta_source_minus_historical":film-7522,"status":"REPRODUCED" if film==7522 else "MISMATCH","notes":"Feature records, not unique images."},
       {"claim":"bubble_sizes_total","historical_count":19509,"source_count":raw_total,"delta_source_minus_historical":raw_total-19509,"status":"AGGREGATE_MATCH_TIME_SPLIT_MISMATCH" if raw_total==19509 else "MISMATCH","notes":"Historical split says 20min=10000, 30min=9509; raw source split is 20min=13388, 30min=6121."},
       {"claim":"bubble_sizes_20min","historical_count":10000,"source_count":bubble_stats.get("20min",{}).get("raw_area_cells",0),"delta_source_minus_historical":bubble_stats.get("20min",{}).get("raw_area_cells",0)-10000,"status":"MISMATCH","notes":"Raw numeric area cells in 20min sheet."},
