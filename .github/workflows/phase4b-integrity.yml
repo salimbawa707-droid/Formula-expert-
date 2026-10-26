@@ -179,7 +179,7 @@ jobs:
         run: python evidence_vault/scripts/round24_rheometer_historical_count_diagnostic.py
 
       - name: Test historical rheometer count diagnostics without asserting undocumented intent
-        run: python evidence_vault/scripts/test_round24_rheometer_historical_count_diagnostic.py
+        run: python evidence_vault/scripts/test_round24_rheometer_historical_count_diagnostic.py evidence_vault/scripts/acquire_phdat_dataset.py evidence_vault/scripts/test_acquire_phdat_dataset.py
 
       - name: Preserve historical rheometer count diagnostic
         if: always()
@@ -204,6 +204,24 @@ jobs:
         with:
           name: phase4b-repod-foam-audit
           path: evidence_vault/datasets/repod_foam/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Acquire and audit official PhDat surfactant phase-behavior dataset
+        run: python evidence_vault/scripts/acquire_phdat_dataset.py
+
+      - name: Test PhDat source integrity and scientific-status guardrails
+        run: python evidence_vault/scripts/test_acquire_phdat_dataset.py
+
+      - name: Preserve PhDat source and audit outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4b-phdat-initial-ingestion-audit
+          path: |
+            evidence_vault/datasets/phdat/
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.md
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.json
           if-no-files-found: ignore
           retention-days: 30
 
