@@ -172,7 +172,7 @@ def profile_json(data: bytes, name: str):
         "file": name, "validJson": True, "rootType": type(parsed).__name__,
         "objectCountIncludingNested": objects, "arrayCountIncludingNested": arrays,
         "topLevelArrayLength": len(parsed) if isinstance(parsed, list) else None,
-        "numericLeafCount": phdat_audit["dataPointCount"] + phdat_audit["phaseProbabilityValueCount"] if phdat_audit else numeric,
+        "numericLeafCount": 2 * phdat_audit["dataPointCount"] + phdat_audit["phaseProbabilityValueCount"] if phdat_audit else numeric,
         "numericLeafCountSemantics": "parsed numeric values in JSON-encoded PhDat arrays" if phdat_audit else "literal JSON numeric leaves",
         "phdatAudit": phdat_audit, "uniqueKeys": all_keys,
         "candidatePhaseCompositionKeys": [k for k in all_keys if re.search(r"phase|state|probab|temperature|concentration|surfactant|smiles|composition|mole|weight|wt", k, re.I)],
@@ -248,7 +248,7 @@ def main():
         "title": title, "fileCount": len(file_records),
         "downloadedFileCount": sum(f.get("status") == "DOWNLOADED" for f in file_records),
         "licenseStatus": manifest["licenseStatus"], "jsonProfileCount": len(profiles),
-        "profileSummaries": [{k: p.get(k) for k in ("file", "rootType", "objectCountIncludingNested", "arrayCountIncludingNested", "numericLeafCount", "candidatePhaseCompositionKeys", "sha256")} for p in profiles],
+        "profileSummaries": [{k: p.get(k) for k in ("file", "rootType", "objectCountIncludingNested", "arrayCountIncludingNested", "numericLeafCount", "candidatePhaseCompositionKeys", "sha256", "phdatAudit")} for p in profiles],
         "scientificDisposition": "SOURCE_DISCOVERED_NOT_FORMULA_VALIDATION", "phase4b": "OPEN", "phase5": "LOCKED"
     }
     REPORTS.mkdir(parents=True, exist_ok=True)
@@ -256,6 +256,18 @@ def main():
     lines = ["# Phase 4B — PhDat Initial Ingestion Audit", "", f"**Dataset:** {title}", f"**Decision:** {decision}", f"**License:** {manifest['licenseStatus']}", "**Scientific status:** NOT_LAB_VALIDATED", "**Gate:** Phase 4B OPEN; Phase 5 LOCKED", "", "| File | Bytes | SHA-256 | Status |", "|---|---:|---|---|"]
     for f in file_records:
         lines.append(f"| {f.get('name')} | {f.get('bytes', '—')} | {f.get('sha256', '—')} | {f.get('status')} |")
+    for p in profiles:
+        audit = p.get("phdatAudit")
+        if audit:
+            lines += [
+                "", "## Parsed source coverage",
+                f"- Chemical records: {audit['recordCount']} (complete: {audit['completeRecords']}; incomplete: {audit['incompleteRecords']}).",
+                f"- Source point rows: {audit['dataPointCount']:,}; phase probability values: {audit['phaseProbabilityValueCount']:,}; distinct phase-label columns across records: {audit['distinctPhaseLabelColumns']}.",
+                f"- Temperature range: {audit['temperatureRangeDegC'][0]} to {audit['temperatureRangeDegC'][1]} °C; composition range: {audit['compositionRangeWtPercent'][0]} to {audit['compositionRangeWtPercent'][1]} wt%.",
+                f"- Missing numeric record IDs: {', '.join(audit['recordIdsMissingFromNumericSequence']) or 'none'}. Header order mismatches: {', '.join(audit['headerOrderMismatchRecordIds']) or 'none'}; array-length mismatch records: {', '.join(audit['arrayLengthMismatchRecordIds']) or 'none'}.",
+                f"- Maximum absolute phase-sum deviation from 1: {audit['phaseSumMaxAbsoluteDeviationFromOne']}; source values remain unchanged and are not normalized.",
+                "- State and label semantics remain source-defined; incomplete records are not silently promoted to complete."
+            ]
     lines += ["", "## Applicability and limitations", "", "- Candidate use: phase behavior / compatibility within source-supported chemical and temperature/composition ranges.", "- Not a direct benchmark for detergency, soil removal, hard-water chelation, foam kinetics, pH, cleaning score, or formula accuracy.", "- Review source chemical identifiers, units, phase-state semantics, missingness, extraction methods, and per-record provenance before mapping to the ingredient catalog.", "- Confirm the license against repository/publisher terms before redistribution.", "- No engine eligibility or scientific maturity promotion is granted."]
     (REPORTS / "PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False))
