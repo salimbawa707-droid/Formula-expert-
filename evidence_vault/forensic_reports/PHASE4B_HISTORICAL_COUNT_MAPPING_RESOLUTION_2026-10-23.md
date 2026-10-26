@@ -36,6 +36,10 @@ The Round-20 CI run on commit `af6264bb5ba269319defab07058f1fdceaba0818` enforce
 
 The CI regression gate verifies source bytes and structural counts. This does not itself resolve historical category semantics or prove that counts represent independent experiments.
 
+## Clarification on the 1,492 difference
+
+The value **1,492** is `29,474 - 27,982`: the arithmetic difference between a mixed-unit sum of source-defined records and the historical headline. It is **not** a count of 1,492 unit-mismatch or ingestion-blocker cases. The source totals mix complete flow points, image-feature records, bubble area cells, and rheometer instrument-point rows, so the difference cannot be interpreted as a number of missing measurements or blockers.
+
 ## Arithmetic cross-checks (not observation totals)
 
 - Historical component arithmetic: `212 + 7,522 + 19,509 + 739 = 27,982`.
