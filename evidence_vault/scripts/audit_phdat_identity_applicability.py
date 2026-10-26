@@ -18,7 +18,11 @@ def normalize(value):
 def extract_array_objects(source: str, marker: str):
     marker_at = source.find(marker)
     if marker_at < 0: raise ValueError(f"Catalog marker not found: {marker}")
-    array_at = source.find("[", marker_at)
+    # Skip TypeScript type annotations such as `UniversalIngredient[]`; the actual
+    # initializer array begins after the assignment operator.
+    assignment_at = source.find("=", marker_at + len(marker))
+    if assignment_at < 0: raise ValueError("Catalog assignment operator not found")
+    array_at = source.find("[", assignment_at + 1)
     if array_at < 0: raise ValueError("Catalog array opening bracket not found")
     objects, i = [], array_at + 1
     while i < len(source):
