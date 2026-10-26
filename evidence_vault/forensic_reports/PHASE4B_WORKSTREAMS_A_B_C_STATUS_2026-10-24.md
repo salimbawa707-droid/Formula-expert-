@@ -17,7 +17,7 @@
 
 The current source-identity checks and Round-20 parser assertions establish reproducible *structural inventories*, not a common count of independent physical experiments.
 
-- Solution flow: 210 complete numeric point rows; the historical 212 corresponds to nonempty rows, with two incomplete rows not mapped to historical observation IDs.
+- Solution flow: 210 complete numeric point rows. Round-21 now reproduces 212 only as 210 data rows plus two nonempty header rows; this is a structural explanation, not proof of original author intent. Do not describe 212 as measured points.
 - Film thickness: 7,522 group-level feature/length records; not 7,522 unique images or independent experiments.
 - Bubble sizes: 19,509 raw area cells and 19,509 paired formula-derived radius cells. Radius cells must not be added as independent observations.
 - Bubble split: historical 10,000/9,509 split is not mapped to source raw split 13,388/6,121.

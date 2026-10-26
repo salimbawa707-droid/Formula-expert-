@@ -76,6 +76,10 @@ class Round20ReconciliationTests(unittest.TestCase):
         self.assertEqual(claims["rheometer"]["historical_count"], 739)
         self.assertEqual(claims["rheometer"]["source_count"], 2233)
         self.assertEqual(claims["rheometer"]["status"], "NOT_REPRODUCED")
+        self.assertEqual(claims["solution_flow_curves"]["source_count"], 210)
+        self.assertEqual(claims["solution_flow_curves"]["status"], "STRUCTURAL_HEADER_INCLUSIVE_COUNT_ONLY")
+        self.assertIn("two nonempty header rows", claims["solution_flow_curves"]["notes"])
+        self.assertNotIn("212 measured points", claims["solution_flow_curves"]["notes"])
 
     def test_governance_stays_open_and_outputs_are_present(self):
         self.assertEqual(self.report["governance"]["phase4b"], "OPEN")
