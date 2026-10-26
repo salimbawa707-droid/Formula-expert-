@@ -32,6 +32,9 @@ def classify_record(record_id, raw, label, identity, duplicate_smiles=False):
     smiles_ok = not missing(raw.get("SMILES"))
     unknown_phase = "U" in (raw.get("Data") or {})
     phase_mismatch = bool(str(label.get("phase_key_tokens_not_in_label_targets") or "").strip())
+    repeated_source_mapping = int(label.get("duplicate_source_label_count") or 0) > 0
+    repeated_target_mapping = int(label.get("duplicate_dataset_label_count") or 0) > 0
+    repeated_mapping = repeated_source_mapping or repeated_target_mapping
     if state != "complete": reasons.append("SOURCE_RECORD_MARKED_INCOMPLETE")
     if not source_ok: reasons.append("SOURCE_CITATION_MISSING")
     if not figure_ok: reasons.append("FIGURE_REFERENCE_MISSING")
@@ -40,8 +43,10 @@ def classify_record(record_id, raw, label, identity, duplicate_smiles=False):
     if not smiles_ok: reasons.append("SMILES_MISSING")
     if unknown_phase: reasons.append("UNKNOWN_U_PHASE_KEY_PRESENT")
     if phase_mismatch: reasons.append("PHASE_KEY_LABEL_MAPPING_NEEDS_REVIEW")
+    if repeated_source_mapping: reasons.append("REPEATED_SOURCE_LABEL_MAPPING_NEEDS_REVIEW")
+    if repeated_target_mapping: reasons.append("REPEATED_DATASET_LABEL_MAPPING_NEEDS_REVIEW")
     if duplicate_smiles: reasons.append("DUPLICATE_SMILES_GROUP_REQUIRES_SOURCE_LEVEL_REVIEW")
-    if state == "complete" and source_ok and figure_ok and method_ok and purity_ok and smiles_ok and not unknown_phase and not phase_mismatch:
+    if state == "complete" and source_ok and figure_ok and method_ok and purity_ok and smiles_ok and not unknown_phase and not phase_mismatch and not repeated_mapping and not duplicate_smiles:
         tier = "A_TRACEABLE_EXPLORATORY_CANDIDATE"
         rationale = "Required source/method/purity fields present; record marked complete; no U key or unresolved key/label diagnostic. Still requires figure-level phase-label review and is not validation data."
     elif state == "complete" and source_ok and figure_ok and smiles_ok:
@@ -96,7 +101,7 @@ def run_audit(raw_records, label_rows, identity_rows):
         "recordsWithExactCatalogNameCandidate": sum(r["exact_catalog_name_candidate_count"] > 0 for r in rows),
         "confirmedChemicalIdentityMatches": 0, "formulaValidationEligibleRecords": 0,
         "scope": "Candidate tiers are only for curating exploratory aqueous phase-behavior/compatibility research; they do not establish physical validity, detergent cleaning performance, or model validation.",
-        "tierARequirements": ["source State complete", "source citation and figure present", "method and purity not missing/placeholder", "SMILES present", "no U phase key", "no phase-key/label diagnostic"],
+        "tierARequirements": ["source State complete", "source citation and figure present", "method and purity not missing/placeholder", "SMILES present", "no U phase key", "no phase-key/label diagnostic", "no repeated source-label mapping", "no repeated dataset-label mapping", "not in an exact duplicate-SMILES group"],
         "limitations": [
             "PhDat is literature-curated/digitized aqueous surfactant phase-behavior evidence, not a detergent cleaning benchmark.",
             "Duplicate SMILES are flagged but records are not merged or dropped; distinct source/figure provenance may matter.",
