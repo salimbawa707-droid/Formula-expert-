@@ -213,6 +213,12 @@ jobs:
       - name: Test PhDat source integrity and scientific-status guardrails
         run: python evidence_vault/scripts/test_acquire_phdat_dataset.py
 
+      - name: Audit PhDat phase-label mappings and per-record provenance
+        run: python evidence_vault/scripts/audit_phdat_label_provenance.py
+
+      - name: Test PhDat label provenance audit
+        run: python evidence_vault/scripts/test_audit_phdat_label_provenance.py
+
       - name: Preserve PhDat source and audit outputs
         if: always()
         uses: actions/upload-artifact@v4
@@ -222,6 +228,8 @@ jobs:
             evidence_vault/datasets/phdat/
             evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.md
             evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.json
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_LABEL_PROVENANCE_AUDIT.json
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_LABEL_PROVENANCE_BY_RECORD.csv
           if-no-files-found: ignore
           retention-days: 30
 
