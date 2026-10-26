@@ -56,6 +56,32 @@ class PhDatAuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             MODULE.profile_json(b"{not json", "bad.json")
 
+    def test_official_phdat_manifest_preserves_observed_source_coverage(self):
+        manifest_path = ROOT / "evidence_vault/datasets/phdat/data-manifest.json"
+        if not manifest_path.is_file():
+            self.skipTest("Run acquire_phdat_dataset.py first to generate the official source manifest")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["articleId"], 29071202)
+        self.assertEqual(manifest["licenseStatus"], "CONFIRMED_CC_BY_4_0")
+        self.assertEqual(manifest["labValidationStatus"], "NOT_LAB_VALIDATED")
+        self.assertEqual(manifest["engineEligibility"], [])
+        file_record = next(item for item in manifest["files"] if item["name"] == "PhDat.json")
+        self.assertEqual(file_record["bytes"], 112738787)
+        self.assertEqual(file_record["md5"], "cbad98c7b20313586fb4183a4e88e539")
+        self.assertEqual(file_record["sha256"], "748a29d08341bd8e868247d609401301495e24b3c1d88ed3b0ec065e2cdb12f3")
+        audit = manifest["jsonProfiles"][0]["phdatAudit"]
+        self.assertEqual(audit["recordCount"], 143)
+        self.assertEqual(audit["completeRecords"], 99)
+        self.assertEqual(audit["incompleteRecords"], 44)
+        self.assertEqual(audit["dataPointCount"], 1896776)
+        self.assertEqual(audit["phaseProbabilityValueCount"], 15785160)
+        self.assertEqual(audit["recordIdsMissingFromNumericSequence"], ["98"])
+        self.assertEqual(audit["arrayLengthMismatchRecordIds"], [])
+        self.assertEqual(audit["headerOrderMismatchRecordIds"], ["7", "25"])
+        self.assertEqual(audit["nonnumericDataValueCount"], 0)
+        self.assertLessEqual(audit["phaseSumMaxAbsoluteDeviationFromOne"], 0.0005)
+        self.assertEqual(audit["phaseSumDeviationPointCounts"]["greaterThan0.0005"], 0)
+
     def test_source_has_no_scientific_promotion(self):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('"labValidationStatus": "NOT_LAB_VALIDATED"', source)
