@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Acquire and audit official PhDat phase-behavior data; never claim detergent validation."""
 from __future__ import annotations
-import hashlib, json, re, time, urllib.error, urllib.request, zipfile
+import hashlib, json, math, re, time, urllib.error, urllib.request, zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -51,8 +51,108 @@ def cc_by_4(value):
     return "cc by 4 0" in compact or "creativecommons.org/licenses/by/4.0" in text or "attribution 4.0 international" in text
 
 
+def audit_phdat_records(parsed):
+    """Parse the dataset's JSON-encoded arrays one chemical record at a time."""
+    if not isinstance(parsed, dict) or not parsed or not all(str(k).isdigit() for k in parsed):
+        return None
+    if not all(isinstance(v, dict) and isinstance(v.get("Data"), dict) for v in parsed.values()):
+        return None
+    states, types, solvents = {}, {}, {}
+    missing_ids = sorted(set(str(i) for i in range(1, max(map(int, parsed)) + 1)) - set(parsed), key=int)
+    unique_smiles, point_total, phase_value_total = set(), 0, 0
+    array_length_mismatches, header_order_mismatches = [], []
+    temperature_min, temperature_max = math.inf, -math.inf
+    composition_min, composition_max = math.inf, -math.inf
+    phase_min, phase_max = math.inf, -math.inf
+    phase_sum_max_deviation = 0.0
+    phase_sum_deviation_gt_0001 = 0
+    phase_sum_deviation_gt_0002 = 0
+    phase_sum_deviation_gt_0005 = 0
+    nonnumeric_values = 0
+    phase_labels = set()
+    complete_records = incomplete_records = 0
+    for record_id, record in parsed.items():
+        state = str(record.get("State", "UNKNOWN"))
+        states[state] = states.get(state, 0) + 1
+        if state.lower() == "complete": complete_records += 1
+        if state.lower() == "incomplete": incomplete_records += 1
+        typ = str(record.get("Type", "UNKNOWN")); types[typ] = types.get(typ, 0) + 1
+        solvent = str(record.get("Solvent", "UNKNOWN")); solvents[solvent] = solvents.get(solvent, 0) + 1
+        smiles = record.get("SMILES")
+        if isinstance(smiles, str) and smiles.strip(): unique_smiles.add(smiles.strip())
+        data = record["Data"]
+        arrays = {}
+        for key, raw in data.items():
+            try:
+                arr = json.loads(raw) if isinstance(raw, str) else raw
+            except (json.JSONDecodeError, TypeError):
+                arr = None
+            arrays[key] = arr
+        lengths = {len(v) for v in arrays.values() if isinstance(v, list)}
+        if len(lengths) != 1 or len(arrays) != sum(isinstance(v, list) for v in arrays.values()):
+            array_length_mismatches.append(str(record_id))
+            continue
+        n = next(iter(lengths), 0)
+        point_total += n
+        headers = record.get("headers", [])
+        if list(headers) != list(data.keys()):
+            header_order_mismatches.append(str(record_id))
+        phase_keys = [key for key in arrays if key not in ("temperature_(degC)", "composition_(wt%)")]
+        phase_labels.update(phase_keys)
+        phase_value_total += sum(len(arrays[key]) for key in phase_keys)
+        temps = arrays.get("temperature_(degC)")
+        comps = arrays.get("composition_(wt%)")
+        if not isinstance(temps, list) or not isinstance(comps, list):
+            array_length_mismatches.append(str(record_id))
+            continue
+        for value in temps:
+            if isinstance(value, (int, float)) and math.isfinite(value):
+                temperature_min = min(temperature_min, value); temperature_max = max(temperature_max, value)
+            else: nonnumeric_values += 1
+        for value in comps:
+            if isinstance(value, (int, float)) and math.isfinite(value):
+                composition_min = min(composition_min, value); composition_max = max(composition_max, value)
+            else: nonnumeric_values += 1
+        for phase_key in phase_keys:
+            for value in arrays[phase_key]:
+                if isinstance(value, (int, float)) and math.isfinite(value):
+                    phase_min = min(phase_min, value); phase_max = max(phase_max, value)
+                else: nonnumeric_values += 1
+        # Source values are preserved; tolerance measures rounding deviations only.
+        for i in range(n):
+            vals = [arrays[key][i] for key in phase_keys]
+            if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in vals):
+                continue
+            deviation = abs(sum(vals) - 1.0)
+            phase_sum_max_deviation = max(phase_sum_max_deviation, deviation)
+            if deviation > 0.0001: phase_sum_deviation_gt_0001 += 1
+            if deviation > 0.0002: phase_sum_deviation_gt_0002 += 1
+            if deviation > 0.0005: phase_sum_deviation_gt_0005 += 1
+    return {
+        "recordCount": len(parsed), "recordIdsMissingFromNumericSequence": missing_ids,
+        "stateCounts": states, "completeRecords": complete_records, "incompleteRecords": incomplete_records,
+        "typeCounts": types, "solventCounts": solvents, "uniqueNonemptySmiles": len(unique_smiles),
+        "dataPointCount": point_total, "phaseProbabilityValueCount": phase_value_total,
+        "distinctPhaseLabelColumns": len(phase_labels), "phaseLabelExamples": sorted(phase_labels)[:30],
+        "arrayLengthMismatchRecordIds": array_length_mismatches,
+        "headerOrderMismatchRecordIds": header_order_mismatches,
+        "temperatureRangeDegC": [temperature_min, temperature_max],
+        "compositionRangeWtPercent": [composition_min, composition_max],
+        "phaseValueRange": [phase_min, phase_max],
+        "phaseSumMaxAbsoluteDeviationFromOne": phase_sum_max_deviation,
+        "phaseSumDeviationPointCounts": {
+            "greaterThan0.0001": phase_sum_deviation_gt_0001,
+            "greaterThan0.0002": phase_sum_deviation_gt_0002,
+            "greaterThan0.0005": phase_sum_deviation_gt_0005
+        },
+        "nonnumericDataValueCount": nonnumeric_values,
+        "interpretation": "Phase sums are diagnostic only. Original values are not normalized or rewritten; small deviations may reflect source rounding."
+    }
+
+
 def profile_json(data: bytes, name: str):
     parsed = json.loads(data.decode("utf-8-sig"))
+    phdat_audit = audit_phdat_records(parsed)
     objects, arrays, numeric = 0, 0, 0
     keys = set()
     stack = [parsed]
@@ -72,7 +172,9 @@ def profile_json(data: bytes, name: str):
         "file": name, "validJson": True, "rootType": type(parsed).__name__,
         "objectCountIncludingNested": objects, "arrayCountIncludingNested": arrays,
         "topLevelArrayLength": len(parsed) if isinstance(parsed, list) else None,
-        "numericLeafCount": numeric, "uniqueKeys": all_keys,
+        "numericLeafCount": phdat_audit["dataPointCount"] + phdat_audit["phaseProbabilityValueCount"] if phdat_audit else numeric,
+        "numericLeafCountSemantics": "parsed numeric values in JSON-encoded PhDat arrays" if phdat_audit else "literal JSON numeric leaves",
+        "phdatAudit": phdat_audit, "uniqueKeys": all_keys,
         "candidatePhaseCompositionKeys": [k for k in all_keys if re.search(r"phase|state|probab|temperature|concentration|surfactant|smiles|composition|mole|weight|wt", k, re.I)],
         "candidateChemicalIdentityKeys": [k for k in all_keys if re.search(r"smiles|inchi|surfactant|chemical|compound|molecule|name", k, re.I)],
         "sha256": digest(data),
