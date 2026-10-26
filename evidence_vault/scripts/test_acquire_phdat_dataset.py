@@ -28,7 +28,29 @@ class PhDatAuditTests(unittest.TestCase):
         self.assertIn("temperature_C", profile["candidatePhaseCompositionKeys"])
         self.assertIn("phase_state", profile["candidatePhaseCompositionKeys"])
         self.assertEqual(len(profile["sha256"]), 64)
-        self.assertIn("diagnostic only", profile["semanticWarning"])
+        self.assertIn("Key-name scan only", profile["semanticWarning"])
+
+    def test_phdat_string_encoded_arrays_are_audited_without_normalizing(self):
+        fixture = {
+            "1": {
+                "State": "complete", "Type": "anionic", "Solvent": "water",
+                "SMILES": "S", "headers": ["temperature_(degC)", "composition_(wt%)", "La", "U"],
+                "Data": {
+                    "temperature_(degC)": "[20, 21]", "composition_(wt%)": "[0, 50]",
+                    "La": "[0.2, 0.5]", "U": "[0.8, 0.5]"
+                }
+            }
+        }
+        audit = MODULE.audit_phdat_records(fixture)
+        self.assertEqual(audit["recordCount"], 1)
+        self.assertEqual(audit["completeRecords"], 1)
+        self.assertEqual(audit["dataPointCount"], 2)
+        self.assertEqual(audit["phaseProbabilityValueCount"], 4)
+        self.assertEqual(audit["arrayLengthMismatchRecordIds"], [])
+        self.assertEqual(audit["headerOrderMismatchRecordIds"], [])
+        self.assertEqual(audit["phaseSumMaxAbsoluteDeviationFromOne"], 0.0)
+        self.assertEqual(audit["temperatureRangeDegC"], [20, 21])
+        self.assertEqual(audit["compositionRangeWtPercent"], [0, 50])
 
     def test_invalid_json_rejected(self):
         with self.assertRaises(ValueError):
