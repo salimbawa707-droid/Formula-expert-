@@ -40,6 +40,9 @@ class BubbleTimeSplitTests(unittest.TestCase):
             len(search["complementary_partitions"]),
         )
         self.assertIn("cannot establish", search["interpretation"])
+        self.assertEqual(search["subset_count_matching_10000"], 0)
+        self.assertEqual(search["subset_count_matching_9509"], 0)
+        self.assertEqual(search["complementary_partition_count_matching_both"], 0)
 
     def test_each_raw_cell_has_unique_lineage_and_no_double_count(self):
         ids=[(r["sheet"],r["raw_area_cell"]) for r in self.rows]
