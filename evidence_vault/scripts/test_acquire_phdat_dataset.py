@@ -91,6 +91,14 @@ class PhDatAuditTests(unittest.TestCase):
         self.assertIn("No imputation", source)
         self.assertIn("not a direct detergent cleaning-performance benchmark", source)
 
+    def test_candidate_registry_classifies_phdat_as_auxiliary_only(self):
+        registry = (ROOT / "evidence_vault/datasets/public_dataset_candidates.csv").read_text(encoding="utf-8")
+        row = next(line for line in registry.splitlines() if line.startswith('"DS-PHDAT",'))
+        self.assertIn("CC BY 4.0 confirmed from official Figshare API metadata", row)
+        self.assertIn("AUXILIARY_PHASE_BEHAVIOR_ONLY", row)
+        self.assertIn("Not a detergent cleaning/soil-removal", row)
+        self.assertIn("1,896,776 temperature/composition point rows", row)
+
     def test_downloads_are_checksum_checked_when_source_supplies_md5(self):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn("if supplied_md5 and md5.lower() != str(supplied_md5).lower()", source)
