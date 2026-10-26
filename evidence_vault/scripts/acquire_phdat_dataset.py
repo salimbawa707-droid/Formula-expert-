@@ -60,6 +60,7 @@ def audit_phdat_records(parsed):
     states, types, solvents = {}, {}, {}
     missing_ids = sorted(set(str(i) for i in range(1, max(map(int, parsed)) + 1)) - set(parsed), key=int)
     unique_smiles, point_total, phase_value_total = set(), 0, 0
+    smiles_records = {}
     array_length_mismatches, header_order_mismatches = [], []
     temperature_min, temperature_max = math.inf, -math.inf
     composition_min, composition_max = math.inf, -math.inf
@@ -79,7 +80,9 @@ def audit_phdat_records(parsed):
         typ = str(record.get("Type", "UNKNOWN")); types[typ] = types.get(typ, 0) + 1
         solvent = str(record.get("Solvent", "UNKNOWN")); solvents[solvent] = solvents.get(solvent, 0) + 1
         smiles = record.get("SMILES")
-        if isinstance(smiles, str) and smiles.strip(): unique_smiles.add(smiles.strip())
+        if isinstance(smiles, str) and smiles.strip():
+            unique_smiles.add(smiles.strip())
+            smiles_records.setdefault(smiles.strip(), []).append({"recordId": str(record_id), "name": record.get("Name"), "source": record.get("Source"), "figure": record.get("Figure"), "state": state})
         data = record["Data"]
         arrays = {}
         for key, raw in data.items():
@@ -128,10 +131,14 @@ def audit_phdat_records(parsed):
             if deviation > 0.0001: phase_sum_deviation_gt_0001 += 1
             if deviation > 0.0002: phase_sum_deviation_gt_0002 += 1
             if deviation > 0.0005: phase_sum_deviation_gt_0005 += 1
+    duplicate_smiles = [items for items in smiles_records.values() if len(items) > 1]
     return {
         "recordCount": len(parsed), "recordIdsMissingFromNumericSequence": missing_ids,
         "stateCounts": states, "completeRecords": complete_records, "incompleteRecords": incomplete_records,
         "typeCounts": types, "solventCounts": solvents, "uniqueNonemptySmiles": len(unique_smiles),
+        "duplicateSmilesGroupCount": len(duplicate_smiles),
+        "recordsInDuplicateSmilesGroups": sum(len(items) for items in duplicate_smiles),
+        "duplicateSmilesGroups": duplicate_smiles,
         "dataPointCount": point_total, "phaseProbabilityValueCount": phase_value_total,
         "distinctPhaseLabelColumns": len(phase_labels), "phaseLabelExamples": sorted(phase_labels)[:30],
         "arrayLengthMismatchRecordIds": array_length_mismatches,
