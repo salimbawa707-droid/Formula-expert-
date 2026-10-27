@@ -34,6 +34,25 @@ jobs:
       - name: Build production frontend
         run: bun run build
 
+  phase6-regression:
+    name: P1 Phase 6 lab evidence regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Phase 6 lab evidence regression suite
+        run: bun run test:phase6
+
   evidence-guardrails:
     name: Evidence syntax, regression and fail-closed gates
     runs-on: ubuntu-latest
