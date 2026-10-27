@@ -89,6 +89,27 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
   const validCheck = validateMeasurementRecord(baseMeasurement);
   assert('1. Measurement attaches to correct formula', validCheck.isValid && baseMeasurement.formulaId === 'f-laundry-01', true, true);
 
+  const compFormulaMismatch = checkMeasurementComparability({
+    targetFormulaId: 'f-other-formula',
+    targetFormulaVersion: '1.0',
+    targetCategory: 'LAUNDRY_LIQUID',
+    targetKPIId: 'cleaningScore',
+    targetUnit: '%',
+    measurement: baseMeasurement
+  });
+  assert('2. Formula ID mismatch is blocked with explicit reason', !compFormulaMismatch.isComparable && !compFormulaMismatch.matchedFormula && compFormulaMismatch.reason?.includes('Formula ID mismatch'), true, true);
+
+  const missingFormulaId = { ...baseMeasurement, formulaId: undefined };
+  const missingFormulaIdCheck = checkMeasurementComparability({
+    targetFormulaId: 'f-laundry-01',
+    targetFormulaVersion: '1.0',
+    targetCategory: 'LAUNDRY_LIQUID',
+    targetKPIId: 'cleaningScore',
+    targetUnit: '%',
+    measurement: missingFormulaId
+  });
+  assert('3. Missing formula ID is blocked when target formula is specified', !missingFormulaIdCheck.isComparable && !missingFormulaIdCheck.matchedFormula, true, true);
+
   const compVersionMismatch = checkMeasurementComparability({
     targetFormulaId: 'f-laundry-01',
     targetFormulaVersion: '2.0', // Mismatch vs 1.0

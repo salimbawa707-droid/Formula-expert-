@@ -339,7 +339,7 @@ export function checkMeasurementComparability(input: ComparabilityInput): Compar
   const conditionWarnings: string[] = [];
 
   // 1. Formula & Version Match
-  const matchedFormula = !m.formulaId || !input.targetFormulaId || m.formulaId === input.targetFormulaId;
+  const matchedFormula = !input.targetFormulaId || m.formulaId === input.targetFormulaId;
   const matchedVersion = m.formulaVersion === input.targetFormulaVersion;
 
   // 2. Category Match
@@ -396,7 +396,8 @@ export function checkMeasurementComparability(input: ComparabilityInput): Compar
   const isComparable = matchedFormula && matchedVersion && matchedCategory && matchedKPI && matchedUnit && conditionsComparable;
 
   let reason: string | undefined = undefined;
-  if (!matchedVersion) reason = `Formula version mismatch (Measurement: v${m.formulaVersion}, Target: v${input.targetFormulaVersion})`;
+  if (!matchedFormula) reason = `Formula ID mismatch (Measurement: ${m.formulaId || 'missing'}, Target: ${input.targetFormulaId})`;
+  else if (!matchedVersion) reason = `Formula version mismatch (Measurement: v${m.formulaVersion}, Target: v${input.targetFormulaVersion})`;
   else if (!matchedCategory) reason = `Product category mismatch (Measurement: ${normMeasCat}, Target: ${normTargetCat})`;
   else if (!matchedKPI) reason = `KPI mismatch (Measurement KPI: '${mKPI}', Target KPI: '${tKPI}')`;
   else if (!matchedUnit) reason = `Incompatible units (Measurement: ${m.unit}, Target: ${input.targetUnit})`;
