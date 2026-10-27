@@ -368,6 +368,29 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
       gateMissingVersionWithVersionedEvidence.validationReport?.missingTests.includes('pH'),
     gateMissingVersionWithVersionedEvidence.validationReport?.comparisons.length, 0);
 
+  const comparabilityWithoutTargetId = checkMeasurementComparability({
+    targetFormulaVersion: '1.0',
+    targetCategory: 'LAUNDRY_LIQUID',
+    targetKPIId: 'cleaningScore',
+    targetUnit: '%',
+    measurement: baseMeasurement
+  });
+  assert('22c-1. Missing target formula ID cannot wildcard-match a measurement in direct comparability checks',
+    !comparabilityWithoutTargetId.isComparable && !comparabilityWithoutTargetId.matchedFormula,
+    comparabilityWithoutTargetId.isComparable, false);
+
+  const qualityGateWithoutTargetId = evaluateScientificQualityGate({
+    formulaName: 'f-laundry-01',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: validLaundryFormula,
+    labMeasurements: [validationMeasurement]
+  });
+  assert('22c-2. Formula name cannot substitute for missing formula ID during evidence matching',
+    qualityGateWithoutTargetId.validationReport?.comparisons.length === 0 &&
+      qualityGateWithoutTargetId.validationReport?.missingTests.includes('pH'),
+    qualityGateWithoutTargetId.validationReport?.comparisons.length, 0);
+
   const validationWithoutTargetId = evaluateFormulaScientificValidation({
     formulaVersion: '1.0',
     productCategory: 'LAUNDRY_LIQUID',
