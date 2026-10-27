@@ -312,8 +312,7 @@ export function runRDKitAdapterTestSuite(): TestResultSummary {
         });
     `;
 
-    const tsxCliPath = path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
-    const rawOutput = execFileSync(process.execPath, [tsxCliPath, '-e', runnerCode], {
+    const rawOutput = execFileSync(process.execPath, ['-e', runnerCode], {
       encoding: 'utf-8',
       timeout: 30000,
     });
