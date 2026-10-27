@@ -139,7 +139,7 @@ export function importExternalExecutionToLims(
   }
 
   const logAccuracyMatch = runData.rawLogContent?.match(
-    /(?:volume[\\s_-]*dispense[\\s_-]*accuracy|dispense\\s+accuracy)\\s*[:=]\\s*(\\d+(?:\\.\\d+)?)\\s*%/i
+    /(?:volume[\s_-]*dispense[\s_-]*accuracy|dispense\s+accuracy)\s*[:=]\s*(\d+(?:\.\d+)?)\s*%/i
   );
   const dispenseAccuracyPct = runData.dispenseAccuracyPct ??
     (logAccuracyMatch ? Number(logAccuracyMatch[1]) : undefined);
