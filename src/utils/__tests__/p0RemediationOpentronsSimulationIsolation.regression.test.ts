@@ -349,6 +349,22 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
   }
   assert('TEST 19a: Genuine run without measured dispense accuracy is blocked instead of receiving nominal 100%', missingAccuracyBlocked, true);
 
+  let missingFormulaIdentityBlocked = false;
+  try {
+    importExternalExecutionToLims({ ...execRecord, formulaId: undefined, formulaVersionId: undefined }, {
+      externalRunId: 'RUN-GENUINE-MISSING-FORMULA',
+      externalRobotName: 'ROBOT-USER-01',
+      completedAt: '2026-10-02T12:00:00Z',
+      operator: 'Lead QC Analyst',
+      replicateCount: 1,
+      dispenseAccuracyPct: 98.7,
+      rawLogContent: 'Opentrons log details: Dispensing SLES and LABSA aliquots. All commands completed successfully.'
+    });
+  } catch (error) {
+    missingFormulaIdentityBlocked = String(error).includes('requires explicit formulaId and formulaVersionId');
+  }
+  assert('TEST 19b: Genuine run without explicit formula identity cannot create LAB_TESTED evidence', missingFormulaIdentityBlocked, true);
+
   // ---------------------------------------------------------------------------
   // TEST 20: LAB_TESTED still passes through the Problem #3 LAB_VALIDATED gate before becoming LAB_VALIDATED
   // ---------------------------------------------------------------------------
