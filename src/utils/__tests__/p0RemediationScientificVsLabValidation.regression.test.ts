@@ -73,6 +73,14 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   });
   assert('TEST 4: Provenance report for calculated formula yields CALCULATED or SCIENTIFICALLY_SCREENED state', provReport.overallProvenanceState === 'SCIENTIFICALLY_SCREENED' || provReport.overallProvenanceState === 'CALCULATED');
 
+  const missingVersionProvenance = generateMasterScientificProvenanceReport({
+    formulaId: 'FORM-CALC-UNKNOWN-VERSION',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: validIngredients
+  });
+  assert('TEST 4a: Missing formula version is reported as UNKNOWN_VERSION, not a fabricated release',
+    missingVersionProvenance.formulaVersion === 'UNKNOWN_VERSION');
+
   // TEST 5: A+ grade or high quality score is not LAB_VALIDATED
   assert('TEST 5: Quality Gate status VALID does not set labEvidence dimension to LAB_VALIDATED', provReport.dimensions.labEvidence.provenanceState !== 'LAB_VALIDATED');
 
