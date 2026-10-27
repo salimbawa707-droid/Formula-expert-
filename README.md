@@ -6,7 +6,8 @@ Detergent Formula Expert is a React and TypeScript application for detergent and
 
 - [Bun](https://bun.sh/) (the repository uses `bun.lock`)
 - A current desktop browser for the web app
-- Android packaging is not currently buildable from this checkout; a complete native project needs to be supplied
+- Android Studio with Android SDK Platform 36 and Build Tools 36.0.0
+- JDK 21 and Node.js 22 for Capacitor's Android tooling
 
 ## Run locally
 
@@ -40,6 +41,14 @@ Run all registered TypeScript regressions:
 bun run test:all
 ```
 
+Build the Android debug APK (requires the Android requirements above):
+
+```sh
+bun run android:debug
+```
+
+The generated APK is `android/app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions also builds and uploads this debug APK for each qualifying run. A Play Store release must be signed with your own protected release keystore; the repository does not contain signing credentials.
+
 The GitHub Actions workflow runs the production build, both TypeScript regression commands, and evidence-vault guardrails. The checked-in full-suite report is historical and records failed assertions; rerun the suite on the release commit and resolve any failures before treating that report as a clean release gate.
 
 ## Configuration
@@ -55,6 +64,6 @@ Calculated and predicted values are decision-support outputs. They do not establ
 ## Repository notes
 
 - Main frontend code is under `src/`.
-- `android/` currently contains only partial assets/configuration; the Gradle project, wrapper, manifest, and Capacitor configuration are missing, so this checkout cannot produce an installable Android build.
+- `android/` contains the Capacitor Android app, Gradle wrapper, and API 36 build configuration. Run `bun run cap:sync` after changing web dependencies or native plugins.
 - Evidence datasets, audit reports, and their validation scripts are under `evidence_vault/`.
 - The project does not currently declare an open-source license. No license should be assumed for reuse or redistribution.
