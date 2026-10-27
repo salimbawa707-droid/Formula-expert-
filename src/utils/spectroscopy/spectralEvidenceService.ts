@@ -70,7 +70,9 @@ export function generateSpectralEvidenceRecord(
     (spectrum.sourceFileName && /synthetic|demo|simulated/i.test(spectrum.sourceFileName));
 
   // 3. Determine Verification & Evidence Status
-  const conformStatus = conformityReport.conformStatus || (conformityReport as any).overallStatus || 'PASS';
+  const rawConformStatus = conformityReport.conformStatus || (conformityReport as any).overallStatus;
+  const hasExplicitConformityStatus = Boolean(rawConformStatus);
+  const conformStatus = rawConformStatus || 'INSUFFICIENT_DATA';
   const similarityScore = conformityReport.similarityScore ?? (conformityReport as any).overallScore ?? 0.0;
   const referenceName = conformityReport.referenceName || conformityReport.referenceId || 'Standard Reference';
 
@@ -82,7 +84,11 @@ export function generateSpectralEvidenceRecord(
     ? 'REVIEWED'
     : 'UNVERIFIED';
 
-  let effectiveEvidenceLevel = conformityReport.evidenceLevel;
+  let effectiveEvidenceLevel = hasExplicitConformityStatus ? conformityReport.evidenceLevel : 'CALCULATED';
+  if (!hasExplicitConformityStatus) {
+    verificationStatus = 'UNVERIFIED';
+    warnings.push('PROVENANCE ISOLATION: Missing explicit spectral conformity status; PASS cannot be assumed. Evidence downgraded to CALCULATED.');
+  }
 
   if (isSyntheticReferenceOrDemo) {
     effectiveEvidenceLevel = 'CALCULATED';
@@ -143,7 +149,7 @@ export function generateSpectralEvidenceRecord(
 
   const hash = sha256(evidencePayload);
 
-  const isVerified = hasFormulaIdentity && !isSyntheticReferenceOrDemo && isCalibrationValid && conformityReport.conformStatus === 'PASS';
+  const isVerified = hasExplicitConformityStatus && hasFormulaIdentity && !isSyntheticReferenceOrDemo && isCalibrationValid && conformStatus === 'PASS';
 
   const evidenceRecord: EvidenceRecord = {
     evidenceId,
