@@ -827,7 +827,8 @@ export function evaluateFormulaScientificValidation(input: FormulaValidationEval
   const normCat = normalizeProductCategory(input.productCategory);
   const category: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY' = normCat;
 
-  const targetVersion = input.formulaVersion || '1.0.0';
+  // Missing target version must remain unknown; never synthesize a version for evidence matching.
+  const targetVersion = input.formulaVersion;
   const targetId = input.formulaId;
   const records = Array.isArray(input.labEvidenceRecords) ? input.labEvidenceRecords : [];
 
