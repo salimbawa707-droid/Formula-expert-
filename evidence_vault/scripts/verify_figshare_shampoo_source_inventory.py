@@ -68,14 +68,15 @@ def validate(root: Path = ROOT) -> dict:
         errors.append("ingredient crosswalk must contain the 18 unique source component names")
     normalized_trade_names = {row.get("source_trade_name", "").replace("®", "").strip() for row in surfactants}
     crosswalk_trades = {row.get("source_trade_name", "").replace("®", "").strip() for row in crosswalk}
-    if normalized_trade_names != normalized_trade_names.intersection(crosswalk_trades):
-        errors.append("all 12 official surfactant products must appear in the identity crosswalk")
+    missing_products = normalized_trade_names - crosswalk_trades
+    if missing_products:
+        errors.append(f"official surfactant products missing from the identity crosswalk: {sorted(missing_products)}")
 
     exact_inci_matches = sum(bool(row.get("application_exact_inci_candidates", "").strip()) for row in crosswalk)
     unmatched = sum(not row.get("application_exact_inci_candidates", "").strip() for row in crosswalk)
     if (exact_inci_matches, unmatched) != (4, 14):
         errors.append(f"expected 4 exact app INCI candidates and 14 unmatched components; found {(exact_inci_matches, unmatched)}")
-    if any(row.get("direct_formula_prediction_pair_status") != "NOT_ESTABLISHED" for row in crosswalk):
+    if any(row.get("formula_prediction_pair_status") != "NOT_ESTABLISHED" for row in crosswalk):
         errors.append("ingredient mapping must not promote any formula prediction pair")
     if not any(row.get("grade_comparison") == "APP_GRADE_OUTSIDE_SOURCE_ACTIVE_RANGE" for row in crosswalk):
         errors.append("known Sodium Cocoamphoacetate grade mismatch is not recorded")
