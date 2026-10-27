@@ -292,6 +292,7 @@ export function runLabAutomationTestSuite(): TestSuiteSummary {
     completedAt: new Date().toISOString(),
     operator: 'Dr. Lead Chemist',
     replicateCount: 3,
+    dispenseAccuracyPct: 98.7,
     rawLogContent: 'Opentrons Execution Log: All 3 replicates dispensed without error.',
   });
 
@@ -299,7 +300,8 @@ export function runLabAutomationTestSuite(): TestSuiteSummary {
     limsImportResult.samples.length === 3 &&
     limsImportResult.measurements.length === 3 &&
     limsImportResult.evidenceRecords.length === 3 &&
-    limsImportResult.evidenceRecords[0].evidenceLevel === 'LAB_TESTED');
+    limsImportResult.evidenceRecords[0].evidenceLevel === 'LAB_TESTED' &&
+    limsImportResult.measurements[0].value === 98.7);
 
   assert('H3. LIMS EvidenceRecord preserves protocol SHA-256 hash and external run ID',
     limsImportResult.evidenceRecords[0].sourceReference.includes(approvedProto.protocolId) &&

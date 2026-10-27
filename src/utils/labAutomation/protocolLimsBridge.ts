@@ -68,6 +68,8 @@ export function importExternalExecutionToLims(
     completedAt: string;
     operator: string;
     replicateCount: number;
+    /** Actual measured dispense accuracy (0–100%). If omitted, a value may be parsed from raw log text. */
+    dispenseAccuracyPct?: number;
     rawLogContent?: string;
     notes?: string;
     isSimulated?: boolean;
@@ -136,6 +138,20 @@ export function importExternalExecutionToLims(
     verificationStatus = 'VERIFIED';
   }
 
+  const logAccuracyMatch = runData.rawLogContent?.match(
+    /(?:volume[\s_-]*dispense[\s_-]*accuracy|dispense\s+accuracy)\s*[:=]\s*(\d+(?:\.\d+)?)\s*%/i
+  );
+  const dispenseAccuracyPct = runData.dispenseAccuracyPct ??
+    (logAccuracyMatch ? Number(logAccuracyMatch[1]) : undefined);
+  if (typeof dispenseAccuracyPct !== 'number' || !Number.isFinite(dispenseAccuracyPct) ||
+      dispenseAccuracyPct < 0 || dispenseAccuracyPct > 100) {
+    throw new Error('AUTHORITATIVE LIMS BLOCK: Missing or invalid actual dispense accuracy (0–100%). Provide the measured value or include "Dispense accuracy: 98.7%" in the raw execution log. Nominal 100% must not be fabricated.');
+  }
+
+  if (!isSimulated && (!executionRecord.formulaId || !executionRecord.formulaVersionId)) {
+    throw new Error('AUTHORITATIVE LIMS BLOCK: Genuine laboratory evidence requires explicit formulaId and formulaVersionId; unknown identity cannot be promoted.');
+  }
+
   const updatedExecRecord: ProtocolExecutionRecord = {
     ...executionRecord,
     externalRunId: runData.externalRunId,
@@ -159,8 +175,8 @@ export function importExternalExecutionToLims(
   for (let r = 1; r <= runData.replicateCount; r++) {
     const sampleId = `SMP-AUTO-${executionRecord.protocolId.slice(-6)}-R${r}`;
     const batchId = `BATCH-AUTO-${executionRecord.protocolId.slice(-6)}`;
-    const formulaId = executionRecord.formulaId || 'UNKNOWN_FORMULA';
-    const formulaVersion = executionRecord.formulaVersionId || '1.0.0';
+    const formulaId = executionRecord.formulaId || 'UNKNOWN_FORMULA_ID';
+    const formulaVersion = executionRecord.formulaVersionId || 'UNKNOWN_VERSION';
     sampleIds.push(sampleId);
 
     const sample: LabSample = {
@@ -224,7 +240,7 @@ export function importExternalExecutionToLims(
       formulaVersion,
       parameterKey: 'volume_dispense_accuracy',
       parameterName: 'Volume Dispense Accuracy',
-      value: 100.0, // 100% nominal dispense verified
+      value: dispenseAccuracyPct,
       unit: '%',
       method: 'Automated Liquid Handling Log Verification',
       instrumentId: registeredRobot ? registeredRobot.instrumentId : `ROBOT-${runData.externalRobotName}`,
@@ -252,7 +268,7 @@ export function importExternalExecutionToLims(
       method: 'Automated Liquid Handling Execution & Log Verification',
       parameterKey: 'volume_dispense_accuracy',
       parameterName: 'Volume Dispense Accuracy',
-      value: 100.0,
+      value: dispenseAccuracyPct,
       unit: '%',
       formulaId,
       formulaVersion,
