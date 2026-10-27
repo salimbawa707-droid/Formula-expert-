@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --port=3000 --host=0.0.0.0"
+    "preview": "vite preview --port=3000 --host=0.0.0.0",
+    "test:phase6": "bun run scripts/run-p1-phase6-lab-evidence-regression.ts"
   },
   "dependencies": {
     "3dmol": "^2.5.5",
