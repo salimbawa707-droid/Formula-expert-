@@ -3,8 +3,8 @@
 Genuine Android Capacitor Release APK Build Pipeline
 Runs:
 1. Pre-flight tool & keystore environment validation
-2. Web production build (npm run build)
-3. Capacitor sync (copies web dist/ to android/app/src/main/assets/public)
+2. Web production build (bun run build)
+3. Capacitor sync (validates and copies web dist/ to the Android project)
 4. Genuine Gradle release build (./gradlew assembleRelease in android/)
 5. APK signing via externally supplied keystore (apksigner)
 6. Signature & integrity verification
@@ -82,7 +82,7 @@ def build_release():
         sys.exit(1)
 
     # 3. Capacitor Sync / Copy
-    print("\\n=== STEP 2: Synchronizing web assets through Capacitor ===")
+    print("\n=== STEP 2: Synchronizing web assets through Capacitor ===")
     dist_dir = os.path.join(PROJECT_ROOT, "dist")
     if not os.path.isdir(dist_dir):
         print("❌ Production web assets are missing; the web build did not produce dist/.")
