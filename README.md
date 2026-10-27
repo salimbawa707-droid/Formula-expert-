@@ -6,7 +6,7 @@ Detergent Formula Expert is a React and TypeScript application for detergent and
 
 - [Bun](https://bun.sh/) (the repository uses `bun.lock`)
 - A current desktop browser for the web app
-- For Android builds, the Android project and Android SDK tooling
+- Android packaging is not currently buildable from this checkout; a complete native project needs to be supplied
 
 ## Run locally
 
@@ -55,6 +55,6 @@ Calculated and predicted values are decision-support outputs. They do not establ
 ## Repository notes
 
 - Main frontend code is under `src/`.
-- The Android project is under `android/`.
+- `android/` currently contains only partial assets/configuration; the Gradle project, wrapper, manifest, and Capacitor configuration are missing, so this checkout cannot produce an installable Android build.
 - Evidence datasets, audit reports, and their validation scripts are under `evidence_vault/`.
 - The project does not currently declare an open-source license. No license should be assumed for reuse or redistribution.
