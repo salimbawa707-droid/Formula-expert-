@@ -116,6 +116,19 @@ export function runSpectralEvidenceTestSuite(): TestResultSummary {
     `Formula: ${missingIdentityIntegration.evidenceRecord.formulaId}, Version: ${missingIdentityIntegration.evidenceRecord.formulaVersion}, Status: ${missingIdentityIntegration.evidenceRecord.verificationStatus}`
   );
 
+  const missingStatusIntegration = generateSpectralEvidenceRecord(
+    testSpectrum,
+    { ...conformity, conformStatus: undefined } as any,
+    ftirInstrument
+  );
+  assert(
+    missingStatusIntegration.evidenceRecord.verificationStatus === 'UNVERIFIED' &&
+      missingStatusIntegration.evidenceRecord.evidenceLevel === 'CALCULATED' &&
+      missingStatusIntegration.warnings.some(w => w.includes('PASS cannot be assumed')),
+    'Test 1b: Missing spectral conformity status cannot default to PASS or retain analytical evidence level',
+    `Status: ${missingStatusIntegration.evidenceRecord.verificationStatus}, Level: ${missingStatusIntegration.evidenceRecord.evidenceLevel}`
+  );
+
   // ---------------------------------------------------------------------------
   // 2. LabMeasurement Record Linking
   // ---------------------------------------------------------------------------
