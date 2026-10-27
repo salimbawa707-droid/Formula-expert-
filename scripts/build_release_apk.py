@@ -41,7 +41,7 @@ def check_environment():
     aapt2 = shutil.which("aapt2") or os.path.exists("/opt/android-sdk/build-tools/34.0.0/aapt2")
     apksigner = shutil.which("apksigner") or os.path.exists("/opt/android-sdk/build-tools/34.0.0/apksigner")
     
-    if not aapt2 and not apksigner:
+    if not aapt2 or not apksigner:
         errors.append("Android SDK build tools ('aapt2' / 'apksigner') are not available in environment")
 
     # 4. Check External Signing Environment Variables
@@ -76,26 +76,27 @@ def build_release():
     # 2. Web Production Build
     print("\n=== STEP 1: Running Web Production Build ===")
     try:
-        subprocess.run(["npm", "run", "build"], cwd=PROJECT_ROOT, check=True)
+        subprocess.run(["bun", "run", "build"], cwd=PROJECT_ROOT, check=True)
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Web production build failed: {e}")
         sys.exit(1)
 
     # 3. Capacitor Sync / Copy
-    print("\n=== STEP 2: Synchronizing Web Assets to Capacitor Android Project ===")
-    public_assets_dir = os.path.join(ANDROID_DIR, "app", "src", "main", "assets", "public")
-    os.makedirs(public_assets_dir, exist_ok=True)
+    print("\\n=== STEP 2: Synchronizing web assets through Capacitor ===")
     dist_dir = os.path.join(PROJECT_ROOT, "dist")
-
+    if not os.path.isdir(dist_dir):
+        print("❌ Production web assets are missing; the web build did not produce dist/.")
+        sys.exit(1)
     try:
-        # Run npx cap sync or copy dist assets directly
-        if shutil.which("npx"):
-            subprocess.run(["npx", "cap", "sync", "android"], cwd=PROJECT_ROOT, check=True)
-        else:
-            shutil.copytree(dist_dir, public_assets_dir, dirs_exist_ok=True)
-    except Exception as e:
-        print(f"Warning/Notice on cap sync: {e}. Ensuring direct asset sync...")
-        shutil.copytree(dist_dir, public_assets_dir, dirs_exist_ok=True)
+        subprocess.run(["bun", "run", "cap:sync"], cwd=PROJECT_ROOT, check=True)
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"❌ Capacitor sync failed: {e}")
+        sys.exit(1)
+
+    public_assets_dir = os.path.join(ANDROID_DIR, "app", "src", "main", "assets", "public")
+    if not os.path.isdir(public_assets_dir):
+        print(f"❌ Capacitor did not produce Android web assets at '{public_assets_dir}'")
+        sys.exit(1)
 
     # Automated Release Artifact Verification Check
     print("=== Artifact Verification: Checking Android public assets ===")
@@ -105,7 +106,6 @@ def build_release():
             if file == "server.cjs" or file.endswith(".cjs") or file.endswith(".map"):
                 bad_path = os.path.join(root, file)
                 prohibited_found.append(bad_path)
-                os.remove(bad_path)
     if prohibited_found:
         print(f"❌ ERROR: Prohibited backend artifacts found in Android public assets: {prohibited_found}")
         sys.exit(1)
