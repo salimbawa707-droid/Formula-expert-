@@ -101,6 +101,21 @@ export function runSpectralEvidenceTestSuite(): TestResultSummary {
     `Evidence ID: ${limsIntegration.evidenceRecord.evidenceId}, Level: ${limsIntegration.evidenceRecord.evidenceLevel}`
   );
 
+  const missingIdentityIntegration = generateSpectralEvidenceRecord(
+    { ...testSpectrum, formulaId: undefined, formulaVersion: undefined },
+    conformity,
+    ftirInstrument
+  );
+  assert(
+    missingIdentityIntegration.evidenceRecord.formulaId === 'UNKNOWN_FORMULA_ID' &&
+      missingIdentityIntegration.evidenceRecord.formulaVersion === 'UNKNOWN_VERSION' &&
+      missingIdentityIntegration.evidenceRecord.evidenceLevel === 'CALCULATED' &&
+      missingIdentityIntegration.evidenceRecord.verificationStatus === 'UNVERIFIED' &&
+      missingIdentityIntegration.warnings.some(w => w.includes('Missing explicit formula ID or version')),
+    'Test 1a: Missing formula identity cannot be fabricated or verified by spectral evidence adapter',
+    `Formula: ${missingIdentityIntegration.evidenceRecord.formulaId}, Version: ${missingIdentityIntegration.evidenceRecord.formulaVersion}, Status: ${missingIdentityIntegration.evidenceRecord.verificationStatus}`
+  );
+
   // ---------------------------------------------------------------------------
   // 2. LabMeasurement Record Linking
   // ---------------------------------------------------------------------------
