@@ -90,8 +90,15 @@ export function generateSpectralEvidenceRecord(
     warnings.push('PROVENANCE ISOLATION: Synthetic, reference, demo, or simulated spectra cannot produce LAB_TESTED, LAB_VALIDATED, or ANALYTICAL_EVIDENCE level laboratory evidence.');
   }
 
-  const formulaId = spectrum.formulaId || 'FORM-RAW-VERIF';
-  const formulaVersion = spectrum.formulaVersion || '1.0.0';
+  // Formula identity is traceability metadata, not something this adapter may invent.
+  const hasFormulaIdentity = Boolean(spectrum.formulaId && spectrum.formulaVersion);
+  const formulaId = spectrum.formulaId || 'UNKNOWN_FORMULA_ID';
+  const formulaVersion = spectrum.formulaVersion || 'UNKNOWN_VERSION';
+  if (!hasFormulaIdentity) {
+    effectiveEvidenceLevel = 'CALCULATED';
+    verificationStatus = 'UNVERIFIED';
+    warnings.push('PROVENANCE ISOLATION: Missing explicit formula ID or version; spectral result cannot be verified as formula-linked laboratory evidence.');
+  }
   const sampleId = spectrum.sampleId || `SMP-${spectrum.id}`;
   const batchId = spectrum.batchId || `BATCH-${spectrum.id}`;
 
@@ -136,7 +143,7 @@ export function generateSpectralEvidenceRecord(
 
   const hash = sha256(evidencePayload);
 
-  const isVerified = !isSyntheticReferenceOrDemo && isCalibrationValid && conformityReport.conformStatus === 'PASS';
+  const isVerified = hasFormulaIdentity && !isSyntheticReferenceOrDemo && isCalibrationValid && conformityReport.conformStatus === 'PASS';
 
   const evidenceRecord: EvidenceRecord = {
     evidenceId,

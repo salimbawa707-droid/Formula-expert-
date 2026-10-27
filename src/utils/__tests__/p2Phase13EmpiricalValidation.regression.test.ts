@@ -289,6 +289,7 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
   const jsonPayload = JSON.stringify([
     {
       observationId: "OBS-JSON-101",
+      formulaId: "FORMULA-JSON-101",
       batchId: "BATCH-301",
       productCategory: "LAUNDRY_LIQUID",
       measuredProperty: "pH Prediction",
@@ -307,6 +308,7 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     },
     {
       observationId: "OBS-JSON-101", // Duplicate ID should be quarantined
+      formulaId: "FORMULA-JSON-101",
       batchId: "BATCH-301",
       productCategory: "LAUNDRY_LIQUID",
       measuredProperty: "pH Prediction",
@@ -337,6 +339,40 @@ OBS-CSV-102,LAUNDRY_LIQUID,F-101,v1.0.0,DS-CSV-2027-v1,BATCH-101,Cleaning Score 
     jsonImportRes.approvedCount === 1 && jsonImportRes.quarantinedRecords.length === 1,
     jsonImportRes.quarantinedRecords.length,
     1
+  );
+
+  const missingFormulaIdJson = JSON.stringify([{
+    observationId: 'OBS-JSON-MISSING-FORMULA',
+    batchId: 'BATCH-JSON-MISSING-FORMULA',
+    productCategory: 'LAUNDRY_LIQUID',
+    measuredProperty: 'pH',
+    measuredValue: 8.2,
+    measurementUnit: 'pH units',
+    testMethodId: 'ASTM-D1172',
+    waterHardnessPpm: 150,
+    temperatureC: 25,
+    dosageGramsPerL: 2,
+    contactTimeMin: 15,
+    replicateNumber: 1,
+    testDate: '2026-10-27',
+    formulaVersion: '1.0.0',
+    formulaFingerprint: 'FP-MISSING-FORMULA-ID'
+  }]);
+  const missingFormulaIdImport = EmpiricalDataImporter.parseJsonLaboratoryData(missingFormulaIdJson, {
+    datasetId: 'DS-JSON-MISSING-FORMULA',
+    datasetVersion: 'DS-JSON-MISSING-FORMULA-v1',
+    laboratoryName: 'Test Lab',
+    operator: 'QA Reviewer',
+    dataOrigin: 'REAL_LAB_MEASUREMENT',
+    formulaVersion: '1.0.0'
+  });
+  assert(
+    'JSON importer rejects a lab observation when formulaId is missing instead of fabricating FORMULA-JSON',
+    missingFormulaIdImport.approvedCount === 0 &&
+      missingFormulaIdImport.rejectedCount === 1 &&
+      missingFormulaIdImport.quarantinedRecords[0]?.quarantineReason.includes('formulaId'),
+    missingFormulaIdImport.quarantinedRecords[0]?.quarantineReason,
+    'formulaId required'
   );
 
   // 12. Empty Dataset State Handling in Evaluation Engine
