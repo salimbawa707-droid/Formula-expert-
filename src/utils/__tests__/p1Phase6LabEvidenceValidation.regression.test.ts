@@ -155,6 +155,28 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     matchingIdentityValidation.comparisons.length === 1 && matchingIdentityValidation.comparisons[0].measuredValue === 8.2,
     matchingIdentityValidation.comparisons.length, 1);
 
+  const predictedEvidenceValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-laundry-01',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.0 },
+    labEvidenceRecords: [{ ...validationMeasurement, provenance: 'PREDICTED' as any }]
+  });
+  assert('3d. Predicted provenance cannot enter lab comparison or complete a test',
+    predictedEvidenceValidation.comparisons.length === 0 && predictedEvidenceValidation.missingTests.includes('pH'),
+    predictedEvidenceValidation.comparisons.length, 0);
+
+  const missingValueEvidenceValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-laundry-01',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.0 },
+    labEvidenceRecords: [{ ...validationMeasurement, value: NaN }]
+  });
+  assert('3e. Invalid numeric lab evidence cannot enter comparison',
+    missingValueEvidenceValidation.comparisons.length === 0 && missingValueEvidenceValidation.missingTests.includes('pH'),
+    missingValueEvidenceValidation.comparisons.length, 0);
+
   const compVersionMismatch = checkMeasurementComparability({
     targetFormulaId: 'f-laundry-01',
     targetFormulaVersion: '2.0', // Mismatch vs 1.0
