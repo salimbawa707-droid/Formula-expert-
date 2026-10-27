@@ -1,0 +1,96 @@
+name: Current Release Quality Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: current-release-quality-gates-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-build:
+    name: Reproducible dependency install and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build production frontend
+        run: bun run build
+
+  evidence-guardrails:
+    name: Evidence syntax, regression and fail-closed gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile evidence scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find evidence_vault/scripts -type f -name '*.py' -print0 | xargs -0 -r python -m py_compile
+
+      - name: Test Pušić extraction validator
+        run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
+
+      - name: Test independent-review comparator
+        run: python evidence_vault/scripts/test_compare_pusic_independent_review.py
+
+      - name: Test PhDat label provenance guardrails
+        run: python evidence_vault/scripts/test_audit_phdat_label_provenance.py
+
+      - name: Test PhDat identity and applicability guardrails
+        run: python evidence_vault/scripts/test_audit_phdat_identity_applicability.py
+
+      - name: Test PhDat compatibility readiness guardrails
+        run: python evidence_vault/scripts/test_audit_phdat_compatibility_readiness.py
+
+      - name: Confirm unreviewed Pušić data remains blocked
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$(mktemp)"
+          set +e
+          python evidence_vault/scripts/validate_pusic_2006_r460.py evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv > "$report"
+          status=$?
+          set -e
+          cat "$report"
+          if [ "$status" -eq 0 ]; then
+            echo "ERROR: unreviewed extraction unexpectedly passed the independent-review gate"
+            exit 1
+          fi
+          python - "$report" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              report = json.load(handle)
+          assert report["row_count"] == 144, report
+          assert report["validation"] == "FAIL", report
+          assert report["scientific_status"] == "SOURCE_EXTRACTED_PENDING_SECOND_REVIEW", report
+          assert report["lab_validated"] is False, report
+          assert report["phase4b"] == "OPEN" and report["phase5"] == "LOCKED", report
+          assert any("second review gate not met" in error for error in report["errors"]), report
+          print("PASS: Phase 4B stays OPEN and Phase 5 stays LOCKED until independent human review.")
+          PY
