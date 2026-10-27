@@ -206,3 +206,5 @@ jobs:
 
       - name: Test AI-only source review guardrails
         run: python evidence_vault/scripts/test_compare_pusic_ai_source_review.py
+      - name: Verify Figshare shampoo source inventory and checksum
+        run: python evidence_vault/scripts/verify_figshare_shampoo_source_inventory.py
