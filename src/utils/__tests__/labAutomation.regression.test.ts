@@ -169,6 +169,7 @@ export function runLabAutomationTestSuite(): TestSuiteSummary {
   const experimentDesign: ExperimentDesign = createExperimentDesignFromFormula({
     formulaId: sampleFormula.id,
     formulaName: sampleFormula.name,
+    formulaVersionId: '1.0.0',
     productCategory: sampleFormula.category as any,
     physicalForm: 'LIQUID',
     ingredients: sampleFormula.ingredients as any,

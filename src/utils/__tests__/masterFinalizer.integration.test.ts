@@ -109,7 +109,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
     fs.writeFileSync(testAConfigPath, JSON.stringify(testAConfig, null, 2), 'utf8');
 
     // Execute via child process using real production finalization path
-    const testAChild = spawnSync(process.execPath, [path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs'), finalizerScriptPath, '--config', testAConfigPath], {
+    const testAChild = spawnSync(process.execPath, [finalizerScriptPath, '--config', testAConfigPath], {
       encoding: 'utf8',
       cwd: process.cwd()
     });
@@ -207,7 +207,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
     fs.writeFileSync(testBConfigPath, JSON.stringify(testBConfig, null, 2), 'utf8');
 
     // Execute via child process using real production finalization path
-    const testBChild = spawnSync(process.execPath, [path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs'), finalizerScriptPath, '--config', testBConfigPath], {
+    const testBChild = spawnSync(process.execPath, [finalizerScriptPath, '--config', testBConfigPath], {
       encoding: 'utf8',
       cwd: process.cwd()
     });
@@ -314,7 +314,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
     fs.writeFileSync(successConfigPath, JSON.stringify(successConfig, null, 2), 'utf8');
 
     // Run clean case in child process
-    const successChild = spawnSync(process.execPath, [path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs'), finalizerScriptPath, '--config', successConfigPath], {
+    const successChild = spawnSync(process.execPath, [finalizerScriptPath, '--config', successConfigPath], {
       encoding: 'utf8',
       cwd: process.cwd()
     });
@@ -600,7 +600,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
 
     fs.writeFileSync(testP3AConfigPath, JSON.stringify(testP3AConfig, null, 2), 'utf8');
 
-    const testP3AChild = spawnSync(process.execPath, [path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs'), finalizerScriptPath, '--config', testP3AConfigPath], {
+    const testP3AChild = spawnSync(process.execPath, [finalizerScriptPath, '--config', testP3AConfigPath], {
       encoding: 'utf8',
       cwd: process.cwd()
     });

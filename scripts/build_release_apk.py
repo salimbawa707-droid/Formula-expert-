@@ -3,8 +3,8 @@
 Genuine Android Capacitor Release APK Build Pipeline
 Runs:
 1. Pre-flight tool & keystore environment validation
-2. Web production build (npm run build)
-3. Capacitor sync (copies web dist/ to android/app/src/main/assets/public)
+2. Web production build (bun run build)
+3. Capacitor sync (validates and copies web dist/ to the Android project)
 4. Genuine Gradle release build (./gradlew assembleRelease in android/)
 5. APK signing via externally supplied keystore (apksigner)
 6. Signature & integrity verification
@@ -23,6 +23,35 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ANDROID_DIR = os.path.join(PROJECT_ROOT, "android")
 RELEASE_ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, "release-artifacts")
 
+
+def find_android_tool(tool_name):
+    """Find an Android SDK build tool on PATH or in the installed SDK."""
+    executable = shutil.which(tool_name)
+    if executable:
+        return executable
+
+    sdk_roots = [
+        os.environ.get("ANDROID_SDK_ROOT"),
+        os.environ.get("ANDROID_HOME"),
+        "/opt/android-sdk",
+        "/usr/local/lib/android/sdk",
+    ]
+    for sdk_root in dict.fromkeys(root for root in sdk_roots if root):
+        build_tools_dir = os.path.join(sdk_root, "build-tools")
+        if not os.path.isdir(build_tools_dir):
+            continue
+        versions = sorted(
+            (name for name in os.listdir(build_tools_dir)
+             if os.path.isdir(os.path.join(build_tools_dir, name))),
+            key=lambda version: tuple(int(part) for part in version.split(".") if part.isdigit()),
+            reverse=True,
+        )
+        for version in versions:
+            candidate = os.path.join(build_tools_dir, version, tool_name)
+            if os.path.isfile(candidate):
+                return candidate
+    return None
+
 def check_environment():
     """Validates availability of JDK, Gradle/Gradlew, Android SDK tools, and release credentials."""
     errors = []
@@ -37,11 +66,10 @@ def check_environment():
     if not has_gradle:
         errors.append("Gradle build tool is missing (neither system 'gradle' nor './android/gradlew' found)")
 
-    # 3. Check Android SDK build tools
-    aapt2 = shutil.which("aapt2") or os.path.exists("/opt/android-sdk/build-tools/34.0.0/aapt2")
-    apksigner = shutil.which("apksigner") or os.path.exists("/opt/android-sdk/build-tools/34.0.0/apksigner")
-    
-    if not aapt2 and not apksigner:
+    # 3. Check Android SDK build tools across installed SDK versions
+    aapt2 = find_android_tool("aapt2")
+    apksigner = find_android_tool("apksigner")
+    if not aapt2 or not apksigner:
         errors.append("Android SDK build tools ('aapt2' / 'apksigner') are not available in environment")
 
     # 4. Check External Signing Environment Variables
@@ -73,29 +101,35 @@ def build_release():
         print("  - Refusing to generate self-signed keystores or hardcoded credentials.")
         sys.exit(1)
 
+    apksigner = find_android_tool("apksigner")
+    if not apksigner:
+        print("❌ Android SDK apksigner was not found.")
+        sys.exit(1)
+
     # 2. Web Production Build
     print("\n=== STEP 1: Running Web Production Build ===")
     try:
-        subprocess.run(["npm", "run", "build"], cwd=PROJECT_ROOT, check=True)
+        subprocess.run(["bun", "run", "build"], cwd=PROJECT_ROOT, check=True)
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Web production build failed: {e}")
         sys.exit(1)
 
     # 3. Capacitor Sync / Copy
-    print("\n=== STEP 2: Synchronizing Web Assets to Capacitor Android Project ===")
-    public_assets_dir = os.path.join(ANDROID_DIR, "app", "src", "main", "assets", "public")
-    os.makedirs(public_assets_dir, exist_ok=True)
+    print("\n=== STEP 2: Synchronizing web assets through Capacitor ===")
     dist_dir = os.path.join(PROJECT_ROOT, "dist")
-
+    if not os.path.isdir(dist_dir):
+        print("❌ Production web assets are missing; the web build did not produce dist/.")
+        sys.exit(1)
     try:
-        # Run npx cap sync or copy dist assets directly
-        if shutil.which("npx"):
-            subprocess.run(["npx", "cap", "sync", "android"], cwd=PROJECT_ROOT, check=True)
-        else:
-            shutil.copytree(dist_dir, public_assets_dir, dirs_exist_ok=True)
-    except Exception as e:
-        print(f"Warning/Notice on cap sync: {e}. Ensuring direct asset sync...")
-        shutil.copytree(dist_dir, public_assets_dir, dirs_exist_ok=True)
+        subprocess.run(["bun", "run", "cap:sync"], cwd=PROJECT_ROOT, check=True)
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"❌ Capacitor sync failed: {e}")
+        sys.exit(1)
+
+    public_assets_dir = os.path.join(ANDROID_DIR, "app", "src", "main", "assets", "public")
+    if not os.path.isdir(public_assets_dir):
+        print(f"❌ Capacitor did not produce Android web assets at '{public_assets_dir}'")
+        sys.exit(1)
 
     # Automated Release Artifact Verification Check
     print("=== Artifact Verification: Checking Android public assets ===")
@@ -105,7 +139,6 @@ def build_release():
             if file == "server.cjs" or file.endswith(".cjs") or file.endswith(".map"):
                 bad_path = os.path.join(root, file)
                 prohibited_found.append(bad_path)
-                os.remove(bad_path)
     if prohibited_found:
         print(f"❌ ERROR: Prohibited backend artifacts found in Android public assets: {prohibited_found}")
         sys.exit(1)
@@ -139,7 +172,7 @@ def build_release():
     alias = os.environ.get("KEYSTORE_ALIAS", "detergent-expert")
 
     sign_cmd = [
-        "apksigner", "sign",
+        apksigner, "sign",
         "--ks", keystore_path,
         "--ks-pass", f"pass:{store_pass}",
         "--key-pass", f"pass:{key_pass}",
@@ -157,7 +190,7 @@ def build_release():
     # 6. Verify Signature
     print("\n=== STEP 5: Verifying Signature Integrity ===")
     try:
-        subprocess.run(["apksigner", "verify", "--verbose", target_apk], check=True)
+        subprocess.run([apksigner, "verify", "--verbose", target_apk], check=True)
     except subprocess.CalledProcessError as e:
         print(f"\n❌ APK signature verification failed: {e}")
         sys.exit(1)
