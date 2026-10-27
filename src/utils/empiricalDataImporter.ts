@@ -435,7 +435,7 @@ export class EmpiricalDataImporter {
 
       const normalizedCategory = normalizeProductCategory(item.productCategory || '');
       const category = normalizedCategory as Productcategory13;
-      const formulaId = item.formulaId || 'FORMULA-JSON';
+      const formulaId = item.formulaId;
       const formulaVer = item.formulaVersion || item.formulaVersionId || defaultMetadata.formulaVersion;
       const datasetVer = item.datasetVersion || defaultMetadata.datasetVersion;
       const batchId = item.batchId;
@@ -455,6 +455,7 @@ export class EmpiricalDataImporter {
 
       const missing: string[] = [];
       if (!category) missing.push('productCategory');
+      if (!formulaId) missing.push('formulaId');
       if (normalizedCategory === 'UNKNOWN_PRODUCT_CATEGORY') missing.push('productCategory (unknown or unmapped)');
       if (!formulaVer) missing.push('formulaVersion');
       if (!datasetVer) missing.push('datasetVersion');
