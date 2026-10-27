@@ -21,6 +21,7 @@ import { CANONICAL_PRODUCT_CATEGORY_IDS } from '../../domain/productTaxonomy';
 import { FORMULAS } from '../../data/formulas';
 import { PHEngineV2 } from '../../domain/ph/pHEngineV2';
 import { evaluateScientificQualityGate } from '../scientificQualityGateEngine';
+import { ScientificExecutionDAG } from '../orchestrator/scientificExecutionDAG';
 import {
   validateMeasurementRecord,
   analyzeLabReplicates,
@@ -366,6 +367,18 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     gateMissingVersionWithVersionedEvidence.validationReport?.comparisons.length === 0 &&
       gateMissingVersionWithVersionedEvidence.validationReport?.missingTests.includes('pH'),
     gateMissingVersionWithVersionedEvidence.validationReport?.comparisons.length, 0);
+
+  const dagWithoutTargetVersion = new ScientificExecutionDAG().executeDAG({
+    formulaId: 'f-laundry-01',
+    formulaName: 'DAG Missing Version Test',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: validLaundryFormula as any,
+    labEvidence: [{ ...validationMeasurement, formulaVersion: '1.0.0' } as any]
+  });
+  assert('22b. DAG cannot use its display fallback version to match lab evidence',
+    dagWithoutTargetVersion.state.labEvidenceResult?.verifiedMeasurementsCount === 0 &&
+      dagWithoutTargetVersion.state.labEvidenceResult?.missingMeasurements.includes('pH'),
+    dagWithoutTargetVersion.state.labEvidenceResult?.verifiedMeasurementsCount, 0);
 
   // Lab Measurement showing Out of Spec pH (e.g. pH 11.5)
   const failedLabPHRecord: DetailedLabEvidenceRecord = {

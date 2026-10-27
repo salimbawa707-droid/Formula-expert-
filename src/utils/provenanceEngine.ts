@@ -157,7 +157,7 @@ export function generateMasterScientificProvenanceReport(params: {
   qualityGateStatus?: { finalFormulaStatus: string; scientificValidity: string };
 }): MasterScientificProvenanceReport {
   const formulaId = params.formulaId || 'F-1.0';
-  const formulaVersion = params.formulaVersion || '1.0.0';
+  const formulaVersion = params.formulaVersion || 'UNKNOWN_VERSION';
   const rawCat = params.productCategory || 'UNKNOWN_PRODUCT_CATEGORY';
   const canonicalCategory = normalizeProductCategory(rawCat);
   const categoryLabel = getProductCategoryLabel(canonicalCategory);
