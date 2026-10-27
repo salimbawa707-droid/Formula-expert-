@@ -28,6 +28,7 @@ import {
   calculatePredictionError,
   evaluateCategoryModelValidation,
   proposeCalibrationCandidates,
+  evaluateFormulaScientificValidation,
   CATEGORY_EVIDENCE_MATRIX,
   DetailedLabEvidenceRecord
 } from '../labEvidenceEngine';
@@ -109,6 +110,50 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     measurement: missingFormulaId
   });
   assert('3. Missing formula ID is blocked when target formula is specified', !missingFormulaIdCheck.isComparable && !missingFormulaIdCheck.matchedFormula, true, true);
+
+  // The formula-validation report must enforce the same strict identity gate.
+  const validationMeasurement: DetailedLabEvidenceRecord = {
+    ...baseMeasurement,
+    parameterKey: 'pH',
+    kpiId: 'pH',
+    value: 8.2,
+    unit: 'pH units',
+    status: 'PASS',
+    qualityStatus: 'ACCEPTED',
+    sourceType: 'LAB_MEASURED'
+  };
+  const missingIdValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-laundry-01',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.0 },
+    labEvidenceRecords: [{ ...validationMeasurement, formulaId: undefined }]
+  });
+  assert('3a. Validation report blocks missing formula ID when target is specified',
+    missingIdValidation.comparisons.length === 0 && missingIdValidation.missingTests.includes('pH'),
+    missingIdValidation.comparisons.length, 0);
+
+  const missingVersionValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-laundry-01',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.0 },
+    labEvidenceRecords: [{ ...validationMeasurement, formulaVersion: undefined as any }]
+  });
+  assert('3b. Validation report blocks missing formula version',
+    missingVersionValidation.comparisons.length === 0 && missingVersionValidation.missingTests.includes('pH'),
+    missingVersionValidation.comparisons.length, 0);
+
+  const matchingIdentityValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-laundry-01',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.0 },
+    labEvidenceRecords: [validationMeasurement]
+  });
+  assert('3c. Validation report accepts exact formula ID and version for comparison',
+    matchingIdentityValidation.comparisons.length === 1 && matchingIdentityValidation.comparisons[0].measuredValue === 8.2,
+    matchingIdentityValidation.comparisons.length, 1);
 
   const compVersionMismatch = checkMeasurementComparability({
     targetFormulaId: 'f-laundry-01',
