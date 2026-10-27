@@ -670,6 +670,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         'Map ingredient identities, composition basis, rheology response, temperature, and replicates before determining eligible formula-prediction pairs.',
       ],
       isLeadSeed: true,
+    },
     {
       id: 'EVD-004',
       title: 'QUARANTINED — Citation mismatch; no detergent chelation evidence established',
@@ -699,6 +700,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         'Identify and verify the intended chelation source from an authoritative publisher record before creating a replacement evidence record.',
       ],
       isLeadSeed: false,
+    },
     {
       id: 'EVD-005',
       title: 'RheoData: An Open Repository and Data Standard for Experimental Complex Fluid Rheology',
@@ -803,6 +805,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         'Keep identity and phase-label source review open before any exploratory model mapping.',
       ],
       isLeadSeed: true,
+    },
     {
       id: 'EVD-008',
       title: 'CurveClaw: Automated Extraction and Digitization of Experimental Scientific Curves from Literature',
@@ -1046,6 +1049,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       numericalValidationReadiness: 'INSPECTION_PENDING',
       inspectionStatus: 'UNINSPECTED',
       inspectionNotes: 'Awaiting retrieval of official Figshare JSON, hash verification, schema/units review, and ingredient-to-engine mapping.',
+    },
     {
       id: 'DS-004',
       name: 'PhDat aqueous surfactant phase behavior by temperature and composition (Figshare item 29071202 v4)',
@@ -1066,6 +1070,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       inspectedBy: 'Codex automated source-array integrity audit; independent scientific review remains pending',
       inspectionDate: '2026-10-27',
       inspectionNotes: 'Numerical/source-structure inspection is evidenced by the linked CI audit reports and reproducibility hash. This is auxiliary phase-behavior evidence only; zero formula-validation-eligible records were found. Reacquire the raw file and verify its hash before reuse.',
+    },
     {
       id: 'DS-005',
       name: 'Foamability and foam stability — polyelectrolyte/surfactant mixture (RepOD MKCDUM)',
