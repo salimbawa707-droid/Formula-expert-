@@ -66,7 +66,7 @@ def validate(root: Path = ROOT) -> dict:
     component_names = {row.get("dataset_component", "").strip() for row in crosswalk}
     if len(crosswalk) != 18 or component_names != EXPECTED_COMPONENTS:
         errors.append("ingredient crosswalk must contain the 18 unique source component names")
-    normalized_trade_names = {row.get("source_trade_name", "").replace("®", "").strip() for row in surfactants}
+    normalized_trade_names = {row.get("trade_name", "").replace("®", "").strip() for row in surfactants}
     crosswalk_trades = {row.get("source_trade_name", "").replace("®", "").strip() for row in crosswalk}
     missing_products = normalized_trade_names - crosswalk_trades
     if missing_products:
