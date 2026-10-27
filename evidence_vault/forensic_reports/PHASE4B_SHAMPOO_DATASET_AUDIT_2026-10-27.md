@@ -9,8 +9,8 @@
 - Article: Chitre et al., “Accelerating Formulation Design via Machine Learning: Generating a High-throughput Shampoo Formulations Dataset,” *Scientific Data* 11, 728 (2024), [DOI 10.1038/s41597-024-03573-w](https://doi.org/10.1038/s41597-024-03573-w).
 - Official data collection cited by the paper: [Figshare collection DOI 10.6084/m9.figshare.c.7132624.v1](https://doi.org/10.6084/m9.figshare.c.7132624.v1).
 - Official file identified in the dataset metadata: `LiquidFormulationsDataset_2023.json`, Figshare file ID `45187180`, [official file record](https://springernature.figshare.com/articles/software/Liquid_Formulations_Dataset/25451878), download endpoint `https://ndownloader.figshare.com/files/45187180`.
-- Inspection bytes were obtained from the public GitHub mirror `Staphlerr/formusense`, blob `739cf39a0c6fe3b512c159a9e95336802f75a773`. The file size (1,464,630 bytes) and computed MD5 (`8898e7b460c71e334f6ece5daebc6a6e`) match the Figshare-file metadata supplied with that mirror. Computed SHA-256: `3a195870782e6fd87bdd7499cbb4fe201d025b2cda05f9eee9fb9477f34b58bd`.
-- **Provenance limit:** the official Figshare download endpoint could not be retrieved directly in this environment. The hash match supports byte identity against the mirrored Figshare metadata, but the raw file is not yet pinned in this repository and the official download/license record must be rechecked before release reuse. The mirror is not represented as the source publisher.
+- Inspection bytes were obtained from the public GitHub mirror `Staphlerr/formusense`, blob `739cf39a0c6fe3b512c159a9e95336802f75a773`. On 2026-10-27, the official Figshare API v2 article record (article 25451878, version 1) returned HTTP 200 and identified file 45187180, title, size (1,464,630 bytes), CC0 license, supplied MD5, and computed MD5 (`8898e7b460c71e334f6ece5daebc6a6e`). The inspected mirror file has the same size and MD5; its SHA-256 is `3a195870782e6fd87bdd7499cbb4fe201d025b2cda05f9eee9fb9477f34b58bd`. Official metadata URL: `https://api.figshare.com/v2/articles/25451878`.
+- **Provenance limit:** the official API metadata is directly verified, but the official binary download endpoint returned HTTP 403 in this environment. A matching size/MD5 against official file metadata supports source identity but does not mean the official bytes were downloaded. The raw dataset is not yet pinned in this repository. The mirror is not represented as the source publisher.
 
 The article describes 812 cleaned formulations from 822 prepared, with 294 stable formulations receiving turbidity and rheology measurements. Formulations combine two surfactants, a polyelectrolyte, and a thickener in water. The paper reports a 25 °C shear sweep and at least three repeats; the JSON provides average curves and standard deviations rather than replicate-level raw traces. Dataset suitability is limited to its tested shampoo/rinse-off design space and short-term stability procedure.
 
@@ -45,7 +45,7 @@ The supplied text’s Llama/GitHub/Hugging Face links identify language-model re
 
 ## Remaining Phase 4B work
 
-1. Retrieve official Figshare file 45187180 directly; record the publisher file manifest, direct-download hashes, and actual dataset license.
+1. Retry direct retrieval of official Figshare file 45187180 from a permitted environment; compare the downloaded bytes with the official metadata and pin the verified raw artifact before using this dataset for model comparisons.
 2. Pin the verified source artifact in a reproducible repository location or CI artifact with a documented retrieval procedure.
 3. Resolve or explicitly quarantine the four malformed stable rheology profiles.
 4. Establish ingredient identity, grade, and composition units from official supplementary files before considering ENG-003 comparisons.
