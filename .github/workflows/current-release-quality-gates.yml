@@ -53,6 +53,25 @@ jobs:
       - name: Run Phase 6 lab evidence regression suite
         run: bun run test:phase6
 
+  full-typescript-regression:
+    name: Full TypeScript regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run all registered TypeScript regressions
+        run: bun run test:all
+
   evidence-guardrails:
     name: Evidence syntax, regression and fail-closed gates
     runs-on: ubuntu-latest
