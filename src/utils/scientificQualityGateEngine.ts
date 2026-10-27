@@ -585,7 +585,8 @@ export function evaluateScientificQualityGate(
   // ---------------------------------------------------------------------------
   const validationReport = evaluateFormulaScientificValidation({
     formulaId: input.formulaId || formulaName,
-    formulaVersion,
+    // Keep an absent target version unknown; the display/report fallback must not authorize evidence comparisons.
+    formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
     isComputationallyValid: scientificValidity === 'VALID' && compatibilityStatus === 'COMPATIBLE',
     predictedMetrics: {
