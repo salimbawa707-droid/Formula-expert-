@@ -585,7 +585,8 @@ export function evaluateScientificQualityGate(
   // ---------------------------------------------------------------------------
   const validationReport = evaluateFormulaScientificValidation({
     formulaId: input.formulaId || formulaName,
-    formulaVersion,
+    // Keep an absent target version unknown; the display/report fallback must not authorize evidence comparisons.
+    formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
     isComputationallyValid: scientificValidity === 'VALID' && compatibilityStatus === 'COMPATIBLE',
     predictedMetrics: {
@@ -596,8 +597,6 @@ export function evaluateScientificQualityGate(
       cpi: performanceRes.cpi,
       waterHardnessTolerancePpm: hardnessTolerance.maxSupportedPpm
     },
-    // Keep an absent target version unknown for evidence matching; the display/report version fallback above must not authorize comparisons.
-    formulaVersion: input.formulaVersion,
     labEvidenceRecords: (labMeasurements as any) || [],
     qualityGateFindings: {
       blockingIssuesCount: blockingIssues.length,
