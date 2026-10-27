@@ -177,6 +177,16 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     missingValueEvidenceValidation.comparisons.length === 0 && missingValueEvidenceValidation.missingTests.includes('pH'),
     missingValueEvidenceValidation.comparisons.length, 0);
 
+  const missingTargetVersionValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-laundry-01',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.0 },
+    labEvidenceRecords: [validationMeasurement]
+  });
+  assert('3f. Missing target formula version cannot default-match a versioned measurement',
+    missingTargetVersionValidation.comparisons.length === 0 && missingTargetVersionValidation.missingTests.includes('pH') && missingTargetVersionValidation.formulaVersion === undefined,
+    missingTargetVersionValidation.comparisons.length, 0);
+
   const compVersionMismatch = checkMeasurementComparability({
     targetFormulaId: 'f-laundry-01',
     targetFormulaVersion: '2.0', // Mismatch vs 1.0
