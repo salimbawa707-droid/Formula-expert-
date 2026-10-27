@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      build_android_debug_apk:
+        description: "Build a debug APK only after the Phase 5 gate is open"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -76,6 +82,7 @@ jobs:
         run: bun run test:all
 
   android-debug-build:
+    if: github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true
     name: Capacitor Android debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -92,6 +99,10 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.4'
+
+      - name: Require Phase 5 gate before Android packaging
+        run: |
+          bun -e 'import { INITIAL_VAULT_STATE } from "./src/domain/vault/initialData.ts"; import { canUnlockPhase5 } from "./src/utils/vault/vaultLogic.ts"; const gate = canUnlockPhase5(INITIAL_VAULT_STATE); if (!gate.allowed) { console.error(gate.reason); process.exit(1); }'
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -161,7 +172,7 @@ jobs:
       - name: Test PhDat compatibility readiness guardrails
         run: python evidence_vault/scripts/test_audit_phdat_compatibility_readiness.py
 
-      - name: Confirm unreviewed Pušić data remains blocked
+      - name: Confirm human-review path stays honest
         shell: bash
         run: |
           set -euo pipefail
@@ -185,5 +196,13 @@ jobs:
           assert report["lab_validated"] is False, report
           assert report["phase4b"] == "OPEN" and report["phase5"] == "LOCKED", report
           assert any("second review gate not met" in error for error in report["errors"]), report
-          print("PASS: Phase 4B stays OPEN and Phase 5 stays LOCKED until independent human review.")
+          print("PASS: human-review path remains blocked unless a real human review is supplied; the AI route is checked separately.")
           PY
+      - name: Verify owner-authorized AI-only Pušić transcription
+        run: >-
+          python evidence_vault/scripts/compare_pusic_ai_source_review.py
+          evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv
+          evidence_vault/review_workbooks/pusic_2006_ai_source_only_second_pass_2026-10-27.csv
+
+      - name: Test AI-only source review guardrails
+        run: python evidence_vault/scripts/test_compare_pusic_ai_source_review.py

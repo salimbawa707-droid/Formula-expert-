@@ -44,12 +44,21 @@ Printed page 13 presents four tables with 9 column categories across 4 experimen
 
 ---
 
-## 4. Independence Requirement (Strict Anti-Fabrication Rule)
-- The reviewer must be a **real human person** distinct from the original transcriber (`assistant_transcription_from_uploaded_pdf`).
-- An AI model re-reading its own output is **NOT** independent human review.
-- The reviewer must enter their genuine identity or approved organizational pseudonymous identifier (e.g. `reviewer_human_02`) in `independent_reviewer`.
-- The comparator strictly rejects any review where `independent_reviewer` matches `reviewer_1` (case-insensitive).
-- Fabricating reviewer identities, timestamps, or approvals is strictly prohibited.
+## 4. Review Paths and Anti-Fabrication Rule
+
+### Human blind-review path
+- A human reviewer may independently transcribe the 144 readings and record their genuine identity or approved organizational pseudonymous identifier in the human template.
+- The comparator rejects a review where the second identity matches the original transcriber (case-insensitive).
+- Never fabricate a person, identity, date, or approval.
+
+### User-authorized AI source-only path
+The repository owner explicitly requested an AI pass on 2026-10-27. This is a separately labelled alternative for transcription checking; it does **not** become a human review and must never be represented as one.
+
+- The AI second pass must read the publisher PDF page image before seeing production CSV values, transcribe all 144 source cells into a separate transcript, then compare the transcript by table/condition/stain key.
+- Record the AI model, review method, exact publisher-PDF SHA-256, all 144 numeric readings, and row-level comparison result in `pusic_2006_ai_source_only_second_pass_2026-10-27.csv`.
+- The AI path fails closed unless all 144 source IDs and keys match, all 144 numeric values match exactly, the PDF hash matches the pinned source, and every row says `human_review=false`.
+- Use status `AI_SOURCE_REVIEWED` for this route. Do not populate the human template's reviewer identity/date fields, claim human sign-off, or claim laboratory validation.
+- The human route remains available independently; AI and human outcomes are reported separately.
 
 ---
 
@@ -75,15 +84,17 @@ Printed page 13 presents four tables with 9 column categories across 4 experimen
 
 ---
 
-## 6. Acceptance Criteria & Gate Status
-- **Coverage:** Exactly 144 unique source IDs with 36 readings per table.
-- **Independence:** Distinct human reviewer identity verified.
-- **Completeness:** All 144 independent values entered with 0 blanks and 0 unreadable entries.
-- **Agreement:** 144/144 exact matches between source and independent observation.
-- **Audit Ledger:** Generation of `pusic_2006_reconciliation_audit.csv` recording row-level comparison.
+## 6. Acceptance Criteria and Gate Status
+A review route passes only within its own scope:
+
+- **Coverage:** Exactly 144 unique keys and 36 readings per table.
+- **Human route:** A distinct real human reviewer, all values entered, no unreadable cells, 144/144 exact matches, and a generated row-level reconciliation ledger.
+- **AI route:** User-authorized source-only transcription; pinned publisher PDF hash; all 144 keys and values compared; 144/144 exact matches; no human identity or approval claimed; AI method and model recorded in the separate transcript and report.
+- **Scientific boundary:** Neither review route establishes cleaning efficacy as a percentage, ingredient-level formula identity, model accuracy, or `LAB_VALIDATED`.
 
 ### Current Project Status
-- **Dataset Status:** `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW`
-- **Review Template:** Ready for human review (all 144 slots prepared, unreviewed).
-- **Phase Governance:** Phase 4B remains **OPEN**; Phase 5 remains **LOCKED**.
+- **AI review status:** `AI_SOURCE_REVIEWED` (144/144 exact readings; AI-only).
+- **Human review status:** Not performed; the human template remains blank.
+- **Dataset status:** The source transcription has a separately recorded AI review; no human approval is asserted.
+- **Phase governance:** Phase 4B remains **OPEN**; Phase 5 remains **LOCKED** until all remaining Phase 4B gates pass.
 
