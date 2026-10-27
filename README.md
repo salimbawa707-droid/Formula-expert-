@@ -26,13 +26,21 @@ bun run preview
 
 The build output is written to `dist/`. The preview server is for local review; configure your own production hosting and security controls before deployment.
 
-## Available checks
+## Checks
+
+The package exposes a focused Phase 6 regression check:
 
 ```sh
 bun run test:phase6
 ```
 
-The GitHub Actions workflow also runs the production build and evidence-vault guardrails. There is no single command in `package.json` that runs every test file in the repository.
+The full TypeScript regression runner is:
+
+```sh
+bun run src/utils/test-calculations.ts
+```
+
+The GitHub Actions workflow runs the production build, the Phase 6 suite, and evidence-vault guardrails. It does not currently run the full TypeScript regression runner. The checked-in full-suite report is historical and records failed assertions; rerun the suite on the release commit and resolve any failures before treating that report as a clean release gate.
 
 ## Configuration
 
