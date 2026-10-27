@@ -49,7 +49,7 @@ bun run android:debug
 
 The generated APK is `android/app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions also builds and uploads this debug APK for each qualifying run. A Play Store release must be signed with your own protected release keystore; the repository does not contain signing credentials.
 
-The GitHub Actions workflow runs the production build, both TypeScript regression commands, and evidence-vault guardrails. The checked-in full-suite report is historical and records failed assertions; rerun the suite on the release commit and resolve any failures before treating that report as a clean release gate.
+The GitHub Actions workflow runs the production build, both TypeScript regression commands, evidence-vault guardrails, and an Android debug APK build. The checked-in full-suite report is historical and records failed assertions; rerun the suite on the release commit and resolve any failures before treating that report as a clean release gate.
 
 ## Configuration
 
