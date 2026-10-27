@@ -871,7 +871,9 @@ export function evaluateFormulaScientificValidation(input: FormulaValidationEval
     if (!isMatchingVersion && (r.formulaId === targetId || !targetId || isMatchingId)) {
       hasOutdatedEvidence = true;
     }
-    return isMatchingVersion && isMatchingId;
+    // Identity alone is not evidence: only valid numeric records explicitly
+    // classified as MEASURED may enter predicted-vs-measured comparisons.
+    return isMatchingVersion && isMatchingId && validateMeasurementRecord(r).isValid;
   });
 
   // Evaluate matching parameters
