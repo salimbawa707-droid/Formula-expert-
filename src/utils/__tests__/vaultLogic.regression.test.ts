@@ -6,8 +6,8 @@
  * Verifies:
  * 1. Initial roadmap state: Phase 4B is active and Phase 5 locked
  * 2. 64/59/97 engine-count discrepancy is explicitly preserved
- * 3. SurfPro retrieval blocker BLK-001 is recorded with environment context
- * 4. Experimental dataset inspection count remains strictly zero initially
+ * 3. SurfPro raw files and numerical inspection are tracked accurately
+ * 4. At least one experimental dataset has a positive source-record count
  * 5. Pricing Integrity: Missing prices remain strictly null (never coerced to 0.00)
  * 6. Phase 5 Gate Rule: cannot unlock while Phase 4B active or unverified
  * 7. Promotion Rule: engine cannot be marked ready for validation without inspected data
@@ -103,23 +103,25 @@ export function runVaultLogicTestSuite() {
   assert(metrics.engineDiscrepancyClaimedSubmodules === 97, 'Engine Discrepancy', 'Claimed submodules count is 97');
   assert(metrics.engineDiscrepancyStatus === 'REPORTED_UNVERIFIED', 'Engine Discrepancy', 'Status is REPORTED_UNVERIFIED');
 
-  // 3. SurfPro retrieval blocker BLK-001 is recorded
+  // 3. SurfPro source files are present and its former retrieval blocker is cleared
   const blocker = INITIAL_VAULT_STATE.activeBlockers.find(b => b.id === 'BLK-001');
-  assert(Boolean(blocker), 'Active Blockers', 'BLK-001 exists');
-  assert(Boolean(blocker?.title.includes('raw artifact missing from current main')), 'Active Blockers', 'BLK-001 describes current raw-artifact reproducibility gap');
-  assert(Boolean(blocker?.workaroundOrNextAction.includes('e5bcd1bbab2fc56717a3cd6a0cf1c152')), 'Active Blockers', 'BLK-001 pins the published SURFPRO checksum');
-  assert(Boolean(blocker?.environmentLimitation.includes('no longer accurately described as “never inspected”')), 'Active Blockers', 'BLK-001 preserves historical inspection evidence while noting current artifact absence');
+  assert(!blocker, 'Active Blockers', 'BLK-001 is cleared because verified raw CSV artifacts are checked in');
+  const surfproEvidence = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-002');
+  assert(surfproEvidence?.downloadStatus === 'DOWNLOADED', 'Dataset Inspection', 'EVD-002 records the checked-in CSV as downloaded');
+  assert(surfproEvidence?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'EVD-002 records the reproducible numerical inspection');
+  assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-001')?.numericalInspectionStatus === 'UNINSPECTED', 'Dataset Inspection', 'EVD-001 remains an uninspected lead seed');
+  assert(metrics.experimentalDatasetsNumericallyInspected >= 1, 'Dataset Inspection', 'At least one source dataset has a positive inspected row count');
 
-  // DS-001 was historically inspected and checksum-verified, but raw CSV artifacts
-  // are absent from current main. Keep the inspection fact separate from reproducibility.
+  // DS-001 is reproducible from the checked-in source CSVs; its component-level scope
+  // remains distinct from matched mixed-formula validation.
   const ds001 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-001');
   assert(Boolean(ds001), 'Dataset Inspection', 'DS-001 SURFPRO dataset exists');
-  assert(ds001?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-001 historical numerical inspection is preserved');
-  assert(ds001?.actualRowCount === 1624, 'Dataset Inspection', 'DS-001 master-record count is recorded as database rows, not formula observations');
+  assert(ds001?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-001 numerical inspection is recorded');
+  assert(ds001?.actualRowCount === 1624, 'Dataset Inspection', 'DS-001 master-record count is source rows, not formula observations');
   assert(ds001?.actualColumnCount === 31, 'Dataset Inspection', 'DS-001 master schema width is recorded');
   assert(ds001?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-001 remains ineligible for mixed-formula validation');
   assert(ds001?.designation === 'BENCHMARK', 'Dataset Inspection', 'DS-001 uses a supported dataset designation');
-  assert(Boolean(ds001?.sha256Hash === '316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841'), 'Dataset Inspection', 'DS-001 historical SHA-256 is preserved');
+  assert(Boolean(ds001?.sha256Hash === '316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841'), 'Dataset Inspection', 'DS-001 canonical CSV SHA-256 is recorded');
 
   // 4. Dataset inspection states must reflect the evidence vault's current source audit.
   // DS-002 is numerically inspected at workbook/parser level, but it is NOT a count of
