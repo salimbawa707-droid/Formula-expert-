@@ -96,8 +96,8 @@ export interface MasterScientificProvenanceReport {
  * version, and category profile.
  */
 export function computeFormulaFingerprint(
-  formulaId: string = 'F-1.0',
-  formulaVersion: string = '1.0.0',
+  formulaId: string = 'UNKNOWN_FORMULA_ID',
+  formulaVersion: string = 'UNKNOWN_VERSION',
   ingredients: FormulationIngredient[] = [],
   productCategory: string = 'UNKNOWN_PRODUCT_CATEGORY'
 ): string {
