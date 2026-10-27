@@ -132,6 +132,8 @@ export function runVaultLogicTestSuite() {
   const ds002 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-002');
   assert(Boolean(ds002), 'Dataset Inspection', 'DS-002 descriptive rheology dataset exists');
   assert(ds002?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-002 source workbooks are parser-inspected');
+  const ds003 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-003');
+  assert(Boolean(ds003), 'Dataset Inspection', 'DS-003 shampoo formulation dataset exists');
   assert(ds002?.actualRowCount === null, 'Dataset Inspection', 'DS-002 physical observation count remains unresolved');
   assert(ds002?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-002 is not formula-validation-ready');
   const ds005 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-005');
@@ -141,12 +143,14 @@ export function runVaultLogicTestSuite() {
   const ds004 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-004');
   assert(ds004?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-004 PhDat arrays passed the recorded source integrity audit');
   assert(ds004?.actualRowCount === 143, 'Dataset Inspection', 'DS-004 row count reflects source chemical records, not independent experiments');
+  assert(ds003?.actualRowCount === 812 && ds003?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-003 records audited JSON rows without promoting validation readiness');
+  assert(ds003?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-003 ingredient/domain gaps keep model validation blocked');
   assert(ds004?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-004 remains ineligible for formula validation');
   assert(ds005?.actualColumnCount === 23, 'Dataset Inspection', 'DS-005 normalized worksheet schema has 23 columns');
   assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
   assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
   assert(Boolean(ds005?.inspectionNotes?.includes('Unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
-  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-004'].includes(ds.id))) {
+  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-003', 'DS-004'].includes(ds.id))) {
     assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
   }
 
@@ -243,7 +247,7 @@ export function runVaultLogicTestSuite() {
   assert(legacyMigrationResult.parsedState?.version === '1.1.0', 'Schema Migration', 'Legacy backup is upgraded to schema v1.1.0');
   assert((legacyMigrationResult.parsedState?.inventoryMetrics.length || 0) >= 5, 'Schema Migration', 'Migration adds only explicitly reported inventory metrics');
   assert(legacyMigrationResult.parsedState?.historicalReconciliations[0]?.reconciliationStatus === 'UNRESOLVED', 'Schema Migration', 'Historical 27,982 claim remains unresolved after migration');
-  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' ? ds.actualRowCount === 1624 : ds.id === 'DS-004' ? ds.actualRowCount === 143 : ds.actualRowCount === null)), 'Schema Migration', 'Unknown dataset row counts remain null while audited DS-001 and DS-004 counts are preserved');
+  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' ? ds.actualRowCount === 1624 : ds.id === 'DS-003' ? ds.actualRowCount === 812 : ds.id === 'DS-004' ? ds.actualRowCount === 143 : ds.actualRowCount === null)), 'Schema Migration', 'Uninspected dataset counts remain null while audited DS-001, DS-003, and DS-004 counts are preserved');
   assert(canUnlockPhase5(legacyMigrationResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Schema Migration', 'Migration cannot unlock Phase 5');
 
   const optionalScientificExtensions = JSON.parse(exported);
