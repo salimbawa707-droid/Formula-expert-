@@ -946,9 +946,12 @@ export default function FormulaExpert({
               <FlaskConical className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                Formula Expert
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
+              <h1 
+                className="hero-card-title text-lg sm:text-2xl font-extrabold tracking-tight flex items-center gap-2 flex-wrap"
+                style={{ color: '#FFFFFF', opacity: 1, WebkitTextFillColor: '#FFFFFF' }}
+              >
+                Detergent Formula Expert
+                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono shrink-0">
                   Universal Analysis
                 </span>
               </h1>
@@ -1003,7 +1006,7 @@ export default function FormulaExpert({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           
           {/* A. Product Category */}
-          <div className="bg-[#131d35] border border-slate-700/80 rounded-xl p-3 space-y-1.5">
+          <div className="bg-[#131d35] border border-slate-700/80 rounded-xl p-3 space-y-1.5 relative z-20">
             <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
               Product Category
             </label>
@@ -1127,21 +1130,23 @@ export default function FormulaExpert({
                       </td>
 
                       {/* Chemical Name & Picker */}
-                      <td className="py-2.5 px-3 sm:px-4 min-w-[200px]">
-                        <div className="flex items-center gap-1.5 w-full">
+                      <td className="py-2.5 px-3 sm:px-4 min-w-[320px]">
+                        <div className="flex items-center gap-2 w-full">
                           <input
                             type="text"
                             value={ing.name || ""}
                             onChange={(e) => handleUpdateIngredient(ingId, "name", e.target.value)}
-                            placeholder="Select or enter chemical name..."
-                            className="w-full bg-[#131d35] border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-white font-bold placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition"
+                            placeholder="Chemical name..."
+                            className="flex-1 min-w-[130px] bg-[#131d35] border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-white font-bold placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition"
                           />
-                          <CategoryIngredientSelector
-                            category={productCategory}
-                            onSelect={(selected) => {
-                              handleSelectUniversalIngredient(ingId, selected);
-                            }}
-                          />
+                          <div className="w-48 sm:w-56 shrink-0">
+                            <CategoryIngredientSelector
+                              category={productCategory}
+                              onSelect={(selected) => {
+                                handleSelectUniversalIngredient(ingId, selected);
+                              }}
+                            />
+                          </div>
                         </div>
                       </td>
 
@@ -1260,21 +1265,32 @@ export default function FormulaExpert({
                     </button>
                   </div>
 
-                  {/* Name Input + Selector */}
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={ing.name || ""}
-                      onChange={(e) => handleUpdateIngredient(ingId, "name", e.target.value)}
-                      placeholder="Type chemical name..."
-                      className="w-full bg-[#0e1629] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:border-cyan-500 focus:outline-none"
-                    />
-                    <CategoryIngredientSelector
-                      category={productCategory}
-                      onSelect={(selected) => {
-                        handleSelectUniversalIngredient(ingId, selected);
-                      }}
-                    />
+                  {/* Chemical Name Input & Database Selector (Stacked Full-Width on Mobile) */}
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                        Chemical Name
+                      </span>
+                      <input
+                        type="text"
+                        value={ing.name || ""}
+                        onChange={(e) => handleUpdateIngredient(ingId, "name", e.target.value)}
+                        placeholder="Chemical name (e.g. SLES, Demineralized Water)..."
+                        className="w-full bg-[#0e1629] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none placeholder-slate-500"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                        Database Library Selector
+                      </span>
+                      <CategoryIngredientSelector
+                        category={productCategory}
+                        name={ing.name}
+                        onSelect={(selected) => {
+                          handleSelectUniversalIngredient(ingId, selected);
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* 4-Field Grid: Raw %, Active %, Weight, Cost/kg */}

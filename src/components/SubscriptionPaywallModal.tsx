@@ -188,16 +188,16 @@ export default function SubscriptionPaywallModal({
         <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-900/90">
           {/* 1. Free Plan */}
           <div className="flex flex-col bg-slate-800/50 border border-slate-700/80 rounded-xl p-5 hover:border-slate-600 transition-all">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Starter</div>
+            <div className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-1">Starter</div>
             <h3 className="text-xl font-bold text-white">Free Plan</h3>
-            <p className="text-xs text-slate-400 mt-1">For DIY formulators & students</p>
+            <p className="text-xs text-slate-300 mt-1">For DIY formulators & students</p>
 
             <div className="my-4 text-2xl font-black text-white">
               {currency === 'USD' ? '$0' : '₹0'}{' '}
-              <span className="text-xs font-normal text-slate-400">/ forever</span>
+              <span className="text-xs font-medium text-slate-300">/ forever</span>
             </div>
 
-            <ul className="space-y-2.5 text-xs text-slate-300 mb-6 flex-1">
+            <ul className="space-y-2.5 text-xs text-slate-200 mb-6 flex-1">
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400 shrink-0" /> Max 7 Saved Formulas
               </li>
@@ -207,11 +207,11 @@ export default function SubscriptionPaywallModal({
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400 shrink-0" /> Master 400+ Chemical Library
               </li>
-              <li className="flex items-center gap-2 text-slate-500">
-                <X className="w-4 h-4 shrink-0" /> No Professional PDF Reports
+              <li className="flex items-center gap-2 text-slate-400">
+                <X className="w-4 h-4 shrink-0 text-slate-500" /> No Professional PDF Reports
               </li>
-              <li className="flex items-center gap-2 text-slate-500">
-                <X className="w-4 h-4 shrink-0" /> No Cloud Sync & Backup
+              <li className="flex items-center gap-2 text-slate-400">
+                <X className="w-4 h-4 shrink-0 text-slate-500" /> No Cloud Sync & Backup
               </li>
             </ul>
 

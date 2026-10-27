@@ -1270,7 +1270,7 @@ function SmartFormulaAnalyzerProInner({
         {/* Active Surfactants */}
         <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Active Surfactants %</span>
+            <span className="text-xs text-slate-700 font-bold uppercase tracking-wider block">Active Surfactants %</span>
             <span className="text-[9px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded uppercase">
               🔵 Calculated
             </span>
@@ -1288,7 +1288,7 @@ function SmartFormulaAnalyzerProInner({
               </button>
             </div>
           </div>
-          <div className="text-[10px] text-gray-400 font-medium">
+          <div className="text-[10px] text-slate-600 font-medium">
             Total Active Matter: <span className="text-teal-700 font-bold">{safeNum(analysisResult?.totalActiveMatter, 1)}%</span>
           </div>
         </div>
@@ -1296,7 +1296,7 @@ function SmartFormulaAnalyzerProInner({
         {/* pH */}
         <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">pH</span>
+            <span className="text-xs text-slate-700 font-bold uppercase tracking-wider block">pH</span>
             <ScientificBadge maturity={analysisResult.phPartialFlag ? "ESTIMATED" : "MODEL_PREDICTION"} />
           </div>
           <div>
@@ -1304,7 +1304,7 @@ function SmartFormulaAnalyzerProInner({
               {analysisResult.estpH}
             </span>
             <div className="flex items-center gap-1.5 mt-2">
-              <span className="text-[9px] bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-md">
+              <span className="text-[9px] bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded-md">
                 ✓ Weighted Neutralization
               </span>
               <button onClick={() => handleExplainClick("pH")} className="text-teal-600 hover:text-teal-800">
@@ -1312,7 +1312,7 @@ function SmartFormulaAnalyzerProInner({
               </button>
             </div>
           </div>
-          <div className="text-[10px] text-gray-400 font-medium truncate">
+          <div className="text-[10px] text-slate-600 font-medium truncate">
             {analysisResult.phPartialFlag ? "Partial pH data available" : "Full stoichiometry values."}
           </div>
         </div>
@@ -1320,8 +1320,8 @@ function SmartFormulaAnalyzerProInner({
         {/* HLB */}
         <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Blend HLB (Griffin)</span>
-            <span className="text-[9px] bg-amber-50 text-amber-700 font-bold px-1.5 py-0.5 rounded uppercase">
+            <span className="text-xs text-slate-700 font-bold uppercase tracking-wider block">Blend HLB (Griffin)</span>
+            <span className="text-[9px] bg-amber-50 text-amber-800 font-bold px-1.5 py-0.5 rounded uppercase">
               🟡 Estimated
             </span>
           </div>
@@ -1330,7 +1330,7 @@ function SmartFormulaAnalyzerProInner({
               {analysisResult.estHlb !== null ? analysisResult.estHlb : "N/A"}
             </span>
             <div className="flex items-center gap-1.5 mt-2">
-              <span className="text-[9px] bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-md">
+              <span className="text-[9px] bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded-md">
                 ✓ Griffin HLB Method
               </span>
               <button onClick={() => handleExplainClick("hlb")} className="text-teal-600 hover:text-teal-800">
@@ -1338,16 +1338,16 @@ function SmartFormulaAnalyzerProInner({
               </button>
             </div>
           </div>
-          <div className="text-[10px] text-gray-400 font-medium">
-            Confidence: <span className="text-amber-600 font-bold">Medium</span> — empirical surfactant ratio.
+          <div className="text-[10px] text-slate-600 font-medium">
+            Confidence: <span className="text-amber-700 font-bold">Medium</span> — empirical surfactant ratio.
           </div>
         </div>
 
         {/* Eco Score */}
         <div className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Eco Score (Biodegradability)</span>
-            <span className="text-[9px] bg-amber-50 text-amber-700 font-bold px-1.5 py-0.5 rounded uppercase">
+            <span className="text-xs text-slate-700 font-bold uppercase tracking-wider block">Eco Score (Biodegradability)</span>
+            <span className="text-[9px] bg-amber-50 text-amber-800 font-bold px-1.5 py-0.5 rounded uppercase">
               🟡 Estimated
             </span>
           </div>
@@ -1356,7 +1356,7 @@ function SmartFormulaAnalyzerProInner({
               {safeNum(analysisResult?.complexEcoResult?.score, 1)} / 100
             </span>
             <div className="flex items-center gap-1.5 mt-2">
-              <span className="text-[9px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-md">
+              <span className="text-[9px] bg-emerald-50 text-emerald-800 font-semibold px-2 py-0.5 rounded-md">
                 🌱 OECD 301 Standards
               </span>
               <button onClick={() => handleExplainClick("eco")} className="text-teal-600 hover:text-teal-800">
@@ -1364,8 +1364,8 @@ function SmartFormulaAnalyzerProInner({
               </button>
             </div>
           </div>
-          <div className="text-[10px] text-gray-400 font-medium">
-            Confidence: <span className="text-amber-600 font-bold">Medium</span> — environmental model predictions.
+          <div className="text-[10px] text-slate-600 font-medium">
+            Confidence: <span className="text-amber-700 font-bold">Medium</span> — environmental model predictions.
           </div>
         </div>
       </div>
@@ -1375,32 +1375,32 @@ function SmartFormulaAnalyzerProInner({
 
       {/* HEALTH SCORE BREAKDOWN */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
           <Layers size={14} className="text-teal-600" /> Formula Screening Score Rubric (Calculated Result)
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">pH Stability (20)</span>
+            <span className="text-[9px] text-slate-600 font-extrabold block uppercase">pH Stability (20)</span>
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.phScore}/20</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Category Bal. (20)</span>
+            <span className="text-[9px] text-slate-600 font-extrabold block uppercase">Category Bal. (20)</span>
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.balScore}/20</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Cost Eff. (15)</span>
+            <span className="text-[9px] text-slate-600 font-extrabold block uppercase">Cost Eff. (15)</span>
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.costScore}/15</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Eco Score (20)</span>
+            <span className="text-[9px] text-slate-600 font-extrabold block uppercase">Eco Score (20)</span>
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.ecoScore}/20</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Compatability (15)</span>
+            <span className="text-[9px] text-slate-600 font-extrabold block uppercase">Compatability (15)</span>
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.compScore}/15</span>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border text-center">
-            <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Completeness (10)</span>
+            <span className="text-[9px] text-slate-600 font-extrabold block uppercase">Completeness (10)</span>
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.completenessScore}/10</span>
           </div>
         </div>
@@ -1408,13 +1408,13 @@ function SmartFormulaAnalyzerProInner({
 
       {/* MISSING DATA DETECTOR */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-          <ShieldAlert size={14} className="text-amber-500" /> Ingredient Database Completeness & Missing Fields
+        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+          <ShieldAlert size={14} className="text-amber-600" /> Ingredient Database Completeness & Missing Fields
         </h4>
         <div className="overflow-x-auto text-xs">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 text-[10px] text-gray-400 uppercase font-bold">
+              <tr className="border-b border-gray-200 text-[10px] text-slate-700 uppercase font-extrabold">
                 <th className="pb-2">Ingredient</th>
                 <th className="pb-2">CAS Number</th>
                 <th className="pb-2">Density</th>

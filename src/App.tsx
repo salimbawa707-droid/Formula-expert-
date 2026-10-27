@@ -552,7 +552,7 @@ export default function App() {
       desc: "Create • Analyze • Verify",
       icon: FlaskConical, 
       glow: "from-blue-500/20 to-cyan-500/20",
-      accent: "text-cyan-400",
+      accent: "text-blue-400",
       badge: "CORE"
     },
     { 
@@ -560,7 +560,7 @@ export default function App() {
       label: t.scienceLab || "Science Lab", 
       desc: "3D Molecules & PubChem",
       icon: Atom, 
-      glow: "from-blue-500/20 to-purple-500/20",
+      glow: "from-cyan-500/20 to-blue-500/20",
       accent: "text-cyan-400",
       badge: "SCIENCE"
     },
@@ -587,24 +587,23 @@ export default function App() {
       label: t.phEngine, 
       desc: "Newton-Raphson Solver",
       icon: TestTube, 
-      glow: "from-amber-500/20 to-orange-500/20",
-      accent: "text-amber-400",
+      glow: "from-violet-500/20 to-purple-500/20",
+      accent: "text-violet-400",
       badge: "EQUILIBRIUM"
     },
   ];
 
   // Secondary Scientific Tool Suites
   const SECONDARY_NAV = [
-    { id: 'science_lab' as TabType, label: t.scienceLab || "Science Lab", icon: Atom, accent: "text-cyan-400" },
-    { id: 'calculators' as TabType, label: t.calculators, icon: Calculator, accent: "text-blue-400" },
+    { id: 'calculators' as TabType, label: t.calculators, icon: Calculator, accent: "text-amber-400" },
     { id: 'qc_operations' as TabType, label: t.qcOperations, icon: ClipboardCheck, accent: "text-emerald-400" },
     { id: 'inventory' as TabType, label: t.inventory, icon: Package, accent: "text-cyan-400" },
     { id: 'docs_library' as TabType, label: t.docs, icon: FileText, accent: "text-indigo-400" },
     { id: 'lab_notebook' as TabType, label: t.labNotebook, icon: PenTool, accent: "text-rose-400" },
-    { id: 'lab_automation' as TabType, label: "Lab Automation", icon: Cpu, accent: "text-amber-400" },
-    { id: 'closed_loop' as TabType, label: "Closed-Loop R&D", icon: Workflow, accent: "text-teal-400" },
-    { id: 'validation_suite' as TabType, label: t.validation, icon: Award, accent: "text-purple-400" },
-    { id: 'scientific_vault' as TabType, label: "Evidence Vault & Roadmap", icon: Database, accent: "text-amber-400" },
+    { id: 'lab_automation' as TabType, label: "Lab Automation", icon: Cpu, accent: "text-orange-400" },
+    { id: 'closed_loop' as TabType, label: "Closed-Loop R&D", icon: Workflow, accent: "text-purple-400" },
+    { id: 'validation_suite' as TabType, label: t.validation, icon: Award, accent: "text-blue-400" },
+    { id: 'scientific_vault' as TabType, label: "Evidence Vault & Roadmap", icon: Database, accent: "text-teal-400" },
   ];
 
   return (
@@ -622,15 +621,18 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-col justify-center min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-black text-sm sm:text-base tracking-tight text-white whitespace-nowrap bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span 
+                className="app-header-title font-black text-xs sm:text-sm md:text-base tracking-tight leading-tight"
+                style={{ color: '#F8FAFC', opacity: 1, WebkitTextFillColor: '#F8FAFC' }}
+              >
                 Detergent Formula Expert
               </span>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/40 font-mono hidden xs:inline-block shadow-xs">
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono hidden lg:inline-block shadow-xs shrink-0">
                 PRO R&D LAB
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:block truncate max-w-xs">
+            <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium hidden sm:block truncate max-w-xs">
               {t.appSubtitle}
             </span>
           </div>
@@ -709,15 +711,15 @@ export default function App() {
             </select>
           </div>
 
-          {/* Gemini Chemistry Bot Quick Launcher Button in Header */}
+          {/* Gemini Chemistry Bot Quick Launcher Button in Header (desktop/tablet) */}
           <button
             type="button"
             onClick={() => setIsGlobalChatOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-900/60 to-indigo-900/60 hover:from-purple-800/80 hover:to-indigo-800/80 border border-purple-500/40 text-xs font-bold text-purple-200 hover:text-white transition shadow-sm cursor-pointer shrink-0"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-900/60 to-indigo-900/60 hover:from-purple-800/80 hover:to-indigo-800/80 border border-purple-500/40 text-xs font-bold text-purple-200 hover:text-white transition shadow-sm cursor-pointer shrink-0"
             title="Ask Gemini Cleaning Chemistry Bot"
           >
             <Bot size={14} className="text-purple-300" />
-            <span className="hidden sm:inline">AI Chemistry Bot</span>
+            <span className="hidden md:inline">AI Chemistry Bot</span>
           </button>
 
           {/* PWA Install Button & User Account Menu */}
@@ -743,8 +745,8 @@ export default function App() {
       <div className="bg-[#0b1020] border-b border-slate-800/80 px-3 sm:px-6 py-3 shrink-0">
         <div className="max-w-7xl mx-auto space-y-3">
           
-          {/* Primary 4 Core Workstations Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+          {/* Primary Core Workstations Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
             {PRIMARY_NAV.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -786,8 +788,8 @@ export default function App() {
           </div>
 
           {/* Secondary Specialized Tool Suites Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-slate-800/60">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 mr-1 shrink-0 flex items-center gap-1">
+          <div className="flex items-center gap-1.5 pb-1 pt-1.5 border-t border-slate-800/60 overflow-x-auto no-scrollbar whitespace-nowrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1 shrink-0 flex items-center gap-1">
               <Layers size={12} className="text-slate-400" /> Specialized R&D Suites:
             </span>
             {SECONDARY_NAV.map((item) => {
@@ -797,10 +799,10 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                     isActive
                       ? 'bg-cyan-500/15 border-cyan-500/60 text-cyan-300 shadow-xs'
-                      : 'bg-[#0e1629] border-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-[#131d35] hover:border-slate-700'
+                      : 'bg-[#0e1629] border-slate-800/80 text-slate-300 hover:text-white hover:bg-[#131d35] hover:border-slate-700'
                   }`}
                 >
                   <Icon size={14} className={isActive ? 'text-cyan-400' : item.accent} />
@@ -814,7 +816,7 @@ export default function App() {
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 w-full p-3 sm:p-5 md:p-6 min-w-0 overflow-x-hidden">
+      <main className="flex-1 w-full p-3 sm:p-5 md:p-6 pb-24 sm:pb-16 min-w-0 overflow-x-hidden">
         <div className="max-w-7xl mx-auto w-full space-y-6">
 
           <Suspense fallback={<div className="min-h-40 flex items-center justify-center text-sm text-slate-400" role="status" aria-live="polite">Loading workspace…</div>}>
@@ -914,21 +916,22 @@ export default function App() {
       <OfflineIndicator />
 
       {/* FLOATING ACTION BUTTON: GEMINI CHEMISTRY BOT */}
-      <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 pointer-events-auto">
+      <div className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-20 flex flex-col items-end gap-2 pointer-events-auto">
         <button
           type="button"
           onClick={() => setIsGlobalChatOpen(true)}
-          className="group relative flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-cyan-950/80 border border-cyan-400/40 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
+          className="group relative flex items-center justify-center w-11 h-11 sm:w-auto sm:h-auto sm:px-3.5 sm:py-2.5 rounded-full sm:rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-cyan-950/80 border border-cyan-400/40 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
           title="Open Gemini Cleaning Chemistry Assistant"
+          aria-label="Ask Chemistry AI"
         >
-          <div className="relative">
-            <Bot className="w-5 h-5 text-white animate-bounce" />
+          <div className="relative shrink-0 flex items-center justify-center">
+            <Bot className="w-5 h-5 text-white" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#070b18]" />
           </div>
-          <div className="flex flex-col text-left">
-            <span className="leading-tight">Ask Chemistry AI</span>
-            <span className="text-[9px] font-mono font-medium text-cyan-200">
-              {activeFormula ? `Formula Attached (${activeFormula.name.slice(0, 15)})` : 'Gemini 3.8 Flash'}
+          <div className="hidden sm:flex flex-col text-left ml-2">
+            <span className="leading-tight whitespace-nowrap">Ask Chemistry AI</span>
+            <span className="text-[9px] font-mono font-medium text-cyan-200 truncate max-w-[140px]">
+              {activeFormula ? `Attached: ${activeFormula.name.slice(0, 14)}` : 'Gemini 3.8 Flash'}
             </span>
           </div>
         </button>

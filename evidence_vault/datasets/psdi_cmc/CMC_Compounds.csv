@@ -1,4 +1,4 @@
-﻿Compound No.,Mol. Wgt.,Name,IUPAC,SMILES,Lookup wgt.,Method
+Compound No.,Mol. Wgt.,Name,IUPAC,SMILES,Lookup wgt.,Method
 1,288.3,SODIUM DODECYL 1 SULFATE,sodium;dodecyl sulfate,CCCCCCCCCCCCOS(=O)(=O)[O-].[Na+],288.38,LLM initial name and weight
 2,232.2,SODIUM OCTYL 1 SULFATE,sodium;2-ethylhexyl sulfate,CCCCC(CC)COS(=O)(=O)[O-].[Na+],232.28,LLM initial name and weight
 3,260.3,SODIUM DECYL 1 SULFATE,sodium;decyl sulfate,CCCCCCCCCCOS(=O)(=O)[O-].[Na+],260.33,LLM initial name and weight

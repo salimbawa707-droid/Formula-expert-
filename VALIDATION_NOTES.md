@@ -1,1 +1,0 @@
-Final validation pass: package manifest and lockfile aligned; regression test script restored; CI uses Node 24.12.0.

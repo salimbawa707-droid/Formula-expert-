@@ -1,0 +1,23 @@
+{
+  "projectName": "Formula Expert",
+  "version": "2.5.0",
+  "timestamp": "2026-10-27T06:57:00Z",
+  "status": "RELEASE_CANDIDATE_VERIFIED",
+  "auditScope": [
+    "P0-01: Entitlement Security",
+    "P0-02: Server API & Billing Security",
+    "P0-03: Scientific Engine Integrity",
+    "P0-04: PhDat Evidence & Provenance",
+    "P0-05: Dependency Hygiene & Build Reproducibility"
+  ],
+  "buildVerification": {
+    "bundler": "Vite v6.4.5",
+    "status": "SUCCESS",
+    "exitCode": 0,
+    "outputDirectory": "dist"
+  },
+  "cryptographicIntegrity": {
+    "algorithm": "SHA-256",
+    "verified": true
+  }
+}

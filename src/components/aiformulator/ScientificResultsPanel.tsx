@@ -49,7 +49,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <Atom className="w-5 h-5 text-cyan-400" />
             SCIENTIFIC & PERFORMANCE RESULTS
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-token-muted font-medium">
             Consolidated physical chemistry and performance analysis for {productCategory}
           </p>
         </div>
@@ -195,28 +195,28 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
           {/* 1. pH */}
           <div className="bg-[#0e1629] border border-slate-800 rounded-xl p-4 space-y-2 shadow-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-300 uppercase">1. Equilibrium pH</span>
+              <span className="text-xs font-extrabold text-white uppercase">1. Equilibrium pH</span>
               <ScientificBadge maturity="HEURISTIC_SCREENING" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
                 {scientificResults.pH.toFixed(2)}
               </span>
-              <span className="text-xs text-slate-400 font-semibold">
+              <span className="text-xs text-token-secondary font-bold">
                 Target: {getTargetPHRange(productCategory).min} - {getTargetPHRange(productCategory).max}
               </span>
             </div>
-            <p className="text-[11px] text-cyan-300/90 font-medium leading-tight">
+            <p className="text-[11px] text-cyan-300 font-bold leading-tight">
               Calculated Equilibrium pH: {scientificResults.pH.toFixed(2)} — SCREENING
             </p>
             <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
-              <span className="text-slate-400">Measured Finished Product pH:</span>
+              <span className="text-token-secondary font-bold">Measured Finished Product pH:</span>
               <span className="font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded text-[10px] border border-amber-500/30">
                 NOT TESTED
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 leading-tight">
-              Newton-Raphson charge balance ({scientificResults.pH < 7 ? "Acidic" : scientificResults.pH > 7 ? "Alkaline" : "Neutral"}) • <span className="text-slate-300 font-medium">{scientificResults.phConfidence?.confidence || "Theoretical Model"}</span>. Physical electrode test required for release.
+            <p className="text-[11px] text-token-primary leading-tight font-medium">
+              Newton-Raphson charge balance ({scientificResults.pH < 7 ? "Acidic" : scientificResults.pH > 7 ? "Alkaline" : "Neutral"}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || "Theoretical Model"}</span>. Physical electrode test required for release.
             </p>
             {scientificResults.pH > 9.5 && scientificResults.details?.recognizedContributors?.includes('sodium_citrate') && !scientificResults.details?.recognizedContributors?.includes('citric_acid') && (
               <div className="mt-2 text-[11px] bg-amber-950/50 border border-amber-500/40 rounded-lg p-2 text-amber-200">
@@ -228,7 +228,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
           {/* 2. Viscosity */}
           <div className="bg-[#0e1629] border border-slate-800 rounded-xl p-4 space-y-2 shadow-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-300 uppercase">2. Viscosity</span>
+              <span className="text-xs font-extrabold text-white uppercase">2. Viscosity</span>
               <span className="text-[10px] font-extrabold font-mono px-2.5 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/40">
                 {isMetricApplicable(productCategory, "viscosity") ? "ESTIMATED" : "N/A"}
               </span>
@@ -240,25 +240,25 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                     {scientificResults.viscosity}
                   </span>
                 </div>
-                <p className="text-[11px] text-indigo-300/90 font-medium leading-tight">
+                <p className="text-[11px] text-indigo-300 font-bold leading-tight">
                   Modeled Viscosity: {scientificResults.viscosity} — ESTIMATED
                 </p>
                 <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
-                  <span className="text-slate-400">Brookfield Viscometer Spindle 2:</span>
+                  <span className="text-token-secondary font-bold">Brookfield Viscometer Spindle 2:</span>
                   <span className="font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded text-[10px] border border-amber-500/30">
                     NOT TESTED / INSUFFICIENT_DATA
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 leading-tight">
+                <p className="text-[11px] text-token-primary leading-tight font-medium">
                   Modeled from surfactant micellar structuring & electrolyte packing. Empirical viscometer rheology unmeasured.
                 </p>
               </>
             ) : (
               <>
-                <span className="text-xs text-slate-500 block pt-1 italic font-semibold">
+                <span className="text-xs text-token-muted block pt-1 italic font-extrabold">
                   N/A — Not applicable for this category
                 </span>
-                <p className="text-[11px] text-slate-500 leading-tight">
+                <p className="text-[11px] text-token-secondary leading-tight font-medium">
                   Powder formulation; bulk density evaluated separately.
                 </p>
               </>
@@ -483,10 +483,10 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
           {/* 7. Cleaning Score / CPI */}
           <div className="bg-[#0e1629] border border-slate-800 rounded-xl p-4 space-y-2 shadow-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-300 uppercase">7. Predicted CPI / Score</span>
+              <span className="text-xs font-extrabold text-white uppercase">7. Predicted CPI / Score</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
                 !isMetricApplicable(productCategory, "cleaningScore") 
-                  ? "bg-slate-800 text-slate-400 border-slate-700" 
+                  ? "bg-slate-800 text-token-muted border-slate-700" 
                   : (scientificResults.cleaning.isMeasured 
                     ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" 
                     : "bg-blue-950/80 text-blue-300 border-blue-500/40")
@@ -502,21 +502,21 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                   <span className="text-2xl font-mono font-extrabold text-emerald-400">
                     {scientificResults.cleaning?.cleaningScore ?? scientificResults.cleaning?.cpi ?? 0}
                   </span>
-                  <span className="text-xs text-slate-400 font-semibold">/ 100 Index</span>
-                  <span className="text-[10px] text-slate-400 font-bold ml-auto">
+                  <span className="text-xs text-token-secondary font-bold">/ 100 Index</span>
+                  <span className="text-[10px] text-token-primary font-bold ml-auto">
                     {scientificResults.cleaning?.cleaningPower ?? scientificResults.cleaning?.qualitativePower ?? 'Standard'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
+                <p className="text-[11px] text-token-primary font-medium leading-tight">
                   Degreasing: {scientificResults.cleaning?.degreasingScore ?? scientificResults.cleaning?.domainScores?.degreasing ?? 0}% | Particulate Soil: {scientificResults.cleaning?.particulateSoilRemoval ?? scientificResults.cleaning?.domainScores?.particulate ?? 0}%. Model estimate (R&D screening).
                 </p>
               </>
             ) : (
               <>
-                <span className="text-xs text-slate-500 block pt-1 italic font-semibold">
+                <span className="text-xs text-token-muted block pt-1 italic font-extrabold">
                   N/A — Not applicable for this category
                 </span>
-                <p className="text-[11px] text-slate-500 leading-tight">
+                <p className="text-[11px] text-token-secondary font-medium leading-tight">
                   Fabric softener / conditioner (Non-cleansing category).
                 </p>
               </>

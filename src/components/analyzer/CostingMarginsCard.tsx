@@ -28,73 +28,73 @@ export function CostingMarginsCard({
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-3 gap-2">
         <div>
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
             <Scale size={14} className="text-teal-600" /> Raw Materials Costing & Industry Margins Sheet
           </h4>
-          <p className="text-[10px] text-gray-400 font-medium">Verify suggested margins before commercial production.</p>
+          <p className="text-[10px] text-slate-600 font-semibold">Verify suggested margins before commercial production.</p>
         </div>
         <div className="flex items-center gap-3 text-xs flex-wrap">
           <div className="flex items-center gap-1.5">
-            <span className="font-bold text-gray-500">Overhead:</span>
+            <span className="font-extrabold text-slate-700">Overhead:</span>
             <input
               type="number"
               value={overheadPct}
               onChange={(e) => setOverheadPct(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-14 bg-gray-50 border rounded px-1.5 py-0.5 font-bold"
+              className="w-14 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 font-bold text-slate-900 focus:ring-2 focus:ring-teal-500"
             />
-            <span className="text-gray-400">%</span>
+            <span className="text-slate-600 font-bold">%</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="font-bold text-gray-500">Packaging:</span>
+            <span className="font-extrabold text-slate-700">Packaging:</span>
             <input
               type="number"
               value={packagingCost}
               onChange={(e) => setPackagingCost(Math.max(0, parseFloat(e.target.value) || 0))}
-              className="w-16 bg-gray-50 border rounded px-1.5 py-0.5 font-bold"
+              className="w-16 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 font-bold text-slate-900 focus:ring-2 focus:ring-teal-500"
             />
-            <span className="text-gray-400">₹/kg</span>
+            <span className="text-slate-600 font-bold">₹/kg</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5 text-xs text-center">
-        <div className="bg-gray-50 p-3 rounded-xl border">
-          <span className="text-[9px] text-gray-400 font-extrabold block uppercase">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span className="text-[9px] text-slate-800 font-black block uppercase">
             {isPartial ? 'Raw Material (Partial)' : 'Raw Material'}
           </span>
           <span className="text-base font-black text-[#0f766e] mt-1 block">
             {isUnpriced ? 'Unset' : `₹${safeNum(costing?.rawMaterialCost, 2)}`}
           </span>
         </div>
-        <div className="bg-gray-50 p-3 rounded-xl border">
-          <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Mfg. Overhead</span>
-          <span className="text-base font-black text-gray-700 mt-1 block">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span className="text-[9px] text-slate-800 font-black block uppercase">Mfg. Overhead</span>
+          <span className="text-base font-black text-slate-900 mt-1 block">
             {isUnpriced ? '—' : `₹${safeNum(costing?.manufacturingCost, 2)}`}
           </span>
         </div>
-        <div className="bg-teal-50/50 p-3 rounded-xl border border-teal-100">
-          <span className="text-[9px] text-teal-800 font-extrabold block uppercase">Ex-Factory Cost</span>
-          <span className="text-base font-black text-teal-700 mt-1 block">
+        <div className="bg-teal-50/70 p-3 rounded-xl border border-teal-200">
+          <span className="text-[9px] text-teal-950 font-black block uppercase">Ex-Factory Cost</span>
+          <span className="text-base font-black text-teal-800 mt-1 block">
             {isUnpriced ? '—' : `₹${safeNum(costing?.finalExFactoryCost, 2)}`}
           </span>
         </div>
-        <div className="bg-gray-50 p-3 rounded-xl border">
-          <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Suggest Whols. (+20%)</span>
-          <span className="text-base font-black text-gray-700 mt-1 block">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span className="text-[9px] text-slate-800 font-black block uppercase">Suggest Whols. (+20%)</span>
+          <span className="text-base font-black text-slate-900 mt-1 block">
             {isUnpriced ? '—' : `₹${safeNum(costing?.suggestedWholesale, 2)}`}
           </span>
         </div>
-        <div className="bg-gray-50 p-3 rounded-xl border">
-          <span className="text-[9px] text-gray-400 font-extrabold block uppercase">Distributor (+15%)</span>
-          <span className="text-base font-black text-gray-700 mt-1 block">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span className="text-[9px] text-slate-800 font-black block uppercase">Distributor (+15%)</span>
+          <span className="text-base font-black text-slate-900 mt-1 block">
             {isUnpriced ? '—' : `₹${safeNum(costing?.suggestedDistributor, 2)}`}
           </span>
         </div>
-        <div className="bg-emerald-50/30 p-3 rounded-xl border border-emerald-100">
-          <span className="text-[9px] text-emerald-800 font-extrabold block uppercase">MRP (incl. 18% GST)</span>
-          <span className="text-base font-black text-emerald-700 mt-1 block">
+        <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200">
+          <span className="text-[9px] text-emerald-950 font-black block uppercase">MRP (incl. 18% GST)</span>
+          <span className="text-base font-black text-emerald-800 mt-1 block">
             {isUnpriced ? '—' : `₹${safeNum(costing?.suggestedMRP, 2)}`}
           </span>
         </div>

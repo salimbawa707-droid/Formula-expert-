@@ -1,8 +1,0 @@
-{
-	"appId": "com.detergentrnd.formulaexpert",
-	"appName": "Detergent Formula Expert",
-	"webDir": "dist",
-	"server": {
-		"androidScheme": "https"
-	}
-}

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">Detergent Formula Expert</string>
-    <string name="title_activity_main">Detergent Formula Expert</string>
-    <string name="package_name">com.detergentrnd.formulaexpert</string>
-    <string name="custom_url_scheme">com.detergentrnd.formulaexpert</string>
-</resources>

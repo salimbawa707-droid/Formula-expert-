@@ -53,15 +53,15 @@ export const SpecificationExplorerPanel: React.FC<SpecificationExplorerPanelProp
   return (
     <div className="space-y-6">
       {/* HEADER BANNER */}
-      <div className="bg-[#0e1629] border border-cyan-500/30 rounded-xl p-4 space-y-3">
+      <div className="bg-[#0e1629] border border-cyan-500/40 rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-cyan-400" />
+            <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
             <div>
               <h3 className="text-sm font-extrabold text-white tracking-wide">
                 SPECIFICATION & QUALITY GATE EXPLORER
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-300">
                 Authoritative breakdown of specification compliance, quality gate findings, and grade impact.
               </p>
             </div>
@@ -71,13 +71,13 @@ export const SpecificationExplorerPanel: React.FC<SpecificationExplorerPanelProp
             <span
               className={`px-3 py-1 rounded-full font-extrabold border ${
                 specificationStatus === 'PASS'
-                  ? 'bg-emerald-950 text-emerald-300 border-emerald-500/50'
-                  : 'bg-amber-950 text-amber-300 border-amber-500/50'
+                  ? 'bg-emerald-950 text-emerald-200 border-emerald-500/60'
+                  : 'bg-amber-950 text-amber-200 border-amber-500/60'
               }`}
             >
               Gate Status: {specificationStatus}
             </span>
-            <span className="px-3 py-1 rounded-full font-extrabold bg-cyan-950 text-cyan-300 border border-cyan-500/50">
+            <span className="px-3 py-1 rounded-full font-extrabold bg-cyan-950 text-cyan-200 border border-cyan-500/60">
               Grade: {aiGrade.grade}
             </span>
           </div>
@@ -85,13 +85,13 @@ export const SpecificationExplorerPanel: React.FC<SpecificationExplorerPanelProp
 
         {/* SPECIFICATION COMPARISON TABLE */}
         <div className="space-y-2">
-          <span className="text-xs font-extrabold text-slate-300 uppercase tracking-wider block">
+          <span className="text-xs font-extrabold text-slate-200 uppercase tracking-wider block">
             Target vs Calculated Specification Analysis
           </span>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#0b1324] text-slate-400 border-b border-slate-800 font-mono text-[11px]">
+                <tr className="bg-[#0b1324] text-slate-200 border-b border-slate-700 font-mono text-[11px]">
                   <th className="p-2.5">Parameter</th>
                   <th className="p-2.5">Calculated Value</th>
                   <th className="p-2.5">Status</th>
@@ -105,20 +105,20 @@ export const SpecificationExplorerPanel: React.FC<SpecificationExplorerPanelProp
                     <td className="p-2.5 text-cyan-300 font-bold">{s.calculated}</td>
                     <td className="p-2.5">
                       {s.status === 'PASS' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                        <span className="inline-flex items-center gap-1 text-emerald-300 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5" /> PASS
                         </span>
                       ) : s.status === 'WARN' ? (
-                        <span className="inline-flex items-center gap-1 text-amber-400 font-bold">
+                        <span className="inline-flex items-center gap-1 text-amber-300 font-bold">
                           <AlertTriangle className="w-3.5 h-3.5" /> WARN
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-red-400 font-bold">
+                        <span className="inline-flex items-center gap-1 text-rose-300 font-bold">
                           <XCircle className="w-3.5 h-3.5" /> FAIL
                         </span>
                       )}
                     </td>
-                    <td className="p-2.5 text-slate-400 text-[11px]">{s.provenance}</td>
+                    <td className="p-2.5 text-slate-300 text-[11px]">{s.provenance}</td>
                   </tr>
                 ))}
               </tbody>
@@ -128,32 +128,32 @@ export const SpecificationExplorerPanel: React.FC<SpecificationExplorerPanelProp
 
         {/* TRIGGERED QUALITY GATE FINDINGS */}
         <div className="space-y-2 pt-2 border-t border-slate-800">
-          <span className="text-xs font-extrabold text-slate-300 uppercase tracking-wider block">
+          <span className="text-xs font-extrabold text-slate-200 uppercase tracking-wider block">
             Quality Gate Findings & Rules
           </span>
 
           {blockingIssues.length === 0 && errors.length === 0 && warnings.length === 0 ? (
-            <div className="bg-[#0b1324] border border-emerald-500/30 rounded-lg p-3 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="bg-[#0b1324] border border-emerald-500/40 rounded-lg p-3 text-xs text-emerald-200 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Zero critical findings. Formula meets all quality gate parameters cleanly.</span>
             </div>
           ) : (
             <div className="space-y-2">
               {blockingIssues.map((issue, idx) => (
-                <div key={idx} className="bg-red-950/40 border border-red-500/40 rounded-lg p-3 text-xs text-red-200 space-y-1">
-                  <div className="font-extrabold flex items-center gap-1.5 text-red-300">
-                    <AlertOctagon className="w-4 h-4 text-red-400" /> [BLOCKING] {issue.title || issue.code}
+                <div key={idx} className="bg-red-950/80 border border-red-500/60 rounded-lg p-3 text-xs text-red-100 space-y-1">
+                  <div className="font-extrabold flex items-center gap-1.5 text-red-200">
+                    <AlertOctagon className="w-4 h-4 text-red-300 shrink-0" /> [BLOCKING] {issue.title || issue.code}
                   </div>
-                  <p className="text-[11px] text-red-200/90">{issue.message}</p>
+                  <p className="text-[11px] text-red-100 font-medium leading-relaxed">{issue.message}</p>
                 </div>
               ))}
 
               {warnings.map((warn, idx) => (
-                <div key={idx} className="bg-amber-950/40 border border-amber-500/40 rounded-lg p-3 text-xs text-amber-200 space-y-1">
-                  <div className="font-extrabold flex items-center gap-1.5 text-amber-300">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" /> [WARNING] {warn.title || warn.code}
+                <div key={idx} className="bg-amber-950/80 border border-amber-500/60 rounded-lg p-3 text-xs text-amber-100 space-y-1">
+                  <div className="font-extrabold flex items-center gap-1.5 text-amber-200">
+                    <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0" /> [WARNING] {warn.title || warn.code}
                   </div>
-                  <p className="text-[11px] text-amber-200/90">{warn.message}</p>
+                  <p className="text-[11px] text-amber-100 font-medium leading-relaxed">{warn.message}</p>
                 </div>
               ))}
             </div>

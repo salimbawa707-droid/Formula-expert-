@@ -18,8 +18,7 @@ import {
 const env = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
 const firestoreDatabaseId = env.VITE_FIRESTORE_DATABASE_ID || (rawAppletConfig as any)?.firestoreDatabaseId || (rawAppletConfig as any)?.projectId || '';
 
-// Loaded only by authenticated cloud-sync features, not the local-first app shell.
-export const db = getFirestore(app, firestoreDatabaseId);
+export const db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
 
 // Standard Firestore Error Handling
 export enum OperationType {

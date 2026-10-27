@@ -67,7 +67,7 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
       {/* 3 Large Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-[#0e1629] p-3.5 rounded-xl border border-slate-700/80">
-          <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">
+          <span className="text-[10px] text-token-muted font-extrabold block uppercase tracking-wider">
             {formulaCost.pricingStatus === 'PARTIAL_PRICING'
               ? `Partial Cost / kg (${formulaCost.completePriceCount}/${formulaCost.totalIngredientsCount} priced)`
               : formulaCost.pricingStatus === 'NO_PRICING' || formulaCost.pricingStatus === 'UNKNOWN'
@@ -76,11 +76,11 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
           </span>
           <span className="text-xl sm:text-2xl font-mono font-extrabold text-emerald-400 block mt-1">
             {formulaCost.pricingStatus === 'NO_PRICING' || formulaCost.pricingStatus === 'UNKNOWN' ? (
-              <span className="text-slate-500 font-sans text-lg font-bold">Unpriced</span>
+              <span className="text-slate-300 font-sans text-lg font-bold">Unpriced</span>
             ) : (
               <>
                 ₹{formulaCost.costPerKg.toFixed(2)}
-                <span className="text-xs text-slate-400 font-normal ml-1">/ kg</span>
+                <span className="text-xs text-token-muted font-normal ml-1">/ kg</span>
                 {formulaCost.pricingStatus === 'PARTIAL_PRICING' && (
                   <span className="text-[10px] text-amber-400 font-sans font-normal ml-1.5">(Partial)</span>
                 )}
@@ -90,14 +90,14 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
         </div>
 
         <div className="bg-[#0e1629] p-3.5 rounded-xl border border-slate-700/80">
-          <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">
+          <span className="text-[10px] text-token-muted font-extrabold block uppercase tracking-wider">
             {formulaCost.pricingStatus === 'PARTIAL_PRICING'
               ? `Partial Batch Cost (${batchSizeKg} kg)`
               : `Total Batch Cost (${batchSizeKg} kg)`}
           </span>
           <span className="text-xl sm:text-2xl font-mono font-extrabold text-white block mt-1">
             {formulaCost.pricingStatus === 'NO_PRICING' || formulaCost.pricingStatus === 'UNKNOWN' ? (
-              <span className="text-slate-500 font-sans text-base font-bold">Price Input Required</span>
+              <span className="text-slate-300 font-sans text-base font-bold">Price Input Required</span>
             ) : (
               <>
                 ₹{formulaCost.totalBatchCost.toFixed(2)}
@@ -110,50 +110,51 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
         </div>
 
         <div className="bg-[#0e1629] p-3.5 rounded-xl border border-slate-700/80">
-          <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">
+          <span className="text-[10px] text-token-muted font-extrabold block uppercase tracking-wider">
             Priced Ingredients
           </span>
           <span className="text-xl sm:text-2xl font-mono font-extrabold text-cyan-300 block mt-1">
             {formulaCost.completePriceCount} / {formulaCost.totalIngredientsCount}
-            <span className="text-xs text-slate-400 font-normal ml-1.5">priced</span>
+            <span className="text-xs text-token-muted font-normal ml-1.5">priced</span>
           </span>
         </div>
       </div>
 
       {/* Per-Ingredient Cost Breakdown */}
       <div className="bg-[#0e1629] rounded-xl border border-slate-800 p-3 sm:p-4 space-y-2.5">
-        <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+        <h4 className="text-xs font-extrabold text-slate-200 uppercase tracking-wider flex items-center justify-between">
           <span>Raw Material Cost Breakdown</span>
-          <span className="text-[10px] font-normal text-slate-400">
+          <span className="text-[10px] font-normal text-token-muted">
             Batch: {batchSizeKg} kg
           </span>
         </h4>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="text-slate-400 border-b border-slate-800 text-[10px] uppercase font-bold">
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[580px]">
+            <thead className="text-token-muted border-b border-slate-800 text-[10px] uppercase font-bold">
               <tr>
-                <th className="py-1.5 px-2">Ingredient</th>
-                <th className="py-1.5 px-2 text-right">Dosage</th>
-                <th className="py-1.5 px-2 text-right">Batch Qty</th>
-                <th className="py-1.5 px-2 text-right">Cost/kg</th>
-                <th className="py-1.5 px-2 text-right">Total Cost</th>
-                <th className="py-1.5 px-2 text-right">% of Cost</th>
+                <th className="py-2 px-2.5">Ingredient</th>
+                <th className="py-2 px-2.5 text-right">Dosage</th>
+                <th className="py-2 px-2.5 text-right">Batch Qty</th>
+                <th className="py-2 px-2.5 text-right">Cost/kg</th>
+                <th className="py-2 px-2.5 text-right">Total Cost</th>
+                <th className="py-2 px-2.5 text-right">% of Cost</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono">
               {formulaCost.ingredientCosts.map((item: any, i: number) => (
-                <tr key={item.id || i} className="hover:bg-[#131d35]/40">
-                  <td className="py-2 px-2 text-white font-sans font-medium">
+                <tr key={item.id || i} className="hover:bg-[#131d35]/40 transition">
+                  <td className="py-2 px-2.5 text-white font-sans font-medium">
                     {item.name || `Ingredient #${i + 1}`}
                   </td>
-                  <td className="py-2 px-2 text-right text-slate-300">
+                  <td className="py-2 px-2.5 text-right text-slate-200">
                     {item.percentage}%
                   </td>
-                  <td className="py-2 px-2 text-right text-slate-300">
+                  <td className="py-2 px-2.5 text-right text-slate-200">
                     {item.weightKg.toFixed(2)} kg
                   </td>
-                  <td className="py-2 px-2 text-right">
+                  <td className="py-2 px-2.5 text-right">
                     {item.hasUserPrice ? (
                       item.costPerKg === 0 ? (
                         <span className="text-emerald-400 font-bold">₹0.00 <span className="text-[10px] text-emerald-300 font-normal">(Free)</span></span>
@@ -164,40 +165,78 @@ export const CostingProjectionsPanel: React.FC<CostingProjectionsPanelProps> = R
                       <span className="text-amber-400 text-[11px] font-sans font-semibold">Not Set</span>
                     )}
                   </td>
-                  <td className="py-2 px-2 text-right font-bold text-white">
-                    {item.hasUserPrice ? `₹${item.totalCost.toFixed(2)}` : <span className="text-slate-600 font-normal">—</span>}
+                  <td className="py-2 px-2.5 text-right font-bold text-white">
+                    {item.hasUserPrice ? `₹${item.totalCost.toFixed(2)}` : <span className="text-slate-400 font-normal">—</span>}
                   </td>
-                  <td className="py-2 px-2 text-right text-cyan-300">
-                    {item.hasUserPrice && formulaCost.totalBatchCost > 0 ? `${item.costPercentageOfTotal.toFixed(1)}%` : <span className="text-slate-600 font-normal">—</span>}
+                  <td className="py-2 px-2.5 text-right text-cyan-300 font-bold">
+                    {item.hasUserPrice && formulaCost.totalBatchCost > 0 ? `${item.costPercentageOfTotal.toFixed(1)}%` : <span className="text-slate-400 font-normal">—</span>}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Stacked Card View (< 640px) */}
+        <div className="block sm:hidden space-y-2">
+          {formulaCost.ingredientCosts.map((item: any, i: number) => (
+            <div key={item.id || i} className="bg-[#131d35] p-3 rounded-xl border border-slate-700/80 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold text-xs text-white truncate">{item.name || `Ingredient #${i + 1}`}</span>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40">
+                  {item.percentage}%
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs pt-1 border-t border-slate-700/60">
+                <div>
+                  <span className="text-[10px] text-token-muted block font-semibold">Batch Qty:</span>
+                  <span className="font-mono text-slate-200">{item.weightKg.toFixed(2)} kg</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-token-muted block font-semibold">Cost / kg:</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {item.hasUserPrice ? (item.costPerKg === 0 ? '₹0.00' : `₹${item.costPerKg.toFixed(2)}`) : 'Not Set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-token-muted block font-semibold">Total Cost:</span>
+                  <span className="font-mono font-bold text-white">
+                    {item.hasUserPrice ? `₹${item.totalCost.toFixed(2)}` : '—'}
+                  </span>
+                </div>
+              </div>
+              {item.hasUserPrice && formulaCost.totalBatchCost > 0 && (
+                <div className="text-[10px] text-token-muted flex items-center justify-between pt-1 border-t border-slate-800">
+                  <span>Cost Contribution:</span>
+                  <span className="font-mono font-bold text-cyan-300">{item.costPercentageOfTotal.toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Commercial Margin Chain Projections */}
       {formulaCost.isComplete && formulaCost.totalBatchCost > 0 && marginChain && (
         <div className="bg-[#0e1629] rounded-xl border border-slate-800 p-3 sm:p-4 space-y-3">
-          <h4 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+          <h4 className="text-xs font-extrabold text-slate-200 uppercase tracking-wider">
             Commercial Margin Chain Projections
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
             <div className="bg-[#131d35] p-2.5 rounded-lg border border-slate-700">
-              <span className="text-[10px] text-slate-400 block font-semibold">Mfg Overhead (+12%)</span>
+              <span className="text-[10px] text-token-muted block font-semibold">Mfg Overhead (+12%)</span>
               <span className="font-mono font-bold text-slate-200 mt-0.5 block">
                 ₹{marginChain.manufacturingCost.toFixed(2)} / kg
               </span>
             </div>
             <div className="bg-[#131d35] p-2.5 rounded-lg border border-slate-700">
-              <span className="text-[10px] text-slate-400 block font-semibold">Ex-Factory (+₹15 Pkg)</span>
+              <span className="text-[10px] text-token-muted block font-semibold">Ex-Factory (+₹15 Pkg)</span>
               <span className="font-mono font-bold text-cyan-300 mt-0.5 block">
                 ₹{marginChain.finalExFactoryCost.toFixed(2)} / kg
               </span>
             </div>
             <div className="bg-[#131d35] p-2.5 rounded-lg border border-slate-700">
-              <span className="text-[10px] text-slate-400 block font-semibold">Wholesale (+20%)</span>
+              <span className="text-[10px] text-token-muted block font-semibold">Wholesale (+20%)</span>
               <span className="font-mono font-bold text-indigo-300 mt-0.5 block">
                 ₹{marginChain.suggestedWholesale.toFixed(2)} / kg
               </span>

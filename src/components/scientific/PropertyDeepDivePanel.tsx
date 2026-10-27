@@ -85,7 +85,7 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
                   <Droplets className="w-4 h-4 text-cyan-400" />
                   1. pH EQUILIBRIUM & STOICHIOMETRIC NEUTRALIZATION
                 </h3>
-                <p className="text-xs text-slate-400">Authoritative Engine: PHEngineV2 & StoichiometricNeutralizationEngine</p>
+                <p className="text-xs text-token-muted font-medium">Authoritative Engine: PHEngineV2 & StoichiometricNeutralizationEngine</p>
               </div>
               <EvidenceBadge
                 status={
@@ -101,29 +101,29 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Calculated Equilibrium pH</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Calculated Equilibrium pH</span>
                 <div className="text-2xl font-mono font-extrabold text-cyan-300">{pHResult.ph.toFixed(2)}</div>
-                <div className="text-[10px] text-slate-400">Ionic Strength: {pHResult.ionicStrength.toFixed(3)} M</div>
+                <div className="text-[10px] text-token-muted font-medium">Ionic Strength: {pHResult.ionicStrength.toFixed(3)} M</div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Buffer Capacity (β)</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Buffer Capacity (β)</span>
                 <div className="text-xl font-mono font-bold text-white">{pHResult.bufferCapacity.toFixed(3)}</div>
-                <div className="text-[10px] text-slate-400">Solver Status: {pHResult.solverConverged ? 'Converged' : 'Estimated'}</div>
+                <div className="text-[10px] text-token-muted font-medium">Solver Status: {pHResult.solverConverged ? 'Converged' : 'Estimated'}</div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Measured Bench pH</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Measured Bench pH</span>
                 <div className="text-xl font-mono font-bold text-amber-400">
                   {pHResult.measuredPH ? pHResult.measuredPH.toFixed(2) : 'UNTESTED'}
                 </div>
-                <div className="text-[10px] text-slate-400">Physical Electrode Verification</div>
+                <div className="text-[10px] text-token-muted font-medium">Physical Electrode Verification</div>
               </div>
             </div>
 
             <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-2 text-xs">
-              <span className="font-bold text-slate-300">Inputs & Intermediate States Consumed:</span>
-              <p className="text-slate-400 text-[11px]">
+              <span className="font-bold text-white">Inputs & Intermediate States Consumed:</span>
+              <p className="text-token-primary text-[11px] font-medium leading-relaxed">
                 Consumed active ingredient acid pKas, caustic stoichiometry, total water dilution, ionic strength, and Newton-Raphson charge balance equations.
               </p>
             </div>
@@ -139,36 +139,36 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
                   <Zap className="w-4 h-4 text-cyan-400" />
                   2. ACTIVE MATTER & SURFACTANT BREAKDOWN
                 </h3>
-                <p className="text-xs text-slate-400">Authoritative Engine: ActiveMatterEngine</p>
+                <p className="text-xs text-token-muted font-medium">Authoritative Engine: ActiveMatterEngine</p>
               </div>
               <EvidenceBadge status="AUTHORITATIVE_CALCULATED" size="md" />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Total Active Surfactants</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Total Active Surfactants</span>
                 <div className="text-2xl font-mono font-extrabold text-cyan-300">
                   {activeMatterResult.totalSurfactantActivePct.toFixed(2)}%
                 </div>
-                <div className="text-[10px] text-slate-400">Category Min: {activeMatterResult.categoryMinPct}%</div>
+                <div className="text-[10px] text-token-muted font-medium">Category Min: {activeMatterResult.categoryMinPct}%</div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Anionic</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Anionic</span>
                 <div className="text-lg font-mono font-bold text-white">
                   {activeMatterResult.surfactantBreakdown.anionic.toFixed(2)}%
                 </div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Nonionic</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Nonionic</span>
                 <div className="text-lg font-mono font-bold text-white">
                   {activeMatterResult.surfactantBreakdown.nonionic.toFixed(2)}%
                 </div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Amphoteric / Cationic</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Amphoteric / Cationic</span>
                 <div className="text-lg font-mono font-bold text-white">
                   {(activeMatterResult.surfactantBreakdown.amphoteric + activeMatterResult.surfactantBreakdown.cationic).toFixed(2)}%
                 </div>
@@ -186,22 +186,22 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
                   <Shield className="w-4 h-4 text-cyan-400" />
                   3. CHELATION & WATER HARDNESS TOLERANCE
                 </h3>
-                <p className="text-xs text-slate-400">Authoritative Engine: chelatorEngine</p>
+                <p className="text-xs text-token-muted font-medium">Authoritative Engine: chelatorEngine</p>
               </div>
               <EvidenceBadge status="AUTHORITATIVE_CALCULATED" size="md" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Wash Hardness</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Wash Hardness</span>
                 <div className="text-xl font-mono font-bold text-white">{hardnessResult.waterHardnessPpm} ppm</div>
               </div>
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Max Supported Hardness</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Max Supported Hardness</span>
                 <div className="text-xl font-mono font-bold text-cyan-300">{hardnessResult.maxSupportedPpm} ppm</div>
               </div>
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Sequestration Status</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Sequestration Status</span>
                 <div className="text-sm font-bold text-emerald-400">{hardnessResult.status}</div>
               </div>
             </div>
@@ -217,24 +217,24 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
                   <Activity className="w-4 h-4 text-cyan-400" />
                   4. VISCOSITY & RHEOLOGY MODELING
                 </h3>
-                <p className="text-xs text-slate-400">Authoritative Engine: viscosityEngine</p>
+                <p className="text-xs text-token-muted font-medium">Authoritative Engine: viscosityEngine</p>
               </div>
               <EvidenceBadge status="ESTIMATED_HEURISTIC" size="md" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Predicted Viscosity</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Predicted Viscosity</span>
                 <div className="text-xl font-mono font-bold text-cyan-300">
                   {viscosityResult.predictedViscosityCp ? `${viscosityResult.predictedViscosityCp} cP` : 'N/A'}
                 </div>
               </div>
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Flow Mechanism</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Flow Mechanism</span>
                 <div className="text-sm font-bold text-white">{viscosityResult.flowMechanism}</div>
               </div>
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Rating</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Rating</span>
                 <div className="text-sm font-bold text-slate-200">{viscosityResult.rating}</div>
               </div>
             </div>
@@ -250,22 +250,22 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                   5. CLEANING CPI PERFORMANCE MODELING
                 </h3>
-                <p className="text-xs text-slate-400">Authoritative Engine: cleaningPerformanceEngine</p>
+                <p className="text-xs text-token-muted font-medium">Authoritative Engine: cleaningPerformanceEngine</p>
               </div>
               <EvidenceBadge status={cleaningResult.isMeasured ? 'MEASURED_LAB' : 'SCREENING_ONLY'} size="md" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Cleaning Power Index (CPI)</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Cleaning Power Index (CPI)</span>
                 <div className="text-2xl font-mono font-extrabold text-cyan-300">{cleaningResult.cpi.toFixed(1)}</div>
               </div>
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Degreasing Score</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Degreasing Score</span>
                 <div className="text-lg font-mono font-bold text-white">{cleaningResult.degreasingScore}</div>
               </div>
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-bold">Particulate Soil Removal</span>
+                <span className="text-[10px] text-token-secondary uppercase font-bold">Particulate Soil Removal</span>
                 <div className="text-lg font-mono font-bold text-white">{cleaningResult.particulateSoilRemoval}</div>
               </div>
             </div>
