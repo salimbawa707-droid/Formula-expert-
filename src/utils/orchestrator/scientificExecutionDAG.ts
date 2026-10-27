@@ -890,7 +890,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         const labEvidence = state.rawInput.labEvidence || [];
         const labValidationReport = evaluateFormulaScientificValidation({
-          formulaId: state.formulaId,
+          formulaId: state.rawInput.formulaId,
           // Evidence matching must use the caller's explicit version, not the display sentinel.
           formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory,
@@ -940,7 +940,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         // QualityGateEngine consumes all upstream branches
         state.qualityGateResult = evaluateScientificQualityGate({
-          formulaId: state.formulaId,
+          formulaId: state.rawInput.formulaId,
           formulaName: state.formulaName,
           // Do not turn the internal unknown-version sentinel into an evidence target.
           formulaVersion: state.rawInput.formulaVersion,
@@ -1114,7 +1114,7 @@ export class ScientificExecutionDAG {
     // Initialize clean, empty intermediate state
     const state: ScientificExecutionState = {
       rawInput: input,
-      formulaId: input.formulaId || `formula-${Date.now()}`,
+      formulaId: input.formulaId || 'UNKNOWN_FORMULA_ID',
       formulaName: input.formulaName || 'Unnamed Formula',
       formulaVersion: input.formulaVersion || 'UNKNOWN_VERSION',
       batchSizeKg,
