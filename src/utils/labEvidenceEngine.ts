@@ -867,13 +867,15 @@ export function evaluateFormulaScientificValidation(input: FormulaValidationEval
     // A missing target version is unknown, not a wildcard; no record may match it.
     // Evidence is comparable only when both target and record carry the same explicit version.
     const isMatchingVersion = Boolean(targetVersion) && r.formulaVersion === targetVersion;
-    const isMatchingId = !targetId || r.formulaId === targetId;
-    if (!isMatchingVersion && (r.formulaId === targetId || !targetId || isMatchingId)) {
+    // Missing formula identity is unknown, not a wildcard. Evidence must be tied
+    // to an explicit target formula ID and exact version before it can be compared.
+    const isMatchingId = Boolean(targetId) && r.formulaId === targetId;
+    if ((!targetId || r.formulaId === targetId) && !isMatchingVersion) {
       hasOutdatedEvidence = true;
     }
     // Identity alone is not evidence: only valid numeric records explicitly
     // classified as MEASURED may enter predicted-vs-measured comparisons.
-    return isMatchingVersion && isMatchingId && validateMeasurementRecord(r).isValid;
+    return Boolean(targetId) && isMatchingVersion && isMatchingId && validateMeasurementRecord(r).isValid;
   });
 
   // Evaluate matching parameters
