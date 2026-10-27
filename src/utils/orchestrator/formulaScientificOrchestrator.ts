@@ -134,7 +134,7 @@ export class FormulaScientificOrchestrator {
 
       return {
         formulaIdentity: {
-          id: input.formulaId || `formula-${Date.now()}`,
+          id: input.formulaId || 'UNKNOWN_FORMULA_ID',
           name: input.formulaName || 'Unnamed Formula',
           version: input.formulaVersion || 'UNKNOWN_VERSION',
           canonicalCategory: 'UNKNOWN_PRODUCT_CATEGORY',

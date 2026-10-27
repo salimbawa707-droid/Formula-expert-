@@ -414,6 +414,19 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
       dagWithoutTargetVersion.state.labEvidenceResult?.missingMeasurements.includes('pH'),
     dagWithoutTargetVersion.state.labEvidenceResult?.verifiedMeasurementsCount, 0);
 
+  const dagWithoutTargetId = new ScientificExecutionDAG().executeDAG({
+    formulaName: 'DAG Missing Formula ID Test',
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: validLaundryFormula as any,
+    labEvidence: [validationMeasurement as any]
+  });
+  assert('22d. DAG preserves missing formula ID as unknown and does not match lab evidence by a generated ID',
+    dagWithoutTargetId.state.formulaId === 'UNKNOWN_FORMULA_ID' &&
+      dagWithoutTargetId.state.labEvidenceResult?.verifiedMeasurementsCount === 0 &&
+      dagWithoutTargetId.state.labEvidenceResult?.missingMeasurements.includes('pH'),
+    dagWithoutTargetId.state.formulaId, 'UNKNOWN_FORMULA_ID');
+
   // Lab Measurement showing Out of Spec pH (e.g. pH 11.5)
   const failedLabPHRecord: DetailedLabEvidenceRecord = {
     measurementId: 'm-ph-fail',
