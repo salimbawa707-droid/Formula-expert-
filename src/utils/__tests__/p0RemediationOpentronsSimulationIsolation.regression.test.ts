@@ -73,6 +73,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Some log content',
   });
   assert('TEST 1: Simulated Run Id blocks LAB_TESTED', simRun1.evidenceRecords[0].evidenceLevel, 'CALCULATED');
@@ -91,6 +92,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Some log content',
   });
   assert('TEST 3: Demo Run Id blocks LAB_TESTED', simRun3.evidenceRecords[0].evidenceLevel, 'CALCULATED');
@@ -104,6 +106,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Some log content',
   });
   assert('TEST 4: Synthetic Run Id blocks LAB_TESTED', simRun4.evidenceRecords[0].evidenceLevel, 'CALCULATED');
@@ -119,6 +122,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: '', // Missing raw execution log!
     });
   } catch (e) {
@@ -137,6 +141,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: undefined, // Missing artifact!
     });
   } catch (e) {
@@ -155,6 +160,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: '   ', // Spaces only!
     });
   } catch (e) {
@@ -173,6 +179,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: 'Opentrons Execution Log: Success',
     });
   } catch (e) {
@@ -191,6 +198,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: 'Opentrons Execution Log: Success',
     });
   } catch (e) {
@@ -209,6 +217,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: 'Opentrons Execution Log: Success',
     });
   } catch (e) {
@@ -228,6 +237,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
       completedAt: '2026-10-02T12:00:00Z',
       operator: 'Lead QC Analyst',
       replicateCount: 3,
+    dispenseAccuracyPct: 100,
       rawLogContent: 'Opentrons Execution Log: Success',
     });
   } catch (e) {
@@ -261,6 +271,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Opentrons Execution Log: Simulated runs return nominal 100% dispense accuracy.',
   });
   assert('TEST 15: Simulated results are downgraded to CALCULATED level', simRun15.evidenceRecords[0].evidenceLevel, 'CALCULATED');
@@ -274,6 +285,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z', // Timestamp on simulated run
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Automated liquid handling execution log verified.',
   });
   assert('TEST 16: Timestamp on simulated run is still downgraded to CALCULATED', simRun16.evidenceRecords[0].evidenceLevel, 'CALCULATED');
@@ -287,6 +299,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Automated liquid handling execution log verified.', // Banned fake text!
   });
   assert('TEST 17: Banned placeholder text log triggers SIMULATED path and is downgraded', simRun17.evidenceRecords[0].evidenceLevel, 'CALCULATED');
@@ -301,6 +314,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 1,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Simulated Log',
     isSimulated: true
   });
@@ -315,9 +329,25 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 98.7,
     rawLogContent: 'Opentrons log details: Dispensing SLES and LABSA aliquots. All commands completed successfully.', // Genuine log
   });
   assert('TEST 19: Genuine run creates LAB_TESTED evidence records', realRun19.evidenceRecords[0].evidenceLevel, 'LAB_TESTED');
+
+  let missingAccuracyBlocked = false;
+  try {
+    importExternalExecutionToLims(execRecord, {
+      externalRunId: 'RUN-GENUINE-MISSING-ACCURACY',
+      externalRobotName: 'ROBOT-USER-01',
+      completedAt: '2026-10-02T12:00:00Z',
+      operator: 'Lead QC Analyst',
+      replicateCount: 1,
+      rawLogContent: 'Opentrons log details: Dispensing SLES and LABSA aliquots. All commands completed successfully.'
+    });
+  } catch (error) {
+    missingAccuracyBlocked = String(error).includes('Missing or invalid actual dispense accuracy');
+  }
+  assert('TEST 19a: Genuine run without measured dispense accuracy is blocked instead of receiving nominal 100%', missingAccuracyBlocked, true);
 
   // ---------------------------------------------------------------------------
   // TEST 20: LAB_TESTED still passes through the Problem #3 LAB_VALIDATED gate before becoming LAB_VALIDATED
@@ -337,6 +367,7 @@ export function runP0RemediationOpentronsSimulationTestSuite(): {
     completedAt: '2026-10-02T12:00:00Z',
     operator: 'Lead QC Analyst',
     replicateCount: 3,
+    dispenseAccuracyPct: 100,
     rawLogContent: 'Simulated trial run details',
   });
   assert('TEST 21: Simulated runs still return valid LIMS objects for UI display', simRun21.samples.length, 3);
