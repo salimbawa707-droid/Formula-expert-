@@ -69,6 +69,9 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate current formula report for regression checks
+        run: bun run scripts/audit_39_current_status.ts
+
       - name: Run all registered TypeScript regressions
         run: bun run test:all
 
