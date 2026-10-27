@@ -891,7 +891,8 @@ export class ScientificExecutionDAG {
         const labEvidence = state.rawInput.labEvidence || [];
         const labValidationReport = evaluateFormulaScientificValidation({
           formulaId: state.formulaId,
-          formulaVersion: state.formulaVersion,
+          // Evidence matching must use the caller's explicit version, not the display sentinel.
+          formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory,
           isComputationallyValid: state.errors.length === 0,
           predictedMetrics: {
@@ -941,7 +942,8 @@ export class ScientificExecutionDAG {
         state.qualityGateResult = evaluateScientificQualityGate({
           formulaId: state.formulaId,
           formulaName: state.formulaName,
-          formulaVersion: state.formulaVersion,
+          // Do not turn the internal unknown-version sentinel into an evidence target.
+          formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : (state.rawInput.productCategory || 'UNKNOWN_PRODUCT_CATEGORY'),
           ingredients: state.resolvedIngredients,
           labMeasurements: state.rawInput.labEvidence || [],
@@ -1114,7 +1116,7 @@ export class ScientificExecutionDAG {
       rawInput: input,
       formulaId: input.formulaId || `formula-${Date.now()}`,
       formulaName: input.formulaName || 'Unnamed Formula',
-      formulaVersion: input.formulaVersion || '1.0.0',
+      formulaVersion: input.formulaVersion || 'UNKNOWN_VERSION',
       batchSizeKg,
       waterHardnessPpm,
 
