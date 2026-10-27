@@ -355,6 +355,18 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
   });
   assert('22. Predicted spec result preserved (PASS)', gatePredictedPass.specificationStatus === 'PASS', gatePredictedPass.specificationStatus, 'PASS');
 
+  const gateMissingVersionWithVersionedEvidence = evaluateScientificQualityGate({
+    formulaId: 'f-laundry-01',
+    formulaName: 'Test Laundry Liquid',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: validLaundryFormula,
+    labMeasurements: [validationMeasurement]
+  });
+  assert('22a. Missing target version cannot default-match versioned lab evidence',
+    gateMissingVersionWithVersionedEvidence.validationReport?.comparisons.length === 0 &&
+      gateMissingVersionWithVersionedEvidence.validationReport?.missingTests.includes('pH'),
+    gateMissingVersionWithVersionedEvidence.validationReport?.comparisons.length, 0);
+
   // Lab Measurement showing Out of Spec pH (e.g. pH 11.5)
   const failedLabPHRecord: DetailedLabEvidenceRecord = {
     measurementId: 'm-ph-fail',
