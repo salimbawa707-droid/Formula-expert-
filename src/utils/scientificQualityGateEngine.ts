@@ -584,7 +584,8 @@ export function evaluateScientificQualityGate(
   // STEP 5: EVIDENCE & VALIDATION EVALUATION (PHASE 5 SSOT)
   // ---------------------------------------------------------------------------
   const validationReport = evaluateFormulaScientificValidation({
-    formulaId: input.formulaId || formulaName,
+    // Evidence matching must use caller-supplied identity only; display names are not formula IDs.
+    formulaId: input.formulaId,
     // Keep an absent target version unknown; the display/report fallback must not authorize evidence comparisons.
     formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
