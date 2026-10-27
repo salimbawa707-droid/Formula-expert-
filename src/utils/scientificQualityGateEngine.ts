@@ -757,7 +757,7 @@ export function evaluateScientificQualityGate(
   const reasoningTrace = blockingIssues.concat(majorWarnings, minorWarnings)
     .map(w => w.code || w.id);
 
-  const formulaId = input.formulaId || 'F-1.0';
+  const formulaId = input.formulaId || 'UNKNOWN_FORMULA_ID';
   const formulaFingerprint = computeFormulaFingerprint(
     formulaId,
     formulaVersion,
@@ -766,7 +766,7 @@ export function evaluateScientificQualityGate(
   );
 
   const provenanceReport = generateMasterScientificProvenanceReport({
-    formulaId,
+    formulaId: input.formulaId,
     formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
     ingredients: rawIngs,
