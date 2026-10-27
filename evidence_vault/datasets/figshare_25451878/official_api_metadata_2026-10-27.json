@@ -1,0 +1,36 @@
+{
+  "record_id": 25451878,
+  "title": "Liquid Formulations Dataset",
+  "doi": "10.6084/m9.figshare.25451878.v1",
+  "version": 1,
+  "retrieval_date": "2026-10-27",
+  "retrieval_endpoint": "https://api.figshare.com/v2/articles/25451878",
+  "retrieval_http_status": 200,
+  "license": {
+    "name": "CC0",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "files": [
+    {
+      "id": 45187180,
+      "name": "LiquidFormulationsDataset_2023.json",
+      "size_bytes": 1464630,
+      "is_link_only": false,
+      "download_url": "https://ndownloader.figshare.com/files/45187180",
+      "supplied_md5": "8898e7b460c71e334f6ece5daebc6a6e",
+      "computed_md5": "8898e7b460c71e334f6ece5daebc6a6e",
+      "mimetype": "text/plain"
+    }
+  ],
+  "binary_download_attempt": {
+    "status": 403,
+    "endpoint": "https://ndownloader.figshare.com/files/45187180",
+    "environment_specific": true
+  },
+  "inspected_mirror_bytes": {
+    "size_bytes": 1464630,
+    "md5": "8898e7b460c71e334f6ece5daebc6a6e",
+    "sha256": "3a195870782e6fd87bdd7499cbb4fe201d025b2cda05f9eee9fb9477f34b58bd"
+  },
+  "provenance_note": "Official API metadata is verified. The inspected mirror matches official file size and MD5, but the official binary was not downloaded here; the mirror SHA-256 is not an official publisher checksum."
+}
