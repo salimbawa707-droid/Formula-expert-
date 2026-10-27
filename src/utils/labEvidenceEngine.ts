@@ -339,7 +339,8 @@ export function checkMeasurementComparability(input: ComparabilityInput): Compar
   const conditionWarnings: string[] = [];
 
   // 1. Formula & Version Match
-  const matchedFormula = !input.targetFormulaId || m.formulaId === input.targetFormulaId;
+  // Formula identity is mandatory for evidence comparability; an absent target is not a wildcard.
+  const matchedFormula = Boolean(input.targetFormulaId) && Boolean(m.formulaId) && m.formulaId === input.targetFormulaId;
   const matchedVersion = m.formulaVersion === input.targetFormulaVersion;
 
   // 2. Category Match
