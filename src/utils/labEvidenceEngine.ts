@@ -864,10 +864,9 @@ export function evaluateFormulaScientificValidation(input: FormulaValidationEval
 
   // Filter records strictly belonging to this formula version
   const validVersionRecords = records.filter(r => {
-    // Never treat missing identity metadata as a match when a target is known.
-    // Version is always explicit here (targetVersion defaults to 1.0.0), so
-    // measurements without the exact version are not comparable.
-    const isMatchingVersion = r.formulaVersion === targetVersion;
+    // A missing target version is unknown, not a wildcard; no record may match it.
+    // Evidence is comparable only when both target and record carry the same explicit version.
+    const isMatchingVersion = Boolean(targetVersion) && r.formulaVersion === targetVersion;
     const isMatchingId = !targetId || r.formulaId === targetId;
     if (!isMatchingVersion && (r.formulaId === targetId || !targetId || isMatchingId)) {
       hasOutdatedEvidence = true;
