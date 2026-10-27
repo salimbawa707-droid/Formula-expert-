@@ -156,7 +156,7 @@ export function generateMasterScientificProvenanceReport(params: {
   labEvidenceReport?: { validationState?: string; isLabValidated?: boolean; completedTests?: string[] };
   qualityGateStatus?: { finalFormulaStatus: string; scientificValidity: string };
 }): MasterScientificProvenanceReport {
-  const formulaId = params.formulaId || 'F-1.0';
+  const formulaId = params.formulaId || 'UNKNOWN_FORMULA_ID';
   const formulaVersion = params.formulaVersion || 'UNKNOWN_VERSION';
   const rawCat = params.productCategory || 'UNKNOWN_PRODUCT_CATEGORY';
   const canonicalCategory = normalizeProductCategory(rawCat);
