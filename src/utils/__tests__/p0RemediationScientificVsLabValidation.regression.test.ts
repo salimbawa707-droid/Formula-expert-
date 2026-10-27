@@ -81,6 +81,14 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   assert('TEST 4a: Missing formula version is reported as UNKNOWN_VERSION, not a fabricated release',
     missingVersionProvenance.formulaVersion === 'UNKNOWN_VERSION');
 
+  const missingIdentityProvenance = generateMasterScientificProvenanceReport({
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: validIngredients
+  });
+  assert('TEST 4b: Missing formula ID is reported as UNKNOWN_FORMULA_ID, not a fabricated identity',
+    missingIdentityProvenance.formulaId === 'UNKNOWN_FORMULA_ID');
+
   // TEST 5: A+ grade or high quality score is not LAB_VALIDATED
   assert('TEST 5: Quality Gate status VALID does not set labEvidence dimension to LAB_VALIDATED', provReport.dimensions.labEvidence.provenanceState !== 'LAB_VALIDATED');
 
