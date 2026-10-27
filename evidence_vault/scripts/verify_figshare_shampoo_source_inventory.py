@@ -45,7 +45,7 @@ def validate(root: Path = ROOT) -> dict:
             errors.append(f"Figshare supplement {record_id} file identity is invalid")
 
     csv_file_record = supplements.get(25451926, {}).get("file", {})
-    repo_copy = csv_file_record.get("repository_copy", {})
+    repo_copy = supplements.get(25451926, {}).get("repository_copy", {})
     raw = (root / SURFACTANT_CSV.relative_to(ROOT)).read_bytes()
     actual = {
         "size_bytes": len(raw),
