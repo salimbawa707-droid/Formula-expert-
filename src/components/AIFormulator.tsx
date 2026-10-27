@@ -48,7 +48,15 @@ import { FormulaVerdictPanel } from "./aiformulator/FormulaVerdictPanel";
 import { FormulationOptimizationPanel } from "./aiformulator/FormulationOptimizationPanel";
 import { StagedAnalysisWorkflowCard } from "./aiformulator/StagedAnalysisWorkflowCard";
 import { GeminiChemistryChatModal, FormulaChatContext } from "./GeminiChemistryChatModal";
-import { Bot } from "lucide-react";
+import { CalibrationProposalModal } from "./CalibrationProposalModal";
+import { CalibrationEngine } from "../utils/calibrationEngine";
+import { RefinementProposalModal } from "./RefinementProposalModal";
+import { RefinementEngine, RefinementProposal } from "../utils/refinementEngine";
+import { Bot, LineChart, Layout } from "lucide-react";
+import { calculateLabAlignmentScore } from "../utils/labEvidenceEngine";
+import { FormulaComparisonView } from "./FormulaComparisonView";
+import { LabAlignmentTrendGraph } from "./aiformulator/LabAlignmentTrendGraph";
+import { FORMULAS } from "../data/formulas";
 
 // Critical Micelle Concentration estimation helper (backwards-compatible alias)
 export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: number } | null => {
@@ -339,6 +347,9 @@ export default function FormulaExpert({
 
   // Workflow State for Staged Scientific Analysis
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [isCalibrationModalOpen, setIsCalibrationModalOpen] = useState<boolean>(false);
+  const [isRefinementModalOpen, setIsRefinementModalOpen] = useState<boolean>(false);
+  const [refinementProposals, setRefinementProposals] = useState<RefinementProposal[]>([]);
   const [workflowProgress, setWorkflowProgress] = useState<StagedWorkflowProgress | null>(null);
   const [forensicAuditReport, setForensicAuditReport] = useState<ForensicAuditReport | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -348,6 +359,21 @@ export default function FormulaExpert({
   // Gemini Chemistry Chatbot Modal State
   const [showChemistryChat, setShowChemistryChat] = useState<boolean>(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<'editor' | 'comparison'>('editor');
+  const [comparisonFormula, setComparisonFormula] = useState<ActiveFormulaState | null>(null);
+  const [scoreHistory, setScoreHistory] = useState<Array<{ timestamp: string; score: number; label: string }>>(() => {
+    try {
+      const saved = localStorage.getItem("lab_alignment_history");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist history changes
+  useEffect(() => {
+    localStorage.setItem("lab_alignment_history", JSON.stringify(scoreHistory));
+  }, [scoreHistory]);
 
   const handleOpenChemistryChat = (prompt?: string) => {
     setChatInitialPrompt(prompt);
@@ -695,6 +721,17 @@ export default function FormulaExpert({
     };
   }, [ingredients, formulaCost, isPowder]);
 
+  // Lab-Alignment Score Calculation
+  const labAlignmentScore = useMemo(() => {
+    // Find a standard reference formula for this category
+    const benchmark = comparisonFormula || FORMULAS.find(f => 
+      normalizeProductCategory(f.category || '') === normalizeProductCategory(productCategory)
+    ) as ActiveFormulaState;
+
+    if (!benchmark) return null;
+    return calculateLabAlignmentScore({ ingredients }, benchmark);
+  }, [ingredients, productCategory, comparisonFormula]);
+
   // Context payload prepared for Gemini Chemistry Assistant
   const formulaChatContext: FormulaChatContext = useMemo(() => {
     const warningsList: string[] = [];
@@ -891,6 +928,20 @@ export default function FormulaExpert({
         existing.unshift(newFormulaItem);
       }
       localStorage.setItem("user_saved_formulas", JSON.stringify(existing));
+      
+      // Update Precision History Log
+      if (labAlignmentScore !== null) {
+        setScoreHistory(prev => {
+          const newPoint = {
+            timestamp: new Date().toISOString(),
+            score: labAlignmentScore,
+            label: savedName
+          };
+          // Keep last 15 points
+          const updated = [...prev, newPoint].slice(-15);
+          return updated;
+        });
+      }
     } catch (e) {
       console.error("Save error:", e);
     }
@@ -954,6 +1005,19 @@ export default function FormulaExpert({
                 <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono shrink-0">
                   Universal Analysis
                 </span>
+                {labAlignmentScore !== null && (
+                  <span 
+                    className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border font-mono shrink-0 flex items-center gap-1 shadow-sm ${
+                      labAlignmentScore >= 95 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+                      labAlignmentScore >= 80 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+                      'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    }`}
+                    title="Lab-Alignment Score: Measures precision against human-standard benchmarks."
+                  >
+                    <Check className="w-3 h-3" />
+                    Lab-Alignment: {labAlignmentScore}%
+                  </span>
+                )}
               </h1>
               <p className="text-xs sm:text-sm text-slate-300">
                 Formulation analysis, ingredient balancing & scientific verification
@@ -964,6 +1028,16 @@ export default function FormulaExpert({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap relative z-10">
+          <button onClick={() => setIsCalibrationModalOpen(true)} className="px-3.5 py-2 rounded-xl bg-amber-950/80 border border-amber-500/40 text-xs font-bold text-amber-200 hover:bg-amber-900 transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95">
+            <Sliders className="w-3.5 h-3.5" /> Calibrations
+          </button>
+          <button onClick={() => {
+              const proposals = RefinementEngine.proposeAdjustments(ingredients, []); // Need real evidence
+              setRefinementProposals(proposals);
+              setIsRefinementModalOpen(true);
+          }} className="px-3.5 py-2 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-xs font-bold text-indigo-200 hover:bg-indigo-900 transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95">
+            <Sparkles className="w-3.5 h-3.5" /> Refine
+          </button>
           <button
             onClick={() => setShowInciModal(true)}
             className="px-3.5 py-2 rounded-xl bg-[#131d35] border border-slate-700 text-xs font-bold text-slate-200 hover:text-white hover:bg-[#192648] hover:border-cyan-500/50 transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
@@ -984,7 +1058,27 @@ export default function FormulaExpert({
         </div>
       </div>
 
-      {/* SECTION 1 — CHECK FORMULA */}
+      {/* TAB SYSTEM */}
+      <div className="flex items-center gap-1 bg-[#0e1629] p-1 rounded-xl border border-slate-800 w-fit relative z-30">
+        <button 
+          onClick={() => setActiveTab('editor')}
+          className={`px-4 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center gap-2 cursor-pointer ${activeTab === 'editor' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <Layout className="w-3.5 h-3.5" />
+          Formula Expert
+        </button>
+        <button 
+          onClick={() => setActiveTab('comparison')}
+          className={`px-4 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center gap-2 cursor-pointer ${activeTab === 'comparison' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <LineChart className="w-3.5 h-3.5" />
+          Benchmark Comparison
+        </button>
+      </div>
+
+      {activeTab === 'editor' ? (
+        <>
+          {/* SECTION 1 — CHECK FORMULA */}
       <div className="bg-[#0e1629] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-5 shadow-lg">
         
         {/* Section Title */}
@@ -1598,6 +1692,9 @@ export default function FormulaExpert({
                 batchSizeKg={deepAnalysisState.formulaSnapshot.batchSizeKg}
                 waterHardnessPpm={deepAnalysisState.formulaSnapshot.waterHardnessPpm}
                 totals={totals}
+                ingredients={deepAnalysisState.formulaSnapshot.ingredients}
+                comparisonFormula={comparisonFormula}
+                scoreHistory={scoreHistory}
               />
               <FormulaVerdictPanel
                 scientificResults={scientificResults}
@@ -1663,6 +1760,23 @@ export default function FormulaExpert({
           }}
         />
       )}
+        </>
+      ) : (
+        <div className="bg-[#0e1629] border border-slate-800 rounded-2xl p-6 shadow-xl">
+          <FormulaComparisonView
+            activeFormula={{
+              id: 'active',
+              name: formulaName,
+              ingredients,
+              category: productCategory,
+              batchSizeKg
+            } as any}
+            comparisonFormula={comparisonFormula}
+            onSelectComparison={setComparisonFormula}
+            availableFormulas={FORMULAS as any}
+          />
+        </div>
+      )}
 
       {/* SAVE MODAL */}
       <SaveFormulaModal
@@ -1691,6 +1805,26 @@ export default function FormulaExpert({
         formulaContext={formulaChatContext}
         initialPrompt={chatInitialPrompt}
         lang={_lang}
+      />
+      <CalibrationProposalModal
+        isOpen={isCalibrationModalOpen}
+        onClose={() => setIsCalibrationModalOpen(false)}
+        onApply={(p) => {
+          const result = CalibrationEngine.applyProposal(p);
+          if (result.success) {
+            setIsCalibrationModalOpen(false);
+          }
+        }}
+      />
+      <RefinementProposalModal
+        isOpen={isRefinementModalOpen}
+        onClose={() => setIsRefinementModalOpen(false)}
+        proposals={refinementProposals}
+        onApply={(p) => {
+          // Placeholder for applying refinement
+          console.log('Applying refinement', p);
+          setIsRefinementModalOpen(false);
+        }}
       />
     </div>
   );

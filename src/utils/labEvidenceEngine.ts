@@ -1016,3 +1016,47 @@ export function evaluateFormulaScientificValidation(input: FormulaValidationEval
     scientificDisclaimer
   };
 }
+
+/**
+ * Calculates a Lab-Alignment Score (0-100) based on the delta between 
+ * an active formula and a "validated" reference formula.
+ * The score reflects how close the active formula is to the human-standard validated formula.
+ */
+export function calculateLabAlignmentScore(
+  activeFormula: { ingredients: Array<{ name: string; percentage?: number; percent?: number }> },
+  validatedFormula: { ingredients: Array<{ name: string; percentage?: number; percent?: number }> }
+): number {
+  if (!activeFormula || !validatedFormula) return 0;
+  
+  const activeIngredients = activeFormula.ingredients;
+  const validIngredients = validatedFormula.ingredients;
+
+  // Create maps for easier lookup
+  const activeMap = new Map(activeIngredients.map(i => [i.name.toLowerCase().trim(), Number(i.percentage ?? i.percent ?? 0)]));
+  const validMap = new Map(validIngredients.map(i => [i.name.toLowerCase().trim(), Number(i.percentage ?? i.percent ?? 0)]));
+
+  // Get all unique ingredient names
+  const allNames = new Set([
+    ...Array.from(activeMap.keys()),
+    ...Array.from(validMap.keys())
+  ]);
+
+  let totalDelta = 0;
+  let totalReferencePercent = 0;
+
+  allNames.forEach(name => {
+    const activePct = activeMap.get(name) || 0;
+    const validPct = validMap.get(name) || 0;
+    
+    totalDelta += Math.abs(activePct - validPct);
+    totalReferencePercent += validPct;
+  });
+
+  if (totalReferencePercent === 0) return 0;
+
+  // Score calculation: 100 - (totalDelta / totalReferencePercent * 100)
+  // We cap it at 0.
+  const score = Math.max(0, 100 - (totalDelta / totalReferencePercent) * 100);
+  
+  return Number(score.toFixed(1));
+}

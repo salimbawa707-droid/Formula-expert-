@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Library, 
@@ -20,8 +20,12 @@ import {
   Workflow,
   Atom,
   Bot,
-  Database
+  Database,
+  CheckCircle2
 } from 'lucide-react';
+import { calculateLabAlignmentScore } from './utils/labEvidenceEngine';
+import { FORMULAS } from './data/formulas';
+import { normalizeProductCategory } from './domain/productTaxonomy';
 
 import AccountMenu from './components/AccountMenu';
 const AIFormulator = lazy(() => import('./components/AIFormulator'));
@@ -415,6 +419,32 @@ export type TabType =
   | 'validation_suite'
   | 'scientific_vault';
 
+const AlignmentBadge: React.FC<{ activeFormula: ActiveFormulaState }> = ({ activeFormula }) => {
+  const score = React.useMemo(() => {
+    const benchmark = FORMULAS.find(f => 
+      normalizeProductCategory(f.category || '') === normalizeProductCategory(activeFormula.category || activeFormula.productType || '')
+    ) as ActiveFormulaState;
+
+    if (!benchmark) return null;
+    return calculateLabAlignmentScore(activeFormula, benchmark);
+  }, [activeFormula]);
+
+  if (score === null) return null;
+
+  return (
+    <span 
+      className={`text-[9px] font-mono px-1 py-0.2 rounded border font-bold flex items-center gap-0.5 ${
+        score >= 95 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+        score >= 80 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+        'bg-rose-500/20 text-rose-300 border-rose-500/40'
+      }`}
+    >
+      <CheckCircle2 size={8} />
+      Score: {score}%
+    </span>
+  );
+};
+
 export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -682,10 +712,17 @@ export default function App() {
               title="Click to view active formula in Formula Expert"
             >
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              <span className="font-bold text-white truncate max-w-[130px]">{activeFormula.name}</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-bold">
-                {activeFormula.ingredients?.length || 0} ing
-              </span>
+              <div className="flex flex-col">
+                <span className="font-bold text-white truncate max-w-[130px] leading-tight">{activeFormula.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-bold">
+                    {activeFormula.ingredients?.length || 0} components
+                  </span>
+                  {activeFormula.ingredients && (
+                    <AlignmentBadge activeFormula={activeFormula} />
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

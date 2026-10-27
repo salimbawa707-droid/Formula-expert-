@@ -8,12 +8,15 @@
     "build": "vite build",
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "test:phase6": "bun run scripts/run-p1-phase6-lab-evidence-regression.ts",
+    "test": "bun run test:phase6",
     "test:all": "bun run src/utils/test-calculations.ts",
     "cap:sync": "cap sync android",
     "android:debug": "bun run cap:sync && node scripts/build_android_debug.mjs"
   },
   "dependencies": {
     "3dmol": "^2.5.5",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
     "@google/genai": "^2.31.0",
     "@rdkit/rdkit": "^2026.9.1",
     "@supabase/supabase-js": "^2.118.0",
@@ -26,10 +29,9 @@
     "lucide-react": "^1.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.10.1",
     "smiles-drawer": "^2.4.1",
-    "zustand": "^5.0.16",
-    "@capacitor/core": "8.5.3",
-    "@capacitor/android": "8.5.3"
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

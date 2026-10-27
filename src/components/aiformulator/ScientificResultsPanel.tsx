@@ -7,6 +7,9 @@ import { ScientificExecutionTraceViewer } from '../scientific/ScientificExecutio
 import { PropertyDeepDivePanel } from '../scientific/PropertyDeepDivePanel';
 import { SpecificationExplorerPanel } from '../scientific/SpecificationExplorerPanel';
 import { TraceExportUtility } from '../scientific/TraceExportUtility';
+import { DossierGenerator } from '../../utils/dossierGenerator';
+import { IngredientSensitivityHistogram } from './IngredientSensitivityHistogram';
+import { LabAlignmentTrendGraph } from './LabAlignmentTrendGraph';
 
 interface ScientificResultsPanelProps {
   scientificResults: any;
@@ -15,6 +18,9 @@ interface ScientificResultsPanelProps {
   batchSizeKg: number;
   waterHardnessPpm: number;
   totals: any;
+  ingredients: any[];
+  comparisonFormula?: any | null;
+  scoreHistory?: Array<{ timestamp: string; score: number; label: string }>;
 }
 
 export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = React.memo(({
@@ -23,12 +29,33 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
   productCategory,
   batchSizeKg,
   waterHardnessPpm,
-  totals
+  totals,
+  ingredients,
+  comparisonFormula,
+  scoreHistory = []
 }) => {
   const [activeView, setActiveView] = useState<'EXECUTIVE' | 'DEEP_DIVE' | 'TRACE' | 'SPECIFICATION'>('EXECUTIVE');
   const [copiedFingerprint, setCopiedFingerprint] = useState(false);
 
   const evalResult = orchestratorResult || scientificResults?.orchestratorResult || scientificResults;
+  // ... rest of the code
+
+  const handleDownloadDossier = () => {
+    const report = {
+      ...evalResult,
+      productCategoryLabel: productCategory,
+      majorWarnings: evalResult.majorWarnings || []
+    };
+    const dossier = DossierGenerator.generate(report as any, 'Current Formula', ingredients);
+    const blob = new Blob([DossierGenerator.generateHtml(dossier)], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Technical_Dossier_${new Date().toISOString().slice(0, 10)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const provenanceReport = scientificResults?.provenanceReport || scientificResults?.qualityGateResult?.provenanceReport;
   const overallState = provenanceReport?.overallProvenanceState || (scientificResults?.isLabValidated ? 'LAB_VALIDATED' : 'SCIENTIFICALLY_SCREENED');
   const fingerprint = provenanceReport?.formulaFingerprint || evalResult?.provenance?.fingerprint || 'ID[F-1.0]|VER[1.0.0]';
@@ -111,6 +138,12 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             >
               <FileText className="w-3 h-3" /> Print Scientific Report
             </button>
+            <button
+              onClick={handleDownloadDossier}
+              className="px-2.5 py-1 text-[10px] font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-500/40 rounded-lg flex items-center gap-1 cursor-pointer"
+            >
+              <Download className="w-3 h-3" /> Download Dossier
+            </button>
           </div>
         </div>
       </div>
@@ -186,6 +219,14 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
 
       {activeView === 'EXECUTIVE' && (
         <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <IngredientSensitivityHistogram 
+              ingredients={ingredients}
+              productCategory={productCategory}
+              comparisonFormula={comparisonFormula}
+            />
+            <LabAlignmentTrendGraph history={scoreHistory} />
+          </div>
           {/* GROUP A — FORMULATION QUALITY */}
       <div className="space-y-3">
         <h3 className="text-xs font-extrabold text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 px-3 py-1.5 rounded-xl uppercase tracking-wider flex items-center gap-2 w-fit">
