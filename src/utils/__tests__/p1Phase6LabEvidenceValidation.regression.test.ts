@@ -368,6 +368,17 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
       gateMissingVersionWithVersionedEvidence.validationReport?.missingTests.includes('pH'),
     gateMissingVersionWithVersionedEvidence.validationReport?.comparisons.length, 0);
 
+  const validationWithoutTargetId = evaluateFormulaScientificValidation({
+    formulaVersion: '1.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    predictedMetrics: { pH: 8.5, activeSurfactantsPct: 15, activeMatterPct: 15, viscosityCps: 500, cpi: 70, densityGCm3: 1.02 },
+    labEvidenceRecords: [baseMeasurement]
+  });
+  assert('22c. Missing target formula ID cannot wildcard-match versioned lab evidence',
+    validationWithoutTargetId.comparisons.length === 0 &&
+      validationWithoutTargetId.isLabValidated === false,
+    validationWithoutTargetId.comparisons.length, 0);
+
   const dagWithoutTargetVersion = new ScientificExecutionDAG().executeDAG({
     formulaId: 'f-laundry-01',
     formulaName: 'DAG Missing Version Test',
