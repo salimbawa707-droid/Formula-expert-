@@ -200,7 +200,7 @@ export function evaluateScientificQualityGate(
   input: MasterScientificQualityGateInput
 ): MasterScientificQualityGateReport {
   const formulaName = input.formulaName || 'Unnamed Formula';
-  const formulaVersion = input.formulaVersion || '1.0';
+  const formulaVersion = input.formulaVersion || 'UNKNOWN_VERSION';
   const rawIngs = Array.isArray(input.ingredients) ? input.ingredients : [];
   const labMeasurements = Array.isArray(input.labMeasurements) ? input.labMeasurements : [];
   const waterHardnessPpm = input.waterHardnessPpm !== undefined && input.waterHardnessPpm >= 0 ? input.waterHardnessPpm : 150;
@@ -767,7 +767,7 @@ export function evaluateScientificQualityGate(
 
   const provenanceReport = generateMasterScientificProvenanceReport({
     formulaId,
-    formulaVersion,
+    formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
     ingredients: rawIngs,
     speciationResult: { pH: finalPH, isMeasured: isPHMeasured, confidence: phConfidence },
