@@ -23,6 +23,35 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ANDROID_DIR = os.path.join(PROJECT_ROOT, "android")
 RELEASE_ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, "release-artifacts")
 
+
+def find_android_tool(tool_name):
+    """Find an Android SDK build tool on PATH or in the installed SDK."""
+    executable = shutil.which(tool_name)
+    if executable:
+        return executable
+
+    sdk_roots = [
+        os.environ.get("ANDROID_SDK_ROOT"),
+        os.environ.get("ANDROID_HOME"),
+        "/opt/android-sdk",
+        "/usr/local/lib/android/sdk",
+    ]
+    for sdk_root in dict.fromkeys(root for root in sdk_roots if root):
+        build_tools_dir = os.path.join(sdk_root, "build-tools")
+        if not os.path.isdir(build_tools_dir):
+            continue
+        versions = sorted(
+            (name for name in os.listdir(build_tools_dir)
+             if os.path.isdir(os.path.join(build_tools_dir, name))),
+            key=lambda version: tuple(int(part) for part in version.split(".") if part.isdigit()),
+            reverse=True,
+        )
+        for version in versions:
+            candidate = os.path.join(build_tools_dir, version, tool_name)
+            if os.path.isfile(candidate):
+                return candidate
+    return None
+
 def check_environment():
     """Validates availability of JDK, Gradle/Gradlew, Android SDK tools, and release credentials."""
     errors = []
@@ -37,10 +66,9 @@ def check_environment():
     if not has_gradle:
         errors.append("Gradle build tool is missing (neither system 'gradle' nor './android/gradlew' found)")
 
-    # 3. Check Android SDK build tools
-    aapt2 = shutil.which("aapt2") or os.path.exists("/opt/android-sdk/build-tools/34.0.0/aapt2")
-    apksigner = shutil.which("apksigner") or os.path.exists("/opt/android-sdk/build-tools/34.0.0/apksigner")
-    
+    # 3. Check Android SDK build tools across installed SDK versions
+    aapt2 = find_android_tool("aapt2")
+    apksigner = find_android_tool("apksigner")
     if not aapt2 or not apksigner:
         errors.append("Android SDK build tools ('aapt2' / 'apksigner') are not available in environment")
 
@@ -71,6 +99,11 @@ def build_release():
         print("\nSecurity & Release Policy Enforcement:")
         print("  - Refusing to create fake, minimal, or synthetic APKs.")
         print("  - Refusing to generate self-signed keystores or hardcoded credentials.")
+        sys.exit(1)
+
+    apksigner = find_android_tool("apksigner")
+    if not apksigner:
+        print("❌ Android SDK apksigner was not found.")
         sys.exit(1)
 
     # 2. Web Production Build
@@ -139,7 +172,7 @@ def build_release():
     alias = os.environ.get("KEYSTORE_ALIAS", "detergent-expert")
 
     sign_cmd = [
-        "apksigner", "sign",
+        apksigner, "sign",
         "--ks", keystore_path,
         "--ks-pass", f"pass:{store_pass}",
         "--key-pass", f"pass:{key_pass}",
@@ -157,7 +190,7 @@ def build_release():
     # 6. Verify Signature
     print("\n=== STEP 5: Verifying Signature Integrity ===")
     try:
-        subprocess.run(["apksigner", "verify", "--verbose", target_apk], check=True)
+        subprocess.run([apksigner, "verify", "--verbose", target_apk], check=True)
     except subprocess.CalledProcessError as e:
         print(f"\n❌ APK signature verification failed: {e}")
         sys.exit(1)
