@@ -596,6 +596,8 @@ export function evaluateScientificQualityGate(
       cpi: performanceRes.cpi,
       waterHardnessTolerancePpm: hardnessTolerance.maxSupportedPpm
     },
+    // Keep an absent target version unknown for evidence matching; the display/report version fallback above must not authorize comparisons.
+    formulaVersion: input.formulaVersion,
     labEvidenceRecords: (labMeasurements as any) || [],
     qualityGateFindings: {
       blockingIssuesCount: blockingIssues.length,
