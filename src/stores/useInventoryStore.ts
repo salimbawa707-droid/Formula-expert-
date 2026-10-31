@@ -53,7 +53,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
       costPerKg: Number(itemData.costPerKg) || 0,
       supplier: itemData.supplier || '',
       casNumber: itemData.casNumber || '',
-      activeConcentration: Number(itemData.activeConcentration) || 100,
+      activeConcentration: Number(itemData.activeConcentration) || 0,
       notes: itemData.notes || '',
       updatedAt: now
     };
@@ -77,7 +77,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
       batchNumber: runData.batchNumber || `BATCH-${Date.now().toString().slice(-6)}`,
       formulaId: runData.formulaId || '',
       formulaName: runData.formulaName || 'Custom Formula',
-      batchSizeKg: Number(runData.batchSizeKg) || 100,
+      batchSizeKg: Number(runData.batchSizeKg) || 0,
       date: runData.date || now.split('T')[0],
       operator: runData.operator || 'Default Operator',
       status: runData.status || 'COMPLETED',

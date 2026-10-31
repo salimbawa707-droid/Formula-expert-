@@ -60,6 +60,7 @@ export interface IngredientActiveResolution {
   isWater: boolean;
   isSolvent: boolean;
   canonicalMatch?: UniversalIngredient;
+  conflict?: { message: string };
 }
 
 export interface IngredientActiveContribution {
@@ -352,6 +353,9 @@ export class ActiveMatterEngine {
     const rawCategory = (ing?.category || (ing as any)?.role || (ing as any)?.function || '').trim();
     const rawRole = (ing?.role || (ing as any)?.function || '').trim();
 
+    const conflict = this.detectGradeActiveConflict(ing);
+    const conflictRes = conflict.hasConflict ? { message: conflict.message } : undefined;
+
     const isWater = this.isWaterIngredient(rawName, rawCategory, rawRole);
     const isSolvent = this.isSolventIngredient(rawName, rawCategory, rawRole);
 
@@ -386,7 +390,8 @@ export class ActiveMatterEngine {
         surfactantType: 'none',
         isWater: true,
         isSolvent: false,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -401,7 +406,8 @@ export class ActiveMatterEngine {
         surfactantType,
         isWater: false,
         isSolvent,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -432,7 +438,8 @@ export class ActiveMatterEngine {
         surfactantType: surfactantType !== 'none' ? surfactantType : (matchedBench?.surfactantType || 'none'),
         isWater: false,
         isSolvent,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -446,7 +453,8 @@ export class ActiveMatterEngine {
         surfactantType,
         isWater: false,
         isSolvent,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -468,7 +476,8 @@ export class ActiveMatterEngine {
         surfactantType: surfactantType !== 'none' ? surfactantType : benchMatch.surfactantType,
         isWater: false,
         isSolvent,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -482,7 +491,8 @@ export class ActiveMatterEngine {
         surfactantType: 'none',
         isWater: false,
         isSolvent: true,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -510,7 +520,8 @@ export class ActiveMatterEngine {
         surfactantType,
         isWater: false,
         isSolvent: false,
-        canonicalMatch
+        canonicalMatch,
+        conflict: conflictRes
       };
     }
 
@@ -523,7 +534,8 @@ export class ActiveMatterEngine {
       surfactantType,
       isWater: false,
       isSolvent: false,
-      canonicalMatch
+      canonicalMatch,
+      conflict: conflictRes
     };
   }
 
@@ -702,6 +714,39 @@ export class ActiveMatterEngine {
    */
   public static calculateRawSurfactants(ingredients: FormulationIngredient[]): number {
     return this.calculateActiveMatterReport(ingredients).surfactants.totalRawSurfactants;
+  }
+
+  /**
+   * Detects conflict between a canonical commercial grade name (e.g. "Sodium Hydroxide 50% Liquid")
+   * and the active percentage set in the formula (e.g. 99%), unless explicitly confirmed by user override.
+   */
+  public static detectGradeActiveConflict(ing: FormulationIngredient): {
+    hasConflict: boolean;
+    expectedActivePct: number | null;
+    actualActivePct: number;
+    message: string;
+  } {
+    const name = (ing.name || '').trim();
+    const actualActivePct = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? null;
+    
+    const match = name.match(/(\d+(?:\.\d+)?)%/);
+    if (!match) {
+      return { hasConflict: false, expectedActivePct: null, actualActivePct, message: '' };
+    }
+
+    const expectedActivePct = parseFloat(match[1]);
+    const hasConflict = (actualActivePct === null || Math.abs(expectedActivePct - (actualActivePct as number)) > 1.0) && !(ing as any).confirmedGradeActiveOverride;
+
+    if (hasConflict) {
+      return {
+        hasConflict: true,
+        expectedActivePct,
+        actualActivePct,
+        message: `Grade Conflict: Ingredient name specifies "${expectedActivePct}% active" but formula active percentage is set to "${actualActivePct}%". Confirm grade or correct active percentage.`
+      };
+    }
+
+    return { hasConflict: false, expectedActivePct, actualActivePct, message: '' };
   }
 
   /**

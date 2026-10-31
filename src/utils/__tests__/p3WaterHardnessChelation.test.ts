@@ -141,25 +141,25 @@ export function runP3WaterHardnessTestSuite() {
   // 4. CHELATOR ACTIVE GRADES, PURITY & MOLECULAR WEIGHT BASIS
   // ---------------------------------------------------------------------------
   // GLDA 47% vs 99%
-  const glda47Cap = getChelatorBindingCapacity('GLDA 47% Liquid');
-  const glda99Cap = getChelatorBindingCapacity('GLDA 99% Powder', 99);
+  const glda47Cap = getChelatorBindingCapacity('GLDA 47% Liquid').capacityMgCaCO3PerGram ?? 0;
+  const glda99Cap = getChelatorBindingCapacity('GLDA 99% Powder', 99).capacityMgCaCO3PerGram ?? 0;
   assertNear('Chelator Grades', 'GLDA 47% Benchmark Capacity', glda47Cap, 137);
   assertNear('Chelator Grades', 'GLDA 99% Active Capacity', glda99Cap, 282.2, 0.5);
 
   // MGDA 38% vs 40%
-  const mgda38Cap = getChelatorBindingCapacity('MGDA 38% Liquid');
-  const mgda40Cap = getChelatorBindingCapacity('MGDA 40% Liquid');
+  const mgda38Cap = getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0;
+  const mgda40Cap = getChelatorBindingCapacity('MGDA 40% Liquid').capacityMgCaCO3PerGram ?? 0;
   assertNear('Chelator Grades', 'MGDA 38% Liquid Capacity', mgda38Cap, 155);
   assertNear('Chelator Grades', 'MGDA 40% Liquid Capacity', mgda40Cap, 155);
 
   // EDTA 39% vs 99%
-  const edta39Cap = getChelatorBindingCapacity('Tetrasodium EDTA 39% Liquid');
-  const edta99Cap = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder');
+  const edta39Cap = getChelatorBindingCapacity('Tetrasodium EDTA 39% Liquid').capacityMgCaCO3PerGram ?? 0;
+  const edta99Cap = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram ?? 0;
   assertNear('Chelator Grades', 'EDTA 39% Liquid Capacity', edta39Cap, 103);
   assertNear('Chelator Grades', 'EDTA 99% Powder Capacity', edta99Cap, 220);
 
   // Zeolite 4A Builder Powder
-  const zeoliteCap = getChelatorBindingCapacity('Zeolite 4A Builder Powder');
+  const zeoliteCap = getChelatorBindingCapacity('Zeolite 4A Builder Powder').capacityMgCaCO3PerGram ?? 0;
   assertNear('Chelator Grades', 'Zeolite 4A Cation Exchange Capacity', zeoliteCap, 110);
 
   // ---------------------------------------------------------------------------
@@ -273,8 +273,8 @@ export function runP3WaterHardnessTestSuite() {
   assertNear('Edge Cases', 'Zero Chelator Capacity', zeroChelatorRes.totalSequestrationMg, 0);
 
   // Unneutralized Citric Acid vs Sodium Citrate
-  const citricAcidCap = getChelatorBindingCapacity('Citric Acid Monohydrate');
-  const sodiumCitrateCap = getChelatorBindingCapacity('Sodium Citrate Dihydrate');
+  const citricAcidCap = getChelatorBindingCapacity('Citric Acid Monohydrate').capacityMgCaCO3PerGram ?? 0;
+  const sodiumCitrateCap = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0;
   assertNear('Edge Cases', 'Unneutralized Citric Acid has 0 binding capacity', citricAcidCap, 0);
   assertNear('Edge Cases', 'Sodium Citrate has 150 mg/g binding capacity', sodiumCitrateCap, 150);
 

@@ -264,7 +264,7 @@ export class ManufacturingEngine {
       return {
         ingredientName: ing.name,
         grade: ing.category || 'Standard Grade',
-        assayPct: ing.activeMatterPct ?? ing.activePercent ?? 100,
+        assayPct: ing.activeMatterPct ?? ing.activePercent ?? null,
         plannedQuantityKg: plannedKg,
         unit: 'kg'
       };

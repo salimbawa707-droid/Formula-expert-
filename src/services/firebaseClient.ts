@@ -129,7 +129,7 @@ export async function saveUserFormula(userId: string, formula: any): Promise<voi
       name: formula.name || 'Untitled Formulation',
       productType: formula.productType || 'Standard Detergent',
       grade: formula.grade || 'Commercial',
-      batchSizeKg: Number(formula.batchSizeKg || formula.batchSize || 100),
+      batchSizeKg: Number(formula.batchSizeKg || formula.batchSize || 0),
       targetCost: (formula.targetCost !== undefined && formula.targetCost !== null && !isNaN(Number(formula.targetCost)))
         ? Number(formula.targetCost)
         : null,

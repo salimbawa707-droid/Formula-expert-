@@ -106,11 +106,11 @@ export interface PowderMoistureContribution {
 
 export interface PowderMoistureReport {
   totalFormulaMassKg: number;
-  moistureMassKg: number;
-  dryMatterMassKg: number;
-  inherentMoisturePct: number; // for backward-compat
-  moisturePct: number;
-  dryMatterPct: number;
+  moistureMassKg: number | null;
+  dryMatterMassKg: number | null;
+  inherentMoisturePct: number | null; // for backward-compat
+  moisturePct: number | null;
+  dryMatterPct: number | null;
   moistureStatus: ResultSource;
   dryMatterStatus: ResultSource;
   testMethod: string;
@@ -275,7 +275,7 @@ export interface PowderPHReport {
   };
   slurryBasis?: PowderSlurryBasis;
   measuredPH?: number;
-  calculatedAqueousPH: number;
+  calculatedAqueousPH?: number;
   targetRange: {
     min?: number;
     max?: number;

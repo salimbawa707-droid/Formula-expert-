@@ -308,7 +308,13 @@ export const PowderEngineDashboard: React.FC<Props> = ({
               {renderSourceBadge(powderPH.source)}
             </div>
             <div className="text-2xl font-bold text-amber-400 flex items-baseline gap-2">
-              <span>{powderPH.measuredPH !== undefined ? powderPH.measuredPH.toFixed(2) : powderPH.calculatedAqueousPH.toFixed(2)}</span>
+              <span>
+                {powderPH.measuredPH !== undefined && Number.isFinite(powderPH.measuredPH)
+                  ? powderPH.measuredPH.toFixed(2)
+                  : powderPH.calculatedAqueousPH !== undefined && Number.isFinite(powderPH.calculatedAqueousPH) && !isNaN(powderPH.calculatedAqueousPH)
+                  ? powderPH.calculatedAqueousPH.toFixed(2)
+                  : 'UNAVAILABLE'}
+              </span>
               <span className="text-xs font-normal text-slate-400 font-mono">
                 {powderPH.targetRange.isSpecified ? `(Target: ${powderPH.targetRange.min}–${powderPH.targetRange.max})` : 'Alkaline matrix'}
               </span>

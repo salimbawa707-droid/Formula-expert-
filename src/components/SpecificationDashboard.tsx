@@ -223,7 +223,7 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
         id: i.id,
         name: i.name,
         percentage: Number(i.percentage) || 0,
-        activeMatterPct: Number(i.activeMatterPct) || 100,
+        activeMatterPct: Number(i.activeMatterPct) || 0,
         costPerKg: Number(i.costPerKg) || 0,
         role: i.role
       })),
@@ -1351,7 +1351,7 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
                       <td className="py-1.5 px-3 text-slate-400 font-sans">{ing.role || '-'}</td>
                       <td className="py-1.5 px-3 text-right text-slate-200">{Number(ing.percentage).toFixed(2)}%</td>
                       <td className="py-1.5 px-3 text-right text-slate-300">{((Number(ing.percentage) / 100) * batchSizeKg).toFixed(2)} kg</td>
-                      <td className="py-1.5 px-3 text-right text-cyan-300">{Number(ing.activeMatterPct || 100).toFixed(1)}%</td>
+                      <td className="py-1.5 px-3 text-right text-cyan-300">{Number(ing.activeMatterPct || 0).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>

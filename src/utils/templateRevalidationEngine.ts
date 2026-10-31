@@ -168,7 +168,7 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   const profile: ScientificProductProfile = getScientificProductProfile(categoryId, (formula as any).subCategory || (formula as any).profileId || formula.name || formula.id);
   const policy = profile.calculationPolicy;
   
-  const batchSizeKg = formula.batchSizeKg || 100;
+  const batchSizeKg = formula.batchSizeKg || 0;
   
   // 1. Composition Audit
   const rawIngs = Array.isArray(formula.ingredients) ? formula.ingredients : [];

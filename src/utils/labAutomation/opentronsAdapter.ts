@@ -53,17 +53,15 @@ export function createExperimentDesignFromFormula(
     }
 
     const pct = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0;
-    const stockConc = ing.activePercent ?? ing.activeMatterPct ?? ing.activeMatterPurity ?? 100;
-    const targetScale = options.targetScaleUl || 200;
-    const reqVol = Number(((pct / Math.max(1, stockConc)) * targetScale).toFixed(1));
+    const stockConc = ing.activePercent ?? ing.activeMatterPct ?? ing.activeMatterPurity ?? null;
 
     return {
       canonicalIngredientId: ing.id || `ING-${idx + 1}-${ing.name.replace(/\s+/g, '_')}`,
       tradeName: ing.name,
       inciName: ing.inciName || ing.name,
-      concentrationInStockPercent: stockConc,
+      concentrationInStockPercent: stockConc ?? 0,
       targetFormulaPercent: pct,
-      requiredVolumeUl: reqVol,
+      requiredVolumeUl: null, // Blocking generation until conversion evidence is provided
       viscosityClass: vClass,
     };
   });

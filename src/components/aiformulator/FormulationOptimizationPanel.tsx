@@ -205,15 +205,15 @@ export const FormulationOptimizationPanel: React.FC<FormulationOptimizationPanel
 
         <div className="bg-[#131d35] border border-slate-700/80 rounded-xl p-3.5 space-y-2">
           <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-            Cost Ceiling Target ($/kg)
+            Cost Ceiling Target (₹/kg)
           </label>
           <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-emerald-400 font-extrabold text-sm shrink-0">₹</span>
             <input
               type="number"
-              step="0.1"
+              step="0.5"
               min="0.5"
-              max="50"
+              max="500"
               value={maxCostCeiling}
               onChange={(e) => setMaxCostCeiling(Math.max(0.1, Number(e.target.value) || 0))}
               disabled={isOptimizing}
@@ -221,7 +221,7 @@ export const FormulationOptimizationPanel: React.FC<FormulationOptimizationPanel
             />
           </div>
           <p className="text-[10px] text-slate-400">
-            Baseline: {currentCostPerKg ? `$${currentCostPerKg.toFixed(2)}/kg` : 'Incomplete'}
+            Baseline: {currentCostPerKg ? `₹${currentCostPerKg.toFixed(2)}/kg` : 'Incomplete'}
           </p>
         </div>
 
@@ -377,7 +377,7 @@ export const FormulationOptimizationPanel: React.FC<FormulationOptimizationPanel
                       <div className="bg-[#0e1629] p-2 rounded-lg border border-slate-800">
                         <span className="text-[10px] text-slate-400 uppercase block font-semibold">Cost / kg</span>
                         <span className="text-sm font-mono font-extrabold text-emerald-400">
-                          {cand.metrics.costPerKg !== undefined ? `$${cand.metrics.costPerKg.toFixed(2)}` : 'Incomplete'}
+                          {cand.metrics.costPerKg !== undefined ? `₹${cand.metrics.costPerKg.toFixed(2)}` : 'Incomplete'}
                         </span>
                         {costDelta !== null && (
                           <span className={`text-[10px] font-mono block ${costDelta <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>

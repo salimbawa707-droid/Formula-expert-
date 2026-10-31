@@ -82,7 +82,7 @@ export async function prepareFormulaForCalculation(
   // The report contains the actual active-matter contribution of every
   // ingredient, including source-backed researched activeMatterPct values.
   const activeMatterReport = calculationReady
-    ? evaluateAuthoritativeActiveMatter(preparedFormula.ingredients, formula.batchSizeKg ?? formula.batchSize ?? 100)
+    ? evaluateAuthoritativeActiveMatter(preparedFormula.ingredients, formula.batchSizeKg ?? formula.batchSize ?? null)
     : undefined;
 
   if (activeMatterReport?.activeMatterStatus === 'INSUFFICIENT_DATA') {

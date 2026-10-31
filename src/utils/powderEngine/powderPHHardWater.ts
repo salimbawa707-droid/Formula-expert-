@@ -30,7 +30,7 @@ export function calculatePowderPH(
   let isSpecified = true;
 
   if (labInputs?.customPHTargetMin !== undefined || labInputs?.customPHTargetMax !== undefined) {
-    targetMin = labInputs.customPHTargetMin ?? 7.0;
+    targetMin = labInputs.customPHTargetMin ?? null;
     targetMax = labInputs.customPHTargetMax ?? 11.5;
     targetLabel = labInputs.customPHTargetLabel || `User-Defined Specification Target (${targetMin} – ${targetMax})`;
   } else if (isDelicate) {
@@ -103,7 +103,9 @@ export function calculatePowderPH(
     activePercent: i.activeMatterPct
   }));
 
-  let calculatedPH = legacyHeuristicPH;
+  let calculatedPH: number | undefined = undefined;
+  let isPHAvailable = false;
+
   if (classifiedIngredients.length > 0) {
     try {
       const v2Res = PHEngineV2.calculatePH(engineInputs, 100, {
@@ -112,31 +114,45 @@ export function calculatePowderPH(
         slurryConcentrationPct: concentrationPct,
         temperatureC: 25.0
       });
-      calculatedPH = v2Res.pH;
+      if (v2Res && v2Res.converged && Number.isFinite(v2Res.pH) && !isNaN(v2Res.pH)) {
+        calculatedPH = v2Res.pH;
+        isPHAvailable = true;
+      } else {
+        calculatedPH = undefined;
+        isPHAvailable = false;
+      }
     } catch (err) {
-      console.warn('PHEngineV2 calculation failed inside powder engine, falling back to legacy heuristic.', err);
-      calculatedPH = legacyHeuristicPH;
+      console.warn('PHEngineV2 calculation failed inside powder engine.', err);
+      calculatedPH = undefined;
+      isPHAvailable = false;
     }
   } else {
     calculatedPH = legacyHeuristicPH;
+    isPHAvailable = true;
   }
 
   const measuredPH = labInputs?.measured1PctAqueousPH;
-  const effectivePH = measuredPH !== undefined && measuredPH > 0 ? measuredPH : calculatedPH;
+  const isMeasuredAvailable = measuredPH !== undefined && Number.isFinite(measuredPH) && measuredPH > 0;
+  const effectivePH = isMeasuredAvailable ? measuredPH : (isPHAvailable ? calculatedPH : undefined);
 
-  let isWithinTarget = true;
+  let isWithinTarget = false;
   let statusMessage = '';
 
-  if (isSpecified && targetMin !== undefined && targetMax !== undefined) {
-    isWithinTarget = effectivePH >= targetMin && effectivePH <= targetMax;
-    statusMessage = isWithinTarget
-      ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) complies with ${targetLabel}. Alkaline wash liquor saponifies fatty acids and maintains builder dispersion.`
-      : effectivePH > targetMax
-      ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) exceeds target specification (${targetMin}–${targetMax}).`
-      : `1% aqueous test solution pH (${effectivePH.toFixed(2)}) is below the intended target window (${targetMin}–${targetMax}). Check acid slurry (LABSA) neutralization by alkaline builders.`;
+  if (effectivePH !== undefined && Number.isFinite(effectivePH) && !isNaN(effectivePH)) {
+    if (isSpecified && targetMin !== undefined && targetMax !== undefined) {
+      isWithinTarget = effectivePH >= targetMin && effectivePH <= targetMax;
+      statusMessage = isWithinTarget
+        ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) complies with ${targetLabel}. Alkaline wash liquor saponifies fatty acids and maintains builder dispersion.`
+        : effectivePH > targetMax
+        ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) exceeds target specification (${targetMin}–${targetMax}).`
+        : `1% aqueous test solution pH (${effectivePH.toFixed(2)}) is below the intended target window (${targetMin}–${targetMax}). Check acid slurry (LABSA) neutralization by alkaline builders.`;
+    } else {
+      isWithinTarget = true;
+      statusMessage = `1% aqueous test solution pH is ${effectivePH.toFixed(2)}. Target not specified.`;
+    }
   } else {
-    isWithinTarget = true;
-    statusMessage = `1% aqueous test solution pH is ${effectivePH.toFixed(2)}. Target not specified.`;
+    isWithinTarget = false;
+    statusMessage = `1% aqueous test solution pH calculation failed to converge (UNAVAILABLE). Cannot verify compliance against ${targetLabel || 'target specification'}.`;
   }
 
   // 3. DEFINE EXPLICIT SCIENTIFIC SLURRY PREPARATION CONFIGURATION
@@ -179,7 +195,7 @@ export function calculatePowderPH(
     isWithinTarget,
     statusMessage,
     isAlkalineIntended: !isDelicate,
-    source: measuredPH !== undefined && measuredPH > 0 ? 'MEASURED' : 'CALCULATED',
+    source: isMeasuredAvailable ? 'MEASURED' : (isPHAvailable ? 'CALCULATED' : 'INSUFFICIENT_DATA'),
     nonAuthoritativeHeuristicPH: legacyHeuristicPH
   };
 }

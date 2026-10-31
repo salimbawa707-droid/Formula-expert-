@@ -21,6 +21,7 @@
 
 import { execFileSync } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 import {
   initializeRDKit,
   getRDKitStatus,
@@ -312,7 +313,11 @@ export function runRDKitAdapterTestSuite(): TestResultSummary {
         });
     `;
 
-    const rawOutput = execFileSync(process.execPath, ['-e', runnerCode], {
+    const tsxBinary = fs.existsSync('/usr/local/bin/tsx')
+      ? '/usr/local/bin/tsx'
+      : (process.execPath.includes('tsx') ? process.execPath : 'tsx');
+
+    const rawOutput = execFileSync(tsxBinary, ['-e', runnerCode], {
       encoding: 'utf-8',
       timeout: 30000,
     });

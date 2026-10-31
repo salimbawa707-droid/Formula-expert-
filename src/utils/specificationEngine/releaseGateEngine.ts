@@ -226,7 +226,7 @@ export class ReleaseGateEngine {
     // 5. SHA-256 Artifact Integrity Validation & Generation Matching
     // Computes and cross-checks the unique SHA-256 hash of the formulation to prove it matches the active generationId
     const serializedIngredients = snapshot.ingredients
-      ?.map((i) => `${i.name}:${Number(i.percentage).toFixed(2)}:${Number(i.activeMatterPct || 100).toFixed(2)}`)
+      ?.map((i) => `${i.name}:${Number(i.percentage).toFixed(2)}:${(i.activeMatterPct ?? 0).toFixed(2)}`)
       .sort()
       .join('|') || '';
     const integrityHash = sha256(serializedIngredients || 'empty-formula');

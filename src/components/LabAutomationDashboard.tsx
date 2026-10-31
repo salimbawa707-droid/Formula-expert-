@@ -15,7 +15,9 @@ import {
   Sparkles,
   Info,
   Database,
+  Usb,
 } from 'lucide-react';
+import { LabHardwareModal } from './hardware/LabHardwareModal';
 import { FORMULAS } from '../data/formulas';
 import {
   createExperimentDesignFromFormula,
@@ -49,6 +51,7 @@ export const LabAutomationDashboard: React.FC = () => {
   const [temperatureCelsius, setTemperatureCelsius] = useState<number>(22);
   const [mixingRequired, setMixingRequired] = useState<boolean>(true);
   const [mixCycles, setMixCycles] = useState<number>(5);
+  const [isHardwareModalOpen, setIsHardwareModalOpen] = useState<boolean>(false);
 
   // 2. Active Protocol & State
   const currentFormula = useMemo(() => {
@@ -223,10 +226,14 @@ export const LabAutomationDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 text-xs text-slate-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Hardware Safety Guard: Active
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsHardwareModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-cyan-900/60 to-blue-900/60 hover:from-cyan-800/80 hover:to-blue-800/80 border border-cyan-500/40 text-cyan-200 rounded-xl text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
+          >
+            <Usb className="w-4 h-4 text-cyan-400" />
+            <span>Connect Physical Lab Machine</span>
+          </button>
           <button
             onClick={handleRegenerateProtocol}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition shadow-lg shadow-blue-600/20"
@@ -889,6 +896,12 @@ export const LabAutomationDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Real Physical Lab Machine Hardware Bridge Modal */}
+      <LabHardwareModal
+        isOpen={isHardwareModalOpen}
+        onClose={() => setIsHardwareModalOpen(false)}
+      />
     </div>
   );
 };

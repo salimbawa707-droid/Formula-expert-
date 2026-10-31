@@ -90,13 +90,13 @@ export default function InventoryProduction({
 
   // Batch production parameters
   const [batchSizeOverride, setBatchSizeOverride] = useState<number>(() => {
-    return activeFormula?.batchSizeKg || activeFormula?.batchSize || 100;
+    return activeFormula?.batchSizeKg || activeFormula?.batchSize || 0;
   });
 
   // Synchronize batchSizeOverride when activeFormula changes
   useEffect(() => {
     if (activeFormula?.batchSizeKg || activeFormula?.batchSize) {
-      setBatchSizeOverride(activeFormula.batchSizeKg || activeFormula.batchSize || 100);
+      setBatchSizeOverride(activeFormula.batchSizeKg || activeFormula.batchSize || 0);
     }
   }, [activeFormula?.batchSizeKg, activeFormula?.batchSize]);
 

@@ -82,6 +82,7 @@ export interface EvaluationInput {
     activeSurfactants?: number;
     totalPercentage?: number;
     viscosity?: string | number;
+    viscosityCp?: number;
     density?: number;
     liquidNVR?: number;
     liquidNVRComplete?: boolean;
@@ -234,7 +235,6 @@ export function extractParameterValue(
         }
         break;
       case 'viscosity':
-        // Brookfield finished-product viscosity requires physical laboratory testing
         break;
       case 'liquidNVR':
       case 'liquidNvr':

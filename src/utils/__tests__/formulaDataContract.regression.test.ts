@@ -154,22 +154,22 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   // 4. COMMERCIAL PRODUCT GRADE & CHELATOR DOUBLE-COUNT AUDIT
   // -------------------------------------------------------------
 
-  const gldaBindingCapacity = getChelatorBindingCapacity('GLDA 47% Liquid');
+  const gldaBindingCapacity = getChelatorBindingCapacity('GLDA 47% Liquid').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'GLDA 47% Liquid binding capacity is 137 mg CaCO3/g (commercial basis)', gldaBindingCapacity, 137));
 
-  const mgdaBindingCapacity = getChelatorBindingCapacity('MGDA 38% Liquid');
+  const mgdaBindingCapacity = getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'MGDA 38% Liquid binding capacity is 155 mg CaCO3/g (commercial basis)', mgdaBindingCapacity, 155));
 
-  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium');
+  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'EDTA Tetrasodium binding capacity is 220 mg CaCO3/g (commercial basis)', edtaBindingCapacity, 220));
 
-  const dtpaBindingCapacity = getChelatorBindingCapacity('DTPA Powder');
+  const dtpaBindingCapacity = getChelatorBindingCapacity('DTPA Powder').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'DTPA binding capacity is 200 mg CaCO3/g (commercial basis)', dtpaBindingCapacity, 200));
 
-  const citrateBindingCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate');
+  const citrateBindingCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'Sodium Citrate Dihydrate binding capacity is 150 mg CaCO3/g (commercial basis)', citrateBindingCapacity, 150));
 
-  const citricAcidBindingCapacity = getChelatorBindingCapacity('Citric Acid Monohydrate');
+  const citricAcidBindingCapacity = getChelatorBindingCapacity('Citric Acid Monohydrate').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'Citric acid (acidifier) binding capacity is 0 mg CaCO3/g', citricAcidBindingCapacity, 0));
 
   // Single-discount verification: 2% GLDA in 20g dose = 0.4g product. 0.4g * 137 mg/g = 54.8 mg CaCO3.
@@ -184,15 +184,15 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   // -------------------------------------------------------------
 
   const gldaAliases = ['GLDA', 'GLDA-47', 'GLDA 47%', 'Tetrasodium GLDA', 'Dissolvine GL-47-S'];
-  const allGLDAIdentified = gldaAliases.every(alias => getChelatorBindingCapacity(alias) === 137);
+  const allGLDAIdentified = gldaAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
   record(assertEqual('Duplicate Ingredient Naming', 'All GLDA alias representations return identical binding capacity (137 mg/g)', allGLDAIdentified, true));
 
   const citrateAliases = ['Sodium Citrate', 'Sodium Citrate Dihydrate', 'Trisodium Citrate'];
-  const allCitrateIdentified = citrateAliases.every(alias => getChelatorBindingCapacity(alias) === 150);
+  const allCitrateIdentified = citrateAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 150);
   record(assertEqual('Duplicate Ingredient Naming', 'All Sodium Citrate representations return identical binding capacity (150 mg/g)', allCitrateIdentified, true));
 
   const edtaAliases = ['EDTA', 'Tetrasodium EDTA', 'EDTA Tetrasodium'];
-  const allEDTAIdentified = edtaAliases.every(alias => getChelatorBindingCapacity(alias) === 220);
+  const allEDTAIdentified = edtaAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 220);
   record(assertEqual('Duplicate Ingredient Naming', 'All EDTA representations return identical binding capacity (220 mg/g)', allEDTAIdentified, true));
 
   // -------------------------------------------------------------

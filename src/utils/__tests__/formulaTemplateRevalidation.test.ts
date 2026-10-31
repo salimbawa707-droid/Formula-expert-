@@ -123,7 +123,7 @@ export function runFormulaTemplateRevalidationTestSuite(): {
   const sampleLiquid = FORMULAS.find(f => f.id === 'hd-liquid-laundry');
   if (sampleLiquid) {
     const phInput = mapFormulationIngredientsToPHEngineInput(sampleLiquid.ingredients as any);
-    const directPHRes = PHEngineV2.calculatePH(phInput, sampleLiquid.batchSizeKg || 100);
+    const directPHRes = PHEngineV2.calculatePH(phInput, sampleLiquid.batchSizeKg || 0);
     const rep = reports.find(r => r.templateId === 'hd-liquid-laundry');
     
     assert(

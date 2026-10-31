@@ -634,7 +634,7 @@ export class FormulaScientificOrchestrator {
         totalSolidsPct: isPowder ? calculateTotalSolids(state.resolvedIngredients) : state.nvrPercentage,
         nvrPercentage: state.nvrPercentage,
         isNvrComplete: !isPowder ? (state.nvrResult?.isComplete ?? false) : true,
-        dataCompleteness: !isPowder ? (state.nvrResult?.dataCompleteness ?? 100) : 100,
+        dataCompleteness: !isPowder ? (state.nvrResult?.dataCompleteness ?? null) : 100,
         unknownIngredients: !isPowder ? (state.nvrResult?.unknownIngredients ?? []) : []
       },
       stabilityResult: state.stabilityResult,

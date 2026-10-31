@@ -320,10 +320,15 @@ export class HLBEngine {
 
     let totalSurfactantRawWeight = 0;
     let totalSurfactantActiveWeight = 0;
-    let weightedHLB = 0;
+    let nonionicActiveWeight = 0;
+    let nonionicWeightedHLB = 0;
+    let ionicActiveWeight = 0;
+    let ionicWeightedHLB = 0;
+
     let surfactantsWithAuthoritativeHLB = 0;
     let surfactantsWithMissingHLB = 0;
     let hasIonicSurfactants = false;
+    let hasNonionicSurfactants = false;
 
     for (const ing of safeIngs) {
       const pct = Number(ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
@@ -340,13 +345,22 @@ export class HLBEngine {
 
         if (resolution.isIonic) {
           hasIonicSurfactants = true;
+          if (resolution.hlb !== null && resolution.hlb >= 0) {
+            ionicActiveWeight += activeWeight;
+            ionicWeightedHLB += resolution.hlb * activeWeight;
+          }
+        } else {
+          hasNonionicSurfactants = true;
+          if (resolution.hlb !== null && resolution.hlb >= 0) {
+            nonionicActiveWeight += activeWeight;
+            nonionicWeightedHLB += resolution.hlb * activeWeight;
+          }
         }
 
         if (resolution.hlb !== null && resolution.hlb >= 0) {
           if (resolution.dataSource === 'authoritative' || resolution.dataSource === 'explicit_override') {
             surfactantsWithAuthoritativeHLB++;
           }
-          weightedHLB += resolution.hlb * activeWeight;
         } else {
           surfactantsWithMissingHLB++;
           limitations.push(`Surfactant "${ing.name || 'Unknown'}" lacks authoritative HLB data.`);
@@ -377,21 +391,41 @@ export class HLBEngine {
     }
 
     const hasSurfactants = totalSurfactantActiveWeight > 0 && contributions.length > 0;
-    const finalBlendedHLB = totalSurfactantActiveWeight > 0 
-      ? Number((weightedHLB / totalSurfactantActiveWeight).toFixed(2))
-      : 0;
+    
+    // P0-03 SCIENTIFIC SCALE ISOLATION CONTRACT:
+    // Griffin Scale (0-20) and Davies Scale (extended >20) are mathematically distinct models.
+    // They MUST NOT be mixed through an arbitrary arithmetic average.
+    let finalBlendedHLB = 0;
+    let overallMethodMeta: HLBMethodMetadata = 'NOT_APPLICABLE';
 
-    const { region, interpretation } = this.mapEmulsionRegion(finalBlendedHLB);
+    if (!hasSurfactants) {
+      overallMethodMeta = 'NOT_APPLICABLE';
+      finalBlendedHLB = 0;
+    } else if (hasNonionicSurfactants) {
+      // Nonionic surfactants present -> calculate authoritative Griffin blended HLB
+      finalBlendedHLB = nonionicActiveWeight > 0
+        ? Number((nonionicWeightedHLB / nonionicActiveWeight).toFixed(2))
+        : 0;
+      overallMethodMeta = 'GRIFFIN';
 
-    if (hasIonicSurfactants) {
-      limitations.push('Mixture contains ionic surfactants: Griffin HLB is strictly defined for nonionic surfactants. Extended values reflect the Davies scale.');
+      if (hasIonicSurfactants) {
+        limitations.push(
+          'Mixture contains both nonionic and ionic surfactants. To preserve mathematical validity, ' +
+          'blended HLB is calculated strictly for the nonionic surfactant phase (Griffin Scale 0–20). ' +
+          'Davies ionic scale values (e.g. SLES/SLS = 40.0) are excluded from the Griffin weighted average.'
+        );
+      }
+    } else {
+      // Only ionic surfactants present -> calculate Davies blended HLB
+      finalBlendedHLB = ionicActiveWeight > 0
+        ? Number((ionicWeightedHLB / ionicActiveWeight).toFixed(2))
+        : 0;
+      overallMethodMeta = 'DAVIES';
+      limitations.push('All active surfactants are ionic. Blended HLB reflects the extended Davies charge scale.');
     }
 
+    const { region, interpretation } = this.mapEmulsionRegion(finalBlendedHLB);
     const isFullyAuthoritative = hasSurfactants && surfactantsWithMissingHLB === 0;
-
-    const overallMethodMeta: HLBMethodMetadata = !hasSurfactants
-      ? 'NOT_APPLICABLE'
-      : (hasIonicSurfactants ? 'DAVIES' : 'GRIFFIN');
 
     return {
       blendedHLB: finalBlendedHLB,
@@ -407,7 +441,7 @@ export class HLBEngine {
       emulsionRegion: region,
       interpretation,
       scientificNotes: hasSurfactants
-        ? `Blended HLB ${finalBlendedHLB.toFixed(2)} calculated from ${contributions.length} surfactant(s) based on active-matter mass fractions.`
+        ? `Blended HLB ${finalBlendedHLB.toFixed(2)} (${overallMethodMeta} scale) calculated from ${contributions.length} surfactant(s) based on active-matter mass fractions.`
         : 'No surfactant components with valid HLB detected in formulation.',
       contributions,
       limitations

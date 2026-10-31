@@ -455,17 +455,10 @@ export class PHEngine {
     options: PHCalculationOptions = {}
   ): PHAdvancedResult {
     const rawCategory = options.productCategory;
-    let normalizedCategory = rawCategory;
-    if (rawCategory) {
-      const norm = normalizeProductCategory(rawCategory);
-      if (norm !== 'UNKNOWN_PRODUCT_CATEGORY') {
-        normalizedCategory = norm;
-      }
-    }
 
     const v2Result = PHEngineV2.calculatePH(ingredients, totalMassKg, {
       ...options,
-      productCategory: normalizedCategory,
+      productCategory: rawCategory,
       targetPH
     });
 
@@ -490,8 +483,14 @@ export class PHEngine {
       ionicStrength: v2Result.ionicStrength,
       solverConverged: v2Result.converged,
       solverIterations: v2Result.iterations,
+      excessStrongAcidEquivalents: v2Result.excessStrongAcidEquivalents ?? v2Result.excessStrongAcid,
+      excessStrongBaseEquivalents: v2Result.excessStrongBaseEquivalents ?? v2Result.excessStrongBase,
+      excessAcidEquivalents: v2Result.excessAcidEquivalents ?? v2Result.excessAcidMoles,
+      excessBaseEquivalents: v2Result.excessBaseEquivalents ?? v2Result.excessBaseMoles,
       excessStrongAcid: v2Result.excessStrongAcid,
       excessStrongBase: v2Result.excessStrongBase,
+      excessAcidMoles: v2Result.excessAcidMoles,
+      excessBaseMoles: v2Result.excessBaseMoles,
       status: v2Result.status,
       method: v2Result.method,
       converged: v2Result.converged,
@@ -507,6 +506,11 @@ export class PHEngine {
       measuredPH: v2Result.measuredPH,
       predictionError: v2Result.predictionError,
       details: {
+        totalAcidEquivalents: v2Result.details.totalAcidEquivalents ?? v2Result.details.totalAcidMoles,
+        totalBaseEquivalents: v2Result.details.totalBaseEquivalents ?? v2Result.details.totalBaseMoles,
+        totalStrongAcidEquivalents: v2Result.details.totalStrongAcidEquivalents,
+        totalStrongBaseEquivalents: v2Result.details.totalStrongBaseEquivalents,
+        netEquivalents: v2Result.details.netEquivalents ?? v2Result.details.netMoles,
         totalAcidMoles: v2Result.details.totalAcidMoles,
         totalBaseMoles: v2Result.details.totalBaseMoles,
         netMoles: v2Result.details.netMoles,
@@ -536,21 +540,7 @@ export function calculatePHAdvanced(
       ? { productCategory: options }
       : options || {};
 
-  const rawCat = rawOptions.productCategory;
-  let canonicalCat = rawCat;
-  if (rawCat) {
-    const norm = normalizeProductCategory(rawCat);
-    if (norm !== 'UNKNOWN_PRODUCT_CATEGORY') {
-      canonicalCat = norm;
-    }
-  }
-
-  const normalizedOptions: PHCalculationOptions = {
-    ...rawOptions,
-    productCategory: canonicalCat
-  };
-
-  return engine.calculatePH(ingredients, totalMassKg, 7.0, normalizedOptions);
+  return engine.calculatePH(ingredients, totalMassKg, 7.0, rawOptions);
 }
 
 /**

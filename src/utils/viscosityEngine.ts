@@ -1,6 +1,7 @@
 import { FormulationIngredient } from '../types';
 import { ActiveMatterEngine } from './activeMatterEngine';
 import { calculatePHAdvanced } from './pHEngine';
+import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
 import { PHCalculationOptions } from '../domain/ph/types';
 
@@ -320,7 +321,17 @@ export class ViscosityEngine {
     // Evaluate pH for pH-sensitive thickeners (e.g. Carbomers, ASE polyacrylates)
     const normCategory = productCategory ? normalizeProductCategory(productCategory) : undefined;
     const phOpts: PHCalculationOptions | undefined = (normCategory && normCategory !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCategory } : undefined;
-    const estimatedPH = options.targetPH ?? (calculatePHAdvanced ? calculatePHAdvanced(list, 100, phOpts).pH : 7.0);
+    let estimatedPH = 7.0;
+    if (typeof options.targetPH === 'number' && !isNaN(options.targetPH)) {
+      estimatedPH = options.targetPH;
+    } else {
+      try {
+        const mappedList = mapFormulationIngredientsToPHEngineInput(list);
+        estimatedPH = calculatePHAdvanced(mappedList, 100, phOpts).pH ?? null;
+      } catch (e) {
+        estimatedPH = null;
+      }
+    }
 
     // Active Surfactant Breakdown
     let activeAnionicPct = 0;
@@ -978,7 +989,7 @@ export function calculateSaltCurve(
   const minSalt = options.minSalt ?? 0.0;
   const maxSalt = options.maxSalt ?? 4.0;
   const steps = options.steps ?? 20;
-  const targetPH = options.targetPH ?? 7.0;
+  const targetPH = options.targetPH ?? null;
 
   const baseIngredients = ingredients.filter(i => {
     const n = (i?.name || '').toLowerCase();

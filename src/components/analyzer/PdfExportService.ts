@@ -83,7 +83,7 @@ export function generatePdfDiagnosticReport(data: PdfReportData) {
     const name = ing.name.length > 35 ? ing.name.substring(0, 32) + "..." : ing.name;
     const cat = (ing.category || ing.function || "Additive").substring(0, 22);
     const pct = Number(ing.percentage ?? ing.percent ?? 0).toFixed(2);
-    const active = Number(ing.activePercent ?? 100).toFixed(0);
+    const active = Number(ing.activePercent ?? null).toFixed(0);
 
     doc.text(name, 16, y);
     doc.text(cat, 85, y);

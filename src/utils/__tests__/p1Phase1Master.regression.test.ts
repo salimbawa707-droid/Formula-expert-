@@ -218,14 +218,14 @@ export function runP1Phase1MasterTestSuite() {
   assert(AUTHORITATIVE_CHELATOR_DATABASE.length >= 8, 'Chelation Stoichiometry', 'Authoritative Database Populated');
 
   // Specific Binding Capacities
-  assertNear('Chelation Stoichiometry', 'GLDA 47% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('GLDA 47% Liquid'), 137);
-  assertNear('Chelation Stoichiometry', 'MGDA 38% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('MGDA 38% Liquid'), 155);
-  assertNear('Chelation Stoichiometry', 'Sodium Citrate Dihydrate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Citrate Dihydrate'), 150);
-  assertNear('Chelation Stoichiometry', 'Sodium Gluconate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Gluconate'), 76);
-  assertNear('Chelation Stoichiometry', 'EDTA Tetrasodium Powder Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('EDTA Tetrasodium'), 220);
-  assertNear('Chelation Stoichiometry', 'EDTA 39% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Tetrasodium EDTA 39% Liquid'), 103);
-  assertNear('Chelation Stoichiometry', 'STPP 94% Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Tripolyphosphate (STPP 94%)'), 180);
-  assertNear('Chelation Stoichiometry', 'HEDP Phosphonate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('HEDP / Etidronate'), 250);
+  assertNear('Chelation Stoichiometry', 'GLDA 47% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('GLDA 47% Liquid').capacityMgCaCO3PerGram ?? 0, 137);
+  assertNear('Chelation Stoichiometry', 'MGDA 38% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0, 155);
+  assertNear('Chelation Stoichiometry', 'Sodium Citrate Dihydrate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0, 150);
+  assertNear('Chelation Stoichiometry', 'Sodium Gluconate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Gluconate').capacityMgCaCO3PerGram ?? 0, 76);
+  assertNear('Chelation Stoichiometry', 'EDTA Tetrasodium Powder Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram ?? 0, 220);
+  assertNear('Chelation Stoichiometry', 'EDTA 39% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Tetrasodium EDTA 39% Liquid').capacityMgCaCO3PerGram ?? 0, 103);
+  assertNear('Chelation Stoichiometry', 'STPP 94% Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Tripolyphosphate (STPP 94%)').capacityMgCaCO3PerGram ?? 0, 180);
+  assertNear('Chelation Stoichiometry', 'HEDP Phosphonate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('HEDP / Etidronate').capacityMgCaCO3PerGram ?? 0, 250);
 
   // 300 PPM Hardness Load:
   // 300 mg CaCO3/L * 10 L wash liquor = 3,000 mg CaCO3 load

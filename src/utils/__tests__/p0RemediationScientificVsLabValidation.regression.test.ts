@@ -35,7 +35,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     id: i.id,
     name: i.name,
     percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-    activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? 100),
+    activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? null),
     costPerKg: Number(i.costPerKg ?? 1.0),
     category: i.category,
     function: i.function

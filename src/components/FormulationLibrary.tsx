@@ -75,11 +75,11 @@ export default function FormulationLibrary({
           ingredients: (f.ingredients || []).map((ing: any) => ({
             name: ing.name,
             percentage: Number(ing.percentage ?? ing.percent ?? 0),
-            activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? 100),
+            activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? null),
             role: ing.role || ing.category || 'Component'
           })),
           waterHardnessPpm: 150,
-          batchSizeKg: f.batchSizeKg || 100,
+          batchSizeKg: f.batchSizeKg || 0,
           costContext: {
             targetCostPerKg: 50
           }
@@ -331,7 +331,7 @@ export default function FormulationLibrary({
                           {Number(ing.percent ?? ing.percentage ?? 0).toFixed(2)}%
                         </td>
                         <td className="py-2.5 px-3.5 text-right font-mono text-purple-300 font-extrabold">
-                          {((Number(ing.percent ?? ing.percentage ?? 0) / 100) * (currentFormula.batchSizeKg || 100)).toFixed(2)} kg
+                          {((Number(ing.percent ?? ing.percentage ?? 0) / 100) * (currentFormula.batchSizeKg || 0)).toFixed(2)} kg
                         </td>
                       </tr>
                     ))}

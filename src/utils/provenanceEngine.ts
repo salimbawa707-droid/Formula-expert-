@@ -174,7 +174,7 @@ export function generateMasterScientificProvenanceReport(params: {
     .join(', ');
 
   // 1. pH
-  const phVal = params.speciationResult?.pH ?? 7.0;
+  const phVal = params.speciationResult?.pH ?? null;
   const isPHMeasured = params.speciationResult?.isMeasured ?? false;
   const phState: ProvenanceState = isPHMeasured ? 'LAB_VALIDATED' : 'CALCULATED';
   const phProv: ScientificDimensionProvenance = {
@@ -291,7 +291,7 @@ export function generateMasterScientificProvenanceReport(params: {
   };
 
   // 5. Compatibility
-  const compScore = params.compatibilityResult?.score ?? 100;
+  const compScore = params.compatibilityResult?.score ?? null;
   const compProv: ScientificDimensionProvenance = {
     dimension: 'compatibility',
     displayName: 'Chemical & Phase Compatibility',

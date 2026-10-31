@@ -84,7 +84,7 @@ export function evaluateRegulatoryCompliance(
     jurisdictionId = 'US_FEDERAL';
   }
 
-  const safePH = calculatedPH ?? 7.0;
+  const safePH = calculatedPH ?? null;
 
   // Map to Domain SSOT Input
   const domainInput: RegulatoryEvaluationInput = {

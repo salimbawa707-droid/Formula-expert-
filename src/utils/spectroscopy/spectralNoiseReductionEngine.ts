@@ -193,7 +193,7 @@ export function reduceSpectralNoise(
   options: { windowSize?: number; polyOrder?: number; sigma?: number } = {}
 ): NoiseReductionResult {
   // Window size must be an odd positive integer >= 3
-  let winSize = options.windowSize ?? 7;
+  let winSize = options.windowSize ?? null;
   if (winSize % 2 === 0) winSize += 1;
   winSize = Math.max(3, Math.min(31, winSize));
 

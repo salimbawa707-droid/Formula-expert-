@@ -233,7 +233,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   // Normalize hydrated ingredients like App.tsx does
   const normalizedHydratedIngs = hydrated.ingredients.map((ing: any, idx: number) => {
     const pct = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0;
-    const activePct = ing.activeMatterPct ?? ing.activePercent ?? ing.purity ?? ing.activeMatterPurity ?? 100;
+    const activePct = ing.activeMatterPct ?? ing.activePercent ?? ing.purity ?? ing.activeMatterPurity ?? null;
     return {
       ...ing,
       id: ing.id || `ing-${idx}`,

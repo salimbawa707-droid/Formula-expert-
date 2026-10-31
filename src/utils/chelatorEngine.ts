@@ -16,6 +16,37 @@ export type ChelatorScientificStatus =
   | 'ESTIMATED' 
   | 'INSUFFICIENT_DATA';
 
+export interface ValidatedChelatorCapacity {
+  capacityMgCaCO3PerGram: number | null;
+  status: 'VALID' | 'INSUFFICIENT_DATA';
+  evidenceId?: string;
+  reason?: string;
+}
+
+export function validateChelatorCapacity(
+  capacity: number | null | undefined,
+  evidenceId?: string
+): ValidatedChelatorCapacity {
+  if (
+    typeof capacity !== 'number' ||
+    !Number.isFinite(capacity) ||
+    capacity <= 0 ||
+    !evidenceId?.trim()
+  ) {
+    return {
+      capacityMgCaCO3PerGram: null,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'CHELATOR_CAPACITY_OR_EVIDENCE_UNAVAILABLE'
+    };
+  }
+
+  return {
+    capacityMgCaCO3PerGram: capacity,
+    status: 'VALID',
+    evidenceId
+  };
+}
+
 export interface ChelatorSpecies {
   id: string;
   name: string;
@@ -552,73 +583,57 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
  * Returns the effective binding capacity (in mg CaCO3 bound per gram of ingredient).
  * Supports explicit active percentage overrides or canonical benchmark matching.
  */
-export function getChelatorBindingCapacity(name: string, explicitActive?: number): number {
+export function getChelatorBindingCapacity(
+  name: string,
+  _explicitActive?: number
+): ValidatedChelatorCapacity {
   const n = (name || "").toLowerCase().trim();
-  if (!n) return 0;
-
-  // Citric acid without neutralization is an acidulant, not an active sodium chelator salt
-  if (n === 'citric acid' || (n.includes('citric acid') && !n.includes('sodium citrate') && !n.includes('citrate'))) {
-    return 0;
+  if (!n) {
+    return {
+      capacityMgCaCO3PerGram: null,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'INGREDIENT_NAME_MISSING'
+    };
   }
 
-  // Exact benchmark matches for backward compatibility and test contracts
-  if (n.includes('glda 47') || n === 'glda 47% liquid' || n.includes('dissolvine gl-47') || n === 'glda-47') {
-    return 137;
-  }
-  if (n.includes('mgda 38') || n === 'mgda 38% liquid' || n.includes('trilon m')) {
-    return 155;
-  }
-  if (n.includes('citrate dihydrate') || n === 'sodium citrate dihydrate' || n === 'sodium citrate') {
-    return 150;
-  }
-  if (n.includes('citrate anhydrous') || n === 'sodium citrate anhydrous') {
-    return 170;
-  }
-  if (n === 'sodium gluconate' || n.includes('gluconate')) {
-    return 76;
-  }
-  if (n.includes('edta tetrasodium') || n === 'edta tetrasodium' || (n.includes('edta') && !n.includes('39%'))) {
-    return 220;
-  }
-  if (n.includes('edta 39%') || n.includes('edta 39')) {
-    return 103;
-  }
-  if (n.includes('dtpa')) {
-    return 200;
-  }
-  if (n.includes('stpp') || n.includes('tripolyphosphate')) {
-    return 180;
-  }
-  if (n.includes('zeolite') || n.includes('aluminosilicate')) {
-    return 110;
-  }
-  if (n.includes('polycarboxylate') || n.includes('polyacrylate')) {
-    return 200;
-  }
-  if (n.includes('hedp') || n.includes('etidronate') || n.includes('etidronic')) {
-    return 250;
+  // 1. Specific ID match
+  let matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => n === s.id);
+
+  // 2. Exact name match
+  if (!matchedSpecies) {
+    matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => n === s.name.toLowerCase());
   }
 
-  // Generic matching with explicit active concentration calculation if available
-  if (n.includes('glda') || n.includes('dissolvine') || n.includes('gl-47')) {
-    if (explicitActive !== undefined && explicitActive > 0) {
-      return Number(((explicitActive / 100) * 285.04).toFixed(1));
-    }
-    return 137; // Standard default liquid GLDA-47
+  // 3. Documented Alias / Brand match
+  if (!matchedSpecies) {
+    matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
+      n.includes(s.id) || 
+      n.includes(s.name.toLowerCase()) ||
+      (s.id === 'glda-47' && (n.includes('glda 47') || n.includes('gl-47'))) ||
+      (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
+      (s.id === 'citrate-dihydrate' && (n.includes('citrate dihydrate') || n.includes('sodium citrate'))) ||
+      (s.id === 'gluconate' && n.includes('gluconate')) ||
+      (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium'))) ||
+      (s.id === 'edta-liquid' && n.includes('edta 39')) ||
+      (s.id === 'stpp' && n.includes('stpp')) ||
+      (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
+      (s.id === 'hedp' && (n.includes('hedp') || n.includes('etidronate'))) ||
+      (s.id === 'polycarboxylate' && (n.includes('polycarboxylate') || n.includes('polyacrylate')))
+    );
   }
 
-  if (n.includes('citrate') || n.includes('citric')) {
-    return 150; // Sodium Citrate Dihydrate
+  if (!matchedSpecies || matchedSpecies.scientificStatus === 'INSUFFICIENT_DATA') {
+    return {
+      capacityMgCaCO3PerGram: null,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'CHELATOR_CAPACITY_NOT_FOUND_OR_UNSUPPORTED'
+    };
   }
 
-  if (n.includes('mgda')) {
-    if (explicitActive !== undefined && explicitActive > 0) {
-      return Number(((explicitActive / 100) * 369.20).toFixed(1));
-    }
-    return 155;
-  }
-
-  return 0; // Non-chelating ingredients return 0
+  return validateChelatorCapacity(
+    matchedSpecies.effectiveCommercialCapacityMgPerG,
+    matchedSpecies.citation
+  );
 }
 
 /**
@@ -691,7 +706,8 @@ export function calculateFormulationChelationCapacity(
     const batchMassGrams = (validPct / 100) * batchKg * 1000;
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
-    const bindingCapacityMgPerG = getChelatorBindingCapacity(rawName, typeof explicitActive === 'number' ? explicitActive : undefined);
+    const capacityResult = getChelatorBindingCapacity(rawName, typeof explicitActive === 'number' ? explicitActive : undefined);
+    const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
     const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
@@ -734,8 +750,8 @@ export function calculateFormulationChelationCapacity(
     totalSequestrationMg += boundCaCO3Mg;
     batchSequestrationGrams += batchBoundCaCO3Grams;
 
-    const activePct = typeof explicitActive === 'number' ? explicitActive : (matchedSpecies?.activeDefault ?? 100);
-    const activeMassGrams = (validPct / 100) * dose * (activePct / 100);
+    const activePct = typeof explicitActive === 'number' ? explicitActive : (matchedSpecies?.activeDefault ?? null);
+    const activeMassGrams = (activePct !== null) ? (validPct / 100) * dose * (activePct / 100) : 0;
     const mw = matchedSpecies?.molecularWeight;
     const moles = mw && mw > 0 ? activeMassGrams / mw : undefined;
 
@@ -1065,8 +1081,8 @@ export function calculateWaterHardnessTolerance(
 export function evaluateFormulationGreenChelators(ingredients: FormulationIngredient[]) {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const greenChelators = ings.filter(i => {
-    const cap = getChelatorBindingCapacity(i?.name || '');
-    return cap > 0;
+    const res = getChelatorBindingCapacity(i?.name || '');
+    return res.status === 'VALID' && (res.capacityMgCaCO3PerGram ?? 0) > 0;
   });
 
   const hasGreenChelator = greenChelators.length > 0;
@@ -1149,9 +1165,12 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
 
   if (inputList.length > 0) {
     details = inputList.map((c, i) => {
-      const resolvedCap = c.bindingCapacity || getChelatorBindingCapacity(c.name);
-      const isKnown = typeof resolvedCap === 'number' && resolvedCap > 0;
-      const bindingCap = isKnown ? resolvedCap : 0;
+      const capRes = c.bindingCapacity 
+        ? { capacityMgCaCO3PerGram: c.bindingCapacity, status: 'VALID' } 
+        : getChelatorBindingCapacity(c.name);
+      
+      const isKnown = capRes.status === 'VALID' && (capRes.capacityMgCaCO3PerGram ?? 0) > 0;
+      const bindingCap = isKnown ? (capRes.capacityMgCaCO3PerGram as number) : 0;
       const theoGrams = isKnown ? stoichiometricTargetMg / bindingCap : 0;
       const coGrams = theoGrams * (coTarget / 100);
       const calcPct = isKnown ? (coGrams / (washDose || 1)) * 100 : 0;

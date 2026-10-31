@@ -88,7 +88,7 @@ export const AnalyticalMetricsPanel: React.FC<AnalyticalMetricsPanelProps> = ({
             Ionic Compatibility
           </span>
           <span className={`text-base font-black ${compatibilityRes?.isCompatible ? 'text-emerald-400' : 'text-red-400'}`}>
-            {compatibilityRes?.score || 100}%
+            {compatibilityRes?.score || 0}%
           </span>
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">

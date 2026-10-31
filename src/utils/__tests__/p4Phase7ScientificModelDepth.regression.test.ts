@@ -177,11 +177,11 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // 3. Chelator & Builder Chemistry Tests
   // =========================================================================
   // 3.1 Separate mechanisms for soluble chelants vs inorganic builders vs zeolite
-  const gldaCap = getChelatorBindingCapacity('GLDA 47% Liquid');
-  const edtaCap = getChelatorBindingCapacity('EDTA Tetrasodium / 99% Powder');
-  const citCap = getChelatorBindingCapacity('Sodium Citrate Dihydrate');
-  const stppCap = getChelatorBindingCapacity('Sodium Tripolyphosphate (STPP 94%)');
-  const zeoCap = getChelatorBindingCapacity('Zeolite 4A Builder Powder');
+  const gldaCap = getChelatorBindingCapacity('GLDA 47% Liquid').capacityMgCaCO3PerGram ?? 0;
+  const edtaCap = getChelatorBindingCapacity('EDTA Tetrasodium / 99% Powder').capacityMgCaCO3PerGram ?? 0;
+  const citCap = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0;
+  const stppCap = getChelatorBindingCapacity('Sodium Tripolyphosphate (STPP 94%)').capacityMgCaCO3PerGram ?? 0;
+  const zeoCap = getChelatorBindingCapacity('Zeolite 4A Builder Powder').capacityMgCaCO3PerGram ?? 0;
 
   assert('3. Chelation', '3.1 GLDA effective binding capacity is 137 mg CaCO3/g', gldaCap === 137, gldaCap, 137);
   assert('3. Chelation', '3.2 EDTA 99% powder binding capacity is 220 mg CaCO3/g', edtaCap === 220, edtaCap, 220);
@@ -199,7 +199,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   assert('3. Chelation', '3.6 Dynamic hardness load correctly calculated for 300 ppm in 10L = 3000 mg CaCO3', dynChel.hardnessLoadMg === 3000, dynChel.hardnessLoadMg, 3000);
 
   // 3.7 Unknown chelation capacity
-  const unkChelCap = getChelatorBindingCapacity('Unknown Mystery Salt');
+  const unkChelCap = getChelatorBindingCapacity('Unknown Mystery Salt').capacityMgCaCO3PerGram ?? 0;
   assert('3. Chelation', '3.7 Unknown ingredients do NOT receive fabricated chelation capacity', unkChelCap === 0, unkChelCap, 0);
 
   // =========================================================================

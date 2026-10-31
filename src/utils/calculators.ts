@@ -37,6 +37,8 @@ export interface ActiveMatterIngredient {
 
 // Import newly modularized domain engines
 import { calculateFormulationCompatibility, evaluateFormulationStability } from './compatibilityEngine';
+import { modelManufacturingProcess } from './manufacturing/processModelingEngine';
+import { DossierGenerator, type TechnicalDossier } from './dossierGenerator';
 import { 
   calculateCleaningPerformance, 
   calculateCPI, 
@@ -597,7 +599,25 @@ export function getInciName(name: string): string {
   return name;
 }
 
-export function generateDynamicMixingInstructions(_a: any, ..._args: any[]): string[] {
+export function generateDynamicMixingInstructions(ingredients: FormulationIngredient[], categoryOrOptions?: any): string[] {
+  try {
+    if (Array.isArray(ingredients) && ingredients.length > 0) {
+      const category = typeof categoryOrOptions === 'string'
+        ? categoryOrOptions
+        : (categoryOrOptions?.productCategory || categoryOrOptions?.category || 'LAUNDRY_LIQUID');
+      const processModel = modelManufacturingProcess(ingredients, category as any, 100);
+      if (processModel && Array.isArray(processModel.processSteps) && processModel.processSteps.length > 0) {
+        return processModel.processSteps.map(step => {
+          const temps = step.targetTemperatureC ? ` @ ${step.targetTemperatureC.min}-${step.targetTemperatureC.max}°C` : '';
+          const duration = step.mixingDurationMinutes ? ` (${step.mixingDurationMinutes} min)` : '';
+          const ings = step.targetIngredients && step.targetIngredients.length > 0 ? `: ${step.targetIngredients.join(', ')}` : '';
+          return `Step ${step.stepNumber} [${step.phaseName}]${temps}${duration}${ings} — ${step.criticalQualityControls?.[0] || 'Mix until homogenous.'}`;
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Error generating dynamic manufacturing instructions:', err);
+  }
   return [
     'Add water to vessel.',
     'Add primary surfactant under slow paddle agitation.',
@@ -608,7 +628,7 @@ export function generateDynamicMixingInstructions(_a: any, ..._args: any[]): str
 }
 
 export function scaleFormula(ingredients: FormulationIngredient[], batchSizeKg: number, targetBatchKg?: number) {
-  const target = targetBatchKg || batchSizeKg || 100;
+  const target = targetBatchKg || batchSizeKg || 0;
   return ingredients.map(i => {
     const pct = i.percentage ?? i.percent ?? i.percentageInFormula ?? 0;
     const scaledKg = (pct / 100) * target;
@@ -1755,6 +1775,8 @@ export {
   evaluateIngredientDataQuality,
   traceCompatibilityReasoning,
   analyzeDependencyPropagation,
+  DossierGenerator,
+  type TechnicalDossier,
   evaluateIngredientSubstitution,
   globalIngredientGovernance,
   INGREDIENT_INTELLIGENCE_REGISTRY,

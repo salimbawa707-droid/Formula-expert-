@@ -52,6 +52,7 @@ export interface FormulationIngredient {
   phMax?: number;
   density?: number;
   nonVolatileFraction?: number;
+  confirmedGradeActiveOverride?: boolean;
 }
 
 export interface ActiveFormulaState {
@@ -96,8 +97,14 @@ export interface PHAdvancedResult {
   predictionError?: number | null;
   solverConverged: boolean;
   solverIterations: number;
+  excessStrongAcidEquivalents?: number;
+  excessStrongBaseEquivalents?: number;
+  excessAcidEquivalents?: number;
+  excessBaseEquivalents?: number;
   excessStrongAcid?: number;
   excessStrongBase?: number;
+  excessAcidMoles?: number;
+  excessBaseMoles?: number;
   activeBuffers?: any;
   enzymeWarning?: boolean;
   enzymeWarningMsg?: string;

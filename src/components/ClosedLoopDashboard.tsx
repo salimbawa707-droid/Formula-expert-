@@ -12,7 +12,9 @@ import {
   Check,
   Workflow,
   History,
+  Usb,
 } from 'lucide-react';
+import { LabHardwareModal } from './hardware/LabHardwareModal';
 import { FORMULAS } from '../data/formulas';
 import { ProductCategoryId } from '../domain/productTaxonomy';
 import { StandardUnit } from '../utils/specificationEngine/types';
@@ -51,10 +53,23 @@ export const ClosedLoopDashboard: React.FC = () => {
     return FORMULAS.find(f => f.id === selectedFormulaId) || FORMULAS[0];
   }, [selectedFormulaId]);
 
-  // Simulated Bench Observed Lab Measurements (e.g. drawn from LIMS or external Opentrons run)
+  // Bench Observed Lab Measurements (Simulated or Live Physical Hardware Stream)
   const [observedPH, setObservedPH] = useState<number>(7.85); // Intentionally lower than target 8.5 to trigger feedback
   const [observedViscosity, setObservedViscosity] = useState<number>(280); // Target 350
   const [observedActiveMatter, setObservedActiveMatter] = useState<number>(14.2); // Target 15.0
+  const [isHardwareModalOpen, setIsHardwareModalOpen] = useState<boolean>(false);
+  const [lastHardwareSyncTime, setLastHardwareSyncTime] = useState<string | null>(null);
+
+  const handleHardwareReading = (reading: { parameterKey: 'ph' | 'viscosity' | 'active_matter'; value: number }) => {
+    if (reading.parameterKey === 'ph') {
+      setObservedPH(reading.value);
+    } else if (reading.parameterKey === 'viscosity') {
+      setObservedViscosity(reading.value);
+    } else if (reading.parameterKey === 'active_matter') {
+      setObservedActiveMatter(reading.value);
+    }
+    setLastHardwareSyncTime(new Date().toLocaleTimeString());
+  };
 
   // 2. Compute Predicted Measurements from Scientific Engines
   const predictedMeasurements: PredictedMeasurement[] = useMemo(() => {
@@ -357,15 +372,39 @@ export const ClosedLoopDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Simulated Result Ingestion Simulator */}
+          {/* Simulated / Live Hardware Result Ingestion */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <Database className="w-4 h-4 text-cyan-400" />
-              Adjust Simulated Closed-Loop Observations
-            </h2>
-            <p className="text-xs text-slate-400">
-              Adjust simulated values to observe dynamic feedback and reformulation candidate generation (NOT LAB VALIDATED).
-            </p>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Database className="w-4 h-4 text-cyan-400" />
+                Bench Observed Measurements
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsHardwareModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-900/60 to-blue-900/60 hover:from-cyan-800/80 hover:to-blue-800/80 border border-cyan-500/40 text-xs font-bold text-cyan-200 transition shadow-sm cursor-pointer"
+              >
+                <Usb size={13} className="text-cyan-400" />
+                <span>Link Real Machine</span>
+                {lastHardwareSyncTime && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                )}
+              </button>
+            </div>
+
+            {lastHardwareSyncTime ? (
+              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-2.5 flex items-center justify-between text-xs text-emerald-300">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400" />
+                  Live Physical Hardware Telemetry Streamed
+                </span>
+                <span className="font-mono text-[11px] text-emerald-400">{lastHardwareSyncTime}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">
+                Adjust sliders manually or link physical titrators / viscometers via WebSerial/USB to pipe real measurements.
+              </p>
+            )}
 
             {/* pH Slider */}
             <div className="space-y-1">
@@ -733,6 +772,13 @@ export const ClosedLoopDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Real Physical Lab Machine Hardware Bridge Modal */}
+      <LabHardwareModal
+        isOpen={isHardwareModalOpen}
+        onClose={() => setIsHardwareModalOpen(false)}
+        onApplyReadingToClosedLoop={handleHardwareReading}
+      />
     </div>
   );
 };

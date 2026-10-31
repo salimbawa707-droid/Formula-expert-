@@ -179,7 +179,7 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     const ings: FormulationIngredient[] = (tpl.ingredients || []).map((i: any) => ({
       name: i.name,
       percentage: Number(i.percentage ?? i.percent ?? 0),
-      activeMatterPct: Number(i.activeMatterPct ?? i.activePercent ?? 100),
+      activeMatterPct: Number(i.activeMatterPct ?? i.activePercent ?? null),
       category: i.category || i.role || 'Additive'
     }));
 

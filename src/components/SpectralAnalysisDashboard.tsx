@@ -36,6 +36,23 @@ import {
 import { CANONICAL_LAB_INSTRUMENTS } from '../domain/lims/instrument';
 import { FORMULAS } from '../data/formulas';
 
+export function getDetergentFunctionalBand(cm1: number): string {
+  if (cm1 >= 3200 && cm1 <= 3600) return 'O-H / N-H H-bonded stretch (Hydrate / Amide)';
+  if (cm1 >= 2940 && cm1 <= 2975) return 'Alkyl C-H (CH₃ asymmetric stretch)';
+  if (cm1 >= 2905 && cm1 <= 2939) return 'Alkyl C-H (CH₂ asymmetric stretch, Fatty chain)';
+  if (cm1 >= 2840 && cm1 <= 2865) return 'Alkyl C-H (CH₂ symmetric stretch, Fatty chain)';
+  if (cm1 >= 1700 && cm1 <= 1740) return 'Carbonyl C=O stretch (Ester / Organic Acid)';
+  if (cm1 >= 1580 && cm1 <= 1660) return 'Aromatic C=C / Carboxylate COO⁻ / Amide I';
+  if (cm1 >= 1445 && cm1 <= 1475) return 'Alkyl CH₂ scissor / CH₃ bend';
+  if (cm1 >= 1340 && cm1 <= 1385) return 'Sulfone / Sulfate ester S=O stretch';
+  if (cm1 >= 1165 && cm1 <= 1230) return 'Sulfonate -SO₃⁻ / Sulfate -O-SO₃⁻ asym stretch';
+  if (cm1 >= 1095 && cm1 <= 1140) return 'Aliphatic ether C-O-C stretch (Polyoxyethylene EO chain)';
+  if (cm1 >= 1025 && cm1 <= 1075) return 'Sulfonate -SO₃⁻ / Sulfate -O-SO₃⁻ sym stretch (Diagnostic)';
+  if (cm1 >= 820 && cm1 <= 855) return 'Para-disubstituted aromatic ring out-of-plane C-H bend';
+  if (cm1 >= 640 && cm1 <= 730) return 'C-S stretch / Long chain (CH₂)n rocking';
+  return 'Diagnostic Fingerprint Region';
+}
+
 export const SpectralAnalysisDashboard: React.FC = () => {
   // Active state
   const [selectedReferenceId, setSelectedReferenceId] = useState<string>(CANONICAL_SPECTRAL_REFERENCES[0].referenceId);
@@ -518,7 +535,9 @@ export const SpectralAnalysisDashboard: React.FC = () => {
                       <td className="p-2 text-slate-300">{p.prominence.toFixed(4)}</td>
                       <td className="p-2 text-slate-400">{p.fwhmWidth ? `${p.fwhmWidth.toFixed(1)} cm⁻¹` : '-'}</td>
                       <td className="p-2 text-emerald-400">{p.snr ? `${p.snr}x` : '-'}</td>
-                      <td className="p-2 text-slate-300 font-sans">{p.label || 'Unassigned / Fingerprint mode'}</td>
+                      <td className="p-2 text-cyan-200 font-sans font-medium">
+                        {p.label || getDetergentFunctionalBand(p.position)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

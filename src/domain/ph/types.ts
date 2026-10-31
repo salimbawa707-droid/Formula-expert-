@@ -153,15 +153,37 @@ export interface DetailedPHResult {
   confidence: number;
   measuredPH: number | null;
   predictionError: number | null;
+  /** Explicit stoichiometric acid equivalents excess (unit: eq, chemical equivalents) */
+  excessAcidEquivalents: number;
+  /** Explicit stoichiometric base equivalents excess (unit: eq, chemical equivalents) */
+  excessBaseEquivalents: number;
+  /** Explicit unneutralized strong mineral acid equivalents (unit: eq, chemical equivalents) */
+  excessStrongAcidEquivalents: number;
+  /** Explicit unneutralized strong caustic alkali equivalents (unit: eq, chemical equivalents) */
+  excessStrongBaseEquivalents: number;
+  /** @deprecated Use excessStrongAcidEquivalents. Note: quantity represents chemical equivalents (eq), not moles. */
   excessStrongAcid: number;
+  /** @deprecated Use excessStrongBaseEquivalents. Note: quantity represents chemical equivalents (eq), not moles. */
   excessStrongBase: number;
+  /** @deprecated Use excessAcidEquivalents. Note: quantity represents chemical equivalents (eq), not moles. */
+  excessAcidMoles: number;
+  /** @deprecated Use excessBaseEquivalents. Note: quantity represents chemical equivalents (eq), not moles. */
+  excessBaseMoles: number;
   bufferCapacity: number;
   totalBufferCapacity: number;
   solverConverged: boolean;
   solverIterations: number;
   details: {
+    totalAcidEquivalents: number;
+    totalBaseEquivalents: number;
+    totalStrongAcidEquivalents?: number;
+    totalStrongBaseEquivalents?: number;
+    netEquivalents: number;
+    /** @deprecated Use totalAcidEquivalents (quantity in eq) */
     totalAcidMoles: number;
+    /** @deprecated Use totalBaseEquivalents (quantity in eq) */
     totalBaseMoles: number;
+    /** @deprecated Use netEquivalents (quantity in eq) */
     netMoles: number;
     recognizedContributors: string[];
     modelType: string;

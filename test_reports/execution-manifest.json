@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-10-27T08:15:51.181Z",
+  "timestamp": "2026-10-31T16:03:07.074Z",
   "summary": {
     "discoveredCount": 130,
     "registeredCount": 130,
     "executedCount": 130,
     "skippedCount": 0,
-    "failedModulesCount": 6,
-    "totalAssertionsExecuted": 4464,
-    "totalAssertionsPassed": 4425,
-    "totalAssertionsFailed": 39,
-    "isCleanPass": false,
+    "failedModulesCount": 0,
+    "totalAssertionsExecuted": 4585,
+    "totalAssertionsPassed": 4585,
+    "totalAssertionsFailed": 0,
+    "isCleanPass": true,
     "testIntegrityFailures": 0,
     "p2Phase13Failures": 0,
     "failureDetails": [],
@@ -33,9 +33,9 @@
       "file": "pHEngineV2.regression.test.ts",
       "moduleName": "runPHEngineV2TestSuite",
       "executed": true,
-      "passedAssertions": 32,
+      "passedAssertions": 67,
       "failedAssertions": 0,
-      "totalAssertions": 32,
+      "totalAssertions": 67,
       "skipped": false
     },
     {
@@ -78,9 +78,9 @@
       "file": "powderEngine.regression.test.ts",
       "moduleName": "runPowderEngineTestSuite",
       "executed": true,
-      "passedAssertions": 104,
+      "passedAssertions": 108,
       "failedAssertions": 0,
-      "totalAssertions": 104,
+      "totalAssertions": 108,
       "skipped": false
     },
     {
@@ -339,9 +339,9 @@
       "file": "p1Phase6LabEvidenceValidation.regression.test.ts",
       "moduleName": "runP1Phase6LabEvidenceValidationTestSuite",
       "executed": true,
-      "passedAssertions": 30,
+      "passedAssertions": 45,
       "failedAssertions": 0,
-      "totalAssertions": 30,
+      "totalAssertions": 45,
       "skipped": false
     },
     {
@@ -474,9 +474,9 @@
       "file": "commercialGrades.regression.test.ts",
       "moduleName": "runCommercialGradesTestSuite",
       "executed": true,
-      "passedAssertions": 12,
+      "passedAssertions": 15,
       "failedAssertions": 0,
-      "totalAssertions": 12,
+      "totalAssertions": 15,
       "skipped": false
     },
     {
@@ -573,8 +573,8 @@
       "file": "androidNetworkSecurity.regression.test.ts",
       "moduleName": "runAndroidNetworkSecurityTestSuite",
       "executed": true,
-      "passedAssertions": 5,
-      "failedAssertions": 2,
+      "passedAssertions": 7,
+      "failedAssertions": 0,
       "totalAssertions": 7,
       "skipped": false
     },
@@ -582,8 +582,8 @@
       "file": "currentScientificReport.regression.test.ts",
       "moduleName": "runCurrentScientificReportRegressionTestSuite",
       "executed": true,
-      "passedAssertions": 5,
-      "failedAssertions": 1,
+      "passedAssertions": 6,
+      "failedAssertions": 0,
       "totalAssertions": 6,
       "skipped": false
     },
@@ -600,18 +600,18 @@
       "file": "rdkitAdapter.regression.test.ts",
       "moduleName": "runRDKitAdapterTestSuite",
       "executed": true,
-      "passedAssertions": 0,
-      "failedAssertions": 1,
-      "totalAssertions": 1,
+      "passedAssertions": 18,
+      "failedAssertions": 0,
+      "totalAssertions": 18,
       "skipped": false
     },
     {
       "file": "formulationOptimization.regression.test.ts",
       "moduleName": "runFormulationOptimizationTestSuite",
       "executed": true,
-      "passedAssertions": 0,
-      "failedAssertions": 1,
-      "totalAssertions": 1,
+      "passedAssertions": 34,
+      "failedAssertions": 0,
+      "totalAssertions": 34,
       "skipped": false
     },
     {
@@ -654,9 +654,9 @@
       "file": "spectralEvidence.regression.test.ts",
       "moduleName": "runSpectralEvidenceTestSuite",
       "executed": true,
-      "passedAssertions": 5,
+      "passedAssertions": 7,
       "failedAssertions": 0,
-      "totalAssertions": 5,
+      "totalAssertions": 7,
       "skipped": false
     },
     {
@@ -717,9 +717,9 @@
       "file": "p0RemediationOpentronsSimulationIsolation.regression.test.ts",
       "moduleName": "runP0RemediationOpentronsSimulationTestSuite",
       "executed": true,
-      "passedAssertions": 22,
+      "passedAssertions": 24,
       "failedAssertions": 0,
-      "totalAssertions": 22,
+      "totalAssertions": 24,
       "skipped": false
     },
     {
@@ -762,8 +762,8 @@
       "file": "p0RemediationAndroidProjectIntegrity.regression.test.ts",
       "moduleName": "runP0RemediationAndroidProjectIntegrityTestSuite",
       "executed": true,
-      "passedAssertions": 9,
-      "failedAssertions": 21,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
       "totalAssertions": 30,
       "skipped": false
     },
@@ -780,9 +780,9 @@
       "file": "p0RemediationScientificVsLabValidation.regression.test.ts",
       "moduleName": "runP0RemediationScientificVsLabValidationTestSuite",
       "executed": true,
-      "passedAssertions": 35,
+      "passedAssertions": 37,
       "failedAssertions": 0,
-      "totalAssertions": 35,
+      "totalAssertions": 37,
       "skipped": false
     },
     {
@@ -969,9 +969,9 @@
       "file": "p2Phase13EmpiricalValidation.regression.test.ts",
       "moduleName": "runP2Phase13EmpiricalValidationTestSuite",
       "executed": true,
-      "passedAssertions": 23,
+      "passedAssertions": 24,
       "failedAssertions": 0,
-      "totalAssertions": 23,
+      "totalAssertions": 24,
       "skipped": false
     },
     {
@@ -1104,8 +1104,8 @@
       "file": "masterFinalizer.integration.test.ts",
       "moduleName": "runMasterFinalizerIntegrationTestSuite",
       "executed": true,
-      "passedAssertions": 11,
-      "failedAssertions": 13,
+      "passedAssertions": 24,
+      "failedAssertions": 0,
       "totalAssertions": 24,
       "skipped": false
     },
@@ -1158,9 +1158,9 @@
       "file": "vaultLogic.regression.test.ts",
       "moduleName": "runVaultLogicTestSuite",
       "executed": true,
-      "passedAssertions": 136,
+      "passedAssertions": 143,
       "failedAssertions": 0,
-      "totalAssertions": 136,
+      "totalAssertions": 143,
       "skipped": false
     },
     {

@@ -31,6 +31,7 @@
 
 import { execFileSync } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 import {
   buildProductConstraints,
   evaluateFormulationConstraints,
@@ -203,7 +204,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     id: i.id,
     name: i.name,
     percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-    activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? 100),
+    activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? null),
     costPerKg: Number(i.costPerKg ?? 1.0),
     category: i.category,
     function: i.function,
@@ -451,7 +452,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
       id: i.id,
       name: i.name,
       percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-      activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? 100),
+      activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? null),
       costPerKg: Number(i.costPerKg ?? 1.0),
       category: i.category,
       function: i.function,
@@ -700,7 +701,11 @@ export function runFormulationOptimizationTestSuite(): TestResultSummary {
         });
     `;
 
-    const rawOutput = execFileSync(process.execPath, ['-e', runnerCode], {
+    const tsxBinary = fs.existsSync('/usr/local/bin/tsx')
+      ? '/usr/local/bin/tsx'
+      : (process.execPath.includes('tsx') ? process.execPath : 'tsx');
+
+    const rawOutput = execFileSync(tsxBinary, ['-e', runnerCode], {
       encoding: 'utf-8',
       timeout: 45000,
     });

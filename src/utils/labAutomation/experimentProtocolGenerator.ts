@@ -21,6 +21,58 @@ import { generateStandardFormulationDeck } from './deckLayoutEngine';
 import { CANONICAL_PIPETTES, selectBestPipetteForVolume } from './pipetteRegistry';
 import { computeProtocolCanonicalHash } from './protocolHashService';
 import { validateLiquidHandlingPlan } from './liquidHandlingConstraintEngine';
+import {
+  ConcentrationBasis,
+  StockVolumeConversionEvidence,
+  ExperimentIngredient
+} from './types';
+
+export function calculateRequiredStockVolumeUl(
+  ingredient: ExperimentIngredient
+): number | null {
+  const evidence = ingredient.conversionEvidence;
+
+  if (!evidence) return null;
+
+  if (
+    !Number.isFinite(ingredient.concentrationInStockPercent) ||
+    ingredient.concentrationInStockPercent <= 0 ||
+    ingredient.concentrationInStockPercent > 100 ||
+    !Number.isFinite(ingredient.targetFormulaPercent) ||
+    ingredient.targetFormulaPercent < 0 ||
+    ingredient.targetFormulaPercent > 100
+  ) {
+    return null;
+  }
+
+  if (
+    evidence.concentrationBasis !== 'W_W' ||
+    !Number.isFinite(evidence.stockDensityGPerMl) ||
+    !Number.isFinite(evidence.targetBatchMassG) ||
+    !Number.isFinite(evidence.stockDensityEvidenceId ? 1 : NaN) ||
+    evidence.stockDensityGPerMl! <= 0 ||
+    evidence.targetBatchMassG! <= 0
+  ) {
+    return null;
+  }
+
+  const requiredStockMassG =
+    evidence.targetBatchMassG! *
+    (ingredient.targetFormulaPercent / 100) /
+    (ingredient.concentrationInStockPercent / 100);
+
+  const requiredVolumeUl =
+    (requiredStockMassG / evidence.stockDensityGPerMl!) * 1000;
+
+  if (
+    !Number.isFinite(requiredVolumeUl) ||
+    requiredVolumeUl < 0
+  ) {
+    return null;
+  }
+
+  return Number(requiredVolumeUl.toFixed(2));
+}
 
 export interface ProtocolGenerationOptions {
   protocolId?: string;
@@ -44,6 +96,54 @@ export function generateExperimentProtocol(
   const protocolId = options.protocolId || `PROTO-${experiment.id.replace(/[^A-Za-z0-9]/g, '').slice(-10).toUpperCase()}`;
   const protocolVersion = '1.0.0';
   const createdAt = options.createdAt || experiment.createdAt || '2026-10-02T00:00:00.000Z';
+
+  // 0. Pre-validate Ingredient Volumes & Conversion Evidence
+  const ingredientErrors: string[] = [];
+  const validatedIngredients = experiment.ingredients.map(ing => {
+    const vol = calculateRequiredStockVolumeUl(ing);
+    if (vol === null) {
+      ingredientErrors.push(`Ingredient '${ing.tradeName}' (${ing.canonicalIngredientId}) has missing or invalid scientific conversion evidence (Basis, Stock Density, Evidence ID).`);
+    }
+    return { ...ing, requiredVolumeUl: vol };
+  });
+
+  if (ingredientErrors.length > 0) {
+    return {
+      protocolId,
+      protocolVersion,
+      protocolName: `${experiment.name} [INCOMPLETE - INSUFFICIENT DATA]`,
+      experimentId: experiment.id,
+      formulaId: experiment.formulaId,
+      formulaVersionId: experiment.formulaVersionId,
+      robotPlatform: platform,
+      apiLevel: '2.13',
+      deckLayout: {},
+      pipettes: {},
+      commands: [],
+      liquidTransfers: [],
+      mixOperations: [],
+      totalTipsRequired: 0,
+      estimatedDurationMinutes: 0,
+      validationResult: {
+        status: 'INSUFFICIENT_DATA',
+        isValid: false,
+        canApproveForExport: false,
+        issues: ingredientErrors.map(err => ({
+          severity: 'ERROR',
+          code: 'MISSING_CONVERSION_EVIDENCE',
+          message: err,
+          scientificGuidance: 'Provide W_W concentration basis, stock density (g/mL), and traceable evidence ID for all ingredients to enable mass-to-volume conversion.'
+        })),
+        validatedAt: new Date().toISOString(),
+        validatorVersion: '1.0.0',
+        summary: `Protocol generation blocked: ${ingredientErrors.length} ingredients lack validated mass-to-volume conversion evidence.`
+      },
+      protocolHash: 'incomplete',
+      createdAt,
+      createdBy: experiment.createdBy || 'Automated Formulator Protocol Engine',
+      approvedForExport: false,
+    };
+  }
 
   // 1. Initialize Standard Deck
   const deckLayout = generateStandardFormulationDeck(
@@ -90,7 +190,7 @@ export function generateExperimentProtocol(
 
   // Setup stock ingredients in source rack
   let wellIdx = 0;
-  for (const ing of experiment.ingredients) {
+  for (const ing of validatedIngredients) {
     // Water/solvent handled via reservoir
     const isWater = ing.inciName?.toLowerCase().includes('water') || ing.tradeName?.toLowerCase().includes('water');
     if (isWater && reservoirItem) {
@@ -167,7 +267,7 @@ export function generateExperimentProtocol(
 
   // Determine ingredient addition order:
   // Water first, then builders/chelators, surfactants, specialty additives, then preservative/fragrance
-  const sortedIngredients = [...experiment.ingredients].sort((a, b) => {
+  const sortedIngredients = [...validatedIngredients].sort((a, b) => {
     const isWaterA = a.inciName?.toLowerCase().includes('water') || a.tradeName?.toLowerCase().includes('water');
     const isWaterB = b.inciName?.toLowerCase().includes('water') || b.tradeName?.toLowerCase().includes('water');
     if (isWaterA) return -1;
@@ -181,12 +281,7 @@ export function generateExperimentProtocol(
     const src = sourceWellMap[ing.canonicalIngredientId];
     if (!src) continue;
 
-    // Calculate volume per replicate well
-    // Target volume = (targetFormulaPercent / concentrationInStockPercent) * targetScaleUl
-    const fraction = ing.concentrationInStockPercent > 0
-      ? (ing.targetFormulaPercent / ing.concentrationInStockPercent)
-      : (ing.targetFormulaPercent / 100);
-    const volPerWell = Math.max(1.0, Math.round(fraction * experiment.targetScaleUl * 10) / 10);
+    const volPerWell = ing.requiredVolumeUl!;
 
     // Pick best pipette
     const chosenPip = selectBestPipetteForVolume(volPerWell, availablePipettesList as any);

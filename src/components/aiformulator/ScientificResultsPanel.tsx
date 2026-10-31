@@ -347,9 +347,44 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 NOT TESTED
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 leading-tight">
-              Calculated harmonic density: {(scientificResults.density?.densityKgPerM3 ?? ((scientificResults.density?.densityGPerCm3 ?? 1.0) * 1000)).toFixed(1)} kg/m³. Batch volume: {((scientificResults.density?.totalVolumeCm3 ?? 100000) / 1000).toFixed(2)} L.
-            </p>
+            {(() => {
+              const densityKgPerM3 =
+                scientificResults.density?.densityKgPerM3 ??
+                (
+                  typeof scientificResults.density?.densityGPerCm3 === 'number' &&
+                  Number.isFinite(scientificResults.density.densityGPerCm3) &&
+                  scientificResults.density.densityGPerCm3 > 0
+                    ? scientificResults.density.densityGPerCm3 * 1000
+                    : null
+                );
+
+              const volumeCm3 =
+                scientificResults.density?.totalVolumeCm3;
+
+              const validDensity =
+                typeof densityKgPerM3 === 'number' &&
+                Number.isFinite(densityKgPerM3) &&
+                densityKgPerM3 > 0;
+
+              const validVolume =
+                typeof volumeCm3 === 'number' &&
+                Number.isFinite(volumeCm3) &&
+                volumeCm3 >= 0;
+
+              return (
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Calculated harmonic density:{' '}
+                  {validDensity
+                    ? `${densityKgPerM3.toFixed(1)} kg/m³`
+                    : 'UNAVAILABLE'}
+                  . Batch volume:{' '}
+                  {validVolume
+                    ? `${(volumeCm3 / 1000).toFixed(2)} L`
+                    : 'UNAVAILABLE'}
+                  .
+                </p>
+              );
+            })()}
           </div>
 
           {/* 5. Non-Volatile Matter (NVR) */}

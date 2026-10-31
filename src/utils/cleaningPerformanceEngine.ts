@@ -827,7 +827,7 @@ export function calculateCleaningPerformance(
       if (kpi.isApplicable && kpi.provenance !== 'NOT_APPLICABLE') {
         kpi.provenance = 'MEASURED';
         if (kpi.value !== null && primaryMeasuredVal !== undefined) {
-          kpi.status = primaryMeasuredVal >= (kpi.targetMin || 70) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
+          kpi.status = primaryMeasuredVal >= (kpi.targetMin || 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
         }
       }
     }

@@ -87,13 +87,14 @@ export function calculatePowderChelationSystem(
   const chelatorIngredients: PowderChelationReport['chelatorIngredients'] = [];
   let totalChelatorPct = 0;
   let totalCaCapacityMg = 0;
+  let hasInsufficientActiveMatter = false;
   let hasValidatedData = false;
 
   classifiedIngredients.forEach((ing) => {
     const name = ing.name.toLowerCase();
     if (ing.functionalClass === 'Chelating Agent / Soluble Sequestrant') {
       let type = 'Soluble Organic Sequestrant';
-      let capacityMgPerGram: number | undefined = undefined; // mg CaCO3 per gram active chelator
+      let capacityMgPerGram: number | undefined = undefined; // mg CaCO₃ per gram active chelator
       let capacityStatus = 'Validated capacity data unavailable';
 
       if (name.includes('edta') || name.includes('tetrasodium')) {
@@ -132,13 +133,36 @@ export function calculatePowderChelationSystem(
       });
       totalChelatorPct += ing.inputPercentage;
 
+      const rawActivePct = ing.activeMatterPct;
+      const activePct =
+        typeof rawActivePct === 'number' &&
+        Number.isFinite(rawActivePct) &&
+        rawActivePct >= 0 &&
+        rawActivePct <= 100
+          ? rawActivePct
+          : null;
+
+      if (activePct === null) {
+        hasInsufficientActiveMatter = true;
+        return;
+      }
+
       if (capacityMgPerGram !== undefined) {
-        const activePct = ing.activeMatterPct || 100;
         const activeGramsInDose = (washDoseG * (ing.inputPercentage / 100) * (activePct / 100));
         totalCaCapacityMg += activeGramsInDose * capacityMgPerGram;
       }
     }
   });
+
+  if (hasInsufficientActiveMatter) {
+    return {
+      totalChelatorPct: 0,
+      chelatorIngredients: [],
+      hasValidatedData: false,
+      capacityStatus: 'INSUFFICIENT_DATA: Missing or invalid active matter percentage for one or more chelators.',
+      source: 'INSUFFICIENT_DATA'
+    };
+  }
 
   if (chelatorIngredients.length === 0) {
     return {

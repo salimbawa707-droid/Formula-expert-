@@ -101,7 +101,7 @@ export class NumericalEquilibriumSolver {
 
       if (!foundBracket) {
         return {
-          pH: Math.abs(fa) < Math.abs(fb) ? a : b,
+          pH: Number.NaN,
           status: 'NON_CONVERGED',
           converged: false,
           iterations: 0,
@@ -205,7 +205,7 @@ export class NumericalEquilibriumSolver {
     // Max iterations reached
     const converged = Math.abs(fCurrent) <= tol * 10;
     return {
-      pH: Number(currentPH.toFixed(4)),
+      pH: converged ? Number(currentPH.toFixed(4)) : Number.NaN,
       status: converged ? 'CONVERGED' : 'NON_CONVERGED',
       converged,
       iterations,

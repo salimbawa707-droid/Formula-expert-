@@ -43,6 +43,7 @@ import { getPreservativeWarning } from '../calculators';
 import { calculateLabHealthScore } from '../labHealthEngine';
 import { analyzeClimateAndHardWater } from '../climateEngine';
 import { findSubstitutionsForFormula } from '../substitutionEngine';
+import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../specificationEngine';
 
 // =============================================================================
 // 1. STRONGLY TYPED INTERMEDIATE SCIENTIFIC STATE MODEL
@@ -320,22 +321,15 @@ export class ScientificExecutionDAG {
           let isUnknown = ing.isUnknown ?? false;
 
           if (activePct === undefined) {
-            if (matchedUniv) {
-              if (matchedUniv.id === 'aristo-9' || matchedUniv.unknownProperties?.includes('activeMatter')) {
-                isUnknown = true;
-                state.unknownParameters.push(`${ing.name}:activeMatter`);
-                activePct = 0;
-              } else {
-                activePct = matchedUniv.activeDefault ?? matchedUniv.activeMatter ?? 100;
-              }
+            if (matchedUniv && matchedUniv.activeMatter !== undefined) {
+              activePct = matchedUniv.activeMatter;
             } else {
-              const autoActive = getDefaultActiveMatter(ing.name);
-              activePct = autoActive;
-              if (autoActive === 100 && !cleanName.includes('water') && !cleanName.includes('salt') && !cleanName.includes('soda ash')) {
-                state.assumptions.push(`Ingredient '${ing.name}' assumed 100% active purity from baseline defaults.`);
-              }
+              isUnknown = true;
+              state.unknownParameters.push(`${ing.name}:activeMatter`);
+              activePct = 0; // Explicitly 0 for unknown
             }
           }
+          // Remove automatic assumption logs
 
           const hlb = ing.hlb ?? ing.hlbValue ?? matchedUniv?.hlb;
           const density = ing.density ?? (matchedUniv as any)?.density ?? (intel as any)?.densityGPerMl ?? (intel as any)?.density;
@@ -456,7 +450,7 @@ export class ScientificExecutionDAG {
         state.phWarnings = phWarnings;
         state.phDetails = phDetails;
         state.slurryBasis = slurryBasis;
-        state.phStatus = finalPH !== null ? (isPHMeasured ? 'VALID' : 'SCREENING') : 'UNKNOWN';
+        state.phStatus = (finalPH !== null && !isNaN(finalPH) && (phConverged || isPHMeasured)) ? (isPHMeasured ? 'VALID' : 'SCREENING') : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -578,7 +572,7 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER'],
       execute: (state) => {
-        const ph = state.finalEquilibriumPH ?? 7.0;
+        const ph = state.finalEquilibriumPH;
         const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory);
         state.compatibilityResult = compRes;
         state.compatibilityScore = compRes.compatibilityScore;
@@ -607,7 +601,7 @@ export class ScientificExecutionDAG {
             reason: 'SOLID_OR_POWDER',
             viscosityReport: ViscosityEngine.evaluateViscosity(state.resolvedIngredients, {
               productCategory: state.canonicalCategory,
-              targetPH: state.finalEquilibriumPH ?? 7,
+              targetPH: state.finalEquilibriumPH ?? null,
               activeMatterReport: state.activeMatterReport
             })
           };
@@ -617,7 +611,7 @@ export class ScientificExecutionDAG {
 
         const viscReport = ViscosityEngine.evaluateViscosity(state.resolvedIngredients, {
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
-          targetPH: state.finalEquilibriumPH ?? 7,
+          targetPH: state.finalEquilibriumPH ?? null,
           temperatureC: state.rawInput.temperatureC ?? state.rawInput.temperature ?? 25,
           activeMatterReport: state.activeMatterReport // Consume authoritative active matter result
         });
@@ -727,7 +721,7 @@ export class ScientificExecutionDAG {
 
         const perfRes = calculateCleaningPerformance(
           state.resolvedIngredients,
-          state.finalEquilibriumPH ?? 7,
+          state.finalEquilibriumPH ?? null,
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
           undefined,
           {
@@ -750,7 +744,7 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['COMPATIBILITY', 'PH_EQUILIBRIUM'],
       execute: (state) => {
-        const presWarningObj = getPreservativeWarning(state.resolvedIngredients, state.finalEquilibriumPH ?? 7);
+        const presWarningObj = getPreservativeWarning(state.resolvedIngredients, state.finalEquilibriumPH ?? null);
         const presWarningMsg = presWarningObj ? (typeof presWarningObj === 'string' ? presWarningObj : presWarningObj.message) : null;
 
         let presStatus: 'ADEQUATE' | 'WARNING' = 'ADEQUATE';
@@ -828,7 +822,7 @@ export class ScientificExecutionDAG {
           state.resolvedIngredients,
           state.canonicalCategory,
           state.rawInput.regulatoryContext,
-          state.finalEquilibriumPH ?? 7
+          state.finalEquilibriumPH ?? null
         );
         state.regulatoryStatus = 'VALID';
       }
@@ -876,8 +870,34 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'VISCOSITY', 'DENSITY', 'NVR', 'POWDER_ENGINE'],
       execute: (state) => {
-        // Enforce validation boundaries
-        state.specificationStatus = 'VALID';
+        const specTemplate = getSpecificationTemplateForCategory(state.canonicalCategory, state.formulaName);
+        const specReport = evaluateSpecifications({
+          formulaId: state.formulaId,
+          formulaName: state.formulaName,
+          formulaVersion: state.formulaVersion,
+          productCategory: state.canonicalCategory,
+          parameters: specTemplate?.parameters || [],
+          labMeasurements: state.rawInput.labEvidence || [],
+          powderReport: state.powderReport,
+          costReport: state.costResult ? { costPerKg: state.costResult.costPerKg, totalBatchCost: state.costResult.totalBatchCost } as any : null,
+          liquidResults: {
+            pH: state.finalEquilibriumPH ?? undefined,
+            activeSurfactants: state.totalSurfactantActivePct,
+            totalPercentage: state.totalMassPct,
+            viscosity: state.viscosityResult?.description,
+            viscosityCp: state.viscosityResult?.predictedViscosityCp ?? undefined,
+            density: state.densityGPerCm3,
+            liquidNVR: state.nvrPercentage,
+            liquidNVRComplete: state.nvrResult?.isComplete,
+            nvrCoveragePct: state.nvrResult?.dataCompleteness,
+            costPerKg: state.costResult?.costPerKg
+          }
+        });
+
+        state.specificationResult = specReport;
+        state.specificationStatus = specReport.verdict.status === 'PASS' 
+          ? 'VALID' 
+          : (specReport.verdict.status === 'FAIL' ? 'FAILED' : 'INSUFFICIENT_DATA');
       }
     });
 
@@ -896,7 +916,7 @@ export class ScientificExecutionDAG {
           productCategory: state.canonicalCategory,
           isComputationallyValid: state.errors.length === 0,
           predictedMetrics: {
-            pH: state.finalEquilibriumPH ?? 7,
+            pH: state.finalEquilibriumPH ?? null,
             activeSurfactantsPct: state.totalSurfactantActivePct,
             activeMatterPct: state.totalSurfactantActivePct,
             viscosityCps: state.viscosityResult?.predictedViscosityCp ?? 0,
@@ -1022,7 +1042,9 @@ export class ScientificExecutionDAG {
           costResult: costOut as any,
           labEvidenceResult: state.labEvidenceResult as any,
           regulatoryResult: state.regulatoryResult as any,
-          blockingIssues: state.blockingIssues,
+          blockingIssues: state.canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' 
+            ? ['CATEGORY_REQUIRED', ...state.blockingIssues] 
+            : state.blockingIssues,
           warnings: state.warnings,
           unknownParameters: state.unknownParameters
         });
@@ -1043,7 +1065,7 @@ export class ScientificExecutionDAG {
           productCategory: state.canonicalCategory,
           waterHardnessPpm: state.waterHardnessPpm,
           batchSizeKg: state.batchSizeKg,
-          calculatedPH: state.finalEquilibriumPH ?? 7.0,
+          calculatedPH: state.finalEquilibriumPH,
           totalActiveMatter: state.totalSurfactantActivePct,
           totalPercentage: state.totalMassPct,
           costPerKg: state.costResult?.costPerKg ?? 0,
@@ -1058,7 +1080,7 @@ export class ScientificExecutionDAG {
         const climatePreset = state.rawInput.climatePreset || 'Temperate';
         state.climateResult = analyzeClimateAndHardWater(state.resolvedIngredients, climatePreset as any, state.waterHardnessPpm);
         state.substitutionResult = findSubstitutionsForFormula(state.resolvedIngredients, state.rawInput.regulatoryContext?.jurisdiction || 'Global', 'Cost Reduction');
-        state.labHealthResult = calculateLabHealthScore(state.resolvedIngredients, state.finalEquilibriumPH ?? 7.0, state.canonicalCategory);
+        state.labHealthResult = calculateLabHealthScore(state.resolvedIngredients, state.finalEquilibriumPH, state.canonicalCategory);
       }
     });
   }

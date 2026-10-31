@@ -11,6 +11,7 @@ import {
   UniversalIngredient
 } from '../../data/universalIngredientLibrary';
 import { calculateActiveMatter, calculateBatchCost } from '../calculators';
+import { ActiveMatterEngine } from '../activeMatterEngine';
 
 export interface CommercialGradeTestResult {
   testNumber: number;
@@ -223,6 +224,52 @@ export function runCommercialGradesTestSuite(): {
     matchesSles.length === 8 && matchesLabsa.length >= 4,
     `SLES CAS matches: ${matchesSles.length}, LABSA CAS matches: ${matchesLabsa.length}`,
     'SLES CAS matches: 8, LABSA CAS matches: >= 4'
+  );
+
+  // TEST 13: Detect conflict for NaOH 50% Liquid set to 99% active without override
+  const conflict1 = ActiveMatterEngine.detectGradeActiveConflict({
+    id: 'naoh-50',
+    name: 'Sodium Hydroxide 50% Liquid (Caustic Soda Lye)',
+    percentage: 10,
+    activeMatterPct: 99
+  } as any);
+  assert(
+    13,
+    'Detect conflict for NaOH 50% Liquid set to 99% active without override',
+    conflict1.hasConflict === true && conflict1.expectedActivePct === 50,
+    conflict1.hasConflict,
+    true
+  );
+
+  // TEST 14: NaOH 50% Liquid set to 50% active has no conflict
+  const conflict2 = ActiveMatterEngine.detectGradeActiveConflict({
+    id: 'naoh-50',
+    name: 'Sodium Hydroxide 50% Liquid (Caustic Soda Lye)',
+    percentage: 10,
+    activeMatterPct: 50
+  } as any);
+  assert(
+    14,
+    'NaOH 50% Liquid set to 50% active has no conflict',
+    conflict2.hasConflict === false,
+    conflict2.hasConflict,
+    false
+  );
+
+  // TEST 15: Explicit confirmed override clears conflict
+  const conflict3 = ActiveMatterEngine.detectGradeActiveConflict({
+    id: 'naoh-50',
+    name: 'Sodium Hydroxide 50% Liquid (Caustic Soda Lye)',
+    percentage: 10,
+    activeMatterPct: 99,
+    confirmedGradeActiveOverride: true
+  } as any);
+  assert(
+    15,
+    'Explicit confirmedGradeActiveOverride clears grade conflict',
+    conflict3.hasConflict === false,
+    conflict3.hasConflict,
+    false
   );
 
   console.log(`\n================================================================`);

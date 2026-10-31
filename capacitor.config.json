@@ -1,0 +1,9 @@
+{
+  "appId": "com.detergentrnd.formulaexpert",
+  "appName": "Formula Expert",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

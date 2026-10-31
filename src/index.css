@@ -150,184 +150,16 @@ html {
   box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.25);
 }
 
-/* ==========================================================================
-   SEMANTIC THEME TOKEN UTILITY CLASSES (WCAG 2.2 AA COMPLIANT)
-   ========================================================================== */
-.text-token-primary { color: var(--text-primary); }
-.text-token-secondary { color: var(--text-secondary); }
-.text-token-muted { color: var(--text-muted); }
-.text-token-subtle { color: var(--text-subtle); }
-.text-token-accent-teal { color: var(--text-accent-teal); }
-.text-token-accent-emerald { color: var(--text-accent-emerald); }
-.text-token-accent-amber { color: var(--text-accent-amber); }
-.text-token-accent-rose { color: var(--text-accent-rose); }
-
-.bg-token-surface { background-color: var(--bg-surface); }
-.bg-token-card { background-color: var(--bg-card); border-color: var(--border-card); }
-
-.text-dark-panel-title { color: var(--text-darkcard-title) !important; }
-.text-dark-panel-subtitle { color: var(--text-darkcard-subtitle) !important; }
-.text-dark-panel-muted { color: var(--text-darkcard-muted) !important; }
-.text-dark-panel-body { color: var(--text-darkcard-body) !important; }
-
-/* ==========================================================================
-   DAYLIGHT LABORATORY (HIGH-CONTRAST LIGHT) THEME
-   Tailored for bright laboratory illumination, preventing eye strain and glare
-   ========================================================================== */
-
-html.theme-daylight .bg-\[\#070b18\],
-html.theme-daylight .bg-\[\#040711\],
-html.theme-daylight .bg-\[\#030712\],
-html.theme-daylight .bg-\[\#060a17\] {
-  background-color: #f8fafc !important;
+/* Universal Select Option Defaults for All Browsers & Operating Systems */
+select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+  padding: 6px 12px;
 }
 
-html.theme-daylight .bg-\[\#0b1020\],
-html.theme-daylight .bg-\[\#0e1629\],
-html.theme-daylight .bg-\[\#0d1527\],
-html.theme-daylight .bg-slate-950,
-html.theme-daylight .bg-slate-950\/70,
-html.theme-daylight .bg-slate-950\/80 {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-}
-
-html.theme-daylight .bg-\[\#0f172a\],
-html.theme-daylight .bg-\[\#0f172a\]\/70,
-html.theme-daylight .bg-\[\#0f172a\]\/80,
-html.theme-daylight .bg-\[\#111827\],
-html.theme-daylight .bg-\[\#131d35\],
-html.theme-daylight .bg-slate-900 {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-}
-
-html.theme-daylight .bg-\[\#152342\],
-html.theme-daylight .bg-\[\#18233a\],
-html.theme-daylight .bg-\[\#1a243b\],
-html.theme-daylight .bg-slate-800,
-html.theme-daylight .bg-slate-800\/80 {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-}
-
-html.theme-daylight .bg-\[\#1e293b\],
-html.theme-daylight .bg-slate-700,
-html.theme-daylight .bg-slate-700\/80 {
-  background-color: #e2e8f0 !important;
-  border-color: #94a3b8 !important;
-}
-
-html.theme-daylight .border-slate-800,
-html.theme-daylight .border-slate-800\/80,
-html.theme-daylight .border-slate-700,
-html.theme-daylight .border-slate-700\/80,
-html.theme-daylight .border-slate-700\/60 {
-  border-color: #cbd5e1 !important;
-}
-
-html.theme-daylight .text-white {
-  color: #0f172a !important;
-}
-
-html.theme-daylight .text-slate-100,
-html.theme-daylight .text-slate-200 {
-  color: #1e293b !important;
-}
-
-html.theme-daylight .text-slate-300 {
-  color: #334155 !important;
-}
-
-html.theme-daylight .text-slate-400 {
-  color: #475569 !important;
-}
-
-/* Form inputs & controls in daylight mode */
-html.theme-daylight input,
-html.theme-daylight select,
-html.theme-daylight textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-html.theme-daylight input::placeholder,
-html.theme-daylight textarea::placeholder {
-  color: #94a3b8 !important;
-}
-
-/* Glass panels in daylight mode */
-html.theme-daylight .glass-panel {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Buttons with white text on solid colored backgrounds preserve high-contrast white text */
-html.theme-daylight button.bg-blue-600,
-html.theme-daylight button.bg-cyan-500,
-html.theme-daylight button.bg-cyan-600,
-html.theme-daylight button.bg-indigo-600,
-html.theme-daylight button.bg-emerald-600,
-html.theme-daylight button.bg-purple-600,
-html.theme-daylight button.bg-rose-600,
-html.theme-daylight .bg-blue-600,
-html.theme-daylight .bg-cyan-500,
-html.theme-daylight .bg-cyan-600,
-html.theme-daylight .bg-indigo-600,
-html.theme-daylight .bg-emerald-600,
-html.theme-daylight .bg-purple-600,
-html.theme-daylight .bg-rose-600 {
-  color: #ffffff !important;
-}
-
-/* Keep primary action button text legible */
-html.theme-daylight button.bg-blue-600 *,
-html.theme-daylight button.bg-cyan-600 *,
-html.theme-daylight button.bg-indigo-600 *,
-html.theme-daylight button.bg-emerald-600 * {
-  color: #ffffff !important;
-}
-
-/* High contrast badge tints in daylight mode */
-html.theme-daylight .bg-cyan-950\/50,
-html.theme-daylight .bg-blue-950\/50,
-html.theme-daylight .bg-indigo-950\/50 {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
-  border-color: #bae6fd !important;
-}
-
-html.theme-daylight .bg-emerald-950\/50,
-html.theme-daylight .bg-green-950\/50 {
-  background-color: #dcfce7 !important;
-  color: #15803d !important;
-  border-color: #bbf7d0 !important;
-}
-
-html.theme-daylight .bg-amber-950\/50 {
-  background-color: #fef3c7 !important;
-  color: #b45309 !important;
-  border-color: #fde68a !important;
-}
-
-html.theme-daylight .bg-rose-950\/50,
-html.theme-daylight .bg-red-950\/50 {
-  background-color: #ffe4e6 !important;
-  color: #be123c !important;
-  border-color: #fecdd3 !important;
-}
-
-/* Scrollbar in daylight mode */
-html.theme-daylight ::-webkit-scrollbar-track {
-  background: #f8fafc;
-}
-html.theme-daylight ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-}
-html.theme-daylight ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+html.theme-daylight select option {
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 /* Scrollbar utilities */
@@ -341,85 +173,15 @@ html.theme-daylight ::-webkit-scrollbar-thumb:hover {
   scrollbar-width: none;
 }
 
-/* High contrast overrides for dark/colored container children in daylight theme */
-html.theme-daylight .bg-red-950,
-html.theme-daylight .bg-red-950\/40,
-html.theme-daylight .bg-red-900,
-html.theme-daylight .bg-rose-950,
-html.theme-daylight .bg-rose-900\/30,
-html.theme-daylight .bg-rose-950\/40 {
-  background-color: #fff1f2 !important;
-  border-color: #fecdd3 !important;
-  color: #9f1239 !important;
+/* Application Title High-Contrast Formatting */
+.app-header-title {
+  color: #f8fafc;
 }
 
-html.theme-daylight .bg-red-950 *,
-html.theme-daylight .bg-red-950\/40 *,
-html.theme-daylight .bg-red-900 *,
-html.theme-daylight .bg-rose-950 *,
-html.theme-daylight .bg-rose-900\/30 *,
-html.theme-daylight .bg-rose-950\/40 * {
-  color: #9f1239 !important;
+html.theme-daylight .app-header-title {
+  color: #0f172a;
 }
 
-html.theme-daylight .bg-amber-950,
-html.theme-daylight .bg-amber-950\/40,
-html.theme-daylight .bg-amber-900 {
-  background-color: #fffbeb !important;
-  border-color: #fde68a !important;
-  color: #92400e !important;
-}
-
-html.theme-daylight .bg-amber-950 *,
-html.theme-daylight .bg-amber-950\/40 *,
-html.theme-daylight .bg-amber-900 * {
-  color: #92400e !important;
-}
-
-html.theme-daylight .bg-emerald-950,
-html.theme-daylight .bg-emerald-950\/40,
-html.theme-daylight .bg-emerald-900 {
-  background-color: #f0fdf4 !important;
-  border-color: #bbf7d0 !important;
-  color: #166534 !important;
-}
-
-html.theme-daylight .bg-emerald-950 *,
-html.theme-daylight .bg-emerald-950\/40 *,
-html.theme-daylight .bg-emerald-900 * {
-  color: #166534 !important;
-}
-
-html.theme-daylight .bg-cyan-950,
-html.theme-daylight .bg-cyan-950\/40,
-html.theme-daylight .bg-cyan-900 {
-  background-color: #ecfeff !important;
-  border-color: #a5f3fc !important;
-  color: #155e75 !important;
-}
-
-html.theme-daylight .bg-cyan-950 *,
-html.theme-daylight .bg-cyan-950\/40 *,
-html.theme-daylight .bg-cyan-900 * {
-  color: #155e75 !important;
-}
-
-/* High-Contrast Application & Hero Title Safeguards */
-.app-header-title,
-html.theme-daylight .app-header-title,
-html.theme-midnight .app-header-title {
-  color: #F8FAFC !important;
-  -webkit-text-fill-color: #F8FAFC !important;
-  opacity: 1 !important;
-}
-
-.hero-card-title,
-html.theme-daylight .hero-card-title,
-html.theme-midnight .hero-card-title {
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
-  opacity: 1 !important;
-}
 
 
 

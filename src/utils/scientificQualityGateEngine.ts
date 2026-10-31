@@ -374,7 +374,7 @@ export function evaluateScientificQualityGate(
     waterHardnessPpm,
     productHardnessPolicy.defaultWashVolumeL,
     productHardnessPolicy.defaultDoseGrams,
-    input.batchSizeKg || 100,
+    input.batchSizeKg || 0,
     input.specificationProfileId || input.subCategory || canonicalCategory
   );
 
@@ -524,8 +524,8 @@ export function evaluateScientificQualityGate(
   let specReport: SpecificationReport | undefined = undefined;
 
   if (canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' && specTemplate) {
-    const densityRes = calculateDensity(rawIngs, (input.batchSizeKg || 100) * 1000);
-    const nvrRes = calculateLiquidNVR(rawIngs, input.batchSizeKg || 100);
+    const densityRes = calculateDensity(rawIngs, (input.batchSizeKg || 0) * 1000);
+    const nvrRes = calculateLiquidNVR(rawIngs, input.batchSizeKg || 0);
 
     specReport = evaluateSpecifications({
       formulaName,

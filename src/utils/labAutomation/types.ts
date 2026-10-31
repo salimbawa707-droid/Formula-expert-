@@ -159,16 +159,35 @@ export interface ExperimentDesign {
   createdBy: string;
 }
 
+export type ConcentrationBasis =
+  | 'W_W'
+  | 'W_V'
+  | 'V_V'
+  | 'UNKNOWN';
+
+export interface StockVolumeConversionEvidence {
+  concentrationBasis: ConcentrationBasis;
+
+  stockDensityGPerMl?: number;
+  finalMixtureDensityGPerMl?: number;
+
+  stockDensityEvidenceId?: string;
+  finalDensityEvidenceId?: string;
+
+  targetBatchMassG?: number;
+}
+
 export interface ExperimentIngredient {
   canonicalIngredientId: string;
   tradeName: string;
   inciName: string;
   concentrationInStockPercent: number; // Stock solution concentration
   targetFormulaPercent: number; // Target active % in final formulation
-  requiredVolumeUl: number;
+  requiredVolumeUl: number | null;
   assignedWell?: string; // Slot + well coordinate
   assignedSlot?: DeckPosition;
   viscosityClass: 'LOW_AQUEOUS' | 'MEDIUM_SURFACTANT' | 'HIGH_VISCOUS' | 'VOLATILE_SOLVENT';
+  conversionEvidence?: StockVolumeConversionEvidence;
 }
 
 export interface ExperimentProcessParameters {

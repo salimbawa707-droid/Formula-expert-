@@ -58,7 +58,7 @@ export class RegulatoryComplianceEngine {
       ing => RegulatoryIngredientEngine.processIngredient(ing)
     );
 
-    const calculatedPH = input.calculatedPH ?? 7.0;
+    const calculatedPH = input.calculatedPH;
 
     // 3. Mixture GHS Hazard Classification
     const ghsClassification = MixtureGHSValidationEngine.evaluateGHSClassification(

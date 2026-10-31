@@ -21,11 +21,15 @@ import {
   Atom,
   Bot,
   Database,
-  CheckCircle2
+  CheckCircle2,
+  Users
 } from 'lucide-react';
+import { ChemicalLabelVisionScannerModal } from './components/scanner/ChemicalLabelVisionScannerModal';
+import { CollaborativeFormulaRoomModal } from './components/collaborative/CollaborativeFormulaRoomModal';
 import { calculateLabAlignmentScore } from './utils/labEvidenceEngine';
 import { FORMULAS } from './data/formulas';
 import { normalizeProductCategory } from './domain/productTaxonomy';
+import { getDefaultActiveMatter } from './utils/activeMatterEngine';
 
 import AccountMenu from './components/AccountMenu';
 const AIFormulator = lazy(() => import('./components/AIFormulator'));
@@ -472,6 +476,7 @@ export default function App() {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState<boolean>(false);
+  const [isCollabModalOpen, setIsCollabModalOpen] = useState<boolean>(false);
 
   // Cross-component selected IDs & Single Source of Truth Active Formula State
   const [selectedChemicalId, setSelectedChemicalId] = useState<string | null>(null);
@@ -549,6 +554,58 @@ export default function App() {
       console.error("Failed to persist activeFormula to localStorage in App.tsx:", e);
     }
   }, [activeFormula]);
+
+  const handleAddScannedIngredient = (scannedIng: any) => {
+    setActiveFormula((prev) => {
+      const baseFormula: ActiveFormulaState = prev || {
+        id: `formula-${Date.now()}`,
+        name: "Custom Detergent Formulation",
+        productType: "Liquid Laundry Detergent",
+        grade: "Standard",
+        batchSize: 100,
+        batchSizeKg: 100,
+        ingredients: [],
+        isDraft: true,
+        status: "Draft",
+        category: "FABRIC_CARE"
+      };
+
+      const currentIngs = Array.isArray(baseFormula.ingredients) ? baseFormula.ingredients : [];
+      const existingIndex = currentIngs.findIndex(
+        (i) => i.name.toLowerCase() === scannedIng.name.toLowerCase()
+      );
+
+      let updatedIngs: any[];
+      if (existingIndex >= 0) {
+        updatedIngs = [...currentIngs];
+        updatedIngs[existingIndex] = {
+          ...updatedIngs[existingIndex],
+          percentage: Number(scannedIng.percentage),
+          percent: Number(scannedIng.percentage),
+          activeMatterPct: scannedIng.activeMatterPct ?? updatedIngs[existingIndex].activeMatterPct,
+          activePercent: scannedIng.activeMatterPct ?? updatedIngs[existingIndex].activePercent,
+          role: scannedIng.role || updatedIngs[existingIndex].role,
+        };
+      } else {
+        const newIng: any = {
+          id: `ing-${Date.now()}`,
+          name: scannedIng.name,
+          percentage: Number(scannedIng.percentage),
+          percent: Number(scannedIng.percentage),
+          activeMatterPct: scannedIng.activeMatterPct ?? getDefaultActiveMatter(scannedIng.name),
+          activePercent: scannedIng.activeMatterPct ?? getDefaultActiveMatter(scannedIng.name),
+          role: scannedIng.role || 'Component',
+          costPerKg: scannedIng.costPerKg ?? null,
+        };
+        updatedIngs = [...currentIngs, newIng];
+      }
+
+      return {
+        ...baseFormula,
+        ingredients: updatedIngs
+      };
+    });
+  };
 
   // Current translation strings
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
@@ -748,6 +805,18 @@ export default function App() {
             </select>
           </div>
 
+          {/* Live Multi-Chemist Collaboration Room Button */}
+          <button
+            type="button"
+            onClick={() => setIsCollabModalOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950 to-blue-950 hover:from-cyan-900 hover:to-blue-900 border border-cyan-500/40 text-xs font-bold text-cyan-200 hover:text-white transition shadow-sm cursor-pointer shrink-0"
+            title="Open Multi-Chemist Live Collaboration Suite"
+          >
+            <Users size={14} className="text-cyan-400" />
+            <span className="hidden md:inline">Live Collab</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          </button>
+
           {/* Gemini Chemistry Bot Quick Launcher Button in Header (desktop/tablet) */}
           <button
             type="button"
@@ -765,18 +834,18 @@ export default function App() {
         </div>
       </header>
 
-      {/* CAMERA / SCANNER MODAL FEEDBACK IF TOGGLED */}
-      {isCameraActive && (
-        <div className="bg-teal-950/80 border-b border-teal-500/40 px-4 py-2 flex items-center justify-between text-xs text-teal-200 animate-fadeIn shrink-0">
-          <div className="flex items-center gap-2">
-            <Camera size={16} className="animate-pulse text-teal-400" />
-            <span>Label Scanner Active: Point camera at raw material specifications or OCR chemical label</span>
-          </div>
-          <button onClick={() => setIsCameraActive(false)} className="text-teal-400 hover:text-white font-bold cursor-pointer underline">
-            Close Scanner
-          </button>
-        </div>
-      )}
+      {/* CHEMICAL LABEL & COA MULTIMODAL AI VISION SCANNER */}
+      <ChemicalLabelVisionScannerModal
+        isOpen={isCameraActive}
+        onClose={() => setIsCameraActive(false)}
+        onAddIngredientToFormula={handleAddScannedIngredient}
+      />
+
+      {/* MULTI-CHEMIST REAL-TIME COLLABORATION ROOM MODAL */}
+      <CollaborativeFormulaRoomModal
+        isOpen={isCollabModalOpen}
+        onClose={() => setIsCollabModalOpen(false)}
+      />
 
       {/* TOP NAVIGATION SUITE (Dark Modern Cards with Glowing Accents) */}
       <div className="bg-[#0b1020] border-b border-slate-800/80 px-3 sm:px-6 py-3 shrink-0">

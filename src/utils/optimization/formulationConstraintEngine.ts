@@ -535,7 +535,7 @@ export function evaluateFormulationConstraints(
           const item = metrics.ingredients.find(i => i.id === c.targetIngredientId || (i as any).name === c.targetIngredientId);
           const currentPct = item ? item.percentage : 0;
           val = `${currentPct.toFixed(2)}%`;
-          rangeDisplay = `${c.targetMin ?? 0}% - ${c.targetMax ?? 100}%`;
+          rangeDisplay = `${c.targetMin ?? 0}% - ${c.targetMax ?? null}%`;
           if (c.targetMin !== undefined && currentPct < c.targetMin) {
             isSatisfied = false;
             deviation = (c.targetMin - currentPct) / Math.max(0.1, c.targetMin);

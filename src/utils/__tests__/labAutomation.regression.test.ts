@@ -179,6 +179,16 @@ export function runLabAutomationTestSuite(): TestSuiteSummary {
     mixingRequired: true,
   });
 
+  // Inject mock scientific conversion evidence (Correction 5)
+  experimentDesign.ingredients.forEach(ing => {
+    ing.conversionEvidence = {
+      concentrationBasis: 'W_W',
+      stockDensityGPerMl: 1.0,
+      stockDensityEvidenceId: 'REF-VALID-001',
+      targetBatchMassG: 0.2 // 200mg total batch mass per replicate well
+    };
+  });
+
   assert('D1. ExperimentDesign is successfully instantiated from canonical formula',
     Boolean(experimentDesign && experimentDesign.ingredients.length === sampleFormula.ingredients.length));
 

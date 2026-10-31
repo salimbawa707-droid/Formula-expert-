@@ -98,7 +98,7 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
       category: formulaData.category || 'UNKNOWN_PRODUCT_CATEGORY',
       productType: formulaData.productType || formulaData.category || 'UNKNOWN_PRODUCT_CATEGORY',
       targetPH: formulaData.targetPH ?? 8.5,
-      batchSizeKg: formulaData.batchSizeKg ?? 100,
+      batchSizeKg: formulaData.batchSizeKg ?? null,
       waterHardnessPpm: formulaData.waterHardnessPpm ?? 150,
       description: formulaData.description || '',
       ingredients: formulaData.ingredients || [],

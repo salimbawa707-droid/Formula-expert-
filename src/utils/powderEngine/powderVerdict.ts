@@ -101,25 +101,33 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
   }
 
   // 4. Powder pH Specification (Normal Alkaline Target)
+  const isCalcPHFinite = powderPH.calculatedAqueousPH !== undefined && Number.isFinite(powderPH.calculatedAqueousPH) && !isNaN(powderPH.calculatedAqueousPH);
   if (!powderPH.isWithinTarget && powderPH.targetRange.isSpecified && powderPH.targetRange.min !== undefined && powderPH.targetRange.max !== undefined) {
-    if (powderPH.calculatedAqueousPH < powderPH.targetRange.min) {
+    if (isCalcPHFinite && powderPH.calculatedAqueousPH! < powderPH.targetRange.min) {
       issues.push({
         title: 'Aqueous pH Below Target Window',
         severity: 'Medium',
-        message: `1% aqueous pH is ${powderPH.calculatedAqueousPH.toFixed(2)} (Target: ${powderPH.targetRange.min}–${powderPH.targetRange.max}).`,
+        message: `1% aqueous pH is ${powderPH.calculatedAqueousPH!.toFixed(2)} (Target: ${powderPH.targetRange.min}–${powderPH.targetRange.max}).`,
         actionableGuidance: 'Ensure acid slurry (LABSA) is fully neutralized with sufficient stoichiometric alkaline builder (Soda Ash / Caustic).'
       });
-    } else {
+    } else if (isCalcPHFinite) {
       issues.push({
         title: 'Aqueous pH Above Specification',
         severity: 'Low',
-        message: `1% aqueous pH is ${powderPH.calculatedAqueousPH.toFixed(2)} (Target: ${powderPH.targetRange.min}–${powderPH.targetRange.max}).`,
+        message: `1% aqueous pH is ${powderPH.calculatedAqueousPH!.toFixed(2)} (Target: ${powderPH.targetRange.min}–${powderPH.targetRange.max}).`,
         actionableGuidance: 'Reduce excess caustic or metasilicate if formulation is intended for delicate fabric care.'
       });
+    } else {
+      issues.push({
+        title: 'Aqueous pH Unavailable / Non-Converged',
+        severity: 'High',
+        message: `1% aqueous pH calculation failed to converge. Cannot verify compliance against target window (${powderPH.targetRange.min}–${powderPH.targetRange.max}).`,
+        actionableGuidance: 'Verify formulation composition and species definitions or measure pH experimentally in laboratory.'
+      });
     }
-  } else if (powderPH.targetRange.isSpecified) {
+  } else if (powderPH.targetRange.isSpecified && isCalcPHFinite) {
     strengths.push({
-      title: `Optimal Alkaline Wash Liquor (1% pH ${powderPH.calculatedAqueousPH.toFixed(2)})`,
+      title: `Optimal Alkaline Wash Liquor (1% pH ${powderPH.calculatedAqueousPH!.toFixed(2)})`,
       description: `Complies with detergent powder performance window (${powderPH.targetRange.label}).`
     });
   }

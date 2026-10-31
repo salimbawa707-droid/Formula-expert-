@@ -200,11 +200,11 @@ jobs:
           PY
       - name: Verify owner-authorized AI-only Pušić transcription
         run: >-
-          python evidence_vault/scripts/compare_pusic_ai_source_review.py
+          python evidence_vault/scripts/validate_pusic_ai_evidence.py
           evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv
-          evidence_vault/review_workbooks/pusic_2006_ai_source_only_second_pass_2026-10-27.csv
+          evidence_vault/review_workbooks/pusic_2006_ai_visual_comparison_144.csv
 
       - name: Test AI-only source review guardrails
-        run: python evidence_vault/scripts/test_compare_pusic_ai_source_review.py
+        run: python evidence_vault/scripts/test_validate_pusic_ai_evidence.py
       - name: Verify Figshare shampoo source inventory and checksum
         run: python evidence_vault/scripts/verify_figshare_shampoo_source_inventory.py

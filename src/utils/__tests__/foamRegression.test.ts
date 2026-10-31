@@ -21,7 +21,7 @@ function computeFoamProfileForTest(
     const name = (ing.name || "").toLowerCase();
     const role = (ing.role || getAuditedIngredientCategory(ing.name || "")).toLowerCase();
     const pct = Number(ing.percentage ?? ing.percent ?? 0) || 0;
-    const active = Number(ing.activeMatterPct ?? 100) / 100;
+    const active = Number(ing.activeMatterPct ?? null) / 100;
     const activePct = pct * active;
 
     if (

@@ -23,7 +23,7 @@ export async function runLocalStorageMigration(): Promise<boolean> {
             category: f.category || f.productType || 'UNKNOWN_PRODUCT_CATEGORY',
             productType: f.productType || f.category || 'UNKNOWN_PRODUCT_CATEGORY',
             targetPH: Number(f.targetPH) || 8.5,
-            batchSizeKg: Number(f.batchSizeKg) || 100,
+            batchSizeKg: Number(f.batchSizeKg) || 0,
             waterHardnessPpm: Number(f.waterHardnessPpm) || 150,
             description: f.description || '',
             ingredients: Array.isArray(f.ingredients) ? f.ingredients : [],
@@ -59,7 +59,7 @@ export async function runLocalStorageMigration(): Promise<boolean> {
               : null,
             supplier: item.supplier || '',
             casNumber: item.casNumber || '',
-            activeConcentration: Number(item.activeConcentration) || 100,
+            activeConcentration: Number(item.activeConcentration) || 0,
             notes: item.notes || '',
             updatedAt: item.updatedAt || new Date().toISOString()
           }));
@@ -82,7 +82,7 @@ export async function runLocalStorageMigration(): Promise<boolean> {
             batchNumber: r.batchNumber || `BATCH-${Date.now()}`,
             formulaId: r.formulaId || '',
             formulaName: r.formulaName || 'Custom Formula',
-            batchSizeKg: Number(r.batchSizeKg) || 100,
+            batchSizeKg: Number(r.batchSizeKg) || 0,
             date: r.date || new Date().toISOString().split('T')[0],
             operator: r.operator || 'Default Operator',
             status: r.status || 'COMPLETED',

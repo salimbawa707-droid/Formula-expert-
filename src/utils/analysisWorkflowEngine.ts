@@ -454,7 +454,7 @@ export async function executeStagedScientificAnalysis(
     if (isNaN(pct) || pct < 0) {
       validationErrors.push(`Ingredient '${name || `#${i + 1}`}' has an invalid quantity (${pct}%).`);
     }
-    const purity = Number(ing.activeMatterPct ?? 100);
+    const purity = ing.activeMatterPct ?? null;
     if (isNaN(purity) || purity < 0 || purity > 100) {
       validationErrors.push(`Ingredient '${name}' has invalid active purity (${purity}%). Must be 0–100%.`);
     }
@@ -602,7 +602,7 @@ export async function executeStagedScientificAnalysis(
   for (const ing of immutableSnapshot.ingredients) {
     const role = (ing.role || ing.category || '').toLowerCase();
     const name = (ing.name || '').toLowerCase();
-    const act = (Number(ing.percentage) || 0) * ((Number(ing.activeMatterPct ?? 100)) / 100);
+    const act = (Number(ing.percentage) || 0) * (ing.activeMatterPct !== null ? (Number(ing.activeMatterPct) / 100) : 0);
 
     if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap')) {
       anionicPct += act;
@@ -697,7 +697,7 @@ export async function executeStagedScientificAnalysis(
   immutableSnapshot.ingredients.forEach((ing) => {
     const name = ing.name.toLowerCase();
     const role = (ing.role || '').toLowerCase();
-    const act = (Number(ing.activeMatterPct ?? 100)) / 100;
+    const act = ing.activeMatterPct !== null ? (Number(ing.activeMatterPct) / 100) : 0;
     const activePct = (Number(ing.percentage) || 0) * act;
     if (role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate')) {
       chelatorActivePct += activePct;
@@ -729,7 +729,7 @@ export async function executeStagedScientificAnalysis(
 
   const viscReport = ViscosityEngine.evaluateViscosity(immutableSnapshot.ingredients, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-    targetPH: advancedPH.pH ?? 7,
+    targetPH: advancedPH.pH ?? null,
     temperatureC: 25
   });
 
@@ -785,13 +785,13 @@ export async function executeStagedScientificAnalysis(
 
   const compatibilityResult = calculateFormulationCompatibility(
     immutableSnapshot.ingredients,
-    advancedPH.pH ?? 7,
+    advancedPH.pH ?? null,
     canonicalCategory
   );
 
   const cleaningResult = calculateCleaningPerformance(
     immutableSnapshot.ingredients,
-    advancedPH.pH ?? 7,
+    advancedPH.pH ?? null,
     canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     undefined,
     {
@@ -803,7 +803,7 @@ export async function executeStagedScientificAnalysis(
 
   const cpiValue = calculateCPI(
     immutableSnapshot.ingredients,
-    advancedPH.pH ?? 7,
+    advancedPH.pH ?? null,
     canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     undefined,
     {
@@ -834,19 +834,19 @@ export async function executeStagedScientificAnalysis(
 
   const stabilityResult = evaluateFormulationStability(
     immutableSnapshot.ingredients,
-    advancedPH.pH ?? 7,
+    advancedPH.pH ?? null,
     canonicalCategory,
     compatibilityResult.alerts as any
   );
 
-  const presWarningObj = getPreservativeWarning(immutableSnapshot.ingredients, advancedPH.pH ?? 7);
+  const presWarningObj = getPreservativeWarning(immutableSnapshot.ingredients, advancedPH.pH ?? null);
   const preservativeWarning = presWarningObj ? (typeof presWarningObj === 'string' ? presWarningObj : presWarningObj.message) : null;
 
   const regulatoryResult = evaluateRegulatoryCompliance(
     immutableSnapshot.ingredients,
     canonicalCategory,
     undefined,
-    advancedPH.pH ?? 7.0
+    advancedPH.pH ?? null
   );
 
   const compIntermediate = {
@@ -1115,6 +1115,9 @@ export async function executeStagedScientificAnalysis(
     phResult: p,
     phConfidence: p.confidence,
     viscosity: visc.description,
+    viscosityCp: visc.predictedViscosityCp,
+    viscosityRating: visc.rating,
+    isFluid: visc.isFluid,
     waterHardness: h,
     hlb: (o.hlbResult && o.hlbResult.status === 'VALID' && o.hlbResult.blendedHLB !== null) ? o.hlbResult.blendedHLB : 0,
     hlbResult: o.hlbResult,

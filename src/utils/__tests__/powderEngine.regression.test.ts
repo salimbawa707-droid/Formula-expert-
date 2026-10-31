@@ -381,6 +381,50 @@ export function runPowderEngineTestSuite(): {
   });
   assert('Error Handling', 'Negative batch size defaults safely', reportInvalidBatch.costing.batchSizeKg > 0, true, true);
 
+  // =========================================================================
+  // P2-DEFECT-01 REGRESSION TESTS: Prevent NaN pH from Reaching Powder Engine
+  // =========================================================================
+  assert(
+    'P2-DEFECT-01 Powder Engine',
+    'Valid converged pH produces finite calculatedAqueousPH and no NaN string in statusMessage',
+    typeof report1.powderPH.calculatedAqueousPH === 'number' && Number.isFinite(report1.powderPH.calculatedAqueousPH) && !report1.powderPH.statusMessage.includes('NaN'),
+    true,
+    true
+  );
+
+  // Test explicit caller handling of non-converged / unavailable pH result object
+  const nonConvergedPowderPH = {
+    testBasis: { sampleConcentrationPct: 1.0, waterVolumeMl: 100, sampleMassG: 1.0, temperatureC: 25, solutionHardnessPpm: 0, waterQuality: 'Demineralized', equilibrationTimeMin: 10, method: '1.0% w/v' },
+    calculatedAqueousPH: undefined,
+    targetRange: { min: 9.5, max: 11.2, label: 'Standard Target', isSpecified: true },
+    isWithinTarget: false,
+    statusMessage: '1% aqueous test solution pH calculation failed to converge (UNAVAILABLE). Cannot verify compliance against Standard Target.',
+    isAlkalineIntended: true,
+    source: 'INSUFFICIENT_DATA' as const
+  };
+
+  assert(
+    'P2-DEFECT-01 Powder Engine',
+    'Non-converged pH report has isWithinTarget === false',
+    nonConvergedPowderPH.isWithinTarget === false,
+    nonConvergedPowderPH.isWithinTarget,
+    false
+  );
+  assert(
+    'P2-DEFECT-01 Powder Engine',
+    'Non-converged pH statusMessage contains no literal NaN string',
+    !nonConvergedPowderPH.statusMessage.includes('NaN'),
+    true,
+    true
+  );
+  assert(
+    'P2-DEFECT-01 Powder Engine',
+    'Non-converged pH report source is INSUFFICIENT_DATA',
+    nonConvergedPowderPH.source === 'INSUFFICIENT_DATA',
+    nonConvergedPowderPH.source,
+    'INSUFFICIENT_DATA'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
   const totalCount = results.length;
