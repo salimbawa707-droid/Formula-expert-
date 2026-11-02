@@ -96,15 +96,19 @@ export function runActiveMatterRegressionTestSuite() {
 
   const report = evaluateAuthoritativeActiveMatter(testFormula, 100);
 
-  // Total active matter: 14 + 3 + 5 + 2 + 1 + 0.2 + 1.8 = 27.0%
-  assertNear('Mass Breakdown', 'Total active matter is 27.0%', report.totalActiveMatter, 27.0, 0.05);
-  assertNear('Mass Breakdown', 'Total active kg for 100kg batch is 27.0kg', report.totalActiveKg, 27.0, 0.05);
+  // Only SLES, CAPB and LAE have explicitly supplied active assays.
+  // NaCl, citric acid, preservative and fragrance remain unclassified, not assumed 100% active.
+  assertNear('Mass Breakdown', 'Known total active matter is 22.0%', report.totalActiveMatter, 22.0, 0.05);
+  assertNear('Mass Breakdown', 'Known total active kg for 100kg batch is 22.0kg', report.totalActiveKg, 22.0, 0.05);
+  assertNear('Mass Breakdown', 'Unknown active assay mass is 5.0%', report.totalUnclassifiedPercentage, 5.0, 0.05);
+  assert('Mass Breakdown', 'Report remains INSUFFICIENT_DATA while ingredient assays are missing', report.activeMatterStatus === 'INSUFFICIENT_DATA', report.activeMatterStatus, 'INSUFFICIENT_DATA');
   
   // Total raw percentage is 100%
   assertNear('Mass Breakdown', 'Total raw percentage is 100.0%', report.totalRawPercentage, 100.0, 0.05);
   
-  // Total carrier percentage is 73.0% (60 free water + 6 from SLES + 7 from CAPB)
-  assertNear('Mass Breakdown', 'Total carrier percentage is 73.0%', report.totalCarrierPercentage, 73.0, 0.05);
+  // Known water/carrier is 73.0% (60 free water + 6 from SLES + 7 from CAPB).
+  // Unknown 5.0% is not silently relabeled as carrier.
+  assertNear('Mass Breakdown', 'Known carrier percentage is 73.0%', report.totalCarrierPercentage, 73.0, 0.05);
 
   // Water Balance: free added water = 60%, carried water = 13%, total water = 73%
   assertNear('Water Balance', 'Free water is 60.0%', report.waterBalance.freeAddedWaterPct, 60.0, 0.05);
@@ -136,10 +140,10 @@ export function runActiveMatterRegressionTestSuite() {
   assert('Edge Cases', 'Empty ingredients return 0% active matter', emptyReport.totalActiveMatter === 0, emptyReport.totalActiveMatter, 0);
 
   const clampedRes = ActiveMatterEngine.resolveIngredientActive({ name: 'Special Chemical', activeMatterPct: 150 });
-  assert('Safety Clamping', 'Active matter > 100% is clamped to 100%', clampedRes.activeMatterPct === 100, clampedRes.activeMatterPct, 100);
+  assert('Input Validation', 'Active matter > 100% is rejected as unavailable, not silently clamped', clampedRes.activeMatterPct === null && clampedRes.dataSource === 'missing', { activeMatterPct: clampedRes.activeMatterPct, dataSource: clampedRes.dataSource }, { activeMatterPct: null, dataSource: 'missing' });
 
   const negClampedRes = ActiveMatterEngine.resolveIngredientActive({ name: 'Special Chemical', activeMatterPct: -20 });
-  assert('Safety Clamping', 'Active matter < 0% is clamped to 0%', negClampedRes.activeMatterPct === 0, negClampedRes.activeMatterPct, 0);
+  assert('Input Validation', 'Active matter < 0% is rejected as unavailable, not silently clamped', negClampedRes.activeMatterPct === null && negClampedRes.dataSource === 'missing', { activeMatterPct: negClampedRes.activeMatterPct, dataSource: negClampedRes.dataSource }, { activeMatterPct: null, dataSource: 'missing' });
 
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
