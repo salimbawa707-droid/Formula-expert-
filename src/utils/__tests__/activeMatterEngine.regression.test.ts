@@ -53,6 +53,11 @@ export function runActiveMatterRegressionTestSuite() {
   assert('Resolution', 'LABSA 90% provenance is authoritative/derived', labsa90Res.dataSource !== 'missing', labsa90Res.dataSource, 'authoritative | derived_from_name');
   assert('Resolution', 'Name-derived commercial concentration is not represented as verified assay', labsa90Res.dataSource === 'derived_from_name', labsa90Res.dataSource, 'derived_from_name');
 
+  const canonicalDefault = ActiveMatterEngine.resolveIngredientActive({ canonicalIngredientId: 'sodium-bicarbonate', name: 'Sodium Bicarbonate' });
+  assert('Resolution', 'Canonical library default is not labelled authoritative assay', canonicalDefault.dataSource === 'canonical_library_default', canonicalDefault.dataSource, 'canonical_library_default');
+  const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70% (Sodium Lauryl Ether Sulfate Paste)' });
+  assert('Resolution', 'Commercial reference default is not labelled authoritative assay', referenceDefault.dataSource === 'reference_default', referenceDefault.dataSource, 'reference_default');
+
   const sles70Res = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'SLES 70% resolves to 70%', sles70Res.activeMatterPct === 70, sles70Res.activeMatterPct, 70);
 
