@@ -379,7 +379,7 @@ export function runPowderEngineTestSuite(): {
     ingredients: testFormula1,
     batchSizeKg: -50
   });
-  assert('Error Handling', 'Negative batch size is rejected rather than converted into a positive batch', reportInvalidBatch.costing.batchSizeKg === 0, reportInvalidBatch.costing.batchSizeKg, 0);
+  assert('Error Handling', 'Negative batch size is rejected and costing batch size remains unavailable', reportInvalidBatch.costing.batchSizeKg === null && reportInvalidBatch.costing.source === 'INSUFFICIENT_DATA', { batchSizeKg: reportInvalidBatch.costing.batchSizeKg, source: reportInvalidBatch.costing.source }, { batchSizeKg: null, source: 'INSUFFICIENT_DATA' });
 
   // =========================================================================
   // P2-DEFECT-01 REGRESSION TESTS: Prevent NaN pH from Reaching Powder Engine
