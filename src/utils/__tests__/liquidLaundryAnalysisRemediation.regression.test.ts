@@ -248,7 +248,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
   assert(
     'J. Decoupled 4-Pillar Status',
     'Scientific Screening is VALID, while Release Gate is BLOCKED due to cost and missing lab evidence',
-    qgResult.finalFormulaStatus === 'VALID' && (releaseDecision.status === 'BLOCKED' || releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED') && specReport.verdict.status === 'NEEDS_REVISION'
+    qgResult.scientificValidity === 'VALID' && (releaseDecision.status === 'BLOCKED' || releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED') && specReport.verdict.status === 'NEEDS_REVISION'
   );
 
   // =========================================================================
@@ -280,7 +280,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
     'M. Owner R&D Control',
     'A BLOCKED release status does not prevent draft editing, saving, or scientific analysis',
     (releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED') &&
-    qgResult.finalFormulaStatus === 'VALID' &&
+    qgResult.scientificValidity === 'VALID' &&
     liveCost.costPerKg > 0
   );
 
