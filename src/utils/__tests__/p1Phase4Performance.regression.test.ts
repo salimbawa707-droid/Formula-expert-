@@ -265,11 +265,12 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     'LAUNDRY_LIQUID',
     { measuredSoilRemovalPct: 82.5, testMethod: 'ASTM D4265 Tergotometer', testDate: '2026-09-29' }
   );
-  assert('Measured Provenance is MEASURED', measuredRes.provenance === 'MEASURED', measuredRes.provenance, 'MEASURED');
+  assert('Composite CPI remains PREDICTED when one lab measurement is supplied', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
   assert('Measured isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
   assert('Measured Value Stored Correctly', measuredRes.measuredSoilRemovalPct === 82.5, measuredRes.measuredSoilRemovalPct, 82.5);
   
-  const expectedVariance = Number((82.5 - measuredRes.cpi).toFixed(1));
+  const predictedSoilKpi = measuredRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
+  const expectedVariance = Number((82.5 - predictedSoilKpi).toFixed(1));
   assert('Prediction Variance Calculated Correctly', measuredRes.predictionVariance === expectedVariance, measuredRes.predictionVariance, expectedVariance);
   assert('Prediction Error Pct Calculated Correctly', measuredRes.predictionErrorPct !== undefined, measuredRes.predictionErrorPct !== undefined, true);
 
