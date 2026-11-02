@@ -409,8 +409,8 @@ assert('Field Contract', 'K4: Explicit zero activeMatterPct is preserved', k4Map
 
 // K5 — HLB calculation with canonical hlbValue vs hlb alias
 const k5Surfactants = [
-  { name: 'Span 80', hlbValue: 4.3, percentage: 5 },
-  { name: 'Tween 80', hlb: 15.0, percentage: 5 }
+  { name: 'Span 80', hlbValue: 4.3, percentage: 5, activeMatterPct: 100 },
+  { name: 'Tween 80', hlb: 15.0, percentage: 5, activeMatterPct: 100 }
 ];
 const k5BlendedHLB = calculateBlendedHLB(k5Surfactants);
 assert('Field Contract', 'K5: Blended HLB handles both hlbValue and hlb alias', k5BlendedHLB === 9.65, k5BlendedHLB, 9.65);
