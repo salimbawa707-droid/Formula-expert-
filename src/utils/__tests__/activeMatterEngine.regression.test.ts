@@ -51,6 +51,7 @@ export function runActiveMatterRegressionTestSuite() {
   const labsa90Res = ActiveMatterEngine.resolveIngredientActive({ name: 'LABSA (Acid Slurry 90%)' });
   assert('Resolution', 'LABSA 90% resolves to 90%', labsa90Res.activeMatterPct === 90, labsa90Res.activeMatterPct, 90);
   assert('Resolution', 'LABSA 90% provenance is authoritative/derived', labsa90Res.dataSource !== 'missing', labsa90Res.dataSource, 'authoritative | derived_from_name');
+  assert('Resolution', 'Name-derived commercial concentration is not represented as verified assay', labsa90Res.dataSource === 'derived_from_name', labsa90Res.dataSource, 'derived_from_name');
 
   const sles70Res = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'SLES 70% resolves to 70%', sles70Res.activeMatterPct === 70, sles70Res.activeMatterPct, 70);
