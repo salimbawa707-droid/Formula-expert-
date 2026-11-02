@@ -814,6 +814,8 @@ export function calculateCleaningPerformance(
 
   // A single lab measurement must not relabel every KPI or the composite CPI as measured.
   // Only map measurements to the matching KPI; unlike units/domains are never compared.
+  const soilKpi = categoryKPIs.find(kpi => ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'].includes(kpi.id));
+  const predictedSoilKpiValue = soilKpi?.value;
   const measuredKpiInputs: Array<{ ids: string[]; value?: number }> = [
     { ids: ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'], value: labMeasurements?.measuredSoilRemovalPct },
     { ids: ['oilyGreaseRemoval', 'greaseCutting'], value: labMeasurements?.measuredGreaseRemovalPct },
@@ -829,10 +831,9 @@ export function calculateCleaningPerformance(
       kpi.status = measurement.value >= (kpi.targetMin || 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
     }
   }
-  const soilKpi = categoryKPIs.find(kpi => ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'].includes(kpi.id));
   const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct;
-  if (typeof primaryMeasuredVal === 'number' && Number.isFinite(primaryMeasuredVal) && soilKpi?.value !== null && soilKpi?.value !== undefined) {
-    predictionVariance = Number((primaryMeasuredVal - soilKpi.value).toFixed(1));
+  if (typeof primaryMeasuredVal === 'number' && Number.isFinite(primaryMeasuredVal) && predictedSoilKpiValue !== null && predictedSoilKpiValue !== undefined) {
+    predictionVariance = Number((primaryMeasuredVal - predictedSoilKpiValue).toFixed(1));
     predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
   }
 
