@@ -269,7 +269,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   assert('Measured isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
   assert('Measured Value Stored Correctly', measuredRes.measuredSoilRemovalPct === 82.5, measuredRes.measuredSoilRemovalPct, 82.5);
   
-  const predictedSoilKpi = measuredRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
+  const predictedSoilKpi = directRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
   const expectedVariance = Number((82.5 - predictedSoilKpi).toFixed(1));
   assert('Prediction Variance Calculated Correctly', measuredRes.predictionVariance === expectedVariance, measuredRes.predictionVariance, expectedVariance);
   assert('Prediction Error Pct Calculated Correctly', measuredRes.predictionErrorPct !== undefined, measuredRes.predictionErrorPct !== undefined, true);
