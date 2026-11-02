@@ -336,20 +336,6 @@ export function evaluateReleaseGate(
   const ingredients = Array.isArray(arg3) ? arg3 : [];
   const labMeasurements = Array.isArray(arg4) ? arg4 : [];
 
-  if (ingredients.length === 0) {
-    return {
-      status: 'BLOCKED_BY_EMPTY_FORMULA',
-      decisionCode: 'EMPTY_FORMULA',
-      isReady: false,
-      verified: false,
-      decision: 'BLOCKED',
-      blockingIssues: ['Release blocked: formulation contains no ingredients.'],
-      formulaId,
-      category,
-      ingredientsCount: 0
-    };
-  }
-
   if (category === 'UNKNOWN_PRODUCT_CATEGORY') {
     return {
       status: 'BLOCKED_BY_UNKNOWN_CATEGORY',
@@ -361,6 +347,20 @@ export function evaluateReleaseGate(
       formulaId,
       category: 'UNKNOWN_PRODUCT_CATEGORY',
       ingredientsCount: ingredients.length,
+    };
+  }
+
+  if (ingredients.length === 0) {
+    return {
+      status: 'BLOCKED_BY_EMPTY_FORMULA',
+      decisionCode: 'EMPTY_FORMULA',
+      isReady: false,
+      verified: false,
+      decision: 'BLOCKED',
+      blockingIssues: ['Release blocked: formulation contains no ingredients.'],
+      formulaId,
+      category,
+      ingredientsCount: 0
     };
   }
 
