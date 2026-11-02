@@ -45,6 +45,13 @@ import { ActiveMatterResultObject } from './activeMatterValidation';
  * ============================================================================
  */
 
+function normalizeActiveMatterInputValue(value: unknown): unknown {
+  if (typeof value === 'string' && value.trim() !== '') {
+    return Number(value.trim());
+  }
+  return value;
+}
+
 export type ActiveMatterProvenance = 'authoritative' | 'explicit_override' | 'derived_from_name' | 'missing';
 
 export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
@@ -359,7 +366,8 @@ export class ActiveMatterEngine {
     const isSolvent = this.isSolventIngredient(rawName, rawCategory, rawRole);
 
     // 1. Check explicit formula override inputs
-    const explicitActive = ing?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
+    const explicitActiveRaw = ing?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
+    const explicitActive = normalizeActiveMatterInputValue(explicitActiveRaw);
     
     // Canonical master lookup by canonical ID, ID, Name, or deterministic alias
     let canonicalMatch: UniversalIngredient | undefined;
@@ -533,10 +541,11 @@ export class ActiveMatterEngine {
 
       const resolution = this.resolveIngredientActive(ing);
       
-      const amValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity;
+      const rawAmValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity;
+      const amValue = normalizeActiveMatterInputValue(rawAmValue);
       const isInvalidActive =
-        amValue !== undefined &&
-        amValue !== null &&
+        rawAmValue !== undefined &&
+        rawAmValue !== null &&
         validateActiveMatterInput(amValue).status !== 'VALID';
 
       const isMissingOrInvalid = resolution.activeMatterPct === null || resolution.dataSource === 'missing' || isInvalidActive;
