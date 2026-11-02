@@ -48,13 +48,13 @@ export class NumericalEquilibriumSolver {
       }
 
       return {
-        pH: 7.00,
-        status: 'CONVERGED',
-        converged: true,
-        iterations: 1,
-        residual: 0,
+        pH: Number.NaN,
+        status: 'NON_CONVERGED',
+        converged: false,
+        iterations: 0,
+        residual: 1.0,
         stepSize: 0,
-        method: 'Neutral aqueous baseline'
+        method: 'INSUFFICIENT_DATA: Uncharacterized chemical composition without explicit equilibrium data'
       };
     }
 

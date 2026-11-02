@@ -60,7 +60,7 @@ export interface SurfactantHLBContribution {
   name: string;
   category?: string;
   percentage: number;
-  activeMatterPct: number;
+  activeMatterPct: number | null;
   activeWeight: number; // in formula percentage units (percentage * active / 100)
   hlb: number | null;
   dataSource: HLBDataSource;
@@ -176,10 +176,10 @@ export class HLBEngine {
     const isIonic = catLower.includes('anionic') || catLower.includes('cationic') || catLower.includes('amphoteric');
 
     // 2. Active matter resolution
-    let activeMatterPct = 100;
+    let activeMatterPct: number | null = null;
     if (explicitActive !== undefined && explicitActive !== null && !isNaN(Number(explicitActive))) {
       activeMatterPct = Number(explicitActive);
-    } else if (canonicalMatch?.activeDefault !== undefined) {
+    } else if (canonicalMatch?.activeDefault !== undefined && canonicalMatch?.activeDefault !== null) {
       activeMatterPct = canonicalMatch.activeDefault;
     } else if (isWater) {
       activeMatterPct = 0;
@@ -339,7 +339,7 @@ export class HLBEngine {
       const resolution = this.resolveIngredientHLB(ing);
 
       if (resolution.isSurfactant || (resolution.hlb !== null && resolution.hlb > 0)) {
-        const activeWeight = (pct * resolution.activeMatterPct) / 100;
+        const activeWeight = (pct * (resolution.activeMatterPct ?? 100)) / 100;
         totalSurfactantRawWeight += pct;
         totalSurfactantActiveWeight += activeWeight;
 
