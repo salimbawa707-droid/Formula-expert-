@@ -603,10 +603,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
 
     fs.writeFileSync(testP3AConfigPath, JSON.stringify(testP3AConfig, null, 2), 'utf8');
 
-    const testP3AChild = spawnSync(tsxBinary, [finalizerScriptPath, '--config', testP3AConfigPath], {
-      encoding: 'utf8',
-      cwd: process.cwd()
-    });
+    const testP3AChild = runFinalizerChild(testP3AConfigPath);
 
     assert(
       'Problem 3 — Test P3-A: P2-13 Raw Diagnostics Child Process',
