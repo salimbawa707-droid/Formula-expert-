@@ -835,6 +835,9 @@ export function calculateCleaningPerformance(
   if (typeof primaryMeasuredVal === 'number' && Number.isFinite(primaryMeasuredVal) && predictedSoilKpiValue !== null && predictedSoilKpiValue !== undefined) {
     predictionVariance = Number((primaryMeasuredVal - predictedSoilKpiValue).toFixed(1));
     predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
+    if (predictionErrorPct > 20) {
+      keyNegativeFactors.push(`High prediction variance detected: measured soil-removal value differs from the matching predicted soil KPI by ${predictionErrorPct.toFixed(1)}%. Model recalibration and additional independent replicates are required.`);
+    }
   }
 
   const provenance: PerformanceProvenance = isEmptyFormula ? 'INSUFFICIENT_DATA' : 'PREDICTED';
