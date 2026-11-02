@@ -5,7 +5,7 @@
 
 ## Latest recorded evidence
 
-- **Web frontend build**: PASS in GitHub Actions workflow 41514527839 on commit cb94f8a.
+- **Web frontend build**: PASS in GitHub Actions workflow 41530474374 on PR commit ee9702b.
 - **TypeScript regression suite**: PASS in the same workflow.
 - **Phase 6 lab-evidence regression**: PASS in the same workflow.
 - **Android debug APK**: SKIPPED in the same workflow because the independent evidence gate remains locked.
