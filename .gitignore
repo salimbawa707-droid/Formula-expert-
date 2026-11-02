@@ -9,7 +9,6 @@
 *.keystore
 *.jks
 service-account*.json
-google-services.json
 
 # Build and generated artifacts
 node_modules/
