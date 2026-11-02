@@ -72,9 +72,9 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   assert(
     'Group 1: Mandatory Tests',
     'Test 1: Unknown surfactant active matter is flagged missing/unknown (NOT assumed 100% or 0% carrier)',
-    unknownSurfactantRes.dataSource === 'missing' && unknownSurfactantRes.activeMatterPct === 0,
-    unknownSurfactantRes.dataSource,
-    'missing'
+    unknownSurfactantRes.dataSource === 'missing' && unknownSurfactantRes.activeMatterPct === null,
+    { dataSource: unknownSurfactantRes.dataSource, activeMatterPct: unknownSurfactantRes.activeMatterPct },
+    { dataSource: 'missing', activeMatterPct: null }
   );
 
   // Test 2 (B): Unknown Acid pKa in PHEngineV2
