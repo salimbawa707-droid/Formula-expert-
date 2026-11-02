@@ -79,7 +79,7 @@ export function runHardcodedScientificResultsRegressionTestSuite() {
   const climateChelated = analyzeClimateAndHardWater([
     { name: 'Water', percentage: 80, category: 'Solvent' },
     { name: 'SLES 70%', percentage: 15, activeMatterPct: 70, category: 'Surfactant' },
-    { name: 'Tetrasodium EDTA 40%', percentage: 5, activeMatterPct: 40, role: 'Chelator' }
+    { name: 'Tetrasodium EDTA 39% Liquid', percentage: 5, activeMatterPct: 39, role: 'Chelator' }
   ], 'Temperate', 'Hard (120-180 ppm)');
   assert(
     '3. Climate Engine Dynamic Chelator Calculation',
