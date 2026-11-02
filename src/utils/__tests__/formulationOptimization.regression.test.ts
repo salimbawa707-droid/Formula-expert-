@@ -204,7 +204,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     id: i.id,
     name: i.name,
     percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-    activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? null),
+    activeMatterPct: i.activePercent ?? (i as any).activeDefault,
     costPerKg: Number(i.costPerKg ?? 1.0),
     category: i.category,
     function: i.function,
@@ -357,12 +357,15 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     { category: 'LAUNDRY_LIQUID', populationSize: 6, generations: 2, seed: 12345 }
   );
 
-  const cpi1 = optResult1.paretoFront[0]?.objectives.cpi;
-  const cpi2 = optResult2.paretoFront[0]?.objectives.cpi;
+  const objectives1 = optResult1.paretoFront[0]?.objectives;
+  const objectives2 = optResult2.paretoFront[0]?.objectives;
+  const deterministicObjectives = objectives1 !== undefined &&
+    objectives2 !== undefined &&
+    JSON.stringify(objectives1) === JSON.stringify(objectives2);
   assert(
-    cpi1 !== undefined && cpi1 === cpi2 && optResult1.totalEvaluations === optResult2.totalEvaluations,
-    'Test 15: Optimizer execution with identical seed (12345) produces identical evaluation counts and outputs',
-    `Run 1 CPI: ${cpi1}, Run 2 CPI: ${cpi2}, Evaluations: ${optResult1.totalEvaluations}`
+    deterministicObjectives && optResult1.totalEvaluations === optResult2.totalEvaluations,
+    'Test 15: Optimizer execution with identical seed (12345) produces identical evaluation counts and objective outputs',
+    `Objectives deterministic: ${deterministicObjectives}, Evaluations: ${optResult1.totalEvaluations}`
   );
 
   // 15. Cancellation Token Support
