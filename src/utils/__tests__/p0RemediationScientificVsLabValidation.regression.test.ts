@@ -383,7 +383,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   // TEST 35: Scientific screening and laboratory status remain independently queryable
   const screeningStatus = qgResult.finalFormulaStatus;
   const labStatus = qgResult.evidenceStatus;
-  assert('TEST 35: Scientific screening status (VALID) and Lab Status (PREDICTED_ONLY) are independent queryable dimensions', screeningStatus === 'VALID' && labStatus === 'PREDICTED_ONLY');
+  assert('TEST 35: Scientific validity (VALID) and evidence status (PREDICTED_ONLY) are independent queryable dimensions', qgResult.scientificValidity === 'VALID' && labStatus === 'PREDICTED_ONLY');
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
