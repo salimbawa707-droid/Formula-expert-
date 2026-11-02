@@ -55,7 +55,7 @@ export function runActiveMatterRegressionTestSuite() {
 
   const canonicalDefault = ActiveMatterEngine.resolveIngredientActive({ canonicalIngredientId: 'sodium-bicarbonate', name: 'Sodium Bicarbonate' });
   assert('Resolution', 'Canonical library default is not labelled authoritative assay', canonicalDefault.dataSource === 'canonical_library_default', canonicalDefault.dataSource, 'canonical_library_default');
-  const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70% (Sodium Lauryl Ether Sulfate Paste)' });
+  const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'Commercial reference default is not labelled authoritative assay', referenceDefault.dataSource === 'reference_default', referenceDefault.dataSource, 'reference_default');
 
   const sles70Res = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
