@@ -265,6 +265,7 @@ export function runP0MasterRemediationTestSuite(): {
   // =========================================================================
   const liquidEval = FormulaScientificOrchestrator.evaluate({
     formulaName: 'Liquid Detergent',
+    formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
       { name: 'SLES 70%', percentage: 14, activeMatterPct: 70 },
