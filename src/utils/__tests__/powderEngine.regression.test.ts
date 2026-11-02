@@ -97,8 +97,8 @@ export function runPowderEngineTestSuite(): {
   assert('4. Physical Properties', 'Particle size is NOT_MEASURED without test data', report1.particleSize.status === 'NOT_MEASURED', report1.particleSize.status, 'NOT_MEASURED');
 
   // 5. Moisture & Dry Matter Engine
-  assert('5. Moisture & Dry Matter', 'Moisture report source is CALCULATED or ESTIMATED', report1.moistureAndDryMatter.source === 'CALCULATED' || report1.moistureAndDryMatter.source === 'ESTIMATED', report1.moistureAndDryMatter.source, 'CALCULATED or ESTIMATED');
-  assert('5. Moisture & Dry Matter', 'Dry Matter % + Moisture % = 100%', Math.abs((report1.moistureAndDryMatter.dryMatterPct + report1.moistureAndDryMatter.moisturePct) - 100) < 0.01, report1.moistureAndDryMatter.dryMatterPct + report1.moistureAndDryMatter.moisturePct, 100);
+  assert('5. Moisture & Dry Matter', 'Moisture is unavailable without a measured finished-product moisture value', report1.moistureAndDryMatter.source === 'INSUFFICIENT_DATA' && report1.moistureAndDryMatter.moisturePct === null, report1.moistureAndDryMatter, 'INSUFFICIENT_DATA with null moisture');
+  assert('5. Moisture & Dry Matter', 'Dry matter is unavailable when moisture is unavailable', report1.moistureAndDryMatter.dryMatterPct === null && report1.moistureAndDryMatter.dryMatterMassKg === null, { dryMatterPct: report1.moistureAndDryMatter.dryMatterPct, dryMatterMassKg: report1.moistureAndDryMatter.dryMatterMassKg }, { dryMatterPct: null, dryMatterMassKg: null });
   assert('5. Moisture & Dry Matter', 'Total Formula Mass is 100 kg', report1.moistureAndDryMatter.totalFormulaMassKg === 100, report1.moistureAndDryMatter.totalFormulaMassKg, 100);
 
   // 6. Powder pH (Alkaline Intended, No Citric Acid Recommendation)
@@ -379,7 +379,7 @@ export function runPowderEngineTestSuite(): {
     ingredients: testFormula1,
     batchSizeKg: -50
   });
-  assert('Error Handling', 'Negative batch size defaults safely', reportInvalidBatch.costing.batchSizeKg > 0, true, true);
+  assert('Error Handling', 'Negative batch size is rejected rather than converted into a positive batch', reportInvalidBatch.costing.batchSizeKg === 0, reportInvalidBatch.costing.batchSizeKg, 0);
 
   // =========================================================================
   // P2-DEFECT-01 REGRESSION TESTS: Prevent NaN pH from Reaching Powder Engine
