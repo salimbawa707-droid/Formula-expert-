@@ -52,9 +52,9 @@ export function runMasterScientificUnknownDataIntegrityTestSuite(): TestSuiteSum
   assert(
     '1. Active Matter Integrity',
     '1. Unknown active matter does NOT become 100%',
-    unknownActiveRes.dataSource === 'missing' && unknownActiveRes.activeMatterPct === 0,
+    unknownActiveRes.dataSource === 'missing' && unknownActiveRes.activeMatterPct === null,
     unknownActiveRes.activeMatterPct,
-    0
+    null
   );
 
   // 2. Known active matter still calculates correctly
