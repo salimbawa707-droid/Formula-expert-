@@ -110,7 +110,7 @@ export function runVaultLogicTestSuite() {
   assert(surfproEvidence?.downloadStatus === 'DOWNLOADED', 'Dataset Inspection', 'EVD-002 records the checked-in CSV as downloaded');
   assert(surfproEvidence?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'EVD-002 records the reproducible numerical inspection');
   assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-001')?.numericalInspectionStatus === 'UNINSPECTED', 'Dataset Inspection', 'EVD-001 remains an uninspected lead seed');
-  assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-003')?.title.includes('High-throughput Shampoo Formulations Dataset'), 'Evidence Identity', 'EVD-003 DOI title matches the actual shampoo formulation dataset');
+  assert(!INITIAL_VAULT_STATE.evidence.some(e => e.id === 'EVD-003'), 'Evidence Identity', 'Out-of-scope personal-care dataset is not registered in the laundry evidence vault');
   assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-004')?.accessStatus === 'BLOCKED', 'Evidence Identity', 'EVD-004 citation mismatch remains quarantined');
   assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-007')?.title.includes('aqueous surfactant phase behavior'), 'Evidence Identity', 'EVD-007 metadata matches the PhDat paper');
   assert(metrics.experimentalDatasetsNumericallyInspected >= 1, 'Dataset Inspection', 'At least one source dataset has a positive inspected row count');
@@ -132,8 +132,7 @@ export function runVaultLogicTestSuite() {
   const ds002 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-002');
   assert(Boolean(ds002), 'Dataset Inspection', 'DS-002 descriptive rheology dataset exists');
   assert(ds002?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-002 source workbooks are parser-inspected');
-  const ds003 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-003');
-  assert(Boolean(ds003), 'Dataset Inspection', 'DS-003 shampoo formulation dataset exists');
+  assert(!INITIAL_VAULT_STATE.datasets.some(ds => ds.id === 'DS-003'), 'Dataset Inspection', 'Out-of-scope personal-care dataset is not registered');
   assert(ds002?.actualRowCount === null, 'Dataset Inspection', 'DS-002 physical observation count remains unresolved');
   assert(ds002?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-002 is not formula-validation-ready');
   const ds005 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-005');
