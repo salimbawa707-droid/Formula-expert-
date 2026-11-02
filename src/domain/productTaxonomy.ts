@@ -488,6 +488,12 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
   }
 };
 
+// Category targets are screening defaults until evidence is attached and independently reviewed.
+Object.values(PRODUCT_TAXONOMY_MAP).forEach((category) => {
+  category.specificationEvidenceStatus = 'UNVERIFIED_ENGINEERING_TARGETS';
+  category.specificationEvidenceNote = 'pH and active-matter targets are engineering screening defaults; no category-specific source dossier has been attached and independently approved.';
+});
+
 export const PRODUCT_CATEGORIES: ProductCategoryDefinition[] = CANONICAL_PRODUCT_CATEGORY_IDS.map((id) => ({
   ...PRODUCT_TAXONOMY_MAP[id],
   specificationEvidenceStatus: 'UNVERIFIED_ENGINEERING_TARGETS',
