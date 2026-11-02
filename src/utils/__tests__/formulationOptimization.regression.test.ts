@@ -701,11 +701,13 @@ export function runFormulationOptimizationTestSuite(): TestResultSummary {
         });
     `;
 
-    const tsxBinary = fs.existsSync('/usr/local/bin/tsx')
-      ? '/usr/local/bin/tsx'
-      : (process.execPath.includes('tsx') ? process.execPath : 'tsx');
+    // Bun is the CI/runtime for the master suite and can execute TypeScript
+    // directly. Do not depend on a globally installed tsx binary.
+    const childRuntime = process.versions.bun
+      ? process.execPath
+      : (fs.existsSync('/usr/local/bin/tsx') ? '/usr/local/bin/tsx' : 'tsx');
 
-    const rawOutput = execFileSync(tsxBinary, ['-e', runnerCode], {
+    const rawOutput = execFileSync(childRuntime, ['-e', runnerCode], {
       encoding: 'utf-8',
       timeout: 45000,
     });
