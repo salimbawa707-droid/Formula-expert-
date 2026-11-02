@@ -265,13 +265,32 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     'LAUNDRY_LIQUID',
     { measuredSoilRemovalPct: 82.5, testMethod: 'ASTM D4265 Tergotometer', testDate: '2026-09-29' }
   );
-  assert('Measured Provenance is MEASURED', measuredRes.provenance === 'MEASURED', measuredRes.provenance, 'MEASURED');
+  assert('Composite CPI remains PREDICTED when one lab measurement is supplied', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
   assert('Measured isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
   assert('Measured Value Stored Correctly', measuredRes.measuredSoilRemovalPct === 82.5, measuredRes.measuredSoilRemovalPct, 82.5);
   
-  const expectedVariance = Number((82.5 - measuredRes.cpi).toFixed(1));
+  const predictedSoilKpi = directRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
+  const expectedVariance = Number((82.5 - predictedSoilKpi).toFixed(1));
   assert('Prediction Variance Calculated Correctly', measuredRes.predictionVariance === expectedVariance, measuredRes.predictionVariance, expectedVariance);
   assert('Prediction Error Pct Calculated Correctly', measuredRes.predictionErrorPct !== undefined, measuredRes.predictionErrorPct !== undefined, true);
+
+  const zeroMeasurementRes = calculateCleaningPerformance(
+    laundryFormula,
+    8.5,
+    'LAUNDRY_LIQUID',
+    { measuredSoilRemovalPct: 0, testMethod: 'ASTM D4265 Terg-O-Meter' }
+  );
+  assert('Zero is retained as a valid measured soil-removal result', zeroMeasurementRes.isMeasured === true && zeroMeasurementRes.measuredSoilRemovalPct === 0, { isMeasured: zeroMeasurementRes.isMeasured, measuredSoilRemovalPct: zeroMeasurementRes.measuredSoilRemovalPct }, { isMeasured: true, measuredSoilRemovalPct: 0 });
+  assert('Zero soil-removal result is a measured failure, not missing data', zeroMeasurementRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.status === 'MEASURED_FAIL', zeroMeasurementRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.status, 'MEASURED_FAIL');
+
+  const unmappedDescalingRes = calculateCleaningPerformance(
+    laundryFormula,
+    8.5,
+    'LAUNDRY_LIQUID',
+    { measuredDescalingRate: 0, testMethod: 'Unmapped descaling method' }
+  );
+  assert('Unmapped descaling measurement is not misreported as a measured KPI', unmappedDescalingRes.isMeasured === false && unmappedDescalingRes.provenance === 'PREDICTED', { isMeasured: unmappedDescalingRes.isMeasured, provenance: unmappedDescalingRes.provenance }, { isMeasured: false, provenance: 'PREDICTED' });
+  assert('Unmapped descaling measurement is disclosed as unused', unmappedDescalingRes.limitations.includes('not mapped to a validated performance KPI'), unmappedDescalingRes.limitations, 'limitations disclose unmapped measurement');
 
   // --------------------------------------------------------------------------
   // TEST SECTION 12: getCategoryPerformanceKPIs helper

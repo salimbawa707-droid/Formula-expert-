@@ -65,7 +65,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   assert('Default Formula isMeasured is False', defaultRes.isMeasured === false, defaultRes.isMeasured, false);
   assert('Default Formula Provenance is PREDICTED', defaultRes.provenance === 'PREDICTED', defaultRes.provenance, 'PREDICTED');
   assert('Default Formula Prediction Variance is Undefined', defaultRes.predictionVariance === undefined, defaultRes.predictionVariance, undefined);
-  assert('Default Formula Limitations Disclaims Lab Validation', defaultRes.limitations.includes('NOT an empirical laboratory test result'), true, true);
+  assert('Default Formula Limitations Disclaims Lab Validation', defaultRes.limitations.includes('not measured removal percentages'), true, true);
 
   // --------------------------------------------------------------------------
   // REQUIREMENT 2: Terminology Hardening (Predicted + Model Estimate)
@@ -85,18 +85,20 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   };
   const measuredRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID', labData);
   assert('Measured Result isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
-  assert('Measured Result Provenance is MEASURED', measuredRes.provenance === 'MEASURED', measuredRes.provenance, 'MEASURED');
-  assert('Measured Model Type Refers to Standard Protocol', measuredRes.modelType.includes('ASTM D4265 Terg-O-Tometer'), true, true);
+  assert('Composite CPI remains PREDICTED with one measured KPI', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
+  assert('Measured Model Type Refers to Standard Protocol', measuredRes.modelType === 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL', true, true);
   
-  const expectedVariance = Number((88.0 - measuredRes.cpi).toFixed(1));
+  const predictedSoilKpi = defaultRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
+  const expectedVariance = Number((88.0 - predictedSoilKpi).toFixed(1));
   assert('Measured Result Prediction Variance Correct', measuredRes.predictionVariance === expectedVariance, measuredRes.predictionVariance, expectedVariance);
   
   const expectedErrorPct = Number(((Math.abs(expectedVariance) / 88.0) * 100).toFixed(1));
   assert('Measured Result Prediction Error Pct Correct', measuredRes.predictionErrorPct === expectedErrorPct, measuredRes.predictionErrorPct, expectedErrorPct);
 
   // Check measured status on KPIs
-  const measuredKPIs = measuredRes.categoryKPIs.filter(k => k.isApplicable && k.provenance !== 'NOT_APPLICABLE');
-  assert('Measured KPIs Have MEASURED Provenance', measuredKPIs.every(k => k.provenance === 'MEASURED'), true, true);
+  const measuredKPIs = measuredRes.categoryKPIs.filter(k => k.provenance === 'MEASURED');
+  assert('Only matching soil KPI has MEASURED Provenance', measuredKPIs.length === 1 && measuredKPIs[0].id === 'particulateRemoval', measuredKPIs.map(k => k.id), ['particulateRemoval']);
+  assert('Unmeasured KPIs remain PREDICTED', measuredRes.categoryKPIs.filter(k => k.isApplicable && k.id !== 'particulateRemoval').every(k => k.provenance === 'PREDICTED'), true, true);
 
   // --------------------------------------------------------------------------
   // REQUIREMENT 4: High Prediction Variance Warning Threshold (>20%)

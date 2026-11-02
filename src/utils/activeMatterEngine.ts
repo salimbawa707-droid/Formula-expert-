@@ -15,7 +15,7 @@ import { ActiveMatterResultObject } from './activeMatterValidation';
  *    - Preserves commercial raw-material grades/variants distinctively even when CAS numbers match
  *    - Respects explicit formula override inputs (e.g., user-specified `activeMatterPct`, `activePercent`, `activeMatterPurity`, `purity`)
  *    - Data Provenance Status:
- *      * 'authoritative': Verified commercial assay specification from canonical ingredient library
+ *      * 'authoritative': Only a canonical grade record with attached source/provenance
  *      * 'explicit_override': User-provided custom active concentration
  *      * 'derived_from_name': Rigorously extracted commercial concentration from standardized chemical title (e.g., "SLES 28%")
  *      * 'missing': No active matter data available (never silently assume 100% unless chemically pure/authoritative)
@@ -52,7 +52,7 @@ function normalizeActiveMatterInputValue(value: unknown): unknown {
   return value;
 }
 
-export type ActiveMatterProvenance = 'authoritative' | 'explicit_override' | 'derived_from_name' | 'missing';
+export type ActiveMatterProvenance = 'authoritative' | 'canonical_library_default' | 'reference_default' | 'explicit_override' | 'derived_from_name' | 'missing';
 
 export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
 
@@ -142,9 +142,9 @@ export interface StandardActiveReference {
 }
 
 /**
- * Standard Active Matter Benchmarks for common industrial detergent raw materials
+ * Unsourced standard reference values for common commercial grade labels. These are screening defaults, not verified supplier assays.
  */
-export const AUTHORITATIVE_ACTIVE_BENCHMARKS: StandardActiveReference[] = [
+export const STANDARD_ACTIVE_MATTER_REFERENCE_VALUES: StandardActiveReference[] = [
   { name: "LABSA 96% (Acid Slurry)", activeDefault: 96, category: "Anionic Surfactant", surfactantType: "anionic", description: "Standard high-purity linear alkylbenzene sulfonic acid." },
   { name: "LABSA 90% (Acid Slurry)", activeDefault: 90, category: "Anionic Surfactant", surfactantType: "anionic", description: "Standard commercial 90% active linear alkylbenzene sulfonic acid." },
   { name: "LABSA 90% (Commercial Grade)", activeDefault: 90, category: "Anionic Surfactant", surfactantType: "anionic", description: "Commercial alkylbenzene sulfonic acid grade." },
@@ -418,11 +418,33 @@ export class ActiveMatterEngine {
       };
     }
 
+    // Benchmark standard database lookup
+    const benchMatch = STANDARD_ACTIVE_MATTER_REFERENCE_VALUES.find(b => {
+      const bLower = b.name.toLowerCase();
+      const bParen = bLower.split('(')[0].trim();
+      // Do not resolve a generic family name (e.g. "LABSA") to an arbitrary first grade.
+      return lowerName === bLower || lowerName === bParen;
+    });
+
+    if (benchMatch) {
+      return {
+        activeMatterPct: benchMatch.activeDefault,
+        dataSource: 'reference_default',
+        category: resolvedCategory || benchMatch.category,
+        isSurfactant: isSurfactant || benchMatch.surfactantType !== 'none',
+        surfactantType: surfactantType !== 'none' ? surfactantType : benchMatch.surfactantType,
+        isWater: false,
+        isSolvent,
+        canonicalMatch,
+        conflict: conflictRes
+      };
+    }
+
     // Name-embedded concentration derivation (e.g., "SLES 28%", "LABSA 90%", "GLDA 47%", "NaOH 50%")
     const namePct = this.extractPercentageFromName(rawName);
     if (namePct !== null) {
       // Find benchmark that matches both category/name AND this percentage
-      const matchedBench = AUTHORITATIVE_ACTIVE_BENCHMARKS.find(b => {
+      const matchedBench = STANDARD_ACTIVE_MATTER_REFERENCE_VALUES.find(b => {
         const bLower = b.name.toLowerCase();
         return b.activeDefault === namePct && (
           (lowerName.includes('labsa') && bLower.includes('labsa')) ||
@@ -439,7 +461,7 @@ export class ActiveMatterEngine {
 
       return {
         activeMatterPct: namePct,
-        dataSource: matchedBench ? 'authoritative' : 'derived_from_name',
+        dataSource: 'derived_from_name',
         category: resolvedCategory || matchedBench?.category || 'Surfactant',
         isSurfactant: isSurfactant || (matchedBench ? matchedBench.surfactantType !== 'none' : false),
         surfactantType: surfactantType !== 'none' ? surfactantType : (matchedBench?.surfactantType || 'none'),
@@ -454,7 +476,7 @@ export class ActiveMatterEngine {
     if (canonicalMatch && canonicalMatch.activeDefault !== undefined) {
       return {
         activeMatterPct: canonicalMatch.activeDefault,
-        dataSource: 'authoritative',
+        dataSource: 'canonical_library_default',
         category: resolvedCategory,
         isSurfactant,
         surfactantType,
@@ -465,28 +487,7 @@ export class ActiveMatterEngine {
       };
     }
 
-    // Benchmark standard database lookup
-    const benchMatch = AUTHORITATIVE_ACTIVE_BENCHMARKS.find(b => {
-      const bLower = b.name.toLowerCase();
-      const bFirst = bLower.split(' ')[0];
-      const bParen = bLower.split('(')[0].trim();
-      const hasParenthesesMatch = bLower.includes(`(${lowerName} `) || bLower.includes(` ${lowerName} `) || bLower.includes(`(${lowerName})`) || bLower.includes(` ${lowerName})`) || bLower.includes(`(${lowerName}%)`) || bLower.includes(`(${lowerName} 100%)`);
-      return lowerName === bFirst || lowerName === bParen || bLower.startsWith(lowerName) || hasParenthesesMatch;
-    });
 
-    if (benchMatch) {
-      return {
-        activeMatterPct: benchMatch.activeDefault,
-        dataSource: 'authoritative',
-        category: resolvedCategory || benchMatch.category,
-        isSurfactant: isSurfactant || benchMatch.surfactantType !== 'none',
-        surfactantType: surfactantType !== 'none' ? surfactantType : benchMatch.surfactantType,
-        isWater: false,
-        isSolvent,
-        canonicalMatch,
-        conflict: conflictRes
-      };
-    }
 
     // Missing / Unknown Active Specification
     return {

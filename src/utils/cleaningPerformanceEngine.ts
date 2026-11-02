@@ -51,6 +51,7 @@ export interface PerformanceLabMeasurements {
 }
 
 export interface PerformanceEvaluationOptions {
+  /** Explicit measured/user-supplied wash-water hardness; absent values use a labelled screening assumption only. */
   waterHardnessPpm?: number;
   compatibilityStatus?: string;
   hasCriticalCompatibilityAlert?: boolean;
@@ -238,7 +239,8 @@ export function calculateCleaningPerformance(
   }
 
   // Phase 3 Water Hardness Synchronization
-  const hardnessTargetPpm = options?.waterHardnessPpm ?? 150;
+  const hasExplicitHardness = typeof options?.waterHardnessPpm === 'number' && Number.isFinite(options.waterHardnessPpm) && options.waterHardnessPpm >= 0;
+  const hardnessTargetPpm = hasExplicitHardness ? options!.waterHardnessPpm! : 150;
   const hardnessResult = calculateWaterHardnessTolerance(safeIngs, hardnessTargetPpm, undefined, undefined, undefined, category);
 
   // Base Surfactant Synergy Multiplier
@@ -312,11 +314,11 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'particulateRemoval', name: 'Predicted Particulate Soil Removal Index', value: particulateKpi, unit: '%', provenance: 'PREDICTED', status: particulateKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted removal of clay, carbon black, and dust from fibers (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'oilyGreaseRemoval', name: 'Predicted Oily Soil / Sebum Removal Index', value: oilyGreaseKpi, unit: '%', provenance: 'PREDICTED', status: oilyGreaseKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted emulsification of body oils, cooking fats, and hydrophobic stains (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'enzymaticStainBreakdown', name: 'Predicted Enzymatic Stain Catalysis Index', value: enzymeCount > 0 ? enzymaticKpi : null, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PASS' : 'WARNING', description: 'Predicted catalytic breakdown of protein, starch, and pectin stains (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 },
-        { id: 'builderEfficiency', name: 'Predicted Builder Chelation Efficiency', value: builderKpi, unit: '%', provenance: 'PREDICTED', status: builderKpi >= 60 ? 'PASS' : 'WARNING', description: 'Predicted Ca/Mg sequestration efficiency in wash liquor (Model Estimate)', targetMin: 60, isApplicable: true },
-        { id: 'fabricCompatibility', name: 'Predicted Fabric Fiber Compatibility Index', value: fabricCompatKpi, unit: 'pts', provenance: 'PREDICTED', status: fabricCompatKpi >= 80 ? 'PASS' : 'WARNING', description: 'Predicted fiber preservation score based on wash pH 7.0-9.5 (Model Estimate)', targetMin: 80, isApplicable: true }
+        { id: 'particulateRemoval', name: 'Predicted Particulate Soil Removal Index', value: particulateKpi, unit: '%', provenance: 'PREDICTED', status: particulateKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted removal of clay, carbon black, and dust from fibers (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'oilyGreaseRemoval', name: 'Predicted Oily Soil / Sebum Removal Index', value: oilyGreaseKpi, unit: '%', provenance: 'PREDICTED', status: oilyGreaseKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted emulsification of body oils, cooking fats, and hydrophobic stains (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'enzymaticStainBreakdown', name: 'Predicted Enzymatic Stain Catalysis Index', value: enzymeCount > 0 ? enzymaticKpi : null, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted catalytic breakdown of protein, starch, and pectin stains (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 },
+        { id: 'builderEfficiency', name: 'Predicted Builder Chelation Efficiency', value: builderKpi, unit: '%', provenance: 'PREDICTED', status: builderKpi >= 60 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted Ca/Mg sequestration efficiency in wash liquor (Model Estimate)', targetMin: 60, isApplicable: true },
+        { id: 'fabricCompatibility', name: 'Predicted Fabric Fiber Compatibility Index', value: fabricCompatKpi, unit: 'pts', provenance: 'PREDICTED', status: fabricCompatKpi >= 80 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted fiber preservation score based on wash pH 7.0-9.5 (Model Estimate)', targetMin: 80, isApplicable: true }
       );
 
       if (activeSurfactant >= 10) keyPositiveFactors.push(`Primary active surfactant loading (${activeSurfactant.toFixed(1)}%) meets heavy-duty laundry specifications.`);
@@ -347,10 +349,10 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'particulateSoilSuspension', name: 'Predicted Particulate Soil Suspension Index', value: particulateKpi, unit: '%', provenance: 'PREDICTED', status: particulateKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted suspension and anti-redeposition of insoluble particulate soils (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'alkalineSaponification', name: 'Predicted Alkaline Saponification Index', value: saponificationKpi, unit: 'pts', provenance: 'PREDICTED', status: saponificationKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted alkaline hydrolysis of fatty acid soils at pH 9.5-11.5 (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'bleachableStainRemoval', name: 'Predicted Bleachable Stain Oxidation Index', value: hasBleach ? bleachableKpi : null, unit: '%', provenance: hasBleach ? 'PREDICTED' : 'NOT_APPLICABLE', status: hasBleach ? 'PASS' : 'NOT_APPLICABLE', description: 'Predicted active oxygen bleaching of tea, coffee, and wine stains (Model Estimate)', targetMin: 70, isApplicable: hasBleach },
-        { id: 'enzymaticDetergency', name: 'Predicted Enzyme Granule Detergency Index', value: enzymaticKpi, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PASS' : 'WARNING', description: 'Predicted granular enzyme detergency for protein and starch soils (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 }
+        { id: 'particulateSoilSuspension', name: 'Predicted Particulate Soil Suspension Index', value: particulateKpi, unit: '%', provenance: 'PREDICTED', status: particulateKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted suspension and anti-redeposition of insoluble particulate soils (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'alkalineSaponification', name: 'Predicted Alkaline Saponification Index', value: saponificationKpi, unit: 'pts', provenance: 'PREDICTED', status: saponificationKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted alkaline hydrolysis of fatty acid soils at pH 9.5-11.5 (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'bleachableStainRemoval', name: 'Predicted Bleachable Stain Oxidation Index', value: hasBleach ? bleachableKpi : null, unit: '%', provenance: hasBleach ? 'PREDICTED' : 'NOT_APPLICABLE', status: hasBleach ? 'PREDICTIVE_ONLY' : 'NOT_APPLICABLE', description: 'Predicted active oxygen bleaching of tea, coffee, and wine stains (Model Estimate)', targetMin: 70, isApplicable: hasBleach },
+        { id: 'enzymaticDetergency', name: 'Predicted Enzyme Granule Detergency Index', value: enzymaticKpi, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted granular enzyme detergency for protein and starch soils (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 }
       );
 
       if (builderPct >= 15) keyPositiveFactors.push('High builder loading ensures robust water softening and alkalinity reserve.');
@@ -379,10 +381,10 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'greaseCutting', name: 'Predicted Grease Cutting Index', value: greaseCuttingKpi, unit: '%', provenance: 'PREDICTED', status: greaseCuttingKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted solubilization of triglycerides, animal fats, and oils (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'foamPersistence', name: 'Predicted Foam Volume & Mileage Index', value: foamPersistenceKpi, unit: 'pts', provenance: 'PREDICTED', status: foamPersistenceKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted persistent high lather in presence of oily soil challenge (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'skinMildnessProxy', name: 'Predicted Skin Mildness Index (Model Estimate)', value: skinMildnessKpi, unit: 'pts', provenance: 'RULE_BASED', status: skinMildnessKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted skin compatibility based on pH 6.0-7.5 and amphoteric ratio (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'rinseability', name: 'Predicted Rinseability & Film-Free Index', value: rinseabilityKpi, unit: 'pts', provenance: 'PREDICTED', status: rinseabilityKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted free rinsing from plates and glassware without residue (Model Estimate)', targetMin: 75, isApplicable: true }
+        { id: 'greaseCutting', name: 'Predicted Grease Cutting Index', value: greaseCuttingKpi, unit: '%', provenance: 'PREDICTED', status: greaseCuttingKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted solubilization of triglycerides, animal fats, and oils (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'foamPersistence', name: 'Predicted Foam Volume & Mileage Index', value: foamPersistenceKpi, unit: 'pts', provenance: 'PREDICTED', status: foamPersistenceKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted persistent high lather in presence of oily soil challenge (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'skinMildnessProxy', name: 'Predicted Skin Mildness Index (Model Estimate)', value: skinMildnessKpi, unit: 'pts', provenance: 'RULE_BASED', status: skinMildnessKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted skin compatibility based on pH 6.0-7.5 and amphoteric ratio (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'rinseability', name: 'Predicted Rinseability & Film-Free Index', value: rinseabilityKpi, unit: 'pts', provenance: 'PREDICTED', status: rinseabilityKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted free rinsing from plates and glassware without residue (Model Estimate)', targetMin: 75, isApplicable: true }
       );
 
       if (hasAmphoteric) keyPositiveFactors.push('Amphoteric betaine co-surfactant provides high flash foam and skin mildness.');
@@ -412,10 +414,10 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'zeroFoamCompliance', name: 'Predicted Zero-Foam Compliance Score', value: zeroFoamKpi, unit: 'pts', provenance: 'RULE_BASED', status: zeroFoamKpi >= 80 ? 'PASS' : 'FAIL', description: 'Predicted low/zero foam screening to prevent pump cavitation (Model Estimate)', targetMin: 80, isApplicable: true },
-        { id: 'mechanicalSoilRemoval', name: 'Predicted Mechanical Soil Removal Index', value: mechanicalDetergencyKpi, unit: '%', provenance: 'PREDICTED', status: mechanicalDetergencyKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted alkaline builder and low-foaming nonionic soil lifting (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'enzymeStarchProtein', name: 'Predicted Enzyme Starch / Protein Hydrolysis Index', value: enzymeCount > 0 ? enzymeBreakdownKpi : null, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PASS' : 'WARNING', description: 'Predicted protease and amylase breakdown of baked-on food residues (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 },
-        { id: 'antiSpottingFilming', name: 'Predicted Anti-Spotting & Sheeting Index', value: antiFilmingKpi, unit: 'pts', provenance: 'PREDICTED', status: antiFilmingKpi >= 65 ? 'PASS' : 'WARNING', description: 'Predicted prevention of scale and white film on glassware (Model Estimate)', targetMin: 65, isApplicable: true }
+        { id: 'zeroFoamCompliance', name: 'Predicted Zero-Foam Compliance Score', value: zeroFoamKpi, unit: 'pts', provenance: 'RULE_BASED', status: zeroFoamKpi >= 80 ? 'PREDICTIVE_ONLY' : 'FAIL', description: 'Predicted low/zero foam screening to prevent pump cavitation (Model Estimate)', targetMin: 80, isApplicable: true },
+        { id: 'mechanicalSoilRemoval', name: 'Predicted Mechanical Soil Removal Index', value: mechanicalDetergencyKpi, unit: '%', provenance: 'PREDICTED', status: mechanicalDetergencyKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted alkaline builder and low-foaming nonionic soil lifting (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'enzymeStarchProtein', name: 'Predicted Enzyme Starch / Protein Hydrolysis Index', value: enzymeCount > 0 ? enzymeBreakdownKpi : null, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted protease and amylase breakdown of baked-on food residues (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 },
+        { id: 'antiSpottingFilming', name: 'Predicted Anti-Spotting & Sheeting Index', value: antiFilmingKpi, unit: 'pts', provenance: 'PREDICTED', status: antiFilmingKpi >= 65 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted prevention of scale and white film on glassware (Model Estimate)', targetMin: 65, isApplicable: true }
       );
 
       if (hasHighFoamer) keyNegativeFactors.push('High-foaming anionic/amphoteric surfactant detected: risk of machine pump cavitation.');
@@ -444,10 +446,10 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'mopDownSoilRemoval', name: 'Predicted Mop-Down Soil Removal Index', value: mopDownKpi, unit: '%', provenance: 'PREDICTED', status: mopDownKpi >= 65 ? 'PASS' : 'WARNING', description: 'Predicted lifting of foot traffic grime and dust from hard floors (Model Estimate)', targetMin: 65, isApplicable: true },
-        { id: 'fastDryingStreakFree', name: 'Predicted Fast-Drying Streak-Free Index', value: fastDryingKpi, unit: 'pts', provenance: 'PREDICTED', status: fastDryingKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted rapid moisture flash-off without haze on hard floors (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'zeroResidueSafety', name: 'Predicted Zero Sticky Residue Score', value: residueFreeKpi, unit: 'pts', provenance: 'PREDICTED', status: residueFreeKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted low active residue preventing re-soiling and slippery floors (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'substrateSafety', name: 'Predicted Substrate Safety Score', value: floorSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: floorSafetyKpi >= 80 ? 'PASS' : 'WARNING', description: 'Predicted neutral pH 6.5-8.5 protecting sensitive stone (Model Estimate)', targetMin: 80, isApplicable: true }
+        { id: 'mopDownSoilRemoval', name: 'Predicted Mop-Down Soil Removal Index', value: mopDownKpi, unit: '%', provenance: 'PREDICTED', status: mopDownKpi >= 65 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted lifting of foot traffic grime and dust from hard floors (Model Estimate)', targetMin: 65, isApplicable: true },
+        { id: 'fastDryingStreakFree', name: 'Predicted Fast-Drying Streak-Free Index', value: fastDryingKpi, unit: 'pts', provenance: 'PREDICTED', status: fastDryingKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted rapid moisture flash-off without haze on hard floors (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'zeroResidueSafety', name: 'Predicted Zero Sticky Residue Score', value: residueFreeKpi, unit: 'pts', provenance: 'PREDICTED', status: residueFreeKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted low active residue preventing re-soiling and slippery floors (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'substrateSafety', name: 'Predicted Substrate Safety Score', value: floorSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: floorSafetyKpi >= 80 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted neutral pH 6.5-8.5 protecting sensitive stone (Model Estimate)', targetMin: 80, isApplicable: true }
       );
 
       if (activeSurfactant > 8) keyNegativeFactors.push(`Active surfactant (${activeSurfactant.toFixed(1)}% > 8%) is high for floor cleaning: may cause sticky residue or dull haze.`);
@@ -474,9 +476,9 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'sprayWipeDetergency', name: 'Predicted Spray & Wipe Detergency Index', value: sprayWipeKpi, unit: '%', provenance: 'PREDICTED', status: sprayWipeKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted instant dirt lifting from countertops and fixtures (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'greasePenetration', name: 'Predicted Light Grease & Fingerprint Cut Index', value: greasePenetrationKpi, unit: '%', provenance: 'PREDICTED', status: greasePenetrationKpi >= 65 ? 'PASS' : 'WARNING', description: 'Predicted penetration of light cooking oils and everyday grime (Model Estimate)', targetMin: 65, isApplicable: true },
-        { id: 'surfaceSafety', name: 'Predicted Multi-Surface Safety Score', value: multiSurfaceSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: multiSurfaceSafetyKpi >= 80 ? 'PASS' : 'WARNING', description: 'Predicted safe pH window across plastic, metal, and ceramic (Model Estimate)', targetMin: 80, isApplicable: true }
+        { id: 'sprayWipeDetergency', name: 'Predicted Spray & Wipe Detergency Index', value: sprayWipeKpi, unit: '%', provenance: 'PREDICTED', status: sprayWipeKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted instant dirt lifting from countertops and fixtures (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'greasePenetration', name: 'Predicted Light Grease & Fingerprint Cut Index', value: greasePenetrationKpi, unit: '%', provenance: 'PREDICTED', status: greasePenetrationKpi >= 65 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted penetration of light cooking oils and everyday grime (Model Estimate)', targetMin: 65, isApplicable: true },
+        { id: 'surfaceSafety', name: 'Predicted Multi-Surface Safety Score', value: multiSurfaceSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: multiSurfaceSafetyKpi >= 80 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted safe pH window across plastic, metal, and ceramic (Model Estimate)', targetMin: 80, isApplicable: true }
       );
       break;
     }
@@ -501,9 +503,9 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'acidDescalingScore', name: 'Predicted Descaling Capacity Index', value: descalingKpi, unit: 'pts', provenance: 'PREDICTED', status: descalingKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted dissolution rate of calcium carbonate scale and uric deposits (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'rustStainRemoval', name: 'Predicted Rust & Iron Stain Removal Index', value: rustRemovalKpi, unit: 'pts', provenance: 'PREDICTED', status: rustRemovalKpi >= 60 ? 'PASS' : 'WARNING', description: 'Predicted solubilization of ferric oxide mineral rings (Model Estimate)', targetMin: 60, isApplicable: true },
-        { id: 'verticalClingFactor', name: 'Predicted Vertical Cling Dwell Factor', value: clingProxyKpi, unit: 'pts', provenance: 'RULE_BASED', status: clingProxyKpi >= 60 ? 'PASS' : 'WARNING', description: 'Predicted formulation dwell time on vertical porcelain (Model Estimate)', targetMin: 60, isApplicable: true }
+        { id: 'acidDescalingScore', name: 'Predicted Descaling Capacity Index', value: descalingKpi, unit: 'pts', provenance: 'PREDICTED', status: descalingKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted dissolution rate of calcium carbonate scale and uric deposits (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'rustStainRemoval', name: 'Predicted Rust & Iron Stain Removal Index', value: rustRemovalKpi, unit: 'pts', provenance: 'PREDICTED', status: rustRemovalKpi >= 60 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted solubilization of ferric oxide mineral rings (Model Estimate)', targetMin: 60, isApplicable: true },
+        { id: 'verticalClingFactor', name: 'Predicted Vertical Cling Dwell Factor', value: clingProxyKpi, unit: 'pts', provenance: 'RULE_BASED', status: clingProxyKpi >= 60 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted formulation dwell time on vertical porcelain (Model Estimate)', targetMin: 60, isApplicable: true }
       );
 
       if (isAcidic) keyPositiveFactors.push(`Low pH (${phVal.toFixed(1)}) delivers rapid lime scale and mineral descaling.`);
@@ -531,9 +533,9 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'soapScumDissolution', name: 'Predicted Soap Scum Dissolution Index', value: soapScumKpi, unit: '%', provenance: 'PREDICTED', status: soapScumKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted dissolution of insoluble calcium soap scum (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'tileGroutSafety', name: 'Predicted Tile & Grout Protection Score', value: tileGroutSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: tileGroutSafetyKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted controlled acidity (pH 2.5-4.5) preventing grout erosion (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'clingingFoamIndex', name: 'Predicted Clinging Spray Foam Index', value: clingingFoamKpi, unit: 'pts', provenance: 'PREDICTED', status: clingingFoamKpi >= 65 ? 'PASS' : 'WARNING', description: 'Predicted lather stability on vertical bathroom tiles (Model Estimate)', targetMin: 65, isApplicable: true }
+        { id: 'soapScumDissolution', name: 'Predicted Soap Scum Dissolution Index', value: soapScumKpi, unit: '%', provenance: 'PREDICTED', status: soapScumKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted dissolution of insoluble calcium soap scum (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'tileGroutSafety', name: 'Predicted Tile & Grout Protection Score', value: tileGroutSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: tileGroutSafetyKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted controlled acidity (pH 2.5-4.5) preventing grout erosion (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'clingingFoamIndex', name: 'Predicted Clinging Spray Foam Index', value: clingingFoamKpi, unit: 'pts', provenance: 'PREDICTED', status: clingingFoamKpi >= 65 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted lather stability on vertical bathroom tiles (Model Estimate)', targetMin: 65, isApplicable: true }
       );
       break;
     }
@@ -561,9 +563,9 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'streakFreeClarity', name: 'Predicted Streak Resistance Score', value: streakFreeKpi, unit: 'pts', provenance: 'PREDICTED', status: streakFreeKpi >= 80 ? 'PASS' : 'WARNING', description: 'Predicted streak-free optical transmission on glass (Model Estimate)', targetMin: 80, isApplicable: true },
-        { id: 'flashDryingRate', name: 'Predicted Flash-Off Evaporation Index', value: flashDryingKpi, unit: 'pts', provenance: 'PREDICTED', status: flashDryingKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted volatile alcohol/glycol flash drying (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'fingerprintCut', name: 'Predicted Fingerprint & Smudge Cut Index', value: smudgeCutKpi, unit: '%', provenance: 'PREDICTED', status: smudgeCutKpi >= 60 ? 'PASS' : 'WARNING', description: 'Predicted light solvent/surfactant coupling to lift oils (Model Estimate)', targetMin: 60, isApplicable: true }
+        { id: 'streakFreeClarity', name: 'Predicted Streak Resistance Score', value: streakFreeKpi, unit: 'pts', provenance: 'PREDICTED', status: streakFreeKpi >= 80 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted streak-free optical transmission on glass (Model Estimate)', targetMin: 80, isApplicable: true },
+        { id: 'flashDryingRate', name: 'Predicted Flash-Off Evaporation Index', value: flashDryingKpi, unit: 'pts', provenance: 'PREDICTED', status: flashDryingKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted volatile alcohol/glycol flash drying (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'fingerprintCut', name: 'Predicted Fingerprint & Smudge Cut Index', value: smudgeCutKpi, unit: '%', provenance: 'PREDICTED', status: smudgeCutKpi >= 60 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted light solvent/surfactant coupling to lift oils (Model Estimate)', targetMin: 60, isApplicable: true }
       );
 
       if (activeSurfactant > 3.0) keyNegativeFactors.push(`Active surfactant (${activeSurfactant.toFixed(1)}% > 3%) is too high for glass cleaner: causes severe streaking and optical haze.`);
@@ -606,9 +608,9 @@ export function calculateCleaningPerformance(
       )));
 
       categoryKPIs.push(
-        { id: 'fabricSofteningIndex', name: 'Predicted Fabric Softening Index', value: softeningKpi, unit: 'pts', provenance: 'PREDICTED', status: softeningKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted cationic surfactant deposition providing soft hand-feel (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'antiStaticReduction', name: 'Predicted Anti-Static Charge Reduction Score', value: antiStaticKpi, unit: 'pts', provenance: 'PREDICTED', status: antiStaticKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted charge neutralization reducing static cling (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'cationicEmulsionStability', name: 'Predicted Emulsion pH Stability Score', value: phStabilityKpi, unit: 'pts', provenance: 'PREDICTED', status: phStabilityKpi >= 80 ? 'PASS' : 'WARNING', description: 'Predicted acidic pH 2.5-4.5 preventing esterquat hydrolysis (Model Estimate)', targetMin: 80, isApplicable: true },
+        { id: 'fabricSofteningIndex', name: 'Predicted Fabric Softening Index', value: softeningKpi, unit: 'pts', provenance: 'PREDICTED', status: softeningKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted cationic surfactant deposition providing soft hand-feel (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'antiStaticReduction', name: 'Predicted Anti-Static Charge Reduction Score', value: antiStaticKpi, unit: 'pts', provenance: 'PREDICTED', status: antiStaticKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted charge neutralization reducing static cling (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'cationicEmulsionStability', name: 'Predicted Emulsion pH Stability Score', value: phStabilityKpi, unit: 'pts', provenance: 'PREDICTED', status: phStabilityKpi >= 80 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted acidic pH 2.5-4.5 preventing esterquat hydrolysis (Model Estimate)', targetMin: 80, isApplicable: true },
         { id: 'cleaningScore', name: 'Detergent Cleaning Score', value: null, unit: 'N/A', provenance: 'NOT_APPLICABLE', status: 'NOT_APPLICABLE', description: 'Cleaning score is not applicable to cationic fabric softeners (Model Estimate)', isApplicable: false }
       );
 
@@ -637,9 +639,9 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'skinMildnessIndex', name: 'Predicted Skin Mildness Index (Model Estimate)', value: skinMildnessKpi, unit: 'pts', provenance: 'RULE_BASED', status: skinMildnessKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted skin-compatible pH 5.0-6.8 with amphoteric secondary surfactant (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'latherRichness', name: 'Predicted Lather Richness & Creaminess Score', value: latherRichnessKpi, unit: 'pts', provenance: 'PREDICTED', status: latherRichnessKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted dense micro-bubble foam build during washing (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'lipidCleansing', name: 'Predicted Pathogen & Lipid Cleansing Index', value: lipidCleansingKpi, unit: '%', provenance: 'PREDICTED', status: lipidCleansingKpi >= 65 ? 'PASS' : 'WARNING', description: 'Predicted lifting of dirt, transient bacteria, and sebum (Model Estimate)', targetMin: 65, isApplicable: true }
+        { id: 'skinMildnessIndex', name: 'Predicted Skin Mildness Index (Model Estimate)', value: skinMildnessKpi, unit: 'pts', provenance: 'RULE_BASED', status: skinMildnessKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted skin-compatible pH 5.0-6.8 with amphoteric secondary surfactant (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'latherRichness', name: 'Predicted Lather Richness & Creaminess Score', value: latherRichnessKpi, unit: 'pts', provenance: 'PREDICTED', status: latherRichnessKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted dense micro-bubble foam build during washing (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'lipidCleansing', name: 'Predicted Pathogen & Lipid Cleansing Index', value: lipidCleansingKpi, unit: '%', provenance: 'PREDICTED', status: lipidCleansingKpi >= 65 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted lifting of dirt, transient bacteria, and sebum (Model Estimate)', targetMin: 65, isApplicable: true }
       );
 
       if (hasAmphoteric) keyPositiveFactors.push('Amphoteric betaine moderates anionic harshness for skin-safe hand cleansing.');
@@ -670,9 +672,9 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'heavyGreaseSaponification', name: 'Predicted Alkaline Grease Saponification Index', value: saponificationKpi, unit: '%', provenance: 'PREDICTED', status: saponificationKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted caustic hydrolysis of polymerized grease at pH > 11.0 (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'solventGreasePenetration', name: 'Predicted Solvent Grease Penetration Index', value: solventPenetrationKpi, unit: 'pts', provenance: 'PREDICTED', status: solventPenetrationKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted glycol ether breakdown of hydrophobic oil crusts (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'heavyDegreasingIndex', name: 'Predicted Heavy Degreasing Power Index', value: heavyGreaseKpi, unit: '%', provenance: 'PREDICTED', status: heavyGreaseKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted overall removal of charred oils and kitchen grease (Model Estimate)', targetMin: 75, isApplicable: true }
+        { id: 'heavyGreaseSaponification', name: 'Predicted Alkaline Grease Saponification Index', value: saponificationKpi, unit: '%', provenance: 'PREDICTED', status: saponificationKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted caustic hydrolysis of polymerized grease at pH > 11.0 (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'solventGreasePenetration', name: 'Predicted Solvent Grease Penetration Index', value: solventPenetrationKpi, unit: 'pts', provenance: 'PREDICTED', status: solventPenetrationKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted glycol ether breakdown of hydrophobic oil crusts (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'heavyDegreasingIndex', name: 'Predicted Heavy Degreasing Power Index', value: heavyGreaseKpi, unit: '%', provenance: 'PREDICTED', status: heavyGreaseKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted overall removal of charred oils and kitchen grease (Model Estimate)', targetMin: 75, isApplicable: true }
       );
 
       if (isHeavyAlkaline) keyPositiveFactors.push(`High alkaline reserve (pH ${phVal.toFixed(1)}) saponifies baked-on oils rapidly.`);
@@ -702,10 +704,10 @@ export function calculateCleaningPerformance(
       cleaningScore = cpi;
 
       categoryKPIs.push(
-        { id: 'snowFoamGrimeLifting', name: 'Predicted Snow Foam Grime Lifting Score', value: snowFoamKpi, unit: 'pts', provenance: 'PREDICTED', status: snowFoamKpi >= 75 ? 'PASS' : 'WARNING', description: 'Predicted dense clinging foam capsule lifting road grit (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'lubricitySlickness', name: 'Predicted Washing Lubricity & Slickness Score', value: lubricityKpi, unit: 'pts', provenance: 'PREDICTED', status: lubricityKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted high surface slip preventing swirl marks (Model Estimate)', targetMin: 70, isApplicable: true },
-        { id: 'waxSafePreservation', name: 'Predicted Wax & Coating Safety Score', value: waxSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: waxSafetyKpi >= 80 ? 'PASS' : 'WARNING', description: 'Predicted neutral pH 6.8-7.8 preserving carnauba wax and ceramic sealants (Model Estimate)', targetMin: 80, isApplicable: true },
-        { id: 'spotFreeRinsing', name: 'Predicted Spot-Free Free-Rinsing Score', value: spotFreeRinseKpi, unit: 'pts', provenance: 'PREDICTED', status: spotFreeRinseKpi >= 70 ? 'PASS' : 'WARNING', description: 'Predicted complete water sheet-off minimizing mineral spots (Model Estimate)', targetMin: 70, isApplicable: true }
+        { id: 'snowFoamGrimeLifting', name: 'Predicted Snow Foam Grime Lifting Score', value: snowFoamKpi, unit: 'pts', provenance: 'PREDICTED', status: snowFoamKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted dense clinging foam capsule lifting road grit (Model Estimate)', targetMin: 75, isApplicable: true },
+        { id: 'lubricitySlickness', name: 'Predicted Washing Lubricity & Slickness Score', value: lubricityKpi, unit: 'pts', provenance: 'PREDICTED', status: lubricityKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted high surface slip preventing swirl marks (Model Estimate)', targetMin: 70, isApplicable: true },
+        { id: 'waxSafePreservation', name: 'Predicted Wax & Coating Safety Score', value: waxSafetyKpi, unit: 'pts', provenance: 'PREDICTED', status: waxSafetyKpi >= 80 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted neutral pH 6.8-7.8 preserving carnauba wax and ceramic sealants (Model Estimate)', targetMin: 80, isApplicable: true },
+        { id: 'spotFreeRinsing', name: 'Predicted Spot-Free Free-Rinsing Score', value: spotFreeRinseKpi, unit: 'pts', provenance: 'PREDICTED', status: spotFreeRinseKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted complete water sheet-off minimizing mineral spots (Model Estimate)', targetMin: 70, isApplicable: true }
       );
 
       if (isWaxSafe) keyPositiveFactors.push(`pH-neutral profile (${phVal.toFixed(1)}) protects automotive clearcoat, wax, and ceramic coatings.`);
@@ -799,59 +801,65 @@ export function calculateCleaningPerformance(
   }
 
   // Check Laboratory Measurement Input & Calculate Variance
+  // Zero is a valid measured result. Reject non-finite/out-of-domain values instead of
+  // silently treating zero as "not measured". Descaling rate is non-negative (mg/min);
+  // percentage/score measurements must be within 0..100.
+  const isValidScoreMeasurement = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+  const isValidDescalingMeasurement = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  const hasUnmappedDescalingMeasurement = isValidDescalingMeasurement(labMeasurements?.measuredDescalingRate);
   const isMeasured = Boolean(labMeasurements && (
-    (labMeasurements.measuredSoilRemovalPct !== undefined && labMeasurements.measuredSoilRemovalPct > 0) ||
-    (labMeasurements.measuredGreaseRemovalPct !== undefined && labMeasurements.measuredGreaseRemovalPct > 0) ||
-    (labMeasurements.measuredSofteningScore !== undefined && labMeasurements.measuredSofteningScore > 0) ||
-    (labMeasurements.measuredStreakRating !== undefined && labMeasurements.measuredStreakRating > 0) ||
-    (labMeasurements.measuredDescalingRate !== undefined && labMeasurements.measuredDescalingRate > 0)
+    isValidScoreMeasurement(labMeasurements.measuredSoilRemovalPct) ||
+    isValidScoreMeasurement(labMeasurements.measuredGreaseRemovalPct) ||
+    isValidScoreMeasurement(labMeasurements.measuredSofteningScore) ||
+    isValidScoreMeasurement(labMeasurements.measuredStreakRating)
   ));
 
   let predictionVariance: number | undefined;
   let predictionErrorPct: number | undefined;
 
-  const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct ?? 
-    labMeasurements?.measuredGreaseRemovalPct ?? 
-    labMeasurements?.measuredSofteningScore ?? 
-    labMeasurements?.measuredStreakRating;
-
-  if (isMeasured && primaryMeasuredVal !== undefined) {
-    predictionVariance = Number((primaryMeasuredVal - cpi).toFixed(1));
-    predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
-    
-    if (predictionErrorPct > 20) {
-      keyNegativeFactors.push(`High prediction variance detected: Measured empirical laboratory value (${primaryMeasuredVal}) differs from model estimate (${cpi}) by ${predictionErrorPct.toFixed(1)}%. Model re-calibration recommended.`);
-    }
-
+  // A single lab measurement must not relabel every KPI or the composite CPI as measured.
+  // Only map measurements to the matching KPI; unlike units/domains are never compared.
+  const soilKpi = categoryKPIs.find(kpi => ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'].includes(kpi.id));
+  const predictedSoilKpiValue = soilKpi?.value;
+  const measuredKpiInputs: Array<{ ids: string[]; value?: number }> = [
+    { ids: ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'], value: labMeasurements?.measuredSoilRemovalPct },
+    { ids: ['oilyGreaseRemoval', 'greaseCutting'], value: labMeasurements?.measuredGreaseRemovalPct },
+    { ids: ['fabricSofteningIndex'], value: labMeasurements?.measuredSofteningScore },
+    { ids: ['streakFreeClarity'], value: labMeasurements?.measuredStreakRating }
+  ];
+  for (const measurement of measuredKpiInputs) {
+    if (!isValidScoreMeasurement(measurement.value)) continue;
     for (const kpi of categoryKPIs) {
-      if (kpi.isApplicable && kpi.provenance !== 'NOT_APPLICABLE') {
-        kpi.provenance = 'MEASURED';
-        if (kpi.value !== null && primaryMeasuredVal !== undefined) {
-          kpi.status = primaryMeasuredVal >= (kpi.targetMin || 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
-        }
-      }
+      if (!measurement.ids.includes(kpi.id) || !kpi.isApplicable) continue;
+      kpi.value = measurement.value;
+      kpi.provenance = 'MEASURED';
+      kpi.status = measurement.value >= (kpi.targetMin ?? 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
+    }
+  }
+  const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct;
+  if (isValidScoreMeasurement(primaryMeasuredVal) && predictedSoilKpiValue !== null && predictedSoilKpiValue !== undefined) {
+    predictionVariance = Number((primaryMeasuredVal - predictedSoilKpiValue).toFixed(1));
+    predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
+    if (predictionErrorPct > 20) {
+      keyNegativeFactors.push(`High prediction variance detected: measured soil-removal value differs from the matching predicted soil KPI by ${predictionErrorPct.toFixed(1)}%. Model recalibration and additional independent replicates are required.`);
     }
   }
 
-  const provenance: PerformanceProvenance = isEmptyFormula 
-    ? 'INSUFFICIENT_DATA' 
-    : (isMeasured ? 'MEASURED' : 'PREDICTED');
+  const provenance: PerformanceProvenance = isEmptyFormula ? 'INSUFFICIENT_DATA' : 'PREDICTED';
 
   const modelType = isEmptyFormula
     ? 'Insufficient Ingredient Data'
     : (category === 'UNKNOWN_PRODUCT_CATEGORY'
       ? 'MODEL_NOT_VALIDATED'
-      : (isMeasured 
-        ? `Standardized Empirical Laboratory Test (${labMeasurements?.testMethod || 'Standard Protocol'})` 
-        : 'Product-Specific Predicted Cleaning Index / CPI Screening Model'));
+      : 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL');
 
   const riskLevel: 'Low' | 'Medium' | 'High' = isEmptyFormula ? 'High' : (cpi >= 75 ? 'Low' : (cpi >= 50 ? 'Medium' : 'High'));
 
   const limitations = isEmptyFormula
     ? 'Insufficient formulation ingredient data to calculate performance score.'
-    : (isMeasured
-      ? `Empirical laboratory test data recorded on ${labMeasurements?.testDate || 'standard test protocol'} by operator ${labMeasurements?.operator || 'R&D Analyst'}.`
-      : `Predicted score is derived from formulation chemistry screening models (active surfactant loading, HLB match, pH, builders, enzymes). It is NOT an empirical laboratory test result and does not substitute for standardized Terg-O-Tometer stain-swatch (ASTM D4265/AATCC) or panel testing.`);
+    : `SCREENING MODEL ONLY: CPI/KPI coefficients and thresholds are engineering heuristics, not experimentally calibrated predictive models. Scores are not measured removal percentages and must not be used as certified product-performance claims. ${hasExplicitHardness ? 'Water hardness was supplied as an input; its measurement provenance remains user-declared.' : 'Water hardness was not supplied; 150 mg/L as CaCO3 is an assumed screening scenario, not a measurement.'} ${isMeasured ? 'Some individual laboratory measurements were supplied; only the matching KPI is labelled MEASURED. The composite CPI remains PREDICTED.' : 'No laboratory measurements were supplied.'} ${hasUnmappedDescalingMeasurement ? 'A descaling-rate measurement was supplied but is not mapped to a validated performance KPI; it was not used for KPI status or variance.' : ''} Standardized Terg-O-Tometer stain-swatch (ASTM D4265/AATCC) or relevant product-specific panel testing is still required.`;
 
   const labValidationGuidance = isCleaningApplicable
     ? 'Standardized soil swatch testing (e.g. EMPA/wfk test monitors under ASTM D4265 / AATCC 135) required for commercial performance claims.'

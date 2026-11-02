@@ -13,7 +13,7 @@
  */
 
 import { AUTHORITATIVE_HLB_BENCHMARKS } from '../../utils/hlbEngine';
-import { AUTHORITATIVE_ACTIVE_BENCHMARKS } from '../../utils/activeMatterEngine';
+import { STANDARD_ACTIVE_MATTER_REFERENCE_VALUES } from '../../utils/activeMatterEngine';
 
 export type IdentityStatus = 'IDENTIFIED' | 'PARTIALLY_IDENTIFIED' | 'AMBIGUOUS' | 'UNKNOWN';
 
@@ -583,7 +583,7 @@ export class IngredientIdentitySSOT {
    * Authoritative Active Matter benchmarks fetched through SSOT
    */
   public static getActiveMatterBenchmarks(): Array<{ name: string; purity: number }> {
-    return AUTHORITATIVE_ACTIVE_BENCHMARKS.map((b) => ({
+    return STANDARD_ACTIVE_MATTER_REFERENCE_VALUES.map((b) => ({
       name: b.name,
       purity: b.activeDefault
     }));

@@ -77,6 +77,9 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
   assert('Screening Formula - Predicted-only formula requires lab validation', validGate.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED', validGate.finalFormulaStatus, 'LAB_VALIDATION_REQUIRED');
   assert('Valid Formula - Lab Readiness is READY_FOR_LAB_BENCH', validGate.labReadiness === 'READY_FOR_LAB_BENCH', validGate.labReadiness, 'READY_FOR_LAB_BENCH');
 
+  assert('Category targets - unverified provenance is explicitly surfaced', validGate.majorWarnings.some(w => w.code === 'WARN_UNVERIFIED_CATEGORY_TARGETS'), validGate.majorWarnings.map(w => w.code), 'WARN_UNVERIFIED_CATEGORY_TARGETS');
+  assert('Missing hardness - assumed 150 ppm is explicitly warned', validGate.majorWarnings.some(w => w.code === 'WARN_ASSUMED_WATER_HARDNESS'), validGate.majorWarnings.map(w => w.code), 'WARN_ASSUMED_WATER_HARDNESS');
+
   // --------------------------------------------------------------------------
   // TEST 2: Unknown Product Category Handling
   // --------------------------------------------------------------------------

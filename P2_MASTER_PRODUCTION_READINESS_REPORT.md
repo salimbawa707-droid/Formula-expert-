@@ -1,36 +1,33 @@
-# P2 Master Production Readiness & Engineering Report
+# P2 Production Readiness & Engineering Report
 
 **Project**: Detergent Formula Expert  
-**Scope**: P2 Workstreams (Offline Architecture, Local Persistence & Backup, Security & Privacy, Frontend Integration, Web/Android Builds, Data Portability, Performance & Stability, UX & Localization, and Release Regression)  
-**Status**: `PASS` (Production Ready)  
-**Date**: October 31, 2026  
+**Status**: `PARTIAL — NOT RELEASE CERTIFIED`  
+**Last reviewed**: November 3, 2026
 
----
+## 1. Current verified position
 
-## 1. Executive Summary
-The Detergent Formula Expert application has successfully completed the P2 Production Readiness & Engineering remediation. All core scientific calculation engines operate locally without external AI API keys or remote chemical databases. Data persistence is fully established via IndexedDB/Dexie and localStorage with robust migration and backup-restore capabilities. Security controls protect local state, and web, PWA, and Android build pipelines are fully verified and reproducible.
+The repository contains local deterministic calculation engines and also retains external integrations, including Gemini, Supabase and Firebase. The application must not be described as fully offline or as having zero external service dependencies.
 
----
+The latest PR-branch CI run (workflow 41530474374, commit ee9702b) passed the TypeScript regression suite (139/139 modules; 4,699/4,699 assertions), production frontend build, Phase 6 lab-evidence regression, and evidence fail-closed checks. The Android debug APK job was skipped because the independent evidence gate remains locked.
 
-## 2. P2 Workstream Status Summary
+## 2. Workstream status
 
-| Workstream | Focus Area | Status |
-| :--- | :--- | :--- |
-| **P2-01** | Offline & Self-Contained Architecture | `PASS` |
-| **P2-02** | Local Database, Data Integrity & Backup | `PASS` |
-| **P2-03** | Application Security & Privacy | `PASS` |
-| **P2-04** | Frontend & Engine Integration Reliability | `PASS` |
-| **P2-05** | Web, PWA & Android Build Reliability | `PASS` |
-| **P2-06** | Export, Reporting & User Data Portability | `PASS` |
-| **P2-07** | Performance, Stability & Error Recovery | `PASS` |
-| **P2-08** | Accessibility, Localization & UX | `PASS` |
-| **P2-09** | Release Quality & Regression Framework | `PASS` |
+| Workstream | Current status |
+|---|---|
+| TypeScript regression and frontend build | CI verified on commit cb94f8a |
+| Scientific model correctness | PARTIAL — heuristic and source-provenance remediation remains |
+| Laboratory evidence | PARTIAL — independent review pending |
+| Gemini / Supabase / Firebase integrations | PRESENT — intentionally retained |
+| Fully offline operation | NOT CERTIFIED |
+| Android APK release build | NOT VERIFIED by latest workflow |
+| Production release readiness | NOT CERTIFIED |
 
----
+## 3. Required release blockers
 
-## 3. Verification Metrics
-- **Tests Executed**: 131 test suites (4,649+ assertions).
-- **Test Pass Rate**: 100% clean passes (0 failed, 0 skipped).
-- **Web Build**: Successfully compiled (`vite build`).
-- **Android Build**: Successfully packaged via Capacitor.
-- **Offline Capability**: Fully functional without network access.
+- Complete independent human second review of the 144 Pušić R460 source rows; AI self-review does not qualify.
+- Validate CPI coefficients against appropriate independent laboratory datasets before presenting them as calibrated predictions.
+- Supply measured wash-water hardness for formula-specific chelation conclusions; an assumed scenario is not a measurement.
+- Attach traceable sources to category pH and active-matter targets and commercial ingredient-grade assays.
+- Run and retain a successful Android build job before claiming Android release readiness.
+
+A green software CI run is evidence of software regression/build status only. It is not proof of chemical correctness, commercial suitability, laboratory validation, or release certification.

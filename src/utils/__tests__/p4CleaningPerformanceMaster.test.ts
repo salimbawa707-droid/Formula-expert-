@@ -173,7 +173,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   const zeroFoamKpiCompliant = perfAutoCompliant.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
   const zeroFoamKpiHighFoam = perfAutoHighFoam.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
 
-  assert('Auto Dishwash', 'Compliant low-foam formula passes zero-foam compliance', zeroFoamKpiCompliant?.status === 'PASS', zeroFoamKpiCompliant?.status, 'PASS');
+  assert('Auto Dishwash', 'Compliant low-foam formula passes zero-foam compliance', zeroFoamKpiCompliant?.status === 'PREDICTIVE_ONLY', zeroFoamKpiCompliant?.status, 'PREDICTIVE_ONLY');
   assert('Auto Dishwash', 'High-foaming formula fails zero-foam compliance', zeroFoamKpiHighFoam?.status === 'FAIL', zeroFoamKpiHighFoam?.status, 'FAIL');
   assert('Auto Dishwash', 'Compliant auto-dish formula has higher overall CPI', perfAutoCompliant.cpi > perfAutoHighFoam.cpi, perfAutoCompliant.cpi, perfAutoHighFoam.cpi);
 
@@ -266,7 +266,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   const perfCarShampoo = calculateCleaningPerformance(carShampooNeutral, 7.2, 'CAR_SHAMPOO');
   const waxKpi = perfCarShampoo.categoryKPIs.find(k => k.id === 'waxSafePreservation');
 
-  assert('Car Shampoo', 'Neutral pH car shampoo passes wax-safety criteria', waxKpi?.status === 'PASS', waxKpi?.status, 'PASS');
+  assert('Car Shampoo', 'Neutral pH car shampoo passes wax-safety criteria', waxKpi?.status === 'PREDICTIVE_ONLY', waxKpi?.status, 'PREDICTIVE_ONLY');
 
   // --------------------------------------------------------------------------
   // TEST GROUP 11: COMPATIBILITY SYNCHRONIZATION & CRITICAL PENALTY
@@ -309,9 +309,16 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     assert('Taxonomy Coverage', `Category ${catId} evaluated successfully`, typeof res.cpi === 'number' && res.categoryKPIs.length > 0, true, true);
   }
 
+  // P0 SCIENTIFIC HONESTY: heuristic CPI/KPIs cannot claim validated PASS.
+  const screeningOnly = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID');
+  assert('Scientific Provenance', 'Composite CPI remains predicted without lab data', screeningOnly.provenance === 'PREDICTED', screeningOnly.provenance, 'PREDICTED');
+  assert('Scientific Provenance', 'Predicted KPI threshold hits are never represented as verified PASS', screeningOnly.categoryKPIs.filter(k => k.provenance === 'PREDICTED').every(k => k.status !== 'PASS' && k.status !== 'MEASURED_PASS'), screeningOnly.categoryKPIs.map(k => k.status), 'PREDICTIVE_ONLY / WARNING');
+  const oneLabMeasurement = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID', { measuredSoilRemovalPct: 82, testMethod: 'ASTM D4265' });
+  assert('Scientific Provenance', 'One soil measurement does not certify composite CPI', oneLabMeasurement.provenance === 'PREDICTED', oneLabMeasurement.provenance, 'PREDICTED');
+  assert('Scientific Provenance', 'One soil measurement only marks the matching soil KPI as measured', oneLabMeasurement.categoryKPIs.filter(k => k.provenance === 'MEASURED').length === 1, oneLabMeasurement.categoryKPIs.filter(k => k.provenance === 'MEASURED').map(k => k.id), 'one matching KPI');
+
   // --------------------------------------------------------------------------
-  // SUMMARY
-  // --------------------------------------------------------------------------
+  // SUMMARY  // --------------------------------------------------------------------------
   const total = results.length;
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;

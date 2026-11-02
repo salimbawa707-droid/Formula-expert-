@@ -51,6 +51,12 @@ export function runActiveMatterRegressionTestSuite() {
   const labsa90Res = ActiveMatterEngine.resolveIngredientActive({ name: 'LABSA (Acid Slurry 90%)' });
   assert('Resolution', 'LABSA 90% resolves to 90%', labsa90Res.activeMatterPct === 90, labsa90Res.activeMatterPct, 90);
   assert('Resolution', 'LABSA 90% provenance is authoritative/derived', labsa90Res.dataSource !== 'missing', labsa90Res.dataSource, 'authoritative | derived_from_name');
+  assert('Resolution', 'Name-derived commercial concentration is not represented as verified assay', labsa90Res.dataSource === 'derived_from_name', labsa90Res.dataSource, 'derived_from_name');
+
+  const canonicalDefault = ActiveMatterEngine.resolveIngredientActive({ canonicalIngredientId: 'sodium-bicarbonate', name: 'Sodium Bicarbonate' });
+  assert('Resolution', 'Canonical library default is not labelled authoritative assay', canonicalDefault.dataSource === 'canonical_library_default', canonicalDefault.dataSource, 'canonical_library_default');
+  const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
+  assert('Resolution', 'Commercial reference default is not labelled authoritative assay', referenceDefault.dataSource === 'reference_default', referenceDefault.dataSource, 'reference_default');
 
   const sles70Res = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'SLES 70% resolves to 70%', sles70Res.activeMatterPct === 70, sles70Res.activeMatterPct, 70);
@@ -87,7 +93,7 @@ export function runActiveMatterRegressionTestSuite() {
     { id: '1', name: 'Deionized Water', percentage: 60.0 }, // 0% active, 60% free water
     { id: '2', name: 'SLES 70%', percentage: 20.0 },         // 14% active, 6% carried water
     { id: '3', name: 'CAPB 30%', percentage: 10.0 },         // 3% active, 7% carried water
-    { id: '4', name: 'LAE-9', percentage: 5.0 },             // 5% active, 0% carrier
+    { id: '4', name: 'LAE-9', percentage: 5.0, activeMatterPct: 100 },             // 5% active, 0% carrier
     { id: '5', name: 'Sodium Chloride', percentage: 2.0 },   // 2% active solid, 0% carrier
     { id: '6', name: 'Citric Acid', percentage: 1.0 },       // 1% active solid, 0% carrier
     { id: '7', name: 'Preservative', percentage: 0.2 },      // 0.2% active solid
