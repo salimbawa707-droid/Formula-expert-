@@ -8,11 +8,17 @@ export interface ActiveMatterValidation {
 export function validateActiveMatterInput(
   value: unknown
 ): ActiveMatterValidation {
+  // Form fields and serialized JSON may carry numeric values as strings.
+  // Accept only non-empty numeric strings; never coerce empty strings, booleans,
+  // null, NaN, or out-of-range values into a valid assay.
+  const normalized = typeof value === 'number'
+    ? value
+    : (typeof value === 'string' && value.trim() !== '' ? Number(value.trim()) : NaN);
+
   if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    value < 0 ||
-    value > 100
+    !Number.isFinite(normalized) ||
+    normalized < 0 ||
+    normalized > 100
   ) {
     return {
       value: null,
@@ -22,7 +28,7 @@ export function validateActiveMatterInput(
   }
 
   return {
-    value,
+    value: normalized,
     status: 'VALID'
   };
 }
