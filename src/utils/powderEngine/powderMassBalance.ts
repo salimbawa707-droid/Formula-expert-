@@ -12,6 +12,31 @@ import { PowderMassBalanceReport } from './types';
  */
 export function calculatePowderMassBalance(ingredients: FormulationIngredient[]): PowderMassBalanceReport {
   const safeList = Array.isArray(ingredients) ? ingredients : [];
+
+  const invalidInputs = safeList.filter((ing) => {
+    const raw =
+      (ing as any)?.percentage ??
+      (ing as any)?.percent ??
+      (ing as any)?.percentageInFormula;
+
+    if (raw === undefined || raw === null) return false;
+
+    const value = Number(raw);
+    return !Number.isFinite(value) || value < 0;
+  });
+
+  if (invalidInputs.length > 0) {
+    return {
+      assignedPercentage: 0,
+      unassignedPercentage: 0,
+      formulaTotalPct: 0,
+      status: 'INVALID_INPUT',
+      missingPercentage: 0,
+      excessPercentage: 0,
+      statusMessage: 'INVALID INPUT: One or more formulation ingredients have malformed or negative percentages. Invalid inputs must be corrected by formulator.',
+      source: 'CALCULATED'
+    };
+  }
   
   const rawSum = safeList.reduce((acc, ing) => {
     const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);

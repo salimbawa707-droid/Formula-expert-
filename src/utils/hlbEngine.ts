@@ -339,7 +339,20 @@ export class HLBEngine {
       const resolution = this.resolveIngredientHLB(ing);
 
       if (resolution.isSurfactant || (resolution.hlb !== null && resolution.hlb > 0)) {
-        const activeWeight = (pct * (resolution.activeMatterPct ?? 100)) / 100;
+        const activeMatterPct = resolution.activeMatterPct;
+        if (
+          activeMatterPct === null ||
+          !Number.isFinite(activeMatterPct) ||
+          activeMatterPct < 0 ||
+          activeMatterPct > 100
+        ) {
+          limitations.push(
+            `UNKNOWN_ACTIVE_MATTER: ${ing.name || 'Unknown'}`
+          );
+          surfactantsWithMissingHLB++;
+          continue;
+        }
+        const activeWeight = (pct * activeMatterPct) / 100;
         totalSurfactantRawWeight += pct;
         totalSurfactantActiveWeight += activeWeight;
 
