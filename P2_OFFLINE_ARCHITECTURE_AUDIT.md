@@ -1,21 +1,21 @@
-# P2 Offline Architecture Audit
+# P2 Architecture & Connectivity Audit
 
-**Workstream**: P2-01  
-**Status**: `PASS`  
-**Scope**: Complete Offline and Self-Contained Architecture Verification  
+**Status**: `NOT CERTIFIED AS FULLY OFFLINE`  
+**Last reviewed**: November 3, 2026
 
----
+## Scope correction
 
-## 1. Audit Scope & Objectives
-- Verify zero dependence on external AI API keys or remote LLM calls.
-- Verify zero dependence on external chemical databases (e.g. PubChem API).
-- Ensure all deterministic calculation engines (PHEngine V2, Stoichiometric Neutralization, Active Matter, HLB, Viscosity, Chelation, CPI, Powder Engine) execute locally.
-- Confirm local availability of all 13 canonical product categories and master ingredient libraries.
+This repository intentionally retains external integrations. The package manifest includes Gemini (@google/genai), Supabase, Firebase / Firebase Admin, and Google APIs. These integrations must not be removed as part of this audit without an explicit scope change.
 
-## 2. Findings & Implementation
-- All calculations run locally in the browser/app client runtime.
-- Expert reasoning and formula analysis use local deterministic rules and expert logic.
-- Offline mode verified via disconnected network and DNS blocking simulations.
+## Verified architecture position
 
-## 3. Test Results
-- All offline test suites and integration checks passed with 100% success.
+- Deterministic calculation engines are implemented in the application codebase and can execute locally where their required inputs and runtime dependencies are available.
+- Gemini and cloud integrations remain part of the existing application architecture.
+- A local calculation path does not prove the entire application can operate without network access.
+- No current evidence in this report certifies a complete disconnected-network run of every UI flow, persistence path, authentication path, export path, and integration-dependent feature.
+
+## Verdict
+
+`PARTIAL / NOT FULLY OFFLINE-CERTIFIED`
+
+Do not claim zero external API/service dependencies or fully self-contained operation. A separate, documented offline acceptance test would need to inventory and exercise every runtime path while preserving the existing integrations.
