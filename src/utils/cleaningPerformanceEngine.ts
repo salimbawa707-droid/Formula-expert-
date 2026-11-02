@@ -351,7 +351,7 @@ export function calculateCleaningPerformance(
       categoryKPIs.push(
         { id: 'particulateSoilSuspension', name: 'Predicted Particulate Soil Suspension Index', value: particulateKpi, unit: '%', provenance: 'PREDICTED', status: particulateKpi >= 70 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted suspension and anti-redeposition of insoluble particulate soils (Model Estimate)', targetMin: 70, isApplicable: true },
         { id: 'alkalineSaponification', name: 'Predicted Alkaline Saponification Index', value: saponificationKpi, unit: 'pts', provenance: 'PREDICTED', status: saponificationKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted alkaline hydrolysis of fatty acid soils at pH 9.5-11.5 (Model Estimate)', targetMin: 75, isApplicable: true },
-        { id: 'bleachableStainRemoval', name: 'Predicted Bleachable Stain Oxidation Index', value: hasBleach ? bleachableKpi : null, unit: '%', provenance: hasBleach ? 'PREDICTED' : 'NOT_APPLICABLE', status: hasBleach ? 'PASS' : 'NOT_APPLICABLE', description: 'Predicted active oxygen bleaching of tea, coffee, and wine stains (Model Estimate)', targetMin: 70, isApplicable: hasBleach },
+        { id: 'bleachableStainRemoval', name: 'Predicted Bleachable Stain Oxidation Index', value: hasBleach ? bleachableKpi : null, unit: '%', provenance: hasBleach ? 'PREDICTED' : 'NOT_APPLICABLE', status: hasBleach ? 'PREDICTIVE_ONLY' : 'NOT_APPLICABLE', description: 'Predicted active oxygen bleaching of tea, coffee, and wine stains (Model Estimate)', targetMin: 70, isApplicable: hasBleach },
         { id: 'enzymaticDetergency', name: 'Predicted Enzyme Granule Detergency Index', value: enzymaticKpi, unit: '%', provenance: enzymeCount > 0 ? 'PREDICTED' : 'INSUFFICIENT_DATA', status: enzymeCount > 0 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted granular enzyme detergency for protein and starch soils (Model Estimate)', targetMin: 60, isApplicable: enzymeCount > 0 }
       );
 
@@ -812,32 +812,31 @@ export function calculateCleaningPerformance(
   let predictionVariance: number | undefined;
   let predictionErrorPct: number | undefined;
 
-  const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct ?? 
-    labMeasurements?.measuredGreaseRemovalPct ?? 
-    labMeasurements?.measuredSofteningScore ?? 
-    labMeasurements?.measuredStreakRating;
-
-  if (isMeasured && primaryMeasuredVal !== undefined) {
-    predictionVariance = Number((primaryMeasuredVal - cpi).toFixed(1));
-    predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
-    
-    if (predictionErrorPct > 20) {
-      keyNegativeFactors.push(`High prediction variance detected: Measured empirical laboratory value (${primaryMeasuredVal}) differs from model estimate (${cpi}) by ${predictionErrorPct.toFixed(1)}%. Model re-calibration recommended.`);
-    }
-
+  // A single lab measurement must not relabel every KPI or the composite CPI as measured.
+  // Only map measurements to the matching KPI; unlike units/domains are never compared.
+  const measuredKpiInputs: Array<{ ids: string[]; value?: number }> = [
+    { ids: ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'], value: labMeasurements?.measuredSoilRemovalPct },
+    { ids: ['oilyGreaseRemoval', 'greaseCutting'], value: labMeasurements?.measuredGreaseRemovalPct },
+    { ids: ['fabricSofteningIndex'], value: labMeasurements?.measuredSofteningScore },
+    { ids: ['streakFreeClarity'], value: labMeasurements?.measuredStreakRating }
+  ];
+  for (const measurement of measuredKpiInputs) {
+    if (typeof measurement.value !== 'number' || !Number.isFinite(measurement.value)) continue;
     for (const kpi of categoryKPIs) {
-      if (kpi.isApplicable && kpi.provenance !== 'NOT_APPLICABLE') {
-        kpi.provenance = 'MEASURED';
-        if (kpi.value !== null && primaryMeasuredVal !== undefined) {
-          kpi.status = primaryMeasuredVal >= (kpi.targetMin || 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
-        }
-      }
+      if (!measurement.ids.includes(kpi.id) || !kpi.isApplicable) continue;
+      kpi.value = measurement.value;
+      kpi.provenance = 'MEASURED';
+      kpi.status = measurement.value >= (kpi.targetMin || 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
     }
   }
+  const soilKpi = categoryKPIs.find(kpi => ['particulateRemoval', 'particulateSoilSuspension', 'mechanicalSoilRemoval', 'mopDownSoilRemoval', 'sprayWipeDetergency'].includes(kpi.id));
+  const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct;
+  if (typeof primaryMeasuredVal === 'number' && Number.isFinite(primaryMeasuredVal) && soilKpi?.value !== null && soilKpi?.value !== undefined) {
+    predictionVariance = Number((primaryMeasuredVal - soilKpi.value).toFixed(1));
+    predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
+  }
 
-  const provenance: PerformanceProvenance = isEmptyFormula 
-    ? 'INSUFFICIENT_DATA' 
-    : (isMeasured ? 'MEASURED' : 'PREDICTED');
+  const provenance: PerformanceProvenance = isEmptyFormula ? 'INSUFFICIENT_DATA' : 'PREDICTED';
 
   const modelType = isEmptyFormula
     ? 'Insufficient Ingredient Data'
