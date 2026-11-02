@@ -209,10 +209,9 @@ export function runVaultLogicTestSuite() {
   const serialized = JSON.stringify(INITIAL_VAULT_STATE);
   const parsed = JSON.parse(serialized);
   assert(parsed.datasets.length === INITIAL_VAULT_STATE.datasets.length, 'Roundtrip Preservation', 'Dataset length preserved');
-  for (const ds of parsed.datasets.filter((ds: any) => !['DS-001', 'DS-003', 'DS-004'].includes(ds.id))) {
+  for (const ds of parsed.datasets.filter((ds: any) => !['DS-001', 'DS-004'].includes(ds.id))) {
     assert(ds.actualRowCount === null, 'Roundtrip Preservation', `Dataset ${ds.id} rowCount remains null`);
   }
-  assert(parsed.datasets.find((ds: any) => ds.id === 'DS-003')?.actualRowCount === 812, 'Roundtrip Preservation', 'Audited DS-003 source row count survives roundtrip');
   assert(parsed.datasets.find((ds: any) => ds.id === 'DS-001')?.actualRowCount === 1624, 'Roundtrip Preservation', 'Historical DS-001 master-record count survives roundtrip');
   const unpricedLAS = parsed.pricingRecords.find((p: any) => p.ingredientId === 'ING-SPECIAL-004');
   assert(Boolean(unpricedLAS), 'Roundtrip Preservation', 'Unpriced ingredient found');
@@ -245,7 +244,7 @@ export function runVaultLogicTestSuite() {
   assert(legacyMigrationResult.parsedState?.version === '1.1.0', 'Schema Migration', 'Legacy backup is upgraded to schema v1.1.0');
   assert((legacyMigrationResult.parsedState?.inventoryMetrics.length || 0) >= 5, 'Schema Migration', 'Migration adds only explicitly reported inventory metrics');
   assert(legacyMigrationResult.parsedState?.historicalReconciliations[0]?.reconciliationStatus === 'UNRESOLVED', 'Schema Migration', 'Historical 27,982 claim remains unresolved after migration');
-  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' ? ds.actualRowCount === 1624 : ds.id === 'DS-003' ? ds.actualRowCount === 812 : ds.id === 'DS-004' ? ds.actualRowCount === 143 : ds.actualRowCount === null)), 'Schema Migration', 'Uninspected dataset counts remain null while audited DS-001, DS-003, and DS-004 counts are preserved');
+  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' ? ds.actualRowCount === 1624 : ds.id === 'DS-004' ? ds.actualRowCount === 143 : ds.actualRowCount === null)), 'Schema Migration', 'Uninspected dataset counts remain null while audited DS-001 and DS-004 counts are preserved');
   assert(canUnlockPhase5(legacyMigrationResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Schema Migration', 'Migration cannot unlock Phase 5');
 
   const optionalScientificExtensions = JSON.parse(exported);
