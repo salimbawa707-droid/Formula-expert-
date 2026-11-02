@@ -92,14 +92,9 @@ export function runP0RemediationUnknownProductCategoryTestSuite(): {
   assert('TEST 8: Unknown category does not load Liquid Laundry profile', profileThrew && tryProfile === null);
 
   // TEST 9: Unknown category does not enter category-specific specification evaluation
-  let specThrew = false;
-  try {
-    getSpecificationTemplateForCategory('UNKNOWN_PRODUCT_CATEGORY');
-  } catch {
-    specThrew = true;
-  }
+  const specTemplate = getSpecificationTemplateForCategory('UNKNOWN_PRODUCT_CATEGORY');
   const trySpec = tryGetSpecificationTemplateForCategory('UNKNOWN_PRODUCT_CATEGORY');
-  assert('TEST 9: Unknown category does not load specification template', specThrew && trySpec === null);
+  assert('TEST 9: Unknown category does not load specification template', specTemplate === null && trySpec === null);
 
   // TEST 10: Unknown category does not produce a normal category-specific PASS/VALID verdict in Quality Gate
   const gateUnknown = evaluateScientificQualityGate({
