@@ -418,6 +418,28 @@ export class ActiveMatterEngine {
       };
     }
 
+    // Benchmark standard database lookup
+    const benchMatch = STANDARD_ACTIVE_MATTER_REFERENCE_VALUES.find(b => {
+      const bLower = b.name.toLowerCase();
+      const bParen = bLower.split('(')[0].trim();
+      // Do not resolve a generic family name (e.g. "LABSA") to an arbitrary first grade.
+      return lowerName === bLower || lowerName === bParen;
+    });
+
+    if (benchMatch) {
+      return {
+        activeMatterPct: benchMatch.activeDefault,
+        dataSource: 'reference_default',
+        category: resolvedCategory || benchMatch.category,
+        isSurfactant: isSurfactant || benchMatch.surfactantType !== 'none',
+        surfactantType: surfactantType !== 'none' ? surfactantType : benchMatch.surfactantType,
+        isWater: false,
+        isSolvent,
+        canonicalMatch,
+        conflict: conflictRes
+      };
+    }
+
     // Name-embedded concentration derivation (e.g., "SLES 28%", "LABSA 90%", "GLDA 47%", "NaOH 50%")
     const namePct = this.extractPercentageFromName(rawName);
     if (namePct !== null) {
@@ -465,27 +487,7 @@ export class ActiveMatterEngine {
       };
     }
 
-    // Benchmark standard database lookup
-    const benchMatch = STANDARD_ACTIVE_MATTER_REFERENCE_VALUES.find(b => {
-      const bLower = b.name.toLowerCase();
-      const bParen = bLower.split('(')[0].trim();
-      // Do not resolve a generic family name (e.g. "LABSA") to an arbitrary first grade.
-      return lowerName === bLower || lowerName === bParen;
-    });
 
-    if (benchMatch) {
-      return {
-        activeMatterPct: benchMatch.activeDefault,
-        dataSource: 'reference_default',
-        category: resolvedCategory || benchMatch.category,
-        isSurfactant: isSurfactant || benchMatch.surfactantType !== 'none',
-        surfactantType: surfactantType !== 'none' ? surfactantType : benchMatch.surfactantType,
-        isWater: false,
-        isSolvent,
-        canonicalMatch,
-        conflict: conflictRes
-      };
-    }
 
     // Missing / Unknown Active Specification
     return {
