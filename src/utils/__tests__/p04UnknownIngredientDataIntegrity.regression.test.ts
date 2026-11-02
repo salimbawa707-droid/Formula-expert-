@@ -72,9 +72,9 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   assert(
     'Group 1: Mandatory Tests',
     'Test 1: Unknown surfactant active matter is flagged missing/unknown (NOT assumed 100% or 0% carrier)',
-    unknownSurfactantRes.dataSource === 'missing' && unknownSurfactantRes.activeMatterPct === 0,
-    unknownSurfactantRes.dataSource,
-    'missing'
+    unknownSurfactantRes.dataSource === 'missing' && unknownSurfactantRes.activeMatterPct === null,
+    { dataSource: unknownSurfactantRes.dataSource, activeMatterPct: unknownSurfactantRes.activeMatterPct },
+    { dataSource: 'missing', activeMatterPct: null }
   );
 
   // Test 2 (B): Unknown Acid pKa in PHEngineV2
@@ -348,10 +348,10 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   const defaultLookupRes = getDefaultActiveMatter('Sodium Chloride');
   assert(
     'Group 1: Mandatory Tests',
-    'Test 20: Known inorganic salt (Sodium Chloride) resolves 100% active via authoritative lookup',
-    defaultLookupRes === 100,
+    'Test 20: Unspecified Sodium Chloride grade remains unknown rather than assuming 100% purity',
+    defaultLookupRes === null,
     defaultLookupRes,
-    100
+    null
   );
 
   const passed = results.filter(r => r.passed).length;

@@ -49,7 +49,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: validIngredients
   });
-  assert('TEST 1: Calculated PASS produces PREDICTED_ONLY evidence status, NOT LAB_TESTED', qgResult.finalFormulaStatus === 'VALID' && qgResult.evidenceStatus === 'PREDICTED_ONLY');
+  assert('TEST 1: Calculated-only formula remains LAB_VALIDATION_REQUIRED with PREDICTED_ONLY evidence', qgResult.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED' && qgResult.evidenceStatus === 'PREDICTED_ONLY');
 
   // TEST 2: Calculated PASS is not LAB_VALIDATED
   assert('TEST 2: Calculated PASS is NOT LAB_VALIDATED', qgResult.evidenceStatus !== 'FULLY_LAB_VALIDATED');
@@ -383,7 +383,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   // TEST 35: Scientific screening and laboratory status remain independently queryable
   const screeningStatus = qgResult.finalFormulaStatus;
   const labStatus = qgResult.evidenceStatus;
-  assert('TEST 35: Scientific screening status (VALID) and Lab Status (PREDICTED_ONLY) are independent queryable dimensions', screeningStatus === 'VALID' && labStatus === 'PREDICTED_ONLY');
+  assert('TEST 35: Scientific validity (VALID) and evidence status (PREDICTED_ONLY) are independent queryable dimensions', qgResult.scientificValidity === 'VALID' && labStatus === 'PREDICTED_ONLY');
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;

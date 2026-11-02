@@ -125,7 +125,7 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
   ];
   const hlbRes3 = evaluateAuthoritativeHLB(ionicFormula);
   assert('Ionic Surfactant Flag Detected', hlbRes3.hasIonicSurfactants === true, hlbRes3.hasIonicSurfactants, true);
-  assert('Ionic Limitations Documented', hlbRes3.limitations.some(l => l.includes('Davies scale')), true, true);
+  assert('Ionic Limitations Documented', hlbRes3.limitations.some(l => l.includes('Davies ionic scale')), true, true);
 
   // Zero surfactant guard
   const zeroSurfactantFormula: FormulationIngredient[] = [

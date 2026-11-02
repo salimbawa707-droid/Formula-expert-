@@ -58,9 +58,9 @@ export function runP0MasterRemediationTestSuite(): {
   assert(
     1,
     'Unknown ingredient active matter returns 0% with missing provenance, never 100%',
-    unknownRes.activeMatterPct === 0 && unknownRes.dataSource === 'missing',
+    unknownRes.activeMatterPct === null && unknownRes.dataSource === 'missing',
     { activePct: unknownRes.activeMatterPct, source: unknownRes.dataSource },
-    { activePct: 0, source: 'missing' }
+    { activePct: null, source: 'missing' }
   );
 
   // =========================================================================
@@ -74,9 +74,9 @@ export function runP0MasterRemediationTestSuite(): {
   assert(
     2,
     'Unknown purity is recorded as missing, not fabricated as 100%',
-    unkPurityRes.dataSource === 'missing' && unkPurityRes.activeMatterPct === 0,
-    unkPurityRes.dataSource,
-    'missing'
+    unkPurityRes.dataSource === 'missing' && unkPurityRes.activeMatterPct === null,
+    { dataSource: unkPurityRes.dataSource, activeMatterPct: unkPurityRes.activeMatterPct },
+    { dataSource: 'missing', activeMatterPct: null }
   );
 
   // =========================================================================
@@ -265,6 +265,7 @@ export function runP0MasterRemediationTestSuite(): {
   // =========================================================================
   const liquidEval = FormulaScientificOrchestrator.evaluate({
     formulaName: 'Liquid Detergent',
+    formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
       { name: 'SLES 70%', percentage: 14, activeMatterPct: 70 },

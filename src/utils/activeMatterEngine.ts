@@ -45,6 +45,13 @@ import { ActiveMatterResultObject } from './activeMatterValidation';
  * ============================================================================
  */
 
+function normalizeActiveMatterInputValue(value: unknown): unknown {
+  if (typeof value === 'string' && value.trim() !== '') {
+    return Number(value.trim());
+  }
+  return value;
+}
+
 export type ActiveMatterProvenance = 'authoritative' | 'explicit_override' | 'derived_from_name' | 'missing';
 
 export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
@@ -107,7 +114,8 @@ export interface ActiveMatterReport {
   totalActiveMatter: number; // Total dry active solids / non-carrier matter (%)
   totalRawMatter: number; // Sum of raw ingredients (%)
   totalRawPercentage: number; // Alias for totalRawMatter
-  totalCarrierPercentage: number; // Sum of carried water + free water or non-active (%)
+  totalCarrierPercentage: number; // Known free/carried water or carrier fraction only (%)
+  totalUnclassifiedPercentage: number; // Raw fraction with unknown/invalid active assay (%)
   totalActiveKg: number; // Alias for totalBatchActiveKg
   totalCarriedWaterPct: number;
   totalFreeWaterPct: number;
@@ -358,7 +366,8 @@ export class ActiveMatterEngine {
     const isSolvent = this.isSolventIngredient(rawName, rawCategory, rawRole);
 
     // 1. Check explicit formula override inputs
-    const explicitActive = ing?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
+    const explicitActiveRaw = ing?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
+    const explicitActive = normalizeActiveMatterInputValue(explicitActiveRaw);
     
     // Canonical master lookup by canonical ID, ID, Name, or deterministic alias
     let canonicalMatch: UniversalIngredient | undefined;
@@ -511,6 +520,7 @@ export class ActiveMatterEngine {
     let totalActiveMatter = 0;
     let totalCarriedWaterPct = 0;
     let totalFreeWaterPct = 0;
+    let totalUnclassifiedPct = 0;
 
     let anionicActivePct = 0;
     let nonionicActivePct = 0;
@@ -531,18 +541,17 @@ export class ActiveMatterEngine {
 
       const resolution = this.resolveIngredientActive(ing);
       
-      const amValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity;
-      const isInvalidActive = 
-        amValue !== undefined && amValue !== null && (
-          typeof amValue !== 'number' || 
-          !Number.isFinite(amValue) || 
-          amValue < 0 || 
-          amValue > 100
-        );
+      const rawAmValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity;
+      const amValue = normalizeActiveMatterInputValue(rawAmValue);
+      const isInvalidActive =
+        rawAmValue !== undefined &&
+        rawAmValue !== null &&
+        validateActiveMatterInput(amValue).status !== 'VALID';
 
       const isMissingOrInvalid = resolution.activeMatterPct === null || resolution.dataSource === 'missing' || isInvalidActive;
 
       if (isMissingOrInvalid) {
+        totalUnclassifiedPct += rawPct;
         ingredientsWithMissingActive++;
         diagnostics.push(`Ingredient "${ing.name || 'Unknown'}" active matter value "${amValue}" is invalid or missing (INSUFFICIENT_DATA).`);
         warnings.push(`Ingredient "${ing.name || 'Unknown'}" lacks authoritative active assay specification (INSUFFICIENT_DATA).`);
@@ -628,7 +637,8 @@ export class ActiveMatterEngine {
       totalActiveMatter: Number(totalActiveMatter.toFixed(2)),
       totalRawMatter: Number(totalRawMatter.toFixed(2)),
       totalRawPercentage: Number(totalRawMatter.toFixed(2)),
-      totalCarrierPercentage: Number(Math.max(0, totalRawMatter - totalActiveMatter).toFixed(2)),
+      totalCarrierPercentage: Number(totalWaterPct.toFixed(2)),
+      totalUnclassifiedPercentage: Number(totalUnclassifiedPct.toFixed(2)),
       totalActiveKg: Number(totalBatchActiveKg.toFixed(3)),
       totalCarriedWaterPct: Number(totalCarriedWaterPct.toFixed(2)),
       totalFreeWaterPct: Number(totalFreeWaterPct.toFixed(2)),

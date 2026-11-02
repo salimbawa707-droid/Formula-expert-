@@ -52,9 +52,9 @@ export function runMasterScientificUnknownDataIntegrityTestSuite(): TestSuiteSum
   assert(
     '1. Active Matter Integrity',
     '1. Unknown active matter does NOT become 100%',
-    unknownActiveRes.dataSource === 'missing' && unknownActiveRes.activeMatterPct === 0,
+    unknownActiveRes.dataSource === 'missing' && unknownActiveRes.activeMatterPct === null,
     unknownActiveRes.activeMatterPct,
-    0
+    null
   );
 
   // 2. Known active matter still calculates correctly
@@ -201,7 +201,7 @@ export function runMasterScientificUnknownDataIntegrityTestSuite(): TestSuiteSum
   assert(
     '9. Aristo 9 Provenance Check',
     '16. Aristo 9 active matter is 0/missing, NOT invented 100%',
-    aristo9Active.activeMatterPct === 0 && (aristo9Active.dataSource === 'authoritative' || aristo9Active.dataSource === 'missing')
+    (aristo9Active.activeMatterPct === null && aristo9Active.dataSource === 'missing') || (aristo9Active.activeMatterPct === 0 && aristo9Active.dataSource === 'authoritative')
   );
 
   // 17. Aristo 9 HLB is null, NOT invented 12.0

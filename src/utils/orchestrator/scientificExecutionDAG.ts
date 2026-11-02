@@ -997,6 +997,14 @@ export class ScientificExecutionDAG {
       dependencies: ['QUALITY_GATE'],
       execute: (state) => {
         // Execute grading strictly from the authoritative completed nodes
+        // Missing target cost is an unknown commercial input, not an implicit pass.
+        if (state.rawInput.costContext?.targetCostPerKg === undefined ||
+            state.rawInput.costContext?.targetCostPerKg === null) {
+          if (!state.unknownParameters.includes('targetCost')) {
+            state.unknownParameters.push('targetCost');
+          }
+        }
+
         const activeMatterOut = {
           totalSurfactantActivePct: state.totalSurfactantActivePct,
           totalActiveMatterPct: state.totalActiveMatterPct,
@@ -1040,7 +1048,7 @@ export class ScientificExecutionDAG {
         const costOut = {
           costPerKg: state.costResult?.costPerKg ?? 0,
           totalBatchCost: state.costResult?.totalBatchCost ?? 0,
-          isWithinTarget: state.rawInput.costContext?.targetCostPerKg ? state.costResult?.costPerKg <= state.rawInput.costContext.targetCostPerKg : true
+          isWithinTarget: state.rawInput.costContext?.targetCostPerKg !== undefined && state.rawInput.costContext?.targetCostPerKg !== null ? state.costResult?.costPerKg <= state.rawInput.costContext.targetCostPerKg : false
         };
 
         state.aiGradeResult = evaluateAIGrade({

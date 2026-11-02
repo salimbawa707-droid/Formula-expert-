@@ -235,17 +235,17 @@ assertNear('TEA Collision', 'F2: TEA abbreviation recognized as weak base', f2Re
 // Test F3 — Tea Tree Oil 1%
 const f3Input = mapFormulationIngredientsToPHEngineInput([{ name: 'Tea Tree Oil', percentage: 1 }]);
 const f3Res = calculatePHAdvanced(f3Input);
-assert('TEA Collision', 'F3: Tea Tree Oil is neutral/unknown (pH = 7.00)', f3Res.pH === 7.00, f3Res.pH, 7.00);
+assert('TEA Collision', 'F3: Tea Tree Oil has no verified acid-base model and must remain unavailable', !Number.isFinite(f3Res.pH), f3Res.pH, 'UNAVAILABLE');
 
 // Test F4 — Green Tea Extract 1%
 const f4Input = mapFormulationIngredientsToPHEngineInput([{ name: 'Green Tea Extract', percentage: 1 }]);
 const f4Res = calculatePHAdvanced(f4Input);
-assert('TEA Collision', 'F4: Green Tea Extract is neutral (pH = 7.00)', f4Res.pH === 7.00, f4Res.pH, 7.00);
+assert('TEA Collision', 'F4: Green Tea Extract has no verified acid-base model and must remain unavailable', !Number.isFinite(f4Res.pH), f4Res.pH, 'UNAVAILABLE');
 
 // Test F5 — Tea Fragrance 1%
 const f5Input = mapFormulationIngredientsToPHEngineInput([{ name: 'Tea Fragrance', percentage: 1 }]);
 const f5Res = calculatePHAdvanced(f5Input);
-assert('TEA Collision', 'F5: Tea Fragrance is neutral (pH = 7.00)', f5Res.pH === 7.00, f5Res.pH, 7.00);
+assert('TEA Collision', 'F5: Tea Fragrance has no verified acid-base model and must remain unavailable', !Number.isFinite(f5Res.pH), f5Res.pH, 'UNAVAILABLE');
 
 
 // ==========================================
@@ -265,10 +265,17 @@ const neutralIngs = [
   'Water'
 ];
 
+const unsupportedPHIngredients = new Set([
+  'SLES 70%', 'AOS 38%', 'CAPB 30%', 'CMC', 'Enzyme Blend',
+  'Fragrance', 'Optical Brightener', 'Glycerin'
+]);
+
 neutralIngs.forEach((ingName, idx) => {
   const gInput = mapFormulationIngredientsToPHEngineInput([{ name: ingName, percentage: 5 }]);
   const gRes = calculatePHAdvanced(gInput);
-  assert('Unknown Safety', `G${idx + 1}: ${ingName} alone produces pH = 7.00`, gRes.pH === 7.00, gRes.pH, 7.00);
+  const requiresUnavailablePH = unsupportedPHIngredients.has(ingName);
+  const validResult = requiresUnavailablePH ? !Number.isFinite(gRes.pH) : gRes.pH === 7.00;
+  assert('Unknown Safety', `G${idx + 1}: ${ingName} must not receive an invented neutral pH`, validResult, gRes.pH, requiresUnavailablePH ? 'UNAVAILABLE' : 7.00);
 });
 
 
@@ -369,15 +376,15 @@ const j3b = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput([
 ]));
 assert('Sanity/Monotonicity', 'J3: Higher KOH active % yields higher pH', j3b.pH > j3a.pH, j3b.pH, `Greater than ${j3a.pH}`);
 
-// J4 — Neutral surfactants: changing SLES active % does NOT alter neutral pH (remains 7.00)
+// J4 — SLES grades must not receive neutral pH without verified acid-base data.
 const j4a = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput([{ name: 'SLES', percentage: 10, activeMatterPct: 28 }]));
 const j4b = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput([{ name: 'SLES', percentage: 10, activeMatterPct: 70 }]));
-assert('Sanity/Monotonicity', 'J4: SLES active % change keeps pH = 7.00', j4a.pH === 7.00 && j4b.pH === 7.00, `28%:${j4a.pH}, 70%:${j4b.pH}`, 'both 7.00');
+assert('Sanity/Monotonicity', 'J4: SLES active % variants remain unavailable without verified acid-base parameters', !Number.isFinite(j4a.pH) && !Number.isFinite(j4b.pH), `28%:${j4a.pH}, 70%:${j4b.pH}`, 'both UNAVAILABLE');
 
-// J5 — Tea collision switch: TEA (weak base) vs Tea Tree Oil (neutral)
+// J5 — TEA is modeled as a weak base; Tea Tree Oil has no verified acid-base model.
 const j5a = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput([{ name: 'TEA', percentage: 1 }]));
 const j5b = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput([{ name: 'Tea Tree Oil', percentage: 1 }]));
-assert('Sanity/Monotonicity', 'J5: TEA is weak base (>10), Tea Tree Oil is neutral (7.00)', j5a.pH > 10 && j5b.pH === 7.00, `TEA:${j5a.pH}, TeaTree:${j5b.pH}`, 'TEA>10 and TeaTree=7.00');
+assert('Sanity/Monotonicity', 'J5: TEA is modeled as a weak base while Tea Tree Oil remains unavailable', j5a.pH > 10 && !Number.isFinite(j5b.pH), `TEA:${j5a.pH}, TeaTree:${j5b.pH}`, 'TEA>10 and TeaTree UNAVAILABLE');
 
 
 // ==========================================
@@ -402,8 +409,8 @@ assert('Field Contract', 'K4: Explicit zero activeMatterPct is preserved', k4Map
 
 // K5 — HLB calculation with canonical hlbValue vs hlb alias
 const k5Surfactants = [
-  { name: 'Span 80', hlbValue: 4.3, percentage: 5 },
-  { name: 'Tween 80', hlb: 15.0, percentage: 5 }
+  { name: 'Span 80', hlbValue: 4.3, percentage: 5, activeMatterPct: 100 },
+  { name: 'Tween 80', hlb: 15.0, percentage: 5, activeMatterPct: 100 }
 ];
 const k5BlendedHLB = calculateBlendedHLB(k5Surfactants);
 assert('Field Contract', 'K5: Blended HLB handles both hlbValue and hlb alias', k5BlendedHLB === 9.65, k5BlendedHLB, 9.65);

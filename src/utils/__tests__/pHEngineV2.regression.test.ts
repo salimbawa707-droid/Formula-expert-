@@ -183,7 +183,13 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
     mapFormulationIngredientsToPHEngineInput([{ name: 'Custom Secret Polymer XYZ', percentage: 5.0 }]),
     100
   );
-  assertNear('Phase 3 Reference Tests', 'Test 12: Unmapped ingredient defaults safely to neutral water pH = 7.00', t12Res.pH, 7.00, 0.01);
+  assert(
+    'Phase 3 Reference Tests',
+    'Test 12: Unmapped ingredient pH remains unavailable rather than defaulting to neutral water',
+    !Number.isFinite(t12Res.pH),
+    t12Res.pH,
+    'UNAVAILABLE'
+  );
   assert('Phase 3 Reference Tests', 'Test 12: Reports warning for unmapped ingredient', t12Res.warnings.length > 0, true, true);
 
   // =========================================================================
@@ -324,10 +330,10 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
   );
   assert(
     'Phase 3 Reference Tests',
-    'Test 20 (F3-02): pH calculation completes safely at neutral baseline for inert unknown',
-    t20Res.pH >= 6.5 && t20Res.pH <= 7.5,
+    'Test 20 (F3-02): unknown proprietary surfactant pH remains unavailable without invented equilibrium parameters',
+    !Number.isFinite(t20Res.pH),
     t20Res.pH,
-    '7.00 ± 0.50'
+    'UNAVAILABLE'
   );
 
   // =========================================================================

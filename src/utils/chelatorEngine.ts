@@ -745,14 +745,21 @@ export function getChelatorBindingCapacity(
         evidenceId: matchedSpecies.evidenceId
       };
     }
+    // Preserve the verified commercial-grade capacity when the explicit assay
+    // equals the database's documented grade. Re-deriving it from a theoretical
+    // pure-salt value would replace the verified 137 mg/g GLDA-47 benchmark
+    // with a lower theoretical estimate (double-discounting the commercial basis).
+    if (_explicitActive === matchedSpecies.activeDefault) {
+      return validateChelatorCapacity(
+        matchedSpecies.effectiveCommercialCapacityMgPerG,
+        matchedSpecies.evidenceId
+      );
+    }
     const scaled = calculateCommercialCapacity({
       theoreticalActiveCapacityMgPerG: matchedSpecies.theoreticalActiveCapacityMgPerG,
       activeMatterPct: _explicitActive
     });
-    return validateChelatorCapacity(
-      scaled,
-      matchedSpecies.evidenceId
-    );
+    return validateChelatorCapacity(scaled, matchedSpecies.evidenceId);
   }
 
   return validateChelatorCapacity(

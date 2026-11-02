@@ -1,4 +1,3 @@
-
 export interface ActiveMatterValidation {
   value: number | null;
   status: 'VALID' | 'INSUFFICIENT_DATA';

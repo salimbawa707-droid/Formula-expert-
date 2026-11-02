@@ -47,7 +47,9 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
   console.log('  P1 PHASE 5 — SCIENTIFIC QUALITY GATE REGRESSION TEST SUITE ');
   console.log('================================================================================\n');
 
-  // Sample Valid Heavy Duty Laundry Liquid Recipe
+  // Sample heavy-duty laundry liquid screening formula. It is scientifically processable,
+  // but the authoritative specification evaluator reports an out-of-spec parameter and
+  // the absence of empirical lab measurements must keep final release status gated.
   const validLaundryFormula: FormulationIngredient[] = [
     { name: 'LABSA 96%', percentage: 8, activeMatterPct: 96, category: 'Anionic Surfactant' },
     { name: 'SLES 70%', percentage: 8, activeMatterPct: 70, category: 'Anionic Surfactant' },
@@ -68,11 +70,11 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
   });
 
   assert('Valid Formula - Scientific Validity is VALID', validGate.scientificValidity === 'VALID', validGate.scientificValidity, 'VALID');
-  assert('Valid Formula - Specification Status is PASS', validGate.specificationStatus === 'PASS', validGate.specificationStatus, 'PASS');
+  assert('Screening Formula - Out-of-spec parameter is not reported as PASS', validGate.specificationStatus === 'OUT_OF_SPEC', validGate.specificationStatus, 'OUT_OF_SPEC');
   assert('Valid Formula - Compatibility Status is COMPATIBLE', validGate.compatibilityStatus === 'COMPATIBLE' || validGate.compatibilityStatus === 'COMPATIBLE_WITH_WARNINGS', validGate.compatibilityStatus, 'COMPATIBLE');
   assert('Valid Formula - Performance Status is MEETS_PREDICTED_CRITERIA', validGate.performanceStatus === 'MEETS_PREDICTED_CRITERIA', validGate.performanceStatus, 'MEETS_PREDICTED_CRITERIA');
   assert('Valid Formula - Evidence Status is PREDICTED_ONLY', validGate.evidenceStatus === 'PREDICTED_ONLY', validGate.evidenceStatus, 'PREDICTED_ONLY');
-  assert('Valid Formula - Final Status is VALID', validGate.finalFormulaStatus === 'VALID' || validGate.finalFormulaStatus === 'VALID_WITH_WARNINGS', validGate.finalFormulaStatus, 'VALID');
+  assert('Screening Formula - Predicted-only formula requires lab validation', validGate.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED', validGate.finalFormulaStatus, 'LAB_VALIDATION_REQUIRED');
   assert('Valid Formula - Lab Readiness is READY_FOR_LAB_BENCH', validGate.labReadiness === 'READY_FOR_LAB_BENCH', validGate.labReadiness, 'READY_FOR_LAB_BENCH');
 
   // --------------------------------------------------------------------------

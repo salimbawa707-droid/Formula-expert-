@@ -191,36 +191,6 @@
       "rationale": "High file feasibility, but dataset.yaml explicitly states: 'Paper: Unpublished (community contribution), authors: [], doi: null'. Surfactant chemical formulation details and purity are uncertified, making it unsuitable as an authoritative benchmark."
     },
     {
-      "candidateId": "CAND-03",
-      "rank": 3,
-      "name": "Chitre et al. High-Throughput Shampoo Formulation Dataset",
-      "repository": "Cambridge Apollo / PMC",
-      "identifier": "10.1038/s41597-024-03573-w / PMC11222379",
-      "directUrl": "https://www.repository.cam.ac.uk/handle/1810/370552",
-      "license": "CC-BY-4.0",
-      "authors": ["Chitre, Querimit, Rihm, Hippalgaonkar, et al."],
-      "publication": "Scientific Data 11, 715 (2024)",
-      "files": [
-        {
-          "name": "shampoo_formulations_dataset.csv",
-          "sizeBytes": 250000,
-          "targetEngine": "ENG-003",
-          "measurements": "Viscosity at single shear rate (20 1/s), centrifugal stability score"
-        }
-      ],
-      "evaluationScores": {
-        "engineOutputMatch": 70,
-        "measurementQuality": 85,
-        "traceableProvenance": 95,
-        "conditionTransparency": 75,
-        "benchmarkSuitability": 55,
-        "ingestionFeasibility": 50,
-        "totalScore": 68.0
-      },
-      "verdict": "REJECTED_AS_PRIMARY",
-      "rationale": "Focuses on personal care conditioning shampoos (silicones, polyquaterniums) rather than household detergent matrix. Only reports single-point shear viscosity rather than full flow curve, limiting validation of Herschel-Bulkley or Carreau-Yasuda models."
-    },
-    {
       "candidateId": "CAND-04",
       "rank": 4,
       "name": "Alvarez-Gomez et al. Surfactant Mesophase Boundary SAXS Dataset",

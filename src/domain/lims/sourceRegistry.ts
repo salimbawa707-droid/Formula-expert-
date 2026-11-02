@@ -73,7 +73,7 @@ export const LAB_VALIDATION_SOURCES: ValidationSourceRecord[] = [
     licenseOrAccess: 'Apache-2.0 (repository license; verify individual data/model licenses separately)',
     versionOrDate: 'Repository reports v0.3.0; verify release before use',
     relevantUse: 'Architecture and computational formulation research reference only.',
-    limitations: ['Not a detergent laboratory method or proof of finished-product performance.', 'Its cited shampoo dataset is outside this cleaning-product validation scope.'],
+    limitations: ['Not a detergent laboratory method or proof of finished-product performance.'],
     verificationDate: '2026-10-19',
     status: 'REFERENCE_ONLY',
   },

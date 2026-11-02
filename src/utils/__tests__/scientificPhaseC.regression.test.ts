@@ -157,15 +157,18 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
   assertNear('11. SLES Form Resolution', 'T11: SLES 28% active contribution', (10 * t11_28.activeMatterPct) / 100, 2.8, 0.01);
 
   // =========================================================================
-  // 12. HLB Blend Calculation (Active-Surfactant Weighted Griffin/Davies)
+  // 12. HLB Blend Calculation — Griffin and Davies scales stay separate.
   // =========================================================================
   const t12Res = HLBEngine.calculateBlendedHLB([
-    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, hlb: 40.0 }, // 7.0g active @ HLB 40
-    { name: 'Lauryl Alcohol Ethoxylate (LAE-7)', percentage: 3, activeMatterPct: 100, hlb: 12.1 } // 3.0g active @ HLB 12.1
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, hlb: 40.0 }, // Davies ionic scale
+    { name: 'Lauryl Alcohol Ethoxylate (LAE-7)', percentage: 3, activeMatterPct: 100, hlb: 12.1 } // Griffin nonionic scale
   ]);
-  // Weighted HLB = (7.0 * 40.0 + 3.0 * 12.1) / 10.0 = (280 + 36.3) / 10 = 31.63
-  assertNear('12. HLB Blending', 'T12: SLES/LAE-7 Active Mass Weighted HLB', t12Res.blendedHLB, 31.63, 0.1);
-  assert('12. HLB Blending', 'T12: Correct Emulsification Region (Extended Ionic Surfactant / Hydrotropic)', t12Res.emulsionRegion.length > 0, true, true);
+  // The engine must not average Davies ionic HLB with Griffin nonionic HLB.
+  // With a nonionic phase present, the reported Griffin blend is LAE-7's 12.1.
+  assertNear('12. HLB Blending', 'T12: Griffin blend excludes incompatible Davies ionic scale', t12Res.blendedHLB, 12.1, 0.1);
+  assert('12. HLB Blending', 'T12: Mixed ionic/nonionic scale limitation is reported',
+    t12Res.limitations.some(item => item.includes('Davies ionic scale') && item.includes('excluded')),
+    t12Res.limitations, 'Davies ionic scale exclusion limitation');
 
   // =========================================================================
   // 13. Mixed CMC does not substitute unverified commercial CMC/MW defaults.

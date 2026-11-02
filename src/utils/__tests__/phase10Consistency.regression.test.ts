@@ -234,7 +234,7 @@ export function runPhase10ConsistencyTestSuite(): {
   assert(
     'Defect 1: AIFormulator Source Check',
     'AIFormulator consumes canonical hlbResult from orchestrator output',
-    aiFormulatorSource.includes('hlbResult: o.hlbResult'),
+    aiFormulatorSource.includes('hlbResult: o?.hlbResult'),
     aiFormulatorSource.includes('hlbResult: o.hlbResult'),
     true
   );

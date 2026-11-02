@@ -54,9 +54,18 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
 
   const tempBaseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'master-finalizer-integ-'));
   const finalizerScriptPath = path.join(process.cwd(), 'src', 'utils', 'masterTestFinalizer.ts');
-  const tsxBinary = fs.existsSync('/usr/local/bin/tsx')
-    ? '/usr/local/bin/tsx'
-    : (process.execPath.includes('tsx') ? process.execPath : 'tsx');
+  // Run the child process with the same TypeScript-capable runtime as the parent.
+  // CI executes this suite under Bun; assuming a globally installed "tsx" binary
+  // makes every child-process assertion fail with ENOENT on clean runners.
+  const childRuntime = process.versions.bun
+    ? process.execPath
+    : (fs.existsSync('/usr/local/bin/tsx') ? '/usr/local/bin/tsx' : 'tsx');
+  const childRuntimeArgs = process.versions.bun ? [finalizerScriptPath] : [finalizerScriptPath];
+  const runFinalizerChild = (configPath: string) => spawnSync(
+    childRuntime,
+    [...childRuntimeArgs, '--config', configPath],
+    { encoding: 'utf8', cwd: process.cwd() }
+  );
 
   try {
     // =========================================================================
@@ -112,10 +121,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
     fs.writeFileSync(testAConfigPath, JSON.stringify(testAConfig, null, 2), 'utf8');
 
     // Execute via child process using real production finalization path
-    const testAChild = spawnSync(tsxBinary, [finalizerScriptPath, '--config', testAConfigPath], {
-      encoding: 'utf8',
-      cwd: process.cwd()
-    });
+    const testAChild = runFinalizerChild(testAConfigPath);
 
     // 1. Non-zero exit code on integrity failure
     assert(
@@ -210,10 +216,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
     fs.writeFileSync(testBConfigPath, JSON.stringify(testBConfig, null, 2), 'utf8');
 
     // Execute via child process using real production finalization path
-    const testBChild = spawnSync(tsxBinary, [finalizerScriptPath, '--config', testBConfigPath], {
-      encoding: 'utf8',
-      cwd: process.cwd()
-    });
+    const testBChild = runFinalizerChild(testBConfigPath);
 
     const testBManifestExists = fs.existsSync(testBManifestPath);
     assert(
@@ -317,10 +320,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
     fs.writeFileSync(successConfigPath, JSON.stringify(successConfig, null, 2), 'utf8');
 
     // Run clean case in child process
-    const successChild = spawnSync(tsxBinary, [finalizerScriptPath, '--config', successConfigPath], {
-      encoding: 'utf8',
-      cwd: process.cwd()
-    });
+    const successChild = runFinalizerChild(successConfigPath);
 
     // 7. Zero exit code
     assert(
@@ -603,10 +603,7 @@ export function runMasterFinalizerIntegrationTestSuite(): FinalizerIntegrationSu
 
     fs.writeFileSync(testP3AConfigPath, JSON.stringify(testP3AConfig, null, 2), 'utf8');
 
-    const testP3AChild = spawnSync(tsxBinary, [finalizerScriptPath, '--config', testP3AConfigPath], {
-      encoding: 'utf8',
-      cwd: process.cwd()
-    });
+    const testP3AChild = runFinalizerChild(testP3AConfigPath);
 
     assert(
       'Problem 3 — Test P3-A: P2-13 Raw Diagnostics Child Process',
