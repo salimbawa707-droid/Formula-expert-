@@ -801,12 +801,19 @@ export function calculateCleaningPerformance(
   }
 
   // Check Laboratory Measurement Input & Calculate Variance
+  // Zero is a valid measured result. Reject non-finite/out-of-domain values instead of
+  // silently treating zero as "not measured". Descaling rate is non-negative (mg/min);
+  // percentage/score measurements must be within 0..100.
+  const isValidScoreMeasurement = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+  const isValidDescalingMeasurement = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0;
   const isMeasured = Boolean(labMeasurements && (
-    (labMeasurements.measuredSoilRemovalPct !== undefined && labMeasurements.measuredSoilRemovalPct > 0) ||
-    (labMeasurements.measuredGreaseRemovalPct !== undefined && labMeasurements.measuredGreaseRemovalPct > 0) ||
-    (labMeasurements.measuredSofteningScore !== undefined && labMeasurements.measuredSofteningScore > 0) ||
-    (labMeasurements.measuredStreakRating !== undefined && labMeasurements.measuredStreakRating > 0) ||
-    (labMeasurements.measuredDescalingRate !== undefined && labMeasurements.measuredDescalingRate > 0)
+    isValidScoreMeasurement(labMeasurements.measuredSoilRemovalPct) ||
+    isValidScoreMeasurement(labMeasurements.measuredGreaseRemovalPct) ||
+    isValidScoreMeasurement(labMeasurements.measuredSofteningScore) ||
+    isValidScoreMeasurement(labMeasurements.measuredStreakRating) ||
+    isValidDescalingMeasurement(labMeasurements.measuredDescalingRate)
   ));
 
   let predictionVariance: number | undefined;
@@ -823,7 +830,7 @@ export function calculateCleaningPerformance(
     { ids: ['streakFreeClarity'], value: labMeasurements?.measuredStreakRating }
   ];
   for (const measurement of measuredKpiInputs) {
-    if (typeof measurement.value !== 'number' || !Number.isFinite(measurement.value)) continue;
+    if (!isValidScoreMeasurement(measurement.value)) continue;
     for (const kpi of categoryKPIs) {
       if (!measurement.ids.includes(kpi.id) || !kpi.isApplicable) continue;
       kpi.value = measurement.value;
@@ -832,7 +839,7 @@ export function calculateCleaningPerformance(
     }
   }
   const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct;
-  if (typeof primaryMeasuredVal === 'number' && Number.isFinite(primaryMeasuredVal) && predictedSoilKpiValue !== null && predictedSoilKpiValue !== undefined) {
+  if (isValidScoreMeasurement(primaryMeasuredVal) && predictedSoilKpiValue !== null && predictedSoilKpiValue !== undefined) {
     predictionVariance = Number((primaryMeasuredVal - predictedSoilKpiValue).toFixed(1));
     predictionErrorPct = primaryMeasuredVal > 0 ? Number(((Math.abs(predictionVariance) / primaryMeasuredVal) * 100).toFixed(1)) : 0;
     if (predictionErrorPct > 20) {
