@@ -5,10 +5,10 @@
 
 ## Latest recorded evidence
 
-- **Web frontend build**: PASS in GitHub Actions workflow 41530474374 on PR commit ee9702b.
+- **Web frontend build**: PASS in GitHub Actions workflow 41530713142 on merge commit b424f68.
 - **TypeScript regression suite**: PASS in the same workflow.
 - **Phase 6 lab-evidence regression**: PASS in the same workflow.
-- **Android debug APK**: SKIPPED in the same workflow because the independent evidence gate remains locked.
+- **Android debug APK**: SKIPPED in the same workflow; the job is dispatch-only and also enforces the Phase 5 gate. No APK artifact was produced.
 
 ## Certification boundary
 
