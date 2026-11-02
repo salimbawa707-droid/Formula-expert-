@@ -88,7 +88,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   assert('Composite CPI remains PREDICTED with one measured KPI', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
   assert('Measured Model Type Refers to Standard Protocol', measuredRes.modelType === 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL', true, true);
   
-  const predictedSoilKpi = measuredRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
+  const predictedSoilKpi = defaultRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.value ?? 0;
   const expectedVariance = Number((88.0 - predictedSoilKpi).toFixed(1));
   assert('Measured Result Prediction Variance Correct', measuredRes.predictionVariance === expectedVariance, measuredRes.predictionVariance, expectedVariance);
   
