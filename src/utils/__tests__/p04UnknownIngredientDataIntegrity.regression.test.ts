@@ -349,9 +349,9 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   assert(
     'Group 1: Mandatory Tests',
     'Test 20: Unspecified Sodium Chloride grade remains unknown rather than assuming 100% purity',
-    defaultLookupRes === 100,
+    defaultLookupRes === null,
     defaultLookupRes,
-    100
+    null
   );
 
   const passed = results.filter(r => r.passed).length;
