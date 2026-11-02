@@ -276,7 +276,26 @@ const authAndRouteMatrixSummary = await runAuthAndRouteMatrixTestSuite();
 const securityFixesSummary = await runSecurityFixesTestSuite();
 const vaultLogicSummary = runVaultLogicTestSuite();
 const evidenceVaultIntegritySummary = runEvidenceVaultIntegrityTestSuite();
+
 const p0MasterRemediationSummary = runP0MasterRemediationTestSuite();
+
+// Always emit individual failed assertions for the six late-stage suites that
+// historically returned summaries without printing their failure details.
+const diagnosticSuites: Array<[string, any]> = [
+  ['p0RemediationUnknownProductCategory', p0UnknownCategorySummary],
+  ['p0RemediationScientificVsLabValidation', p0ScientificVsLabValSummary],
+  ['liquidLaundryAnalysisRemediation', liquidLaundryRemediationSummary],
+  ['p04UnknownIngredientDataIntegrity', p04UnknownIngredientSummary],
+  ['phase10Consistency', phase10ConsistencySummary],
+  ['p0_master_remediation', p0MasterRemediationSummary]
+];
+for (const [suiteName, summary] of diagnosticSuites) {
+  const failedResults = (summary?.results ?? []).filter((result: any) => result && result.passed === false);
+  if (failedResults.length > 0) {
+    console.log(`[FAILED ASSERTION DETAILS] ${suiteName}: ${JSON.stringify(failedResults)}`);
+  }
+}
+
 
 if (phSummary.failed > 0) {
   console.log('Failed pHEngine legacy tests:');
