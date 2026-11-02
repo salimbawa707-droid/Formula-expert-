@@ -1,11 +1,15 @@
-# P3 Web and Android Release Certification
+# P3 Web and Android Build Verification
 
-**Scope**: Fresh Production Web (`vite build`) and Android APK Build Certification  
-**Status**: `PASS`  
+**Status**: `PARTIAL — ANDROID NOT VERIFIED`  
+**Last reviewed**: November 3, 2026
 
----
+## Latest recorded evidence
 
-## 1. Certification Summary
-- **Web Build**: Successfully compiled via Vite (`vite build`) with zero TypeScript errors or bundling warnings.
-- **Android Build**: Successfully packaged via Capacitor Android SDK with clean Gradle integration and offline startup verification.
-- **Reproducibility**: Complete offline build instructions and dependency lockfiles verified.
+- **Web frontend build**: PASS in GitHub Actions workflow 41514527839 on commit cb94f8a.
+- **TypeScript regression suite**: PASS in the same workflow.
+- **Phase 6 lab-evidence regression**: PASS in the same workflow.
+- **Android debug APK**: SKIPPED in the same workflow because the independent evidence gate remains locked.
+
+## Certification boundary
+
+The current CI evidence supports a successful web build and the listed automated checks only. It does not support a current Android APK build certification, Play Store release certification, or full production release claim. Re-run the Android build after the evidence gate is legitimately cleared; do not bypass the gate to manufacture a green result.
