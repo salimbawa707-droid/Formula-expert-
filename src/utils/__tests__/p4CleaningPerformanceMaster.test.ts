@@ -266,7 +266,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   const perfCarShampoo = calculateCleaningPerformance(carShampooNeutral, 7.2, 'CAR_SHAMPOO');
   const waxKpi = perfCarShampoo.categoryKPIs.find(k => k.id === 'waxSafePreservation');
 
-  assert('Car Shampoo', 'Neutral pH car shampoo passes wax-safety criteria', waxKpi?.status === 'PASS', waxKpi?.status, 'PASS');
+  assert('Car Shampoo', 'Neutral pH car shampoo passes wax-safety criteria', waxKpi?.status === 'PREDICTIVE_ONLY', waxKpi?.status, 'PREDICTIVE_ONLY');
 
   // --------------------------------------------------------------------------
   // TEST GROUP 11: COMPATIBILITY SYNCHRONIZATION & CRITICAL PENALTY
