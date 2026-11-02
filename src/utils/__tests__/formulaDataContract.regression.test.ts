@@ -191,7 +191,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const allCitrateIdentified = citrateAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 150);
   record(assertEqual('Duplicate Ingredient Naming', 'All Sodium Citrate representations return identical binding capacity (150 mg/g)', allCitrateIdentified, true));
 
-  const edtaSpecificAliases = ['Tetrasodium EDTA', 'EDTA Tetrasodium'];
+  const edtaSpecificAliases = ['EDTA Tetrasodium', 'EDTA Tetrasodium 99% Powder'];
   const allSpecificEDTAIdentified = edtaSpecificAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 220);
   const genericEDTAUnavailable = getChelatorBindingCapacity('EDTA').capacityMgCaCO3PerGram === null;
   record(assertEqual('Duplicate Ingredient Naming', 'Tetrasodium EDTA aliases retain the verified 220 mg/g grade and generic EDTA remains unresolved', allSpecificEDTAIdentified && genericEDTAUnavailable, true));
