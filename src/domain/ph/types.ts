@@ -136,15 +136,15 @@ export interface PHCalculationOptions {
 }
 
 export interface DetailedPHResult {
-  pH: number;
-  finalPH: number;
+  pH: number | null;
+  finalPH: number | null;
   status: PHResultStatus;
   method: string;
   converged: boolean;
   iterations: number;
-  residual: number;
+  residual: number | null;
   stepSize: number;
-  ionicStrength: number;
+  ionicStrength: number | null;
   activityModel: ActivityModelType;
   modelValidity: ModelValidityLevel;
   temperatureC: number;
@@ -169,8 +169,8 @@ export interface DetailedPHResult {
   excessAcidMoles: number;
   /** @deprecated Use excessBaseEquivalents. Note: quantity represents chemical equivalents (eq), not moles. */
   excessBaseMoles: number;
-  bufferCapacity: number;
-  totalBufferCapacity: number;
+  bufferCapacity: number | null;
+  totalBufferCapacity: number | null;
   solverConverged: boolean;
   solverIterations: number;
   details: {
@@ -188,9 +188,9 @@ export interface DetailedPHResult {
     recognizedContributors: string[];
     modelType: string;
     speciation: ChemicalFamilySpeciation[];
-    ionicStrength: number;
+    ionicStrength: number | null;
     activityCoefficients?: Record<string, number>;
-    chargeResidual: number;
+    chargeResidual: number | null;
     normalizedComposition?: {
       totalMassKg: number;
       totalVolumeL: number;

@@ -223,10 +223,44 @@ export class ReleaseGateEngine {
       details: { ingredientsCount: snapshot.ingredients?.length || 0 }
     });
 
-    // 5. SHA-256 Artifact Integrity Validation & Generation Matching
+    // 5. Active Matter Completeness Check
+    const missingActiveMatterIngredients = (snapshot.ingredients || []).filter((ingredient) => {
+      const value = ingredient.activeMatterPct;
+      return (
+        typeof value !== 'number' ||
+        !Number.isFinite(value) ||
+        value < 0 ||
+        value > 100
+      );
+    });
+    const activeMatterComplete = missingActiveMatterIngredients.length === 0;
+    checks.push({
+      id: 'gate-active-matter-completeness',
+      name: 'Required Active Matter Completeness',
+      category: 'ARTIFACT_INTEGRITY',
+      passed: activeMatterComplete,
+      isBlocking: true,
+      evidence: activeMatterComplete
+        ? 'All required ingredient active matter values are present and in range.'
+        : `Missing or invalid active matter: ${missingActiveMatterIngredients.map(i => i.name).join(', ')}`,
+      details: {
+        missingIngredients: missingActiveMatterIngredients.map(i => i.name)
+      }
+    });
+
+    // 6. SHA-256 Artifact Integrity Validation & Generation Matching
     // Computes and cross-checks the unique SHA-256 hash of the formulation to prove it matches the active generationId
     const serializedIngredients = snapshot.ingredients
-      ?.map((i) => `${i.name}:${Number(i.percentage).toFixed(2)}:${(i.activeMatterPct ?? 0).toFixed(2)}`)
+      ?.map((i) => {
+        const active = i.activeMatterPct;
+        const activeToken =
+          typeof active === 'number' &&
+          Number.isFinite(active) &&
+          active >= 0 && active <= 100
+            ? active.toFixed(2)
+            : 'UNKNOWN';
+        return `${i.name}:${Number(i.percentage).toFixed(2)}:${activeToken}`;
+      })
       .sort()
       .join('|') || '';
     const integrityHash = sha256(serializedIngredients || 'empty-formula');
@@ -244,7 +278,7 @@ export class ReleaseGateEngine {
       details: { integrityHash }
     });
 
-    // 6. Generation Identity Matching
+    // 7. Generation Identity Matching
     const identityMatched = Boolean(snapshot.versionNumber && snapshot.formulaName);
     checks.push({
       id: 'gate-identity-lineage',
@@ -302,6 +336,20 @@ export function evaluateReleaseGate(
   const ingredients = Array.isArray(arg3) ? arg3 : [];
   const labMeasurements = Array.isArray(arg4) ? arg4 : [];
 
+  if (ingredients.length === 0) {
+    return {
+      status: 'BLOCKED_BY_EMPTY_FORMULA',
+      decisionCode: 'EMPTY_FORMULA',
+      isReady: false,
+      verified: false,
+      decision: 'BLOCKED',
+      blockingIssues: ['Release blocked: formulation contains no ingredients.'],
+      formulaId,
+      category,
+      ingredientsCount: 0
+    };
+  }
+
   if (category === 'UNKNOWN_PRODUCT_CATEGORY') {
     return {
       status: 'BLOCKED_BY_UNKNOWN_CATEGORY',
@@ -312,6 +360,24 @@ export function evaluateReleaseGate(
       blockingIssues: ['Product category is unknown, missing, or invalid. Release authorization requires a valid canonical product category.'],
       formulaId,
       category: 'UNKNOWN_PRODUCT_CATEGORY',
+      ingredientsCount: ingredients.length,
+    };
+  }
+
+  const missingActive = ingredients.filter((i: any) => {
+    const val = i.activeMatterPct ?? i.activePercent ?? i.activeMatterPurity;
+    return typeof val !== 'number' || !Number.isFinite(val) || val < 0 || val > 100;
+  });
+  if (missingActive.length > 0) {
+    return {
+      status: 'BLOCKED_BY_UNKNOWN_ACTIVE_MATTER',
+      decisionCode: 'ACTIVE_MATTER_INCOMPLETE',
+      isReady: false,
+      verified: false,
+      decision: 'BLOCKED',
+      blockingIssues: [`Missing or invalid active matter for ${missingActive.map((i: any) => i.name || 'ingredient').join(', ')}`],
+      formulaId,
+      category,
       ingredientsCount: ingredients.length,
     };
   }

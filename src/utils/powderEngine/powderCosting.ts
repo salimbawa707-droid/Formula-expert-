@@ -2,9 +2,16 @@ import { ClassifiedIngredient, PowderCostingReport } from './types';
 
 export function calculatePowderCosting(
   classifiedIngredients: ClassifiedIngredient[],
-  batchSizeKg: number = 100,
+  batchSizeKg?: number | null,
   washDoseG: number = 50
 ): PowderCostingReport {
+  const validBatchSize =
+    typeof batchSizeKg === 'number' &&
+    Number.isFinite(batchSizeKg) &&
+    batchSizeKg > 0
+      ? batchSizeKg
+      : null;
+
   let costPerKg = 0;
   let hasZeroCost = false;
 
@@ -26,17 +33,30 @@ export function calculatePowderCosting(
   });
 
   const finalCostPerKg = Number(costPerKg.toFixed(4));
-  const totalBatchCost = Number((finalCostPerKg * batchSizeKg).toFixed(2));
   const costPerWashDose = Number(((washDoseG / 1000) * finalCostPerKg).toFixed(4));
 
   contributions.forEach((c) => {
     c.costPercentage = finalCostPerKg > 0 ? Number(((c.costContribution / finalCostPerKg) * 100).toFixed(1)) : 0;
   });
 
+  if (validBatchSize === null) {
+    return {
+      costPerKg: finalCostPerKg,
+      totalBatchCost: null,
+      batchSizeKg: null,
+      costPerWashDose,
+      hasZeroCostIngredients: hasZeroCost,
+      ingredientCostContributions: contributions,
+      source: 'INSUFFICIENT_DATA'
+    };
+  }
+
+  const totalBatchCost = Number((finalCostPerKg * validBatchSize).toFixed(2));
+
   return {
     costPerKg: finalCostPerKg,
     totalBatchCost,
-    batchSizeKg,
+    batchSizeKg: validBatchSize,
     costPerWashDose,
     hasZeroCostIngredients: hasZeroCost,
     ingredientCostContributions: contributions,

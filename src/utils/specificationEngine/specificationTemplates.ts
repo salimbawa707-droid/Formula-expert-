@@ -356,13 +356,6 @@ export function tryGetSpecificationTemplateForCategory(
 export function getSpecificationTemplateForCategory(
   categoryOrId?: string | null,
   subProfileOrFormulaName?: string | null
-): SpecificationTemplate {
-  const template = tryGetSpecificationTemplateForCategory(categoryOrId, subProfileOrFormulaName);
-  if (!template) {
-    throw new Error(
-      `Cannot resolve SpecificationTemplate: Unrecognized, missing, or invalid product category "${categoryOrId ?? 'undefined'}". ` +
-      `Product category must resolve to one of the 13 canonical ProductCategoryId values.`
-    );
-  }
-  return template;
+): SpecificationTemplate | null {
+  return tryGetSpecificationTemplateForCategory(categoryOrId, subProfileOrFormulaName);
 }

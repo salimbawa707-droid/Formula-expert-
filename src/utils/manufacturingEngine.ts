@@ -59,7 +59,7 @@ export interface MaterialRequirement {
   ingredientId?: string;
   ingredientName: string;
   grade?: string;
-  assayPct?: number;
+  assayPct: number | null;
   plannedQuantityKg: number;
   actualQuantityKg?: number;
   varianceKg?: number;
@@ -165,6 +165,8 @@ export interface ManufacturingBatch {
   yieldPercent: number;
   yieldStatus: 'NORMAL' | 'YIELD_DEVIATION' | 'EXCESS_LOSS';
 
+  assayValidationStatus: 'COMPLETE' | 'INSUFFICIENT_DATA';
+
   status: BatchLifecycleStatus;
   releaseStatus: BatchReleaseStatus;
   qualityGateReport?: MasterScientificQualityGateReport;
@@ -183,6 +185,59 @@ export interface ManufacturingBatch {
     action: string;
     details: string;
   }[];
+}
+
+// =============================================================================
+// ASSAY VALIDATION
+// =============================================================================
+
+export interface ManufacturingAssayRecord {
+  ingredientId?: string;
+  ingredientName?: string;
+  assayPct: number | null;
+  lotNumber?: string;
+  evidenceId?: string;
+  provenance?: string;
+}
+
+export interface AssayValidationResult {
+  value: number | null;
+  status: 'VALID' | 'INSUFFICIENT_DATA';
+  reason?: string;
+  evidenceId?: string;
+}
+
+export function validateManufacturingAssay(
+  assayOrRecord: unknown,
+  evidenceId?: string
+): AssayValidationResult {
+  let val: unknown = assayOrRecord;
+  let evid = evidenceId;
+
+  if (typeof assayOrRecord === 'object' && assayOrRecord !== null && 'assayPct' in assayOrRecord) {
+    const rec = assayOrRecord as ManufacturingAssayRecord;
+    val = rec.assayPct;
+    evid = rec.evidenceId || evid;
+  }
+
+  if (
+    typeof val !== 'number' ||
+    !Number.isFinite(val) ||
+    val < 0 ||
+    val > 100
+  ) {
+    return {
+      value: null,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'ASSAY_MISSING_OR_INVALID'
+    };
+  }
+
+  return {
+    value: val,
+    status: 'VALID',
+    evidenceId: evid
+  };
 }
 
 // =============================================================================
@@ -264,7 +319,7 @@ export class ManufacturingEngine {
       return {
         ingredientName: ing.name,
         grade: ing.category || 'Standard Grade',
-        assayPct: ing.activeMatterPct ?? ing.activePercent ?? null,
+        assayPct: validateManufacturingAssay(ing.activeMatterPct ?? ing.activePercent).value,
         plannedQuantityKg: plannedKg,
         unit: 'kg'
       };
@@ -285,6 +340,18 @@ export class ManufacturingEngine {
       provenance: 'FORMULA_DEFINED',
       completed: false
     }));
+
+    const assayValidationResults = input.ingredients.map((ingredient) => ({
+      ingredientName: ingredient.name,
+      result: validateManufacturingAssay(
+        ingredient.activeMatterPct ?? ingredient.activePercent
+      )
+    }));
+    const assayValidationStatus = assayValidationResults.every(
+      item => item.result.status === 'VALID'
+    )
+      ? 'COMPLETE'
+      : 'INSUFFICIENT_DATA';
 
     const batch: ManufacturingBatch = {
       batchId,
@@ -316,6 +383,7 @@ export class ManufacturingEngine {
       deviations: [],
       yieldPercent: 0,
       yieldStatus: 'NORMAL',
+      assayValidationStatus,
       status: 'PLANNED',
       releaseStatus: 'PENDING',
       createdAt: now,
@@ -325,7 +393,7 @@ export class ManufacturingEngine {
           timestamp: now,
           actor: input.actor,
           action: 'BATCH_PLANNED',
-          details: `Planned batch ${input.batchNumber} at scale factor ${scaleFactor.toFixed(4)} (${targetSize} kg target size) from formula version ${input.formulaVersion}.`
+          details: `Planned batch ${input.batchNumber} at scale factor ${scaleFactor.toFixed(4)} (${targetSize} kg target size) from formula version ${input.formulaVersion}. Assay validation status: ${assayValidationStatus}.`
         }
       ]
     };
@@ -528,6 +596,10 @@ export class ManufacturingEngine {
 
     if (batch.releaseStatus === 'RELEASED' || batch.releaseStatus === 'REJECTED') {
       throw new Error(`Batch ${batch.batchNumber} is already finalized (${batch.releaseStatus}) and immutable.`);
+    }
+
+    if (input.releaseStatus === 'RELEASED' && batch.assayValidationStatus === 'INSUFFICIENT_DATA') {
+      throw new Error(`Cannot release batch ${batch.batchNumber}: Assay validation status is INSUFFICIENT_DATA due to missing or invalid active matter assay for raw materials.`);
     }
 
     const now = new Date().toISOString();

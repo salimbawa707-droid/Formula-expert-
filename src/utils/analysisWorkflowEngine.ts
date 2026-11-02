@@ -22,6 +22,7 @@ import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import { StoichiometricNeutralizationEngine } from '../domain/ph/stoichiometricNeutralizationEngine';
 import { HLBEngine } from './hlbEngine';
+import { validatePHInput } from './phInputGuard';
 import {
   calculateActiveSurfactants,
   calculateActiveMatter,
@@ -590,7 +591,8 @@ export async function executeStagedScientificAnalysis(
 
   const rawSurfactantsTotal = calculateRawSurfactants(immutableSnapshot.ingredients);
   const totalSurfactantActivePct = calculateActiveSurfactants(immutableSnapshot.ingredients);
-  const totalActiveMatterPct = calculateActiveMatter(immutableSnapshot.ingredients);
+  const rawAm = calculateActiveMatter(immutableSnapshot.ingredients);
+  const totalActiveMatterPct: number | null = typeof rawAm === 'number' ? rawAm : (rawAm?.value ?? null);
   const hlbResult = HLBEngine.calculateBlendedHLB(immutableSnapshot.ingredients);
 
   // Calculate charge breakdowns
@@ -618,7 +620,7 @@ export async function executeStagedScientificAnalysis(
   const surfactantIntermediate = {
     rawSurfactantsTotal: Number(rawSurfactantsTotal.toFixed(2)),
     totalSurfactantActivePct: Number(totalSurfactantActivePct.toFixed(2)),
-    totalActiveMatterPct: Number(totalActiveMatterPct.toFixed(2)),
+    totalActiveMatterPct: totalActiveMatterPct !== null ? Number(totalActiveMatterPct.toFixed(2)) : null,
     anionicPct: Number(anionicPct.toFixed(2)),
     nonionicPct: Number(nonionicPct.toFixed(2)),
     amphotericPct: Number(amphotericPct.toFixed(2)),
@@ -628,7 +630,7 @@ export async function executeStagedScientificAnalysis(
   };
 
   completeStage('SURFACTANT_SCIENCE', 'COMPLETED', {
-    details: `Active surfactants: ${totalSurfactantActivePct.toFixed(2)}% | Total active: ${totalActiveMatterPct.toFixed(2)}% | HLB: ${hlbResult.blendedHLB ?? 'N/A'}`,
+    details: `Active surfactants: ${totalSurfactantActivePct.toFixed(2)}% | Total active: ${totalActiveMatterPct !== null ? totalActiveMatterPct.toFixed(2) + '%' : 'UNAVAILABLE'} | HLB: ${hlbResult.blendedHLB ?? 'N/A'}`,
     intermediate: surfactantIntermediate
   });
 
@@ -644,17 +646,12 @@ export async function executeStagedScientificAnalysis(
     immutableSnapshot.batchSizeKg
   );
 
-  let initialGuess = 7.0;
-  if (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') {
-    initialGuess = 3.0;
-  } else if (neutralizationResult.value?.status === 'BASE_EXCESS') {
-    initialGuess = 11.0;
-  }
-
   const mappedPHInput = mapFormulationIngredientsToPHEngineInput(immutableSnapshot.ingredients);
+
   const advancedPH = calculatePHAdvanced(mappedPHInput, immutableSnapshot.batchSizeKg, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-    targetPH: initialGuess
+    targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
+              (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
   });
 
   const phIntermediate = {
@@ -670,7 +667,7 @@ export async function executeStagedScientificAnalysis(
   const phWarnings = advancedPH.warnings || [];
 
   completeStage('PH_NEUTRALIZATION', phWarnings.length > 0 ? 'COMPLETED_WITH_WARNINGS' : 'COMPLETED', {
-    details: `pH: ${advancedPH.pH?.toFixed(2) ?? 'N/A'} (${advancedPH.solverConverged ? 'Converged' : 'Approximated'}) | Buffer: ${advancedPH.bufferCapacity.toFixed(4)}`,
+    details: `pH: ${advancedPH.pH?.toFixed(2) ?? 'UNAVAILABLE'} (${advancedPH.solverConverged ? 'Converged' : 'Approximated'}) | Buffer: ${advancedPH.bufferCapacity !== null ? advancedPH.bufferCapacity.toFixed(4) : 'N/A'}`,
     warnings: phWarnings,
     intermediate: phIntermediate
   });
@@ -697,7 +694,7 @@ export async function executeStagedScientificAnalysis(
   immutableSnapshot.ingredients.forEach((ing) => {
     const name = ing.name.toLowerCase();
     const role = (ing.role || '').toLowerCase();
-    const act = ing.activeMatterPct !== null ? (Number(ing.activeMatterPct) / 100) : 0;
+    const act = (ing.activeMatterPct ?? 0) / 100;
     const activePct = (Number(ing.percentage) || 0) * act;
     if (role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate')) {
       chelatorActivePct += activePct;
@@ -1002,10 +999,10 @@ export async function executeStagedScientificAnalysis(
       engineOrFunction: 'PHEngineV2 & StoichiometricNeutralizationEngine',
       formulaFingerprint: analyzedFingerprint,
       status: orchestratorResult.pHResult.isMeasured ? 'LAB_VALIDATED' : 'PREDICTED',
-      valueDisplay: `pH ${orchestratorResult.pHResult.ph !== null ? orchestratorResult.pHResult.ph.toFixed(2) : 'N/A'}`,
+      valueDisplay: `pH ${orchestratorResult.pHResult.ph !== null ? orchestratorResult.pHResult.ph.toFixed(2) : 'UNAVAILABLE'}`,
       confidenceLevel: orchestratorResult.pHResult.solverConverged ? 'High Confidence (Speciation Convergence)' : 'Moderate (Approximated)',
       consistencyStatus: 'CONSISTENT',
-      details: `Buffer Capacity: ${orchestratorResult.pHResult.bufferCapacity} | Slurry: ${orchestratorResult.pHResult.slurryBasis || 'Liquid Direct'}`
+      details: `Buffer Capacity: ${orchestratorResult.pHResult.bufferCapacity ?? 'N/A'} | Slurry: ${orchestratorResult.pHResult.slurryBasis || 'Liquid Direct'}`
     },
     {
       dimension: 'Hard-Water Protection',

@@ -21,11 +21,31 @@ import {
 export function calculatePowderMoistureAndDryMatter(
   ingredients: FormulationIngredient[],
   massBalance: PowderMassBalanceReport,
-  batchSizeKg: number = 100,
+  batchSizeKg?: number,
   labInputs?: PowderLabMeasurementInputs
 ): PowderMoistureReport {
-  const safeList = Array.isArray(ingredients) ? ingredients : [];
-  const totalFormulaMassKg = batchSizeKg > 0 ? batchSizeKg : 100;
+  const validBatchSize =
+    typeof batchSizeKg === 'number' &&
+    Number.isFinite(batchSizeKg) &&
+    batchSizeKg > 0;
+
+  if (!validBatchSize) {
+    return {
+      totalFormulaMassKg: null,
+      moistureMassKg: null,
+      dryMatterMassKg: null,
+      inherentMoisturePct: null,
+      moisturePct: null,
+      dryMatterPct: null,
+      moistureStatus: 'INSUFFICIENT_DATA',
+      dryMatterStatus: 'INSUFFICIENT_DATA',
+      basisExplanation: 'Invalid or unavailable batch mass.',
+      ingredientMoistureContributions: [],
+      source: 'INSUFFICIENT_DATA'
+    };
+  }
+
+  const totalFormulaMassKg = batchSizeKg;
 
   // 1. If laboratory measured moisture is provided
   if (labInputs?.measuredMoisturePct !== undefined && Number.isFinite(labInputs.measuredMoisturePct) && labInputs.measuredMoisturePct >= 0 && labInputs.measuredMoisturePct <= 100) {
@@ -34,7 +54,7 @@ export function calculatePowderMoistureAndDryMatter(
     const moistureMassKg = Number((totalFormulaMassKg * (moisturePct / 100)).toFixed(6));
     const dryMatterMassKg = Number((totalFormulaMassKg * (dryMatterPct / 100)).toFixed(6));
 
-    const testMethod = labInputs.moistureTestMethod || 'Loss on Drying at 105°C (ISO 760 / ASTM D1744)';
+    const testMethod = labInputs.moistureTestMethod?.trim() || undefined;
     const sampleMassG = labInputs.moistureSampleMassG;
     const dryingTempC = labInputs.moistureTempC;
     const dryingTimeMin = labInputs.moistureTimeMin;
@@ -52,7 +72,7 @@ export function calculatePowderMoistureAndDryMatter(
       sampleMassG,
       dryingTempC,
       dryingTimeMin,
-      basisExplanation: `Laboratory measured finished powder moisture is ${moisturePct}% (${testMethod}), yielding ${dryMatterPct}% Dry Matter.`,
+      basisExplanation: `Laboratory measured finished powder moisture is ${moisturePct}%${testMethod ? ` (${testMethod})` : ''}, yielding ${dryMatterPct}% Dry Matter.`,
       ingredientMoistureContributions: [],
       source: 'MEASURED'
     };

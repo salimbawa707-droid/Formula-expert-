@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layers, Activity, Zap, Scale, DollarSign, CheckCircle, ShieldAlert } from 'lucide-react';
+import { getValidatedDensity } from '../../utils/densityGuard';
 
 interface AnalyticalMetricsPanelProps {
   hlbVal: number;
@@ -18,6 +19,8 @@ export const AnalyticalMetricsPanel: React.FC<AnalyticalMetricsPanelProps> = ({
   compatibilityRes,
   marginChain
 }) => {
+  const validDensity = getValidatedDensity(densityRes?.densityGPerCm3);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* HLB Card */}
@@ -68,11 +71,13 @@ export const AnalyticalMetricsPanel: React.FC<AnalyticalMetricsPanelProps> = ({
             <Scale className="w-4 h-4 text-emerald-400" /> Specific Gravity & Density
           </span>
           <span className="text-base font-black text-emerald-400">
-            {densityRes?.densityGPerCm3?.toFixed(3) || '1.000'} g/cm³
+            {validDensity !== null
+              ? `${validDensity.toFixed(3)} g/cm³`
+              : 'UNAVAILABLE'}
           </span>
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
-          {densityRes?.specificGravity ? `Specific gravity: ${densityRes.specificGravity.toFixed(3)} (20°C).` : 'Water baseline density.'}
+          {densityRes?.specificGravity ? `Specific gravity: ${densityRes.specificGravity.toFixed(3)} (20°C).` : 'Formulation bulk density profile.'}
         </p>
       </div>
 

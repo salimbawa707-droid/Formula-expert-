@@ -3,6 +3,7 @@ import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
 import { PHCalculationOptions } from '../domain/ph/types';
+import { validatePHInput } from './phInputGuard';
 
 export interface LabHealthAlert {
   id: string;
@@ -22,13 +23,15 @@ export interface LabHealthBreakdown {
 }
 
 export interface LabHealthResult {
-  finalScore: number;
-  score: number;
+  finalScore: number | null;
+  score: number | null;
   rating: string;
   riskLevel: string;
   alerts: LabHealthAlert[];
   warnings: string[];
   breakdown: LabHealthBreakdown;
+  pHStatus: 'AVAILABLE' | 'UNAVAILABLE';
+  isAssessmentComplete: boolean;
 }
 
 export function calculateLabHealthScore(
@@ -59,22 +62,26 @@ export function calculateLabHealthScore(
 
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
 
-  // If pH is missing or NaN, calculate estimated pH using pHEngineAdapter or default to 7.0
-  if (phVal === undefined || isNaN(phVal) || typeof phVal !== 'number') {
+  // If pH is missing or NaN, attempt estimation using pHEngineAdapter
+  const phValidation = validatePHInput(phVal);
+  if (phValidation.status === 'INSUFFICIENT_DATA') {
     if (safeIngs.length > 0) {
       try {
         const normCat = category ? normalizeProductCategory(category) : undefined;
         const phOpts: PHCalculationOptions | undefined = (normCat && normCat !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCat } : undefined;
         const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
         const phRes = calculatePHAdvanced(mapped, 100, phOpts);
-        phVal = typeof phRes?.pH === 'number' && !isNaN(phRes.pH) ? phRes.pH : 7.0;
+        const validatedPH = validatePHInput(phRes?.pH);
+        if (validatedPH.status === 'VALID') {
+          phVal = validatedPH.value!;
+        }
       } catch {
-        phVal = 7.0;
+        // Fallback to undefined if calculation fails
       }
-    } else {
-      phVal = 7.0;
     }
   }
+
+  const pHUnavailable = safeIngs.length > 0 && (phVal === undefined || phVal === null);
 
   let totalPenalties = 0;
   let phPenalty = 0;
@@ -86,49 +93,62 @@ export function calculateLabHealthScore(
 
   const alerts: LabHealthAlert[] = [];
 
+  // If pH is unavailable for non-empty formula, raise High severity alert
+  if (pHUnavailable) {
+    alerts.push({
+      id: 'ph-unknown',
+      title: 'pH Measurement Unavailable',
+      severity: 'High',
+      message: 'Formulation pH is unknown. Acid/alkali handling hazard cannot be assessed reliably.',
+      recommendation: 'Measure finished-product pH using the correct product-specific laboratory test method before safety approval.'
+    });
+  }
+
   // Filter ingredients with percentage > 0 (Explicit Zero Safety)
   const activeIngs = safeIngs.filter(ing => {
     const pct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0;
     return typeof pct === 'number' && !isNaN(pct) && pct > 0;
   });
 
-  // 1. Operational pH Hazards (R&D / Handling Safety)
-  if (phVal < 3.0) {
-    phPenalty += 25;
-    alerts.push({
-      id: 'ph-extreme-acid',
-      title: 'Extreme Acidic pH Hazard',
-      severity: 'Critical',
-      message: `Formulation pH (${phVal.toFixed(1)}) presents severe skin corrosion, eye damage, and acid chemical burn hazards during handling.`,
-      recommendation: 'Incorporate alkaline neutralizing agents (e.g., NaOH, TEA, or Na2CO3) to adjust pH to standard target range (4.5 - 10.5).'
-    });
-  } else if (phVal < 4.5) {
-    phPenalty += 10;
-    alerts.push({
-      id: 'ph-mild-acid',
-      title: 'Mild Acidic Handling Precaution',
-      severity: 'Medium',
-      message: `Formulation pH (${phVal.toFixed(1)}) is mildly acidic; prolonged skin contact may cause mild dermal irritation.`,
-      recommendation: 'Consider buffering with Sodium Citrate or mild alkali if skin-neutral mildness is required.'
-    });
-  } else if (phVal > 12.0) {
-    phPenalty += 25;
-    alerts.push({
-      id: 'ph-extreme-alkali',
-      title: 'Extreme Alkaline Caustic Hazard',
-      severity: 'Critical',
-      message: `Formulation pH (${phVal.toFixed(1)}) presents severe caustic chemical burn and eye damage hazards.`,
-      recommendation: 'Neutralize excess alkalinity with organic acids (e.g., Citric Acid) or reduce strong builder loading.'
-    });
-  } else if (phVal > 10.5) {
-    phPenalty += 10;
-    alerts.push({
-      id: 'ph-mild-alkali',
-      title: 'Mild Alkaline Handling Precaution',
-      severity: 'Medium',
-      message: `Formulation pH (${phVal.toFixed(1)}) is mildly alkaline; requires standard glove protection during raw material blending.`,
-      recommendation: 'Incorporate Citric Acid or acid buffering if neutral mildness is desired.'
-    });
+  // 1. Operational pH Hazards (R&D / Handling Safety) — only executed when valid numeric pH exists
+  if (typeof phVal === 'number' && Number.isFinite(phVal)) {
+    if (phVal < 3.0) {
+      phPenalty += 25;
+      alerts.push({
+        id: 'ph-extreme-acid',
+        title: 'Extreme Acidic pH Hazard',
+        severity: 'Critical',
+        message: `Formulation pH (${phVal.toFixed(1)}) presents severe skin corrosion, eye damage, and acid chemical burn hazards during handling.`,
+        recommendation: 'Incorporate alkaline neutralizing agents (e.g., NaOH, TEA, or Na2CO3) to adjust pH to standard target range (4.5 - 10.5).'
+      });
+    } else if (phVal < 4.5) {
+      phPenalty += 10;
+      alerts.push({
+        id: 'ph-mild-acid',
+        title: 'Mild Acidic Handling Precaution',
+        severity: 'Medium',
+        message: `Formulation pH (${phVal.toFixed(1)}) is mildly acidic; prolonged skin contact may cause mild dermal irritation.`,
+        recommendation: 'Consider buffering with Sodium Citrate or mild alkali if skin-neutral mildness is required.'
+      });
+    } else if (phVal > 12.0) {
+      phPenalty += 25;
+      alerts.push({
+        id: 'ph-extreme-alkali',
+        title: 'Extreme Alkaline Caustic Hazard',
+        severity: 'Critical',
+        message: `Formulation pH (${phVal.toFixed(1)}) presents severe caustic chemical burn and eye damage hazards.`,
+        recommendation: 'Neutralize excess alkalinity with organic acids (e.g., Citric Acid) or reduce strong builder loading.'
+      });
+    } else if (phVal > 10.5) {
+      phPenalty += 10;
+      alerts.push({
+        id: 'ph-mild-alkali',
+        title: 'Mild Alkaline Handling Precaution',
+        severity: 'Medium',
+        message: `Formulation pH (${phVal.toFixed(1)}) is mildly alkaline; requires standard glove protection during raw material blending.`,
+        recommendation: 'Incorporate Citric Acid or acid buffering if neutral mildness is desired.'
+      });
+    }
   }
 
   // 2. Raw Material Safety Hazards (Strong Acids, Caustic Alkalis, Enzymes, Volatiles, Dust)
@@ -242,46 +262,68 @@ export function calculateLabHealthScore(
 
   // Handle Strong Acid Penalties
   if (hasStrongAcid) {
-    if (phVal < 4.5) {
+    if (typeof phVal === 'number' && Number.isFinite(phVal)) {
+      if (phVal < 4.5) {
+        rawMaterialPenalty += 15;
+        alerts.push({
+          id: 'strong-acid-unneutralized',
+          title: 'Unneutralized Acid Slurry Hazard',
+          severity: 'High',
+          message: `Unneutralized raw surfactant acid present in low pH formulation (pH ${phVal.toFixed(1)}).`,
+          recommendation: 'Incorporate alkaline neutralizing agent (e.g. Caustic Soda 50% or TEA) under temperature control.'
+        });
+      } else {
+        rawMaterialPenalty += 5;
+        alerts.push({
+          id: 'strong-acid-neutralized',
+          title: 'Raw Acid Handling Precaution',
+          severity: 'Low',
+          message: `Raw acid slurry incorporated in batch (neutralized to pH ${phVal.toFixed(1)}); handle neat acid with acid-resistant PPE during vessel charging.`,
+          recommendation: 'Maintain PPE during acid addition phase.'
+        });
+      }
+    } else {
       rawMaterialPenalty += 15;
       alerts.push({
-        id: 'strong-acid-unneutralized',
-        title: 'Unneutralized Acid Slurry Hazard',
+        id: 'strong-acid-unknown-ph',
+        title: 'Acid Slurry Present — Unknown pH',
         severity: 'High',
-        message: `Unneutralized raw surfactant acid present in low pH formulation (pH ${phVal.toFixed(1)}).`,
-        recommendation: 'Incorporate alkaline neutralizing agent (e.g. Caustic Soda 50% or TEA) under temperature control.'
-      });
-    } else {
-      rawMaterialPenalty += 5;
-      alerts.push({
-        id: 'strong-acid-neutralized',
-        title: 'Raw Acid Handling Precaution',
-        severity: 'Low',
-        message: `Raw acid slurry incorporated in batch (neutralized to pH ${phVal.toFixed(1)}); handle neat acid with acid-resistant PPE during vessel charging.`,
-        recommendation: 'Maintain PPE during acid addition phase.'
+        message: 'Raw acid slurry incorporated in batch with unknown pH.',
+        recommendation: 'Measure finished formulation pH and neutralize acid slurry as required.'
       });
     }
   }
 
   // Handle Strong Alkali Penalties
   if (hasStrongAlkali) {
-    if (phVal > 10.5) {
+    if (typeof phVal === 'number' && Number.isFinite(phVal)) {
+      if (phVal > 10.5) {
+        rawMaterialPenalty += 20;
+        alerts.push({
+          id: 'strong-alkali-unneutralized',
+          title: 'High Caustic Alkali Load Hazard',
+          severity: 'High',
+          message: `Unneutralized caustic alkali present in high pH formulation (pH ${phVal.toFixed(1)}).`,
+          recommendation: 'Adjust stoichiometry with organic acid or reduce free alkali percentage.'
+        });
+      } else {
+        rawMaterialPenalty += 5;
+        alerts.push({
+          id: 'strong-alkali-neutralized',
+          title: 'Caustic Neutralization Precaution',
+          severity: 'Low',
+          message: `Concentrated caustic alkali used in batch (neutralized to pH ${phVal.toFixed(1)}); observe exothermic dissolution safeguards during charging.`,
+          recommendation: 'Control neutralization temperature below 60°C.'
+        });
+      }
+    } else {
       rawMaterialPenalty += 20;
       alerts.push({
-        id: 'strong-alkali-unneutralized',
-        title: 'High Caustic Alkali Load Hazard',
+        id: 'strong-alkali-unknown-ph',
+        title: 'Caustic Alkali Present — Unknown pH',
         severity: 'High',
-        message: `Unneutralized caustic alkali present in high pH formulation (pH ${phVal.toFixed(1)}).`,
-        recommendation: 'Adjust stoichiometry with organic acid or reduce free alkali percentage.'
-      });
-    } else {
-      rawMaterialPenalty += 5;
-      alerts.push({
-        id: 'strong-alkali-neutralized',
-        title: 'Caustic Neutralization Precaution',
-        severity: 'Low',
-        message: `Concentrated caustic alkali used in batch (neutralized to pH ${phVal.toFixed(1)}); observe exothermic dissolution safeguards during charging.`,
-        recommendation: 'Control neutralization temperature below 60°C.'
+        message: 'Concentrated caustic alkali used in batch with unknown pH.',
+        recommendation: 'Measure finished formulation pH and adjust stoichiometry with organic acid or buffer.'
       });
     }
   }
@@ -345,14 +387,16 @@ export function calculateLabHealthScore(
 
   totalPenalties = phPenalty + rawMaterialPenalty + enzymePenalty + restrictedPenalty + unknownPenalty + otherPenalty;
   const rawScore = 100 - totalPenalties;
-  const finalScore = isNaN(rawScore) ? 100 : Math.max(0, Math.min(100, Math.round(rawScore)));
+  const finalScore = pHUnavailable ? null : (isNaN(rawScore) ? 100 : Math.max(0, Math.min(100, Math.round(rawScore))));
 
   let rating = 'Safe / Low Hazard';
-  if (finalScore >= 85) {
+  if (pHUnavailable) {
+    rating = 'ASSESSMENT_INCOMPLETE';
+  } else if (finalScore !== null && finalScore >= 85) {
     rating = 'Safe / Low Hazard';
-  } else if (finalScore >= 70) {
+  } else if (finalScore !== null && finalScore >= 70) {
     rating = 'Moderate Hazard / Handling Precautions';
-  } else if (finalScore >= 50) {
+  } else if (finalScore !== null && finalScore >= 50) {
     rating = 'Elevated Safety Concern';
   } else {
     rating = 'High Safety Hazard';
@@ -361,7 +405,7 @@ export function calculateLabHealthScore(
   const warnings = alerts.map(a => a.message);
 
   const breakdown: LabHealthBreakdown = {
-    phScore: Math.max(0, Math.min(20, Math.round(20 - (phPenalty * 0.8)))),
+    phScore: pHUnavailable ? 0 : Math.max(0, Math.min(20, Math.round(20 - (phPenalty * 0.8)))),
     balScore: Math.max(0, Math.min(20, Math.round(20 - (rawMaterialPenalty * 0.8)))),
     costScore: 15,
     ecoScore: Math.max(0, Math.min(20, Math.round(20 - (restrictedPenalty * 0.8)))),
@@ -377,6 +421,8 @@ export function calculateLabHealthScore(
     alerts,
     warnings,
     breakdown,
+    pHStatus: pHUnavailable ? 'UNAVAILABLE' : 'AVAILABLE',
+    isAssessmentComplete: !pHUnavailable,
   };
 }
 export type { LabHealthResult as LabHealthScoreResult };

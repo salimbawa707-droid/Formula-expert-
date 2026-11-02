@@ -13,6 +13,7 @@ import {
   RegulatoryJurisdictionId,
   RegulatoryEvaluationInput
 } from '../domain/regulatory';
+import { validatePHInput } from './phInputGuard';
 
 export type RegulatoryRegion = 'EU' | 'US_EPA' | 'INDIA_BIS' | 'GLOBAL';
 
@@ -84,7 +85,8 @@ export function evaluateRegulatoryCompliance(
     jurisdictionId = 'US_FEDERAL';
   }
 
-  const safePH = calculatedPH ?? null;
+  const phValidation = validatePHInput(calculatedPH);
+  const safePH = phValidation.status === 'VALID' ? phValidation.value! : null;
 
   // Map to Domain SSOT Input
   const domainInput: RegulatoryEvaluationInput = {
@@ -158,7 +160,7 @@ export function evaluateRegulatoryCompliance(
       warnings: []
     },
     ghsClassification: {
-      signalWord: safePH <= 2.0 || safePH >= 11.5 ? 'DANGER' : (safePH <= 4.0 || safePH >= 10.0 ? 'WARNING' : 'NONE'),
+      signalWord: safePH !== null && (safePH <= 2.0 || safePH >= 11.5) ? 'DANGER' : (safePH !== null && (safePH <= 4.0 || safePH >= 10.0) ? 'WARNING' : 'NONE'),
       hazardStatements: [],
       precautionaryStatements: [],
       hazardPictograms: []

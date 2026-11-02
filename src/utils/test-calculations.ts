@@ -2,6 +2,14 @@ process.env.NODE_ENV = 'test';
 
 // This self-running regression module is included in runtime test discovery.
 import './__tests__/formulaLabValidationStatus.test';
+import { runP0RemediationIntegrityTestSuite } from './__tests__/p0_remediation_integrity.test';
+import { runActiveMatterIntegrityTestSuite } from './__tests__/activeMatterIntegrity.test';
+import { runPHInputGuardTestSuite } from './__tests__/phInputGuard.test';
+import { runPowderMoistureTestSuite } from './__tests__/powderMoisture.test';
+import { runActiveMatterInputGuardTestSuite } from './__tests__/activeMatterInputGuard.test';
+import { runChelatorBindingTestSuite } from './__tests__/chelatorBinding.test';
+import { runManufacturingAssayTestSuite } from './__tests__/manufacturingAssay.test';
+import { runPowderChelationTestSuite } from './__tests__/powderChelation.test';
 
 import { runRegressionTestSuite } from './__tests__/pHEngine.regression.test';
 import { runPHEngineV2TestSuite } from './__tests__/pHEngineV2.regression.test';
@@ -406,8 +414,25 @@ console.log(`API Base & Billing Security: ${apiBaseBillingSummary.passed}/${apiB
 console.log(`Auth & Route Access Matrix: ${authAndRouteMatrixSummary.passed}/${authAndRouteMatrixSummary.total} PASS`);
 console.log(`Security Fixes & Billing Replay (47): ${securityFixesSummary.passed}/${securityFixesSummary.total} PASS`);
 
+const p0IntegritySummary = runP0RemediationIntegrityTestSuite();
+const amIntegritySummary = runActiveMatterIntegrityTestSuite();
+const phGuardSummary = runPHInputGuardTestSuite();
+const powderMoistureSummary = runPowderMoistureTestSuite();
+const amGuardSummary = runActiveMatterInputGuardTestSuite();
+const chelatorBindingSummary = runChelatorBindingTestSuite();
+const manufacturingAssaySummary = runManufacturingAssayTestSuite();
+const powderChelationSummary = runPowderChelationTestSuite();
+
 // Build execution map capturing actual execution of every registered test module
 const executionMap: TestExecutionRecord[] = [
+  { file: 'p0_remediation_integrity.test.ts', moduleName: 'runP0RemediationIntegrityTestSuite', executed: true, passedAssertions: p0IntegritySummary.passed, failedAssertions: p0IntegritySummary.failed, totalAssertions: p0IntegritySummary.total, skipped: false },
+  { file: 'activeMatterIntegrity.test.ts', moduleName: 'runActiveMatterIntegrityTestSuite', executed: true, passedAssertions: amIntegritySummary.passed, failedAssertions: amIntegritySummary.failed, totalAssertions: amIntegritySummary.total, skipped: false },
+  { file: 'phInputGuard.test.ts', moduleName: 'runPHInputGuardTestSuite', executed: true, passedAssertions: phGuardSummary.passed, failedAssertions: phGuardSummary.failed, totalAssertions: phGuardSummary.total, skipped: false },
+  { file: 'powderMoisture.test.ts', moduleName: 'runPowderMoistureTestSuite', executed: true, passedAssertions: powderMoistureSummary.passed, failedAssertions: powderMoistureSummary.failed, totalAssertions: powderMoistureSummary.total, skipped: false },
+  { file: 'activeMatterInputGuard.test.ts', moduleName: 'runActiveMatterInputGuardTestSuite', executed: true, passedAssertions: amGuardSummary.passed, failedAssertions: amGuardSummary.failed, totalAssertions: amGuardSummary.total, skipped: false },
+  { file: 'chelatorBinding.test.ts', moduleName: 'runChelatorBindingTestSuite', executed: true, passedAssertions: chelatorBindingSummary.passed, failedAssertions: chelatorBindingSummary.failed, totalAssertions: chelatorBindingSummary.total, skipped: false },
+  { file: 'manufacturingAssay.test.ts', moduleName: 'runManufacturingAssayTestSuite', executed: true, passedAssertions: manufacturingAssaySummary.passed, failedAssertions: manufacturingAssaySummary.failed, totalAssertions: manufacturingAssaySummary.total, skipped: false },
+  { file: 'powderChelation.test.ts', moduleName: 'runPowderChelationTestSuite', executed: true, passedAssertions: powderChelationSummary.passed, failedAssertions: powderChelationSummary.failed, totalAssertions: powderChelationSummary.total, skipped: false },
   { file: 'pHEngine.regression.test.ts', moduleName: 'runRegressionTestSuite', executed: true, passedAssertions: phSummary.passed, failedAssertions: phSummary.failed, totalAssertions: phSummary.passed + phSummary.failed, skipped: false },
   { file: 'pHEngineV2.regression.test.ts', moduleName: 'runPHEngineV2TestSuite', executed: true, passedAssertions: phV2Summary.passed, failedAssertions: phV2Summary.failed, totalAssertions: phV2Summary.total, skipped: false },
   { file: 'hlbEngine.regression.test.ts', moduleName: 'runHLBRegressionTestSuite', executed: true, passedAssertions: hlbSummary.passed, failedAssertions: hlbSummary.failed, totalAssertions: hlbSummary.passed + hlbSummary.failed, skipped: false },

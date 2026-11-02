@@ -5,6 +5,7 @@ import {
   PowderChelationReport,
   PowderLabMeasurementInputs
 } from './types';
+import { getChelatorBindingCapacity } from '../chelatorEngine';
 
 /**
  * Powder Builder System Engine
@@ -94,33 +95,51 @@ export function calculatePowderChelationSystem(
     const name = ing.name.toLowerCase();
     if (ing.functionalClass === 'Chelating Agent / Soluble Sequestrant') {
       let type = 'Soluble Organic Sequestrant';
-      let capacityMgPerGram: number | undefined = undefined; // mg CaCO₃ per gram active chelator
-      let capacityStatus = 'Validated capacity data unavailable';
 
-      if (name.includes('edta') || name.includes('tetrasodium')) {
-        type = 'Aminocarboxylate Chelator (EDTA-4Na)';
-        capacityMgPerGram = 260;
-        capacityStatus = 'Validated database capacity (260 mg CaCO₃/g active)';
-        hasValidatedData = true;
-      } else if (name.includes('glda') || name.includes('dissolvine')) {
-        type = 'Biodegradable Aminocarboxylate (GLDA-4Na)';
-        capacityMgPerGram = 210;
-        capacityStatus = 'Validated database capacity (210 mg CaCO₃/g active)';
-        hasValidatedData = true;
-      } else if (name.includes('mgda') || name.includes('trilon m')) {
-        type = 'Biodegradable Aminocarboxylate (MGDA-3Na)';
-        capacityMgPerGram = 290;
-        capacityStatus = 'Validated database capacity (290 mg CaCO₃/g active)';
-        hasValidatedData = true;
-      } else if (name.includes('citrate') || name.includes('sodium citrate')) {
-        type = 'Hydroxycarboxylate Co-builder (Sodium Citrate)';
-        capacityMgPerGram = 170;
-        capacityStatus = 'Validated database capacity (170 mg CaCO₃/g active)';
-        hasValidatedData = true;
-      } else if (name.includes('phosphonate') || name.includes('hedp') || name.includes('dtpmp')) {
-        type = 'Threshold Organic Phosphonate Sequestrant';
-        capacityMgPerGram = 450;
-        capacityStatus = 'Validated database capacity (450 mg CaCO₃/g active)';
+      const rawActivePct = ing.activeMatterPct;
+      const validActivePct =
+        typeof rawActivePct === 'number' &&
+        Number.isFinite(rawActivePct) &&
+        rawActivePct >= 0 &&
+        rawActivePct <= 100
+          ? rawActivePct
+          : null;
+
+      let rawCapacity = ing.chelatingCapacityMgPerGram;
+      let evidenceId = ing.chelatingCapacityEvidenceId;
+      let capacityBasis = ing.chelatingCapacityBasis;
+
+      if (rawCapacity === undefined || !evidenceId) {
+        const lookup = getChelatorBindingCapacity(ing.name, validActivePct !== null ? validActivePct : undefined);
+        if (lookup.status === 'VALID' && lookup.capacityMgCaCO3PerGram !== null) {
+          rawCapacity = lookup.capacityMgCaCO3PerGram;
+          evidenceId = lookup.evidenceId;
+          capacityBasis = capacityBasis || 'COMMERCIAL_PRODUCT';
+        }
+      }
+
+      const validCapacity =
+        typeof rawCapacity === 'number' &&
+        Number.isFinite(rawCapacity) &&
+        rawCapacity >= 0 &&
+        Boolean(evidenceId?.trim()) &&
+        (capacityBasis === 'ACTIVE_MATERIAL' ||
+         capacityBasis === 'COMMERCIAL_PRODUCT');
+
+      let capacityMgPerGram: number | undefined = undefined;
+      let capacityStatus = 'Validated capacity evidence or active matter unavailable.';
+
+      if (validActivePct === null || !validCapacity) {
+        hasInsufficientActiveMatter = true;
+      } else {
+        capacityMgPerGram = rawCapacity;
+        capacityStatus = `Traceable capacity evidence (${evidenceId}): ${rawCapacity} mg CaCO₃/g (${capacityBasis})`;
+        const rawIngredientGrams = washDoseG * (ing.inputPercentage / 100);
+        const capacityBasisGrams =
+          capacityBasis === 'ACTIVE_MATERIAL' || ing.activeMatterPct !== undefined
+            ? rawIngredientGrams * (validActivePct / 100)
+            : rawIngredientGrams;
+        totalCaCapacityMg += capacityBasisGrams * rawCapacity;
         hasValidatedData = true;
       }
 
@@ -132,34 +151,16 @@ export function calculatePowderChelationSystem(
         capacityMgPerGram
       });
       totalChelatorPct += ing.inputPercentage;
-
-      const rawActivePct = ing.activeMatterPct;
-      const activePct =
-        typeof rawActivePct === 'number' &&
-        Number.isFinite(rawActivePct) &&
-        rawActivePct >= 0 &&
-        rawActivePct <= 100
-          ? rawActivePct
-          : null;
-
-      if (activePct === null) {
-        hasInsufficientActiveMatter = true;
-        return;
-      }
-
-      if (capacityMgPerGram !== undefined) {
-        const activeGramsInDose = (washDoseG * (ing.inputPercentage / 100) * (activePct / 100));
-        totalCaCapacityMg += activeGramsInDose * capacityMgPerGram;
-      }
     }
   });
 
   if (hasInsufficientActiveMatter) {
     return {
-      totalChelatorPct: 0,
-      chelatorIngredients: [],
+      totalChelatorPct: Number(totalChelatorPct.toFixed(2)),
+      chelatorIngredients,
       hasValidatedData: false,
-      capacityStatus: 'INSUFFICIENT_DATA: Missing or invalid active matter percentage for one or more chelators.',
+      calciumCapacityMgPerDose: undefined,
+      capacityStatus: 'INSUFFICIENT_DATA: Missing or invalid active matter percentage or capacity evidence for one or more chelators.',
       source: 'INSUFFICIENT_DATA'
     };
   }

@@ -170,59 +170,59 @@ export function runDeepScientificAnalysis(snapshot: {
     }
   });
 
-  const o = orchResult;
-  const v = o.verdictMatrix;
-  const c = o.cleaningResult;
-  const p = o.pHResult;
-  const a = o.activeMatterResult;
-  const h = o.hardnessResult;
-  const ch = o.chelationResult;
-  const visc = o.viscosityResult;
-  const den = o.densityResult;
-  const comp = o.compatibilityResult;
-  const stab = o.stabilityResult;
-  const qg = o.qualityGateResult;
-  const prov = o.provenanceReport;
-  const expert = o.expertReport;
+  const o = orchResult || {};
+  const v = o.verdictMatrix || {};
+  const c = o.cleaningResult || {};
+  const p = o.pHResult || {};
+  const a = o.activeMatterResult || {};
+  const h = o.hardnessResult || {};
+  const ch = o.chelationResult || {};
+  const visc = o.viscosityResult || {};
+  const den = o.densityResult || {};
+  const comp = o.compatibilityResult || {};
+  const stab = o.stabilityResult || {};
+  const qg = o.qualityGateResult || {};
+  const prov = o.provenanceReport || {};
+  const expert = o.expertReport || {};
 
   const sciResults = {
-    qualityGateResult: qg,
-    provenanceReport: prov,
-    pH: p.ph,
-    phResult: p,
-    phConfidence: p.confidence,
-    viscosity: visc.description,
-    waterHardness: h,
-    hlb: (o.hlbResult && o.hlbResult.status === 'VALID' && o.hlbResult.blendedHLB !== null) ? o.hlbResult.blendedHLB : 0,
-    hlbResult: o.hlbResult,
+    qualityGateResult: qg || {},
+    provenanceReport: prov || {},
+    pH: p?.ph ?? null,
+    phResult: p || { value: null, status: 'INSUFFICIENT_DATA' },
+    phConfidence: p?.confidence ?? 'UNKNOWN',
+    viscosity: visc?.description ?? "N/A",
+    waterHardness: h || { status: 'NOT_EVALUATED', description: 'Water hardness not evaluated' },
+    hlb: (o?.hlbResult && o.hlbResult.status === 'VALID' && o.hlbResult.blendedHLB !== null) ? o.hlbResult.blendedHLB : 0,
+    hlbResult: o?.hlbResult || { status: 'INSUFFICIENT_DATA', blendedHLB: null },
     cmc: calculateMixedCMC(snapshot.ingredients),
-    activeMatter: a.totalSurfactantActivePct,
-    density: den,
+    activeMatter: a?.totalSurfactantActivePct ?? 0,
+    density: den || {},
     nvrResult: {
-      nvrPercentage: den.nvrPercentage,
-      isComplete: den.isNvrComplete,
-      dataCompleteness: den.dataCompleteness,
-      unknownIngredients: den.unknownIngredients || []
+      nvrPercentage: den?.nvrPercentage ?? 0,
+      isComplete: den?.isNvrComplete ?? false,
+      dataCompleteness: den?.dataCompleteness ?? 0,
+      unknownIngredients: den?.unknownIngredients || []
     },
-    totalSolids: den.totalSolidsPct,
-    surfactantBreakdown: a.surfactantBreakdown,
-    chelatorActivePct: ch.chelatorActivePct,
-    chelatorNames: ch.chelatorNames,
-    cleaning: c,
-    foam: c.foamProfile || "Moderate / Balanced Foam (Qualitative Foam Assessment)",
-    categorySuitability: c.categorySuitability || "High (Optimal Formulation Profile)",
-    compatibility: comp,
-    health: o.labHealthResult,
-    preservativeWarning: stab.preservativeWarning,
-    aiGrade: orchResult.aiGrade,
-    verdictStatus: v.verdictStatus,
-    screeningStatus: v.screeningStatus,
-    specVerdict: v.specVerdict,
-    labEvidenceVerdict: v.labEvidenceVerdict,
-    releaseGateDecision: v.releaseGateDecision,
-    verdictReasons: v.verdictReasons,
-    attentionExplanation: v.attentionExplanation,
-    expertReport: expert
+    totalSolids: den?.totalSolidsPct ?? 0,
+    surfactantBreakdown: a?.surfactantBreakdown ?? {},
+    chelatorActivePct: ch?.chelatorActivePct ?? 0,
+    chelatorNames: ch?.chelatorNames ?? [],
+    cleaning: c || { cleaningScore: 0, cleaningPower: 'Standard', isMeasured: false, domainScores: {} },
+    foam: c?.foamProfile || "Moderate / Balanced Foam (Qualitative Foam Assessment)",
+    categorySuitability: c?.categorySuitability || "High (Optimal Formulation Profile)",
+    compatibility: comp || { compatible: true, compatibilityScore: 100, warnings: [] },
+    health: o?.labHealthResult || { finalScore: null, rating: 'ASSESSMENT_INCOMPLETE', alerts: [], pHStatus: 'UNAVAILABLE', isAssessmentComplete: false },
+    preservativeWarning: stab?.preservativeWarning ?? null,
+    aiGrade: orchResult?.aiGrade || null,
+    verdictStatus: v?.verdictStatus ?? 'UNKNOWN',
+    screeningStatus: v?.screeningStatus ?? 'UNKNOWN',
+    specVerdict: v?.specVerdict ?? 'PENDING',
+    labEvidenceVerdict: v?.labEvidenceVerdict ?? 'PENDING',
+    releaseGateDecision: v?.releaseGateDecision ?? 'PENDING',
+    verdictReasons: v?.verdictReasons ?? [],
+    attentionExplanation: v?.attentionExplanation ?? '',
+    expertReport: expert || {}
   };
 
   return {

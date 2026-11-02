@@ -159,11 +159,11 @@ export interface MassBalanceOutput {
 }
 
 export interface PHResultOutput {
-  ph: number;
+  ph: number | null;
   isMeasured: boolean;
   provenance: 'PREDICTED' | 'MEASURED' | 'ESTIMATED';
-  bufferCapacity: number;
-  ionicStrength: number;
+  bufferCapacity: number | null;
+  ionicStrength: number | null;
   confidence: string;
   solverConverged: boolean;
   warnings: string[];

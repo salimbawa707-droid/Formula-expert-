@@ -87,10 +87,13 @@ export class ConfidenceEvaluator {
     }
 
     // 4. Extreme pH warnings
-    if (solverResult.pH < 1.0) {
-      warnings.push('Strongly acidic formulation (pH < 1.0). High corrosive hazard.');
-    } else if (solverResult.pH > 13.0) {
-      warnings.push('Strongly alkaline formulation (pH > 13.0). High caustic hazard.');
+    const phVal = solverResult.pH;
+    if (phVal !== null && !isNaN(phVal)) {
+      if (phVal < 1.0) {
+        warnings.push('Strongly acidic formulation (pH < 1.0). High corrosive hazard.');
+      } else if (phVal > 13.0) {
+        warnings.push('Strongly alkaline formulation (pH > 13.0). High caustic hazard.');
+      }
     }
 
     if (validity.level === 'OUT_OF_RANGE') {

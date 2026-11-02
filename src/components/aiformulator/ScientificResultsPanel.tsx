@@ -330,17 +330,35 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 SCREENING
               </span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-mono font-extrabold text-white">
-                {(scientificResults.density?.densityGPerCm3 ?? 1.0).toFixed(3)}
-              </span>
-              <span className="text-xs text-slate-400 font-semibold">
-                g/cm³ (SG: {(scientificResults.density?.specificGravity ?? scientificResults.density?.densityGPerCm3 ?? 1.0).toFixed(3)})
-              </span>
-            </div>
-            <p className="text-[11px] text-cyan-300/90 font-medium leading-tight">
-              Calculated Density @ 20°C: {(scientificResults.density?.densityGPerCm3 ?? 1.0).toFixed(3)} g/cm³ — SCREENING
-            </p>
+            {(() => {
+              const densityGPerCm3 = scientificResults.density?.densityGPerCm3;
+              const specificGravity = scientificResults.density?.specificGravity;
+              const validDensity =
+                typeof densityGPerCm3 === 'number' &&
+                Number.isFinite(densityGPerCm3) &&
+                densityGPerCm3 > 0;
+              const validSpecificGravity =
+                typeof specificGravity === 'number' &&
+                Number.isFinite(specificGravity) &&
+                specificGravity > 0;
+
+              return (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-mono font-extrabold text-white">
+                      {validDensity ? densityGPerCm3.toFixed(3) : 'UNAVAILABLE'}
+                    </span>
+                    <span className="text-xs text-slate-400 font-semibold">
+                      g/cm³ (SG: {validSpecificGravity ? specificGravity.toFixed(3) : 'UNAVAILABLE'})
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-cyan-300/90 font-medium leading-tight">
+                    Calculated Density @ 20°C:{' '}
+                    {validDensity ? `${densityGPerCm3.toFixed(3)} g/cm³` : 'UNAVAILABLE'}
+                  </p>
+                </>
+              );
+            })()}
             <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
               <span className="text-slate-400">Product-appropriate lab density method:</span>
               <span className="font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded text-[10px] border border-amber-500/30">

@@ -195,7 +195,7 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
     { maxIterations: 0 }
   );
   assert('Phase 3 Reference Tests', 'Test 13: Zero-iteration limit handles NON_CONVERGED safely', t13Res.status === 'NON_CONVERGED' && t13Res.converged === false, t13Res.status, 'NON_CONVERGED');
-  assert('Phase 3 Reference Tests', 'Test 13: Non-converged solver returns NaN for pH (never exposes unconverged iterate)', Number.isNaN(t13Res.pH), true, true);
+  assert('Phase 3 Reference Tests', 'Test 13: Non-converged solver returns null for pH (never exposes unconverged iterate)', t13Res.pH === null, true, true);
   assert('Phase 3 Reference Tests', 'Test 13: Non-converged solver sets confidence to 0', t13Res.confidence === 0, t13Res.confidence, 0);
   assert('Phase 3 Reference Tests', 'Test 13: Non-converged solver sets model validity to OUT_OF_RANGE', t13Res.modelValidity === 'OUT_OF_RANGE', t13Res.modelValidity, 'OUT_OF_RANGE');
 

@@ -18,7 +18,8 @@ import {
   calculateActiveMatter,
   calculateRawSurfactants,
   getDefaultActiveMatter,
-  ActiveMatterEngine
+  ActiveMatterEngine,
+  calculateActiveMatterResult
 } from '../activeMatterEngine';
 import {
   calculateWaterHardnessTolerance,
@@ -44,6 +45,8 @@ import { calculateLabHealthScore } from '../labHealthEngine';
 import { analyzeClimateAndHardWater } from '../climateEngine';
 import { findSubstitutionsForFormula } from '../substitutionEngine';
 import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../specificationEngine';
+import { validateActiveMatterInput } from '../activeMatterInputGuard';
+import { validatePHInput } from '../phInputGuard';
 
 // =============================================================================
 // 1. STRONGLY TYPED INTERMEDIATE SCIENTIFIC STATE MODEL
@@ -91,8 +94,8 @@ export interface ScientificExecutionState {
   // 4. pH Equilibrium (PHEngineV2)
   finalEquilibriumPH: number | null;
   phConverged: boolean;
-  phBufferCapacity: number;
-  phIonicStrength: number;
+  phBufferCapacity: number | null;
+  phIonicStrength: number | null;
   phWarnings: string[];
   phDetails: any;
   slurryBasis?: string;
@@ -108,6 +111,7 @@ export interface ScientificExecutionState {
   amphotericPct: number;
   cationicPct: number;
   activeMatterStatus: SemanticStatus;
+  activeMatterVerified?: boolean;
 
   // 6. HLB (HLBEngine)
   hlbResult: any;
@@ -394,7 +398,7 @@ export class ScientificExecutionDAG {
           state.pHIntermediate = null;
           state.neutralizationStatus = 'INSUFFICIENT_DATA';
         } else {
-          state.pHIntermediate = 7.0;
+          state.pHIntermediate = null;
           state.neutralizationStatus = 'SCREENING';
         }
       }
@@ -410,8 +414,8 @@ export class ScientificExecutionDAG {
         const isPowder = state.physicalForm === 'POWDER';
         let computedPH: number | null = null;
         let phConverged = false;
-        let phBufferCapacity = 0;
-        let phIonicStrength = 0;
+        let phBufferCapacity: number | null = null;
+        let phIonicStrength: number | null = null;
         let phWarnings: string[] = [];
         let phDetails: any = null;
         let slurryBasis: string | undefined = undefined;
@@ -421,7 +425,7 @@ export class ScientificExecutionDAG {
             const mappedPH = mapFormulationIngredientsToPHEngineInput(state.resolvedIngredients);
             
             // Pass the intermediate stoichiometric pH to PHEngineV2 as initialGuess (targetPH)
-            const initialGuess = state.pHIntermediate !== null ? state.pHIntermediate : 7.0;
+            const initialGuess = state.pHIntermediate;
 
             const advPH = calculatePHAdvanced(mappedPH, state.batchSizeKg, {
               productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
@@ -463,7 +467,15 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         state.activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(state.resolvedIngredients, state.batchSizeKg);
         state.totalSurfactantActivePct = calculateActiveSurfactants(state.resolvedIngredients);
-        state.totalActiveMatterPct = calculateActiveMatter(state.resolvedIngredients);
+        const amResult = calculateActiveMatterResult(state.resolvedIngredients);
+        state.totalActiveMatterPct = Number(amResult.value ?? 0);
+        if (amResult.status !== 'VALID') {
+          state.activeMatterStatus = 'INSUFFICIENT_DATA';
+          state.activeMatterVerified = false;
+        } else {
+          state.activeMatterStatus = 'VALID';
+          state.activeMatterVerified = amResult.verified;
+        }
         state.rawSurfactantsTotal = calculateRawSurfactants(state.resolvedIngredients);
 
         let anionic = 0;
@@ -474,7 +486,9 @@ export class ScientificExecutionDAG {
         state.resolvedIngredients.forEach((ing) => {
           const name = ing.name.toLowerCase();
           const role = (ing.role || '').toLowerCase();
-          const active = (ing.activeMatterPct !== undefined && ing.activeMatterPct !== null ? ing.activeMatterPct : getDefaultActiveMatter(ing)) / 100;
+          
+          const validation = validateActiveMatterInput(ing.activeMatterPct);
+          const active = (validation.status === 'VALID' ? validation.value! : getDefaultActiveMatter(ing)) / 100;
           const activePct = ing.percentage * active;
 
           if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
@@ -492,7 +506,6 @@ export class ScientificExecutionDAG {
         state.nonionicPct = nonionic;
         state.amphotericPct = amphoteric;
         state.cationicPct = cationic;
-        state.activeMatterStatus = 'VALID';
       }
     });
 
@@ -1161,8 +1174,8 @@ export class ScientificExecutionDAG {
 
       finalEquilibriumPH: null,
       phConverged: false,
-      phBufferCapacity: 0,
-      phIonicStrength: 0,
+      phBufferCapacity: null,
+      phIonicStrength: null,
       phWarnings: [],
       phDetails: null,
       phStatus: 'UNKNOWN',
@@ -1318,6 +1331,7 @@ export class ScientificExecutionDAG {
         nodeTrace.status = 'COMPLETED';
         completedNodes.add(nodeId);
       } catch (err: any) {
+        console.error(`DAG NODE [${nodeId}] FAILED:`, err);
         nodeTrace.status = 'FAILED';
         nodeTrace.error = err?.message || 'Execution failed';
         failedNodes.add(nodeId);

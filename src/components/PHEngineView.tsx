@@ -701,7 +701,10 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                       : 'pH Unavailable'}
                   </span>
                   <span className="text-[11px] text-slate-400 block mt-0.5">
-                    Buffer Index (β): {(advancedResult.totalBufferCapacity ?? (advancedResult as any).bufferCapacity ?? 0).toFixed(4)}
+                    Buffer Index (β): {(() => {
+                      const beta = advancedResult.totalBufferCapacity ?? (advancedResult as any).bufferCapacity;
+                      return beta !== null && beta !== undefined ? beta.toFixed(4) : 'N/A';
+                    })()}
                   </span>
                 </div>
                 <div className="text-right">

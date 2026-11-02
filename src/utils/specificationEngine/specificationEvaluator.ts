@@ -131,15 +131,25 @@ export function extractParameterValue(
         const calcPH = pr.powderPH?.calculatedAqueousPH ?? pr.phHardWater?.calculatedAqueousPH;
         return { value: calcPH, provenance: pr.powderPH?.source || pr.phHardWater?.source || 'CALCULATED', isMeasured: false, testBasis: pr.powderPH?.testBasis?.method || '1.0% w/v in demineralized water' };
       case 'moisture':
-      case 'moisturePct':
-        const moist = pr.moistureAndDryMatter?.moisturePct ?? pr.massBalance?.moisturePct;
-        const moistSource = pr.moistureAndDryMatter?.source || pr.massBalance?.moistureSource || 'ESTIMATED';
-        return { value: moist, provenance: moistSource, isMeasured: moistSource === 'MEASURED' };
+      case 'moisturePct': {
+        const value = pr.moistureAndDryMatter?.moisturePct;
+        const source = pr.moistureAndDryMatter?.moistureStatus || pr.moistureAndDryMatter?.source;
+        return {
+          value: typeof value === 'number' && Number.isFinite(value) ? value : undefined,
+          provenance: value == null ? 'INSUFFICIENT_DATA' : (source ?? 'UNKNOWN'),
+          isMeasured: source === 'MEASURED'
+        };
+      }
       case 'dryMatter':
-      case 'dryMatterPct':
-        const dry = pr.moistureAndDryMatter?.dryMatterPct ?? pr.massBalance?.dryMatterPct;
-        const drySource = pr.moistureAndDryMatter?.source || pr.massBalance?.dryMatterSource || 'ESTIMATED';
-        return { value: dry, provenance: drySource, isMeasured: drySource === 'MEASURED' };
+      case 'dryMatterPct': {
+        const value = pr.moistureAndDryMatter?.dryMatterPct;
+        const source = pr.moistureAndDryMatter?.dryMatterStatus || pr.moistureAndDryMatter?.source;
+        return {
+          value: typeof value === 'number' && Number.isFinite(value) ? value : undefined,
+          provenance: value == null ? 'INSUFFICIENT_DATA' : (source ?? 'UNKNOWN'),
+          isMeasured: false
+        };
+      }
       case 'bulkDensity':
         if (pr.density?.bulkDensityGPerMl !== undefined) {
           return { value: pr.density.bulkDensityGPerMl, provenance: pr.density.source, isMeasured: pr.density.densityType === 'MEASURED' };

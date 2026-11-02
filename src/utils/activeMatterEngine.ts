@@ -1,5 +1,7 @@
 import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
+import { validateActiveMatterInput } from './activeMatterInputGuard';
+import { ActiveMatterResultObject } from './activeMatterValidation';
 
 /**
  * ============================================================================
@@ -11,10 +13,6 @@ import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIng
  * 1. Authoritative Active Matter Resolution:
  *    - Resolves raw materials against canonical ingredient library (id, name, aliases)
  *    - Preserves commercial raw-material grades/variants distinctively even when CAS numbers match
- *      (e.g., SLES 70% vs SLES 28% have the same CAS 68585-34-2; active matter is 70% vs 28%)
- *      (e.g., NaOH 50% Liquid vs NaOH 99% Flakes have same CAS 1310-73-2; active matter is 50% vs 99%)
- *      (e.g., CAPB 30% vs CAPB 45% have same CAS 61789-40-0; active matter is 30% vs 45%)
- *      (e.g., GLDA 47% Liquid vs GLDA 99% Powder; active matter is 47% vs 99%)
  *    - Respects explicit formula override inputs (e.g., user-specified `activeMatterPct`, `activePercent`, `activeMatterPurity`, `purity`)
  *    - Data Provenance Status:
  *      * 'authoritative': Verified commercial assay specification from canonical ingredient library
@@ -52,7 +50,7 @@ export type ActiveMatterProvenance = 'authoritative' | 'explicit_override' | 'de
 export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
 
 export interface IngredientActiveResolution {
-  activeMatterPct: number;
+  activeMatterPct: number | null;
   dataSource: ActiveMatterProvenance;
   category: string;
   isSurfactant: boolean;
@@ -69,12 +67,12 @@ export interface IngredientActiveContribution {
   category: string;
   role?: string;
   rawPercentage: number;
-  activeMatterPct: number;
-  activePercentage: number; // (rawPercentage * activeMatterPct) / 100
-  carrierPercentage: number; // rawPercentage - activePercentage
+  activeMatterPct: number | null;
+  activePercentage: number | null; // (rawPercentage * activeMatterPct) / 100
+  carrierPercentage: number | null; // rawPercentage - activePercentage
   rawMassKg: number;
-  activeMassKg: number;
-  carrierMassKg: number;
+  activeMassKg: number | null;
+  carrierMassKg: number | null;
   isSurfactant: boolean;
   surfactantType: SurfactantChargeClass;
   isWater: boolean;
@@ -396,11 +394,11 @@ export class ActiveMatterEngine {
     }
 
     // Explicit override provided
-    if (explicitActive !== undefined && explicitActive !== null && !isNaN(Number(explicitActive))) {
-      const activeNum = Math.max(0, Math.min(100, Number(explicitActive)));
+    if (explicitActive !== undefined && explicitActive !== null) {
+      const validation = validateActiveMatterInput(explicitActive);
       return {
-        activeMatterPct: activeNum,
-        dataSource: 'explicit_override',
+        activeMatterPct: validation.value,
+        dataSource: validation.status === 'VALID' ? 'explicit_override' : 'missing',
         category: resolvedCategory,
         isSurfactant,
         surfactantType,
@@ -444,9 +442,9 @@ export class ActiveMatterEngine {
     }
 
     // Exact Canonical library direct match
-    if (canonicalMatch && canonicalMatch.activeDefault !== undefined && !isNaN(Number(canonicalMatch.activeDefault))) {
+    if (canonicalMatch && canonicalMatch.activeDefault !== undefined) {
       return {
-        activeMatterPct: Number(canonicalMatch.activeDefault),
+        activeMatterPct: canonicalMatch.activeDefault,
         dataSource: 'authoritative',
         category: resolvedCategory,
         isSurfactant,
@@ -481,53 +479,9 @@ export class ActiveMatterEngine {
       };
     }
 
-    // Solvents like pure Glycerin, IPA, Ethanol are 100% active liquid
-    if (isSolvent) {
-      return {
-        activeMatterPct: 100,
-        dataSource: 'authoritative',
-        category: resolvedCategory,
-        isSurfactant: false,
-        surfactantType: 'none',
-        isWater: false,
-        isSolvent: true,
-        canonicalMatch,
-        conflict: conflictRes
-      };
-    }
-
-    // Solid chemicals / salts (e.g. Sodium Chloride, Citric Acid, STPP, Soda Ash) are standard 100%
-    const isSolidChemical = lowerName.includes('chloride') || 
-                            lowerName.includes('sulfate') && !isSurfactant || 
-                            lowerName.includes('carbonate') || 
-                            lowerName.includes('bicarbonate') || 
-                            lowerName.includes('citric acid') || 
-                            lowerName.includes('silicate') ||
-                            lowerName.includes('powder') ||
-                            lowerName.includes('flakes') ||
-                            lowerName.includes('granules') ||
-                            lowerName.includes('enzyme') ||
-                            lowerName.includes('preservative') ||
-                            lowerName.includes('dye') ||
-                            lowerName.includes('fragrance');
-
-    if (isSolidChemical) {
-      return {
-        activeMatterPct: 100,
-        dataSource: 'authoritative',
-        category: resolvedCategory,
-        isSurfactant,
-        surfactantType,
-        isWater: false,
-        isSolvent: false,
-        canonicalMatch,
-        conflict: conflictRes
-      };
-    }
-
-    // Missing / Unknown Active Specification (Never assume 100% for unknown active specification)
+    // Missing / Unknown Active Specification
     return {
-      activeMatterPct: 0,
+      activeMatterPct: null,
       dataSource: 'missing',
       category: resolvedCategory,
       isSurfactant,
@@ -576,43 +530,57 @@ export class ActiveMatterEngine {
       totalRawMatter += rawPct;
 
       const resolution = this.resolveIngredientActive(ing);
-      const activePct = (rawPct * resolution.activeMatterPct) / 100;
-      const carrierPct = Math.max(0, rawPct - activePct);
+      
+      const amValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity;
+      const isInvalidActive = 
+        amValue !== undefined && amValue !== null && (
+          typeof amValue !== 'number' || 
+          !Number.isFinite(amValue) || 
+          amValue < 0 || 
+          amValue > 100
+        );
 
-      const rawMassKg = (rawPct / 100) * validBatchSize;
-      const activeMassKg = (activePct / 100) * validBatchSize;
-      const carrierMassKg = (carrierPct / 100) * validBatchSize;
+      const isMissingOrInvalid = resolution.activeMatterPct === null || resolution.dataSource === 'missing' || isInvalidActive;
 
-      if (resolution.dataSource === 'missing') {
+      if (isMissingOrInvalid) {
         ingredientsWithMissingActive++;
-        diagnostics.push(`Ingredient "${ing.name || 'Unknown'}" lacks authoritative active assay data (unresolved active specification; INSUFFICIENT_DATA).`);
+        diagnostics.push(`Ingredient "${ing.name || 'Unknown'}" active matter value "${amValue}" is invalid or missing (INSUFFICIENT_DATA).`);
         warnings.push(`Ingredient "${ing.name || 'Unknown'}" lacks authoritative active assay specification (INSUFFICIENT_DATA).`);
       }
+
+      const activeMatterPctVal = resolution.activeMatterPct;
+      const activePct = activeMatterPctVal !== null ? (rawPct * activeMatterPctVal) / 100 : null;
+      const carrierPct = activePct !== null ? Math.max(0, rawPct - activePct) : null;
+
+      const rawMassKg = (rawPct / 100) * validBatchSize;
+      const activeMassKg = activePct !== null ? (activePct / 100) * validBatchSize : null;
+      const carrierMassKg = carrierPct !== null ? (carrierPct / 100) * validBatchSize : null;
 
       if (resolution.isWater) {
         totalFreeWaterPct += rawPct;
       } else {
-        totalActiveMatter += activePct;
-        totalCarriedWaterPct += carrierPct;
+        if (activePct !== null) totalActiveMatter += activePct;
+        if (carrierPct !== null) totalCarriedWaterPct += carrierPct;
       }
 
       if (resolution.isSurfactant) {
         totalRawSurfactants += rawPct;
-        totalActiveSurfactants += activePct;
-
-        switch (resolution.surfactantType) {
-          case 'anionic':
-            anionicActivePct += activePct;
-            break;
-          case 'nonionic':
-            nonionicActivePct += activePct;
-            break;
-          case 'amphoteric':
-            amphotericActivePct += activePct;
-            break;
-          case 'cationic':
-            cationicActivePct += activePct;
-            break;
+        if (activePct !== null) {
+          totalActiveSurfactants += activePct;
+          switch (resolution.surfactantType) {
+            case 'anionic':
+              anionicActivePct += activePct;
+              break;
+            case 'nonionic':
+              nonionicActivePct += activePct;
+              break;
+            case 'amphoteric':
+              amphotericActivePct += activePct;
+              break;
+            case 'cationic':
+              cationicActivePct += activePct;
+              break;
+          }
         }
       }
 
@@ -622,12 +590,12 @@ export class ActiveMatterEngine {
         category: resolution.category,
         role: ing.role || (ing as any).function,
         rawPercentage: Number(rawPct.toFixed(3)),
-        activeMatterPct: resolution.activeMatterPct,
-        activePercentage: Number(activePct.toFixed(3)),
-        carrierPercentage: Number(carrierPct.toFixed(3)),
+        activeMatterPct: activeMatterPctVal,
+        activePercentage: activePct !== null ? Number(activePct.toFixed(3)) : null,
+        carrierPercentage: carrierPct !== null ? Number(carrierPct.toFixed(3)) : null,
         rawMassKg: Number(rawMassKg.toFixed(4)),
-        activeMassKg: Number(activeMassKg.toFixed(4)),
-        carrierMassKg: Number(carrierMassKg.toFixed(4)),
+        activeMassKg: activeMassKg !== null ? Number(activeMassKg.toFixed(4)) : null,
+        carrierMassKg: carrierMassKg !== null ? Number(carrierMassKg.toFixed(4)) : null,
         isSurfactant: resolution.isSurfactant,
         surfactantType: resolution.surfactantType,
         isWater: resolution.isWater,
@@ -635,7 +603,9 @@ export class ActiveMatterEngine {
         dataSource: resolution.dataSource,
         notes: resolution.isWater 
           ? 'Carrier water' 
-          : `${resolution.activeMatterPct}% active (${resolution.dataSource})`
+          : activeMatterPctVal !== null 
+            ? `${activeMatterPctVal}% active (${resolution.dataSource})`
+            : 'UNAVAILABLE'
       });
     }
 
@@ -752,7 +722,7 @@ export class ActiveMatterEngine {
   /**
    * Single-ingredient active matter lookup helper
    */
-  public static getDefaultActiveMatter(nameOrIng: string | FormulationIngredient): number {
+  public static getDefaultActiveMatter(nameOrIng: string | FormulationIngredient): number | null {
     if (typeof nameOrIng === 'string') {
       return this.resolveIngredientActive({ name: nameOrIng }).activeMatterPct;
     }
@@ -769,7 +739,55 @@ export function evaluateAuthoritativeActiveMatter(
 }
 
 export function calculateActiveMatter(ingredients: FormulationIngredient[]): number {
-  return ActiveMatterEngine.calculateTotalActiveMatter(ingredients);
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  if (safeIngs.length === 0) return 0;
+  const report = ActiveMatterEngine.calculateActiveMatterReport(safeIngs);
+  return report.totalActiveMatter;
+}
+
+export function calculateActiveMatterResult(ingredients: FormulationIngredient[]): ActiveMatterResultObject {
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  if (safeIngs.length === 0) {
+    return new ActiveMatterResultObject({
+      value: null,
+      status: 'INSUFFICIENT_DATA',
+      verified: false,
+      provenance: 'UNKNOWN',
+      missingIngredientIds: [],
+      blockingReasons: ['FORMULATION_CONTAINS_NO_INGREDIENTS']
+    });
+  }
+
+  const report = ActiveMatterEngine.calculateActiveMatterReport(safeIngs);
+  const missingIds: string[] = [];
+  const blockingReasons: string[] = [];
+
+  for (const contrib of report.contributions) {
+    if (contrib.activeMatterPct === null || contrib.dataSource === 'missing') {
+      missingIds.push(contrib.id || contrib.name);
+      blockingReasons.push(`MISSING_ACTIVE_MATTER_FOR_INGREDIENT: ${contrib.name}`);
+    }
+  }
+
+  if (report.activeMatterStatus !== 'COMPLETE' || missingIds.length > 0) {
+    return new ActiveMatterResultObject({
+      value: null,
+      status: 'INSUFFICIENT_DATA',
+      verified: false,
+      provenance: 'UNKNOWN',
+      missingIngredientIds: missingIds,
+      blockingReasons
+    });
+  }
+
+  return new ActiveMatterResultObject({
+    value: report.totalActiveMatter,
+    status: 'VALID',
+    verified: report.isFullyAuthoritative,
+    provenance: 'DERIVED',
+    missingIngredientIds: [],
+    blockingReasons: []
+  });
 }
 
 export function calculateActiveSurfactants(ingredients: FormulationIngredient[]): number {
@@ -780,6 +798,6 @@ export function calculateRawSurfactants(ingredients: FormulationIngredient[]): n
   return ActiveMatterEngine.calculateRawSurfactants(ingredients);
 }
 
-export function getDefaultActiveMatter(nameOrIng: string | FormulationIngredient): number {
+export function getDefaultActiveMatter(nameOrIng: string | FormulationIngredient): number | null {
   return ActiveMatterEngine.getDefaultActiveMatter(nameOrIng);
 }

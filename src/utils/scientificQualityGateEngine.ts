@@ -140,11 +140,12 @@ export interface MasterScientificQualityGateReport {
 
   // Underlying Consumed Authoritative Engine Outputs
   speciationResult: {
-    pH: number;
+    pH: number | null;
     provenance: 'PREDICTED' | 'MEASURED';
     isMeasured: boolean;
     confidence: string;
     powderSlurryBasis?: string;
+    solverConverged: boolean;
   };
   activeMatterResult: {
     totalSurfactantActivePct: number;
@@ -323,8 +324,9 @@ export function evaluateScientificQualityGate(
   // ---------------------------------------------------------------------------
 
   // A. PHEngineV2 Output
-  let computedPH = 7.0;
+  let computedPH: number | null = 7.0;
   let phConfidence = 'Moderate Confidence';
+  let phSolverConverged = true;
   let powderSlurryBasis: string | undefined = undefined;
 
   if (rawIngs.length > 0 && canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY') {
@@ -332,9 +334,17 @@ export function evaluateScientificQualityGate(
       const mappedPH = mapFormulationIngredientsToPHEngineInput(rawIngs);
       const phRes = calculatePHAdvanced(mappedPH, 100, { productCategory: canonicalCategory });
       computedPH = phRes.pH;
+      phSolverConverged = phRes.solverConverged;
       powderSlurryBasis = phRes.details?.slurryBasisNotice || (canonicalCategory === 'LAUNDRY_POWDER' ? '1.0% w/v Slurry Basis' : undefined);
+      
+      if (computedPH === null) {
+        phConfidence = 'Zero Confidence (Solver Failed)';
+      } else if (phSolverConverged) {
+        phConfidence = 'High Confidence (Speciation Convergence)';
+      }
     } catch {
-      computedPH = 7.0;
+      computedPH = null;
+      phSolverConverged = false;
     }
   }
 
@@ -342,6 +352,20 @@ export function evaluateScientificQualityGate(
   const measuredPHRecord = labMeasurements.find(m => m.parameterKey === 'ph' || m.parameterKey === 'powderPH');
   const isPHMeasured = Boolean(measuredPHRecord && measuredPHRecord.value > 0);
   const finalPH = isPHMeasured ? measuredPHRecord!.value : computedPH;
+
+  if (finalPH === null) {
+    scientificValidity = 'INSUFFICIENT_DATA';
+    blockingIssues.push({
+      id: 'gate-ph-unavailable',
+      code: 'ERR_PH_SOLVER_FAILED',
+      title: 'Equilibrium pH Unavailable',
+      category: 'VALIDITY',
+      severity: 'FATAL',
+      message: 'The chemical equilibrium solver failed to converge. Thermodynamic pH and ionic strength could not be determined for this composition.',
+      recommendation: 'Check for extreme acid/base imbalances or ingredients outside of supported thermodynamic ranges.',
+      scientificBasis: 'A converged speciation solution is required to authorize the chemical validity of an aqueous formulation.'
+    });
+  }
 
   // B. Active Matter Output
   const totalSurfactantActivePct = calculateActiveSurfactants(rawIngs);
@@ -829,7 +853,8 @@ export function evaluateScientificQualityGate(
       provenance: isPHMeasured ? 'MEASURED' : 'PREDICTED',
       isMeasured: isPHMeasured,
       confidence: phConfidence,
-      powderSlurryBasis
+      powderSlurryBasis,
+      solverConverged: phSolverConverged
     },
     activeMatterResult: {
       totalSurfactantActivePct,

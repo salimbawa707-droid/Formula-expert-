@@ -102,17 +102,40 @@ export function computeFormulaFingerprint(
   productCategory: string = 'UNKNOWN_PRODUCT_CATEGORY'
 ): string {
   const normCat = normalizeProductCategory(productCategory);
+
+  const hasUnknownActiveMatter = ingredients.some((ingredient) => {
+    const amValue = ingredient.activeMatterPct ?? (ingredient as any).activePercent ?? (ingredient as any).activeMatterPurity;
+    return (
+      typeof amValue !== 'number' ||
+      !Number.isFinite(amValue) ||
+      amValue < 0 ||
+      amValue > 100
+    );
+  });
+
   const sortedIngs = [...ingredients]
     .filter(i => i && (i.name || i.id))
     .map(i => {
       const nameKey = (i.id || i.name || '').toLowerCase().trim();
       const pct = Number(i.percentage) || 0;
-      return `${nameKey}:${pct.toFixed(2)}`;
+
+      const amValue = i.activeMatterPct ?? (i as any).activePercent ?? (i as any).activeMatterPurity;
+      const activeMatterForIntegrity =
+        typeof amValue === 'number' &&
+        Number.isFinite(amValue) &&
+        amValue >= 0 &&
+        amValue <= 100
+          ? amValue.toFixed(2)
+          : 'UNKNOWN';
+
+      return `${nameKey}:${pct.toFixed(4)}:AM[${activeMatterForIntegrity}]`;
     })
     .sort()
     .join(';');
 
-  return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|ING[${sortedIngs}]`;
+  const integrityFlag = hasUnknownActiveMatter ? 'INVALID_AM' : 'VALID_AM';
+
+  return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|ING[${sortedIngs}]|INTEGRITY[${integrityFlag}]`;
 }
 
 /**

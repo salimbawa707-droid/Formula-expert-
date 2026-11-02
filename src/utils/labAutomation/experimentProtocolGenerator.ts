@@ -28,50 +28,62 @@ import {
 } from './types';
 
 export function calculateRequiredStockVolumeUl(
-  ingredient: ExperimentIngredient
+  ingredient: ExperimentIngredient,
+  targetScaleUl: number = 1000
 ): number | null {
   const evidence = ingredient.conversionEvidence;
 
   if (!evidence) return null;
 
-  if (
-    !Number.isFinite(ingredient.concentrationInStockPercent) ||
-    ingredient.concentrationInStockPercent <= 0 ||
-    ingredient.concentrationInStockPercent > 100 ||
-    !Number.isFinite(ingredient.targetFormulaPercent) ||
-    ingredient.targetFormulaPercent < 0 ||
-    ingredient.targetFormulaPercent > 100
-  ) {
-    return null;
-  }
+  const stockPct = ingredient.concentrationInStockPercent;
+  const targetPct = ingredient.targetFormulaPercent;
 
   if (
     evidence.concentrationBasis !== 'W_W' ||
-    !Number.isFinite(evidence.stockDensityGPerMl) ||
-    !Number.isFinite(evidence.targetBatchMassG) ||
-    !Number.isFinite(evidence.stockDensityEvidenceId ? 1 : NaN) ||
-    evidence.stockDensityGPerMl! <= 0 ||
-    evidence.targetBatchMassG! <= 0
+    !Number.isFinite(stockPct) || stockPct <= 0 || stockPct > 100 ||
+    !Number.isFinite(targetPct) || targetPct < 0 || targetPct > 100 ||
+    !Number.isFinite(targetScaleUl) || targetScaleUl <= 0 ||
+    !Number.isFinite(evidence.targetBatchMassG) || evidence.targetBatchMassG! <= 0 ||
+    !Number.isFinite(evidence.stockDensityGPerMl) || evidence.stockDensityGPerMl! <= 0 ||
+    !evidence.stockDensityEvidenceId?.trim()
   ) {
     return null;
   }
 
-  const requiredStockMassG =
-    evidence.targetBatchMassG! *
-    (ingredient.targetFormulaPercent / 100) /
-    (ingredient.concentrationInStockPercent / 100);
+  // W/W basis: requires validated stock density (g/mL) and traceable evidence
+  const targetActiveMassG = evidence.targetBatchMassG! * (targetPct / 100);
+  const requiredStockMassG = targetActiveMassG / (stockPct / 100);
+  const requiredStockVolumeMl = requiredStockMassG / evidence.stockDensityGPerMl!;
 
-  const requiredVolumeUl =
-    (requiredStockMassG / evidence.stockDensityGPerMl!) * 1000;
+  let volumePerWellUl = requiredStockVolumeMl * 1000;
+
+  // If final mixture density and evidence ID are provided, apply volume scaling
+  if (
+    evidence.finalMixtureDensityGPerMl !== undefined &&
+    evidence.finalMixtureDensityGPerMl !== null
+  ) {
+    if (
+      !Number.isFinite(evidence.finalMixtureDensityGPerMl) ||
+      evidence.finalMixtureDensityGPerMl <= 0 ||
+      !evidence.finalDensityEvidenceId?.trim()
+    ) {
+      return null;
+    }
+
+    const finalBatchVolumeMl = evidence.targetBatchMassG! / evidence.finalMixtureDensityGPerMl;
+    const scaleFraction = targetScaleUl / (finalBatchVolumeMl * 1000);
+    volumePerWellUl = volumePerWellUl * scaleFraction;
+  }
 
   if (
-    !Number.isFinite(requiredVolumeUl) ||
-    requiredVolumeUl < 0
+    !Number.isFinite(volumePerWellUl) ||
+    volumePerWellUl < 0 ||
+    volumePerWellUl > targetScaleUl
   ) {
     return null;
   }
 
-  return Number(requiredVolumeUl.toFixed(2));
+  return Number(volumePerWellUl.toFixed(2));
 }
 
 export interface ProtocolGenerationOptions {
@@ -100,7 +112,7 @@ export function generateExperimentProtocol(
   // 0. Pre-validate Ingredient Volumes & Conversion Evidence
   const ingredientErrors: string[] = [];
   const validatedIngredients = experiment.ingredients.map(ing => {
-    const vol = calculateRequiredStockVolumeUl(ing);
+    const vol = calculateRequiredStockVolumeUl(ing, experiment.targetScaleUl);
     if (vol === null) {
       ingredientErrors.push(`Ingredient '${ing.tradeName}' (${ing.canonicalIngredientId}) has missing or invalid scientific conversion evidence (Basis, Stock Density, Evidence ID).`);
     }

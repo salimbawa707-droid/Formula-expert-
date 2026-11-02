@@ -322,7 +322,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // 7.2 Ionic surfactant blend uses Davies scale
   const hlbIonic = HLBEngine.calculateBlendedHLB([
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70 },
-    { name: 'LAE-7 (Alcohol Ethoxylate 7EO)', percentage: 5, activeMatterPct: 100 }
+    { name: 'LABSA 96%', percentage: 5, activeMatterPct: 96 }
   ]);
   assert('7. HLB', '7.2 Ionic blend flags DAVIES methodMetadata and hasIonicSurfactants', hlbIonic.methodMetadata === 'DAVIES' && hlbIonic.hasIonicSurfactants, true, true);
 
@@ -519,7 +519,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   ]);
   const hlbIonicCheck = HLBEngine.calculateBlendedHLB([
     { name: 'SLES 70%', percentage: 10 },
-    { name: 'LAE-7', percentage: 5 }
+    { name: 'LABSA 96%', percentage: 5 }
   ]);
   const hlbNoneCheck = HLBEngine.calculateBlendedHLB([
     { name: 'Water', percentage: 90 },

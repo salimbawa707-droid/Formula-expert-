@@ -61,7 +61,12 @@ export {
 export function evaluatePowderFormulation(input: PowderEngineInput): PowderFormulationReport {
   const ingredients = Array.isArray(input.ingredients) ? input.ingredients : [];
   const productCategory = input.productCategory || 'Laundry Powder';
-  const batchSizeKg = (input.batchSizeKg !== undefined && input.batchSizeKg > 0) ? input.batchSizeKg : 100;
+  const batchSizeKg =
+    typeof input.batchSizeKg === 'number' &&
+    Number.isFinite(input.batchSizeKg) &&
+    input.batchSizeKg > 0
+      ? input.batchSizeKg
+      : null;
   const waterHardnessPpm = (input.waterHardnessPpm !== undefined && input.waterHardnessPpm >= 0) ? input.waterHardnessPpm : 150;
   const washDoseG = (input.washDoseG !== undefined && input.washDoseG > 0) ? input.washDoseG : 50;
   const washVolumeL = (input.washLiquorVolumeL !== undefined && input.washLiquorVolumeL > 0) ? input.washLiquorVolumeL : 10;

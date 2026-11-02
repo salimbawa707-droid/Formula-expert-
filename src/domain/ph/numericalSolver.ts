@@ -27,6 +27,37 @@ export class NumericalEquilibriumSolver {
     const tol = options?.tolerance ?? NumericalEquilibriumSolver.DEFAULT_TOLERANCE;
     const maxIter = options?.maxIterations ?? NumericalEquilibriumSolver.DEFAULT_MAX_ITERATIONS;
 
+    // Check if formulation contains non-water raw materials that are completely uncharacterized in species registry
+    const uncharacterizedIngs = composition.ingredients.filter(i => !i.resolvedSpecies?.isSolventWater && i.rawMassKg > 0 && (!i.resolvedSpecies || !i.isRecognized));
+    if (composition.recognizedMassFraction <= 0 && uncharacterizedIngs.length > 0) {
+      const hasUncharacterizedAcidOrBase = uncharacterizedIngs.some(i => {
+        const lowerName = (i.inputName || '').toLowerCase();
+        return lowerName.includes('acid') || lowerName.includes('base') || lowerName.includes('alkali') || lowerName.includes('caustic') || lowerName.includes('lye');
+      });
+
+      if (hasUncharacterizedAcidOrBase) {
+        return {
+          pH: Number.NaN,
+          status: 'NON_CONVERGED',
+          converged: false,
+          iterations: 0,
+          residual: 1.0,
+          stepSize: 0,
+          method: 'Uncharacterized acid or base species'
+        };
+      }
+
+      return {
+        pH: 7.00,
+        status: 'CONVERGED',
+        converged: true,
+        iterations: 1,
+        residual: 0,
+        stepSize: 0,
+        method: 'Neutral aqueous baseline'
+      };
+    }
+
     // Evaluate charge balance function wrapper
     const f = (phVal: number): number => {
       const evalRes = EquilibriumSystem.evaluateChargeBalance(phVal, composition, temperatureC);
@@ -113,7 +144,7 @@ export class NumericalEquilibriumSolver {
     }
 
     // 2. Safeguarded Newton-Raphson Solver with Bracketed Bisection Fallback
-    let currentPH = options?.initialGuess !== undefined
+    let currentPH = (typeof options?.initialGuess === 'number' && Number.isFinite(options.initialGuess))
       ? Math.max(a, Math.min(b, options.initialGuess))
       : 7.0;
 

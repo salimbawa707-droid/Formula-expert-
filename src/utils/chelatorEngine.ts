@@ -1,5 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
+import { validateActiveMatterInput } from './activeMatterInputGuard';
 
 export type ChelationMechanism = 
   | 'CHELATION' 
@@ -47,6 +48,55 @@ export function validateChelatorCapacity(
   };
 }
 
+export function isValidChelationCapacity(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+export interface CommercialCapacityInput {
+  theoreticalActiveCapacityMgPerG: number;
+  activeMatterPct: number;
+  hydrationWaterPct?: number;
+}
+
+export function calculateCommercialCapacity(input: CommercialCapacityInput): number | null {
+  if (
+    typeof input.theoreticalActiveCapacityMgPerG !== 'number' ||
+    !Number.isFinite(input.theoreticalActiveCapacityMgPerG) ||
+    input.theoreticalActiveCapacityMgPerG <= 0 ||
+    typeof input.activeMatterPct !== 'number' ||
+    !Number.isFinite(input.activeMatterPct) ||
+    input.activeMatterPct < 0 ||
+    input.activeMatterPct > 100
+  ) {
+    return null;
+  }
+  return Number(((input.theoreticalActiveCapacityMgPerG * input.activeMatterPct) / 100).toFixed(2));
+}
+
+export interface ChelatorEvidenceInput {
+  evidenceId?: string | null;
+  citation?: string | null;
+  status?: string | null;
+}
+
+export function validateChelatorEvidence(input: ChelatorEvidenceInput): {
+  verified: boolean;
+  status: 'VALID' | 'INSUFFICIENT_DATA';
+  reason?: string;
+} {
+  if (!input.evidenceId || !input.evidenceId.trim()) {
+    return {
+      verified: false,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'MISSING_EVIDENCE_IDENTIFIER'
+    };
+  }
+  return {
+    verified: true,
+    status: 'VALID'
+  };
+}
+
 export interface ChelatorSpecies {
   id: string;
   name: string;
@@ -65,6 +115,9 @@ export interface ChelatorSpecies {
   phOperatingRange: { min: number; max: number; optimal: number };
   phDependencyNotes: string;
   citation: string;
+  commercialGradeId?: string;
+  evidenceId?: string;
+  capacityBasis?: 'ACTIVE_MATERIAL' | 'COMMERCIAL_PRODUCT';
 }
 
 /**
@@ -328,7 +381,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 6.0, max: 12.0, optimal: 9.0 },
     phDependencyNotes: 'High conditional stability (log K ~ 5.2). Retains strong chelation across pH 6.5 to 12.0.',
-    citation: 'Dissolvine GL-47-S Technical Specification & EU Ecolabel Standard'
+    citation: 'Dissolvine GL-47-S Technical Specification & EU Ecolabel Standard',
+    commercialGradeId: 'GLDA-47-S',
+    evidenceId: 'EVID-GLDA-47-SPEC',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'glda-99',
@@ -347,7 +403,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 6.0, max: 12.0, optimal: 9.0 },
     phDependencyNotes: 'Pure crystalline powder form. High calcium binding at neutral-alkaline pH.',
-    citation: 'Dissolvine GL Master Specification'
+    citation: 'Dissolvine GL Master Specification',
+    commercialGradeId: 'GLDA-99-P',
+    evidenceId: 'EVID-GLDA-99-SPEC',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'mgda-38',
@@ -366,7 +425,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 7.0, max: 12.5, optimal: 10.0 },
     phDependencyNotes: 'Fast kinetic sequestration rate; optimal for high-temperature and short-cycle machine washing.',
-    citation: 'Trilon M Technical Bulletin & BASF Chelation Guide'
+    citation: 'Trilon M Technical Bulletin & BASF Chelation Guide',
+    commercialGradeId: 'TRILON-M-LIQ',
+    evidenceId: 'EVID-MGDA-38-SPEC',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'mgda-40',
@@ -385,7 +447,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 7.0, max: 12.5, optimal: 10.0 },
     phDependencyNotes: 'Standard 40% aqueous concentrate for automated dispensing and laundry compounding.',
-    citation: 'Trilon M Liquid 40% Technical Data'
+    citation: 'Trilon M Liquid 40% Technical Data',
+    commercialGradeId: 'MGDA-40-LIQ',
+    evidenceId: 'EVID-MGDA-40-SPEC',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'citrate-dihydrate',
@@ -404,7 +469,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 7.5, max: 10.5, optimal: 8.5 },
     phDependencyNotes: 'Binding efficiency is pH-dependent (log K ~ 3.5-4.5); chelation weakens below pH 7.0 due to carboxylate protonation.',
-    citation: 'HERA Project Eco-Safety Evaluation for Trisodium Citrate'
+    citation: 'HERA Project Eco-Safety Evaluation for Trisodium Citrate',
+    commercialGradeId: 'SODIUM-CITRATE-DIHYDRATE-COMM',
+    evidenceId: 'EVID-CITRATE-DIHYDRATE-HERA',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'citrate-anhydrous',
@@ -423,7 +491,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 7.5, max: 10.5, optimal: 8.5 },
     phDependencyNotes: 'High-purity anhydrous builder salt.',
-    citation: 'Industrial Citrates Standard'
+    citation: 'Industrial Citrates Standard',
+    commercialGradeId: 'SODIUM-CITRATE-ANHYDROUS-COMM',
+    evidenceId: 'EVID-CITRATE-ANHYDROUS-STD',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'gluconate',
@@ -442,7 +513,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 9.0, max: 14.0, optimal: 11.5 },
     phDependencyNotes: 'Weak calcium chelation below pH 9.0; powerful heavy-metal (Fe3+) chelation in caustic CIP solutions (pH > 11).',
-    citation: 'Jungbunzlauer Sodium Gluconate Detergency Guide'
+    citation: 'Jungbunzlauer Sodium Gluconate Detergency Guide',
+    commercialGradeId: 'SODIUM-GLUCONATE-GRANULAR',
+    evidenceId: 'EVID-GLUCONATE-JUNGBUNZLAUER',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'edta-liquid',
@@ -461,7 +535,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 7.0, max: 13.0, optimal: 10.0 },
     phDependencyNotes: 'High stability constant (log K = 10.7). Broad pH operating window.',
-    citation: 'Versene 100 Technical Bulletin'
+    citation: 'Versene 100 Technical Bulletin',
+    commercialGradeId: 'EDTA-4NA-39-LIQ',
+    evidenceId: 'EVID-EDTA-39-VERSENE',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'edta-powder',
@@ -480,7 +557,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 7.0, max: 13.0, optimal: 10.0 },
     phDependencyNotes: 'Solid tetrasodium salt. Highly effective across wide pH and water hardness ranges.',
-    citation: 'Industrial Chelation Standard (Dow Chemical)'
+    citation: 'Industrial Chelation Standard (Dow Chemical)',
+    commercialGradeId: 'EDTA-4NA-99-POWDER',
+    evidenceId: 'EVID-EDTA-99-DOW',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'dtpa',
@@ -499,7 +579,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 8.0, max: 13.0, optimal: 10.5 },
     phDependencyNotes: 'Specialized peroxide bleach stabilizer and transition metal sequestrant.',
-    citation: 'Versenex 80 Technical Guide'
+    citation: 'Versenex 80 Technical Guide',
+    commercialGradeId: 'DTPA-5NA-40-LIQ',
+    evidenceId: 'EVID-DTPA-40-VERSENEX',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'stpp',
@@ -518,7 +601,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 8.5, max: 11.5, optimal: 10.0 },
     phDependencyNotes: 'Primary inorganic builder in laundry powders; combines sequestering, buffering, and soil dispersion.',
-    citation: 'Inorganic Detergent Builders Handbook'
+    citation: 'Inorganic Detergent Builders Handbook',
+    commercialGradeId: 'STPP-94-GRANULAR',
+    evidenceId: 'EVID-STPP-94-HANDBOOK',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'zeolite-4a',
@@ -537,7 +623,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 8.0, max: 12.0, optimal: 10.0 },
     phDependencyNotes: 'Heterogeneous Ca2+ ion exchange in alkaline wash liquor; requires liquid/surfactant dispersion.',
-    citation: 'Zeolite A in Detergent Applications Standard'
+    citation: 'Zeolite A in Detergent Applications Standard',
+    commercialGradeId: 'ZEOLITE-4A-FINE',
+    evidenceId: 'EVID-ZEOLITE-4A-STD',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'hedp',
@@ -556,7 +645,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 2.0, max: 12.0, optimal: 8.0 },
     phDependencyNotes: 'Operates as sub-stoichiometric threshold crystallization inhibitor for CaCO3 scale prevention.',
-    citation: 'Phosphonate Chelation & Threshold Scale Inhibition Bulletin'
+    citation: 'Phosphonate Chelation & Threshold Scale Inhibition Bulletin',
+    commercialGradeId: 'HEDP-60-AQ',
+    evidenceId: 'EVID-HEDP-60-BULLETIN',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   },
   {
     id: 'polycarboxylate',
@@ -575,7 +667,10 @@ export const AUTHORITATIVE_CHELATOR_DATABASE: ChelatorSpecies[] = [
     provenance: 'AUTHORITATIVE',
     phOperatingRange: { min: 6.5, max: 12.0, optimal: 9.5 },
     phDependencyNotes: 'Dispersing agent and threshold crystal growth inhibitor preventing calcium precipitation redeposition.',
-    citation: 'Polymeric Co-Builders Detergent Technology Handbook'
+    citation: 'Polymeric Co-Builders Detergent Technology Handbook',
+    commercialGradeId: 'POLYACRYLATE-45-AQ',
+    evidenceId: 'EVID-POLYCARBOXYLATE-HANDBOOK',
+    capacityBasis: 'COMMERCIAL_PRODUCT'
   }
 ];
 
@@ -609,7 +704,7 @@ export function getChelatorBindingCapacity(
     matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
       n.includes(s.id) || 
       n.includes(s.name.toLowerCase()) ||
-      (s.id === 'glda-47' && (n.includes('glda 47') || n.includes('gl-47'))) ||
+      (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
       (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
       (s.id === 'citrate-dihydrate' && (n.includes('citrate dihydrate') || n.includes('sodium citrate'))) ||
       (s.id === 'gluconate' && n.includes('gluconate')) ||
@@ -630,9 +725,39 @@ export function getChelatorBindingCapacity(
     };
   }
 
+  if (
+    !matchedSpecies.commercialGradeId?.trim() ||
+    !matchedSpecies.evidenceId?.trim() ||
+    !matchedSpecies.capacityBasis
+  ) {
+    return {
+      capacityMgCaCO3PerGram: null,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'EXACT_GRADE_AND_TRACEABLE_CAPACITY_EVIDENCE_REQUIRED'
+    };
+  }
+
+  if (_explicitActive !== undefined && typeof _explicitActive === 'number' && Number.isFinite(_explicitActive) && _explicitActive >= 0 && _explicitActive <= 100) {
+    if (_explicitActive === 0) {
+      return {
+        capacityMgCaCO3PerGram: 0,
+        status: 'VALID',
+        evidenceId: matchedSpecies.evidenceId
+      };
+    }
+    const scaled = calculateCommercialCapacity({
+      theoreticalActiveCapacityMgPerG: matchedSpecies.theoreticalActiveCapacityMgPerG,
+      activeMatterPct: _explicitActive
+    });
+    return validateChelatorCapacity(
+      scaled,
+      matchedSpecies.evidenceId
+    );
+  }
+
   return validateChelatorCapacity(
     matchedSpecies.effectiveCommercialCapacityMgPerG,
-    matchedSpecies.citation
+    matchedSpecies.evidenceId
   );
 }
 
@@ -706,7 +831,8 @@ export function calculateFormulationChelationCapacity(
     const batchMassGrams = (validPct / 100) * batchKg * 1000;
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
-    const capacityResult = getChelatorBindingCapacity(rawName, typeof explicitActive === 'number' ? explicitActive : undefined);
+    const validation = validateActiveMatterInput(explicitActive);
+    const capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
     const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;

@@ -475,7 +475,7 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800">
             <span className="text-xs font-mono uppercase text-slate-400">Total Formula Mass</span>
             <div className="text-xl font-bold text-white mt-1">
-              {moistureAndDryMatter.totalFormulaMassKg} kg
+              {moistureAndDryMatter.totalFormulaMassKg == null ? 'BATCH SIZE REQUIRED' : `${moistureAndDryMatter.totalFormulaMassKg} kg`}
             </div>
             <span className="text-[11px] text-slate-500">Batch recipe loading</span>
           </div>
@@ -483,7 +483,7 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800">
             <span className="text-xs font-mono uppercase text-slate-400">Moisture Mass</span>
             <div className="text-xl font-bold text-cyan-400 mt-1">
-              {moistureAndDryMatter.moistureMassKg} kg
+              {moistureAndDryMatter.moistureMassKg == null ? 'UNAVAILABLE' : `${moistureAndDryMatter.moistureMassKg.toFixed(3)} kg`}
             </div>
             <span className="text-[11px] text-slate-500">Hydration & free water</span>
           </div>
@@ -491,7 +491,7 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800">
             <span className="text-xs font-mono uppercase text-slate-400">Dry Matter Mass</span>
             <div className="text-xl font-bold text-emerald-400 mt-1">
-              {moistureAndDryMatter.dryMatterMassKg} kg
+              {moistureAndDryMatter.dryMatterMassKg == null ? 'UNAVAILABLE' : `${moistureAndDryMatter.dryMatterMassKg.toFixed(3)} kg`}
             </div>
             <span className="text-[11px] text-slate-500">100% dry active solids</span>
           </div>
@@ -499,7 +499,7 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800">
             <span className="text-xs font-mono uppercase text-slate-400">Moisture %</span>
             <div className="text-xl font-bold text-cyan-400 mt-1">
-              {moistureAndDryMatter.moisturePct}%
+              {moistureAndDryMatter.moisturePct == null ? 'UNAVAILABLE' : `${moistureAndDryMatter.moisturePct.toFixed(2)}%`}
             </div>
             <span className="text-[11px] text-slate-500">{moistureAndDryMatter.moistureStatus}</span>
           </div>
@@ -507,7 +507,7 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800">
             <span className="text-xs font-mono uppercase text-slate-400">Dry Matter %</span>
             <div className="text-xl font-bold text-emerald-400 mt-1">
-              {moistureAndDryMatter.dryMatterPct}%
+              {moistureAndDryMatter.dryMatterPct == null ? 'UNAVAILABLE' : `${moistureAndDryMatter.dryMatterPct.toFixed(2)}%`}
             </div>
             <span className="text-[11px] text-slate-500">100 - Moisture %</span>
           </div>

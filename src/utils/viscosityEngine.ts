@@ -4,6 +4,7 @@ import { calculatePHAdvanced } from './pHEngine';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
 import { PHCalculationOptions } from '../domain/ph/types';
+import { validatePHInput } from './phInputGuard';
 
 /**
  * ============================================================================
@@ -318,18 +319,24 @@ export class ViscosityEngine {
     const warnings: string[] = [];
     const recommendations: string[] = [];
 
-    // Evaluate pH for pH-sensitive thickeners (e.g. Carbomers, ASE polyacrylates)
     const normCategory = productCategory ? normalizeProductCategory(productCategory) : undefined;
     const phOpts: PHCalculationOptions | undefined = (normCategory && normCategory !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCategory } : undefined;
-    let estimatedPH = 7.0;
+    let estimatedPH: number | null = null;
     if (typeof options.targetPH === 'number' && !isNaN(options.targetPH)) {
-      estimatedPH = options.targetPH;
+      const validation = validatePHInput(options.targetPH);
+      if (validation.status === 'VALID') {
+        estimatedPH = validation.value;
+      }
     } else {
       try {
         const mappedList = mapFormulationIngredientsToPHEngineInput(list);
-        estimatedPH = calculatePHAdvanced(mappedList, 100, phOpts).pH ?? null;
+        const phRes = calculatePHAdvanced(mappedList, 100, phOpts);
+        const validation = validatePHInput(phRes?.pH);
+        if (validation.status === 'VALID') {
+          estimatedPH = validation.value;
+        }
       } catch (e) {
-        estimatedPH = null;
+        // Fallback to null if calculation fails
       }
     }
 

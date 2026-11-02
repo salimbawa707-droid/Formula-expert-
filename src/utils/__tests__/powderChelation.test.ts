@@ -1,8 +1,26 @@
-import { describe, expect, it } from 'bun:test';
 import { calculatePowderChelationSystem } from '../powderEngine/powderBuilderChelationAlkalinity';
 import { ClassifiedIngredient } from '../powderEngine/types';
 
-describe('Powder Chelation Engine: Active Matter Integrity', () => {
+export function runPowderChelationTestSuite(): {
+  total: number;
+  passed: number;
+  failed: number;
+  details: string[];
+} {
+  let passed = 0;
+  let failed = 0;
+  const details: string[] = [];
+
+  function assert(name: string, condition: boolean, message?: string) {
+    if (condition) {
+      passed++;
+      details.push(`[PASS] ${name}`);
+    } else {
+      failed++;
+      details.push(`[FAIL] ${name}: ${message || 'Assertion failed'}`);
+    }
+  }
+
   const chelator: ClassifiedIngredient = {
     name: 'GLDA-4Na',
     inputPercentage: 10,
@@ -15,42 +33,47 @@ describe('Powder Chelation Engine: Active Matter Integrity', () => {
     costPerKg: 1
   };
 
-  it('should return INSUFFICIENT_DATA when activeMatterPct is missing', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator }]);
-    expect(result.source).toBe('INSUFFICIENT_DATA');
-  });
+  // Missing activeMatterPct -> INSUFFICIENT_DATA
+  const res1 = calculatePowderChelationSystem([{ ...chelator }]);
+  assert('Missing activeMatterPct is INSUFFICIENT_DATA', res1.source === 'INSUFFICIENT_DATA');
 
-  it('should return INSUFFICIENT_DATA when activeMatterPct is null', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: null as any }]);
-    expect(result.source).toBe('INSUFFICIENT_DATA');
-  });
+  // Null activeMatterPct -> INSUFFICIENT_DATA
+  const res2 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: null as any }]);
+  assert('Null activeMatterPct is INSUFFICIENT_DATA', res2.source === 'INSUFFICIENT_DATA');
 
-  it('should return INSUFFICIENT_DATA when activeMatterPct is NaN', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: NaN }]);
-    expect(result.source).toBe('INSUFFICIENT_DATA');
-  });
+  // NaN activeMatterPct -> INSUFFICIENT_DATA
+  const res3 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: NaN }]);
+  assert('NaN activeMatterPct is INSUFFICIENT_DATA', res3.source === 'INSUFFICIENT_DATA');
 
-  it('should return INSUFFICIENT_DATA when activeMatterPct is negative', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: -1 }]);
-    expect(result.source).toBe('INSUFFICIENT_DATA');
-  });
+  // Negative activeMatterPct -> INSUFFICIENT_DATA
+  const res4 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: -1 }]);
+  assert('Negative activeMatterPct is INSUFFICIENT_DATA', res4.source === 'INSUFFICIENT_DATA');
 
-  it('should return INSUFFICIENT_DATA when activeMatterPct is > 100', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 101 }]);
-    expect(result.source).toBe('INSUFFICIENT_DATA');
-  });
+  // > 100 activeMatterPct -> INSUFFICIENT_DATA
+  const res5 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 101 }]);
+  assert('>100 activeMatterPct is INSUFFICIENT_DATA', res5.source === 'INSUFFICIENT_DATA');
 
-  it('should accept valid 47% active matter', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 47 }]);
-    expect(result.source).toBe('CALCULATED');
-    expect(result.hasValidatedData).toBe(true);
-    expect(result.calciumCapacityMgPerDose).toBeDefined();
-  });
+  // Valid 47% active matter
+  const res6 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 47 }]);
+  assert('Valid 47% source is CALCULATED', res6.source === 'CALCULATED');
+  assert('Valid 47% hasValidatedData is true', res6.hasValidatedData === true);
+  assert('Valid 47% calciumCapacityMgPerDose is defined', res6.calciumCapacityMgPerDose !== undefined);
 
-  it('should accept 0% active matter as valid numeric 0', () => {
-    const result = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 0 }]);
-    expect(result.source).toBe('CALCULATED');
-    expect(result.hasValidatedData).toBe(true);
-    expect(result.calciumCapacityMgPerDose).toBe(0);
-  });
-});
+  // 0% active matter as valid numeric 0
+  const res7 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 0 }]);
+  assert('0% active matter source is CALCULATED', res7.source === 'CALCULATED');
+  assert('0% active matter hasValidatedData is true', res7.hasValidatedData === true);
+  assert('0% active matter calciumCapacityMgPerDose is 0', res7.calciumCapacityMgPerDose === 0);
+
+  return {
+    total: passed + failed,
+    passed,
+    failed,
+    details
+  };
+}
+
+const _res = runPowderChelationTestSuite();
+if (_res.failed > 0) {
+  throw new Error(`powderChelation.test failed: ${_res.details.filter(d => d.startsWith('[FAIL]')).join('; ')}`);
+}

@@ -37,31 +37,36 @@ export class PHEngineV2 {
 
     // 2. Numerical equilibrium solver
     const solverRes = NumericalEquilibriumSolver.solve(composition, temperatureC, {
-      tolerance: options.tolerance ?? 1e-7,
+      tolerance: options.tolerance ?? 1e-8,
       maxIterations: options.maxIterations ?? 60,
-      initialGuess: options.targetPH ?? null
+      initialGuess: (typeof options.targetPH === 'number' && Number.isFinite(options.targetPH)) ? options.targetPH : undefined
     });
 
-    const isConverged = solverRes.converged && Number.isFinite(solverRes.pH);
-    const solvedPH = isConverged ? solverRes.pH : Number.NaN;
-    const evalPH = isConverged ? solvedPH : null;
+    const isConverged = solverRes.converged === true && Number.isFinite(solverRes.pH);
+    const solvedPH = isConverged ? solverRes.pH : null;
 
     // 3. Equilibrium charge balance & speciation at evaluation pH
-    const finalEquilibrium = EquilibriumSystem.evaluateChargeBalance(
-      evalPH,
-      composition,
-      temperatureC
-    );
+    // Only perform equilibrium calculations if the solver converged with a finite pH.
+    let finalEquilibrium = null;
+    let ionicStrength: number | null = null;
+    let bufferCapacity: number | null = null;
 
-    // 4. Calculate ionic strength from all participating ions
-    const ionicStrength = Number(ActivityModel.calculateIonicStrength(finalEquilibrium.ions).toFixed(4));
+    if (isConverged && solvedPH !== null) {
+      finalEquilibrium = EquilibriumSystem.evaluateChargeBalance(
+        solvedPH,
+        composition,
+        temperatureC
+      );
 
-    // 5. Buffer capacity beta
-    const bufferCapacity = isConverged
-      ? EquilibriumSystem.calculateBufferCapacity(solvedPH, composition, temperatureC)
-      : 0;
+      // 4. Calculate ionic strength from all participating ions
+      ionicStrength = Number(ActivityModel.calculateIonicStrength(finalEquilibrium.ions).toFixed(4));
+
+      // 5. Buffer capacity beta
+      bufferCapacity = EquilibriumSystem.calculateBufferCapacity(solvedPH, composition, temperatureC);
+    }
 
     // 6. Excess stoichiometric acid/base equivalents (theoretical titratable capacity in eq)
+    // Stoichiometric capacity is independent of solver convergence.
     let totalAcidEquivalents = 0;
     let totalBaseEquivalents = 0;
     let totalStrongAcidEquivalents = 0;
@@ -103,23 +108,27 @@ export class PHEngineV2 {
     const netMoles = netEquivalents;
 
     // 7. Confidence & Diagnostics
-    const diag = ConfidenceEvaluator.evaluate(
-      solverRes,
-      composition,
-      ionicStrength,
-      activityModel,
-      temperatureC
-    );
+    const diag =
+      isConverged &&
+      ionicStrength !== null &&
+      Number.isFinite(ionicStrength)
+        ? ConfidenceEvaluator.evaluate(
+            solverRes,
+            composition,
+            ionicStrength,
+            activityModel,
+            temperatureC
+          )
+        : {
+            confidence: 0,
+            modelValidity: 'OUT_OF_RANGE' as const,
+            assumptions: [],
+            warnings: [
+              'PH_SOLVER_NOT_CONVERGED: Confidence and equilibrium-dependent diagnostics are unavailable.'
+            ]
+          };
 
-    if (!isConverged) {
-      diag.confidence = 0;
-      diag.modelValidity = 'OUT_OF_RANGE';
-      if (!diag.warnings.some(w => w.includes('unavailable') || w.includes('failed to converge'))) {
-        diag.warnings.push('Numerical equilibrium solver failed to converge within maximum iterations; pH calculation is unavailable.');
-      }
-    }
-
-    const outputPH = isConverged ? Number(solvedPH.toFixed(2)) : Number.NaN;
+    const outputPH = isConverged && solvedPH !== null ? Number(solvedPH.toFixed(2)) : null;
 
     // 8. Result Packaging
     return {
@@ -129,7 +138,7 @@ export class PHEngineV2 {
       method: solverRes.method,
       converged: isConverged,
       iterations: solverRes.iterations,
-      residual: Number(solverRes.residual.toExponential(4)),
+      residual: isConverged ? Number(solverRes.residual.toExponential(4)) : null,
       stepSize: Number(solverRes.stepSize.toFixed(6)),
       ionicStrength,
       activityModel,
@@ -165,9 +174,9 @@ export class PHEngineV2 {
         netMoles,
         recognizedContributors,
         modelType: `Rigorous Chemical Equilibrium (${solverRes.method})`,
-        speciation: finalEquilibrium.speciation,
+        speciation: finalEquilibrium ? finalEquilibrium.speciation : [],
         ionicStrength,
-        chargeResidual: solverRes.residual,
+        chargeResidual: isConverged ? solverRes.residual : null,
         normalizedComposition: {
           totalMassKg: composition.totalMassKg,
           totalVolumeL: Number(composition.totalVolumeL.toFixed(3)),

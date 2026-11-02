@@ -68,6 +68,9 @@ export interface ClassifiedIngredient {
   costPerKg: number;
   hygroscopicity?: 'Low' | 'Moderate' | 'High' | 'Unknown';
   inherentMoistureFraction?: number;
+  chelatingCapacityMgPerGram?: number;
+  chelatingCapacityEvidenceId?: string;
+  chelatingCapacityBasis?: 'ACTIVE_MATERIAL' | 'COMMERCIAL_PRODUCT';
 }
 
 export interface FunctionalGroupSummary {
@@ -105,7 +108,7 @@ export interface PowderMoistureContribution {
 }
 
 export interface PowderMoistureReport {
-  totalFormulaMassKg: number;
+  totalFormulaMassKg: number | null;
   moistureMassKg: number | null;
   dryMatterMassKg: number | null;
   inherentMoisturePct: number | null; // for backward-compat
@@ -113,7 +116,7 @@ export interface PowderMoistureReport {
   dryMatterPct: number | null;
   moistureStatus: ResultSource;
   dryMatterStatus: ResultSource;
-  testMethod: string;
+  testMethod?: string;
   sampleMassG?: number;
   dryingTempC?: number;
   dryingTimeMin?: number;
@@ -365,10 +368,10 @@ export interface PowderSafetyReport {
 }
 
 export interface PowderCostingReport {
-  costPerKg: number;
-  totalBatchCost: number;
-  batchSizeKg: number;
-  costPerWashDose: number; // e.g. 50g dose
+  costPerKg: number | null;
+  totalBatchCost: number | null;
+  batchSizeKg: number | null;
+  costPerWashDose: number | null; // e.g. 50g dose
   hasZeroCostIngredients: boolean;
   ingredientCostContributions: Array<{
     name: string;

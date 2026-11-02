@@ -13,7 +13,8 @@ import {
   Hash,
   Scale,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  AlertTriangle
 } from "lucide-react";
 import { ActiveFormulaState, FormulationIngredient } from "../types";
 
@@ -58,11 +59,25 @@ export function COAAndBatchSheetModal({
   };
 
   // Derive parameters from orchestratorResult or defaults
-  const phVal = orchestratorResult?.pHResult?.ph ?? null;
-  const activeMatterVal = orchestratorResult?.activeMatterResult?.totalSurfactantActivePct ?? 14.5;
-  const viscosityVal = orchestratorResult?.viscosityResult?.predictedViscosityCp ?? 1250;
-  const densityVal = orchestratorResult?.densityResult?.densityGPerCm3 ?? 1.035;
-  const cpiVal = orchestratorResult?.cleaningResult?.cpi ?? 92.4;
+  const rawDensity = orchestratorResult?.densityResult?.densityGPerCm3 ?? (formula as any)?.density ?? null;
+  const isDensityValid = typeof rawDensity === 'number' && Number.isFinite(rawDensity) && rawDensity > 0;
+  const densityVal = isDensityValid ? rawDensity : null;
+
+  const rawPh = orchestratorResult?.pHResult?.ph ?? (formula as any)?.targetPH ?? null;
+  const isPhValid = typeof rawPh === 'number' && Number.isFinite(rawPh);
+  const phVal = isPhValid ? rawPh : null;
+
+  const rawActive = orchestratorResult?.activeMatterResult?.totalSurfactantActivePct ?? null;
+  const isActiveValid = typeof rawActive === 'number' && Number.isFinite(rawActive) && rawActive > 0;
+  const activeMatterVal = isActiveValid ? rawActive : null;
+
+  const rawVisc = orchestratorResult?.viscosityResult?.predictedViscosityCp ?? null;
+  const isViscValid = typeof rawVisc === 'number' && Number.isFinite(rawVisc) && rawVisc > 0;
+  const viscosityVal = isViscValid ? rawVisc : null;
+
+  const rawCpi = orchestratorResult?.cleaningResult?.cpi ?? null;
+  const isCpiValid = typeof rawCpi === 'number' && Number.isFinite(rawCpi) && rawCpi > 0;
+  const cpiVal = isCpiValid ? rawCpi : null;
 
   const coaParameters = [
     {
@@ -76,36 +91,36 @@ export function COAAndBatchSheetModal({
       param: 'pH @ 25°C (1% Aqueous Solution)',
       method: 'IS 4955 / ASTM E70',
       spec: '7.0 – 8.5',
-      result: `${Number(phVal).toFixed(2)}`,
-      status: 'PASS'
+      result: phVal !== null ? `${phVal.toFixed(2)}` : 'UNAVAILABLE',
+      status: phVal !== null && phVal >= 7.0 && phVal <= 8.5 ? 'PASS' : (phVal === null ? 'INSUFFICIENT_DATA' : 'OUT_OF_SPEC')
     },
     {
       param: 'Total Active Surfactant Matter (%)',
       method: 'ISO 2271 / Two-Phase Titration',
       spec: '≥ 12.0 % w/w',
-      result: `${Number(activeMatterVal).toFixed(2)} %`,
-      status: 'PASS'
+      result: activeMatterVal !== null ? `${activeMatterVal.toFixed(2)} %` : 'UNAVAILABLE',
+      status: activeMatterVal !== null && activeMatterVal >= 12.0 ? 'PASS' : (activeMatterVal === null ? 'INSUFFICIENT_DATA' : 'OUT_OF_SPEC')
     },
     {
       param: 'Kinematic Viscosity @ 25°C (cPs)',
       method: 'Brookfield RVT (Spindle 2, 20 RPM)',
       spec: '800 – 1800 cPs',
-      result: `${Math.round(viscosityVal)} cPs`,
-      status: 'PASS'
+      result: viscosityVal !== null ? `${Math.round(viscosityVal)} cPs` : 'UNAVAILABLE',
+      status: viscosityVal !== null && viscosityVal >= 800 && viscosityVal <= 1800 ? 'PASS' : (viscosityVal === null ? 'INSUFFICIENT_DATA' : 'OUT_OF_SPEC')
     },
     {
       param: 'Specific Gravity @ 25°C',
       method: 'Pycnometer / ASTM D891',
       spec: '1.020 – 1.050 g/cm³',
-      result: `${Number(densityVal).toFixed(3)} g/cm³`,
-      status: 'PASS'
+      result: densityVal !== null ? `${densityVal.toFixed(3)} g/cm³` : 'UNAVAILABLE',
+      status: densityVal !== null && densityVal >= 1.020 && densityVal <= 1.050 ? 'PASS' : (densityVal === null ? 'INSUFFICIENT_DATA' : 'OUT_OF_SPEC')
     },
     {
       param: 'Cleaning Performance Index (CPI)',
       method: 'Standard Multi-Stain Terg-O-Tometer',
       spec: '≥ 85.0',
-      result: `${Number(cpiVal).toFixed(1)}`,
-      status: 'PASS'
+      result: cpiVal !== null ? `${cpiVal.toFixed(1)}` : 'UNAVAILABLE',
+      status: cpiVal !== null && cpiVal >= 85.0 ? 'PASS' : (cpiVal === null ? 'INSUFFICIENT_DATA' : 'OUT_OF_SPEC')
     },
     {
       param: 'Freeze-Thaw Stability (3 Cycles)',
@@ -115,6 +130,8 @@ export function COAAndBatchSheetModal({
       status: 'PASS'
     }
   ];
+
+  const isAllPass = coaParameters.every(p => p.status === 'PASS');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
@@ -265,8 +282,10 @@ export function COAAndBatchSheetModal({
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500 block">Status</span>
-                  <span className="inline-block text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                    RELEASED
+                  <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded ${
+                    isAllPass ? 'text-emerald-800 bg-emerald-100' : 'text-amber-800 bg-amber-100'
+                  }`}>
+                    {isAllPass ? 'RELEASED' : 'PENDING_VALIDATION'}
                   </span>
                 </div>
               </div>
@@ -293,7 +312,9 @@ export function COAAndBatchSheetModal({
                         <td className="p-2 text-slate-600 font-mono text-[11px] border-r border-slate-200">{row.method}</td>
                         <td className="p-2 text-slate-700 font-mono text-[11px] border-r border-slate-200">{row.spec}</td>
                         <td className="p-2 font-bold text-slate-900 font-mono text-[11px] border-r border-slate-200">{row.result}</td>
-                        <td className="p-2 text-center font-bold text-emerald-700 text-[11px]">{row.status}</td>
+                        <td className={`p-2 text-center font-bold text-[11px] ${
+                          row.status === 'PASS' ? 'text-emerald-700' : 'text-amber-700'
+                        }`}>{row.status}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -301,16 +322,28 @@ export function COAAndBatchSheetModal({
               </div>
 
               {/* Forensic Quality Gate Verdict Box */}
-              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-xs text-emerald-900 flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Quality Control Verdict: APPROVED FOR COMMERCIAL RELEASE</span>
-                  <p className="text-[11px] text-emerald-800 mt-0.5">
-                    This batch has been tested in compliance with established standard protocols (ASTM D459 / IS 4955).
-                    All chemical, surfactant, and rheological parameters conform strictly to standard limits.
-                  </p>
+              {isAllPass ? (
+                <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-xs text-emerald-900 flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Quality Control Verdict: APPROVED FOR COMMERCIAL RELEASE</span>
+                    <p className="text-[11px] text-emerald-800 mt-0.5">
+                      This batch has been tested in compliance with established standard protocols (ASTM D459 / IS 4955).
+                      All chemical, surfactant, and rheological parameters conform strictly to standard limits.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Quality Control Verdict: PENDING LABORATORY VALIDATION</span>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      One or more physical/chemical parameters are unmeasured or out of specification. Commercial release is blocked until verified lab test evidence is provided.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Signatures & Seal */}
               <div className="grid grid-cols-2 gap-8 pt-8 mt-6 border-t border-slate-300 text-xs">

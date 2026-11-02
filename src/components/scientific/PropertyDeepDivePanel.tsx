@@ -102,14 +102,20 @@ export const PropertyDeepDivePanel: React.FC<PropertyDeepDivePanelProps> = ({ ev
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
                 <span className="text-[10px] text-token-secondary uppercase font-bold">Calculated Equilibrium pH</span>
-                <div className="text-2xl font-mono font-extrabold text-cyan-300">{pHResult.ph.toFixed(2)}</div>
-                <div className="text-[10px] text-token-muted font-medium">Ionic Strength: {pHResult.ionicStrength.toFixed(3)} M</div>
+                <div className="text-2xl font-mono font-extrabold text-cyan-300">
+                  {pHResult.ph !== null ? pHResult.ph.toFixed(2) : 'UNAVAILABLE'}
+                </div>
+                <div className="text-[10px] text-token-muted font-medium">
+                  Ionic Strength: {pHResult.ionicStrength !== null ? pHResult.ionicStrength.toFixed(3) : 'N/A'} M
+                </div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">
                 <span className="text-[10px] text-token-secondary uppercase font-bold">Buffer Capacity (β)</span>
-                <div className="text-xl font-mono font-bold text-white">{pHResult.bufferCapacity.toFixed(3)}</div>
-                <div className="text-[10px] text-token-muted font-medium">Solver Status: {pHResult.solverConverged ? 'Converged' : 'Estimated'}</div>
+                <div className="text-xl font-mono font-bold text-white">
+                  {pHResult.bufferCapacity !== null ? pHResult.bufferCapacity.toFixed(3) : 'N/A'}
+                </div>
+                <div className="text-[10px] text-token-muted font-medium">Solver Status: {pHResult.solverConverged ? 'Converged' : 'Estimated/Failed'}</div>
               </div>
 
               <div className="bg-[#0b1324] border border-slate-800 rounded-lg p-3 space-y-1">

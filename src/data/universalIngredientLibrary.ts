@@ -30,8 +30,14 @@ export interface UniversalIngredient {
   casStatus?: 'ASSIGNED' | 'NOT_APPLICABLE_MIXTURE' | 'PROPRIETARY' | 'UNKNOWN';
   inciName: string;
   function: string;
-  activeDefault: number;
-  activeMatter?: number;
+  activeDefault?: number | null;
+  activeMatter?: number | null;
+  commercialConcentrationPct?: number | null;
+  surfactantActiveMatterPct?: number | null;
+  purityPct?: number | null;
+  solidsPct?: number | null;
+  waterContentPct?: number | null;
+  densityGPerMl?: number | null;
   costPerKg: number | null;
   hlb?: number | null;
   phMin?: number;

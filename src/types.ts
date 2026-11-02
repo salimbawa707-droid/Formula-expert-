@@ -76,17 +76,17 @@ export interface ActiveFormulaState {
 }
 
 export interface PHAdvancedResult {
-  pH: number;
-  finalPH?: number;
+  pH: number | null;
+  finalPH?: number | null;
   status?: string;
   method?: string;
   converged?: boolean;
   iterations?: number;
-  residual?: number;
+  residual?: number | null;
   stepSize?: number;
-  bufferCapacity: number;
-  totalBufferCapacity?: number;
-  ionicStrength: number;
+  bufferCapacity: number | null;
+  totalBufferCapacity?: number | null;
+  ionicStrength: number | null;
   activityModel?: string;
   modelValidity?: string;
   temperatureC?: number;
@@ -113,7 +113,7 @@ export interface PHAdvancedResult {
 }
 
 export interface PHSimpleResult {
-  pH: number;
+  pH: number | null;
   estimated: boolean;
   method?: string;
   note?: string;

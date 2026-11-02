@@ -681,7 +681,8 @@ function evaluateAIGradeFromLegacyOrDraft(
     };
   });
 
-  const activeMatterPct = calculateActiveMatter(ingredients);
+  const amRes = calculateActiveMatter(ingredients);
+  const activeMatterPct = typeof amRes === 'number' ? amRes : Number(amRes?.value ?? 0);
 
   // Check for zero active ingredients
   const activeIngsCount = ingredients.filter((i: any) => {
@@ -736,7 +737,9 @@ function evaluateAIGradeFromLegacyOrDraft(
   const compatibilityScore = Math.min(100, Math.max(0, Math.round(compResult.compatibilityScore)));
 
   const healthResult = calculateLabHealthScore(ingredients, phVal);
-  const healthScore = Math.min(100, Math.max(0, Math.round(healthResult.finalScore)));
+  const healthScore = healthResult.finalScore !== null && Number.isFinite(healthResult.finalScore)
+    ? Math.min(100, Math.max(0, Math.round(healthResult.finalScore)))
+    : 0;
 
   let commercialScore = 100;
   const batchCost = calculateBatchCost(ingredients, 1);

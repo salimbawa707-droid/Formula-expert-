@@ -152,7 +152,7 @@ export class FormulaScientificOrchestrator {
           activeSurfactantsTotal: 0,
           rawSurfactantsTotal: 0
         },
-        pHResult: { ph: 0, isMeasured: false, provenance: 'PREDICTED', bufferCapacity: 0, ionicStrength: 0, confidence: 'No calculation', solverConverged: false, warnings: [], slurryBasis: undefined, measuredPH: null, predictionError: null, details: {} },
+        pHResult: { ph: null, isMeasured: false, provenance: 'PREDICTED', bufferCapacity: null, ionicStrength: null, confidence: 'No calculation', solverConverged: false, warnings: [], slurryBasis: undefined, measuredPH: null, predictionError: null, details: {} },
         activeMatterResult: { totalSurfactantActivePct: 0, totalActiveMatterPct: 0, meetsCategoryMin: false, categoryMinPct: 0, surfactantBreakdown: { anionic: 0, nonionic: 0, amphoteric: 0, cationic: 0, total: 0 } },
         hlbResult: {
           blendedHLB: null,
@@ -502,6 +502,10 @@ export class FormulaScientificOrchestrator {
     };
 
     return {
+      totalActiveMatterPct: Number(state.totalActiveMatterPct.toFixed(2)),
+      activeMatterStatus: (state.unknownParameters.includes('ACTIVE_MATTER_UNVERIFIED') || state.activeMatterStatus === 'INSUFFICIENT_DATA' || state.unknownParameters.length > 0) ? 'INSUFFICIENT_DATA' : (state.activeMatterStatus ?? 'VALID'),
+      finalEquilibriumPH: state.finalEquilibriumPH,
+      phStatus: state.phStatus ?? (state.finalEquilibriumPH !== null ? 'VALID' : 'INSUFFICIENT_DATA'),
       formulaIdentity: {
         id: state.formulaId,
         name: state.formulaName,
@@ -515,11 +519,11 @@ export class FormulaScientificOrchestrator {
       scientificValidity: state.qualityGateResult?.scientificValidity ?? 'VALID',
       massBalance,
       pHResult: {
-        ph: state.finalEquilibriumPH !== null ? Number(state.finalEquilibriumPH.toFixed(2)) : (null as any),
+        ph: state.finalEquilibriumPH !== null ? Number(state.finalEquilibriumPH.toFixed(2)) : null,
         isMeasured: state.labEvidenceResult?.verifiedMeasurementsCount > 0,
         provenance: state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'MEASURED' : 'PREDICTED',
-        bufferCapacity: Number(state.phBufferCapacity.toFixed(4)),
-        ionicStrength: Number(state.phIonicStrength.toFixed(4)),
+        bufferCapacity: state.phBufferCapacity !== null ? Number(state.phBufferCapacity.toFixed(4)) : null,
+        ionicStrength: state.phIonicStrength !== null ? Number(state.phIonicStrength.toFixed(4)) : null,
         confidence: state.phStatus === 'VALID' ? 'High Confidence (Speciation Equilibrium)' : 'Moderate Confidence',
         solverConverged: state.phConverged,
         warnings: state.phWarnings,
