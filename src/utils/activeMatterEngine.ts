@@ -533,14 +533,11 @@ export class ActiveMatterEngine {
 
       const resolution = this.resolveIngredientActive(ing);
       
-      const amValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity;
-      const isInvalidActive = 
-        amValue !== undefined && amValue !== null && (
-          typeof amValue !== 'number' || 
-          !Number.isFinite(amValue) || 
-          amValue < 0 || 
-          amValue > 100
-        );
+      const amValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity;
+      const isInvalidActive =
+        amValue !== undefined &&
+        amValue !== null &&
+        validateActiveMatterInput(amValue).status !== 'VALID';
 
       const isMissingOrInvalid = resolution.activeMatterPct === null || resolution.dataSource === 'missing' || isInvalidActive;
 
