@@ -88,7 +88,7 @@ export function runActiveMatterRegressionTestSuite() {
     { id: '1', name: 'Deionized Water', percentage: 60.0 }, // 0% active, 60% free water
     { id: '2', name: 'SLES 70%', percentage: 20.0 },         // 14% active, 6% carried water
     { id: '3', name: 'CAPB 30%', percentage: 10.0 },         // 3% active, 7% carried water
-    { id: '4', name: 'LAE-9', percentage: 5.0 },             // 5% active, 0% carrier
+    { id: '4', name: 'LAE-9', percentage: 5.0, activeMatterPct: 100 },             // 5% active, 0% carrier
     { id: '5', name: 'Sodium Chloride', percentage: 2.0 },   // 2% active solid, 0% carrier
     { id: '6', name: 'Citric Acid', percentage: 1.0 },       // 1% active solid, 0% carrier
     { id: '7', name: 'Preservative', percentage: 0.2 },      // 0.2% active solid
