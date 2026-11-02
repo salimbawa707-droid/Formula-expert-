@@ -808,12 +808,12 @@ export function calculateCleaningPerformance(
     typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
   const isValidDescalingMeasurement = (value: unknown): value is number =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  const hasUnmappedDescalingMeasurement = isValidDescalingMeasurement(labMeasurements?.measuredDescalingRate);
   const isMeasured = Boolean(labMeasurements && (
     isValidScoreMeasurement(labMeasurements.measuredSoilRemovalPct) ||
     isValidScoreMeasurement(labMeasurements.measuredGreaseRemovalPct) ||
     isValidScoreMeasurement(labMeasurements.measuredSofteningScore) ||
-    isValidScoreMeasurement(labMeasurements.measuredStreakRating) ||
-    isValidDescalingMeasurement(labMeasurements.measuredDescalingRate)
+    isValidScoreMeasurement(labMeasurements.measuredStreakRating)
   ));
 
   let predictionVariance: number | undefined;
@@ -835,7 +835,7 @@ export function calculateCleaningPerformance(
       if (!measurement.ids.includes(kpi.id) || !kpi.isApplicable) continue;
       kpi.value = measurement.value;
       kpi.provenance = 'MEASURED';
-      kpi.status = measurement.value >= (kpi.targetMin || 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
+      kpi.status = measurement.value >= (kpi.targetMin ?? 0) ? 'MEASURED_PASS' : 'MEASURED_FAIL';
     }
   }
   const primaryMeasuredVal = labMeasurements?.measuredSoilRemovalPct;
