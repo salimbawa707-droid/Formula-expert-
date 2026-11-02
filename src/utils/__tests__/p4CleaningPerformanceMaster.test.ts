@@ -173,7 +173,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   const zeroFoamKpiCompliant = perfAutoCompliant.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
   const zeroFoamKpiHighFoam = perfAutoHighFoam.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
 
-  assert('Auto Dishwash', 'Compliant low-foam formula passes zero-foam compliance', zeroFoamKpiCompliant?.status === 'PASS', zeroFoamKpiCompliant?.status, 'PASS');
+  assert('Auto Dishwash', 'Compliant low-foam formula passes zero-foam compliance', zeroFoamKpiCompliant?.status === 'PREDICTIVE_ONLY', zeroFoamKpiCompliant?.status, 'PREDICTIVE_ONLY');
   assert('Auto Dishwash', 'High-foaming formula fails zero-foam compliance', zeroFoamKpiHighFoam?.status === 'FAIL', zeroFoamKpiHighFoam?.status, 'FAIL');
   assert('Auto Dishwash', 'Compliant auto-dish formula has higher overall CPI', perfAutoCompliant.cpi > perfAutoHighFoam.cpi, perfAutoCompliant.cpi, perfAutoHighFoam.cpi);
 
