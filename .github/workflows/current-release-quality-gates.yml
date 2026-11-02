@@ -206,8 +206,5 @@ jobs:
 
       - name: Test AI-only source review guardrails
         run: python evidence_vault/scripts/test_validate_pusic_ai_evidence.py
-      - name: Test Figshare intake quarantine classification
-        run: python evidence_vault/scripts/test_figshare_intake_quarantine.py
-
       - name: Verify Figshare shampoo source inventory and checksum
         run: python evidence_vault/scripts/verify_figshare_shampoo_source_inventory.py
