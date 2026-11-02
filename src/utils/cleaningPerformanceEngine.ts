@@ -843,17 +843,13 @@ export function calculateCleaningPerformance(
     ? 'Insufficient Ingredient Data'
     : (category === 'UNKNOWN_PRODUCT_CATEGORY'
       ? 'MODEL_NOT_VALIDATED'
-      : (isMeasured
-        ? `Recorded Laboratory Measurement (method metadata: ${labMeasurements?.testMethod || 'NOT_SUPPLIED'})`
-        : 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL'));
+      : 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL');
 
   const riskLevel: 'Low' | 'Medium' | 'High' = isEmptyFormula ? 'High' : (cpi >= 75 ? 'Low' : (cpi >= 50 ? 'Medium' : 'High'));
 
   const limitations = isEmptyFormula
     ? 'Insufficient formulation ingredient data to calculate performance score.'
-    : (isMeasured
-      ? `Empirical laboratory test data recorded on ${labMeasurements?.testDate || 'standard test protocol'} by operator ${labMeasurements?.operator || 'R&D Analyst'}.`
-      : `Predicted score is derived from formulation chemistry screening models (active surfactant loading, HLB match, pH, builders, enzymes). It is NOT an empirical laboratory test result and does not substitute for standardized Terg-O-Tometer stain-swatch (ASTM D4265/AATCC) or panel testing.`);
+    : `SCREENING MODEL ONLY: CPI/KPI coefficients and thresholds are engineering heuristics, not experimentally calibrated predictive models. Scores are not measured removal percentages and must not be used as certified product-performance claims. ${hasExplicitHardness ? 'Water hardness was supplied as an input; its measurement provenance remains user-declared.' : 'Water hardness was not supplied; 150 mg/L as CaCO3 is an assumed screening scenario, not a measurement.'} ${isMeasured ? 'Some individual laboratory measurements were supplied; only the matching KPI is labelled MEASURED. The composite CPI remains PREDICTED.' : 'No laboratory measurements were supplied.'} Standardized Terg-O-Tometer stain-swatch (ASTM D4265/AATCC) or relevant product-specific panel testing is still required.`;
 
   const labValidationGuidance = isCleaningApplicable
     ? 'Standardized soil swatch testing (e.g. EMPA/wfk test monitors under ASTM D4265 / AATCC 135) required for commercial performance claims.'
