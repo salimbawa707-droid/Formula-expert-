@@ -52,7 +52,7 @@ function normalizeActiveMatterInputValue(value: unknown): unknown {
   return value;
 }
 
-export type ActiveMatterProvenance = 'authoritative' | 'explicit_override' | 'derived_from_name' | 'missing';
+export type ActiveMatterProvenance = 'authoritative' | 'canonical_library_default' | 'reference_default' | 'explicit_override' | 'derived_from_name' | 'missing';
 
 export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
 
@@ -454,7 +454,7 @@ export class ActiveMatterEngine {
     if (canonicalMatch && canonicalMatch.activeDefault !== undefined) {
       return {
         activeMatterPct: canonicalMatch.activeDefault,
-        dataSource: 'authoritative',
+        dataSource: 'canonical_library_default',
         category: resolvedCategory,
         isSurfactant,
         surfactantType,
@@ -476,7 +476,7 @@ export class ActiveMatterEngine {
     if (benchMatch) {
       return {
         activeMatterPct: benchMatch.activeDefault,
-        dataSource: 'authoritative',
+        dataSource: 'reference_default',
         category: resolvedCategory || benchMatch.category,
         isSurfactant: isSurfactant || benchMatch.surfactantType !== 'none',
         surfactantType: surfactantType !== 'none' ? surfactantType : benchMatch.surfactantType,
