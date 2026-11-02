@@ -87,6 +87,9 @@ export interface CategoryMetricApplicability {
 }
 
 export interface ProductCategoryDefinition {
+  /** Category targets remain screening-only until source evidence is attached and independently reviewed. */
+  specificationEvidenceStatus?: 'SOURCE_VERIFIED' | 'UNVERIFIED_ENGINEERING_TARGETS';
+  specificationEvidenceNote?: string;
   id: ProductCategoryId;
   label: string;
   description: string;
@@ -485,9 +488,11 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
   }
 };
 
-export const PRODUCT_CATEGORIES: ProductCategoryDefinition[] = CANONICAL_PRODUCT_CATEGORY_IDS.map(
-  (id) => PRODUCT_TAXONOMY_MAP[id]
-);
+export const PRODUCT_CATEGORIES: ProductCategoryDefinition[] = CANONICAL_PRODUCT_CATEGORY_IDS.map((id) => ({
+  ...PRODUCT_TAXONOMY_MAP[id],
+  specificationEvidenceStatus: 'UNVERIFIED_ENGINEERING_TARGETS',
+  specificationEvidenceNote: 'pH and active-matter targets are engineering screening defaults; no category-specific source dossier has been attached and independently approved.'
+}));
 
 /**
  * Deterministic legacy alias mapping table.
