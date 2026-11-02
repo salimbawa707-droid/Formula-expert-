@@ -219,6 +219,18 @@ export function evaluateScientificQualityGate(
   const categoryDef = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? getProductCategory(canonicalCategory) : null;
   const productCategoryLabel = categoryDef ? categoryDef.label : (rawCategoryInput || 'Unknown Category');
 
+  if (categoryDef && categoryDef.specificationEvidenceStatus !== 'SOURCE_VERIFIED') {
+    majorWarnings.push({
+      id: 'gate-unverified-category-targets',
+      code: 'WARN_UNVERIFIED_CATEGORY_TARGETS',
+      title: 'Category Targets Are Unverified Engineering Defaults',
+      category: 'SPECIFICATION',
+      severity: 'MAJOR',
+      message: categoryDef.specificationEvidenceNote || 'Category pH and active-matter targets have no attached, independently reviewed source dossier.',
+      recommendation: 'Treat category pH and active-matter targets as screening guidance only until category-specific standards or technical sources are attached and reviewed.'
+    });
+  }
+
   let scientificValidity: ScientificValidityStatus = 'VALID';
 
   if (canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY') {
