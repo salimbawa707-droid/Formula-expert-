@@ -677,7 +677,7 @@ export function evaluateScientificQualityGate(
   if (!hasExplicitWaterHardness && productHardnessPolicy.requiresHardnessControl) {
     uncertainties.push('[ASSUMED_SCREENING_INPUT] Water hardness defaulted to 150 mg/L as CaCO3 because no measured/user-supplied value was provided.');
   }
-  if (categoryDef?.specificationEvidenceStatus !== 'SOURCE_VERIFIED') {
+  if (categoryDef && categoryDef.specificationEvidenceStatus !== 'SOURCE_VERIFIED') {
     uncertainties.push('[UNVERIFIED_CATEGORY_TARGETS] Category pH and active-matter targets are engineering screening targets pending source-level validation.');
   }
 
