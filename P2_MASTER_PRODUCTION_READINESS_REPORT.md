@@ -8,7 +8,7 @@
 
 The repository contains local deterministic calculation engines and also retains external integrations, including Gemini, Supabase and Firebase. The application must not be described as fully offline or as having zero external service dependencies.
 
-The latest PR-branch CI run (workflow 41530474374, commit ee9702b) passed the TypeScript regression suite (139/139 modules; 4,699/4,699 assertions), production frontend build, Phase 6 lab-evidence regression, and evidence fail-closed checks. The Android debug APK job was skipped because the independent evidence gate remains locked.
+The latest PR-branch CI run (workflow 41530713142, merged PR #77 commit b424f68) passed the TypeScript regression suite (139/139 modules; 4,699/4,699 assertions), production frontend build, Phase 6 lab-evidence regression, and evidence fail-closed checks. The Android debug APK job was skipped; the Phase 5 gate remains locked. The merge workflow did not produce an APK artifact.
 
 ## 2. Workstream status
 
