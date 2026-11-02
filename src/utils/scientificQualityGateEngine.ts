@@ -204,7 +204,8 @@ export function evaluateScientificQualityGate(
   const formulaVersion = input.formulaVersion || 'UNKNOWN_VERSION';
   const rawIngs = Array.isArray(input.ingredients) ? input.ingredients : [];
   const labMeasurements = Array.isArray(input.labMeasurements) ? input.labMeasurements : [];
-  const waterHardnessPpm = input.waterHardnessPpm !== undefined && input.waterHardnessPpm >= 0 ? input.waterHardnessPpm : 150;
+  const hasExplicitWaterHardness = typeof input.waterHardnessPpm === 'number' && Number.isFinite(input.waterHardnessPpm) && input.waterHardnessPpm >= 0;
+  const waterHardnessPpm = hasExplicitWaterHardness ? input.waterHardnessPpm! : 150;
 
   const blockingIssues: QualityGateFinding[] = [];
   const majorWarnings: QualityGateFinding[] = [];
@@ -401,6 +402,18 @@ export function evaluateScientificQualityGate(
     input.batchSizeKg || 0,
     input.specificationProfileId || input.subCategory || canonicalCategory
   );
+
+  if (!hasExplicitWaterHardness && productHardnessPolicy.requiresHardnessControl) {
+    majorWarnings.push({
+      id: 'gate-assumed-water-hardness',
+      code: 'WARN_ASSUMED_WATER_HARDNESS',
+      title: 'Water Hardness Is an Assumed Screening Scenario',
+      category: 'SPECIFICATION',
+      severity: 'MAJOR',
+      message: 'No measured/user-supplied wash-water hardness was provided. Chelation screening used 150 mg/L as CaCO3 only as an explicit assumed scenario; this is not a measurement and cannot establish local-water suitability.',
+      recommendation: 'Enter a measured water-hardness value (mg/L as CaCO3) for the intended wash water before interpreting the chelation result.'
+    });
+  }
 
   if (rawIngs.length > 0 && hardnessTolerance.isApplicable && waterHardnessPpm > 0 && (hardnessTolerance.status === 'INSUFFICIENT' || hardnessTolerance.status === 'WARNING')) {
     minorWarnings.push({
@@ -649,6 +662,12 @@ export function evaluateScientificQualityGate(
 
   const uncertainties: string[] = [];
   const requiredLabTests: string[] = [];
+  if (!hasExplicitWaterHardness && productHardnessPolicy.requiresHardnessControl) {
+    uncertainties.push('[ASSUMED_SCREENING_INPUT] Water hardness defaulted to 150 mg/L as CaCO3 because no measured/user-supplied value was provided.');
+  }
+  if (categoryDef?.specificationEvidenceStatus !== 'SOURCE_VERIFIED') {
+    uncertainties.push('[UNVERIFIED_CATEGORY_TARGETS] Category pH and active-matter targets are engineering screening targets pending source-level validation.');
+  }
 
   // Propagate uncertainty from missing data or estimates
   if (rawIngs.length === 0) {
