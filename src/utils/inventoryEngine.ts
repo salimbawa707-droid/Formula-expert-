@@ -183,14 +183,8 @@ export function findMatchingInventoryItem(
   const exactNameMatch = inventory.find(inv => inv.name.trim().toLowerCase() === rawName);
   if (exactNameMatch) return exactNameMatch;
 
-  // 3. Normalized / Substring match (e.g. "LABSA", "SLES 70%", "Caustic Soda")
-  const partialMatch = inventory.find(inv => {
-    const invName = inv.name.toLowerCase();
-    return invName.includes(rawName) || rawName.includes(invName);
-  });
-  if (partialMatch) return partialMatch;
-
-  // 4. CAS match if available
+  // 3. CAS match is a precise identity key; do not use substring matching.
+  // Grade-sensitive names such as LABSA 90% and LABSA 96% must never cross-match.
   if (ingredient.casNumber) {
     const casMatch = inventory.find(inv => inv.casNumber === ingredient.casNumber);
     if (casMatch) return casMatch;
@@ -247,11 +241,17 @@ export function checkProductionBatchAvailability(
   let totalBatchCost = 0;
   let costComplete = true;
   const insufficientItems: string[] = [];
+  const blockReasons: string[] = [];
+  let totalFormulaPercentage = 0;
 
-  const requirements: ProductionRequirementItem[] = formula.ingredients.map(ing => {
-    // Zero-safe percentage normalization
-    const rawPct = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0;
-    const percentage = typeof rawPct === 'number' && !isNaN(rawPct) && rawPct >= 0 ? rawPct : 0;
+  const requirements: ProductionRequirementItem[] = formula.ingredients.map((ing, index) => {
+    const rawPct = ing.percentage ?? ing.percent ?? ing.percentageInFormula;
+    const validPercentage = typeof rawPct === 'number' && Number.isFinite(rawPct) && rawPct >= 0 && rawPct <= 100;
+    if (!validPercentage) {
+      blockReasons.push(`${ing.name || `Ingredient ${index + 1}`}: percentage is missing or outside the valid 0–100% range.`);
+    }
+    const percentage = validPercentage ? rawPct : 0;
+    totalFormulaPercentage += percentage;
     
     const requiredKg = Number(((batchSizeKg * percentage) / 100).toFixed(3));
     totalRequiredKg += requiredKg;
@@ -305,7 +305,10 @@ export function checkProductionBatchAvailability(
     };
   });
 
-  const canProduce = insufficientItems.length === 0;
+  if (Math.abs(totalFormulaPercentage - 100) > 0.05) {
+    blockReasons.push(`Formula mass balance is ${totalFormulaPercentage.toFixed(3)}%; exactly 100.00% (±0.05 percentage points) is required.`);
+  }
+  const canProduce = insufficientItems.length === 0 && blockReasons.length === 0;
 
   return {
     canProduce,
@@ -313,7 +316,7 @@ export function checkProductionBatchAvailability(
     totalRequiredKg: Number(totalRequiredKg.toFixed(3)),
     totalBatchCost: costComplete ? Number(totalBatchCost.toFixed(2)) : null,
     costComplete,
-    blockReasons: [],
+    blockReasons,
     requirements,
     insufficientCount: insufficientItems.length,
     insufficientItems
