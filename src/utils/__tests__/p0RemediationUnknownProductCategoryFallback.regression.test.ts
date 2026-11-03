@@ -8,7 +8,8 @@
 import {
   normalizeProductCategory,
   CANONICAL_PRODUCT_CATEGORY_IDS,
-  getProductCategoryLabel
+  getProductCategoryLabel,
+  getTargetPHRange
 } from '../../domain/productTaxonomy';
 import {
   getScientificProductProfile,
@@ -272,6 +273,9 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
       zeroPHGate.speciationResult.provenance === 'MEASURED' &&
       zeroPHGate.speciationResult.pH === 0
   );
+
+  assert('32. Unknown category has no pH target range', getTargetPHRange('UNKNOWN_PRODUCT_CATEGORY') === null);
+  assert('33. Laundry liquid target range remains available', getTargetPHRange('LAUNDRY_LIQUID')?.min === 7.5 && getTargetPHRange('LAUNDRY_LIQUID')?.max === 9.5);
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
