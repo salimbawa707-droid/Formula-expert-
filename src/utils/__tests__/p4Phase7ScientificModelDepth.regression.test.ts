@@ -304,7 +304,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     { name: 'Water', percentage: 90 },
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
   ], 8.5, 'LAUNDRY_LIQUID');
-  assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', true, true);
+  assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', { semantic: compClean.compatibilityStatusSemantic, evidence: compClean.evidenceStatus, alerts: compClean.alerts.map(a => a.severity) }, 'NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE');
 
   // 6.4 Empty formula receives INSUFFICIENT_DATA
   const compEmpty = calculateFormulationCompatibility([]);
@@ -512,8 +512,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     compMeta.modelClass === 'RULE_BASED_SCREENING' &&
     compPreserved.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' &&
     compPreserved.evidenceStatus === 'SCREENING_COMPATIBLE',
-    true,
-    true
+    { semantic: compPreserved.compatibilityStatusSemantic, evidence: compPreserved.evidenceStatus, alerts: compPreserved.alerts.map(a => a.severity) },
+    'NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE'
   );
 
   // G. HLB method metadata distinction
