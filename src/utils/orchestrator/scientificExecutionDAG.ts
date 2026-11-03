@@ -1031,9 +1031,9 @@ export class ScientificExecutionDAG {
           plannedVolumeLiters: state.densityGPerCm3 > 0 ? Number((state.batchSizeKg / state.densityGPerCm3).toFixed(3)) : undefined,
           processLossKg: Number((state.batchSizeKg * 0.01).toFixed(3)),
           processLossPercent: 1.0,
-          processSteps: isPowder ? defaultPowderSteps : defaultLiquidSteps
+          processSteps: state.physicalForm === 'UNKNOWN' ? [] : (isPowder ? defaultPowderSteps : defaultLiquidSteps)
         };
-        state.manufacturingStatus = 'ESTIMATED';
+        state.manufacturingStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'ESTIMATED';
       }
     });
 
@@ -1053,7 +1053,7 @@ export class ScientificExecutionDAG {
           parameters: specTemplate?.parameters || [],
           labMeasurements: state.rawInput.labEvidence || [],
           powderReport: state.powderReport,
-          costReport: state.costResult ? { costPerKg: state.costResult.costPerKg, totalBatchCost: state.costResult.totalBatchCost } as any : null,
+          costReport: state.costResult ? state.costResult as any : null,
           liquidResults: {
             pH: state.finalEquilibriumPH ?? undefined,
             activeSurfactants: state.totalSurfactantActivePct,
@@ -1062,7 +1062,7 @@ export class ScientificExecutionDAG {
             viscosityCp: state.viscosityResult?.predictedViscosityCp ?? undefined,
             density: state.densityGPerCm3,
             liquidNVR: state.nvrPercentage,
-            liquidNVRComplete: state.nvrResult?.isComplete,
+            liquidNVRComplete: state.nvrResult?.isNvrComplete,
             nvrCoveragePct: state.nvrResult?.dataCompleteness,
             costPerKg: state.costResult?.costPerKg
           }
@@ -1088,7 +1088,7 @@ export class ScientificExecutionDAG {
           // Evidence matching must use the caller's explicit version, not the display sentinel.
           formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory,
-          isComputationallyValid: state.errors.length === 0,
+          isComputationallyValid: state.errors.length === 0 && state.blockingIssues.length === 0,
           predictedMetrics: {
             pH: state.finalEquilibriumPH ?? null,
             activeSurfactantsPct: state.totalSurfactantActivePct,
@@ -1096,7 +1096,7 @@ export class ScientificExecutionDAG {
             viscosityCps: state.viscosityResult?.predictedViscosityCp ?? null,
             cpi: state.cpi,
             densityGCm3: state.densityGPerCm3,
-            waterHardnessTolerancePpm: state.rawCapacity
+            waterHardnessTolerancePpm: Number.isFinite(state.hardnessResult?.maxSupportedPpm) ? state.hardnessResult.maxSupportedPpm : null
           },
           labEvidenceRecords: labEvidence as any
         });
@@ -1141,12 +1141,22 @@ export class ScientificExecutionDAG {
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : (state.rawInput.productCategory || 'UNKNOWN_PRODUCT_CATEGORY'),
           ingredients: state.resolvedIngredients,
           labMeasurements: state.rawInput.labEvidence || [],
-          waterHardnessPpm: state.waterHardnessPpm,
+          waterHardnessPpm: state.waterHardnessPpm ?? undefined,
           batchSizeKg: state.batchSizeKg,
           targetCostPerKg: state.rawInput.costContext?.targetCostPerKg
         });
 
-        state.qualityGateStatus = 'VALID';
+        const finalGateStatus = state.qualityGateResult?.finalFormulaStatus;
+        state.qualityGateStatus =
+          finalGateStatus === 'OUT_OF_SPEC' || finalGateStatus === 'SCIENTIFICALLY_INVALID' || finalGateStatus === 'INCOMPATIBLE'
+            ? 'FAILED'
+            : finalGateStatus === 'INSUFFICIENT_DATA'
+              ? 'INSUFFICIENT_DATA'
+              : finalGateStatus === 'LAB_VALIDATION_REQUIRED'
+                ? 'SCREENING'
+                : (state.qualityGateResult?.scientificValidity === 'VALID' && state.labEvidenceResult?.isLabValidated === true
+                  ? 'VALID'
+                  : 'SCREENING');
       }
     });
 
@@ -1169,21 +1179,27 @@ export class ScientificExecutionDAG {
         const activeMatterOut = {
           totalSurfactantActivePct: state.totalSurfactantActivePct,
           totalActiveMatterPct: state.totalActiveMatterPct,
-          meetsCategoryMin: state.totalSurfactantActivePct >= (getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? 0),
-          categoryMinPct: getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? 0,
+          meetsCategoryMin: Number.isFinite(state.totalSurfactantActivePct)
+            ? state.totalSurfactantActivePct >= (getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? Number.NaN)
+            : null,
+          categoryMinPct: getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? null,
+          verified: state.activeMatterVerified === true,
+          status: state.activeMatterStatus,
           surfactantBreakdown: {
             anionic: state.anionicPct,
             nonionic: state.nonionicPct,
             amphoteric: state.amphotericPct,
             cationic: state.cationicPct,
-            total: state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct
+            total: [state.anionicPct, state.nonionicPct, state.amphotericPct, state.cationicPct].every(Number.isFinite)
+              ? state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct
+              : null
           }
         };
 
         const phOut = {
           ph: state.finalEquilibriumPH,
-          isMeasured: state.labEvidenceResult?.verifiedMeasurementsCount > 0,
-          provenance: state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'MEASURED' : 'PREDICTED',
+          isMeasured: state.phStatus === 'VALID',
+          provenance: state.phStatus === 'VALID' ? 'MEASURED' : (state.phStatus === 'SCREENING' ? 'PREDICTED' : 'INSUFFICIENT_DATA'),
           bufferCapacity: state.phBufferCapacity,
           ionicStrength: state.phIonicStrength,
           confidence: state.phStatus,
@@ -1195,28 +1211,37 @@ export class ScientificExecutionDAG {
           compatibilityScore: state.compatibilityScore,
           alerts: state.compatibilityResult?.alerts || [],
           warnings: state.compatibilityResult?.warnings || [],
-          stabilityStatus: state.compatibilityScore >= 80 ? 'HIGH_STABILITY' : 'UNSTABLE'
+          stabilityStatus: Number.isFinite(state.compatibilityScore)
+            ? (state.compatibilityScore >= 80 ? 'SCREENING_HIGH_COMPATIBILITY' : 'SCREENING_LOW_COMPATIBILITY')
+            : 'UNKNOWN'
         };
 
         const cleaningOut = {
-          cpi: state.cpi ?? 0,
-          overallScore: state.cleaningResult?.overallScore ?? 0,
-          cleaningScore: state.cleaningResult?.cleaningScore ?? 0,
-          isCleaningApplicable: state.cleaningResult?.isCleaningApplicable ?? true,
+          cpi: Number.isFinite(state.cpi) ? state.cpi : null,
+          overallScore: Number.isFinite(state.cleaningResult?.overallScore) ? state.cleaningResult.overallScore : null,
+          cleaningScore: Number.isFinite(state.cleaningResult?.cleaningScore) ? state.cleaningResult.cleaningScore : null,
+          provenance: state.cleaningResult?.provenance ?? 'INSUFFICIENT_DATA',
+          isCleaningApplicable: state.cleaningResult?.isCleaningApplicable ?? false,
           limitingFactors: state.cleaningResult?.keyNegativeFactors || []
         };
 
         const costOut = {
-          costPerKg: state.costResult?.costPerKg ?? 0,
-          totalBatchCost: state.costResult?.totalBatchCost ?? 0,
-          isWithinTarget: state.rawInput.costContext?.targetCostPerKg !== undefined && state.rawInput.costContext?.targetCostPerKg !== null ? state.costResult?.costPerKg <= state.rawInput.costContext.targetCostPerKg : false
+          costPerKg: Number.isFinite(state.costResult?.costPerKg) ? state.costResult.costPerKg : null,
+          totalBatchCost: Number.isFinite(state.costResult?.totalBatchCost) ? state.costResult.totalBatchCost : null,
+          isComplete: state.costResult?.isComplete === true,
+          pricingStatus: state.costResult?.pricingStatus ?? 'UNKNOWN',
+          isWithinTarget: Number.isFinite(state.costResult?.costPerKg) &&
+            typeof state.rawInput.costContext?.targetCostPerKg === 'number' &&
+            Number.isFinite(state.rawInput.costContext.targetCostPerKg)
+              ? state.costResult.costPerKg <= state.rawInput.costContext.targetCostPerKg
+              : null
         };
 
         state.aiGradeResult = evaluateAIGrade({
           formulaIdentity: {
             canonicalCategory: state.canonicalCategory
           },
-          scientificValidity: state.qualityGateResult?.scientificValidity ?? 'VALID',
+          scientificValidity: state.qualityGateResult?.scientificValidity ?? 'INSUFFICIENT_DATA',
           activeMatterResult: activeMatterOut as any,
           pHResult: phOut as any,
           compatibilityResult: compOut as any,
@@ -1224,14 +1249,15 @@ export class ScientificExecutionDAG {
           costResult: costOut as any,
           labEvidenceResult: state.labEvidenceResult as any,
           regulatoryResult: state.regulatoryResult as any,
-          blockingIssues: state.canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' 
-            ? ['CATEGORY_REQUIRED', ...state.blockingIssues] 
-            : state.blockingIssues,
+          blockingIssues: [
+            ...(state.canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' ? ['CATEGORY_REQUIRED'] : []),
+            ...state.blockingIssues.map((issue: any) => String(issue?.code || issue?.message || issue))
+          ],
           warnings: state.warnings,
           unknownParameters: state.unknownParameters
         });
 
-        state.gradeStatus = 'VALID';
+        state.gradeStatus = state.aiGradeResult?.isEvaluable === true ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -1248,9 +1274,9 @@ export class ScientificExecutionDAG {
           waterHardnessPpm: state.waterHardnessPpm,
           batchSizeKg: state.batchSizeKg,
           calculatedPH: state.finalEquilibriumPH,
-          totalActiveMatter: state.totalSurfactantActivePct,
-          totalPercentage: state.totalMassPct,
-          costPerKg: state.costResult?.costPerKg ?? 0,
+          totalActiveMatter: Number.isFinite(state.totalSurfactantActivePct) ? state.totalSurfactantActivePct : undefined,
+          totalPercentage: Number.isFinite(state.totalMassPct) ? state.totalMassPct : undefined,
+          costPerKg: Number.isFinite(state.costResult?.costPerKg) ? state.costResult.costPerKg : undefined,
           cleaningScore: state.cleaningResult?.cleaningScore ?? undefined,
           hardnessSufficiency: state.hardnessResult?.sufficiency,
           maxSupportedHardnessPpm: state.hardnessResult?.maxSupportedPpm,
@@ -1260,7 +1286,9 @@ export class ScientificExecutionDAG {
         });
 
         const climatePreset = state.rawInput.climatePreset || 'Temperate';
-        state.climateResult = analyzeClimateAndHardWater(state.resolvedIngredients, climatePreset as any, state.waterHardnessPpm);
+        state.climateResult = state.waterHardnessPpm === null
+          ? null
+          : analyzeClimateAndHardWater(state.resolvedIngredients, climatePreset as any, state.waterHardnessPpm);
         state.substitutionResult = findSubstitutionsForFormula(state.resolvedIngredients, state.rawInput.regulatoryContext?.jurisdiction || 'Global', 'Cost Reduction');
         state.labHealthResult = calculateLabHealthScore(state.resolvedIngredients, state.finalEquilibriumPH, state.canonicalCategory);
       }
