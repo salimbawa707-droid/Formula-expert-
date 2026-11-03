@@ -54,6 +54,7 @@ export interface ProductionBatchRun {
   totalCost: number;
   status: 'Completed' | 'Failed';
   operatorNotes?: string;
+  manufacturingBatchId?: string;
 }
 
 export const INVENTORY_STORAGE_KEY = 'detergent_rd_inventory_v1';
