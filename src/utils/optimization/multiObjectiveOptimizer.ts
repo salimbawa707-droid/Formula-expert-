@@ -703,7 +703,7 @@ export async function runFormulationOptimization(
   const totalGens = Math.max(1, Math.min(25, config.generations || 8));
   const maxEvalCap = config.maxEvaluations || popSize * (totalGens + 1);
 
-  const constraints = buildProductConstraints(categoryId, config.subCategory, config.customConstraints);
+  const constraints = buildProductConstraints(categoryId, config.subCategory, config.customConstraints, config.waterHardnessPpm);
   const random = config.seed !== undefined ? createSeededRandom(config.seed) : Math.random;
 
   const allCandidates: ParetoCandidate[] = [];
