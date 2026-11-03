@@ -237,7 +237,7 @@ export const EmpiricalValidationHub: React.FC<EmpiricalValidationHubProps> = ({
 
   const loadSampleCsvTemplate = () => {
     const sample = `observationId,datasetId,batchId,sampleId,productCategory,measuredProperty,measuredValue,measurementUnit,testMethodId,waterHardnessPpm,temperatureC,dosageGramsPerL,contactTimeMin,replicateNumber,testDate,formulaVersion,formulaFingerprint,standardRef,instrumentName,instrumentId,activeMatterChemistryScope,activeMatterScopeEvidenceRef,activeMatterMolecularMassGPerMol,reviewStatus,reviewer,reviewDate,reviewNotes,replicateValues,rawEvidenceRef
-OBS-PH-001,DS-LAB-2026,BATCH-101,SMP-101-1,LAUNDRY_LIQUID,pH Prediction,8.45,pH units,ASTM-D1172,150,25.0,2.0,15.0,1,2026-10-10,1.0.0,FP-LAUN-A1B2C3D4,,,,,,,,,,,`;
+OBS-PH-001,DS-LAB-2026,BATCH-101,SMP-101-1,LAUNDRY_LIQUID,pH Prediction,8.45,pH units,ASTM-D1172,,25.0,2.0,15.0,1,2026-10-10,1.0.0,FP-LAUN-A1B2C3D4,,,,,,,,,,,`;
     setRawImportText(sample);
   };
 
@@ -251,7 +251,7 @@ OBS-PH-001,DS-LAB-2026,BATCH-101,SMP-101-1,LAUNDRY_LIQUID,pH Prediction,8.45,pH 
         measuredValue: 8.42,
         measurementUnit: "pH units",
         testMethodId: "ASTM-D1172",
-        waterHardnessPpm: 150,
+        waterHardnessPpm: null,
         temperatureC: 25.0,
         dosageGramsPerL: 2.0,
         contactTimeMin: 15.0,
