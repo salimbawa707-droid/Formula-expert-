@@ -23,7 +23,7 @@ import { ScientificValidityStatus, QualityGateEvidenceStatus } from './scientifi
 import { FormulationIngredient } from '../types';
 import { normalizeIngredientTaxonomy } from './calculators';
 import { calculateActiveMatter } from './activeMatterEngine';
-import { calculateCPI } from './cleaningPerformanceEngine';
+import { calculateCPI, calculateCleaningPerformance } from './cleaningPerformanceEngine';
 import { calculateFormulationCompatibility } from './compatibilityEngine';
 import { calculateLabHealthScore } from './labHealthEngine';
 import { calculateBatchCost } from './calculators';
