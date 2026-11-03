@@ -67,9 +67,12 @@ export function evaluatePowderFormulation(input: PowderEngineInput): PowderFormu
     input.batchSizeKg > 0
       ? input.batchSizeKg
       : null;
-  const waterHardnessPpm = (input.waterHardnessPpm !== undefined && input.waterHardnessPpm >= 0) ? input.waterHardnessPpm : 150;
-  const washDoseG = (input.washDoseG !== undefined && input.washDoseG > 0) ? input.washDoseG : 50;
-  const washVolumeL = (input.washLiquorVolumeL !== undefined && input.washLiquorVolumeL > 0) ? input.washLiquorVolumeL : 10;
+  const waterHardnessPpm = typeof input.waterHardnessPpm === 'number' && Number.isFinite(input.waterHardnessPpm) && input.waterHardnessPpm >= 0
+    ? input.waterHardnessPpm : undefined;
+  const washDoseG = typeof input.washDoseG === 'number' && Number.isFinite(input.washDoseG) && input.washDoseG > 0
+    ? input.washDoseG : undefined;
+  const washVolumeL = typeof input.washLiquorVolumeL === 'number' && Number.isFinite(input.washLiquorVolumeL) && input.washLiquorVolumeL > 0
+    ? input.washLiquorVolumeL : undefined;
   const labMeasurements = input.labMeasurements;
 
   // 1. Mass Balance
