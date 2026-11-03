@@ -47,6 +47,7 @@ export interface IngestionBatchResult {
   invalidCount: number;
   conflictCount: number;
   duplicateCount: number;
+  reviewCount: number;
   issues: string[];
 }
 
@@ -60,32 +61,57 @@ export function ingestExperimentResult(
   const resultId = `RES-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
   let quality: DataQualityStatus = 'VALID';
 
-  // 1. Identity & Lineage Checks
-  if (!input.formulaId || !input.sampleId || !input.evidenceRecordId) {
+  const requiredIdentityFields: Array<keyof IngestResultInput> = [
+    'experimentId', 'formulaId', 'formulaVersionId', 'batchId', 'sampleId',
+    'testId', 'measurementId', 'evidenceRecordId', 'parameterKey',
+    'parameterName', 'measuredUnit', 'measurementTimestamp', 'instrumentId',
+    'methodId', 'ingestionSource', 'ingestedBy',
+  ];
+  const missingFields = requiredIdentityFields.filter(key => {
+    const value = input[key];
+    return typeof value !== 'string' || value.trim().length === 0;
+  });
+
+  // Validate the complete lineage before duplicate/conflict checks. Invalid
+  // records must never be relabelled as duplicates or valid by later branches.
+  if (missingFields.length > 0) {
     quality = 'INCOMPLETE';
-  } else if (isNaN(input.measuredValue) || !isFinite(input.measuredValue)) {
+  } else if (
+    typeof input.measuredValue !== 'number' ||
+    !Number.isFinite(input.measuredValue) ||
+    !Number.isFinite(Date.parse(input.measurementTimestamp))
+  ) {
     quality = 'INVALID';
+  } else if (
+    input.verificationStatus === 'REJECTED' ||
+    input.evidenceLevel === 'INSUFFICIENT_DATA' ||
+    input.evidenceLevel === 'NOT_TESTED'
+  ) {
+    quality = 'REQUIRES_REVIEW';
   }
 
-  // 2. Duplicate & Conflict Detection
-  const duplicate = existingResults.find(
-    r =>
-      r.sampleId === input.sampleId &&
-      r.parameterKey === input.parameterKey &&
-      r.measurementId === input.measurementId
-  );
-
-  if (duplicate) {
-    quality = 'DUPLICATE';
-  } else {
-    const conflict = existingResults.find(
-      r =>
-        r.sampleId === input.sampleId &&
-        r.parameterKey === input.parameterKey &&
-        Math.abs(r.measuredValue - input.measuredValue) > 0.001
+  if (quality === 'VALID' || quality === 'REQUIRES_REVIEW') {
+    const sameMeasurement = existingResults.find(
+      result => result.sampleId === input.sampleId && result.measurementId === input.measurementId
     );
-    if (conflict) {
-      quality = 'CONFLICT_REQUIRES_REVIEW';
+
+    if (sameMeasurement) {
+      const exactDuplicate =
+        sameMeasurement.formulaId === input.formulaId &&
+        sameMeasurement.formulaVersionId === input.formulaVersionId &&
+        sameMeasurement.batchId === input.batchId &&
+        sameMeasurement.parameterKey === input.parameterKey &&
+        sameMeasurement.measuredValue === input.measuredValue &&
+        sameMeasurement.measuredUnit === input.measuredUnit &&
+        sameMeasurement.evidenceRecordId === input.evidenceRecordId;
+      quality = exactDuplicate ? 'DUPLICATE' : 'CONFLICT_REQUIRES_REVIEW';
+    } else {
+      const lineageConflict = existingResults.find(
+        result =>
+          result.sampleId === input.sampleId &&
+          (result.formulaId !== input.formulaId || result.formulaVersionId !== input.formulaVersionId)
+      );
+      if (lineageConflict) quality = 'CONFLICT_REQUIRES_REVIEW';
     }
   }
 
@@ -134,6 +160,7 @@ export function ingestExperimentResultBatch(
   let invalidCount = 0;
   let conflictCount = 0;
   let duplicateCount = 0;
+  let reviewCount = 0;
 
   for (const input of inputs) {
     const res = ingestExperimentResult(input, currentPool);
@@ -150,6 +177,9 @@ export function ingestExperimentResultBatch(
     } else if (res.dataQuality === 'DUPLICATE') {
       duplicateCount++;
       issues.push(`Duplicate measurement '${input.measurementId}' ignored.`);
+    } else if (res.dataQuality === 'REQUIRES_REVIEW') {
+      reviewCount++;
+      issues.push(`Result for sample '${input.sampleId}' parameter '${input.parameterKey}' requires evidence review.`);
     }
   }
 
@@ -159,6 +189,7 @@ export function ingestExperimentResultBatch(
     invalidCount,
     conflictCount,
     duplicateCount,
+    reviewCount,
     issues,
   };
 }
