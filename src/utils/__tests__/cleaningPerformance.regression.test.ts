@@ -110,10 +110,12 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
 
   // 7. Formula A -> B -> C -> A Switching Reactivity
   const formulaA = [
-    { name: 'SLES 70%', percentage: 15, activeMatterPct: 70, category: 'Anionic Surfactant' }
+    { name: 'SLES 70%', percentage: 15, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 85, activeMatterPct: 0, category: 'Solvent' }
   ];
   const formulaB = [
-    { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, category: 'Anionic Surfactant' }
+    { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 95, activeMatterPct: 0, category: 'Solvent' }
   ];
   const perfA = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   const perfB = calculateCleaningPerformance(formulaB as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
@@ -126,8 +128,27 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   // 8. AIFormulator vs SmartFormulaAnalyzerPro Determinism
   // Both components consuming calculateCleaningPerformance on formulaWithEnzyme obtain identical output
   const cpiAIFormulator = calculateCPI(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-  const cpiAnalyzer = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID').overallScore;
+  const cpiAnalyzer = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }).overallScore;
   assertEqual('Cross-Component Determinism', 'AIFormulator CPI equals SmartFormulaAnalyzerPro Overall CPI', cpiAIFormulator, cpiAnalyzer);
+
+  const missingPercentagePerformance = calculateCleaningPerformance(
+    [{ name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' }, { name: 'Water', activeMatterPct: 0, category: 'Solvent' }] as any,
+    8.0,
+    'LAUNDRY_LIQUID',
+    undefined,
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
+  );
+  assertEqual('Fail-Closed Inputs', 'Missing ingredient percentage blocks cleaning performance', missingPercentagePerformance.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Missing ingredient percentage emits no CPI', missingPercentagePerformance.cpi, null);
+
+  const unbalancedPerformance = calculateCleaningPerformance(
+    [{ name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' }, { name: 'Water', percentage: 80, activeMatterPct: 0, category: 'Solvent' }] as any,
+    8.0,
+    'LAUNDRY_LIQUID',
+    undefined,
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
+  );
+  assertEqual('Fail-Closed Inputs', 'Unbalanced formula blocks cleaning performance', unbalancedPerformance.provenance, 'INSUFFICIENT_DATA');
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
