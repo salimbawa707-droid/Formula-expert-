@@ -143,7 +143,7 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     { name: 'Water', percentage: 95 },
     { name: 'Tetrasodium EDTA 39% Solution', percentage: 5, activeMatterPct: 39 }
   ];
-  const tolerance = calculateWaterHardnessTolerance(chelatorIngredients, 100);
+  const tolerance = calculateWaterHardnessTolerance(chelatorIngredients, 100, 10, 20, 100);
   assert(
     'Phase 7 Accuracy',
     '4.2 Calculates effective Ca/Mg binding capacity without treating theoretical as free-metal removal',
