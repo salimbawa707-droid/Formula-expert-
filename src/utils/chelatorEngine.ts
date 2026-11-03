@@ -959,6 +959,7 @@ export interface DynamicChelatorRequirement {
   recommendedAction: string;
   calculationBasis: string;
   isSufficient: boolean;
+  status: 'CALCULATED' | 'INSUFFICIENT_DATA';
 }
 
 /**
@@ -967,15 +968,30 @@ export interface DynamicChelatorRequirement {
  */
 export function calculateDynamicChelatorRequirement(
   ingredients: FormulationIngredient[],
-  waterHardnessPpm: number = 150,
-  washVolumeL: number = 10,
-  washDoseGrams: number = 20,
-  safetyMarginPct: number = 25
+  waterHardnessPpm?: number,
+  washVolumeL?: number,
+  washDoseGrams?: number,
+  safetyMarginPct?: number
 ): DynamicChelatorRequirement {
-  const targetHardnessPpm = typeof waterHardnessPpm === 'number' && !isNaN(waterHardnessPpm) ? Math.max(0, waterHardnessPpm) : 150;
-  const vol = typeof washVolumeL === 'number' && !isNaN(washVolumeL) && washVolumeL > 0 ? washVolumeL : 10;
-  const dose = typeof washDoseGrams === 'number' && !isNaN(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : 20;
-  const margin = typeof safetyMarginPct === 'number' && !isNaN(safetyMarginPct) ? Math.max(0, safetyMarginPct) : 25;
+  const scenarioComplete = typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0 &&
+    typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 &&
+    typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 &&
+    typeof safetyMarginPct === 'number' && Number.isFinite(safetyMarginPct) && safetyMarginPct >= 0;
+  if (!scenarioComplete) {
+    return {
+      waterHardnessPpm: NaN, washVolumeL: NaN, washDoseGrams: NaN, hardnessLoadMg: NaN,
+      safetyMarginPct: NaN, requiredSequestrationMg: NaN, existingSequestrationMg: NaN,
+      capacityDeficitMg: NaN, capacitySurplusMg: NaN, additionalGLDA47RequiredPct: NaN,
+      additionalCitrateRequiredPct: NaN, additionalMGDA38RequiredPct: NaN,
+      recommendedAction: 'INSUFFICIENT_DATA: enter exact water hardness, final wash-liquor volume, detergent dose and safety margin. No chelator percentage is calculated.',
+      calculationBasis: 'NOT_EVALUATED: required wash-scenario inputs are missing or invalid.',
+      isSufficient: false, status: 'INSUFFICIENT_DATA'
+    };
+  }
+  const targetHardnessPpm = waterHardnessPpm as number;
+  const vol = washVolumeL as number;
+  const dose = washDoseGrams as number;
+  const margin = safetyMarginPct as number;
 
   const hardnessLoadMg = calculateWaterHardnessLoad(targetHardnessPpm, vol);
   const requiredSequestrationMg = hardnessLoadMg * (1 + margin / 100);
@@ -1024,7 +1040,8 @@ export function calculateDynamicChelatorRequirement(
     additionalMGDA38RequiredPct,
     recommendedAction,
     calculationBasis,
-    isSufficient
+    isSufficient,
+    status: 'CALCULATED'
   };
 }
 
@@ -1055,7 +1072,7 @@ export interface WaterHardnessToleranceResult {
   sufficiency: 'sufficient' | 'borderline' | 'insufficient' | 'not_applicable' | 'baseline';
   isApplicable: boolean;
   category?: string;
-  provenance: 'AUTHORITATIVE' | 'CALCULATED';
+  provenance: 'AUTHORITATIVE' | 'CALCULATED' | 'UNKNOWN';
   theoreticalCapacityBasis?: string;
   matrixEquilibriumNotes?: string;
   limitations?: string[];
@@ -1069,7 +1086,7 @@ export interface WaterHardnessToleranceResult {
  */
 export function calculateWaterHardnessTolerance(
   ingredients: FormulationIngredient[],
-  waterHardnessPpm: number = 150,
+  waterHardnessPpm?: number,
   washVolumeL?: number,
   washDoseGrams?: number,
   batchSizeKg: number = 100,
@@ -1077,19 +1094,29 @@ export function calculateWaterHardnessTolerance(
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const policy = getProductHardnessPolicy(productCategoryOrProfileId);
-
-  const vol = typeof washVolumeL === 'number' && !isNaN(washVolumeL) && washVolumeL > 0 
-    ? washVolumeL 
-    : policy.defaultWashVolumeL;
-  const dose = typeof washDoseGrams === 'number' && !isNaN(washDoseGrams) && washDoseGrams > 0 
-    ? washDoseGrams 
-    : policy.defaultDoseGrams;
-  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 
-    ? batchSizeKg 
-    : 100;
-  const targetHardnessPpm = typeof waterHardnessPpm === 'number' && !isNaN(waterHardnessPpm) 
-    ? Math.max(0, waterHardnessPpm) 
-    : 150;
+  const scenarioComplete = typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0 &&
+    typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 &&
+    typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
+  if (!scenarioComplete) {
+    const unavailable = Number.NaN;
+    return {
+      status: 'NOT_EVALUATED', maxSupportedPpm: unavailable, maxSupportedStoichiometricPpm: unavailable,
+      rating: 'NOT EVALUATED', description: 'Water hardness assessment requires explicit hardness, final wash-liquor volume and detergent dose. No default scenario was substituted.',
+      totalSequestrationMg: unavailable, chelationCapacityMg: unavailable, builderCapacityMg: unavailable,
+      requiredSequestrationMg: unavailable, hardnessLoadMg: unavailable, capacityDeficitMg: unavailable,
+      capacitySurplusMg: unavailable, hardnessProtectionRatio: unavailable, additionalGLDA47RequiredPct: unavailable,
+      additionalCitrateRequiredPct: unavailable, additionalMGDA38RequiredPct: unavailable,
+      batchSequestrationGrams: unavailable, washDoseGrams: unavailable, washVolumeL: unavailable,
+      batchSizeKg: unavailable, safetyMarginPct: unavailable, sufficiency: 'not_applicable', isApplicable: false,
+      category: productCategoryOrProfileId, provenance: 'UNKNOWN',
+      limitations: ['Hardness, wash volume and detergent dose must be supplied explicitly.'],
+      valueOf: () => 'NOT EVALUATED', toString: () => 'NOT EVALUATED'
+    };
+  }
+  const vol = washVolumeL as number;
+  const dose = washDoseGrams as number;
+  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  const targetHardnessPpm = waterHardnessPpm as number;
 
   const { totalSequestrationMg, batchSequestrationGrams, chelationCapacityMg, builderCapacityMg } = 
     calculateFormulationChelationCapacity(ings, dose, batchKg);
@@ -1168,8 +1195,8 @@ export function calculateWaterHardnessTolerance(
     status = 'INSUFFICIENT';
   }
 
-  let ratingStr = 'Moderate (150 ppm)';
-  let descStr = 'Moderate hardness tolerance; chelator addition recommended for hard water.';
+  let ratingStr = 'Evaluated';
+  let descStr = 'Hardness tolerance evaluated against the explicit wash scenario.';
 
   if (targetHardnessPpm === 0) {
     ratingStr = 'Baseline (0 ppm)';
