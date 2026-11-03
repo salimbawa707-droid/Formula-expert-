@@ -339,7 +339,7 @@ export class HLBEngine {
     let hasNonionicSurfactants = false;
 
     for (const ing of safeIngs) {
-      const rawPct = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+      const rawPct = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? (ing as any)?.rawPercent;
       const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
         ? Number.NaN
         : Number(rawPct);
