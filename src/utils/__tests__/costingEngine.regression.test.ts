@@ -56,9 +56,9 @@ export function runCostingEngineTestSuite() {
   ];
   const report1 = calculateFormulaCost(unpricedFormula, 100);
   assertNear('Test 1: Empty Price', 'Total Batch Cost is 0.00 when unpriced', report1.totalBatchCost, 0.00);
-  assertNear('Test 1: Empty Price', 'Cost per kg is 0.00 when unpriced', report1.costPerKg, 0.00);
+  assertEqual('Test 1: Empty Price', 'Cost per kg is unavailable when any priced ingredient is missing', Number.isNaN(report1.costPerKg), true);
   assertEqual('Test 1: Empty Price', 'Status is PRICE INPUT REQUIRED', report1.status, 'PRICE INPUT REQUIRED');
-  assertEqual('Test 1: Empty Price', 'calculateBatchCost fallback is 0', calculateBatchCost(unpricedFormula, 100), 0);
+  assertEqual('Test 1: Empty Price', 'calculateBatchCost remains unavailable when ingredient prices are incomplete', Number.isNaN(calculateBatchCost(unpricedFormula, 100)), true);
 
   // =========================================================================
   // TEST 2 — SINGLE INGREDIENT PRICE ENTRY
@@ -212,7 +212,9 @@ export function runCostingEngineTestSuite() {
   assertEqual('Test 11: Unknown Price Null', 'u2 costPerKg remains null', report11.ingredientCosts[1].userPrice, null);
   assertEqual('Test 11: Unknown Price Null', 'u3 costPerKg remains null', report11.ingredientCosts[2].userPrice, null);
   assertEqual('Test 11: Unknown Price Null', 'u4 costPerKg remains null', report11.ingredientCosts[3].userPrice, null);
-  assertEqual('Test 11: Unknown Price Null', 'All 4 unknown ingredients recognized as missing', report11.missingPriceCount, 4);
+  assertEqual('Test 11: Unknown Price Null', 'Three absent prices are counted as missing', report11.missingPriceCount, 3);
+  assertEqual('Test 11: Unknown Price Null', 'NaN price is separately counted as invalid', report11.invalidPriceCount, 1);
+  assertEqual('Test 11: Unknown Price Null', 'All four unknown prices remain unpriced', report11.unpricedIngredientCount, 4);
   assertEqual('Test 11: Unknown Price Null', 'Formula pricing status is NO_PRICING', report11.pricingStatus, 'NO_PRICING');
   assertEqual('Test 11: Unknown Price Null', 'costLabel is COST UNAVAILABLE', report11.costLabel, 'COST UNAVAILABLE');
 
