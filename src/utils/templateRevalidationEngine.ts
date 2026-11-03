@@ -47,8 +47,8 @@ export interface IngredientAuditDetail {
   name: string;
   rawMassKg: number;
   rawPercentage: number;
-  assayPct: number;
-  activeMatterPct: number;
+  assayPct: number | null;
+  activeMatterPct: number | null;
   densityGPerMl?: number;
   molecularWeightGPerMol?: number;
   chemicalFamily?: string;
@@ -62,7 +62,7 @@ export interface CompositionAuditReport {
   massBalanceSumPct: number;
   batchSizeKg: number;
   waterContributionPct: number;
-  activeSolidsPct: number;
+  activeSolidsPct: number | null;
   hasMassBalanceIssue: boolean;
   flags: string[];
   ingredientDetails: IngredientAuditDetail[];
@@ -77,7 +77,7 @@ export interface PowderPHBasisInfo {
 }
 
 export interface TemplatePHRevalidationReport {
-  predictedPH: number;
+  predictedPH: number | null;
   solverStatus: string;
   converged: boolean;
   iterations: number;
@@ -125,7 +125,8 @@ export interface TemplateRevalidationReport {
   physicalForm: PhysicalForm;
   scientificProfileId: string;
   batchSizeKg: number;
-  batchVolumeL: number;
+  batchVolumeL: number | null;
+  batchVolumeNote?: string;
   
   overallStatus: TemplateScientificStatus;
   statusReason: string;
@@ -176,12 +177,18 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   let massBalanceSumPct = 0;
   let waterContributionPct = 0;
   let activeSolidsPct = 0;
+  let hasUnknownActiveAssay = false;
   const auditFlags: string[] = [];
   const missingDataItems: string[] = [];
 
   for (const ing of rawIngs) {
-    const rawPct = ing.percent ?? ing.percentage ?? 0;
-    massBalanceSumPct += rawPct;
+    const rawPctValue = ing.percent ?? ing.percentage;
+    const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '') ? Number.NaN : Number(rawPctValue);
+    if (!Number.isFinite(rawPct) || rawPct < 0 || rawPct > 100) {
+      auditFlags.push(`Ingredient '${ing.name}' has a missing or invalid formula percentage.`);
+      missingDataItems.push(`Ingredient '${ing.name}' has no valid formula percentage`);
+    }
+    massBalanceSumPct = Number.isFinite(massBalanceSumPct) && Number.isFinite(rawPct) ? massBalanceSumPct + rawPct : Number.NaN;
 
     const matched: UniversalIngredient | undefined = UNIVERSAL_INGREDIENTS.find(
       u => u.id === ing.id || u.name.toLowerCase() === ing.name.toLowerCase()
@@ -194,23 +201,22 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
     }
 
     const resolution = ActiveMatterEngine.resolveIngredientActive(ing as any);
-    if (resolution.dataSource === 'missing') {
+    if (resolution.dataSource === 'missing' || !Number.isFinite(resolution.activeMatterPct)) {
       ingFlags.push('MISSING_ASSAY');
+      if (!resolution.isWater) hasUnknownActiveAssay = true;
     }
-
-    if (resolution.isWater) {
-      waterContributionPct += rawPct;
-    } else {
-      activeSolidsPct += (rawPct * resolution.activeMatterPct) / 100;
+    if (resolution.isWater && Number.isFinite(rawPct)) waterContributionPct += rawPct;
+    else if (!resolution.isWater && Number.isFinite(rawPct) && Number.isFinite(resolution.activeMatterPct)) {
+      activeSolidsPct += (rawPct * resolution.activeMatterPct!) / 100;
     }
 
     ingredientDetails.push({
       id: ing.id,
       name: ing.name,
-      rawMassKg: (rawPct / 100) * batchSizeKg,
+      rawMassKg: Number.isFinite(rawPct) && Number.isFinite(batchSizeKg) ? (rawPct / 100) * batchSizeKg : Number.NaN,
       rawPercentage: rawPct,
-      assayPct: resolution.activeMatterPct,
-      activeMatterPct: resolution.activeMatterPct,
+      assayPct: Number.isFinite(resolution.activeMatterPct) ? resolution.activeMatterPct : null,
+      activeMatterPct: Number.isFinite(resolution.activeMatterPct) ? resolution.activeMatterPct : null,
       densityGPerMl: ing.density || (matched as any)?.densityGPerMl || (matched as any)?.density,
       molecularWeightGPerMol: (matched as any)?.molecularWeight || (matched as any)?.mw,
       chemicalFamily: matched?.category || ing.category,
@@ -220,17 +226,16 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
     });
   }
 
-  const hasMassBalanceIssue = Math.abs(massBalanceSumPct - 100.0) > 0.01;
-  if (hasMassBalanceIssue) {
-    auditFlags.push(`Mass balance sum is ${massBalanceSumPct.toFixed(2)}% (target: 100.0%)`);
-  }
+  const hasMassBalanceIssue = !Number.isFinite(massBalanceSumPct) || Math.abs(massBalanceSumPct - 100.0) > 0.01;
+  if (hasMassBalanceIssue) auditFlags.push(Number.isFinite(massBalanceSumPct) ? `Mass balance sum is ${massBalanceSumPct.toFixed(2)}% (target: 100.0%)` : 'Mass balance cannot be evaluated because ingredient percentages are missing or invalid.');
+  if (hasUnknownActiveAssay) auditFlags.push('Active-solids subtotal is unavailable because one or more ingredient assays are unknown.');
 
   const compositionAudit: CompositionAuditReport = {
     totalIngredients: rawIngs.length,
-    massBalanceSumPct: Number(massBalanceSumPct.toFixed(2)),
+    massBalanceSumPct: Number.isFinite(massBalanceSumPct) ? Number(massBalanceSumPct.toFixed(2)) : Number.NaN,
     batchSizeKg,
     waterContributionPct: Number(waterContributionPct.toFixed(2)),
-    activeSolidsPct: Number(activeSolidsPct.toFixed(2)),
+    activeSolidsPct: hasUnknownActiveAssay ? null : Number(activeSolidsPct.toFixed(2)),
     hasMassBalanceIssue,
     flags: auditFlags,
     ingredientDetails
@@ -265,10 +270,11 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   const targetPHMin = policy.targetPHRange.min;
   const targetPHMax = policy.targetPHRange.max;
   const targetPHOptimal = policy.targetPHRange.optimal;
-  const phWithinTarget = phResult.pH >= targetPHMin && phResult.pH <= targetPHMax;
+  const phAvailable = Number.isFinite(phResult.pH) && phResult.converged;
+  const phWithinTarget = phAvailable && phResult.pH >= targetPHMin && phResult.pH <= targetPHMax;
 
   const phReport: TemplatePHRevalidationReport = {
-    predictedPH: phResult.pH,
+    predictedPH: Number.isFinite(phResult.pH) ? phResult.pH : null,
     solverStatus: String(phResult.status),
     converged: phResult.converged,
     iterations: phResult.iterations,
@@ -285,7 +291,7 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
     targetMax: targetPHMax,
     targetOptimal: targetPHOptimal,
     withinTarget: phWithinTarget,
-    status: phWithinTarget ? 'IN_SPEC' : 'OUT_OF_SPEC'
+    status: !phAvailable ? 'INSUFFICIENT_DATA' : (phWithinTarget ? 'IN_SPEC' : 'OUT_OF_SPEC')
   };
 
   // 3. Active Matter Revalidation
@@ -294,19 +300,20 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   const targetActiveMin = policy.activeSurfactantRange.min;
   const targetActiveMax = policy.activeSurfactantRange.max;
   const targetActiveOptimal = policy.activeSurfactantRange.optimal;
-  const activeWithinTarget = totalSurfactantActive >= targetActiveMin && totalSurfactantActive <= targetActiveMax;
+  const activeMatterAvailable = activeReport.activeMatterStatus === 'COMPLETE' && Number.isFinite(totalSurfactantActive);
+  const activeWithinTarget = activeMatterAvailable && totalSurfactantActive >= targetActiveMin && totalSurfactantActive <= targetActiveMax;
 
   const activeMatterReport: TemplateActiveMatterReport = {
-    totalSurfactantActivePct: totalSurfactantActive,
-    anionicActivePct: activeReport.surfactants.anionicActivePct,
-    nonionicActivePct: activeReport.surfactants.nonionicActivePct,
-    amphotericActivePct: activeReport.surfactants.amphotericActivePct,
-    cationicActivePct: activeReport.surfactants.cationicActivePct,
+    totalSurfactantActivePct: Number.isFinite(totalSurfactantActive) ? totalSurfactantActive : Number.NaN,
+    anionicActivePct: Number.isFinite(activeReport.surfactants.anionicActivePct) ? activeReport.surfactants.anionicActivePct : Number.NaN,
+    nonionicActivePct: Number.isFinite(activeReport.surfactants.nonionicActivePct) ? activeReport.surfactants.nonionicActivePct : Number.NaN,
+    amphotericActivePct: Number.isFinite(activeReport.surfactants.amphotericActivePct) ? activeReport.surfactants.amphotericActivePct : Number.NaN,
+    cationicActivePct: Number.isFinite(activeReport.surfactants.cationicActivePct) ? activeReport.surfactants.cationicActivePct : Number.NaN,
     targetMin: targetActiveMin,
     targetMax: targetActiveMax,
     targetOptimal: targetActiveOptimal,
     withinTarget: activeWithinTarget,
-    status: activeWithinTarget ? 'IN_SPEC' : 'OUT_OF_SPEC',
+    status: !activeMatterAvailable ? 'INSUFFICIENT_DATA' : (activeWithinTarget ? 'IN_SPEC' : 'OUT_OF_SPEC'),
     details: activeReport
   };
 
