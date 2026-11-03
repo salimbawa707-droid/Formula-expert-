@@ -192,6 +192,14 @@ export function transitionBatchStatus(
 // LAB TEST STATUS TRANSITION
 // =============================================================================
 
+const VALID_TEST_TRANSITIONS: Record<LimsTestStatus, LimsTestStatus[]> = {
+  PENDING: ['IN_PROGRESS', 'CANCELLED', 'REJECTED'],
+  IN_PROGRESS: ['COMPLETED', 'CANCELLED', 'REJECTED'],
+  COMPLETED: [],
+  CANCELLED: [],
+  REJECTED: [],
+};
+
 export function transitionTestStatus(
   test: LabTest,
   targetStatus: LimsTestStatus,
@@ -199,6 +207,25 @@ export function transitionTestStatus(
   notes?: string
 ): TransitionResult<LabTest> {
   const currentStatus = test.status;
+  if (currentStatus === targetStatus) {
+    return {
+      success: true,
+      entity: test,
+      previousStatus: currentStatus,
+      newStatus: targetStatus,
+    };
+  }
+
+  const allowed = VALID_TEST_TRANSITIONS[currentStatus] || [];
+  if (!allowed.includes(targetStatus)) {
+    return {
+      success: false,
+      errorMessage: `Invalid test transition from ${currentStatus} to ${targetStatus}. Allowed target states: ${allowed.join(', ')}.`,
+      previousStatus: currentStatus,
+      newStatus: targetStatus,
+    };
+  }
+
   const now = new Date().toISOString();
 
   let startedAt = test.startedAt;
