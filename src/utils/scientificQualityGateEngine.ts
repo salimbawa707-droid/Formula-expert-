@@ -8,6 +8,7 @@ import {
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import {
+  ActiveMatterEngine,
   calculateActiveSurfactants,
   calculateActiveMatter,
   getDefaultActiveMatter
@@ -294,18 +295,19 @@ export function evaluateScientificQualityGate(
     const activePurity = resolvedActivePurity === null || resolvedActivePurity === undefined
       ? null
       : Number(resolvedActivePurity);
-    if (activePurity === null) {
+    const activeResolution = ActiveMatterEngine.resolveIngredientActive(ing);
+    if (activePurity === null && activeResolution.isSurfactant) {
       blockingIssues.push({
         id: `gate-active-purity-unavailable-${name}`,
         code: 'ERR_ACTIVE_MATTER_UNAVAILABLE',
-        title: `Active Matter Assay Unavailable (${name})`,
+        title: `Surfactant Active Matter Unavailable (${name})`,
         category: 'VALIDITY',
         severity: 'FATAL',
-        message: `Ingredient '${name}' has no defensible active-matter value. The engine will not treat an unknown assay as 0% or 100%.`,
-        recommendation: 'Enter a supplier COA/verified assay or an explicitly identified grade concentration. Otherwise keep this ingredient active matter UNKNOWN and do not approve the formula.'
+        message: `Surfactant ingredient '${name}' has no defensible active-matter value. The engine will not treat an unknown surfactant assay as 0% or 100%.`,
+        recommendation: 'Enter a supplier COA/verified assay or an explicitly identified commercial grade concentration before calculating active surfactant matter.'
       });
       scientificValidity = 'INSUFFICIENT_DATA';
-    } else if (!Number.isFinite(activePurity) || activePurity < 0 || activePurity > 100) {
+    } else if (activePurity !== null && (!Number.isFinite(activePurity) || activePurity < 0 || activePurity > 100)) {
       blockingIssues.push({
         id: `gate-invalid-purity-${name}`,
         code: 'ERR_INVALID_ACTIVE_PURITY',
@@ -797,7 +799,10 @@ export function evaluateScientificQualityGate(
     const hasSpecFatal = blockingIssues.some(i => i.category === 'SPECIFICATION');
 
     if (hasValidityFatal) {
-      if (rawIngs.length === 0 || blockingIssues.some(i => i.code === 'ERR_ACTIVE_MATTER_UNAVAILABLE')) {
+      if (blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED')) {
+        finalFormulaStatus = 'OUT_OF_SPEC';
+        labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
+      } else if (rawIngs.length === 0 || blockingIssues.some(i => i.code === 'ERR_ACTIVE_MATTER_UNAVAILABLE')) {
         finalFormulaStatus = 'INSUFFICIENT_DATA';
         labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
       } else {
