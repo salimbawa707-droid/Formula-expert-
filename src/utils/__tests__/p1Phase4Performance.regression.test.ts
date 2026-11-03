@@ -263,7 +263,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     laundryFormula,
     8.5,
     'LAUNDRY_LIQUID',
-    { measuredSoilRemovalPct: 82.5, testMethod: 'ASTM D4265 Tergotometer', testDate: '2026-09-29' }
+    { measuredSoilRemovalPct: 82.5, testMethod: 'ASTM D4265 Tergotometer', testDate: '2026-09-29' },
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('Composite CPI remains PREDICTED when one lab measurement is supplied', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
   assert('Measured isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
@@ -278,7 +279,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     laundryFormula,
     8.5,
     'LAUNDRY_LIQUID',
-    { measuredSoilRemovalPct: 0, testMethod: 'ASTM D4265 Terg-O-Meter' }
+    { measuredSoilRemovalPct: 0, testMethod: 'ASTM D4265 Terg-O-Meter' },
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('Zero is retained as a valid measured soil-removal result', zeroMeasurementRes.isMeasured === true && zeroMeasurementRes.measuredSoilRemovalPct === 0, { isMeasured: zeroMeasurementRes.isMeasured, measuredSoilRemovalPct: zeroMeasurementRes.measuredSoilRemovalPct }, { isMeasured: true, measuredSoilRemovalPct: 0 });
   assert('Zero soil-removal result is a measured failure, not missing data', zeroMeasurementRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.status === 'MEASURED_FAIL', zeroMeasurementRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.status, 'MEASURED_FAIL');
@@ -287,7 +289,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     laundryFormula,
     8.5,
     'LAUNDRY_LIQUID',
-    { measuredDescalingRate: 0, testMethod: 'Unmapped descaling method' }
+    { measuredDescalingRate: 0, testMethod: 'Unmapped descaling method' },
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('Unmapped descaling measurement is not misreported as a measured KPI', unmappedDescalingRes.isMeasured === false && unmappedDescalingRes.provenance === 'PREDICTED', { isMeasured: unmappedDescalingRes.isMeasured, provenance: unmappedDescalingRes.provenance }, { isMeasured: false, provenance: 'PREDICTED' });
   assert('Unmapped descaling measurement is disclosed as unused', unmappedDescalingRes.limitations.includes('not mapped to a validated performance KPI'), unmappedDescalingRes.limitations, 'limitations disclose unmapped measurement');
@@ -295,7 +298,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   // --------------------------------------------------------------------------
   // TEST SECTION 12: getCategoryPerformanceKPIs helper
   // --------------------------------------------------------------------------
-  const kpis = getCategoryPerformanceKPIs(laundryFormula, 'LAUNDRY_LIQUID', 8.5);
+  const kpis = getCategoryPerformanceKPIs(laundryFormula, 'LAUNDRY_LIQUID', 8.5, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('getCategoryPerformanceKPIs returns array', Array.isArray(kpis) && kpis.length >= 4, true, true);
   assert('KPI items contain id, name, value, unit, provenance', kpis.every(k => k.id && k.name && k.unit && k.provenance), true, true);
 
