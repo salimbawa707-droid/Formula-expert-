@@ -187,6 +187,26 @@ export function runAIGradeTestSuite() {
   assertEqual('Problem 2 — Test E', 'Grading rules version provenance is intact', resTestC.gradingRulesVersion, '2026.1');
   assertEqual('Problem 2 — Test E', 'Scientific engine version provenance is intact', resTestC.scientificEngineVersion, '2.0.0');
 
+  // Test G: Legacy draft input cannot promote a target specification into an actual pH.
+  const targetOnlyDraft = evaluateAIGrade({
+    ingredients: premiumFormula,
+    productCategory: 'LAUNDRY_LIQUID',
+    targetpH: 8.5
+  }, undefined, 150);
+  assertEqual('Problem 2 — Test G', 'Target pH alone does not satisfy the current formula pH input', targetOnlyDraft.isEvaluable, false);
+  assertEqual('Problem 2 — Test G', 'Target-only pH returns N/A rather than a composite grade', targetOnlyDraft.grade, 'N/A');
+
+  // Test H: Legacy heuristic grading must never declare scientific validity.
+  const legacyScreening = evaluateAIGrade({
+    ingredients: premiumFormula,
+    productCategory: 'LAUNDRY_LIQUID',
+    ph: 8.5
+  }, undefined, 150);
+  assertEqual('Problem 2 — Test H', 'Legacy grade is explicitly generic screening only', legacyScreening.gradeType, 'GENERIC_SCREENING_INDEX');
+  assertEqual('Problem 2 — Test H', 'Legacy grade cannot claim scientific validity', legacyScreening.scientificValidity, 'INSUFFICIENT_DATA');
+  assertEqual('Problem 2 — Test H', 'Legacy heuristic grade is capped at screening ceiling', legacyScreening.score === null || legacyScreening.score <= 65, true);
+  assertEqual('Problem 2 — Test H', 'Legacy grade carries an orchestrator provenance blocker', legacyScreening.blockingIssues.includes('AUTHORITATIVE_ORCHESTRATOR_CONTEXT_REQUIRED'), true);
+
   // Test F: Invalid or unavailable results are handled safely without crashes or fabricated claims
   const inputInvalidScience = {
     formulaIdentity: { canonicalCategory: 'LAUNDRY_LIQUID' },
