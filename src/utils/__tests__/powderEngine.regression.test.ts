@@ -152,6 +152,11 @@ export function runPowderEngineTestSuite(): {
     measuredFinesPct: 4.5,
     measuredDissolutionTimeSec: 42,
     measuredUndissolvedResiduePct: 0.2,
+    dissolutionDoseGPerL: 5,
+    dissolutionWaterVolumeMl: 1000,
+    dissolutionWaterTempC: 20,
+    dissolutionWaterHardnessPpm: 150,
+    dissolutionAgitationRpm: 200,
     dispersibilityObservation: 'fully dispersed' as const,
     measured1PctAqueousPH: 10.65,
     measuredReserveAlkalinityPctNa2O: 16.8
