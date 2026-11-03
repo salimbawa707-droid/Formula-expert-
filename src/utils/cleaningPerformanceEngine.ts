@@ -258,10 +258,18 @@ export function calculateCleaningPerformance(
   // Fail closed when a required scientific input is absent or invalid.
   // The placeholder zero is retained only for the legacy numeric type contract;
   // provenance and null KPI values make clear that no score was calculated.
-  if (!Number.isFinite(phVal) || missingSurfactantActiveMatter) {
+  const requiresTotalActiveMatter = category === 'FLOOR_CLEANER' || category === 'HAND_WASH';
+  const activeMatterUnavailable =
+    missingSurfactantActiveMatter ||
+    !Number.isFinite(activeSurfactant) ||
+    (requiresTotalActiveMatter && !Number.isFinite(totalActiveMatter));
+
+  if (!Number.isFinite(phVal) || activeMatterUnavailable) {
     const reason = !Number.isFinite(phVal)
       ? 'A valid calculated or measured pH (0–14) is required; no default pH is substituted.'
-      : 'At least one surfactant has unknown or invalid active matter; its contribution cannot be treated as zero.';
+      : missingSurfactantActiveMatter || !Number.isFinite(activeSurfactant)
+        ? 'At least one surfactant active-matter input is unknown or invalid; its contribution cannot be treated as zero.'
+        : 'Total active matter is incomplete for this product category; residue/mildness KPIs cannot be calculated safely.';
     const cleaningApplicable = category !== 'FABRIC_SOFTENER' && category !== 'UNKNOWN_PRODUCT_CATEGORY';
     return {
       productCategory: category,
