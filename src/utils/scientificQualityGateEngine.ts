@@ -384,9 +384,10 @@ export function evaluateScientificQualityGate(
   // ---------------------------------------------------------------------------
 
   // A. PHEngineV2 Output
-  let computedPH: number | null = 7.0;
-  let phConfidence = 'Moderate Confidence';
-  let phSolverConverged = true;
+  // No neutral/default pH is permitted when the composition cannot be evaluated.
+  let computedPH: number | null = null;
+  let phConfidence = 'Zero Confidence (Not Evaluated)';
+  let phSolverConverged = false;
   let powderSlurryBasis: string | undefined = undefined;
 
   if (rawIngs.length > 0 && canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY') {
@@ -410,10 +411,15 @@ export function evaluateScientificQualityGate(
 
   // Check if measured pH exists in lab measurements
   const measuredPHRecord = labMeasurements.find(m => m.parameterKey === 'ph' || m.parameterKey === 'powderPH');
-  const isPHMeasured = Boolean(measuredPHRecord && Number.isFinite(measuredPHRecord.value));
+  const isPHMeasured = Boolean(
+    measuredPHRecord &&
+    Number.isFinite(measuredPHRecord.value) &&
+    measuredPHRecord.value >= 0 &&
+    measuredPHRecord.value <= 14
+  );
   const finalPH = isPHMeasured ? measuredPHRecord!.value : computedPH;
 
-  if (finalPH === null) {
+  if (finalPH === null || !Number.isFinite(finalPH) || finalPH < 0 || finalPH > 14 || (!isPHMeasured && !phSolverConverged)) {
     scientificValidity = 'INSUFFICIENT_DATA';
     blockingIssues.push({
       id: 'gate-ph-unavailable',
@@ -428,8 +434,26 @@ export function evaluateScientificQualityGate(
   }
 
   // B. Active Matter Output
+  const activeMatterAudit = ActiveMatterEngine.calculateActiveMatterReport(rawIngs);
+  const missingSurfactantAssays = activeMatterAudit.contributions.filter(
+    contribution => contribution.isSurfactant && contribution.activeMatterPct === null
+  );
   const totalSurfactantActivePct = calculateActiveSurfactants(rawIngs);
   const totalActiveMatterPct = calculateActiveMatter(rawIngs);
+
+  if (missingSurfactantAssays.length > 0) {
+    scientificValidity = 'INSUFFICIENT_DATA';
+    blockingIssues.push({
+      id: 'gate-active-matter-unavailable',
+      code: 'ERR_SURFACTANT_ACTIVE_MATTER_UNKNOWN',
+      title: 'Surfactant Active Matter Is Unknown',
+      category: 'VALIDITY',
+      severity: 'FATAL',
+      message: `Active matter is unavailable for ${missingSurfactantAssays.map(item => item.name).join(', ')}. The missing assay must not be treated as zero or used to calculate a verified active-surfactant total.`,
+      recommendation: 'Enter a supplier COA/assay-backed active-matter percentage for every surfactant grade, or mark the result INSUFFICIENT_DATA.'
+    });
+  }
+
   const specTemplate = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' 
     ? getSpecificationTemplateForCategory(input.specificationProfileId || input.subCategory || canonicalCategory, formulaName)
     : null;
