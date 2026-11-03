@@ -327,6 +327,32 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
     { cp: 'NaN', dataSource: 'unsupported' }
   );
 
+
+  const bypassedAggregateReport = ViscosityEngine.evaluateViscosity([
+    { name: 'Mystery Anionic Surfactant', percentage: 10, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, category: 'Solvent' }
+  ], {
+    productCategory: 'Laundry Liquid',
+    activeMatterReport: { contributions: [], totalWaterPct: 90, totalRawPercentage: 100 }
+  });
+  assert(
+    'Caller-supplied aggregate cannot hide unknown assay on the exact formula ingredient',
+    Number.isNaN(bypassedAggregateReport.viscosityCp) && bypassedAggregateReport.dataSource === 'unsupported',
+    { cp: bypassedAggregateReport.viscosityCp, dataSource: bypassedAggregateReport.dataSource },
+    { cp: 'NaN', dataSource: 'unsupported' }
+  );
+
+  const gradeConflictReport = ViscosityEngine.evaluateViscosity([
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 55, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, category: 'Solvent' }
+  ], { productCategory: 'Laundry Liquid' });
+  assert(
+    'Grade-conflicted surfactant assay blocks viscosity estimate',
+    Number.isNaN(gradeConflictReport.viscosityCp) && gradeConflictReport.dataSource === 'unsupported',
+    { cp: gradeConflictReport.viscosityCp, dataSource: gradeConflictReport.dataSource },
+    { cp: 'NaN', dataSource: 'unsupported' }
+  );
+
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
