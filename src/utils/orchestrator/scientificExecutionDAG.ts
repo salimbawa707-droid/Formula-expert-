@@ -845,12 +845,10 @@ export class ScientificExecutionDAG {
         );
 
         state.costResult = {
-          costPerKg: formulaCost.costPerKg,
-          totalBatchCost: formulaCost.totalBatchCost,
-          costBreakdown: formulaCost.ingredientCosts || [],
+          ...formulaCost,
           marginChain
         };
-        state.costStatus = 'VALID';
+        state.costStatus = formulaCost.isComplete ? 'VALID' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -867,7 +865,9 @@ export class ScientificExecutionDAG {
           state.rawInput.regulatoryContext,
           state.finalEquilibriumPH ?? null
         );
-        state.regulatoryStatus = 'VALID';
+        state.regulatoryStatus = state.regulatoryResult.status === 'COMPLIANT'
+          ? 'VALID'
+          : (state.regulatoryResult.status === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' : 'INVALID');
       }
     });
 
