@@ -287,6 +287,19 @@ export function runCostingEngineTestSuite() {
   assertEqual('Test 14: Canonical IDs', 'ID labsa preserved', report14.ingredientCosts[0].id, 'labsa');
   assertEqual('Test 14: Canonical IDs', 'ID sles-70 preserved', report14.ingredientCosts[1].id, 'sles-70');
   assertEqual('Test 14: Canonical IDs', 'ID caustic-soda-50 preserved', report14.ingredientCosts[2].id, 'caustic-soda-50');
+  assertEqual('Test 14: Canonical IDs', 'Pricing coverage can be complete for all listed ingredients', report14.pricingStatus, 'COMPLETE_PRICING');
+  assertEqual('Test 14: Canonical IDs', 'Unbalanced formula is not a complete finished-product cost', report14.isComplete, false);
+  assertEqual('Test 14: Canonical IDs', 'Unbalanced formula cost per kg is unavailable', Number.isNaN(report14.costPerKg), true);
+
+  const missingPercentage = calculateFormulaCost([{ name: 'LABSA', costPerKg: 120 } as any], 100);
+  assertEqual('Test 15', 'Missing percentage invalidates formula cost', missingPercentage.invalidPercentageCount, 1);
+  assertEqual('Test 15', 'Missing percentage cannot yield a finished cost per kg', Number.isNaN(missingPercentage.costPerKg), true);
+
+  const invalidBatchSize = calculateFormulaCost([
+    { name: 'LABSA', percentage: 100, costPerKg: 120 } as any
+  ], 0);
+  assertEqual('Test 16', 'Explicit invalid batch size is not replaced with 100 kg', invalidBatchSize.status, 'BATCH SIZE REQUIRED');
+  assertEqual('Test 16', 'Invalid batch size prevents finished cost output', Number.isNaN(invalidBatchSize.costPerKg), true);
 
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
