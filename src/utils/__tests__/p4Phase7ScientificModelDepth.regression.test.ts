@@ -303,7 +303,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const compClean = calculateFormulationCompatibility([
     { name: 'Water', percentage: 90 },
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
-  ]);
+  ], 8.5, 'LAUNDRY_LIQUID');
   assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', true, true);
 
   // 6.4 Empty formula receives INSUFFICIENT_DATA
@@ -505,7 +505,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const compPreserved = calculateFormulationCompatibility([
     { name: 'Water', percentage: 90 },
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
-  ]);
+  ], 8.5, 'LAUNDRY_LIQUID');
   assert(
     '12. Evidence Gate',
     'F. Clean preserved formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without claiming infinite lab proof',
