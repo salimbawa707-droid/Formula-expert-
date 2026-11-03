@@ -818,7 +818,7 @@ export function evaluateScientificQualityGate(
   const uncertainties: string[] = [];
   const requiredLabTests: string[] = [];
   if (!hasExplicitWaterHardness && productHardnessPolicy.requiresHardnessControl) {
-    uncertainties.push('[ASSUMED_SCREENING_INPUT] Water hardness defaulted to 150 mg/L as CaCO3 because no measured/user-supplied value was provided.');
+    uncertainties.push('[MISSING_SCREENING_INPUT] Water-hardness protection was not evaluated because measured/user-supplied hardness and a complete wash scenario were not provided.');
   }
   if (categoryDef && categoryDef.specificationEvidenceStatus !== 'SOURCE_VERIFIED') {
     uncertainties.push('[UNVERIFIED_CATEGORY_TARGETS] Category pH and active-matter targets are engineering screening targets pending source-level validation.');
