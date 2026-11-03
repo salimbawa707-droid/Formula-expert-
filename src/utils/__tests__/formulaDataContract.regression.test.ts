@@ -160,8 +160,8 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const mgdaBindingCapacity = getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'MGDA 38% Liquid binding capacity is 155 mg CaCO3/g (commercial basis)', mgdaBindingCapacity, 155));
 
-  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram ?? 0;
-  record(assertEqual('Commercial Product Grade', 'EDTA Tetrasodium binding capacity is 220 mg CaCO3/g (commercial basis)', edtaBindingCapacity, 220));
+  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'EDTA Tetrasodium 99% Powder binding capacity is 220 mg CaCO3/g (commercial basis)', edtaBindingCapacity, 220));
 
   const dtpaBindingCapacity = getChelatorBindingCapacity('DTPA Powder').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'DTPA binding capacity is 200 mg CaCO3/g (commercial basis)', dtpaBindingCapacity, 200));
