@@ -334,10 +334,10 @@ export function runPhase10ConsistencyTestSuite(): {
 
   assert(
     'Defect 2: Routing Integrity',
-    'Cleaning result CPI is calculated deterministically',
-    hardWaterResult.cleaningResult.cpi > 0,
-    hardWaterResult.cleaningResult.cpi,
-    '> 0'
+    'Cleaning CPI remains unavailable when no pH-active chemistry can establish wash-liquor pH',
+    hardWaterResult.cleaningResult.cpi === null && hardWaterResult.cleaningResult.provenance === 'INSUFFICIENT_DATA',
+    { cpi: hardWaterResult.cleaningResult.cpi, provenance: hardWaterResult.cleaningResult.provenance },
+    'null / INSUFFICIENT_DATA'
   );
 
   // =========================================================================
