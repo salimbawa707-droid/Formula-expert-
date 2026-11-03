@@ -122,10 +122,10 @@ export function runFormulaScientificOrchestratorTestSuite() {
     'Group A: Orchestrator Pipeline',
     'Compatibility engine evaluates formulation as compatible',
     (evalResult.compatibilityResult.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' ||
-      evalResult.compatibilityResult.compatibilityStatusSemantic === 'SCREENING_COMPATIBLE') &&
+      evalResult.compatibilityResult.compatibilityStatusSemantic === 'COMPATIBLE_BY_RULE') &&
       evalResult.compatibilityResult.evidenceStatus === 'SCREENING_COMPATIBLE',
     { semantic: evalResult.compatibilityResult.compatibilityStatusSemantic, evidence: evalResult.compatibilityResult.evidenceStatus },
-    'NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE'
+    'NO_KNOWN_CONFLICT or COMPATIBLE_BY_RULE / SCREENING_COMPATIBLE'
   );
 
   assert(
