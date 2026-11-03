@@ -249,6 +249,30 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
   const masterFormulasOk31 = FORMULAS.length > 0 && FORMULAS.every(f => f.categoryId !== 'UNKNOWN_PRODUCT_CATEGORY');
   assert('31. Existing valid category tests remain passing', masterFormulasOk31);
 
+
+  // 32. A finite measured pH of zero is valid and must not be replaced by prediction.
+  const zeroPHGate = evaluateScientificQualityGate({
+    formulaName: 'Zero pH Measurement Regression',
+    formulaVersion: '1.0.0',
+    productCategory: 'TOILET_CLEANER',
+    ingredients: [{ name: 'Water', percentage: 100, role: 'Solvent' }],
+    labMeasurements: [{
+      measurementId: 'MEAS-PH-ZERO',
+      formulaVersion: '1.0.0',
+      parameterKey: 'ph',
+      value: 0,
+      unit: 'pH units',
+      testDate: '2026-11-03',
+      provenance: 'MEASURED'
+    }]
+  });
+  assert(
+    '32. A measured pH of zero is preserved as measured',
+    zeroPHGate.speciationResult.isMeasured === true &&
+      zeroPHGate.speciationResult.provenance === 'MEASURED' &&
+      zeroPHGate.speciationResult.pH === 0
+  );
+
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
