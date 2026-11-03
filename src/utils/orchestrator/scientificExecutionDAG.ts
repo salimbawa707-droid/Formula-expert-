@@ -69,7 +69,7 @@ export interface ScientificExecutionState {
   formulaName: string;
   formulaVersion: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
 
   // 1. Normalization
   canonicalCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
@@ -1176,13 +1176,16 @@ export class ScientificExecutionDAG {
     state: ScientificExecutionState;
     trace: DAGNodeTrace[];
   } {
-    const batchSizeKg = input.batchSizeKg && input.batchSizeKg > 0
-      ? input.batchSizeKg
-      : (input.batchSize && input.batchSize > 0 ? input.batchSize : 100);
+    const rawBatchSize = input.batchSizeKg ?? input.batchSize;
+    const batchSizeDefaulted = rawBatchSize === undefined || rawBatchSize === null;
+    const batchSizeKg = batchSizeDefaulted
+      ? 100
+      : (typeof rawBatchSize === 'number' && Number.isFinite(rawBatchSize) && rawBatchSize > 0 ? rawBatchSize : Number.NaN);
 
-    const waterHardnessPpm = input.waterHardnessPpm !== undefined && input.waterHardnessPpm >= 0
-      ? input.waterHardnessPpm
-      : (input.hardness !== undefined && input.hardness >= 0 ? input.hardness : (input.waterProfile?.hardnessPpm ?? 150));
+    const rawWaterHardness = input.waterHardnessPpm ?? input.hardness ?? input.waterProfile?.hardnessPpm;
+    const waterHardnessPpm = typeof rawWaterHardness === 'number' && Number.isFinite(rawWaterHardness) && rawWaterHardness >= 0
+      ? rawWaterHardness
+      : null;
 
     // Initialize clean, empty intermediate state
     const state: ScientificExecutionState = {
@@ -1195,7 +1198,7 @@ export class ScientificExecutionDAG {
 
       canonicalCategory: 'UNKNOWN_PRODUCT_CATEGORY',
       categoryLabel: 'Unknown Category',
-      physicalForm: 'LIQUID',
+      physicalForm: 'UNKNOWN',
       totalMassPct: 0,
       normalizedIngredients: [],
       isBalanced: false,
@@ -1219,13 +1222,13 @@ export class ScientificExecutionDAG {
       phStatus: 'UNKNOWN',
 
       activeMatterReport: null,
-      totalSurfactantActivePct: 0,
-      totalActiveMatterPct: 0,
-      rawSurfactantsTotal: 0,
-      anionicPct: 0,
-      nonionicPct: 0,
-      amphotericPct: 0,
-      cationicPct: 0,
+      totalSurfactantActivePct: Number.NaN,
+      totalActiveMatterPct: Number.NaN,
+      rawSurfactantsTotal: Number.NaN,
+      anionicPct: Number.NaN,
+      nonionicPct: Number.NaN,
+      amphotericPct: Number.NaN,
+      cationicPct: Number.NaN,
       activeMatterStatus: 'UNKNOWN',
 
       hlbResult: null,
@@ -1234,26 +1237,26 @@ export class ScientificExecutionDAG {
 
       chelationResult: null,
       hardnessResult: null,
-      rawCapacity: 0,
+      rawCapacity: Number.NaN,
       protectionAssessment: '',
       chelationStatus: 'UNKNOWN',
 
       compatibilityResult: null,
-      compatibilityScore: 100,
-      compatible: true,
+      compatibilityScore: Number.NaN,
+      compatible: false,
       compatibilityStatus: 'UNKNOWN',
 
       viscosityResult: null,
-      predictedViscosityCp: 0,
+      predictedViscosityCp: Number.NaN,
       viscosityStatus: 'UNKNOWN',
 
       densityResult: null,
-      densityGPerCm3: 1.0,
-      specificGravity: 1.0,
+      densityGPerCm3: Number.NaN,
+      specificGravity: Number.NaN,
       densityStatus: 'UNKNOWN',
 
       nvrResult: null,
-      nvrPercentage: 0,
+      nvrPercentage: Number.NaN,
       nvrStatus: 'UNKNOWN',
 
       powderReport: null,
