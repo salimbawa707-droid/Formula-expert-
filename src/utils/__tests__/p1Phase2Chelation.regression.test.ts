@@ -242,7 +242,7 @@ export function runP1Phase2ChelationTestSuite() {
 
   // EDTA Tetrasodium (1% = 0.2g * 220 = 44.0 mg) + GLDA 47% (2% = 54.8 mg) = 98.8 mg
   const edtaGldaFormula: FormulationIngredient[] = [
-    { id: '1', name: 'EDTA Tetrasodium', percentage: 1.0 },
+    { id: '1', name: 'EDTA Tetrasodium 99% Powder', percentage: 1.0 },
     { id: '2', name: 'GLDA 47% Liquid', percentage: 2.0 }
   ];
   const edtaGldaCap = calculateFormulationChelationCapacity(edtaGldaFormula, 20);
