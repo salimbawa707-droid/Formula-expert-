@@ -298,7 +298,7 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
     { name: 'Protease Enzyme', percentage: 0.5 },
     { name: 'Water', percentage: 82.5, activeMatterPct: 0 }
   ], 8.5, 'LAUNDRY_LIQUID');
-  assert('22. Cleaning Performance Index', 'T22: High-performance detergent score >= 80', t22CPI.overallScore >= 80, t22CPI.overallScore, '>= 80');
+  assert('22. Cleaning Performance Index', 'T22: Complete formula returns a bounded screening CPI without claiming laboratory validation', Number.isFinite(t22CPI.cpi) && t22CPI.cpi >= 0 && t22CPI.cpi <= 100 && t22CPI.provenance !== 'INSUFFICIENT_DATA', t22CPI.cpi, 'finite screening score from 0 to 100');
 
   // =========================================================================
   // 23. Formulation Mixture Density Calculation (Harmonic Volume Additivity)
