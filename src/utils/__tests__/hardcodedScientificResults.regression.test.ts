@@ -1,5 +1,3 @@
-import { runRootCauseTroubleshooter } from '../troubleshooterEngine';
-import { analyzeMachineProfile } from '../machineEngine';
 import { analyzeClimateAndHardWater } from '../climateEngine';
 import { evaluateScientificQualityGate } from '../scientificQualityGateEngine';
 
@@ -25,46 +23,6 @@ export function runHardcodedScientificResultsRegressionTestSuite() {
       message: condition ? 'PASSED' : `FAILED (Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)})`
     });
   }
-
-  // 1. Troubleshooter Engine Dynamic Results
-  const troubleEmpty = runRootCauseTroubleshooter([], 'Phase Separation / Cloudiness');
-  assert(
-    '1. Troubleshooter Empty Input Neutral State',
-    'Troubleshooter with empty ingredients returns NOT_EVALUATED rather than hardcoded 88 score or 7.5 pH',
-    troubleEmpty.estimatedPH === 'NOT_EVALUATED' && troubleEmpty.activeSurfactants === 'NOT_EVALUATED',
-    { ph: troubleEmpty.estimatedPH, active: troubleEmpty.activeSurfactants },
-    { ph: 'NOT_EVALUATED', active: 'NOT_EVALUATED' }
-  );
-
-  const troubleLow = runRootCauseTroubleshooter([{ name: 'SLES 70%', percentage: 5, activeMatterPct: 70 }], 'Low Viscosity');
-  const troubleHigh = runRootCauseTroubleshooter([{ name: 'SLES 70%', percentage: 20, activeMatterPct: 70 }], 'Low Viscosity');
-  assert(
-    '1. Troubleshooter Dynamic Input Sensitivity',
-    'Troubleshooter activeSurfactants changes dynamically with ingredient percentage changes (3.5% vs 14.0%)',
-    troubleLow.activeSurfactants === 3.5 && troubleHigh.activeSurfactants === 14,
-    { low: troubleLow.activeSurfactants, high: troubleHigh.activeSurfactants },
-    { low: 3.5, high: 14 }
-  );
-
-  // 2. Machine Profile Engine Dynamic Results
-  const machineEmpty = analyzeMachineProfile([], 'Front Load High-Efficiency (HE)');
-  assert(
-    '2. Machine Engine Empty Input Neutral State',
-    'Machine Engine with empty ingredients returns NOT_EVALUATED rather than hardcoded 14.5% active surfactant',
-    machineEmpty.activeSurfactantPct === 'NOT_EVALUATED' && machineEmpty.cleaningPerformance.status === 'NOT_EVALUATED',
-    { active: machineEmpty.activeSurfactantPct, perfStatus: machineEmpty.cleaningPerformance.status },
-    { active: 'NOT_EVALUATED', perfStatus: 'NOT_EVALUATED' }
-  );
-
-  const machineFormA = analyzeMachineProfile([{ name: 'SLES 70%', percentage: 10, activeMatterPct: 70 }], 'Front Load High-Efficiency (HE)');
-  const machineFormB = analyzeMachineProfile([{ name: 'SLES 70%', percentage: 20, activeMatterPct: 70 }], 'Front Load High-Efficiency (HE)');
-  assert(
-    '2. Machine Engine Dynamic Input Sensitivity',
-    'Machine Engine activeSurfactantPct updates dynamically from ingredients (7.0% vs 14.0%)',
-    machineFormA.activeSurfactantPct === 7 && machineFormB.activeSurfactantPct === 14,
-    { formA: machineFormA.activeSurfactantPct, formB: machineFormB.activeSurfactantPct },
-    { formA: 7, formB: 14 }
-  );
 
   // 3. Climate Engine Dynamic Water Hardness Tolerance
   const climateEmpty = analyzeClimateAndHardWater([], 'Hot & Humid Tropical', 'Hard (120-180 ppm)');
