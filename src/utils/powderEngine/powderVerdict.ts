@@ -50,8 +50,8 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
     chemistAdvisories.push('Formula total exceeds 100%. Re-scale percentages proportionally.');
   } else {
     strengths.push({
-      title: '100.00% Stoichiometric Mass Balance',
-      description: 'All solid builders, active surfactants, alkalinity contributors, and specialty additives sum to exact 100.00% batch.'
+      title: '100.00% Formula Mass Balance',
+      description: 'Assigned ingredient mass fractions sum to 100.00%. This verifies arithmetic balance only, not chemical performance or product compliance.'
     });
   }
 
@@ -80,23 +80,20 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
 
   // 3. Builder & Alkalinity
   if (builderSystem.totalBuilderPct < 15) {
-    issues.push({
-      title: 'Low Inorganic Builder Reserve',
-      severity: 'Medium',
-      message: `Total builder content is ${builderSystem.totalBuilderPct.toFixed(1)}%.`,
-      actionableGuidance: 'Increase inorganic builders (Sodium Carbonate or Zeolite 4A) to minimum 20–35% for sufficient water hardness precipitation and soil dispersion.'
-    });
+    chemistAdvisories.push(
+      `Builder loading is ${builderSystem.totalBuilderPct.toFixed(1)}%. No universal minimum builder percentage establishes hard-water performance; evaluate measured wash-water hardness, dose, pH, and grade-specific sequestration capacity.`
+    );
   } else {
     strengths.push({
-      title: `Inorganic Builder System (${builderSystem.totalBuilderPct.toFixed(1)}% Builder)`,
-      description: `Solid-state inorganic builders provide alkaline saponification of oily soils and precipitation/exchange of hard water cations.`
+      title: `Builder Ingredients Identified (${builderSystem.totalBuilderPct.toFixed(1)}% by mass)`,
+      description: 'Builder mass fraction is reported as a composition fact only; it does not prove calcium/magnesium sequestration or wash performance.'
     });
   }
 
   if (alkalinity.totalAlkalineContributorsPct > 20) {
     strengths.push({
       title: 'Strong Alkaline Reserve',
-      description: `Provides robust pH buffering (~10.5) against acidic body soils and food stains during wash cycle.`
+      description: 'High alkaline-contributor mass fraction detected. This does not determine aqueous pH or reserve alkalinity; use the validated pH engine and/or a measured alkalinity titration.'
     });
   }
 
@@ -138,7 +135,7 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
       title: 'High Powder Caking Tendency',
       severity: 'High',
       message: caking.packagingRecommendation,
-      actionableGuidance: 'Add 1.0–2.0% Fumed Silica / Zeolite 4A flow aid and package in hermetic moisture-barrier pouches.'
+      actionableGuidance: 'Evaluate a compatible anti-caking/flow aid using its supplier-recommended grade and dosage range. Confirm flow, moisture uptake, and caking with controlled humidity/storage testing; no fixed dosage is inferred here.'
     });
     chemistAdvisories.push('Elevated liquid addition without adequate dry flow aid carrier increases lump formation in humid storage.');
   } else if (caking.cakingRisk === 'Moderate Risk') {
@@ -151,13 +148,20 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
       title: 'Bleach & Enzyme Co-presence',
       severity: 'Medium',
       message: 'Uncoated Sodium Percarbonate can rapidly oxidize and deactivate unprotected enzyme granules.',
-      actionableGuidance: 'Use coated/stabilized enzyme granulates (e.g. Savinase / Stainzyme) and coated percarbonate particles.'
+      actionableGuidance: 'Use an enzyme grade explicitly documented as bleach-compatible and a compatible coated bleach grade. Verify retained enzyme activity after accelerated storage; brand name alone does not establish compatibility.'
     });
     chemistAdvisories.push('Ensure enzyme raw materials are encapsulated/granulated grades designed for percarbonate powder compatibility.');
   }
 
   // Overall Status Determination
-  let overallStatus: PowderVerdictReport['overallStatus'] = 'BALANCED & COMPLIANT';
+  const hasCriticalEvidenceGap =
+    activeMatter.hasInsufficientData ||
+    powderPH.source === 'INSUFFICIENT_DATA' ||
+    caking.cakingRisk === 'Insufficient Data' ||
+    stability.source === 'INSUFFICIENT_DATA' ||
+    input.safety.hasInsufficientFormalGHSData;
+
+  let overallStatus: PowderVerdictReport['overallStatus'] = 'SCREENING_ONLY';
 
   if (massBalance.status === 'INCOMPLETE') {
     overallStatus = 'INCOMPLETE FORMULA';
@@ -165,6 +169,8 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
     overallStatus = 'EXCESS FORMULA';
   } else if (issues.some((i) => i.severity === 'Critical')) {
     overallStatus = 'OUT OF SPEC';
+  } else if (hasCriticalEvidenceGap) {
+    overallStatus = 'INSUFFICIENT_DATA';
   } else if (issues.length > 0) {
     overallStatus = 'NEEDS ADJUSTMENT';
   }
@@ -173,9 +179,11 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
     ? `INCOMPLETE POWDER FORMULA — Unassigned formulation = ${massBalance.unassignedPercentage.toFixed(2)}% (Assigned: ${massBalance.assignedPercentage.toFixed(2)}%). Do not add water.`
     : massBalance.status === 'EXCESS'
     ? `EXCESS FORMULA — Exceeds 100.00% batch total by ${massBalance.excessPercentage.toFixed(2)} percentage points.`
+    : overallStatus === 'INSUFFICIENT_DATA'
+    ? 'INSUFFICIENT DATA — One or more required grade, pH, stability, or supplier safety inputs are unavailable. No compliance verdict is issued.'
     : issues.length > 0
-    ? `Powder formulation evaluated. ${issues.length} chemical/physical advisory items require review.`
-    : `100% Balanced Powder Formulation — Complies with surfactant active targets, alkaline builder equilibria, and physical stability specifications.`;
+    ? `Powder formulation screening identified ${issues.length} issue(s) requiring review. This is not a laboratory compliance verdict.`
+    : 'SCREENING ONLY — Mass balance and available engineering checks were reviewed. Chemical performance, storage stability, safety classification, and product compliance are not certified by this calculation.';
 
   return {
     overallStatus,
@@ -183,6 +191,6 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
     strengths,
     issues,
     chemistAdvisories,
-    source: 'CALCULATED'
+    source: 'SCREENING'
   };
 }
