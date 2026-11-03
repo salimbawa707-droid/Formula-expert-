@@ -204,7 +204,21 @@ export function evaluateScientificQualityGate(
   const formulaName = input.formulaName || 'Unnamed Formula';
   const formulaVersion = input.formulaVersion || 'UNKNOWN_VERSION';
   const rawIngs = Array.isArray(input.ingredients) ? input.ingredients : [];
-  const labMeasurements = Array.isArray(input.labMeasurements) ? input.labMeasurements : [];
+  const providedLabMeasurements = Array.isArray(input.labMeasurements) ? input.labMeasurements : [];
+  // Measurements may influence formula calculations only when both immutable formula identity
+  // and exact version match. A name, category, or version-only match is not sufficient.
+  const hasExplicitFormulaIdentity = Boolean(
+    input.formulaId?.trim() &&
+    input.formulaVersion?.trim() &&
+    input.formulaVersion !== 'UNKNOWN_VERSION'
+  );
+  const labMeasurements = hasExplicitFormulaIdentity
+    ? providedLabMeasurements.filter(measurement =>
+        Boolean(measurement.formulaId) &&
+        measurement.formulaId === input.formulaId &&
+        measurement.formulaVersion === input.formulaVersion
+      )
+    : [];
   const hasExplicitWaterHardness = typeof input.waterHardnessPpm === 'number' && Number.isFinite(input.waterHardnessPpm) && input.waterHardnessPpm >= 0;
   const waterHardnessPpm = hasExplicitWaterHardness ? input.waterHardnessPpm! : 150;
 
