@@ -706,7 +706,7 @@ export function getChelatorBindingCapacity(
       n.includes(s.name.toLowerCase()) ||
       (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
       (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
-      (s.id === 'citrate-dihydrate' && (n.includes('citrate dihydrate') || n.includes('sodium citrate'))) ||
+      (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
       (s.id === 'gluconate' && n.includes('gluconate')) ||
       (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium'))) ||
       (s.id === 'edta-liquid' && n.includes('edta 39')) ||
@@ -852,7 +852,8 @@ export function calculateFormulationChelationCapacity(
       n.includes(s.name.toLowerCase()) || 
       (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
       (s.id === 'mgda-38' && n.includes('mgda')) ||
-      (s.id === 'citrate-dihydrate' && n.includes('citrate')) ||
+      (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
+      (s.id === 'citrate-anhydrous' && n.includes('citrate anhydrous')) ||
       (s.id === 'gluconate' && n.includes('gluconate')) ||
       (s.id === 'edta-powder' && n.includes('edta')) ||
       (s.id === 'stpp' && n.includes('stpp')) ||
@@ -1298,9 +1299,9 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
 
   if (inputList.length > 0) {
     details = inputList.map((c, i) => {
-      const capRes = c.bindingCapacity 
-        ? { capacityMgCaCO3PerGram: c.bindingCapacity, status: 'VALID' } 
-        : getChelatorBindingCapacity(c.name);
+      // A caller-supplied numeric capacity is not evidence. Resolve only against
+      // the grade-specific, internally registered chelator database.
+      const capRes = getChelatorBindingCapacity(c.name);
       
       const isKnown = capRes.status === 'VALID' && (capRes.capacityMgCaCO3PerGram ?? 0) > 0;
       const bindingCap = isKnown ? (capRes.capacityMgCaCO3PerGram as number) : 0;
@@ -1313,56 +1314,39 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
       return {
         id: c.id || String(i + 1),
         name: c.name || "Green Chelator",
-        percent: c.percent || pracPct,
-        isGreen: isKnown,
-        score: isKnown ? (c.score || 90) : 0,
+        percent: c.percent ?? pracPct,
+        isGreen: isKnown && ['glda-47', 'mgda-38', 'mgda-40', 'citrate-dihydrate'].includes(
+          AUTHORITATIVE_CHELATOR_DATABASE.find(species => species.evidenceId === capRes.evidenceId)?.id || ''
+        ),
+        score: 0,
         bindingCapacity: bindingCap,
         theoreticalSequestrationGrams: theoGrams,
         coBuilderTargetGrams: coGrams,
         calculatedWeightPct: calcPct,
         practicalWeightPct: pracPct,
         practicalWeightGrams: pracGrams,
-        citation: isKnown ? (c.citation || 'EU Ecolabel Technical Data') : 'Unknown chelator binding capacity (INSUFFICIENT_DATA)'
+        citation: isKnown
+          ? (AUTHORITATIVE_CHELATOR_DATABASE.find(species => species.evidenceId === capRes.evidenceId)?.citation || 'Registered evidence reference unavailable')
+          : 'Unknown chelator binding capacity (INSUFFICIENT_DATA)'
       };
     });
   } else {
-    const baseChelators = [
-      { id: 'glda', name: 'Tetrasodium GLDA (47% Liquid)', bindingCapacity: 137, score: 98, citation: 'Dissolvine GL-47-S Technical Specification & Ecolabel Standard' },
-      { id: 'mgda', name: 'Trisodium MGDA (38% Liquid)', bindingCapacity: 155, score: 92, citation: 'Trilon M Technical Bulletin & Biodegradability Assessment' },
-      { id: 'citrate', name: 'Sodium Citrate Dihydrate (Powder)', bindingCapacity: 150, score: 85, citation: 'Hera Project Eco-Safety Evaluation for Trisodium Citrate' }
-    ];
-
-    details = baseChelators.map((c) => {
-      const theoGrams = stoichiometricTargetMg / c.bindingCapacity;
-      const coGrams = theoGrams * (coTarget / 100);
-      const calcPct = (coGrams / (washDose || 1)) * 100;
-      const pracPct = Math.min(calcPct, maxCap);
-      const pracGrams = (pracPct / 100) * washDose;
-
-      return {
-        id: c.id,
-        name: c.name,
-        percent: pracPct,
-        isGreen: true,
-        score: c.score,
-        bindingCapacity: c.bindingCapacity,
-        theoreticalSequestrationGrams: theoGrams,
-        coBuilderTargetGrams: coGrams,
-        calculatedWeightPct: calcPct,
-        practicalWeightPct: pracPct,
-        practicalWeightGrams: pracGrams,
-        citation: c.citation
-      };
-    });
+    // No hypothetical GLDA/MGDA/citrate package is fabricated when the caller
+    // has supplied no chelator list. Recommendations require actual formulation data.
+    details = [];
   }
 
   return {
-    score: 95,
-    isGreen: true,
+    score: 0,
+    isGreen: details.some(detail => detail.isGreen),
     totalCaCO3ToBindMg,
     stoichiometricTargetMg,
     chelators: details,
     details: details,
-    recommendation: 'Eco-friendly GLDA/MGDA chelation package optimized for stoichiometry and water hardness.'
+    recommendation: details.length === 0
+      ? 'No chelator inputs supplied. No capacity or formulation recommendation was calculated.'
+      : (details.some(detail => detail.isGreen)
+        ? 'Registered grade-specific green chelator inputs detected. Verify dose and wash-water conditions before formulation approval.'
+        : 'No registered green chelator grade was identified. Unknown or unsupported capacity must not be treated as zero-capacity evidence or a green claim.')
   };
 }
