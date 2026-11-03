@@ -413,10 +413,6 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   } else if (hasBlockingCompatibility) {
     overallStatus = 'SCIENTIFICALLY_INVALID';
     statusReason = `Fundamentally incompatible formulation system: ${compatResult.alerts.map(a => a.title).join('; ')}`;
-  } else if (false) { // bypassed old branch
-
-    overallStatus = 'SCIENTIFICALLY_INVALID';
-    statusReason = `Fundamentally incompatible formulation system: ${compatResult.alerts.map(a => a.title).join('; ')}`;
   } else if (!phWithinTarget || !activeWithinTarget || hasMassBalanceIssue) {
     overallStatus = 'OUT_OF_SPEC';
     const specReasons: string[] = [];
