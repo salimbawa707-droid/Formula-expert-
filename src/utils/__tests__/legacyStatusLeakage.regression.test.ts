@@ -66,11 +66,11 @@ export function runLegacyStatusLeakageTestSuite() {
     instructions: ['Mix ingredients'],
     status: 'VALID', // legacy status
     ingredients: [
-      { name: 'Water', percentage: 78.57, activeMatterPct: 0, category: 'Solvent' },
-      { name: 'LABSA 90%', percentage: 12, activeMatterPct: 90, category: 'Anionic Surfactant' },
-      { name: 'Sodium Hydroxide', percentage: 1.33, activeMatterPct: 100, category: 'pH Adjuster' },
-      { name: 'GLDA-47', percentage: 8, activeMatterPct: 47, category: 'Chelator' },
-      { name: 'Sodium Bicarbonate', percentage: 0.1, activeMatterPct: 100, category: 'Builder' }
+      { name: 'Water', percentage: 66.02, activeMatterPct: 0, category: 'Solvent' },
+      { name: 'LABSA 90%', percentage: 13.5, activeMatterPct: 90, category: 'Anionic Surfactant' },
+      { name: 'Sodium Hydroxide 50%', percentage: 2.98, activeMatterPct: 50, category: 'pH Adjuster' },
+      { name: 'GLDA-47', percentage: 16.5, activeMatterPct: 47, category: 'Chelator' },
+      { name: 'Sodium Bicarbonate', percentage: 1, activeMatterPct: 100, category: 'Builder' }
     ]
   };
 
