@@ -319,6 +319,7 @@ export function runIngredientIntelligenceSearchRemediationTestSuite(): TestSuite
     benchmarkFormulasPreserved && INGREDIENT_INTELLIGENCE_REGISTRY['labsa'].grades['90pct'] !== undefined
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: ${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
