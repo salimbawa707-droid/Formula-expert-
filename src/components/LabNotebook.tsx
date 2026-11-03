@@ -106,7 +106,7 @@ export default function LabNotebook(_props?: any) {
   const [newOperator, setNewOperator] = useState('');
   const [newSampleId, setNewSampleId] = useState('');
   const [newTemp, setNewTemp] = useState('25');
-  const [newHardness, setNewHardness] = useState('150');
+  const [newHardness, setNewHardness] = useState('');
   const [newSubstrate, setNewSubstrate] = useState('Polyester-Cotton Blend');
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
@@ -1171,7 +1171,7 @@ export default function LabNotebook(_props?: any) {
                       value={trialHardness}
                       onChange={(e) => setTrialHardness(e.target.value)}
                       className="w-full px-2 py-1.5 bg-[#131d35] border border-slate-700 rounded text-white focus:outline-none text-center font-mono text-xs"
-                      placeholder="150"
+                      placeholder="Optional — enter measured ppm"
                     />
                   </div>
                   <div>
