@@ -271,7 +271,10 @@ export function calculateCleaningPerformance(
     missingSurfactantActiveMatter ||
     !Number.isFinite(activeSurfactant) ||
     (requiresTotalActiveMatter && !Number.isFinite(totalActiveMatter));
-  const hardnessUnavailable = !hasExplicitHardness || !hasExplicitWashScenario;
+  // Only LAUNDRY_LIQUID currently applies the wash-water hardness factor in its KPI model.
+  // Do not demand irrelevant hardness inputs for glass, toilet, softener, or other categories.
+  const requiresHardnessScenario = category === 'LAUNDRY_LIQUID';
+  const hardnessUnavailable = requiresHardnessScenario && (!hasExplicitHardness || !hasExplicitWashScenario);
 
   if (!Number.isFinite(phVal) || activeMatterUnavailable || hardnessUnavailable) {
     const reason = !Number.isFinite(phVal)
@@ -314,15 +317,17 @@ export function calculateCleaningPerformance(
   }
 
   // Phase 3 Water Hardness Synchronization
-  const hardnessTargetPpm = options!.waterHardnessPpm!;
-  const hardnessResult = calculateWaterHardnessTolerance(
-    safeIngs,
-    hardnessTargetPpm,
-    options!.washVolumeL!,
-    options!.washDoseGrams!,
-    options!.batchSizeKg!,
-    category
-  );
+  const hardnessTargetPpm = options?.waterHardnessPpm;
+  const hardnessResult = requiresHardnessScenario
+    ? calculateWaterHardnessTolerance(
+        safeIngs,
+        hardnessTargetPpm!,
+        options!.washVolumeL!,
+        options!.washDoseGrams!,
+        options!.batchSizeKg!,
+        category
+      )
+    : { status: 'NOT_APPLICABLE' as const };
 
   // Base Surfactant Synergy Multiplier
   let surfactantSynergy = 0;
