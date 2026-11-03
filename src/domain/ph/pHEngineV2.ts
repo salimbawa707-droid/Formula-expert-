@@ -35,6 +35,17 @@ export class PHEngineV2 {
     const composition = normalizeFormulationComposition(ingredients, totalMassKg, options);
     (composition as any).activityModel = activityModel;
 
+    // A numerical root is not evidence that pH is chemically identifiable.
+    // Require at least one recognized acid/base/buffer contributor and reject
+    // compositions containing unrecognized mass that could alter the pH.
+    const hasPHActiveSpecies = composition.ingredients.some(item =>
+      item.resolvedSpecies !== null &&
+      item.moles > 0 &&
+      item.resolvedSpecies.pHEffect !== 'neutral'
+    );
+    const hasUnrecognizedIngredients = composition.unrecognizedCount > 0;
+    const hasAdequatePHChemistry = hasPHActiveSpecies && !hasUnrecognizedIngredients;
+
     // 2. Numerical equilibrium solver
     const solverRes = NumericalEquilibriumSolver.solve(composition, temperatureC, {
       tolerance: options.tolerance ?? 1e-8,
@@ -42,7 +53,11 @@ export class PHEngineV2 {
       initialGuess: (typeof options.targetPH === 'number' && Number.isFinite(options.targetPH)) ? options.targetPH : undefined
     });
 
-    const isConverged = solverRes.converged === true && Number.isFinite(solverRes.pH);
+    const isConverged = hasAdequatePHChemistry &&
+      solverRes.converged === true &&
+      Number.isFinite(solverRes.pH) &&
+      solverRes.pH >= 0 &&
+      solverRes.pH <= 14;
     const solvedPH = isConverged ? solverRes.pH : null;
 
     // 3. Equilibrium charge balance & speciation at evaluation pH
@@ -124,7 +139,9 @@ export class PHEngineV2 {
             modelValidity: 'OUT_OF_RANGE' as const,
             assumptions: [],
             warnings: [
-              'PH_SOLVER_NOT_CONVERGED: Confidence and equilibrium-dependent diagnostics are unavailable.'
+              ...(!hasPHActiveSpecies ? ['PH_ACTIVE_SPECIES_UNAVAILABLE: No recognized acid/base/buffer contributor is present; neutral pH is not inferred.'] : []),
+              ...(hasUnrecognizedIngredients ? ['PH_UNRECOGNIZED_INGREDIENTS_PRESENT: Unrecognized formulation mass may alter pH; the equilibrium result is withheld.'] : []),
+              ...(hasAdequatePHChemistry && !solverRes.converged ? ['PH_SOLVER_NOT_CONVERGED: Confidence and equilibrium-dependent diagnostics are unavailable.'] : [])
             ]
           };
 
@@ -134,7 +151,7 @@ export class PHEngineV2 {
     return {
       pH: outputPH,
       finalPH: outputPH,
-      status: isConverged ? solverRes.status : 'NON_CONVERGED',
+      status: !hasAdequatePHChemistry ? 'INSUFFICIENT_DATA' : (isConverged ? solverRes.status : 'NON_CONVERGED'),
       method: solverRes.method,
       converged: isConverged,
       iterations: solverRes.iterations,
