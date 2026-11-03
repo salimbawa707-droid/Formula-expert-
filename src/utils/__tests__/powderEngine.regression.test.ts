@@ -129,7 +129,7 @@ export function runPowderEngineTestSuite(): {
     { name: 'LAE-7 (100%)', percentage: 4.00, activeMatterPct: 100 },
     { name: 'Sodium Carbonate (Soda Ash Dense)', percentage: 25.00, activeMatterPct: 100 },
     { name: 'Zeolite 4A Builder', percentage: 20.00, activeMatterPct: 100 },
-    { name: 'GLDA Chelating Agent (80%)', percentage: 3.00, activeMatterPct: 80 },
+    { name: 'GLDA 99% Powder', percentage: 3.00, activeMatterPct: 99 },
     { name: 'Sodium Percarbonate Coated', percentage: 10.00, activeMatterPct: 100 },
     { name: 'TAED Bleach Activator', percentage: 2.00, activeMatterPct: 100 },
     { name: 'Polycarboxylate Polymer', percentage: 2.00, activeMatterPct: 100 },
