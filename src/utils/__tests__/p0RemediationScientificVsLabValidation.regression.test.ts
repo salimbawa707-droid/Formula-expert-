@@ -387,6 +387,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   const labStatus = qgResult.evidenceStatus;
   assert('TEST 35: Scientific validity (VALID) and evidence status (PREDICTED_ONLY) are independent queryable dimensions', qgResult.scientificValidity === 'VALID' && labStatus === 'PREDICTED_ONLY');
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
