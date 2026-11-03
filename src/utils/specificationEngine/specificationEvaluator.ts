@@ -324,8 +324,23 @@ export function evaluateSpecifications(input: EvaluationInput): SpecificationRep
         }
       }
 
-      // Check min / max bounds
-      if (hasMin && value < param.min!) {
+      // Predicted/calculated values cannot satisfy a parameter explicitly requiring a physical laboratory measurement.
+      // Keep the screening value visible, but do not award PASS or assert a confirmed failure.
+      if (param.requiresLabMeasurement && !isMeasured) {
+        const below = hasMin && value < param.min!;
+        const above = hasMax && value > param.max!;
+        status = 'NOT_TESTED';
+        targetMet = false;
+        if (below) {
+          gapDirection = 'OUT_OF_BOUNDS';
+          statusMessage = `Screening value ${value.toFixed(2)} is below the minimum ${param.min}; physical laboratory measurement is required before any specification verdict.`;
+        } else if (above) {
+          gapDirection = 'OUT_OF_BOUNDS';
+          statusMessage = `Screening value ${value.toFixed(2)} is above the maximum ${param.max}; physical laboratory measurement is required before any specification verdict.`;
+        } else {
+          statusMessage = `Screening value ${value.toFixed(2)} is within the nominal range, but this parameter requires physical laboratory measurement before PASS can be assigned.`;
+        }
+      } else if (hasMin && value < param.min!) {
         status = 'OUT_OF_SPEC';
         statusMessage = `Below minimum threshold (Value: ${value.toFixed(2)}, Min: ${param.min}).`;
         gapDirection = 'OUT_OF_BOUNDS';
