@@ -307,6 +307,7 @@ export function calculateCleaningPerformance(
       overallScore: null as any,
       rating: null as any,
       cleaningScore: null,
+      conditioningScore: null,
       isCleaningApplicable: cleaningApplicable,
       performanceIndex: null as any,
       primaryPerformanceDomain: 'Performance evaluation blocked',
@@ -839,11 +840,11 @@ export function calculateCleaningPerformance(
   let cleaningPower: FormulationPerformanceResult['cleaningPower'] = 'Low';
   if (!isCleaningApplicable) {
     cleaningPower = 'Conditioning / Non-Detergent';
-  } else if (cpi >= 90) {
+  } else if (cpi !== null && cpi >= 90) {
     cleaningPower = 'Outstanding';
-  } else if (cpi >= 75) {
+  } else if (cpi !== null && cpi >= 75) {
     cleaningPower = 'High';
-  } else if (cpi >= 60) {
+  } else if (cpi !== null && cpi >= 60) {
     cleaningPower = 'Medium';
   }
 
