@@ -68,6 +68,20 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   const cpiBaseline = calculateCPI(formula1 as any, 8.0, 'LAUNDRY_LIQUID');
   assertEqual('CPI & Cleaning Score Equality', 'calculateCPI matches cleaningScore', cpiBaseline, perfBaseline.cleaningScore);
 
+  // Missing pH must not silently inherit a neutral default and emit predictive KPIs.
+  const perfWithoutPH = calculateCleaningPerformance(formula1 as any, undefined, 'LAUNDRY_LIQUID');
+  assertEqual('Fail-Closed Inputs', 'Missing pH provenance is INSUFFICIENT_DATA', perfWithoutPH.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Missing pH emits no category KPIs', perfWithoutPH.categoryKPIs.length, 0);
+
+  // Unknown active assay on a declared surfactant must not be converted to 0% active.
+  const unknownAssayFormula = [
+    { name: 'Mystery Anionic Surfactant XZ-17', percentage: 10, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, activeMatterPct: 0, category: 'Solvent' }
+  ];
+  const perfWithUnknownAssay = calculateCleaningPerformance(unknownAssayFormula as any, 8.0, 'LAUNDRY_LIQUID');
+  assertEqual('Fail-Closed Inputs', 'Unknown surfactant assay provenance is INSUFFICIENT_DATA', perfWithUnknownAssay.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Unknown surfactant assay emits no category KPIs', perfWithUnknownAssay.categoryKPIs.length, 0);
+
   // 5. No-Enzyme vs Enzyme Formula
   const formulaNoEnzyme = [
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' },
