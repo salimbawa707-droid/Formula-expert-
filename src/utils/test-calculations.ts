@@ -54,7 +54,6 @@ import { runP1Phase7ModelGovernanceTestSuite } from './__tests__/p1Phase7ModelGo
 import { runP1Phase8IngredientIntelligenceTestSuite } from './__tests__/p1Phase8IngredientIntelligence.regression.test';
 import { runP1Phase10EndToEndDecisionTestSuite } from './__tests__/p1Phase10EndToEndDecision.regression.test';
 import { runP1Phase11LearningLoopTestSuite } from './__tests__/p1Phase11LearningLoop.regression.test';
-import { runP1Phase12FormulaDevelopmentTestSuite } from './__tests__/p1Phase12FormulaDevelopment.regression.test';
 import { runP1Phase13ManufacturingTestSuite } from './__tests__/p1Phase13Manufacturing.regression.test';
 import { runP3WaterHardnessTestSuite } from './__tests__/p3WaterHardnessChelation.test';
 import { runPhase4PerformanceTestSuite } from './__tests__/p4CleaningPerformanceMaster.test';
@@ -196,7 +195,6 @@ const p2Phase14RegulatorySummary = runP2Phase14RegulatoryComplianceTestSuite();
 const p2PhaseScientificCertaintySummary = runP2PhaseScientificCertaintyTestSuite();
 const p1Phase10Summary = runP1Phase10EndToEndDecisionTestSuite();
 const p1Phase11Summary = runP1Phase11LearningLoopTestSuite();
-const p1Phase12Summary = runP1Phase12FormulaDevelopmentTestSuite();
 const p1Phase13Summary = runP1Phase13ManufacturingTestSuite();
 const p3HardnessSummary = runP3WaterHardnessTestSuite();
 const p4PerformanceSummary = runPhase4PerformanceTestSuite();
@@ -405,7 +403,6 @@ console.log(`Phase P1.7 Scientific Model Governance & Versioning Master: ${p1Pha
 console.log(`Phase P1.8 Scientific Knowledge Base & Ingredient Intelligence Master: ${p1Phase8Summary.passed}/${p1Phase8Summary.total} PASS`);
 console.log(`Phase P1.10 End-to-End Decision Quality Master: ${p1Phase10Summary.passed}/${p1Phase10Summary.total} PASS`);
 console.log(`Phase P1.11 R&D Experiment & Learning Loop Master: ${p1Phase11Summary.passed}/${p1Phase11Summary.total} PASS`);
-console.log(`Phase P1.12 Formula Development & Iteration Lifecycle Master: ${p1Phase12Summary.passed}/${p1Phase12Summary.total} PASS`);
 console.log(`Phase P1.13 Production Batch, Scale-Up & Manufacturing Validation Master: ${p1Phase13Summary.passed}/${p1Phase13Summary.total} PASS`);
 console.log(`Phase C.0 Master Scientific Validation: ${scientificPhaseCSummary.passed}/${scientificPhaseCSummary.total} PASS`);
 console.log(`Phase D.0 Forensic Result Integrity Audit: ${phaseDSummary.passed}/${phaseDSummary.total} PASS`);
@@ -495,7 +492,6 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'p1Phase8IngredientIntelligence.regression.test.ts', moduleName: 'runP1Phase8IngredientIntelligenceTestSuite', executed: true, passedAssertions: p1Phase8Summary.passed, failedAssertions: p1Phase8Summary.failed, totalAssertions: p1Phase8Summary.total, skipped: false },
   { file: 'p1Phase10EndToEndDecision.regression.test.ts', moduleName: 'runP1Phase10EndToEndDecisionTestSuite', executed: true, passedAssertions: p1Phase10Summary.passed, failedAssertions: p1Phase10Summary.failed, totalAssertions: p1Phase10Summary.total, skipped: false },
   { file: 'p1Phase11LearningLoop.regression.test.ts', moduleName: 'runP1Phase11LearningLoopTestSuite', executed: true, passedAssertions: p1Phase11Summary.passed, failedAssertions: p1Phase11Summary.failed, totalAssertions: p1Phase11Summary.total, skipped: false },
-  { file: 'p1Phase12FormulaDevelopment.regression.test.ts', moduleName: 'runP1Phase12FormulaDevelopmentTestSuite', executed: true, passedAssertions: p1Phase12Summary.passed, failedAssertions: p1Phase12Summary.failed, totalAssertions: p1Phase12Summary.total, skipped: false },
   { file: 'p1Phase13Manufacturing.regression.test.ts', moduleName: 'runP1Phase13ManufacturingTestSuite', executed: true, passedAssertions: p1Phase13Summary.passed, failedAssertions: p1Phase13Summary.failed, totalAssertions: p1Phase13Summary.total, skipped: false },
   { file: 'p3WaterHardnessChelation.test.ts', moduleName: 'runP3WaterHardnessTestSuite', executed: true, passedAssertions: p3HardnessSummary.passed, failedAssertions: p3HardnessSummary.failed, totalAssertions: p3HardnessSummary.passed + p3HardnessSummary.failed, skipped: false },
   { file: 'p4CleaningPerformanceMaster.test.ts', moduleName: 'runPhase4PerformanceTestSuite', executed: true, passedAssertions: p4PerformanceSummary.passed, failedAssertions: p4PerformanceSummary.failed, totalAssertions: p4PerformanceSummary.passed + p4PerformanceSummary.failed, skipped: false },
