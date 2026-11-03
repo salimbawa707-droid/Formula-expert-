@@ -51,7 +51,7 @@ export default function LabNotebook(_props?: any) {
   // R&D Experiment Loop States
   const [trialName, setTrialName] = useState('');
   const [trialOperator, setTrialOperator] = useState('');
-  const [trialHardness, setTrialHardness] = useState('150');
+  const [trialHardness, setTrialHardness] = useState('');
   const [trialTemp, setTrialTemp] = useState('25');
   const [trialDosage, setTrialDosage] = useState('2.0');
   const [trialReplicateInput, setTrialReplicateInput] = useState('');
@@ -1089,7 +1089,7 @@ export default function LabNotebook(_props?: any) {
                     categoryId: selectedCategory,
                     operator: trialOperator,
                     testConditions: {
-                      waterHardnessPpm: Number(trialHardness),
+                      ...(trialHardness.trim() !== '' ? { waterHardnessPpm: Number(trialHardness) } : {}),
                       temperatureC: Number(trialTemp),
                       dosageGramsPerLiter: Number(trialDosage)
                     },
@@ -1105,7 +1105,7 @@ export default function LabNotebook(_props?: any) {
                     `Deviation: ${newTrial.errors.cleaningScore?.absoluteError > 0 ? '+' : ''}${newTrial.errors.cleaningScore?.absoluteError?.toFixed(1)}%. ` +
                     (parsedReplicates.length > 0 ? `Replicate mean: ${newTrial.replicateMean?.cleaningScore?.toFixed(1)}%. ` : '') +
                     `Quality: ${newTrial.qualityStatus}. ` +
-                    `Conditions: Hardness=${trialHardness} ppm, Temp=${trialTemp}°C, Dosage=${trialDosage} g/L.`;
+                    `Conditions: Hardness=${trialHardness.trim() === '' ? 'NOT PROVIDED' : `${trialHardness} ppm (user-entered, unverified)`}, Temp=${trialTemp}°C, Dosage=${trialDosage} g/L.`;
 
                   setNotes((prev: any) => [
                     {
