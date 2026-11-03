@@ -396,11 +396,13 @@ export function runLimsEvidenceEngineTestSuite(): TestResultSummary {
   const qualityGateReport = evaluateScientificQualityGate({
     formulaId: goldenFormula.id,
     formulaName: goldenFormula.name,
+    formulaVersion: '1.0.0',
     productCategory: goldenFormula.category,
     ingredients: testIngs,
     labMeasurements: [
       {
         measurementId: meas1.measurementId,
+        formulaId: goldenFormula.id,
         formulaVersion: '1.0.0',
         parameterKey: 'ph',
         value: 8.42,
