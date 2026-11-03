@@ -11,6 +11,7 @@ import {
   getDefaultActiveMatter
 } from "../utils/calculators";
 import { HLBEngine } from "../utils/hlbEngine";
+import { AUTHORITATIVE_CHELATOR_DATABASE } from "../utils/chelatorEngine";
 import { ActiveMatterEngine } from "../utils/activeMatterEngine";
 import { IngredientIdentitySSOT } from "../domain/ingredients/ingredientIdentitySSOT";
 import { Calculator, ArrowRight, ShieldAlert, Thermometer, RefreshCw, AlertCircle, Info, Beaker, Sparkles } from "lucide-react";
@@ -171,6 +172,12 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
   const [safetyMarginPct, setSafetyMarginPct] = useState<number>(25);
   const [coBuilderTargetPct, setCoBuilderTargetPct] = useState<number>(10);
   const [maxFormulationCapPct, setMaxFormulationCapPct] = useState<number>(3.0);
+  const [selectedChelatorId, setSelectedChelatorId] = useState<string>('');
+  const greenChelatorOptions = AUTHORITATIVE_CHELATOR_DATABASE.filter(species =>
+    ['glda-47', 'mgda-38', 'mgda-40', 'citrate-dihydrate'].includes(species.id)
+  );
+  const selectedChelator = greenChelatorOptions.find(species => species.id === selectedChelatorId);
+  const selectedChelatorDetail = greenChelatorResult?.details?.[0];
 
   const greenChelatorResult = calculateGreenChelators({
     waterHardnessPpm: typeof waterHardnessPpm === 'number' ? waterHardnessPpm : (parseFloat(String(waterHardnessPpm)) || 0),
@@ -178,7 +185,8 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
     washDoseGrams: typeof washDoseGrams === 'number' ? washDoseGrams : (parseFloat(String(washDoseGrams)) || 0),
     safetyMarginPct: typeof safetyMarginPct === 'number' ? safetyMarginPct : (parseFloat(String(safetyMarginPct)) || 0),
     coBuilderTargetPct: typeof coBuilderTargetPct === 'number' ? coBuilderTargetPct : (parseFloat(String(coBuilderTargetPct)) || 0),
-    maxFormulationCapPct: typeof maxFormulationCapPct === 'number' ? maxFormulationCapPct : (parseFloat(String(maxFormulationCapPct)) || 0)
+    maxFormulationCapPct: typeof maxFormulationCapPct === 'number' ? maxFormulationCapPct : (parseFloat(String(maxFormulationCapPct)) || 0),
+    chelators: selectedChelatorId ? [{ id: selectedChelatorId, name: selectedChelator?.name || selectedChelatorId }] : []
   } as any);
 
   const handleLoadActiveFormulaIntoCalculators = () => {
@@ -349,6 +357,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   <span className="text-slate-400 text-[11px]">Select or generate a formula in AI Formula Expert or Formula Library to load it here into R&D Calculators.</span>
                 </div>
               </div>
+              )}
             </div>
           )}
 
@@ -1298,7 +1307,21 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
 
               {/* Interactive Inputs Grid */}
               <div className="bg-[#131d35] rounded-xl border border-slate-700 p-4 space-y-4">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Wash Water & Dosage Parameters</h4>
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Chelator Grade & Wash Water Parameters</h4>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Registered Chelator Grade</label>
+                  <select
+                    value={selectedChelatorId}
+                    onChange={(e) => setSelectedChelatorId(e.target.value)}
+                    className="w-full bg-[#0b1020] text-white border border-slate-700 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="">Select a grade — required</option>
+                    {greenChelatorOptions.map(species => (
+                      <option key={species.id} value={species.id}>{species.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">Generic or hydration-ambiguous names are not assigned a capacity. Registered candidate status is not an environmental certification.</p>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   {/* Water Hardness */}
@@ -1438,7 +1461,17 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                 </div>
               </div>
 
+              {greenChelatorResult.status !== 'CALCULATED' && (
+                <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-200">
+                  <strong>Calculation unavailable.</strong> {greenChelatorResult.recommendation}
+                  {greenChelatorResult.inputWarnings.map((warning, index) => (
+                    <p key={index} className="text-xs mt-1">{warning}</p>
+                  ))}
+                </div>
+              )}
+
               {/* Calculations Output Dashboard */}
+              {greenChelatorResult.status === 'CALCULATED' && (
               <div className="bg-[#0b1020] text-white rounded-xl p-4 space-y-3 border border-emerald-500/30 shadow-lg">
                 <div className="flex justify-between items-center border-b border-emerald-800/60 pb-2">
                   <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-400">
@@ -1470,11 +1503,13 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Three Chelators comparison list */}
+              {greenChelatorResult.status === 'CALCULATED' && (
               <div className="space-y-3">
                 <span className="text-xs uppercase font-extrabold tracking-wider text-slate-400 block">
-                  Green Chelator Comparison Table & Formulation Outputs
+                  Selected Chelator Grade Calculation
                 </span>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1486,7 +1521,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                       <div
                         key={c.id}
                         className={`border rounded-xl p-4 flex flex-col justify-between transition-all bg-[#0b1020] shadow-md hover:border-slate-600 ${
-                          c.id === "glda" ? "border-emerald-500/50 bg-emerald-950/20" : "border-slate-800"
+                          c.isGreen ? "border-emerald-500/50 bg-emerald-950/20" : "border-slate-800"
                         }`}
                       >
                         <div className="space-y-2.5">
@@ -1495,12 +1530,12 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                             <span className="font-bold text-sm text-white leading-tight block">{c.name}</span>
                             <span
                               className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${
-                                c.id === "glda"
+                                c.isGreen
                                   ? "bg-emerald-950 text-emerald-300 border border-emerald-600/40"
-                                  : "bg-amber-950 text-amber-300 border border-amber-600/40"
+                                  : "bg-slate-800 text-slate-300 border border-slate-600"
                               }`}
                             >
-                              {c.id === "glda" ? "Verified" : "Estimated"}
+                              {c.isGreen ? "Registered candidate" : "Registered grade"}
                             </span>
                           </div>
 
@@ -1560,18 +1595,18 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                             {c.citation}
                           </span>
 
-                          {c.id !== "glda" ? (
+                          {!c.isGreen ? (
                             <div className="bg-amber-950/40 border border-amber-500/30 rounded p-2 text-[9px] text-amber-200 flex items-start gap-1 leading-normal">
                               <AlertCircle className="text-amber-400 shrink-0 mt-0.5" size={12} />
                               <div>
-                                <strong className="font-bold">Persistent UI Disclaimer:</strong> Binding capacity is an estimate only and requires rigorous lab titration validation before production use. Do not assume GLDA-level precision.
+                                <strong className="font-bold">Grade-specific capacity is a registered reference value, not proof of wash performance. Validate binding under the exact pH, water composition, dose, and temperature before production use.
                               </div>
                             </div>
                           ) : (
                             <div className="bg-emerald-950/40 border border-emerald-500/30 rounded p-2 text-[9px] text-emerald-200 flex items-start gap-1 leading-normal">
                               <Beaker className="text-emerald-400 shrink-0 mt-0.5" size={12} />
                               <div>
-                                <strong className="font-bold">Verified confidence:</strong> Built-in safety margin accounts for competitive divalent metal complexation constants.
+                                <strong className="font-bold">Registered candidate:</strong> The internal registry identifies this grade as a green-chelator candidate. This does not certify biodegradability, ecotoxicity, or product-level environmental claims.
                               </div>
                             </div>
                           )}
@@ -1581,8 +1616,10 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   })}
                 </div>
               </div>
+              )}
 
               {/* Step-by-Step Mathematical Calculation Example (Plain Text Style table) */}
+              {greenChelatorResult.status === 'CALCULATED' && (
               <div className="bg-[#0b1020] border border-slate-800 rounded-xl p-4 space-y-3">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                   <h4 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1">
@@ -1604,7 +1641,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <th className="p-2 border-r border-slate-800">Step ID</th>
                         <th className="p-2 border-r border-slate-800">Calculation Parameters</th>
                         <th className="p-2 border-r border-slate-800">Formula Applied</th>
-                        <th className="p-2 text-right">Result (GLDA-47)</th>
+                        <th className="p-2 text-right">Result ({selectedChelator?.name || 'Selected grade'})</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-slate-300 font-medium">
@@ -1629,7 +1666,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 border-r border-slate-800">Theoretical Grams (100%)</td>
                         <td className="p-2 border-r border-slate-800">Target Load / Binding Capacity</td>
                         <td className="p-2 text-right text-emerald-400 font-bold">
-                          {(greenChelatorResult?.stoichiometricTargetMg ?? 0).toLocaleString()} mg / 137 mg/g = {((greenChelatorResult?.stoichiometricTargetMg ?? 0) / 137).toFixed(3)} g GLDA-47
+                          {(greenChelatorResult?.stoichiometricTargetMg ?? 0).toLocaleString()} mg / {selectedChelatorDetail?.bindingCapacity ?? '—'} mg/g = {selectedChelatorDetail?.theoreticalSequestrationGrams?.toFixed(3) ?? '—'} g
                         </td>
                       </tr>
                       <tr>
@@ -1637,7 +1674,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 border-r border-slate-800">Co-Builder Target Demand</td>
                         <td className="p-2 border-r border-slate-800">Theoretical Grams &times; {coBuilderTargetPct}%</td>
                         <td className="p-2 text-right text-emerald-400 font-bold">
-                          {((greenChelatorResult?.stoichiometricTargetMg ?? 0) / 137).toFixed(3)} g &times; {coBuilderTargetPct/100} = {(((greenChelatorResult?.stoichiometricTargetMg ?? 0) / 137) * (coBuilderTargetPct/100)).toFixed(3)} g
+                          {selectedChelatorDetail?.theoreticalSequestrationGrams?.toFixed(3) ?? '—'} g &times; {coBuilderTargetPct/100} = {selectedChelatorDetail?.coBuilderTargetGrams?.toFixed(3) ?? '—'} g
                         </td>
                       </tr>
                       <tr>
@@ -1647,10 +1684,10 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 text-right text-emerald-400 font-bold">
                           {(() => {
                             const safeDose = washDoseGrams > 0 ? washDoseGrams : 1;
-                            const targetMg = greenChelatorResult?.stoichiometricTargetMg ?? 0;
-                            const calcPct = (((targetMg / 137) * (coBuilderTargetPct/100)) / safeDose) * 100;
-                            const safePct = isFinite(calcPct) ? calcPct : 0;
-                            return `(${((targetMg / 137) * (coBuilderTargetPct/100)).toFixed(3)}g / ${washDoseGrams || 0}g) × 100 = ${safePct.toFixed(2)}%`;
+                            const demandGrams = selectedChelatorDetail?.coBuilderTargetGrams;
+                            const calcPct = selectedChelatorDetail?.calculatedWeightPct;
+                            if (!Number.isFinite(demandGrams) || !Number.isFinite(calcPct)) return 'Not evaluated';
+                            return `(${demandGrams!.toFixed(3)}g / ${safeDose.toFixed(3)}g) × 100 = ${calcPct!.toFixed(2)}%`;
                           })()}
                         </td>
                       </tr>
@@ -1661,11 +1698,10 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 text-right text-emerald-300 font-extrabold">
                           {(() => {
                             const safeDose = washDoseGrams > 0 ? washDoseGrams : 1;
-                            const targetMg = greenChelatorResult?.stoichiometricTargetMg ?? 0;
-                            const calcPct = (((targetMg / 137) * (coBuilderTargetPct/100)) / safeDose) * 100;
-                            const safePct = isFinite(calcPct) ? calcPct : 0;
-                            const practical = Math.min(safePct, maxFormulationCapPct);
-                            return `Min(${safePct.toFixed(2)}%, ${maxFormulationCapPct.toFixed(1)}%) = ${practical.toFixed(2)}%`;
+                            const calcPct = selectedChelatorDetail?.calculatedWeightPct;
+                            const practical = selectedChelatorDetail?.practicalWeightPct;
+                            if (!Number.isFinite(calcPct) || !Number.isFinite(practical)) return 'Not evaluated';
+                            return `Min(${calcPct!.toFixed(2)}%, ${maxFormulationCapPct.toFixed(1)}%) = ${practical!.toFixed(2)}%`;
                           })()}
                         </td>
                       </tr>
@@ -1676,12 +1712,10 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 text-right text-emerald-400 font-bold">
                           {(() => {
                             const safeDose = washDoseGrams > 0 ? washDoseGrams : 1;
-                            const targetMg = greenChelatorResult?.stoichiometricTargetMg ?? 0;
-                            const calcPct = (((targetMg / 137) * (coBuilderTargetPct/100)) / safeDose) * 100;
-                            const safePct = isFinite(calcPct) ? calcPct : 0;
-                            const practical = Math.min(safePct, maxFormulationCapPct);
-                            const practicalGrams = (practical / 100) * (washDoseGrams || 0);
-                            return `${practical.toFixed(2)}% of ${washDoseGrams || 0}g = ${practicalGrams.toFixed(3)}g`;
+                            const practical = selectedChelatorDetail?.practicalWeightPct;
+                            const practicalGrams = selectedChelatorDetail?.practicalWeightGrams;
+                            if (!Number.isFinite(practical) || !Number.isFinite(practicalGrams)) return 'Not evaluated';
+                            return `${practical!.toFixed(2)}% of ${washDoseGrams.toFixed(2)}g = ${practicalGrams!.toFixed(3)}g`;
                           })()}
                         </td>
                       </tr>
