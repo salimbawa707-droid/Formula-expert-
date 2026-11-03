@@ -180,8 +180,19 @@ export const LimsDashboard: React.FC = () => {
     }
 
     try {
-      const measurement = recordLabMeasurement(
+      const startedTest = transitionTestStatus(
         test,
+        'IN_PROGRESS',
+        measAnalyst.trim(),
+        'Measurement capture started.'
+      );
+      if (!startedTest.success || !startedTest.entity) {
+        throw new Error(startedTest.errorMessage || 'Test could not enter IN_PROGRESS.');
+      }
+      const activeTest = startedTest.entity;
+
+      const measurement = recordLabMeasurement(
+        activeTest,
         valNum,
         measUnit,
         CANONICAL_TEST_METHODS.find(method => method.methodId === test.testMethodId)?.procedureReference || test.parameterName,
@@ -203,13 +214,13 @@ export const LimsDashboard: React.FC = () => {
       const prevEvidence = evidenceRecords.length > 0 ? evidenceRecords[evidenceRecords.length - 1].hash : undefined;
       const evidence = buildEvidenceRecordFromMeasurement(measurement, instrument, measAnalyst, prevEvidence);
       const methodVersion = CANONICAL_TEST_METHODS.find(method => method.methodId === test.testMethodId)?.version;
-      const ingestionInput = buildLimsIngestionInput(test, measurement, evidence, methodVersion);
+      const ingestionInput = buildLimsIngestionInput(activeTest, measurement, evidence, methodVersion);
       const ingestionResult = ingestExperimentResult(ingestionInput, experimentResults);
 
     // Complete the test through the lifecycle engine so timestamps and notes
     // are managed by one authoritative transition path.
     const completedTest = transitionTestStatus(
-      test,
+      activeTest,
       'COMPLETED',
       measAnalyst.trim(),
       `Measurement ${measurement.measurementId} recorded; ingestion quality ${ingestionResult.dataQuality}`
