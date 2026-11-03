@@ -80,7 +80,7 @@ export function runPhase10MasterFormulaTestSuite(): { passed: number; failed: nu
   }
 
   assert('Summary', 'All master formulas receive an explicit verdict (valid or blocked)', validCount + blockedCount === FORMULAS.length, validCount + blockedCount, FORMULAS.length);
-  assert('Summary', 'Blocked formulas are reported rather than silently promoted', blockedCount >= 0, blockedCount, 'Explicit blocked count');
+  assert('Summary', 'At least one unsupported master formula remains blocked pending evidence', blockedCount > 0, blockedCount, 'At least one blocked formula expected until evidence is complete');
 
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
