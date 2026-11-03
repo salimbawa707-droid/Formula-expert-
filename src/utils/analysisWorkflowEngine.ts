@@ -701,18 +701,19 @@ export async function executeStagedScientificAnalysis(
     }
   });
 
+  const hardnessScenarioEvaluated = hardnessResult.status !== 'NOT_EVALUATED';
   const chelationIntermediate = {
     waterHardnessPpm: immutableSnapshot.waterHardnessPpm,
     hardnessProtectionStatus: hardnessResult.status,
-    maxSupportedPpm: hardnessResult.maxSupportedPpm,
-    hardnessLoadMg: hardnessResult.hardnessLoadMg,
-    totalSequestrationMg: hardnessResult.totalSequestrationMg,
+    maxSupportedPpm: hardnessScenarioEvaluated ? hardnessResult.maxSupportedPpm : null,
+    hardnessLoadMg: hardnessScenarioEvaluated ? hardnessResult.hardnessLoadMg : null,
+    totalSequestrationMg: hardnessScenarioEvaluated ? hardnessResult.totalSequestrationMg : null,
     chelatorActivePct: Number(chelatorActivePct.toFixed(2)),
     chelatorNames: Array.from(new Set(chelatorNames))
   };
 
   completeStage('WATER_CHELATION', 'COMPLETED', {
-    details: immutableSnapshot.waterHardnessPpm === null ? 'Water hardness not supplied; chelation demand and protection were not evaluated.' : `Hardness load: ${immutableSnapshot.waterHardnessPpm} ppm | Max supported: ${hardnessResult.maxSupportedPpm} ppm | Status: ${hardnessResult.status}`,
+    details: !hardnessScenarioEvaluated ? (immutableSnapshot.waterHardnessPpm === null ? 'Water hardness not supplied; chelation demand and protection were not evaluated.' : 'Hardness supplied, but final wash-liquor volume and detergent dose are missing; chelation demand and protection were not evaluated.') : `Hardness load: ${immutableSnapshot.waterHardnessPpm} ppm | Max supported: ${hardnessResult.maxSupportedPpm} ppm | Status: ${hardnessResult.status}`,
     intermediate: chelationIntermediate
   });
 
