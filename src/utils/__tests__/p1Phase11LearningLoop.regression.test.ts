@@ -73,9 +73,9 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
 
   assert('Trial 1 successfully registered', typeof trial1.trialId === 'string', true, true);
   assert('Trial 1 registered active category', trial1.categoryId === 'LAUNDRY_LIQUID', trial1.categoryId, 'LAUNDRY_LIQUID');
-  assert('Trial 1 predicted baseline cleaning score', typeof trial1.predictions.cleaningScore === 'number', true, true);
-  assert('Trial 1 has correct absolute error calculation', typeof trial1.errors.cleaningScore.absoluteError === 'number', true, true);
-  assert('Trial 1 is comparable', trial1.isComparable, true, true);
+  assert('Trial 1 does not invent cleaning score without explicit wash-liquor pH', trial1.predictions.cleaningScore === undefined, true, true);
+  assert('Trial 1 does not invent prediction error without a prediction', trial1.errors.cleaningScore === undefined, true, true);
+  assert('Trial 1 is marked NOT_COMPARABLE without matched wash conditions', trial1.isComparable === false && trial1.qualityStatus === 'NOT_COMPARABLE', true, true);
 
   // --------------------------------------------------------------------------
   // TEST GROUP 2: Outlier & Replicate Statistical Tracking
