@@ -347,7 +347,6 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   if (blockingIssues.length > 0) missingCriticalInputs.push('blockingIssues');
   if (!Number.isFinite(rawActiveSurfactants) || !Number.isFinite(rawTotalActiveMatter)) missingCriticalInputs.push('activeMatter');
   if (orchestratorResult.activeMatterResult?.verified !== true) missingCriticalInputs.push('activeMatterProvenance');
-  if (orchestratorResult.activeMatterResult?.verified !== true) missingCriticalInputs.push('activeMatterProvenance');
   if (!Number.isFinite(rawPH) || rawPH < 0 || rawPH > 14) missingCriticalInputs.push('pH');
   if (!Number.isFinite(rawCompatibility) || rawCompatibility < 0 || rawCompatibility > 100) missingCriticalInputs.push('compatibility');
   const performanceMetric = profile.isCleaningApplicable
