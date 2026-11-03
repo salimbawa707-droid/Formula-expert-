@@ -15,7 +15,7 @@ export { INGREDIENT_DATABASE };
  *
  * Mappings:
  * - name: ing.name
- * - rawPercent: ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? (ing as any).rawPercent ?? 0
+ * - rawPercent: first explicitly supplied percentage field; missing input remains unavailable
  * - activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity
  */
 export function mapFormulationIngredientToPHEngineInput(
@@ -24,14 +24,14 @@ export function mapFormulationIngredientToPHEngineInput(
   if (!ing) {
     return {
       name: '',
-      rawPercent: 0,
+      rawPercent: Number.NaN,
     };
   }
 
-  // Determine raw percentage with explicit nullish priority
-  // Preserves explicit 0 percentage without converting to fallback
+  // Preserve explicit zero and support the documented legacy rawPercent field.
+  // Missing/blank values remain unavailable; they are never silently converted to zero.
   const rawPercentage =
-    ing.percentage ?? ing.percent ?? ing.percentageInFormula;
+    ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? (ing as any).rawPercent;
   const rawPercent =
     rawPercentage === undefined || rawPercentage === null ||
     (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
