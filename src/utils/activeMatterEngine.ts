@@ -513,6 +513,7 @@ export class ActiveMatterEngine {
     batchSizeKg: number = 100
   ): ActiveMatterReport {
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+    const hasNonEmptyFormula = safeIngs.length > 0;
     const hasValidBatchSize = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
     const validBatchSize = hasValidBatchSize ? batchSizeKg : Number.NaN;
 
@@ -537,6 +538,10 @@ export class ActiveMatterEngine {
     let invalidPercentageCount = 0;
     let nonAuthoritativeCount = 0;
 
+    if (!hasNonEmptyFormula) {
+      diagnostics.push('Formula contains no ingredients; active-matter evaluation is unavailable.');
+      warnings.push('EMPTY_FORMULA: No ingredient composition was supplied.');
+    }
     if (!hasValidBatchSize) {
       diagnostics.push('Batch size is missing or invalid; batch-mass outputs are unavailable.');
       warnings.push('INVALID_BATCH_SIZE: Supply a finite batch size greater than zero.');
@@ -686,8 +691,8 @@ export class ActiveMatterEngine {
         totalWaterKg: Number(totalBatchWaterKg.toFixed(3))
       },
       contributions,
-      isFullyAuthoritative: ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && nonAuthoritativeCount === 0 && hasValidBatchSize,
-      activeMatterStatus: ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && hasValidBatchSize ? 'COMPLETE' : 'INSUFFICIENT_DATA',
+      isFullyAuthoritative: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && nonAuthoritativeCount === 0 && hasValidBatchSize,
+      activeMatterStatus: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && hasValidBatchSize ? 'COMPLETE' : 'INSUFFICIENT_DATA',
       ingredientsCount: contributions.length,
       ingredientsWithMissingActive,
       invalidPercentageCount,
@@ -782,9 +787,9 @@ export function evaluateAuthoritativeActiveMatter(
 
 export function calculateActiveMatter(ingredients: FormulationIngredient[]): number {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  if (safeIngs.length === 0) return 0;
+  if (safeIngs.length === 0) return Number.NaN;
   const report = ActiveMatterEngine.calculateActiveMatterReport(safeIngs);
-  return report.totalActiveMatter;
+  return report.activeMatterStatus === 'COMPLETE' ? report.totalActiveMatter : Number.NaN;
 }
 
 export function calculateActiveMatterResult(ingredients: FormulationIngredient[]): ActiveMatterResultObject {
