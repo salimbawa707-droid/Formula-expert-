@@ -388,20 +388,25 @@ export function evaluateScientificQualityGate(
   let computedPH: number | null = null;
   let phConfidence = 'Zero Confidence (Not Evaluated)';
   let phSolverConverged = false;
+  let phModelValidity: 'HIGH' | 'MODERATE' | 'LOW' | 'OUT_OF_RANGE' | 'UNKNOWN' = 'UNKNOWN';
   let powderSlurryBasis: string | undefined = undefined;
 
   if (rawIngs.length > 0 && canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY') {
     try {
       const mappedPH = mapFormulationIngredientsToPHEngineInput(rawIngs);
       const phRes = calculatePHAdvanced(mappedPH, 100, { productCategory: canonicalCategory });
-      computedPH = phRes.pH;
-      phSolverConverged = phRes.solverConverged;
+      phModelValidity = phRes.modelValidity ?? 'UNKNOWN';
+      const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
+      computedPH = pHWithinModelDomain ? phRes.pH : null;
+      phSolverConverged = phRes.solverConverged && pHWithinModelDomain;
       powderSlurryBasis = phRes.details?.slurryBasisNotice || (canonicalCategory === 'LAUNDRY_POWDER' ? '1.0% w/v Slurry Basis' : undefined);
-      
-      if (computedPH === null) {
-        phConfidence = 'Zero Confidence (Solver Failed)';
-      } else if (phSolverConverged) {
-        phConfidence = 'High Confidence (Speciation Convergence)';
+
+      if (!pHWithinModelDomain) {
+        phConfidence = 'OUT_OF_RANGE (Not Eligible for Scientific Gate)';
+      } else if (computedPH === null) {
+        phConfidence = 'Zero Confidence (pH Not Identifiable / Solver Failed)';
+      } else {
+        phConfidence = `${phModelValidity} model domain; engine confidence ${phRes.confidence}/100`;
       }
     } catch {
       computedPH = null;
@@ -419,7 +424,7 @@ export function evaluateScientificQualityGate(
   );
   const finalPH = isPHMeasured ? measuredPHRecord!.value : computedPH;
 
-  if (finalPH === null || !Number.isFinite(finalPH) || finalPH < 0 || finalPH > 14 || (!isPHMeasured && !phSolverConverged)) {
+  if (finalPH === null || !Number.isFinite(finalPH) || finalPH < 0 || finalPH > 14 || (!isPHMeasured && (!phSolverConverged || phModelValidity === 'OUT_OF_RANGE'))) {
     scientificValidity = 'INSUFFICIENT_DATA';
     blockingIssues.push({
       id: 'gate-ph-unavailable',
@@ -445,6 +450,18 @@ export function evaluateScientificQualityGate(
   const totalActiveMatterPct = activeMatterAudit.activeMatterStatus === 'COMPLETE'
     ? calculateActiveMatter(rawIngs)
     : Number.NaN;
+
+  if (!activeMatterAudit.isFullyAuthoritative) {
+    majorWarnings.push({
+      id: 'gate-active-matter-provenance',
+      code: 'WARN_ACTIVE_MATTER_NOT_FULLY_AUTHORITATIVE',
+      title: 'Active Matter Inputs Are Not Fully Source-Verified',
+      category: 'VALIDITY',
+      severity: 'MAJOR',
+      message: 'At least one active-matter contribution uses a reference default, name-derived grade, or user override without fully authoritative source verification. The calculated value is screening input, not a verified supplier assay.',
+      recommendation: 'Attach and independently review the exact supplier COA/assay for each commercial grade. Keep the result screening-only until grade identity and active concentration are verified.'
+    });
+  }
 
   if (activeMatterAudit.activeMatterStatus !== 'COMPLETE') {
     scientificValidity = 'INSUFFICIENT_DATA';
