@@ -8,7 +8,6 @@ import { evaluateFormulaScientificValidation } from '../labEvidenceEngine';
 import { canPromoteToLabValidated } from '../lims/limsEvidencePromotionEngine';
 import { evaluateMasterScientificQualityGate } from '../scientificQualityGateEngine';
 import { generateMasterScientificProvenanceReport } from '../provenanceEngine';
-import { FORMULAS } from '../../data/formulas';
 import { CANONICAL_LAB_INSTRUMENTS, evaluateInstrumentCalibration } from '../../domain/lims/instrument';
 import { EvidenceRecord, LabMeasurement } from '../../domain/lims/types';
 
