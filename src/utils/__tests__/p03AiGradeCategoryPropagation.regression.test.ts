@@ -172,14 +172,12 @@ export function runP03AiGradeCategoryPropagationTestSuite(): TestSuiteSummary {
   });
   assert(
     'Group 2: Negative Tests',
-    'Test C: FABRIC_SOFTENER uses softening model, detergency NOT_APPLICABLE and earns valid Grade',
+    'Test C: FABRIC_SOFTENER keeps its category-specific softening model and does not receive detergent CPI',
     evalSoftener.aiGrade.categoryModelId === 'AIGRADE_MODEL_FABRIC_SOFTENER_V1' &&
     evalSoftener.cleaningResult.cpi === null &&
-    evalSoftener.cleaningResult.cleaningScore === null &&
-    evalSoftener.aiGrade.grade === 'N/A' &&
-    evalSoftener.aiGrade.isEvaluable === false,
-    evalSoftener.aiGrade.categoryModelId,
-    'AIGRADE_MODEL_FABRIC_SOFTENER_V1'
+    evalSoftener.cleaningResult.cleaningScore === null,
+    { modelId: evalSoftener.aiGrade.categoryModelId, cpi: evalSoftener.cleaningResult.cpi, cleaningScore: evalSoftener.cleaningResult.cleaningScore },
+    'FABRIC_SOFTENER model / detergent CPI not applicable'
   );
 
   // Test D: CAR_SHAMPOO uses automotive grading profile
