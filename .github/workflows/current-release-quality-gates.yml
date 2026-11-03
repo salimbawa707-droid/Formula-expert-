@@ -134,8 +134,11 @@ jobs:
       - name: Synchronize Capacitor Android project
         run: bun run cap:sync
 
+      - name: Clear stale Gradle instrumentation cache
+        run: rm -rf "$GRADLE_USER_HOME/caches/jars-9"
+
       - name: Build genuine debug APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon --stacktrace assembleDebug
         working-directory: android
 
       - name: Upload debug APK
