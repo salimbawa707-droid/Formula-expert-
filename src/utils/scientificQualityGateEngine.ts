@@ -916,7 +916,6 @@ export function evaluateScientificQualityGate(
 
   // Precedence Status Logic:
   if (blockingIssues.length > 0) {
-    const hasValidityFatal = blockingIssues.some(i => i.category === 'VALIDITY');
     const hasCompatFatal = blockingIssues.some(i => i.category === 'COMPATIBILITY');
     const hasSpecFatal = blockingIssues.some(i => i.category === 'SPECIFICATION');
 
