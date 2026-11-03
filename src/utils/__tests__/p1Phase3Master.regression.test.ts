@@ -133,7 +133,7 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
     { name: 'Citric Acid', percentage: 5, category: 'Acid' }
   ];
   const hlbResZero = evaluateAuthoritativeHLB(zeroSurfactantFormula);
-  assert('Zero Surfactant Returns 0 HLB', hlbResZero.blendedHLB === 0, hlbResZero.blendedHLB, 0);
+  assert('Zero Surfactant HLB is NOT_APPLICABLE', !Number.isFinite(hlbResZero.blendedHLB) && hlbResZero.methodMetadata === 'NOT_APPLICABLE', { hlb: hlbResZero.blendedHLB, method: hlbResZero.methodMetadata }, 'Unavailable / NOT_APPLICABLE');
   assert('Zero Surfactant hasSurfactants is False', hlbResZero.hasSurfactants === false, hlbResZero.hasSurfactants, false);
 
   // --------------------------------------------------------------------------
