@@ -275,7 +275,7 @@ export function runPowderEngineTestSuite(): {
     productCategory: 'Laundry Powder'
   });
   assert('Matrix K. Insoluble Zeolite', 'Identifies Zeolite 4A as expected insoluble builder mineral', formulaZeoliteBalanced.dissolutionDispersibility.hasInsolubleInorganics === true, formulaZeoliteBalanced.dissolutionDispersibility.hasInsolubleInorganics, true);
-  assert('Matrix K. Insoluble Zeolite', 'Formula with Zeolite 4A passes overall verdict', formulaZeoliteBalanced.verdict.overallStatus === 'BALANCED & COMPLIANT', formulaZeoliteBalanced.verdict.overallStatus, 'BALANCED & COMPLIANT');
+  assert('Matrix K. Insoluble Zeolite', 'Formula with Zeolite 4A is never labelled compliant without required validation evidence', formulaZeoliteBalanced.verdict.overallStatus === 'SCREENING_ONLY' || formulaZeoliteBalanced.verdict.overallStatus === 'INSUFFICIENT_DATA', formulaZeoliteBalanced.verdict.overallStatus, 'SCREENING_ONLY or INSUFFICIENT_DATA');
   assert('Matrix K. Insoluble Zeolite', 'Zeolite is not treated as unexpected insoluble residue failure', formulaZeoliteBalanced.dissolutionDispersibility.hasInsolubleInorganics, true, true);
 
   // Test L: Missing Hardness Capacity
