@@ -200,6 +200,14 @@ export function runCommercialGradesTestSuite(): {
       activeMatterPct: sles70.activeDefault,
       costPerKg: 1.50,
       role: sles70.category
+    },
+    {
+      id: 'ing-water',
+      name: 'Water / Aqua',
+      percentage: 80,
+      activeMatterPct: 0,
+      costPerKg: 0,
+      role: 'Solvent'
     }
   ];
 
