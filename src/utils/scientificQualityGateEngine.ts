@@ -375,7 +375,9 @@ export function evaluateScientificQualityGate(
     });
   }
 
-  if (rawIngs.length > 0 && Math.abs(totalMassPct - 100.0) > 1.0) {
+  // Match the production preflight contract: formula mass balance must be 100.00% ±0.05 percentage points.
+  const MASS_BALANCE_TOLERANCE_PCT = 0.05;
+  if (rawIngs.length > 0 && Math.abs(totalMassPct - 100.0) > MASS_BALANCE_TOLERANCE_PCT) {
     scientificValidity = 'INVALID';
     blockingIssues.push({
       id: 'gate-unbalanced-mass',
@@ -383,9 +385,9 @@ export function evaluateScientificQualityGate(
       title: 'Unbalanced Mass Balance Total',
       category: 'VALIDITY',
       severity: 'FATAL',
-      message: `Formulation mass total is ${totalMassPct.toFixed(2)}%, which deviates from 100.00% mass balance limit by > 1.0%.`,
-      recommendation: 'Adjust solvent (water/filler) to bring recipe total to exactly 100.00%.',
-      scientificBasis: 'Conservation of mass principle requires formula stoichiometry to equal 100.0%.'
+      message: `Formulation mass total is ${totalMassPct.toFixed(2)}%, outside the permitted 100.00% ±0.05 percentage-point mass balance tolerance.`,
+      recommendation: 'Adjust solvent (water/filler) to bring recipe total to 100.00% within ±0.05 percentage points.',
+      scientificBasis: 'Conservation of mass requires formulation percentages to total 100.00%; the ±0.05 percentage-point tolerance matches production preflight.'
     });
   }
 
