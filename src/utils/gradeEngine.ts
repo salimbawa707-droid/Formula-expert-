@@ -951,8 +951,8 @@ function buildNotEvaluableResult(
       factors: [reasoning, ...blockingIssues]
     },
     strengths: [],
-    weaknesses: ['Product category missing or unvalidated'],
-    limitingFactors: ['Category must be assigned to calculate product-specific AI Grade.'],
+    weaknesses: ['Required scientific or commercial inputs are unavailable.'],
+    limitingFactors: [...blockingIssues],
     warnings: [],
     blockingIssues,
     unknownParameters: [...blockingIssues],
