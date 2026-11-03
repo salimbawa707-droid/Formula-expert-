@@ -27,14 +27,16 @@ export interface ProductionRequirementItem {
   status: 'sufficient' | 'insufficient' | 'zero_required';
   shortfallKg: number;
   costPerKg: number | null;
-  totalCost: number;
+  totalCost: number | null;
 }
 
 export interface ProductionBatchCheckResult {
   canProduce: boolean;
   batchSizeKg: number;
   totalRequiredKg: number;
-  totalBatchCost: number;
+  totalBatchCost: number | null;
+  costComplete: boolean;
+  blockReasons: string[];
   requirements: ProductionRequirementItem[];
   insufficientCount: number;
   insufficientItems: string[];
@@ -51,7 +53,7 @@ export interface ProductionBatchRun {
     consumedKg: number;
     costPerKg: number | null;
   }[];
-  totalCost: number;
+  totalCost: number | null;
   status: 'Completed' | 'Failed';
   operatorNotes?: string;
   manufacturingBatchId?: string;
@@ -64,56 +66,20 @@ export const PRODUCTION_RUNS_STORAGE_KEY = 'detergent_rd_production_runs_v1';
  * Generates initial baseline laboratory inventory using canonical items from universalIngredientLibrary
  */
 export function getInitialDefaultInventory(): InventoryItem[] {
-  // Select core detergent raw materials and seed realistic baseline lab stock
-  const seedStocks: Record<string, { stock: number; min: number; reorder: number; lot: string }> = {
-    'labsa-90': { stock: 500, min: 100, reorder: 200, lot: 'LOT-2026-LABSA-01' },
-    'labsa-96': { stock: 350, min: 50, reorder: 100, lot: 'LOT-2026-LABSA-02' },
-    'sles-70': { stock: 600, min: 100, reorder: 250, lot: 'LOT-2026-SLES-01' },
-    'capb-30': { stock: 250, min: 50, reorder: 100, lot: 'LOT-2026-CAPB-01' },
-    'caustic-soda-lye-48': { stock: 300, min: 50, reorder: 100, lot: 'LOT-2026-NAOH-01' },
-    'caustic-soda-pearls': { stock: 150, min: 25, reorder: 50, lot: 'LOT-2026-NAOH-02' },
-    'sodium-carbonate-dense': { stock: 800, min: 150, reorder: 300, lot: 'LOT-2026-SODA-01' },
-    'sodium-sulfate-anhydrous': { stock: 1000, min: 200, reorder: 400, lot: 'LOT-2026-SULF-01' },
-    'sodium-citrate-dihydrate': { stock: 200, min: 40, reorder: 80, lot: 'LOT-2026-CITR-01' },
-    'citric-acid-anhydrous': { stock: 180, min: 30, reorder: 60, lot: 'LOT-2026-CIT-02' },
-    'glda-47-liquid': { stock: 220, min: 40, reorder: 80, lot: 'LOT-2026-GLDA-01' },
-    'lae-9': { stock: 300, min: 50, reorder: 100, lot: 'LOT-2026-LAE9-01' },
-    'lae-7': { stock: 250, min: 50, reorder: 100, lot: 'LOT-2026-LAE7-01' },
-    'protease-liquid': { stock: 45, min: 10, reorder: 20, lot: 'LOT-2026-ENZ-01' },
-    'amylase-liquid': { stock: 35, min: 10, reorder: 15, lot: 'LOT-2026-ENZ-02' },
-    'cellulase-liquid': { stock: 30, min: 10, reorder: 15, lot: 'LOT-2026-ENZ-03' },
-    'sodium-chloride-vacuum': { stock: 500, min: 100, reorder: 200, lot: 'LOT-2026-NACL-01' },
-    'edta-na4-powder': { stock: 120, min: 20, reorder: 40, lot: 'LOT-2026-EDTA-01' },
-    'triethanolamine-99': { stock: 140, min: 25, reorder: 50, lot: 'LOT-2026-TEA-01' },
-    'c12-c14-alkyl-polyglycoside-50': { stock: 180, min: 30, reorder: 60, lot: 'LOT-2026-APG-01' },
-    'fragrance-lavender-fresh': { stock: 25, min: 5, reorder: 10, lot: 'LOT-2026-FRAG-01' },
-    'benzisothiazolinone-20': { stock: 20, min: 5, reorder: 10, lot: 'LOT-2026-BIT-01' },
-  };
-
-  return UNIVERSAL_INGREDIENTS.map((item, idx) => {
-    const seed = seedStocks[item.id] || {
-      stock: 100,
-      min: 20,
-      reorder: 50,
-      lot: `LOT-2026-${String(idx + 1).padStart(3, '0')}`
-    };
-
-    return {
-      id: `inv-${item.id}`,
-      ingredientId: item.id,
-      name: item.name,
-      casNumber: item.casNumber,
-      category: item.category,
-      currentStockKg: seed.stock,
-      unit: 'kg',
-      minimumStockKg: seed.min,
-      reorderLevelKg: seed.reorder,
-      costPerKg: typeof item.costPerKg === 'number' && item.costPerKg > 0 ? item.costPerKg : null,
-      lotNumber: seed.lot,
-      supplier: (item as any).suppliers?.[0] || 'Standard Lab Supply',
-      lastUpdated: new Date().toISOString()
-    };
-  });
+  // Ingredient master data defines identity only. It is not proof of physical stock,
+  // lot identity, supplier, or purchase price. New inventory starts at zero/unknown.
+  return UNIVERSAL_INGREDIENTS.map(item => ({
+    id: `inv-${item.id}`,
+    ingredientId: item.id,
+    name: item.name,
+    casNumber: item.casNumber,
+    category: item.category,
+    currentStockKg: 0,
+    unit: 'kg',
+    minimumStockKg: 0,
+    reorderLevelKg: 0,
+    costPerKg: null,
+  }));
 }
 
 /**
@@ -132,13 +98,13 @@ export function parseStoredInventory(jsonString: string | null): InventoryItem[]
         : 0;
       const minStock = typeof item.minimumStockKg === 'number' && !isNaN(item.minimumStockKg)
         ? Math.max(0, item.minimumStockKg)
-        : 20;
+        : 0;
       const reorder = typeof item.reorderLevelKg === 'number' && !isNaN(item.reorderLevelKg)
         ? Math.max(0, item.reorderLevelKg)
-        : 50;
+        : 0;
       const cost = typeof item.costPerKg === 'number' && !isNaN(item.costPerKg) && item.costPerKg >= 0
         ? item.costPerKg
-        : 2.50;
+        : null;
 
       return {
         id: String(item.id || `inv-item-${idx}`),
@@ -151,9 +117,9 @@ export function parseStoredInventory(jsonString: string | null): InventoryItem[]
         minimumStockKg: minStock,
         reorderLevelKg: reorder,
         costPerKg: cost,
-        lotNumber: item.lotNumber ? String(item.lotNumber) : `LOT-${idx + 1}`,
-        supplier: item.supplier ? String(item.supplier) : 'Standard Chemical Supply',
-        lastUpdated: item.lastUpdated || new Date().toISOString()
+        lotNumber: item.lotNumber ? String(item.lotNumber) : undefined,
+        supplier: item.supplier ? String(item.supplier) : undefined,
+        lastUpdated: typeof item.lastUpdated === 'string' && Number.isFinite(Date.parse(item.lastUpdated)) ? item.lastUpdated : undefined
       };
     });
   } catch (e) {
@@ -245,23 +211,40 @@ export function checkProductionBatchAvailability(
       canProduce: false,
       batchSizeKg: 0,
       totalRequiredKg: 0,
-      totalBatchCost: 0,
+      totalBatchCost: null,
+      costComplete: false,
+      blockReasons: ['A committed formula with ingredients is required.'],
       requirements: [],
       insufficientCount: 0,
       insufficientItems: []
     };
   }
 
-  const batchSizeKg = typeof batchSizeOverrideKg === 'number' && batchSizeOverrideKg > 0
+  const batchSizeKg = typeof batchSizeOverrideKg === 'number' && Number.isFinite(batchSizeOverrideKg) && batchSizeOverrideKg > 0
     ? batchSizeOverrideKg
-    : typeof formula.batchSizeKg === 'number' && formula.batchSizeKg > 0
+    : typeof formula.batchSizeKg === 'number' && Number.isFinite(formula.batchSizeKg) && formula.batchSizeKg > 0
       ? formula.batchSizeKg
-      : typeof formula.batchSize === 'number' && formula.batchSize > 0
+      : typeof formula.batchSize === 'number' && Number.isFinite(formula.batchSize) && formula.batchSize > 0
         ? formula.batchSize
-        : 100;
+        : 0;
+
+  if (batchSizeKg <= 0) {
+    return {
+      canProduce: false,
+      batchSizeKg: 0,
+      totalRequiredKg: 0,
+      totalBatchCost: null,
+      costComplete: false,
+      blockReasons: ['A finite, positive batch size must be specified; no default batch size is assumed.'],
+      requirements: [],
+      insufficientCount: 0,
+      insufficientItems: [],
+    };
+  }
 
   let totalRequiredKg = 0;
   let totalBatchCost = 0;
+  let costComplete = true;
   const insufficientItems: string[] = [];
 
   const requirements: ProductionRequirementItem[] = formula.ingredients.map(ing => {
@@ -278,13 +261,14 @@ export function checkProductionBatchAvailability(
     totalRequiredKg += requiredKg;
 
     const matchedInventory = findMatchingInventoryItem(ing, inventory);
-    const availableStockKg = isWater ? 999999 : (matchedInventory?.currentStockKg ?? 0);
+    const availableStockKg = matchedInventory?.currentStockKg ?? 0;
     const costPerKg = typeof ing.costPerKg === 'number' && ing.costPerKg >= 0
       ? ing.costPerKg
       : (matchedInventory?.costPerKg ?? null);
 
-    const lineCost = costPerKg !== null ? Number((requiredKg * costPerKg).toFixed(2)) : 0;
-    totalBatchCost += lineCost;
+    const lineCost = costPerKg !== null ? Number((requiredKg * costPerKg).toFixed(2)) : null;
+    if (lineCost === null && requiredKg > 0) costComplete = false;
+    if (lineCost !== null) totalBatchCost += lineCost;
 
     if (percentage === 0 || requiredKg === 0) {
       return {
@@ -307,7 +291,7 @@ export function checkProductionBatchAvailability(
       : availableStockKg;
     const shortfallKg = isSufficient ? 0 : Number((requiredKg - availableStockKg).toFixed(3));
 
-    if (!isSufficient && !isWater) {
+    if (!isSufficient) {
       insufficientItems.push(ing.name);
     }
 
@@ -331,7 +315,9 @@ export function checkProductionBatchAvailability(
     canProduce,
     batchSizeKg,
     totalRequiredKg: Number(totalRequiredKg.toFixed(3)),
-    totalBatchCost: Number(totalBatchCost.toFixed(2)),
+    totalBatchCost: costComplete ? Number(totalBatchCost.toFixed(2)) : null,
+    costComplete,
+    blockReasons: [],
     requirements,
     insufficientCount: insufficientItems.length,
     insufficientItems
@@ -370,17 +356,6 @@ export function executeAtomicBatchDeduction(
   for (const req of check.requirements) {
     if (req.requiredKg <= 0 || req.status === 'zero_required') continue;
     
-    // Skip water infinite reservoir
-    const isWater = req.name.toLowerCase().includes('water') || req.name.toLowerCase().includes('aqua');
-    if (isWater) {
-      consumedIngredients.push({
-        name: req.name,
-        consumedKg: req.requiredKg,
-        costPerKg: 0
-      });
-      continue;
-    }
-
     const itemIdx = updatedInventory.findIndex(inv => 
       inv.ingredientId === req.ingredientId || 
       inv.name.toLowerCase() === req.name.toLowerCase() ||
