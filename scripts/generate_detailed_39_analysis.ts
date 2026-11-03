@@ -89,7 +89,7 @@ for (let i = 0; i < FORMULAS.length; i++) {
   const hlbTargetStr = policy.targetHLBRange ? `${policy.targetHLBRange.min} - ${policy.targetHLBRange.max}` : 'N/A';
 
   const chelRes = calculateFormulationChelationCapacity(rawIngs as any);
-  const dynChel = calculateDynamicChelatorRequirement(rawIngs as any, 150);
+  const dynChel = calculateDynamicChelatorRequirement(rawIngs as any, 150, 10, 20, 25) // Explicit screening scenario: 150 ppm, 10 L, 20 g, 25% margin;
   const chelationStatus = dynChel.isSufficient ? 'PASS' : 'FAIL';
 
   const compRes = calculateFormulationCompatibility(rawIngs as any, ph, catId);
