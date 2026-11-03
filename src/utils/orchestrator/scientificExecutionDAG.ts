@@ -684,11 +684,26 @@ export class ScientificExecutionDAG {
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER'],
       execute: (state) => {
         const ph = state.finalEquilibriumPH;
+        if (typeof ph !== 'number' || !Number.isFinite(ph) || ph < 0 || ph > 14) {
+          state.compatibilityResult = {
+            compatible: false,
+            compatibilityScore: null,
+            compatibilityStatusSemantic: 'UNKNOWN',
+            alerts: ['pH is unavailable; pH-dependent compatibility was not evaluated.'],
+            warnings: []
+          };
+          state.compatibilityScore = Number.NaN;
+          state.compatible = false;
+          state.compatibilityStatus = 'INSUFFICIENT_DATA';
+          return;
+        }
         const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory);
         state.compatibilityResult = compRes;
-        state.compatibilityScore = compRes.compatibilityScore;
-        state.compatible = compRes.compatible;
-        state.compatibilityStatus = compRes.compatibilityStatusSemantic === 'INCOMPATIBLE' ? 'BLOCKED' : compRes.compatibilityStatusSemantic === 'UNKNOWN' ? 'UNKNOWN' : compRes.compatibilityStatusSemantic === 'COMPATIBLE_BY_RULE' ? 'VALID' : 'SCREENING';
+        state.compatibilityScore = Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : Number.NaN;
+        state.compatible = compRes.compatible === true;
+        state.compatibilityStatus =
+          compRes.compatibilityStatusSemantic === 'INCOMPATIBLE' ? 'BLOCKED' :
+          compRes.compatibilityStatusSemantic === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'SCREENING';
       }
     });
 
@@ -699,7 +714,7 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const isLiquid = state.physicalForm !== 'POWDER';
+        const isLiquid = state.physicalForm === 'LIQUID' || state.physicalForm === 'GEL' || state.physicalForm === 'EMULSION';
         if (!isLiquid) {
           state.predictedViscosityCp = null as any;
           state.viscosityResult = {
@@ -716,7 +731,7 @@ export class ScientificExecutionDAG {
               activeMatterReport: state.activeMatterReport
             })
           };
-          state.viscosityStatus = 'NOT_APPLICABLE';
+          state.viscosityStatus = state.physicalForm === 'POWDER' ? 'NOT_APPLICABLE' : 'INSUFFICIENT_DATA';
           return;
         }
 
@@ -740,8 +755,8 @@ export class ScientificExecutionDAG {
           modelMaturity: 'EMPIRICAL_MODEL',
           viscosityReport: viscReport
         };
-        state.predictedViscosityCp = viscReport.viscosityCp;
-        state.viscosityStatus = 'VALID';
+        state.predictedViscosityCp = Number.isFinite(viscReport.viscosityCp) ? viscReport.viscosityCp : Number.NaN;
+        state.viscosityStatus = Number.isFinite(viscReport.viscosityCp) ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -752,11 +767,31 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['IDENTITY_RESOLUTION'],
       execute: (state) => {
+        if (state.physicalForm === 'POWDER') {
+          state.densityResult = {
+            densityGPerCm3: null,
+            specificGravity: null,
+            densityStatus: 'NOT_APPLICABLE',
+            provenance: 'NOT_APPLICABLE',
+            notes: 'Liquid ideal-volume density model is not a powder bulk/tapped density method.'
+          };
+          state.densityGPerCm3 = Number.NaN;
+          state.specificGravity = Number.NaN;
+          state.densityStatus = 'NOT_APPLICABLE';
+          return;
+        }
+        if (!['LIQUID', 'GEL', 'EMULSION'].includes(state.physicalForm)) {
+          state.densityResult = { densityGPerCm3: null, densityStatus: 'INSUFFICIENT_DATA', provenance: 'INSUFFICIENT_DATA', notes: 'Unknown physical form; density calculation not evaluated.' };
+          state.densityGPerCm3 = Number.NaN;
+          state.specificGravity = Number.NaN;
+          state.densityStatus = 'INSUFFICIENT_DATA';
+          return;
+        }
         const densityRes = calculateDensity(state.resolvedIngredients, state.batchSizeKg * 1000);
         state.densityResult = densityRes;
-        state.densityGPerCm3 = densityRes.densityGPerCm3;
-        state.specificGravity = densityRes.specificGravity || Number((densityRes.densityGPerCm3 / 0.9982).toFixed(3));
-        state.densityStatus = 'VALID';
+        state.densityGPerCm3 = Number.isFinite(densityRes.densityGPerCm3) ? densityRes.densityGPerCm3 : Number.NaN;
+        state.specificGravity = Number.isFinite(densityRes.specificGravity) ? densityRes.specificGravity : Number.NaN;
+        state.densityStatus = densityRes.densityStatus === 'SCREENING_ESTIMATE' ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -767,18 +802,18 @@ export class ScientificExecutionDAG {
       disposition: 'CONDITIONAL_NODE',
       dependencies: ['IDENTITY_RESOLUTION', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const isLiquid = state.physicalForm !== 'POWDER';
+        const isLiquid = state.physicalForm === 'LIQUID' || state.physicalForm === 'GEL' || state.physicalForm === 'EMULSION';
         if (!isLiquid) {
           state.nvrResult = null;
-          state.nvrPercentage = 0;
-          state.nvrStatus = 'NOT_APPLICABLE';
+          state.nvrPercentage = Number.NaN;
+          state.nvrStatus = state.physicalForm === 'POWDER' ? 'NOT_APPLICABLE' : 'INSUFFICIENT_DATA';
           return;
         }
 
         const nvrRes = calculateLiquidNVR(state.resolvedIngredients, state.batchSizeKg);
         state.nvrResult = nvrRes;
-        state.nvrPercentage = nvrRes.nvrPercentage;
-        state.nvrStatus = 'VALID';
+        state.nvrPercentage = Number.isFinite(nvrRes.nvrPercentage) ? nvrRes.nvrPercentage : Number.NaN;
+        state.nvrStatus = nvrRes.isNvrComplete && Number.isFinite(nvrRes.nvrPercentage) ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -792,18 +827,21 @@ export class ScientificExecutionDAG {
         const isPowder = state.physicalForm === 'POWDER';
         if (!isPowder) {
           state.powderReport = null;
-          state.powderStatus = 'NOT_APPLICABLE';
+          state.powderStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'NOT_APPLICABLE';
           return;
         }
 
         try {
           state.powderReport = evaluatePowderFormulation({
             ingredients: state.resolvedIngredients,
-            productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : 'Laundry Powder',
+            productCategory: state.canonicalCategory,
             batchSizeKg: state.batchSizeKg,
             waterHardnessPpm: state.waterHardnessPpm
           });
-          state.powderStatus = 'VALID';
+          const powderStatus = state.powderReport?.verdict?.overallStatus;
+          state.powderStatus = powderStatus === 'SCREENING_ONLY' ? 'SCREENING' :
+            powderStatus === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' :
+            powderStatus === 'BALANCED & COMPLIANT' ? 'SCREENING' : 'FAILED';
         } catch (err: any) {
           state.powderReport = null;
           state.powderStatus = 'FAILED';
@@ -819,7 +857,10 @@ export class ScientificExecutionDAG {
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER', 'WATER_CHELATION', 'COMPATIBILITY'],
       execute: (state) => {
         // Enforce dependencies: chelation and compatibility must complete and pass down states
-        const hardnessSufficient = state.chelationResult?.isSufficient ?? true;
+        const hardnessSufficient =
+          state.chelationStatus === 'NOT_APPLICABLE' && state.waterHardnessPpm === 0
+            ? true
+            : state.chelationResult?.isSufficient === true;
 
         // If hard water load is severe and chelation is insufficient, active surfactants are penalized
         let effectiveSurfactantAdjustment = state.totalSurfactantActivePct;
