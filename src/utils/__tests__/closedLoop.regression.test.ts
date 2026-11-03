@@ -16,6 +16,7 @@
  */
 
 import { ingestExperimentResult, IngestResultInput } from '../closedLoopRAndD/experimentResultIngestionEngine';
+import { evaluateClosedLoopEvidenceGate } from '../closedLoopRAndD/closedLoopEvidenceGate';
 import { buildLimsIngestionInput } from '../closedLoopRAndD/limsIngestionAdapter';
 import { comparePredictionVsMeasurement } from '../closedLoopRAndD/predictionVsMeasurementEngine';
 import { isParameterApplicable, classifyScientificDeviation } from '../closedLoopRAndD/scientificDeviationEngine';
@@ -197,6 +198,24 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
     evidenceLevel: 'LAB_VALIDATED',
     verificationStatus: 'VERIFIED',
   };
+
+  const simulatedGate = evaluateClosedLoopEvidenceGate([{
+    ...observedPH,
+    evidenceLevel: 'CALCULATED',
+    verificationStatus: 'UNVERIFIED',
+    instrumentCalibrationValid: false,
+    instrumentId: 'SIMULATED',
+  }]);
+  assert('B1a. Simulated/unverified readings cannot authorize a reformulation version',
+    !simulatedGate.eligible && simulatedGate.reasons.length > 0);
+
+  const verifiedGate = evaluateClosedLoopEvidenceGate([observedPH]);
+  assert('B1b. Verified lab evidence with valid calibration and complete identity passes the evidence gate',
+    verifiedGate.eligible && verifiedGate.reasons.length === 0);
+
+  const emptyGate = evaluateClosedLoopEvidenceGate([]);
+  assert('B1c. Empty evidence set fails closed',
+    !emptyGate.eligible);
 
   const compPH = comparePredictionVsMeasurement(predictedPH, observedPH);
   assert('B1. Prediction vs Measurement computes exact delta (-0.3) and preserves both values',
