@@ -268,7 +268,7 @@ export function calculateFormulaFingerprint(inputs: {
   formulaName: string;
   productCategory: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   ingredients: Array<{ id?: string; name: string; percentage?: number; activeMatterPct?: number; role?: string; costPerKg?: number | null }>;
   powderLabInputs?: PowderLabMeasurementInputs;
 }): string {
@@ -806,7 +806,7 @@ export async function executeStagedScientificAnalysis(
     canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     undefined,
     {
-      waterHardnessPpm: immutableSnapshot.waterHardnessPpm,
+      ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
