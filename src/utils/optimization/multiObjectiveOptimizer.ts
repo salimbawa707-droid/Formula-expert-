@@ -340,7 +340,8 @@ export function evaluateCandidateFormulation(
     : 'UNKNOWN';
 
   // 4. Authoritative Active Surfactant Matter
-  const activeSurfactantsPct = orchestratorResult.activeMatterResult.totalSurfactantActivePct;
+  const rawActiveSurfactantsPct = orchestratorResult.activeMatterResult.totalSurfactantActivePct;
+  const activeSurfactantsPct = Number.isFinite(rawActiveSurfactantsPct) ? rawActiveSurfactantsPct : Number.NaN;
 
   // 5. Authoritative pH Engine v2
   const finalPH = orchestratorResult.pHResult.ph ?? Number.NaN; // Missing pH remains unavailable; never substitute a plausible value.
@@ -383,7 +384,7 @@ export function evaluateCandidateFormulation(
   const metrics: CandidateScientificMetrics = {
     totalMassPercentage: Number.isFinite(totalMass) ? Number(totalMass.toFixed(2)) : Number.NaN,
     pH: Number(finalPH.toFixed(2)),
-    activeSurfactantPercentage: Number(activeSurfactantsPct.toFixed(2)),
+    activeSurfactantPercentage: Number.isFinite(activeSurfactantsPct) ? Number(activeSurfactantsPct.toFixed(2)) : Number.NaN,
     viscosityCp,
     densityGPerCm3,
     liquidNvrPercentage,
