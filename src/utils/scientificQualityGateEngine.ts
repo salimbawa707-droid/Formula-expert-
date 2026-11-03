@@ -144,7 +144,7 @@ export interface MasterScientificQualityGateReport {
   // Underlying Consumed Authoritative Engine Outputs
   speciationResult: {
     pH: number | null;
-    provenance: 'PREDICTED' | 'MEASURED';
+    provenance: 'PREDICTED' | 'MEASURED' | 'INSUFFICIENT_DATA';
     isMeasured: boolean;
     confidence: string;
     powderSlurryBasis?: string;
@@ -153,7 +153,7 @@ export interface MasterScientificQualityGateReport {
   activeMatterResult: {
     totalSurfactantActivePct: number;
     totalActiveMatterPct: number;
-    meetsCategoryMin: boolean;
+    meetsCategoryMin: boolean | null;
     categoryMinPct: number;
   };
   chelationResult: {
@@ -168,7 +168,7 @@ export interface MasterScientificQualityGateReport {
   };
   compatibilityResult: {
     compatible: boolean;
-    score: number;
+    score: number | null;
     riskLevel: string;
     alertsCount: number;
   };
@@ -178,7 +178,7 @@ export interface MasterScientificQualityGateReport {
     flowMechanism: string;
   };
   performanceResult: {
-    cpi: number;
+    cpi: number | null;
     qualitativePower: string;
     provenance: PerformanceProvenance;
     isMeasured: boolean;
@@ -1033,7 +1033,7 @@ export function evaluateScientificQualityGate(
 
     speciationResult: {
       pH: finalPH,
-      provenance: isPHMeasured ? 'MEASURED' : (finalPH === null ? 'INSUFFICIENT_DATA' : 'PREDICTED'),
+      provenance: isPHMeasured ? 'MEASURED' : (Number.isFinite(finalPH) ? 'PREDICTED' : 'INSUFFICIENT_DATA'),
       isMeasured: isPHMeasured,
       confidence: phConfidence,
       powderSlurryBasis,
@@ -1042,7 +1042,7 @@ export function evaluateScientificQualityGate(
     activeMatterResult: {
       totalSurfactantActivePct,
       totalActiveMatterPct,
-      meetsCategoryMin: meetsCategoryMinActive,
+      meetsCategoryMin: Number.isFinite(totalSurfactantActivePct) ? meetsCategoryMinActive : null,
       categoryMinPct: categoryMinActivePct
     },
     chelationResult: {
@@ -1051,11 +1051,11 @@ export function evaluateScientificQualityGate(
         : null,
       waterHardnessPpm,
       capacityCaCO3GPer100g: hardnessTolerance ? hardnessTolerance.totalSequestrationMg / 1000 : null,
-      status: hardnessTolerance?.status ?? 'NOT_EVALUATED',
+      status: hardnessTolerance?.status ?? (productHardnessPolicy.requiresHardnessControl ? 'NOT_EVALUATED' : 'NOT_APPLICABLE'),
       hardnessProtectionRatio: hardnessTolerance?.hardnessProtectionRatio,
       hardnessLoadMg: hardnessTolerance?.hardnessLoadMg,
       totalSequestrationMg: hardnessTolerance?.totalSequestrationMg,
-      isApplicable: hardnessTolerance?.isApplicable ?? null
+      isApplicable: hardnessTolerance?.isApplicable ?? productHardnessPolicy.requiresHardnessControl
     },
     compatibilityResult: {
       compatible: compRes.compatible,
