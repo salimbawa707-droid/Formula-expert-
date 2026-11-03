@@ -246,7 +246,7 @@ export function runInventoryTestSuite() {
     ingredients: [{ name: 'LABSA 90%', percentage: Number.NaN }]
   }, 10, inventoryStock);
   assert(
-    'Test 16: Non-finite ingredient percentage blocks production',
+    'Test 17: Non-finite ingredient percentage blocks production',
     !invalidPctCheck.canProduce && invalidPctCheck.blockReasons.some(reason => reason.includes('percentage')),
     invalidPctCheck.blockReasons.join('; ')
   );
@@ -257,18 +257,18 @@ export function runInventoryTestSuite() {
     ingredients: [{ name: 'LABSA 90%', percentage: 90 }]
   }, 10, inventoryStock);
   assert(
-    'Test 17: Formula mass balance other than 100% blocks production',
+    'Test 18: Formula mass balance other than 100% blocks production',
     !unbalancedCheck.canProduce && unbalancedCheck.blockReasons.some(reason => reason.includes('mass balance')),
     unbalancedCheck.blockReasons.join('; ')
   );
 
-  // Test 18: Missing legacy inventory metadata stays unknown, never receives fabricated defaults.
+  // Test 19: Missing legacy inventory metadata stays unknown, never receives fabricated defaults.
   const legacyUnknown = parseStoredInventory(JSON.stringify([{
     id: 'legacy-1', ingredientId: 'legacy-1', name: 'Unknown raw material',
     category: 'Surfactant', currentStockKg: 4, unit: 'kg'
   }]));
   assert(
-    'Test 18: Missing legacy cost, lot and supplier remain unknown',
+    'Test 19: Missing legacy cost, lot and supplier remain unknown',
     legacyUnknown[0].costPerKg === null && legacyUnknown[0].lotNumber === undefined && legacyUnknown[0].supplier === undefined,
     JSON.stringify({ cost: legacyUnknown[0].costPerKg, lot: legacyUnknown[0].lotNumber, supplier: legacyUnknown[0].supplier })
   );
@@ -282,7 +282,7 @@ export function runInventoryTestSuite() {
     { id: 'c1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 20, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }
   ]);
   assert(
-    'Test 19: Unknown material price yields unavailable batch cost, not zero-cost claim',
+    'Test 20: Unknown material price yields unavailable batch cost, not zero-cost claim',
     unknownCostCheck.costComplete === false && unknownCostCheck.totalBatchCost === null &&
     unknownCostCheck.requirements[0].totalCost === null,
     String(unknownCostCheck.totalBatchCost)
@@ -293,24 +293,24 @@ export function runInventoryTestSuite() {
     ingredients: [{ name: 'LABSA 90%', percentage: 100 }]
   }, undefined, inventoryStock);
   assert(
-    'Test 20: Missing batch size fails closed instead of assuming 100 kg',
+    'Test 21: Missing batch size fails closed instead of assuming 100 kg',
     !missingBatchSize.canProduce && missingBatchSize.batchSizeKg === 0 && missingBatchSize.blockReasons.length > 0,
     JSON.stringify({ canProduce: missingBatchSize.canProduce, batchSizeKg: missingBatchSize.batchSizeKg })
   );
 
   const noWaterStock = checkProductionBatchAvailability(activeFormulaSample, 100, inventoryStock.filter(i => i.name !== 'Water'));
   assert(
-    'Test 21: Water is treated as a tracked raw material, not an infinite synthetic reservoir',
+    'Test 22: Water is treated as a tracked raw material, not an infinite synthetic reservoir',
     !noWaterStock.canProduce && noWaterStock.insufficientItems.includes('Water'),
     noWaterStock.insufficientItems.join(', ')
   );
 
-  // Test 22: Stock status threshold calculations
+  // Test 23: Stock status threshold calculations
   const statusOut = getStockStatus({ currentStockKg: 0, reorderLevelKg: 50, minimumStockKg: 20 });
   const statusLow = getStockStatus({ currentStockKg: 30, reorderLevelKg: 50, minimumStockKg: 20 });
   const statusIn = getStockStatus({ currentStockKg: 120, reorderLevelKg: 50, minimumStockKg: 20 });
   assert(
-    'Test 22: Stock status logic (OUT OF STOCK, LOW STOCK, IN STOCK)',
+    'Test 23: Stock status logic (OUT OF STOCK, LOW STOCK, IN STOCK)',
     statusOut === 'OUT OF STOCK' && statusLow === 'LOW STOCK' && statusIn === 'IN STOCK',
     `${statusOut} | ${statusLow} | ${statusIn}`
   );
