@@ -475,7 +475,12 @@ export class ActiveMatterEngine {
     }
 
     // Exact Canonical library direct match
-    if (canonicalMatch && canonicalMatch.activeDefault !== undefined) {
+    if (
+      canonicalMatch &&
+      canonicalMatch.activeDefault !== undefined &&
+      canonicalMatch.activeDefault !== null &&
+      !canonicalMatch.unknownProperties?.includes('activeMatter')
+    ) {
       return {
         activeMatterPct: canonicalMatch.activeDefault,
         dataSource: 'canonical_library_default',
