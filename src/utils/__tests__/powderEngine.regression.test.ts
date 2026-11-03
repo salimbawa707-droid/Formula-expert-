@@ -161,6 +161,8 @@ export function runPowderEngineTestSuite(): {
     ingredients: testFormula2,
     productCategory: 'Laundry Powder',
     batchSizeKg: 500,
+    washDoseG: 50,
+    washLiquorVolumeL: 10,
     labMeasurements: labInputs2
   });
 
@@ -293,7 +295,31 @@ export function runPowderEngineTestSuite(): {
     ingredients: [{ name: 'Non-Standard Proprietary Mineral', percentage: 100, activeMatterPct: 100 }],
     productCategory: 'Laundry Powder'
   });
-  assert('Matrix L. Hardness Handling', 'Builder protection without recognized builders is insufficient', formulaNoHardnessData.hardWater.builderProtectionRating === 'Insufficient Builder Loading', formulaNoHardnessData.hardWater.builderProtectionRating, 'Insufficient Builder Loading');
+  assert('Matrix L. Hardness Handling', 'Missing hardness/dose/volume never receives an assumed protection rating', formulaNoHardnessData.hardWater.source === 'INSUFFICIENT_DATA' && formulaNoHardnessData.hardWater.builderProtectionRating === 'Insufficient validated data', formulaNoHardnessData.hardWater, 'INSUFFICIENT_DATA / no protection claim');
+
+  const powderScenario = evaluatePowderFormulation({
+    ingredients: testFormula2,
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 500,
+    waterHardnessPpm: 150,
+    washDoseG: 50,
+    washLiquorVolumeL: 10
+  });
+  assert('Matrix L. Hardness Handling', 'Complete scenario reports builder delivery arithmetic but not an unvalidated protection PASS', powderScenario.hardWater.source === 'SCREENING' && powderScenario.hardWater.builderProtectionRating === 'Insufficient validated data' && typeof powderScenario.hardWater.builderDeliveryGPerL === 'number', powderScenario.hardWater, 'SCREENING with quantitative delivery and no efficacy verdict');
+
+  const powderNoDose = evaluatePowderFormulation({
+    ingredients: testFormula2,
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 500
+  });
+  assert('Matrix L. Hardness Handling', 'Chelation capacity per dose is unavailable without an explicit wash dose', powderNoDose.chelationSequestration.source === 'INSUFFICIENT_DATA' && powderNoDose.chelationSequestration.calciumCapacityMgPerDose === undefined, powderNoDose.chelationSequestration, 'INSUFFICIENT_DATA / no per-dose capacity');
+
+  const costingWithoutDose = evaluatePowderFormulation({
+    ingredients: formulaWithCosts,
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert('Costing Engine', 'Cost per wash dose is null when no dose is supplied', costingWithoutDose.costing.costPerWashDose === null, costingWithoutDose.costing.costPerWashDose, null);
 
   // Test M: pH without Target
   const formulaUntargetedCategory = evaluatePowderFormulation({
