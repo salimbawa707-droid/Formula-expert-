@@ -356,6 +356,20 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     'Unverified standards cannot certify compliance'
   );
 
+  const decisionNoRules = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 95 },
+      { name: 'Sodium Carbonate', percentage: 5 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'UNREGISTERED_TEST_JURISDICTION' as any
+  });
+  assert(
+    'Test 15B: Zero applicable rules in an unregistered jurisdiction cannot produce COMPLIANT',
+    decisionNoRules.overallStatus === 'INSUFFICIENT_DATA' &&
+      decisionNoRules.documentationStatus.primarySourceCoveragePct === null
+  );
+
   // --------------------------------------------------------------------------
   // TEST 16: UI/export bridge cannot override Regulatory SSOT
   // --------------------------------------------------------------------------
