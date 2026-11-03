@@ -166,9 +166,9 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
   const convertedValue = convertUnit(valNum, convFrom, convTo);
 
   // 7. Green Chelator & Co-Builder Stoichiometry State
-  const [waterHardnessPpm, setWaterHardnessPpm] = useState<number>(150);
-  const [washVolumeL, setWashVolumeL] = useState<number>(10);
-  const [washDoseGrams, setWashDoseGrams] = useState<number>(20);
+  const [waterHardnessPpm, setWaterHardnessPpm] = useState<number | ''>('');
+  const [washVolumeL, setWashVolumeL] = useState<number | ''>('');
+  const [washDoseGrams, setWashDoseGrams] = useState<number | ''>('');
   const [safetyMarginPct, setSafetyMarginPct] = useState<number>(25);
   const [coBuilderTargetPct, setCoBuilderTargetPct] = useState<number>(10);
   const [maxFormulationCapPct, setMaxFormulationCapPct] = useState<number>(3.0);
@@ -179,9 +179,9 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
   const selectedChelator = greenChelatorOptions.find(species => species.id === selectedChelatorId);
 
   const greenChelatorResult = calculateGreenChelators({
-    waterHardnessPpm: typeof waterHardnessPpm === 'number' ? waterHardnessPpm : (parseFloat(String(waterHardnessPpm)) || 0),
-    washVolumeL: typeof washVolumeL === 'number' ? washVolumeL : (parseFloat(String(washVolumeL)) || 0),
-    washDoseGrams: typeof washDoseGrams === 'number' ? washDoseGrams : (parseFloat(String(washDoseGrams)) || 0),
+    waterHardnessPpm: waterHardnessPpm === '' ? undefined : waterHardnessPpm,
+    washVolumeL: washVolumeL === '' ? undefined : washVolumeL,
+    washDoseGrams: washDoseGrams === '' ? undefined : washDoseGrams,
     safetyMarginPct: typeof safetyMarginPct === 'number' ? safetyMarginPct : (parseFloat(String(safetyMarginPct)) || 0),
     coBuilderTargetPct: typeof coBuilderTargetPct === 'number' ? coBuilderTargetPct : (parseFloat(String(coBuilderTargetPct)) || 0),
     maxFormulationCapPct: typeof maxFormulationCapPct === 'number' ? maxFormulationCapPct : (parseFloat(String(maxFormulationCapPct)) || 0),
@@ -1325,68 +1325,36 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   {/* Water Hardness */}
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1 flex justify-between">
-                      <span>Water Hardness (enter measured value)</span>
-                      <span className="font-mono text-emerald-400 font-bold">{waterHardnessPpm} ppm (CaCO₃)</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="500"
-                      step="5"
-                      value={waterHardnessPpm}
-                      onChange={(e) => setWaterHardnessPpm(Number(e.target.value))}
-                      className="w-full accent-emerald-500"
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
-                      <span>10 ppm (Soft)</span>
-                      <span>250 ppm (Hard)</span>
-                      <span>500 ppm (V. Hard)</span>
-                    </div>
+                    <label className="block font-semibold text-slate-300 mb-1">Water Hardness — measured value (ppm CaCO₃)</label>
+                    <input type="number" min="0" step="1" value={waterHardnessPpm} placeholder="Required — enter measured ppm" onChange={(e) => setWaterHardnessPpm(e.target.value === '' ? '' : Number(e.target.value))} className="w-full bg-[#0b1020] text-white border border-slate-700 rounded-lg px-3 py-2 text-sm" />
                   </div>
 
                   {/* Wash Volume */}
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1 flex justify-between">
-                      <span>Wash Water Volume (scenario input)</span>
-                      <span className="font-mono text-emerald-400 font-bold">{washVolumeL} Liters</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="2"
-                      max="30"
-                      step="1"
-                      value={washVolumeL}
-                      onChange={(e) => setWashVolumeL(Number(e.target.value))}
-                      className="w-full accent-emerald-500"
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
-                      <span>2L (Lab beaker)</span>
-                      <span className="text-emerald-400 font-medium">10L (Bucket wash)</span>
-                      <span>30L (Machine)</span>
-                    </div>
+                    <label className="block font-semibold text-slate-300 mb-1">Wash Water Volume (L)</label>
+                    <input type="number" min="0.01" step="0.1" value={washVolumeL} placeholder="Required — enter final liquor volume" onChange={(e) => setWashVolumeL(e.target.value === '' ? '' : Number(e.target.value))} className="w-full bg-[#0b1020] text-white border border-slate-700 rounded-lg px-3 py-2 text-sm" />
                   </div>
 
                   {/* Wash Dose */}
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1 flex justify-between">
                       <span>Detergent Dose per Wash (scenario input)</span>
-                      <span className="font-mono text-emerald-400 font-bold">{washDoseGrams || 0} grams</span>
+                      <span className="font-mono text-emerald-400 font-bold">{washDoseGrams === '' ? 'Not entered' : washDoseGrams + ' grams'}</span>
                     </label>
                     <input
                       type="number"
                       min="1"
                       max="100"
-                      placeholder="e.g. 20"
+                      placeholder="Required — enter dose in grams"
                       value={washDoseGrams}
                       onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        setWashDoseGrams(isNaN(val) ? 0 : val);
+                        const val = e.target.value;
+                        setWashDoseGrams(val === '' ? '' : Number(val));
                       }}
                       className="w-full bg-[#0b1020] text-white caret-cyan-400 placeholder:text-slate-500 border border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-center focus:outline-none focus:ring-1 focus:ring-cyan-400 focus:border-cyan-400"
                     />
                     <div className="text-[10px] text-slate-400 mt-1 leading-normal text-center">
-                      💡 Standard Indian bucket hand-wash scoop is ~20g.
+                      Enter the actual dose used in this wash scenario; no standard dose is assumed.
                     </div>
                   </div>
                 </div>
