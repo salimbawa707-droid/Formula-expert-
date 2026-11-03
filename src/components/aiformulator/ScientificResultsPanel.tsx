@@ -244,7 +244,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 {scientificResults.pH.toFixed(2)}
               </span>
               <span className="text-xs text-token-secondary font-bold">
-                Target: {getTargetPHRange(productCategory).min} - {getTargetPHRange(productCategory).max}
+                Target: {getTargetPHRange(productCategory)?.min ?? 'Not defined'} - {getTargetPHRange(productCategory)?.max ?? 'Not defined'}
               </span>
             </div>
             <p className="text-[11px] text-cyan-300 font-bold leading-tight">
