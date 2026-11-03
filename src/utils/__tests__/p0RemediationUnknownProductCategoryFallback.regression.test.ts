@@ -253,12 +253,14 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
 
   // 32. A finite measured pH of zero is valid and must not be replaced by prediction.
   const zeroPHGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-ZERO-PH',
     formulaName: 'Zero pH Measurement Regression',
     formulaVersion: '1.0.0',
     productCategory: 'TOILET_CLEANER',
     ingredients: [{ name: 'Water', percentage: 100, role: 'Solvent' }],
     labMeasurements: [{
       measurementId: 'MEAS-PH-ZERO',
+      formulaId: 'FORM-ZERO-PH',
       formulaVersion: '1.0.0',
       parameterKey: 'ph',
       value: 0,
@@ -272,6 +274,100 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
     zeroPHGate.speciationResult.isMeasured === true &&
       zeroPHGate.speciationResult.provenance === 'MEASURED' &&
       zeroPHGate.speciationResult.pH === 0
+  );
+
+  // A finite lab value from another formula must never be used to evaluate this formula.
+  const wrongFormulaPHGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-CURRENT',
+    formulaName: 'Current Formula',
+    formulaVersion: '1.0.0',
+    productCategory: 'TOILET_CLEANER',
+    ingredients: [{ name: 'Water', percentage: 100, role: 'Solvent' }],
+    labMeasurements: [{
+      measurementId: 'MEAS-OTHER-FORMULA',
+      formulaId: 'FORM-OTHER',
+      formulaVersion: '1.0.0',
+      parameterKey: 'ph',
+      value: 0,
+      unit: 'pH units',
+      testDate: '2026-11-03',
+      provenance: 'MEASURED'
+    }]
+  });
+  assert(
+    '35. A measured pH from a different formula ID is rejected',
+    wrongFormulaPHGate.speciationResult.isMeasured === false &&
+      wrongFormulaPHGate.speciationResult.provenance === 'PREDICTED'
+  );
+
+  const conflictingGradeGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-GRADE-CONFLICT',
+    formulaName: 'Conflicting SLES Grade',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'SLES 70%', percentage: 10, activeMatterPct: 40, role: 'Anionic Surfactant' },
+      { name: 'Water', percentage: 90, role: 'Solvent' }
+    ]
+  });
+  assert(
+    '37. Unconfirmed active matter that conflicts with the named commercial grade is blocked',
+    conflictingGradeGate.scientificValidity === 'INVALID' &&
+      conflictingGradeGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
+  );
+
+  const confirmedGradeOverrideGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-GRADE-OVERRIDE',
+    formulaName: 'Documented SLES Grade Override',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'SLES 70%', percentage: 10, activeMatterPct: 40, confirmedGradeActiveOverride: true, role: 'Anionic Surfactant' },
+      { name: 'Water', percentage: 90, role: 'Solvent' }
+    ]
+  });
+  assert(
+    '38. An explicitly confirmed grade override is not misclassified as an unconfirmed conflict',
+    !confirmedGradeOverrideGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
+  );
+
+  const waterBalanceGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-WATER-BALANCE',
+    formulaName: 'Water Balance Instruction',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' },
+      { name: 'Water (Aqua, Balance to 100%)', percentage: 90, activeMatterPct: 0, role: 'Solvent' }
+    ]
+  });
+  assert(
+    '39. Balance-to-100 wording is not mistaken for a commercial active-matter grade',
+    !waterBalanceGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
+  );
+
+  // Even the same formula ID cannot reuse evidence from a different version.
+  const wrongVersionPHGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-CURRENT',
+    formulaName: 'Current Formula',
+    formulaVersion: '2.0.0',
+    productCategory: 'TOILET_CLEANER',
+    ingredients: [{ name: 'Water', percentage: 100, role: 'Solvent' }],
+    labMeasurements: [{
+      measurementId: 'MEAS-OLD-VERSION',
+      formulaId: 'FORM-CURRENT',
+      formulaVersion: '1.0.0',
+      parameterKey: 'ph',
+      value: 0,
+      unit: 'pH units',
+      testDate: '2026-11-03',
+      provenance: 'MEASURED'
+    }]
+  });
+  assert(
+    '36. A measured pH from a different formula version is rejected',
+    wrongVersionPHGate.speciationResult.isMeasured === false &&
+      wrongVersionPHGate.speciationResult.provenance === 'PREDICTED'
   );
 
   assert('32. Unknown category has no pH target range', getTargetPHRange('UNKNOWN_PRODUCT_CATEGORY') === null);

@@ -204,7 +204,21 @@ export function evaluateScientificQualityGate(
   const formulaName = input.formulaName || 'Unnamed Formula';
   const formulaVersion = input.formulaVersion || 'UNKNOWN_VERSION';
   const rawIngs = Array.isArray(input.ingredients) ? input.ingredients : [];
-  const labMeasurements = Array.isArray(input.labMeasurements) ? input.labMeasurements : [];
+  const providedLabMeasurements = Array.isArray(input.labMeasurements) ? input.labMeasurements : [];
+  // Measurements may influence formula calculations only when both immutable formula identity
+  // and exact version match. A name, category, or version-only match is not sufficient.
+  const hasExplicitFormulaIdentity = Boolean(
+    input.formulaId?.trim() &&
+    input.formulaVersion?.trim() &&
+    input.formulaVersion !== 'UNKNOWN_VERSION'
+  );
+  const labMeasurements = hasExplicitFormulaIdentity
+    ? providedLabMeasurements.filter(measurement =>
+        Boolean(measurement.formulaId) &&
+        measurement.formulaId === input.formulaId &&
+        measurement.formulaVersion === input.formulaVersion
+      )
+    : [];
   const hasExplicitWaterHardness = typeof input.waterHardnessPpm === 'number' && Number.isFinite(input.waterHardnessPpm) && input.waterHardnessPpm >= 0;
   const waterHardnessPpm = hasExplicitWaterHardness ? input.waterHardnessPpm! : 150;
 
@@ -296,6 +310,24 @@ export function evaluateScientificQualityGate(
       ? null
       : Number(resolvedActivePurity);
     const activeResolution = ActiveMatterEngine.resolveIngredientActive(ing);
+    const explicitActiveValue = ing?.activeMatterPct ?? ing?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
+    if (
+      explicitActiveValue !== null &&
+      explicitActiveValue !== undefined &&
+      activeResolution.conflict &&
+      !(ing as any)?.confirmedGradeActiveOverride
+    ) {
+      blockingIssues.push({
+        id: `gate-active-grade-conflict-${name}`,
+        code: 'ERR_ACTIVE_MATTER_GRADE_CONFLICT',
+        title: `Active Matter Conflicts With Commercial Grade (${name})`,
+        category: 'VALIDITY',
+        severity: 'FATAL',
+        message: activeResolution.conflict.message,
+        recommendation: 'Correct the active-matter value to match the named commercial grade, or explicitly confirm a documented grade override before calculation.'
+      });
+      scientificValidity = 'INVALID';
+    }
     if (activePurity === null && activeResolution.isSurfactant) {
       majorWarnings.push({
         id: `gate-active-purity-unavailable-${name}`,
