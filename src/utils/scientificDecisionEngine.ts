@@ -75,7 +75,7 @@ export interface ScientificDecisionReport {
   formulaId: string;
   formulaName: string;
   formulaFingerprint: string;
-  formulaStatus: 'SCIENTIFICALLY_CONSISTENT' | 'SCREENING_CONCERNS' | 'CRITICAL_ISSUES' | 'INFORMATION_REQUIRED';
+  formulaStatus: 'NO_BLOCKING_RULE_FINDINGS' | 'SCREENING_CONCERNS' | 'CRITICAL_ISSUES' | 'INFORMATION_REQUIRED';
   problems: DecisionProblemItem[];
   recommendations: DecisionRecommendationItem[];
   propertyDecisions: Record<string, {
@@ -101,14 +101,24 @@ export class ScientificDecisionEngine {
     const category = evalResult.formulaIdentity?.canonicalCategory || 'UNKNOWN_PRODUCT_CATEGORY';
 
     // 1. pH Decision Analysis
-    const phVal = evalResult.pHResult?.ph ?? null;
-    const phProvenance: DecisionEvidenceProvenance = evalResult.pHResult?.measuredPH !== null ? 'MEASURED' : 'PREDICTED';
-    
+    const rawPH = evalResult.pHResult?.ph;
+    const phVal = typeof rawPH === 'number' && Number.isFinite(rawPH) ? rawPH : null;
+    const declaredPHProvenance = evalResult.pHResult?.provenance;
+    const phProvenance: DecisionEvidenceProvenance = phVal === null
+      ? 'UNKNOWN'
+      : evalResult.pHResult?.isMeasured === true && declaredPHProvenance === 'MEASURED'
+        ? 'MEASURED'
+        : declaredPHProvenance === 'ESTIMATED'
+          ? 'ESTIMATED'
+          : 'PREDICTED';
+
     propertyDecisions['pH'] = {
       status: phVal !== null ? 'EVALUATED' : 'INSUFFICIENT_DATA',
       value: phVal,
       provenance: phProvenance,
-      notes: 'Numerical solver accurately solves implemented equations within solver tolerance. Physical prediction empirically unvalidated unless measured pH data exists.'
+      notes: phProvenance === 'MEASURED'
+        ? 'Explicitly marked measured by the authoritative pH result; this decision layer does not independently verify the underlying laboratory record.'
+        : 'Solver output is a model result, not a laboratory measurement. Physical prediction remains empirically unvalidated unless matched, verified measurement evidence is linked.'
     };
 
     if (phVal === null) {
@@ -125,25 +135,35 @@ export class ScientificDecisionEngine {
     }
 
     // 2. Active Matter Decision Analysis
-    const activePct = evalResult.activeMatterResult?.totalActiveMatterPct ?? null;
+    const rawActivePct = evalResult.activeMatterResult?.totalSurfactantActivePct;
+    const activePct = typeof rawActivePct === 'number' && Number.isFinite(rawActivePct) ? rawActivePct : null;
     propertyDecisions['activeMatter'] = {
       status: activePct !== null ? 'EVALUATED' : 'INSUFFICIENT_DATA',
       value: activePct,
-      provenance: 'SOURCE_BACKED',
-      notes: 'Source-backed assay active matter calculation. SOURCE_BACKED_ASSAY is not equivalent to LAB_MEASURED_VALIDATION.'
+      // ActiveMatterResultOutput contains a calculated total but no supplier COA
+      // or verified-lab provenance field. Never promote it to SOURCE_BACKED/MEASURED here.
+      provenance: activePct === null ? 'UNKNOWN' : 'PREDICTED',
+      notes: 'Calculated from the formula ingredient assays supplied to the engine. This is not a lot-specific supplier COA or laboratory active-matter assay.'
     };
 
-    if (activePct !== null && activePct < 5.0 && category !== 'FABRIC_SOFTENER' && category !== 'GLASS_CLEANER') {
+    const categoryMinimum = evalResult.activeMatterResult?.categoryMinPct;
+    if (
+      activePct !== null &&
+      evalResult.activeMatterResult?.meetsCategoryMin === false &&
+      typeof categoryMinimum === 'number' &&
+      Number.isFinite(categoryMinimum) &&
+      categoryMinimum > 0
+    ) {
       recommendations.push({
         id: 'rec-active-boost',
         category: 'CATEGORY_B_SCREENING',
         priority: 'P2_MEDIUM',
-        recommendedChange: 'Increase active surfactant percentage.',
-        reason: 'Current active matter level is low for high-performance detergency screening.',
-        expectedImpact: 'Predicted detergency screening score will increase.',
-        modelMaturity: 'EMPIRICAL_SCREENING_MODEL',
-        uncertainty: 'Moderate model dependence on soil type and micellar synergy.',
-        limitations: ['Requires experimental detergency validation.'],
+        recommendedChange: 'Review the surfactant active-matter level against the configured category screening minimum.',
+        reason: `Calculated surfactant active matter (${activePct.toFixed(2)}%) is below the configured category screening minimum (${categoryMinimum.toFixed(2)}%).`,
+        expectedImpact: 'A reformulation may satisfy the configured screening target; detergency improvement is not guaranteed.',
+        modelMaturity: 'CATEGORY_SCREENING_RULE',
+        uncertainty: 'The configured minimum is a screening target, not a universal detergent performance standard.',
+        limitations: ['Requires supplier assay confirmation and formula-specific laboratory detergency validation.'],
         fingerprintRef: fingerprint,
         engineRef: 'ActiveMatterEngine'
       });
@@ -166,24 +186,28 @@ export class ScientificDecisionEngine {
 
     // 4. Viscosity Decision Analysis
     const visc = evalResult.viscosityResult;
-    const isSolidOrPowder = category === 'LAUNDRY_POWDER' || category === 'DISHWASH_AUTOMATIC';
+    const physicalForm = evalResult.formulaIdentity?.physicalForm;
+    const isSolidOrPowder = physicalForm === 'POWDER' || physicalForm === 'SOLID';
+    const rawViscosity = visc?.predictedViscosityCp;
+    const viscosityValue = typeof rawViscosity === 'number' && Number.isFinite(rawViscosity) ? rawViscosity : null;
     propertyDecisions['viscosity'] = {
-      status: isSolidOrPowder ? 'NOT_APPLICABLE' : (visc ? 'EVALUATED' : 'INSUFFICIENT_DATA'),
-      value: visc?.predictedViscosityCp ?? null,
-      provenance: isSolidOrPowder ? 'NOT_APPLICABLE' : 'PREDICTED',
-      notes: isSolidOrPowder ? 'Viscosity not applicable to solid/powder matrices.' : 'Predicted apparent viscosity under model reference conditions (20 RPM equivalent; NOT_EXPERIMENTALLY_VALIDATED).'
+      status: isSolidOrPowder ? 'NOT_APPLICABLE' : (viscosityValue !== null ? 'EVALUATED' : 'INSUFFICIENT_DATA'),
+      value: isSolidOrPowder ? null : viscosityValue,
+      provenance: isSolidOrPowder ? 'NOT_APPLICABLE' : (viscosityValue === null ? 'UNKNOWN' : 'PREDICTED'),
+      notes: isSolidOrPowder ? 'Viscosity is not applicable to powder/solid matrices.' : 'Predicted apparent viscosity under model reference conditions; not experimentally validated for this exact formula, temperature, shear rate, geometry, or sample history.'
     };
 
     // 5. Compatibility Decision Analysis
     const comp = evalResult.compatibilityResult;
+    const compatibilityValue = typeof comp?.compatible === 'boolean' ? comp.compatible : null;
     propertyDecisions['compatibility'] = {
-      status: comp ? 'EVALUATED' : 'INSUFFICIENT_DATA',
-      value: comp?.compatible ?? null,
-      provenance: 'PREDICTED',
-      notes: comp?.compatibilityStatusSemantic || 'NO_KNOWN_CONFLICT'
+      status: compatibilityValue === null ? 'INSUFFICIENT_DATA' : 'EVALUATED',
+      value: compatibilityValue,
+      provenance: compatibilityValue === null ? 'UNKNOWN' : 'PREDICTED',
+      notes: comp?.compatibilityStatusSemantic || 'UNKNOWN'
     };
 
-    if (comp && !comp.compatible) {
+    if (compatibilityValue === false) {
       problems.push({
         id: 'prob-compatibility-clash',
         property: 'Compatibility',
@@ -206,10 +230,12 @@ export class ScientificDecisionEngine {
     };
 
     // Determine Overall Formula Status
-    let formulaStatus: ScientificDecisionReport['formulaStatus'] = 'SCIENTIFICALLY_CONSISTENT';
+    // This is a rule-finding summary only. It must never claim the formula is
+    // scientifically validated or physically correct.
+    let formulaStatus: ScientificDecisionReport['formulaStatus'] = 'NO_BLOCKING_RULE_FINDINGS';
     if (problems.some(p => p.severity === 'P0_CRITICAL')) {
       formulaStatus = 'CRITICAL_ISSUES';
-    } else if (problems.length > 0 || (evalResult.scientificValidity === 'INVALID')) {
+    } else if (problems.length > 0 || evalResult.scientificValidity === 'INVALID') {
       formulaStatus = 'SCREENING_CONCERNS';
     } else if (phVal === null || activePct === null) {
       formulaStatus = 'INFORMATION_REQUIRED';
