@@ -414,6 +414,7 @@ export class ScientificExecutionDAG {
         const isPowder = state.physicalForm === 'POWDER';
         let computedPH: number | null = null;
         let phConverged = false;
+        let phModelValidity: 'HIGH' | 'MODERATE' | 'LOW' | 'OUT_OF_RANGE' | 'UNKNOWN' = 'UNKNOWN';
         let phBufferCapacity: number | null = null;
         let phIonicStrength: number | null = null;
         let phWarnings: string[] = [];
@@ -431,8 +432,10 @@ export class ScientificExecutionDAG {
               productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
               targetPH: initialGuess
             });
-            computedPH = advPH.pH;
-            phConverged = advPH.solverConverged;
+            phModelValidity = advPH.modelValidity ?? 'UNKNOWN';
+            const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
+            computedPH = pHWithinModelDomain ? advPH.pH : null;
+            phConverged = advPH.solverConverged && pHWithinModelDomain;
             phBufferCapacity = advPH.bufferCapacity;
             phIonicStrength = advPH.ionicStrength;
             phWarnings = advPH.warnings || [];
@@ -443,8 +446,24 @@ export class ScientificExecutionDAG {
           }
         }
 
-        const measuredPHRecord = state.rawInput.labEvidence?.find(m => m.parameterKey === 'ph' || m.parameterKey === 'powderPH');
-        const isPHMeasured = Boolean(measuredPHRecord && measuredPHRecord.value > 0);
+        // A measurement is eligible only for the exact immutable formula identity and version.
+        const hasExplicitFormulaIdentity = Boolean(
+          state.rawInput.formulaId?.trim() &&
+          state.rawInput.formulaVersion?.trim()
+        );
+        const measuredPHRecord = hasExplicitFormulaIdentity
+          ? state.rawInput.labEvidence?.find(m =>
+              m.formulaId === state.rawInput.formulaId &&
+              m.formulaVersion === state.rawInput.formulaVersion &&
+              (m.parameterKey === 'ph' || m.parameterKey === 'powderPH')
+            )
+          : undefined;
+        const isPHMeasured = Boolean(
+          measuredPHRecord &&
+          Number.isFinite(measuredPHRecord.value) &&
+          measuredPHRecord.value >= 0 &&
+          measuredPHRecord.value <= 14
+        );
         const finalPH = isPHMeasured ? Number(measuredPHRecord!.value) : computedPH;
 
         state.finalEquilibriumPH = finalPH;
@@ -454,7 +473,14 @@ export class ScientificExecutionDAG {
         state.phWarnings = phWarnings;
         state.phDetails = phDetails;
         state.slurryBasis = slurryBasis;
-        state.phStatus = (finalPH !== null && !isNaN(finalPH) && (phConverged || isPHMeasured)) ? (isPHMeasured ? 'VALID' : 'SCREENING') : 'INSUFFICIENT_DATA';
+        state.phStatus = (
+          finalPH !== null &&
+          Number.isFinite(finalPH) &&
+          finalPH >= 0 &&
+          finalPH <= 14 &&
+          (phConverged || isPHMeasured) &&
+          (isPHMeasured || phModelValidity !== 'OUT_OF_RANGE')
+        ) ? (isPHMeasured ? 'VALID' : 'SCREENING') : 'INSUFFICIENT_DATA';
       }
     });
 
