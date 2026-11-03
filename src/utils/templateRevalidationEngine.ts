@@ -318,7 +318,20 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   };
 
   // 4. Compatibility Evaluation
-  const compatResult = calculateFormulationCompatibility(rawIngs as any, phResult.pH, categoryId);
+  const compatResult = phAvailable
+    ? calculateFormulationCompatibility(rawIngs as any, phResult.pH, categoryId)
+    : {
+        compatible: false,
+        compatibilityScore: Number.NaN,
+        riskLevel: undefined,
+        alerts: [{
+          id: 'PH_UNAVAILABLE',
+          title: 'Compatibility Not Evaluated',
+          severity: 'High' as const,
+          message: 'A converged, finite pH is required before pH-dependent compatibility can be evaluated.'
+        }],
+        warnings: ['Compatibility status is unknown because pH is unavailable.']
+      };
 
   // 5. Engine Applicability Mapping
   const allEngines: ScientificEngineId[] = [
@@ -389,17 +402,17 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   let statusReason = 'All scientific and specification criteria satisfied';
 
   const hasBlockingCompatibility = phAvailable && !compatResult.compatible && compatResult.alerts.some(a => a.severity === 'Critical');
-  const isInvalidPH = isNaN(phResult.pH) || !isFinite(phResult.pH) || phResult.pH < 0 || phResult.pH > 14;
+  const isInvalidPH = !Number.isFinite(phResult.pH) || phResult.pH < 0 || phResult.pH > 14;
   const isNonConverged = phResult.converged === false;
 
-  if (hasBlockingCompatibility || isInvalidPH) {
+  if (isInvalidPH || isNonConverged || !activeMatterAvailable || missingDataItems.length > 0) {
+    overallStatus = 'INSUFFICIENT_DATA';
+    statusReason = isInvalidPH || isNonConverged
+      ? `Equilibrium pH is unavailable or the solver did not converge (pH: ${phResult.pH}, residual: ${phResult.residual}).`
+      : 'One or more required ingredient identities, percentages, or active-matter assays are unavailable; no complete scientific verdict is authorized.';
+  } else if (hasBlockingCompatibility) {
     overallStatus = 'SCIENTIFICALLY_INVALID';
-    statusReason = isInvalidPH 
-      ? `Numerical instability or invalid pH output from equilibrium solver (pH: ${phResult.pH})`
-      : `Fundamentally incompatible formulation system: ${compatResult.alerts.map(a => a.title).join("; ")}`;
-  } else if (isNonConverged) {
-    overallStatus = 'OUT_OF_SPEC';
-    statusReason = `PHEngine equilibrium solver failed to converge (residual: ${phResult.residual.toExponential(2)})`;
+    statusReason = `Fundamentally incompatible formulation system: ${compatResult.alerts.map(a => a.title).join('; ')}`;
   } else if (false) { // bypassed old branch
 
     overallStatus = 'SCIENTIFICALLY_INVALID';
@@ -407,20 +420,17 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   } else if (!phWithinTarget || !activeWithinTarget || hasMassBalanceIssue) {
     overallStatus = 'OUT_OF_SPEC';
     const specReasons: string[] = [];
-    if (!phWithinTarget) specReasons.push(`pH ${phResult.pH.toFixed(2)} out of range (${targetPHMin}-${targetPHMax})`);
-    if (!activeWithinTarget) specReasons.push(`Active surfactant ${totalSurfactantActive.toFixed(2)}% out of range (${targetActiveMin}-${targetActiveMax}%)`);
-    if (hasMassBalanceIssue) specReasons.push(`Mass sum ${massBalanceSumPct.toFixed(2)}% != 100%`);
-    statusReason = `Formulation is out of specification: ${specReasons.join('; ')}`;
-  } else if (missingDataItems.length > 0 || activeReport.ingredientsWithMissingActive > 0) {
-    overallStatus = 'INSUFFICIENT_DATA';
-    statusReason = `Required ingredient assay/chemical data missing for ${missingDataItems.length} items`;
+    if (!phWithinTarget) specReasons.push(`Predicted pH ${phResult.pH.toFixed(2)} out of target range (${targetPHMin}-${targetPHMax})`);
+    if (!activeWithinTarget) specReasons.push(`Active surfactant ${totalSurfactantActive.toFixed(2)}% out of target range (${targetActiveMin}-${targetActiveMax}%)`);
+    if (hasMassBalanceIssue) specReasons.push(Number.isFinite(massBalanceSumPct) ? `Mass sum ${massBalanceSumPct.toFixed(2)}% != 100%` : 'Mass balance unavailable');
+    statusReason = `Formulation is outside one or more screening targets: ${specReasons.join('; ')}`;
   } else if (phResult.confidence < 70 || phResult.modelValidity === 'LOW' || phResult.modelValidity === 'OUT_OF_RANGE' || compatResult.alerts.length > 0) {
     overallStatus = 'VALID_WITH_WARNINGS';
     statusReason = `Valid within specification bounds but has documented scientific limitations or warnings`;
   }
 
-  // Batch Volume estimation (assumes density ~1.0 g/mL if not specified)
-  const batchVolumeL = batchSizeKg / 1.0;
+  // Batch volume is not inferable from mass alone. No generic 1.0 g/mL density is substituted.
+  const batchVolumeL = null;
 
   return {
     templateId: formula.id,
@@ -431,6 +441,7 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
     scientificProfileId: profile.specificationProfileId,
     batchSizeKg,
     batchVolumeL,
+    batchVolumeNote: 'UNAVAILABLE: batch volume requires a measured or explicitly supplied finished-product density.',
     overallStatus,
     statusReason,
     compositionAudit,
