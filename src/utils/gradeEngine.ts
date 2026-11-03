@@ -949,8 +949,8 @@ function buildNotEvaluableResult(
 ): AIGradeResult {
   return {
     grade: 'N/A',
-    score: 0,
-    numericScore: 0,
+    score: null,
+    numericScore: null,
     gradeType,
     productCategory: category,
     categoryModelId: 'CATEGORY_MODEL_NOT_VALIDATED',
@@ -1005,8 +1005,8 @@ function buildIntegrityErrorResult(
 ): AIGradeResult {
   return {
     grade: 'N/A',
-    score: 0,
-    numericScore: 0,
+    score: null,
+    numericScore: null,
     gradeType: 'CATEGORY_CONTEXT_INTEGRITY_ERROR',
     productCategory: category,
     categoryModelId: 'INTEGRITY_ERROR',
