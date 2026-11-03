@@ -870,22 +870,12 @@ export function calculateFormulationChelationCapacity(
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
     const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
 
-    // Resolve matched species metadata
-    const n = rawName.toLowerCase();
-    const matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
-      n.includes(s.id) || 
-      n.includes(s.name.toLowerCase()) || 
-      (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
-      (s.id === 'mgda-38' && n.includes('mgda')) ||
-      (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
-      (s.id === 'citrate-anhydrous' && n.includes('citrate anhydrous')) ||
-      (s.id === 'gluconate' && n.includes('gluconate')) ||
-      (s.id === 'edta-powder' && n.includes('edta')) ||
-      (s.id === 'stpp' && n.includes('stpp')) ||
-      (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
-      (s.id === 'hedp' && (n.includes('hedp') || n.includes('etidronate'))) ||
-      (s.id === 'polycarboxylate' && (n.includes('polycarboxylate') || n.includes('polyacrylate')))
-    );
+    // Reuse the exact species resolved by the grade-validated capacity lookup.
+    // A second broad name matcher previously misclassified GLDA-99 powder as
+    // GLDA-47 liquid and generic EDTA as a verified powder grade.
+    const matchedSpecies = capacityResult.evidenceId
+      ? AUTHORITATIVE_CHELATOR_DATABASE.find(s => s.evidenceId === capacityResult.evidenceId)
+      : undefined;
 
     const rawRole = ((ing as any)?.role || (ing as any)?.category || '').toLowerCase();
     const isDeclaredChelator = /chelat|builder|sequestr/i.test(rawRole) || /chelat|sequestr/i.test(rawName);
