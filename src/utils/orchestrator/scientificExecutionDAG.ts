@@ -517,19 +517,18 @@ export class ScientificExecutionDAG {
           const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
           // Unknown assay is not zero. Keep the contribution out of the numeric
           // breakdown and preserve INSUFFICIENT_DATA from the authoritative report.
-          if (typeof resolvedActive !== 'number' || !Number.isFinite(resolvedActive) || resolvedActive < 0 || resolvedActive > 100) {
-            continue;
-          }
-          const activePct = ing.percentage * (resolvedActive / 100);
+          if (typeof resolvedActive === 'number' && Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100) {
+            const activePct = ing.percentage * (resolvedActive / 100);
 
-          if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
-            anionic += activePct;
-          } else if (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside')) {
-            nonionic += activePct;
-          } else if (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb') || name.includes('amine oxide')) {
-            amphoteric += activePct;
-          } else if (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat')) {
-            cationic += activePct;
+            if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
+              anionic += activePct;
+            } else if (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside')) {
+              nonionic += activePct;
+            } else if (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb') || name.includes('amine oxide')) {
+              amphoteric += activePct;
+            } else if (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat')) {
+              cationic += activePct;
+            }
           }
         });
 
