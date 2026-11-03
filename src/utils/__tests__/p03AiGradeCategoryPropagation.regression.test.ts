@@ -320,6 +320,7 @@ export function runP03AiGradeCategoryPropagationTestSuite(): TestSuiteSummary {
     `${evalRepeat2.aiGrade.grade} (${evalRepeat2.aiGrade.numericScore})`
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
