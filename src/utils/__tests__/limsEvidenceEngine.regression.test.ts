@@ -58,6 +58,7 @@ import {
 import {
   transitionSampleStatus,
   transitionBatchStatus,
+  transitionTestStatus,
 } from '../lims/limsSampleLifecycleEngine';
 import {
   createAuditRecord,
@@ -206,6 +207,21 @@ export function runLimsEvidenceEngineTestSuite(): TestResultSummary {
     scheduledTests.length > 0 && phTest !== undefined && phTest.status === 'PENDING',
     'Test 7: Applicable analytical tests generated automatically for sample based on product profile',
     `Tests count: ${scheduledTests.length}, pH test found: ${!!phTest}`
+  );
+
+  const testStarted = transitionTestStatus(phTest!, 'IN_PROGRESS', 'QC Analyst', 'Measurement capture started');
+  const testCompleted = testStarted.entity
+    ? transitionTestStatus(testStarted.entity, 'COMPLETED', 'QC Analyst', 'Measurement recorded')
+    : { success: false };
+  const skippedTestState = transitionTestStatus(phTest!, 'COMPLETED', 'QC Analyst', 'Attempted to skip IN_PROGRESS');
+  assert(
+    testStarted.success &&
+    testStarted.entity?.status === 'IN_PROGRESS' &&
+    testCompleted.success &&
+    testCompleted.entity?.status === 'COMPLETED' &&
+    !skippedTestState.success,
+    'Test 7A: Analytical test lifecycle enforces PENDING → IN_PROGRESS → COMPLETED and rejects skipped states',
+    `Started: ${testStarted.success}, completed: ${testCompleted.success}, skipped transition: ${skippedTestState.success}`
   );
 
   // ---------------------------------------------------------------------------
