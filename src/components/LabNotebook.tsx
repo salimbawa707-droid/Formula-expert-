@@ -209,7 +209,7 @@ export default function LabNotebook(_props?: any) {
     }
 
     // Set comparability input
-    const comparability = checkMeasurementComparability({
+    const identityComparability = checkMeasurementComparability({
       targetFormulaId: rec.formulaId,
       targetFormulaVersion: rec.formulaVersion,
       targetCategory: (rec.categoryId ? normalizeProductCategory(rec.categoryId) : 'UNKNOWN_PRODUCT_CATEGORY') as ProductCategoryId,
@@ -218,6 +218,13 @@ export default function LabNotebook(_props?: any) {
       targetConditions: rec.testConditions,
       measurement: rec
     });
+    const comparability = Number.isFinite(predictedValue)
+      ? identityComparability
+      : {
+          ...identityComparability,
+          isComparable: false,
+          reason: 'No source-matched prediction is available for this exact formula and test scenario.'
+        };
 
     // Run predictions vs actuals error calculations
     const errorAnalysis = calculatePredictionError(predictedValue, rec.value, rec.unit, comparability);
