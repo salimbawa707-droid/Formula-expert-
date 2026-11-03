@@ -884,7 +884,7 @@ export function classifyChemicalSpecies(rawName: string): SpeciesDefinition | nu
   if (name.includes('sodium chloride') || name.includes('salt') && !name.includes('quaternary') && !name.includes('complex')) {
     return CHEMICAL_SPECIES_REGISTRY.sodium_chloride;
   }
-  if (name.includes('sodium sulfate') || name.includes('glauber')) {
+  if (name.includes('sodium sulfate') || name.includes('sodium sulphate') || name.includes('glauber')) {
     return CHEMICAL_SPECIES_REGISTRY.sodium_sulfate;
   }
 
