@@ -109,10 +109,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Gradle 8.2.1
+      - name: Install Gradle 8.5
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.2.1'
+          gradle-version: '8.5'
           # The repository's wrapper JAR is malformed; this job invokes the
           # pinned Gradle distribution directly, not the wrapper script.
           validate-wrappers: false
