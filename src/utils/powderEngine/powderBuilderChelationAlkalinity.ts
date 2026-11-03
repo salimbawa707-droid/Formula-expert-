@@ -176,13 +176,14 @@ export function calculatePowderChelationSystem(
     };
   }
 
-  if (typeof washDoseG !== 'number' || !Number.isFinite(washDoseG) || washDoseG <= 0) {
+  if (typeof washDoseG !== 'number' || !Number.isFinite(washDoseG) || washDoseG <= 0 ||
+      typeof washVolumeL !== 'number' || !Number.isFinite(washVolumeL) || washVolumeL <= 0) {
     return {
       totalChelatorPct: Number(totalChelatorPct.toFixed(2)),
       chelatorIngredients,
       hasValidatedData: false,
       calciumCapacityMgPerDose: undefined,
-      capacityStatus: 'NOT_EVALUATED: explicit wash dose in grams is required to calculate per-dose chelation capacity. Ingredient-level evidence does not establish a per-wash result.',
+      capacityStatus: 'NOT_EVALUATED: explicit wash dose (g) and final wash-liquor volume (L) are required to report per-wash chelation capacity. Ingredient-level evidence does not establish a per-wash result.',
       source: 'INSUFFICIENT_DATA'
     };
   }
