@@ -276,23 +276,42 @@ export class ScientificExecutionDAG {
         let totalPct = 0;
         state.normalizedIngredients = rawIngs.map((ing, idx) => {
           const name = (ing?.name || '').trim();
-          const pct = Math.max(0, Number(ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? 0));
-          totalPct += pct;
-          const rawKg = (pct / 100) * state.batchSizeKg;
+          const rawPctValue = ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula;
+          const pct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
+            ? Number.NaN
+            : Number(rawPctValue);
+          const validPercentage = Number.isFinite(pct) && pct >= 0 && pct <= 100;
+          if (!validPercentage) {
+            state.blockingIssues.push({
+              code: 'ERR_INVALID_INGREDIENT_PERCENTAGE',
+              severity: 'FATAL',
+              category: 'VALIDITY',
+              message: `Ingredient ${name || idx + 1} has a missing, non-finite, negative, or above-100% percentage.`
+            });
+          } else {
+            totalPct += pct;
+          }
+          const rawKg = validPercentage && Number.isFinite(state.batchSizeKg)
+            ? (pct / 100) * state.batchSizeKg
+            : Number.NaN;
+          const rawPrice = ing.costPerKg ?? (ing as any).rawMaterialCostPerKg ?? (ing as any).cost;
+          const normalizedPrice = rawPrice === undefined || rawPrice === null || rawPrice === ''
+            ? null
+            : (Number.isFinite(Number(rawPrice)) && Number(rawPrice) >= 0 ? Number(rawPrice) : null);
           return {
             ...ing,
             ingredientId: ing.ingredientId || ing.id || `ing-${idx}`,
             id: ing.ingredientId || ing.id || `ing-${idx}`,
             name,
-            percentage: Number(pct.toFixed(4)),
-            rawKg: Number(rawKg.toFixed(4)),
-            costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0
+            percentage: validPercentage ? Number(pct.toFixed(4)) : Number.NaN,
+            rawKg: Number.isFinite(rawKg) ? Number(rawKg.toFixed(4)) : Number.NaN,
+            costPerKg: normalizedPrice as any
           };
         });
 
         state.totalMassPct = totalPct;
         state.isBalanced = Math.abs(totalPct - 100.0) < 0.05;
-        state.deviation = Number((totalPct - 100.0).toFixed(4));
+        state.deviation = Number.isFinite(totalPct) ? Number((totalPct - 100.0).toFixed(4)) : Number.NaN;
         state.formulaFingerprint = computeFormulaFingerprint(
           'FORMULA',
           state.formulaVersion,
