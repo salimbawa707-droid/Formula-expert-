@@ -15,6 +15,8 @@ import {
   Scale
 } from 'lucide-react';
 import { ActiveFormulaState } from '../types';
+import { normalizeProductCategory } from '../domain/productTaxonomy';
+import { globalManufacturingEngine } from '../utils/manufacturingEngine';
 import {
   InventoryItem,
   ProductionBatchRun,
@@ -107,6 +109,7 @@ export default function InventoryProduction({
   const [adjustMode, setAdjustMode] = useState<'add' | 'remove'>('add');
 
   const [showConfirmBatchModal, setShowConfirmBatchModal] = useState(false);
+  const [operatorName, setOperatorName] = useState('');
   const [operatorNotes, setOperatorNotes] = useState('');
   const [batchSuccessMessage, setBatchSuccessMessage] = useState<string | null>(null);
 
@@ -209,6 +212,27 @@ export default function InventoryProduction({
   };
 
   const handleExecuteProduction = () => {
+    const actor = operatorName.trim();
+    if (!actor) {
+      alert('Enter the responsible operator name before recording a traceable manufacturing batch.');
+      return;
+    }
+
+    const category = normalizeProductCategory(effectiveFormula.category || effectiveFormula.productType || '');
+    if (category === 'UNKNOWN_PRODUCT_CATEGORY' || !effectiveFormula.id) {
+      alert('A valid formula ID and canonical product category are required before manufacturing trace creation.');
+      return;
+    }
+
+    const totalFormulaPct = effectiveFormula.ingredients.reduce(
+      (sum, ingredient) => sum + Number(ingredient.percentage ?? (ingredient as any).percent ?? 0),
+      0
+    );
+    if (!Number.isFinite(totalFormulaPct) || Math.abs(totalFormulaPct - 100) > 0.05) {
+      alert(`Manufacturing blocked: formula mass balance is ${totalFormulaPct.toFixed(3)}%, not 100.00%.`);
+      return;
+    }
+
     const result = executeAtomicBatchDeduction(
       effectiveFormula,
       batchSizeOverride,
@@ -216,17 +240,66 @@ export default function InventoryProduction({
       operatorNotes
     );
 
-    if (result.success && result.batchRun) {
+    if (!result.success || !result.batchRun) {
+      alert(result.errorMessage || 'Failed to execute production batch.');
+      return;
+    }
+
+    try {
+      // Create the trace only after the stock transaction has passed its atomic
+      // preflight. Unknown version metadata is stored explicitly as UNVERSIONED.
+      const formulaMeta = effectiveFormula as any;
+      const manufacturingBatch = globalManufacturingEngine.planBatch({
+        batchNumber: result.batchRun.id,
+        formulaFamilyId: String(formulaMeta.formulaFamilyId || effectiveFormula.id),
+        formulaId: effectiveFormula.id,
+        formulaVersion: String(formulaMeta.version || formulaMeta.formulaVersion || 'UNVERSIONED'),
+        productCategory: category as any,
+        modelVersion: String(formulaMeta.modelVersion || 'UNVERSIONED'),
+        specificationVersion: String(formulaMeta.specificationVersion || 'UNVERSIONED'),
+        ingredientKnowledgeVersion: String(formulaMeta.ingredientKnowledgeVersion || 'UNVERSIONED'),
+        referenceBatchSizeKg: 100,
+        targetBatchSizeKg: batchSizeOverride,
+        densityKgPerL: Number.isFinite(Number(formulaMeta.densityKgPerL)) && Number(formulaMeta.densityKgPerL) > 0
+          ? Number(formulaMeta.densityKgPerL)
+          : undefined,
+        ingredients: effectiveFormula.ingredients,
+        actor,
+      });
+
+      const actualMaterials = result.batchRun.consumedIngredients.map(item => {
+        const stockItem = inventory.find(stock => stock.name.trim().toLowerCase() === item.name.trim().toLowerCase());
+        return {
+          ingredientName: item.name,
+          actualQuantityKg: item.consumedKg,
+          supplier: stockItem?.supplier,
+          lotNumber: stockItem?.lotNumber,
+        };
+      });
+      globalManufacturingEngine.recordMaterialConsumption({
+        batchId: manufacturingBatch.batchId,
+        actualMaterials,
+        actor,
+      });
+
+      const tracedRun = {
+        ...result.batchRun,
+        manufacturingBatchId: manufacturingBatch.batchId,
+        operatorNotes: [result.batchRun.operatorNotes, `Operator: ${actor}`].filter(Boolean).join(' · '),
+      };
       setInventory(result.updatedInventory);
-      setProductionRuns(prev => [result.batchRun!, ...prev]);
+      setProductionRuns(prev => [tracedRun, ...prev]);
       setShowConfirmBatchModal(false);
+      setOperatorName('');
       setOperatorNotes('');
       setBatchSuccessMessage(
-        `Batch ${result.batchRun.id} successfully compounded! ${result.batchRun.consumedIngredients.length} raw materials deducted (${batchSizeOverride} kg total batch mass).`
+        `Stock transaction recorded for ${result.batchRun.id}. Manufacturing trace ${manufacturingBatch.batchId} is MATERIALS_READY; actual output mass, process completion, QC and release remain pending.`
       );
-      setTimeout(() => setBatchSuccessMessage(null), 8000);
-    } else {
-      alert(result.errorMessage || 'Failed to execute production batch.');
+      setTimeout(() => setBatchSuccessMessage(null), 10000);
+    } catch (error) {
+      alert(error instanceof Error
+        ? `Stock was not committed because manufacturing trace creation failed: ${error.message}`
+        : 'Stock was not committed because manufacturing trace creation failed.');
     }
   };
 
@@ -819,10 +892,21 @@ export default function InventoryProduction({
                       <div>
                         <span className="text-slate-400 block">Status:</span>
                         <span className="font-bold text-emerald-600 inline-flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> Completed
+                          <CheckCircle className="w-3 h-3" /> Stock deducted
                         </span>
                       </div>
                     </div>
+
+                    {run.manufacturingBatchId && (
+                      <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-[11px] text-cyan-900">
+                        <strong>Manufacturing trace:</strong> {run.manufacturingBatchId} ·
+                        <strong className="ml-1">{globalManufacturingEngine.getBatchById(run.manufacturingBatchId)?.status || 'TRACE_UNAVAILABLE'}</strong>
+                        <span className="block mt-1 text-cyan-800">
+                          QC/release state: {globalManufacturingEngine.getBatchById(run.manufacturingBatchId)?.releaseStatus || 'NOT_RECORDED'} ·
+                          Assay status: {globalManufacturingEngine.getBatchById(run.manufacturingBatchId)?.assayValidationStatus || 'UNKNOWN'}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Consumed breakdown chips */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -978,6 +1062,21 @@ export default function InventoryProduction({
                   <span className="text-slate-500">Total Batch Material Cost:</span>
                   <span className="font-bold text-emerald-700">${batchCheck.totalBatchCost.toFixed(2)}</span>
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="operator-name-input" className="block text-xs font-bold text-slate-700 mb-1">
+                  Responsible Operator (Required):
+                </label>
+                <input
+                  id="operator-name-input"
+                  type="text"
+                  required
+                  value={operatorName}
+                  onChange={e => setOperatorName(e.target.value)}
+                  placeholder="Enter operator name"
+                  className="w-full p-2 text-xs border rounded-lg outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
 
               <div>
