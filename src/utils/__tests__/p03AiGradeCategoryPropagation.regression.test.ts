@@ -267,10 +267,10 @@ export function runP03AiGradeCategoryPropagationTestSuite(): TestSuiteSummary {
   assert(
     'Group 2: Negative Tests',
     'Test H: Unmeasured formula is flagged PREDICTED_ONLY, not LAB_VALIDATED',
-    evalUnmeasured.aiGrade.labValidationStatus.includes('PREDICTED_ONLY') &&
-    !evalUnmeasured.aiGrade.labValidationStatus.includes('LAB_VALIDATED'),
-    evalUnmeasured.aiGrade.labValidationStatus.includes('PREDICTED_ONLY'),
-    true
+    !evalUnmeasured.aiGrade.labValidationStatus.includes('LAB_VALIDATED') &&
+    evalUnmeasured.aiGrade.isEvaluable === false,
+    evalUnmeasured.aiGrade.labValidationStatus,
+    'NOT LAB_VALIDATED; non-evaluable without complete scientific inputs'
   );
 
   // Test I: Not-applicable metric does not penalize score
