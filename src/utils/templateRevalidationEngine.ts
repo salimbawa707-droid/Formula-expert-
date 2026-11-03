@@ -450,7 +450,7 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
     compatibilityReport: {
       compatible: compatResult.compatible,
       compatibilityScore: compatResult.compatibilityScore,
-      riskLevel: compatResult.riskLevel || 'Low',
+      riskLevel: compatResult.riskLevel || 'UNKNOWN',
       alerts: compatResult.alerts,
       warnings: compatResult.warnings
     },
