@@ -797,10 +797,12 @@ export function getChelatorBindingCapacity(
  * Calculates raw water hardness load in mg CaCO3.
  * Hardness Load (mg CaCO3) = Hardness (ppm or mg/L CaCO3) * Water Volume (L).
  */
-export function calculateWaterHardnessLoad(hardnessPpm: number, washVolumeL: number = 10): number {
-  const ppm = typeof hardnessPpm === 'number' && !isNaN(hardnessPpm) ? Math.max(0, hardnessPpm) : 0;
-  const vol = typeof washVolumeL === 'number' && !isNaN(washVolumeL) ? Math.max(0, washVolumeL) : 10;
-  return ppm * vol; // mg CaCO3
+export function calculateWaterHardnessLoad(hardnessPpm: number, washVolumeL?: number): number {
+  if (
+    typeof hardnessPpm !== 'number' || !Number.isFinite(hardnessPpm) || hardnessPpm < 0 ||
+    typeof washVolumeL !== 'number' || !Number.isFinite(washVolumeL) || washVolumeL <= 0
+  ) return Number.NaN;
+  return hardnessPpm * washVolumeL; // mg CaCO3
 }
 
 export interface FormulationChelationIngredientDetail {
@@ -840,13 +842,28 @@ export interface FormulationChelationCapacityResult {
  * - Per-dose capacity (mg CaCO3) vs Entire batch capacity (grams CaCO3)
  */
 export function calculateFormulationChelationCapacity(
-  ingredients: FormulationIngredient[], 
-  washDoseGrams: number = 20, 
-  batchSizeKg: number = 100
+  ingredients: FormulationIngredient[],
+  washDoseGrams?: number,
+  batchSizeKg?: number
 ): FormulationChelationCapacityResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
-  const dose = typeof washDoseGrams === 'number' && !isNaN(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : 20;
-  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  if (typeof washDoseGrams !== 'number' || !Number.isFinite(washDoseGrams) || washDoseGrams <= 0) {
+    return {
+      totalSequestrationMg: Number.NaN,
+      batchSequestrationGrams: Number.NaN,
+      chelationCapacityMg: Number.NaN,
+      builderCapacityMg: Number.NaN,
+      details: [],
+      chelatorCount: 0,
+      unknownChelatorCount: 0,
+      hasUnknownChelators: false,
+      status: 'INSUFFICIENT_DATA'
+    };
+  }
+  const dose = washDoseGrams;
+  const batchKg = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0
+    ? batchSizeKg
+    : Number.NaN;
 
   let totalSequestrationMg = 0;
   let batchSequestrationGrams = 0;
@@ -860,7 +877,7 @@ export function calculateFormulationChelationCapacity(
     const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
     const validPct = isNaN(pct) || pct < 0 ? 0 : pct;
     const massGrams = (validPct / 100) * dose;
-    const batchMassGrams = (validPct / 100) * batchKg * 1000;
+    const batchMassGrams = Number.isFinite(batchKg) ? (validPct / 100) * batchKg * 1000 : Number.NaN;
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const validation = validateActiveMatterInput(explicitActive);
@@ -868,7 +885,7 @@ export function calculateFormulationChelationCapacity(
     const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
-    const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
+    const batchBoundCaCO3Grams = Number.isFinite(batchMassGrams) ? (batchMassGrams * bindingCapacityMgPerG) / 1000 : Number.NaN;
 
     // Reuse the exact species resolved by the grade-validated capacity lookup.
     // A second broad name matcher previously misclassified GLDA-99 powder as
@@ -1089,7 +1106,7 @@ export function calculateWaterHardnessTolerance(
   waterHardnessPpm?: number,
   washVolumeL?: number,
   washDoseGrams?: number,
-  batchSizeKg: number = 100,
+  batchSizeKg?: number,
   productCategoryOrProfileId?: string
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
@@ -1115,7 +1132,7 @@ export function calculateWaterHardnessTolerance(
   }
   const vol = washVolumeL as number;
   const dose = washDoseGrams as number;
-  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  const batchKg = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : Number.NaN;
   const targetHardnessPpm = waterHardnessPpm as number;
 
   const { totalSequestrationMg, batchSequestrationGrams, chelationCapacityMg, builderCapacityMg } = 
@@ -1254,7 +1271,7 @@ export function calculateWaterHardnessTolerance(
   };
 }
 
-export function evaluateFormulationGreenChelators(ingredients: FormulationIngredient[]) {
+export function evaluateFormulationGreenChelators(ingredients: FormulationIngredient[], washDoseGrams?: number, batchSizeKg?: number) {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const greenChelators = ings.filter(i => {
     const res = getChelatorBindingCapacity(i?.name || '');
@@ -1262,15 +1279,19 @@ export function evaluateFormulationGreenChelators(ingredients: FormulationIngred
   });
 
   const hasGreenChelator = greenChelators.length > 0;
-  const { totalSequestrationMg } = calculateFormulationChelationCapacity(ings, 20);
+  const capacity = calculateFormulationChelationCapacity(ings, washDoseGrams, batchSizeKg);
+  const evaluated = capacity.status === 'COMPLETE' && Number.isFinite(capacity.totalSequestrationMg);
 
   return {
+    status: evaluated ? 'CALCULATED' as const : 'INSUFFICIENT_DATA' as const,
     isGreen: hasGreenChelator,
     totalChelatorCount: greenChelators.length,
-    totalSequestrationMg,
-    recommendation: hasGreenChelator
-      ? `Active green chelation package binding approx ${Math.round(totalSequestrationMg)} mg CaCO₃ per wash dose.`
-      : 'Consider adding biodegradable GLDA or Sodium Citrate for hard water stability.'
+    totalSequestrationMg: evaluated ? capacity.totalSequestrationMg : null,
+    recommendation: !evaluated
+      ? 'INSUFFICIENT_DATA: enter the actual detergent dose and batch size before reporting per-wash or batch chelation capacity.'
+      : hasGreenChelator
+        ? `Estimated green-chelator package capacity: ${Math.round(capacity.totalSequestrationMg)} mg CaCO₃ for the supplied wash dose. Not a laboratory validation.`
+        : 'No registered green-chelator candidate identified in the supplied formula.'
   };
 }
 
