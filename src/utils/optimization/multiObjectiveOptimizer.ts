@@ -267,7 +267,8 @@ export function evaluateCandidateFormulation(
   categoryInput: string,
   constraints: FormulationConstraint[],
   candidateId = `CAND-${Date.now()}`,
-  batchSizeKg = 100
+  batchSizeKg = 100,
+  scenario?: { waterHardnessPpm?: number }
 ): {
   metrics: CandidateScientificMetrics;
   objectives: CandidateObjectiveScores;
@@ -290,7 +291,7 @@ export function evaluateCandidateFormulation(
     ingredients: ingredients.map(i => ({
       id: i.id,
       name: i.name,
-      percentage: Number(i.percentage) || 0,
+      percentage: Number(i.percentage),
       activeMatterPct: (i as any).activeMatterPct ?? (i as any).activePercent,
       activePercent: (i as any).activeMatterPct ?? (i as any).activePercent,
       function: i.function || (i as any).role,
@@ -302,7 +303,7 @@ export function evaluateCandidateFormulation(
       tradeName: (i as any).tradeName,
     })),
     batchSizeKg,
-    waterHardnessPpm: 150,
+    waterHardnessPpm: scenario?.waterHardnessPpm,
   };
 
   const orchestratorResult = FormulaScientificOrchestrator.evaluate(canonicalInput);
@@ -344,10 +345,12 @@ export function evaluateCandidateFormulation(
   const finalPH = orchestratorResult.pHResult.ph ?? Number.NaN; // Missing pH remains unavailable; never substitute a plausible value.
 
   // 6. Authoritative Chelation / Hardness Capacity
-  const waterHardnessCapacityPpm = Number((orchestratorResult.hardnessResult?.maxSupportedPpm || 0).toFixed(1));
+  const rawHardnessCapacity = orchestratorResult.hardnessResult?.maxSupportedPpm;
+  const waterHardnessCapacityPpm = Number.isFinite(rawHardnessCapacity) ? Number(rawHardnessCapacity.toFixed(1)) : Number.NaN;
 
   // 7. Authoritative Compatibility Engine
-  const hasFatalIncompatibility = !orchestratorResult.compatibilityResult.compatible ||
+  const hasFatalIncompatibility = orchestratorResult.compatibilityResult.compatibilityStatusSemantic === 'INCOMPATIBLE' ||
+    orchestratorResult.compatibilityResult.compatibilityStatusSemantic === 'KNOWN_INCOMPATIBLE' ||
     (orchestratorResult.compatibilityResult.alerts || []).some((a: any) => a.severity === 'Critical' || a.level === 'CRITICAL');
   const compatibilityScore = orchestratorResult.compatibilityResult.compatibilityScore;
 
@@ -363,7 +366,8 @@ export function evaluateCandidateFormulation(
     : undefined;
 
   // 9. Authoritative Cleaning Performance Index (CPI)
-  const cpi = Number((orchestratorResult.cleaningResult?.cpi || 0).toFixed(1));
+  const rawCpi = orchestratorResult.cleaningResult?.cpi;
+  const cpi = Number.isFinite(rawCpi) ? Number(rawCpi.toFixed(1)) : Number.NaN;
 
   // 10. Authoritative Master Scientific Quality Gate
   const qualityGateReport: MasterScientificQualityGateReport = orchestratorResult.qualityGateResult;
@@ -392,13 +396,19 @@ export function evaluateCandidateFormulation(
   const constraintsSummary = evaluateFormulationConstraints(constraints, metrics);
 
   // Hard feasibility requires mass=100%, zero fatal incompatibility, and zero hard constraint violations
+  const qualityGateAllowsOptimization =
+    qualityGateStatus === 'VALID' ||
+    qualityGateStatus === 'VALID_WITH_WARNINGS' ||
+    qualityGateStatus === 'LAB_VALIDATION_REQUIRED';
   const isFeasible =
     constraintsSummary.isHardFeasible &&
     !hasFatalIncompatibility &&
-    qualityGateStatus !== 'SCIENTIFICALLY_INVALID';
+    qualityGateAllowsOptimization;
 
   // 12. Objective Scores
-  const activeEfficiency = activeSurfactantsPct > 0 ? Number((cpi / activeSurfactantsPct).toFixed(2)) : 0;
+  const activeEfficiency = Number.isFinite(cpi) && Number.isFinite(activeSurfactantsPct) && activeSurfactantsPct > 0
+    ? Number((cpi / activeSurfactantsPct).toFixed(2))
+    : Number.NaN;
   const scientificRiskPenalty =
     constraintsSummary.totalPenalty +
     (qualityGateReport.majorWarnings || []).length * 15.0 +
