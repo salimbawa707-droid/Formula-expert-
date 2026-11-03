@@ -295,6 +295,7 @@ export function runCategoryPropagationTestSuite() {
     'Number between 0 and 100'
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: ${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
