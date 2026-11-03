@@ -286,6 +286,12 @@ export class RegulatoryComplianceEngine {
     } else if (jurisdictionId === 'INDIA' && productScope.mapping?.indiaBisStatus === 'NOT_VERIFIED') {
       overallStatus = 'REVIEW_REQUIRED';
       warnings.push(`Category '${input.productCategory}' lacks an active verified BIS standard in India. Compliance cannot be certified.`);
+    } else if (applicableRules.length === 0) {
+      overallStatus = 'INSUFFICIENT_DATA';
+      warnings.push(`No applicable regulatory rules were found for jurisdiction '${jurisdictionId}' and product category '${input.productCategory}'. Absence of a detected rule is not evidence of compliance.`);
+    } else if (unverifiedCount > 0 || outdatedCount > 0 || verifiedPrimaryCount === 0) {
+      overallStatus = 'REVIEW_REQUIRED';
+      warnings.push('One or more applicable regulatory rules lack current verified primary-source support; compliance cannot be certified.');
     } else if (reviewRequiredRules.length > 0 || claimReport.overallStatus === 'REVIEW_REQUIRED') {
       overallStatus = 'REVIEW_REQUIRED';
     }
@@ -315,7 +321,7 @@ export class RegulatoryComplianceEngine {
         unknownIngredientsDetected: Array.from(new Set(unknownDetected))
       },
       documentationStatus: {
-        primarySourceCoveragePct: applicableRules.length > 0 ? Number(((verifiedPrimaryCount / applicableRules.length) * 100).toFixed(1)) : 100,
+        primarySourceCoveragePct: applicableRules.length > 0 ? Number(((verifiedPrimaryCount / applicableRules.length) * 100).toFixed(1)) : null as any,
         unverifiedRulesCount: unverifiedCount
       },
       evidenceCoverage: {
