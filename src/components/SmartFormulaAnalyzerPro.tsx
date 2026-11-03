@@ -757,7 +757,7 @@ function SmartFormulaAnalyzerProInner({
     // Authoritative Hard Water Tolerance from Canonical Orchestrator Result
     const hardness = canonicalHardness;
     hardWater = (typeof hardness === 'object' && hardness !== null)
-      ? (hardness.sufficiency ? String(hardness.sufficiency).toUpperCase() : (hardness.status ? String(hardness.status) : (hardness.maxSupportedPpm !== undefined ? `${hardness.maxSupportedPpm} ppm` : "INSUFFICIENT_DATA")))
+      ? (hardness.status === 'NOT_EVALUATED' ? 'INSUFFICIENT_DATA' : (hardness.sufficiency ? String(hardness.sufficiency).toUpperCase() : (hardness.status ? String(hardness.status) : (hardness.maxSupportedPpm !== undefined ? `${hardness.maxSupportedPpm} ppm` : "INSUFFICIENT_DATA"))))
       : "INSUFFICIENT_DATA";
 
     // Authoritative Cleaning Performance from Canonical Orchestrator Result
