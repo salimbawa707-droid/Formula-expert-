@@ -16,6 +16,7 @@
  */
 
 import { ingestExperimentResult, IngestResultInput } from '../closedLoopRAndD/experimentResultIngestionEngine';
+import { buildLimsIngestionInput } from '../closedLoopRAndD/limsIngestionAdapter';
 import { comparePredictionVsMeasurement } from '../closedLoopRAndD/predictionVsMeasurementEngine';
 import { isParameterApplicable, classifyScientificDeviation } from '../closedLoopRAndD/scientificDeviationEngine';
 import { evaluateMeasurementsBatch } from '../closedLoopRAndD/measurementEvaluationEngine';
@@ -113,6 +114,49 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
   const ingestedUnverified = ingestExperimentResult(unverifiedInput);
   assert('A8. Rejected evidence is retained as REQUIRES_REVIEW and not promoted',
     ingestedUnverified.dataQuality === 'REQUIRES_REVIEW');
+  const adapterTest = {
+    test: {
+      testId: 'TEST-LIMS-01', sampleId: 'SMP-LIMS-01', batchId: 'BATCH-LIMS-01',
+      formulaId: 'FORM-LIMS-01', formulaVersion: '2.0.0', testMethodId: 'METHOD-PH',
+      parameterKey: 'ph', standardUnit: 'pH units',
+    },
+    measurement: {
+      measurementId: 'MEAS-LIMS-01', testId: 'TEST-LIMS-01', sampleId: 'SMP-LIMS-01',
+      batchId: 'BATCH-LIMS-01', formulaId: 'FORM-LIMS-01', formulaVersion: '2.0.0',
+      parameterKey: 'ph', parameterName: 'pH', value: 8.1, unit: 'pH units',
+      measuredAt: '2026-11-03T10:00:00.000Z', instrumentId: 'PH-USER-01', analyst: 'Analyst 1',
+    },
+    evidence: {
+      evidenceId: 'EVID-LIMS-01', measurementId: 'MEAS-LIMS-01', testId: 'TEST-LIMS-01',
+      sampleId: 'SMP-LIMS-01', batchId: 'BATCH-LIMS-01', formulaId: 'FORM-LIMS-01',
+      formulaVersion: '2.0.0', parameterKey: 'ph', unit: 'pH units',
+      instrumentId: 'PH-USER-01', evidenceLevel: 'LAB_TESTED', verificationStatus: 'UNVERIFIED',
+    },
+  };
+  const adaptedInput = buildLimsIngestionInput(
+    adapterTest.test as any,
+    adapterTest.measurement as any,
+    adapterTest.evidence as any,
+    '1.0'
+  );
+  assert('A9. LIMS adapter preserves formula, sample, batch, test and evidence lineage',
+    adaptedInput.formulaVersionId === 'FORM-LIMS-01@2.0.0' &&
+    adaptedInput.measurementId === 'MEAS-LIMS-01' &&
+    adaptedInput.evidenceRecordId === 'EVID-LIMS-01' &&
+    adaptedInput.ingestionSource === 'LIMS_RECORD' &&
+    adaptedInput.protocolVersion === '1.0');
+
+  let adapterMismatchBlocked = false;
+  try {
+    buildLimsIngestionInput(
+      adapterTest.test as any,
+      { ...adapterTest.measurement, formulaVersion: '3.0.0' } as any,
+      adapterTest.evidence as any
+    );
+  } catch {
+    adapterMismatchBlocked = true;
+  }
+  assert('A10. LIMS adapter blocks mismatched formula-version lineage', adapterMismatchBlocked);
 
   // ==========================================================================
   // SECTION B: PREDICTION VS MEASUREMENT
