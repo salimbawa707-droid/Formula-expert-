@@ -3,6 +3,7 @@ import { FormulationIngredient } from '../types';
 export type IngredientPricingStatus =
   | 'EXPLICIT_USER_PRICE'
   | 'MISSING_PRICE'
+  | 'INVALID_PRICE'
   | 'UNKNOWN_PRICE';
 
 export type FormulaPricingStatus =
@@ -36,10 +37,15 @@ export interface FormulaCostReport {
   totalIngredientsCount: number;
   pricedIngredientCount: number;
   unpricedIngredientCount: number;
+  invalidPercentageCount: number;
+  invalidPriceCount: number;
+  formulaTotalPercentage: number;
+  isMassBalanced: boolean;
+  massBalanceStatus: 'BALANCED' | 'INCOMPLETE' | 'EXCESS' | 'INVALID';
   missingIngredientIds: string[];
   warnings: string[];
-  costLabel: 'TOTAL COST' | 'PARTIAL COST — EXCLUDES UNPRICED INGREDIENTS' | 'COST UNAVAILABLE';
-  status: 'COMPLETE' | 'PRICE INPUT REQUIRED';
+  costLabel: 'TOTAL COST' | 'PARTIAL COST — EXCLUDES UNPRICED INGREDIENTS' | 'PARTIAL COST — FORMULA MASS BALANCE INCOMPLETE' | 'COST UNAVAILABLE';
+  status: 'COMPLETE' | 'PRICE INPUT REQUIRED' | 'FORMULA INPUT REQUIRED' | 'BATCH SIZE REQUIRED';
   statusMessage: string;
 }
 
@@ -59,104 +65,164 @@ export function calculateFormulaCost(
   batchSizeKg: number = 100
 ): FormulaCostReport {
   const safeList = Array.isArray(ingredients) ? ingredients : [];
-  const validBatchSize = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  const hasValidBatchSize = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
+  const validBatchSize = hasValidBatchSize ? batchSizeKg : Number.NaN;
 
   let totalBatchCost = 0;
   let missingPriceCount = 0;
   let completePriceCount = 0;
   let activeIngredientsCount = 0;
+  let invalidPercentageCount = 0;
+  let invalidPriceCount = 0;
+  let formulaTotalPercentage = 0;
+  let actualKnownWeightKg = 0;
   const missingIngredientIds: string[] = [];
   const warnings: string[] = [];
 
+  if (safeList.length === 0) warnings.push('EMPTY_FORMULA: No ingredient composition was supplied.');
+  if (!hasValidBatchSize) warnings.push('INVALID_BATCH_SIZE: Batch size must be a finite value greater than zero.');
+
   const rawItems = safeList.map((ing, idx) => {
-    const rawPct = Number(ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? 0);
-    const weightKg = (rawPct / 100) * validBatchSize;
+    const rawPctValue = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+    const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
+      ? Number.NaN
+      : Number(rawPctValue);
+    const hasValidPercentage = Number.isFinite(rawPct) && rawPct >= 0 && rawPct <= 100;
 
-    // Distinguish between explicit user-entered price (including 0) and missing price
-    const rawPrice = ing.costPerKg ?? (ing as any).rawMaterialCostPerKg ?? (ing as any).cost ?? (ing as any).unitCost;
-    const isMissing = rawPrice === undefined || rawPrice === null || rawPrice === '' || isNaN(Number(rawPrice));
-    const hasPrice = !isMissing && Number(rawPrice) >= 0;
-    const userPrice = hasPrice ? Number(rawPrice) : null;
-    const numericPrice = hasPrice ? Math.max(0, Number(rawPrice)) : 0;
+    if (hasValidPercentage) {
+      formulaTotalPercentage += rawPct;
+      if (hasValidBatchSize) actualKnownWeightKg += (rawPct / 100) * validBatchSize;
+    } else {
+      invalidPercentageCount++;
+      warnings.push(`INVALID_INGREDIENT_PERCENTAGE: ${ing?.name || `Ingredient ${idx + 1}`} has a missing or invalid percentage.`);
+    }
 
-    const totalCost = weightKg * numericPrice;
-    totalBatchCost += totalCost;
+    // Distinguish an intentionally entered zero price from missing/invalid pricing.
+    const rawPrice = ing?.costPerKg ?? (ing as any)?.rawMaterialCostPerKg ?? (ing as any)?.cost ?? (ing as any)?.unitCost;
+    const isMissingPrice = rawPrice === undefined || rawPrice === null || rawPrice === '';
+    const parsedPrice = isMissingPrice ? Number.NaN : Number(rawPrice);
+    const hasValidPrice = !isMissingPrice && Number.isFinite(parsedPrice) && parsedPrice >= 0;
+    const isInvalidPrice = !isMissingPrice && !hasValidPrice;
+    const userPrice = hasValidPrice ? parsedPrice : null;
+    const numericPrice = hasValidPrice ? parsedPrice : 0;
 
-    const ingId = ing.id || `ing-${idx}`;
-
-    if (rawPct > 0) {
+    const ingId = ing?.id || `ing-${idx}`;
+    const hasPositiveValidPercentage = hasValidPercentage && rawPct > 0;
+    if (hasPositiveValidPercentage) {
       activeIngredientsCount++;
-      if (hasPrice) {
+      if (hasValidPrice) {
         completePriceCount++;
+      } else if (isInvalidPrice) {
+        invalidPriceCount++;
+        missingIngredientIds.push(ingId);
+        warnings.push(`INVALID_INGREDIENT_PRICE: ${ing?.name || ingId} has a non-finite or negative price.`);
       } else {
         missingPriceCount++;
         missingIngredientIds.push(ingId);
       }
     }
 
+    const weightKg = hasValidPercentage && hasValidBatchSize ? (rawPct / 100) * validBatchSize : Number.NaN;
+    const totalCost = hasPositiveValidPercentage && hasValidBatchSize && hasValidPrice
+      ? weightKg * numericPrice
+      : 0;
+    totalBatchCost += totalCost;
+
     return {
       id: ingId,
-      name: ing.name || `Ingredient ${idx + 1}`,
+      name: ing?.name || `Ingredient ${idx + 1}`,
       percentage: rawPct,
-      weightKg: Number(weightKg.toFixed(4)),
-      costPerKg: Number(numericPrice.toFixed(2)),
+      weightKg: Number.isFinite(weightKg) ? Number(weightKg.toFixed(4)) : Number.NaN,
+      costPerKg: hasValidPrice ? Number(numericPrice.toFixed(2)) : Number.NaN,
       userPrice,
-      totalCost: Number(totalCost.toFixed(2)),
-      hasUserPrice: hasPrice,
-      pricingStatus: (hasPrice ? 'EXPLICIT_USER_PRICE' : 'MISSING_PRICE') as IngredientPricingStatus,
+      totalCost: hasValidPrice && hasPositiveValidPercentage && hasValidBatchSize ? Number(totalCost.toFixed(2)) : Number.NaN,
+      hasUserPrice: hasValidPrice,
+      pricingStatus: (hasValidPrice ? 'EXPLICIT_USER_PRICE' : (isInvalidPrice ? 'INVALID_PRICE' : 'MISSING_PRICE')) as IngredientPricingStatus,
       costPercentageOfTotal: 0
     };
   });
 
-  const costPerKg = validBatchSize > 0 ? (totalBatchCost / validBatchSize) : 0;
+  const isMassBalanced = safeList.length > 0 &&
+    invalidPercentageCount === 0 &&
+    Number.isFinite(formulaTotalPercentage) &&
+    Math.abs(formulaTotalPercentage - 100) <= 0.05;
+  const massBalanceStatus: FormulaCostReport['massBalanceStatus'] =
+    invalidPercentageCount > 0 ? 'INVALID' :
+    formulaTotalPercentage < 99.95 ? 'INCOMPLETE' :
+    formulaTotalPercentage > 100.05 ? 'EXCESS' : 'BALANCED';
 
-  const ingredientCosts: IngredientCostItem[] = rawItems.map(item => ({
-    ...item,
-    costPercentageOfTotal: totalBatchCost > 0 ? Number(((item.totalCost / totalBatchCost) * 100).toFixed(1)) : 0
-  }));
+  if (invalidPercentageCount === 0 && !isMassBalanced) {
+    warnings.push(`FORMULA_MASS_BALANCE_${massBalanceStatus}: Ingredient percentages sum to ${formulaTotalPercentage.toFixed(3)}%, not 100.000%.`);
+  }
 
-  const isComplete = activeIngredientsCount > 0 && missingPriceCount === 0;
+  const isComplete =
+    hasValidBatchSize &&
+    isMassBalanced &&
+    activeIngredientsCount > 0 &&
+    missingPriceCount === 0 &&
+    invalidPriceCount === 0;
 
   let pricingStatus: FormulaPricingStatus = 'UNKNOWN';
   let costLabel: FormulaCostReport['costLabel'] = 'COST UNAVAILABLE';
 
   if (activeIngredientsCount === 0) {
     pricingStatus = 'UNKNOWN';
-    costLabel = 'COST UNAVAILABLE';
-  } else if (missingPriceCount === 0) {
+  } else if (missingPriceCount === 0 && invalidPriceCount === 0 && isMassBalanced && hasValidBatchSize) {
     pricingStatus = 'COMPLETE_PRICING';
     costLabel = 'TOTAL COST';
-  } else if (completePriceCount > 0) {
+  } else if (completePriceCount > 0 && (missingPriceCount > 0 || invalidPriceCount > 0) && isMassBalanced && hasValidBatchSize) {
     pricingStatus = 'PARTIAL_PRICING';
     costLabel = 'PARTIAL COST — EXCLUDES UNPRICED INGREDIENTS';
-    warnings.push(`Partial cost estimate excludes ${missingPriceCount} unpriced ingredient${missingPriceCount > 1 ? 's' : ''}.`);
-  } else {
+    warnings.push(`Partial cost subtotal excludes ${missingPriceCount + invalidPriceCount} ingredient(s) with missing or invalid prices.`);
+  } else if (completePriceCount === 0) {
     pricingStatus = 'NO_PRICING';
-    costLabel = 'COST UNAVAILABLE';
-    warnings.push('No ingredient prices configured.');
+  } else {
+    pricingStatus = 'UNKNOWN';
+    if (completePriceCount > 0) costLabel = 'PARTIAL COST — FORMULA MASS BALANCE INCOMPLETE';
+  }
+
+  const ingredientCosts: IngredientCostItem[] = rawItems.map(item => ({
+    ...item,
+    costPercentageOfTotal: totalBatchCost > 0 && Number.isFinite(item.totalCost)
+      ? Number(((item.totalCost / totalBatchCost) * 100).toFixed(1))
+      : 0
+  }));
+
+  let status: FormulaCostReport['status'] = 'COMPLETE';
+  let statusMessage = 'Formula mass balance and all ingredient prices are complete.';
+  if (!hasValidBatchSize) {
+    status = 'BATCH SIZE REQUIRED';
+    statusMessage = 'A finite batch size greater than zero is required. No default batch size is substituted for an explicitly invalid value.';
+  } else if (invalidPercentageCount > 0 || !isMassBalanced) {
+    status = 'FORMULA INPUT REQUIRED';
+    statusMessage = `Formula percentages are ${massBalanceStatus.toLowerCase()} (total ${Number.isFinite(formulaTotalPercentage) ? formulaTotalPercentage.toFixed(3) + '%' : 'unknown'}). Correct the ingredient percentages before calculating finished-product cost per kg.`;
+  } else if (!isComplete) {
+    status = 'PRICE INPUT REQUIRED';
+    statusMessage = 'Enter a valid non-negative price for every ingredient with a non-zero percentage.';
   }
 
   return {
     ingredientCosts,
-    totalBatchWeightKg: Number(validBatchSize.toFixed(3)),
+    totalBatchWeightKg: Number.isFinite(actualKnownWeightKg) ? Number(actualKnownWeightKg.toFixed(3)) : Number.NaN,
     totalBatchCost: Number(totalBatchCost.toFixed(2)),
-    costPerKg: Number(costPerKg.toFixed(2)),
+    costPerKg: isComplete ? Number((totalBatchCost / validBatchSize).toFixed(2)) : Number.NaN,
     isComplete,
     pricingStatus,
     missingPriceCount,
     completePriceCount,
     totalIngredientsCount: activeIngredientsCount,
     pricedIngredientCount: completePriceCount,
-    unpricedIngredientCount: missingPriceCount,
+    unpricedIngredientCount: missingPriceCount + invalidPriceCount,
+    invalidPercentageCount,
+    invalidPriceCount,
+    formulaTotalPercentage: Number.isFinite(formulaTotalPercentage) ? Number(formulaTotalPercentage.toFixed(3)) : Number.NaN,
+    isMassBalanced,
+    massBalanceStatus,
     missingIngredientIds,
     warnings,
     costLabel,
-    status: isComplete ? "COMPLETE" : "PRICE INPUT REQUIRED",
-    statusMessage: isComplete
-      ? "All ingredient prices configured. Commercial cost calculated."
-      : missingPriceCount === activeIngredientsCount
-      ? "Enter raw-material prices (₹/kg) to calculate formula cost."
-      : `${missingPriceCount} ingredient price${missingPriceCount > 1 ? 's' : ''} missing. Enter raw-material prices for complete costing.`
+    status,
+    statusMessage
   };
 }
 
