@@ -70,7 +70,7 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   };
   const liquidReport = evaluateSpecifications(evalInputLiquid);
   const liquidPhResult = liquidReport.items.find(i => i.parameterKey === 'ph');
-  assert('TEST 8: Calculated liquid pH is NOT_TESTED until physical lab measurement', liquidPhResult?.status === 'NOT_TESTED' && liquidPhResult?.value === 7.57, JSON.stringify(liquidPhResult));
+  assert('TEST 8: Calculated liquid pH is NOT_TESTED until physical lab measurement', liquidPhResult?.status === 'NOT_TESTED' && liquidPhResult?.currentValue === 7.57, JSON.stringify(liquidPhResult));
 
   // 9. Liquid pH 7.57 is evaluated against Liquid specification
   assert('TEST 9: Liquid pH 7.57 evaluated against liquid spec max of 9.5', liquidPhResult?.max === 9.5, JSON.stringify(liquidPhResult));
