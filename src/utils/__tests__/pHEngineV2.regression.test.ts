@@ -173,8 +173,8 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
     ]),
     100
   );
-  assertNear('Phase 3 Reference Tests', 'Test 11: Mixed detergent-style formulation (pH ~ 12.20)', t11Res.pH, 12.20, 0.40);
-  assert('Phase 3 Reference Tests', 'Test 11: High confidence score (>80%)', t11Res.confidence > 80, t11Res.confidence, '> 80');
+  assert('Phase 3 Reference Tests', 'Test 11: Mixed detergent formula with unregistered SLES grade has unavailable pH', t11Res.pH === null, t11Res.pH, null);
+  assert('Phase 3 Reference Tests', 'Test 11: Unregistered SLES mass blocks pH calculation', t11Res.status === 'INSUFFICIENT_DATA' && t11Res.converged === false, t11Res.status, 'INSUFFICIENT_DATA');
 
   // =========================================================================
   // TEST 12: Invalid / Missing-Data Formulation Handling
