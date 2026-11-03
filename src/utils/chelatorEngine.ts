@@ -1284,6 +1284,9 @@ export interface GreenChelatorResult {
   inputWarnings: string[];
   score: number;
   isGreen: boolean;
+  isHardnessLoadFullyCovered: boolean;
+  totalProvidedSequestrationMg?: number;
+  stoichiometricCoveragePct?: number;
   totalCaCO3ToBindMg?: number;
   stoichiometricTargetMg?: number;
   chelators?: ChelatorDetail[];
@@ -1329,6 +1332,7 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
       inputWarnings,
       score: 0,
       isGreen: false,
+      isHardnessLoadFullyCovered: false,
       details: [],
       chelators: [],
       recommendation: 'INSUFFICIENT_DATA: Supply measured wash-water hardness, wash volume, dose, safety margin, co-builder target, and formulation cap. No defaults are substituted.'
@@ -1344,6 +1348,9 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
       inputWarnings: ['No chelator ingredients were supplied; no chelation capacity or formulation recommendation can be calculated.'],
       score: 0,
       isGreen: false,
+      isHardnessLoadFullyCovered: hardPpm === 0,
+      totalProvidedSequestrationMg: 0,
+      stoichiometricCoveragePct: hardPpm === 0 ? 100 : 0,
       totalCaCO3ToBindMg,
       stoichiometricTargetMg,
       chelators: [],
@@ -1361,6 +1368,10 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
     const calcPct = isKnown ? (coGrams / washDose!) * 100 : 0;
     const pracPct = isKnown ? Math.min(calcPct, maxCap!) : 0;
     const pracGrams = (pracPct / 100) * washDose!;
+    const providedSequestrationMg = pracGrams * bindingCap;
+    const stoichiometricCoveragePct = stoichiometricTargetMg > 0
+      ? (providedSequestrationMg / stoichiometricTargetMg) * 100
+      : 100;
     const species = AUTHORITATIVE_CHELATOR_DATABASE.find(item => item.evidenceId === capRes.evidenceId);
 
     return {
@@ -1375,17 +1386,28 @@ export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, .
       calculatedWeightPct: calcPct,
       practicalWeightPct: pracPct,
       practicalWeightGrams: pracGrams,
+      providedSequestrationMg,
+      stoichiometricCoveragePct,
+      isStoichiometricallySufficient: providedSequestrationMg >= stoichiometricTargetMg,
       citation: isKnown ? (species?.citation || 'Registered evidence reference unavailable') : 'Unknown chelator binding capacity (INSUFFICIENT_DATA)'
     };
   });
 
   const hasUnknownChelator = details.some(detail => detail.bindingCapacity <= 0);
   const hasGreenCandidate = details.some(detail => detail.isGreen);
+  const totalProvidedSequestrationMg = details.reduce((sum, detail) => sum + detail.providedSequestrationMg, 0);
+  const stoichiometricCoveragePct = stoichiometricTargetMg > 0
+    ? (totalProvidedSequestrationMg / stoichiometricTargetMg) * 100
+    : 100;
+  const isHardnessLoadFullyCovered = stoichiometricTargetMg === 0 || totalProvidedSequestrationMg >= stoichiometricTargetMg;
   return {
     status: hasUnknownChelator ? 'INSUFFICIENT_DATA' : 'CALCULATED',
     inputWarnings: hasUnknownChelator ? ['At least one chelator grade is unregistered or its capacity is unavailable; unknown capacity was not counted.'] : [],
     score: 0,
     isGreen: hasGreenCandidate,
+    isHardnessLoadFullyCovered,
+    totalProvidedSequestrationMg,
+    stoichiometricCoveragePct,
     totalCaCO3ToBindMg,
     stoichiometricTargetMg,
     chelators: details,
