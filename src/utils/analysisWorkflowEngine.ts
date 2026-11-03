@@ -908,7 +908,7 @@ export async function executeStagedScientificAnalysis(
     missingPriceCount: formulaCost.missingPriceCount,
     suggestedRetailPrice: marginChain.suggestedRetail,
     substitutionCount: substitutions.length,
-    climateScore: climateAnalysis.riskScore
+    climateScore: null // No validated climate-risk scoring model is available.
   };
 
   completeStage('PROCESS_COSTING', 'COMPLETED', {
