@@ -303,19 +303,19 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const sandboxDraft: FormulationIngredient[] = JSON.parse(JSON.stringify(globalActiveFormula));
   sandboxDraft[0].percentage = 15; // Unapplied draft mutation
 
-  const globalGradeBefore = evaluateAIGrade(globalActiveFormula, 7.0).score;
-  const sandboxGrade = evaluateAIGrade(sandboxDraft, 7.0).score;
+  const globalActiveMatterBefore = calculateActiveMatter(globalActiveFormula);
+  const sandboxActiveMatter = calculateActiveMatter(sandboxDraft);
 
-  record(assertEqual('Sandbox Isolation', 'Unapplied draft mutation in sandbox does NOT alter global active formula score', evaluateAIGrade(globalActiveFormula, 7.0).score, globalGradeBefore));
-  record(assertEqual('Sandbox Isolation', 'Draft sandbox score reflects draft edit (15% LABSA vs 10% LABSA)', sandboxGrade !== globalGradeBefore, true));
+  record(assertEqual('Sandbox Isolation', 'Unapplied draft mutation in sandbox does NOT alter global active matter', calculateActiveMatter(globalActiveFormula), globalActiveMatterBefore));
+  record(assertEqual('Sandbox Isolation', 'Draft sandbox active matter reflects edit (15% LABSA vs 10% LABSA)', sandboxActiveMatter > globalActiveMatterBefore, true));
 
   // Apply sandbox edit
   const appliedGlobalFormula = JSON.parse(JSON.stringify(sandboxDraft));
-  record(assertEqual('Sandbox Isolation', 'Applying sandbox updates global active formula score', evaluateAIGrade(appliedGlobalFormula, 7.0).score, sandboxGrade));
+  record(assertEqual('Sandbox Isolation', 'Applying sandbox updates global active matter', calculateActiveMatter(appliedGlobalFormula), sandboxActiveMatter));
 
   // Reset sandbox
   const resetGlobalFormula = JSON.parse(JSON.stringify(globalActiveFormula));
-  record(assertEqual('Sandbox Isolation', 'Resetting sandbox restores original global formula score', evaluateAIGrade(resetGlobalFormula, 7.0).score, globalGradeBefore));
+  record(assertEqual('Sandbox Isolation', 'Resetting sandbox restores original global active matter', calculateActiveMatter(resetGlobalFormula), globalActiveMatterBefore));
 
   // -------------------------------------------------------------
   // 10. ENGINE OUTPUT CONTRACT VERIFICATION
