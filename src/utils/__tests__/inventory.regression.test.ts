@@ -30,8 +30,8 @@ export function runInventoryTestSuite() {
   // Test 1: Initial inventory loads correctly
   const initial = getInitialDefaultInventory();
   assert(
-    'Test 1: Initial inventory loads correctly',
-    Array.isArray(initial) && initial.length > 0 && initial.some(i => i.ingredientId === 'labsa-96' && i.currentStockKg === 350),
+    'Test 1: Initial inventory starts with zero physical stock and unknown lot/supplier/cost metadata',
+    Array.isArray(initial) && initial.length > 0 && initial.every(i => i.currentStockKg === 0 && i.costPerKg === null && !i.lotNumber && !i.supplier),
     initial.length
   );
 
@@ -117,7 +117,8 @@ export function runInventoryTestSuite() {
   const inventoryStock: InventoryItem[] = [
     { id: '1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 2.2 },
     { id: '2', ingredientId: 'sles-70', name: 'SLES 70%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 1.8 },
-    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 }
+    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 },
+    { id: '4', ingredientId: 'water', name: 'Water', category: 'Solvent', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: 0 }
   ];
 
   const check1 = checkProductionBatchAvailability(activeFormulaSample, 100, inventoryStock);
@@ -142,7 +143,8 @@ export function runInventoryTestSuite() {
   const tightInventory: InventoryItem[] = [
     { id: '1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 5, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 2.2 }, // Only 5kg available vs 10kg needed!
     { id: '2', ingredientId: 'sles-70', name: 'SLES 70%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 1.8 },
-    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 }
+    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 },
+    { id: '4', ingredientId: 'water', name: 'Water', category: 'Solvent', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: 0 }
   ];
   const check2 = checkProductionBatchAvailability(activeFormulaSample, 100, tightInventory);
   assert(
@@ -214,6 +216,49 @@ export function runInventoryTestSuite() {
     'Test 14: Repeated render/reload does not deduct stock twice',
     reloadedInv1[0].currentStockKg === 90 && reloadedInv2[0].currentStockKg === 90,
     `Reload 1: ${reloadedInv1[0].currentStockKg}kg, Reload 2: ${reloadedInv2[0].currentStockKg}kg`
+  );
+
+  // Test 15: Missing legacy inventory metadata stays unknown, never receives fabricated defaults.
+  const legacyUnknown = parseStoredInventory(JSON.stringify([{
+    id: 'legacy-1', ingredientId: 'legacy-1', name: 'Unknown raw material',
+    category: 'Surfactant', currentStockKg: 4, unit: 'kg'
+  }]));
+  assert(
+    'Test 15: Missing legacy cost, lot and supplier remain unknown',
+    legacyUnknown[0].costPerKg === null && legacyUnknown[0].lotNumber === undefined && legacyUnknown[0].supplier === undefined,
+    JSON.stringify({ cost: legacyUnknown[0].costPerKg, lot: legacyUnknown[0].lotNumber, supplier: legacyUnknown[0].supplier })
+  );
+
+  const unknownCostFormula: ActiveFormulaState = {
+    name: 'Unknown cost formula',
+    batchSizeKg: 10,
+    ingredients: [{ name: 'LABSA 90%', percentage: 100 }]
+  };
+  const unknownCostCheck = checkProductionBatchAvailability(unknownCostFormula, 10, [
+    { id: 'c1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 20, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }
+  ]);
+  assert(
+    'Test 16: Unknown material price yields unavailable batch cost, not zero-cost claim',
+    unknownCostCheck.costComplete === false && unknownCostCheck.totalBatchCost === null &&
+    unknownCostCheck.requirements[0].totalCost === null,
+    String(unknownCostCheck.totalBatchCost)
+  );
+
+  const missingBatchSize = checkProductionBatchAvailability({
+    name: 'No scale formula',
+    ingredients: [{ name: 'LABSA 90%', percentage: 100 }]
+  }, undefined, inventoryStock);
+  assert(
+    'Test 17: Missing batch size fails closed instead of assuming 100 kg',
+    !missingBatchSize.canProduce && missingBatchSize.batchSizeKg === 0 && missingBatchSize.blockReasons.length > 0,
+    JSON.stringify({ canProduce: missingBatchSize.canProduce, batchSizeKg: missingBatchSize.batchSizeKg })
+  );
+
+  const noWaterStock = checkProductionBatchAvailability(activeFormulaSample, 100, inventoryStock.filter(i => i.name !== 'Water'));
+  assert(
+    'Test 18: Water is treated as a tracked raw material, not an infinite synthetic reservoir',
+    !noWaterStock.canProduce && noWaterStock.insufficientItems.includes('Water'),
+    noWaterStock.insufficientItems.join(', ')
   );
 
   // Test 15: Stock status threshold calculations
