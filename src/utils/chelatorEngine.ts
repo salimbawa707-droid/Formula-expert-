@@ -729,11 +729,11 @@ export function getChelatorBindingCapacity(
     matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
       n.includes(s.id) || 
       n.includes(s.name.toLowerCase()) ||
-      (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
+      (s.id === 'glda-47' && (n.includes('glda-47') || n.includes('glda 47') || n.includes('gl-47'))) ||
       (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
       (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
       (s.id === 'gluconate' && n.includes('gluconate')) ||
-      (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium'))) ||
+      (s.id === 'edta-powder' && n.includes('edta 99')) ||
       (s.id === 'edta-liquid' && n.includes('edta 39')) ||
       (s.id === 'stpp' && n.includes('stpp')) ||
       (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
