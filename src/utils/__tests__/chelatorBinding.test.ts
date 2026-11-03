@@ -21,21 +21,28 @@ export function runChelatorBindingTestSuite(): {
   }
 
   // TEST 1: Validate valid capacity
-  const res1 = validateChelatorCapacity(260, 'Citation A');
+  const res1 = validateChelatorCapacity(260, 'EVID-GLDA-47-SPEC');
   assert('Validate valid capacity status is VALID', res1.status === 'VALID');
   assert('Validate valid capacity value is 260', res1.capacityMgCaCO3PerGram === 260);
 
   // TEST 2: Reject missing capacity
-  const res2 = validateChelatorCapacity(null as any, 'Citation A');
+  const res2 = validateChelatorCapacity(null as any, 'EVID-GLDA-47-SPEC');
   assert('Reject missing capacity is INSUFFICIENT_DATA', res2.status === 'INSUFFICIENT_DATA');
 
   // TEST 3: Reject missing evidenceId
   const res3 = validateChelatorCapacity(260, '');
   assert('Reject empty evidenceId is INSUFFICIENT_DATA', res3.status === 'INSUFFICIENT_DATA');
 
+  // TEST 3B: Reject arbitrary strings that are not registered evidence identifiers.
+  const fakeEvidence = validateChelatorCapacity(260, 'Citation A');
+  assert('Reject unregistered evidence identifier', fakeEvidence.status === 'INSUFFICIENT_DATA');
+
   // TEST 4: Return INSUFFICIENT_DATA for unknown ingredient
   const res4 = getChelatorBindingCapacity('Unknown Chelator');
   assert('Unknown chelator is INSUFFICIENT_DATA', res4.status === 'INSUFFICIENT_DATA');
+
+  const ambiguousCitrate = getChelatorBindingCapacity('Sodium Citrate');
+  assert('Ambiguous citrate hydration grade is INSUFFICIENT_DATA', ambiguousCitrate.status === 'INSUFFICIENT_DATA');
 
   // TEST 5: Return VALID for known ingredient with citation
   const res5 = getChelatorBindingCapacity('GLDA 47% Liquid');
