@@ -818,7 +818,7 @@ export async function executeStagedScientificAnalysis(
   };
 
   completeStage('CLEANING_PERFORMANCE', 'COMPLETED', {
-    details: `CPI: ${cpiValue.toFixed(1)}/100 | Cleaning Score: ${cleaningResult.cleaningScore?.toFixed(1) ?? 'N/A'}`,
+    details: `CPI: ${Number.isFinite(cpiValue) ? cpiValue.toFixed(1) : 'N/A'}/100 | Cleaning Score: ${Number.isFinite(cleaningResult.cleaningScore) ? cleaningResult.cleaningScore.toFixed(1) : 'N/A'}`,
     intermediate: cleaningIntermediate
   });
 
