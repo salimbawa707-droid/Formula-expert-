@@ -156,7 +156,7 @@ export function calculateFormulationCompatibility(
   for (const ing of safeIngs) {
     const name = (ing?.name || '').toLowerCase();
     const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
+    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent ?? Number.NaN);
 
     if (pct <= 0) continue; // Explicit zero percentage ingredients are physically absent
 
