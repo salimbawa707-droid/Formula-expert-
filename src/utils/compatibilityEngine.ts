@@ -120,6 +120,7 @@ export function calculateFormulationCompatibility(
     if (Number.isFinite(computed.pH) && computed.solverConverged) phVal = computed.pH;
   }
   const pHAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
+  let hasInvalidIngredientPercentage = false;
   const hasFormulaData = safeIngs.length > 0 && !hasInvalidIngredientPercentage;
 
   // 2. Classify ingredients by functional chemistry & percentage
@@ -140,7 +141,6 @@ export function calculateFormulationCompatibility(
   let hasFragranceOrOil = false;
   let hasEnzymeStabilizer = false;
 
-  let hasInvalidIngredientPercentage = false;
   let totalElectrolytePct = 0;
   let fragranceOilPct = 0;
   let anionicPct = 0;
