@@ -183,9 +183,13 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   // 5. DUPLICATE INGREDIENT NAMING AUDIT
   // -------------------------------------------------------------
 
-  const gldaAliases = ['GLDA', 'GLDA-47', 'GLDA 47%', 'Tetrasodium GLDA', 'Dissolvine GL-47-S'];
-  const allGLDAIdentified = gldaAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
-  record(assertEqual('Duplicate Ingredient Naming', 'All GLDA alias representations return identical binding capacity (137 mg/g)', allGLDAIdentified, true));
+  const gldaGradeAliases = ['GLDA-47', 'GLDA 47%', 'Dissolvine GL-47-S'];
+  const allGLDAGradeAliasesIdentified = gldaGradeAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
+  const genericGLDAUnavailable =
+    getChelatorBindingCapacity('GLDA').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('Tetrasodium GLDA').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Grade-specific GLDA-47 aliases return 137 mg/g', allGLDAGradeAliasesIdentified, true));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic GLDA names remain unresolved without commercial grade', genericGLDAUnavailable, true));
 
   const citrateDihydrateCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram;
   const citrateAnhydrousCapacity = getChelatorBindingCapacity('Sodium Citrate Anhydrous').capacityMgCaCO3PerGram;
@@ -196,10 +200,12 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   record(assertEqual('Duplicate Ingredient Naming', 'Anhydrous citrate retains its distinct grade-specific 170 mg/g value', citrateAnhydrousCapacity, 170));
   record(assertEqual('Duplicate Ingredient Naming', 'Generic citrate names remain unresolved without hydration grade', genericCitrateUnavailable, true));
 
-  const edtaSpecificAliases = ['EDTA Tetrasodium', 'EDTA Tetrasodium 99% Powder'];
-  const allSpecificEDTAIdentified = edtaSpecificAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 220);
-  const genericEDTAUnavailable = getChelatorBindingCapacity('EDTA').capacityMgCaCO3PerGram === null;
-  record(assertEqual('Duplicate Ingredient Naming', 'Tetrasodium EDTA aliases retain the verified 220 mg/g grade and generic EDTA remains unresolved', allSpecificEDTAIdentified && genericEDTAUnavailable, true));
+  const edtaPowderCapacity = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram;
+  const genericEDTAUnavailable =
+    getChelatorBindingCapacity('EDTA').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Tetrasodium EDTA 99% powder retains the verified 220 mg/g grade', edtaPowderCapacity, 220));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic EDTA names remain unresolved without commercial grade', genericEDTAUnavailable, true));
 
   // -------------------------------------------------------------
   // 6. CROSS-WORKSPACE INPUT DETERMINISM
