@@ -62,6 +62,8 @@ export interface ActiveFormulaState {
   categoryId?: ProductCategoryId;
   targetPH?: number | null;
   batchSizeKg?: number;
+  waterHardnessPpm?: number;
+  waterHardnessSource?: 'USER_ENTERED' | 'MEASURED' | 'UNKNOWN';
   batchSize?: number;
   productType?: string;
   grade?: string;
