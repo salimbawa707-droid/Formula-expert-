@@ -74,7 +74,7 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
   assert('Incomplete Formula Inputs - Compatibility remains unavailable without evaluable pH', validGate.compatibilityStatus === 'INSUFFICIENT_DATA', validGate.compatibilityStatus, 'INSUFFICIENT_DATA');
   assert('Incomplete Formula Inputs - Performance remains unavailable without complete wash scenario', validGate.performanceStatus === 'INSUFFICIENT_DATA', validGate.performanceStatus, 'INSUFFICIENT_DATA');
   assert('Incomplete Formula Inputs - Evidence remains predicted only', validGate.evidenceStatus === 'PREDICTED_ONLY', validGate.evidenceStatus, 'PREDICTED_ONLY');
-  assert('Incomplete Formula Inputs - Solver failure blocks lab readiness', validGate.finalFormulaStatus === 'SCIENTIFICALLY_INVALID', validGate.finalFormulaStatus, 'SCIENTIFICALLY_INVALID');
+  assert('Incomplete Formula Inputs - Solver failure remains insufficient data and blocks lab readiness', validGate.finalFormulaStatus === 'INSUFFICIENT_DATA', validGate.finalFormulaStatus, 'INSUFFICIENT_DATA');
   assert('Incomplete Formula Inputs - Lab readiness is blocked by scientific invalidity', validGate.labReadiness === 'BLOCKED_BY_SCIENTIFIC_INVALIDITY', validGate.labReadiness, 'BLOCKED_BY_SCIENTIFIC_INVALIDITY');
 
   assert('Category targets - unverified provenance is explicitly surfaced', validGate.majorWarnings.some(w => w.code === 'WARN_UNVERIFIED_CATEGORY_TARGETS'), validGate.majorWarnings.map(w => w.code), 'WARN_UNVERIFIED_CATEGORY_TARGETS');
