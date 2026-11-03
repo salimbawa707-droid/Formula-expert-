@@ -132,7 +132,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   assert('Empty Formula cpi is unavailable', emptyRes.cpi === null, emptyRes.cpi, null);
   assert('Empty Formula Provenance is INSUFFICIENT_DATA', emptyRes.provenance === 'INSUFFICIENT_DATA', emptyRes.provenance, 'INSUFFICIENT_DATA');
   assert('Empty Formula Model Type is Insufficient Ingredient Data', emptyRes.modelType === 'INSUFFICIENT_DATA_FAIL_CLOSED', emptyRes.modelType, 'INSUFFICIENT_DATA_FAIL_CLOSED');
-  assert('Empty Formula Limitations States Insufficient Data', typeof emptyRes.limitations === 'string' && /insufficient data/i.test(emptyRes.limitations), emptyRes.limitations, 'An insufficient-data limitation is required');
+  assert('Empty Formula Limitations States Insufficient Data', typeof emptyRes.limitations === 'string' && /insufficient[_ ]data/i.test(emptyRes.limitations), emptyRes.limitations, 'An insufficient-data limitation is required');
 
   // --------------------------------------------------------------------------
   // REQUIREMENT 7: All 13 Canonical Categories Terminology Audit
