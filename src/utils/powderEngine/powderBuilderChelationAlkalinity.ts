@@ -165,17 +165,6 @@ export function calculatePowderChelationSystem(
     };
   }
 
-  if (typeof washDoseG !== 'number' || !Number.isFinite(washDoseG) || washDoseG <= 0) {
-    return {
-      totalChelatorPct: Number(totalChelatorPct.toFixed(2)),
-      chelatorIngredients,
-      hasValidatedData: false,
-      calciumCapacityMgPerDose: undefined,
-      capacityStatus: 'NOT_EVALUATED: explicit wash dose in grams is required to calculate per-dose chelation capacity. Ingredient-level evidence does not establish a per-wash result.',
-      source: 'INSUFFICIENT_DATA'
-    };
-  }
-
   if (chelatorIngredients.length === 0) {
     return {
       totalChelatorPct: 0,
@@ -184,6 +173,17 @@ export function calculatePowderChelationSystem(
       calciumCapacityMgPerDose: undefined,
       capacityStatus: 'No soluble organic chelating agents (GLDA/EDTA/MGDA/Citrate) present. Builder system relies on carbonate precipitation or aluminosilicate ion-exchange.',
       source: 'NOT_APPLICABLE'
+    };
+  }
+
+  if (typeof washDoseG !== 'number' || !Number.isFinite(washDoseG) || washDoseG <= 0) {
+    return {
+      totalChelatorPct: Number(totalChelatorPct.toFixed(2)),
+      chelatorIngredients,
+      hasValidatedData: false,
+      calciumCapacityMgPerDose: undefined,
+      capacityStatus: 'NOT_EVALUATED: explicit wash dose in grams is required to calculate per-dose chelation capacity. Ingredient-level evidence does not establish a per-wash result.',
+      source: 'INSUFFICIENT_DATA'
     };
   }
 
