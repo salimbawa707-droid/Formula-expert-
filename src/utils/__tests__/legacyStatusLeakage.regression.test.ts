@@ -68,10 +68,9 @@ export function runLegacyStatusLeakageTestSuite() {
     ingredients: [
       { name: 'Water', percentage: 71.45, category: 'Solvent' },
       { name: 'SLES 70%', percentage: 20, activeMatterPct: 70, category: 'Surfactant' },
-      { name: 'Cocamidopropyl Betaine', percentage: 5, activeMatterPct: 30, category: 'Surfactant' },
-      { name: 'Sodium Citrate', percentage: 3, category: 'Builder' },
-      { name: 'Citric Acid', percentage: 0.05, category: 'Acid' },
-      { name: 'Water (Balance)', percentage: 0.5, category: 'Solvent' }
+      { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30, category: 'Surfactant' },
+      { name: 'Sodium Citrate Dihydrate', percentage: 3, category: 'Builder' },
+      { name: 'Sodium Bicarbonate', percentage: 0.55, activeMatterPct: 100, category: 'Builder' }
     ]
   };
 
