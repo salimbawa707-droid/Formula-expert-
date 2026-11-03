@@ -314,13 +314,6 @@ export function runPowderEngineTestSuite(): {
   });
   assert('Matrix L. Hardness Handling', 'Chelation capacity per dose is unavailable without an explicit wash dose', powderNoDose.chelationSequestration.source === 'INSUFFICIENT_DATA' && powderNoDose.chelationSequestration.calciumCapacityMgPerDose === undefined, powderNoDose.chelationSequestration, 'INSUFFICIENT_DATA / no per-dose capacity');
 
-  const costingWithoutDose = evaluatePowderFormulation({
-    ingredients: formulaWithCosts,
-    productCategory: 'Laundry Powder',
-    batchSizeKg: 100
-  });
-  assert('Costing Engine', 'Cost per wash dose is null when no dose is supplied', costingWithoutDose.costing.costPerWashDose === null, costingWithoutDose.costing.costPerWashDose, null);
-
   // Test M: pH without Target
   const formulaUntargetedCategory = evaluatePowderFormulation({
     ingredients: testFormula2,
@@ -378,6 +371,13 @@ export function runPowderEngineTestSuite(): {
     { name: 'Soda Ash Dense', percentage: 40.00, activeMatterPct: 100, costPerKg: 0.35 },
     { name: 'Sodium Sulphate', percentage: 50.00, activeMatterPct: 100, costPerKg: 0.12 }
   ];
+  const costingWithoutDose = evaluatePowderFormulation({
+    ingredients: formulaWithCosts,
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert('Costing Engine', 'Cost per wash dose is null when no dose is supplied', costingWithoutDose.costing.costPerWashDose === null, costingWithoutDose.costing.costPerWashDose, null);
+
   // Cost per kg = 0.10*1.80 + 0.40*0.35 + 0.50*0.12 = 0.18 + 0.14 + 0.06 = 0.3800 $/kg
   const reportCosting100 = evaluatePowderFormulation({
     ingredients: formulaWithCosts,
