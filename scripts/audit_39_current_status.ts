@@ -65,14 +65,26 @@ export function generateCurrentScientificReport(): CurrentScientificReport {
       assumeSlurryBasisIfPowder: isPowder,
       slurryConcentrationPct: isPowder ? 1.0 : undefined
     });
-    const ph = Number(phRes.pH.toFixed(2));
-    const phPass = ph >= policy.targetPHRange.min && ph <= policy.targetPHRange.max;
+    const phAvailable = typeof phRes.pH === 'number' && Number.isFinite(phRes.pH) && phRes.pH >= 0 && phRes.pH <= 14;
+    const ph = phAvailable ? Number(phRes.pH!.toFixed(2)) : null;
+    const phPass = phAvailable &&
+      ph! >= policy.targetPHRange.min &&
+      ph! <= policy.targetPHRange.max;
 
     const activeRep = ActiveMatterEngine.calculateActiveMatterReport(rawIngs as any, f.batchSizeKg || 100);
-    const activePct = Number(activeRep.surfactants.totalActiveSurfactants.toFixed(2));
-    const activePass = activePct >= policy.activeSurfactantRange.min && activePct <= policy.activeSurfactantRange.max;
+    const activeMatterAuthoritative = activeRep.activeMatterStatus === 'COMPLETE' && activeRep.isFullyAuthoritative;
+    const activePct = activeMatterAuthoritative
+      ? Number(activeRep.surfactants.totalActiveSurfactants.toFixed(2))
+      : null;
+    const activePass = activeMatterAuthoritative &&
+      activePct !== null &&
+      Number.isFinite(activePct) &&
+      activePct >= policy.activeSurfactantRange.min &&
+      activePct <= policy.activeSurfactantRange.max;
 
-    const compRes = calculateFormulationCompatibility(rawIngs as any, ph, catId);
+    const compRes = phAvailable
+      ? calculateFormulationCompatibility(rawIngs as any, ph!, catId)
+      : { compatible: false, alerts: [{ title: 'pH unavailable; compatibility calculation not evaluated.' }] };
 
     const qg = evaluateScientificQualityGate({
       formulaName: f.name,
@@ -82,12 +94,21 @@ export function generateCurrentScientificReport(): CurrentScientificReport {
       waterHardnessPpm: 150
     });
 
-    const massSum = Number(rawIngs.reduce((s: number, ing: any) => s + (ing.percent ?? ing.percentage ?? 0), 0).toFixed(2));
+    const percentageInputsValid = rawIngs.length > 0 && rawIngs.every((ing: any) => {
+      const rawPct = ing.percent ?? ing.percentage ?? ing.percentageInFormula;
+      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      return Number.isFinite(pct) && pct >= 0 && pct <= 100;
+    });
+    const massSum = percentageInputsValid
+      ? Number(rawIngs.reduce((sum: number, ing: any) => sum + Number(ing.percent ?? ing.percentage ?? ing.percentageInFormula), 0).toFixed(2))
+      : Number.NaN;
 
     const issues: string[] = [];
-    if (Math.abs(massSum - 100) > 0.05) issues.push(`MassSum=${massSum}%`);
-    if (!phPass) issues.push(`pH=${ph} (tgt ${policy.targetPHRange.min}-${policy.targetPHRange.max})`);
-    if (!activePass) issues.push(`Active=${activePct}% (tgt ${policy.activeSurfactantRange.min}-${policy.activeSurfactantRange.max}%)`);
+    if (!Number.isFinite(massSum) || Math.abs(massSum - 100) > 0.05) issues.push(`MassSum=${Number.isFinite(massSum) ? massSum + '%' : 'INSUFFICIENT_DATA'}`);
+    if (!phPass) issues.push(`pH=${ph === null ? 'INSUFFICIENT_DATA' : ph} (tgt ${policy.targetPHRange.min}-${policy.targetPHRange.max})`);
+    if (!activePass) issues.push(`Active=${activePct === null ? 'INSUFFICIENT_DATA_OR_UNVERIFIED' : activePct + '%'} (tgt ${policy.activeSurfactantRange.min}-${policy.activeSurfactantRange.max}%)`);
     if (!compRes.compatible) issues.push(`Incompat=[${compRes.alerts.map(a => a.title).join('; ')}]`);
 
     const qgStatus = qg.finalFormulaStatus;
