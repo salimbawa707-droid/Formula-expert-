@@ -368,7 +368,10 @@ export function evaluateCandidateFormulation(
 
   // 9. Authoritative Cleaning Performance Index (CPI)
   const rawCpi = orchestratorResult.cleaningResult?.cpi;
-  const cpi = Number.isFinite(rawCpi) ? Number(rawCpi.toFixed(1)) : Number.NaN;
+  const cpi = orchestratorResult.cleaningResult?.provenance === 'INSUFFICIENT_DATA' ||
+    !Number.isFinite(rawCpi)
+    ? Number.NaN
+    : Number(rawCpi.toFixed(1));
 
   // 10. Authoritative Master Scientific Quality Gate
   const qualityGateReport: MasterScientificQualityGateReport = orchestratorResult.qualityGateResult;
@@ -377,7 +380,7 @@ export function evaluateCandidateFormulation(
 
   // Assemble Candidate Metrics
   const metrics: CandidateScientificMetrics = {
-    totalMassPercentage: Number(totalMass.toFixed(2)),
+    totalMassPercentage: Number.isFinite(totalMass) ? Number(totalMass.toFixed(2)) : Number.NaN,
     pH: Number(finalPH.toFixed(2)),
     activeSurfactantPercentage: Number(activeSurfactantsPct.toFixed(2)),
     viscosityCp,
