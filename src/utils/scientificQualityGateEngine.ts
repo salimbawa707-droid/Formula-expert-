@@ -671,6 +671,18 @@ export function evaluateScientificQualityGate(
   const validationState = validationReport.validationState;
   const readinessLevel = validationReport.readinessLevel;
 
+  if (validationState === 'LAB_FAILED') {
+    blockingIssues.push({
+      id: 'gate-laboratory-test-failed',
+      code: 'ERR_LABORATORY_ACCEPTANCE_FAILED',
+      title: 'Laboratory Acceptance Test Failed',
+      category: 'SPECIFICATION',
+      severity: 'FATAL',
+      message: 'At least one identity-matched, version-matched laboratory measurement failed its recorded acceptance criteria.',
+      recommendation: 'Investigate the failed test, correct the formulation or process, and repeat the relevant laboratory test. Do not approve this formula.'
+    });
+  }
+
   let evidenceStatus: QualityGateEvidenceStatus = 'PREDICTED_ONLY';
   if (validationState === 'LAB_VALIDATED') {
     evidenceStatus = 'FULLY_LAB_VALIDATED';
@@ -802,8 +814,8 @@ export function evaluateScientificQualityGate(
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
     }
-  } else if (evidenceStatus === 'PREDICTED_ONLY' && majorWarnings.length > 0) {
-    // If computational evidence is insufficient (no lab bench results exist yet) AND there are major warnings, return LAB_VALIDATION_REQUIRED
+  } else if (evidenceStatus !== 'FULLY_LAB_VALIDATED') {
+    // Computational predictions or partial measurements cannot authorize a VALID result.
     finalFormulaStatus = 'LAB_VALIDATION_REQUIRED';
     labReadiness = 'READY_FOR_LAB_BENCH';
   } else if (majorWarnings.length > 0) {
