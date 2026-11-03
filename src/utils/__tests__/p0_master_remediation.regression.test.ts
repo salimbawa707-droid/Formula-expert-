@@ -125,10 +125,10 @@ export function runP0MasterRemediationTestSuite(): {
   });
   assert(
     5,
-    'Density calculation handles unknown raw materials gracefully via volume additivity',
-    missingDensityEval.densityResult.densityGPerCm3 > 0,
-    missingDensityEval.densityResult.densityGPerCm3,
-    '> 0'
+    'Density remains unavailable when a required raw-material density is unknown',
+    missingDensityEval.densityResult.densityStatus === 'INSUFFICIENT_DATA' && !Number.isFinite(missingDensityEval.densityResult.densityGPerCm3),
+    { status: missingDensityEval.densityResult.densityStatus, density: missingDensityEval.densityResult.densityGPerCm3 },
+    'INSUFFICIENT_DATA'
   );
 
   // =========================================================================
@@ -141,10 +141,10 @@ export function runP0MasterRemediationTestSuite(): {
   });
   assert(
     6,
-    'Empty formula validation failure returns SCIENTIFICALLY_INVALID, avoiding silent 7.0 pass',
-    emptyFormulaEval.finalScientificStatus === 'SCIENTIFICALLY_INVALID',
+    'Empty formula remains INSUFFICIENT_DATA and cannot receive a silent 7.0 pass',
+    emptyFormulaEval.finalScientificStatus === 'INSUFFICIENT_DATA',
     emptyFormulaEval.finalScientificStatus,
-    'SCIENTIFICALLY_INVALID'
+    'INSUFFICIENT_DATA'
   );
 
   // =========================================================================
@@ -195,10 +195,10 @@ export function runP0MasterRemediationTestSuite(): {
   const inorganicHlb = HLBEngine.calculateBlendedHLB(inorganicFormula);
   assert(
     10,
-    'Inorganic acid/water formula returns blendedHLB = 0 and methodMetadata = NOT_APPLICABLE',
-    inorganicHlb.blendedHLB === 0 && inorganicHlb.methodMetadata === 'NOT_APPLICABLE',
+    'Inorganic acid/water formula reports HLB NOT_APPLICABLE without inventing zero',
+    Number.isNaN(inorganicHlb.blendedHLB) && inorganicHlb.methodMetadata === 'NOT_APPLICABLE',
     { blendedHLB: inorganicHlb.blendedHLB, method: inorganicHlb.methodMetadata },
-    { blendedHLB: 0, method: 'NOT_APPLICABLE' }
+    { blendedHLB: 'UNAVAILABLE', method: 'NOT_APPLICABLE' }
   );
 
   // =========================================================================
