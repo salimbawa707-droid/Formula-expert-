@@ -119,10 +119,12 @@ export function runP1Phase10EndToEndDecisionTestSuite(): { total: number; passed
 
   // Scenario C: Predicted performance PASS + Measured performance FAIL (Precedence of Lab Bench Measured Evidence)
   const measuredFailReport = evaluateScientificQualityGate({
+    formulaId: 'FORM-SCENARIO-C',
+    formulaVersion: '1.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: baseIngredients,
     labMeasurements: [
-      { measurementId: 'lab-m-01', formulaVersion: '1.0', parameterKey: 'cleaningScore', value: 45, unit: '%', testMethod: 'ASTM D4265', testDate: '2026-09-29', provenance: 'MEASURED', replicateNumber: 3 }
+      { measurementId: 'lab-m-01', formulaId: 'FORM-SCENARIO-C', formulaVersion: '1.0', parameterKey: 'cleaningScore', value: 45, unit: '%', testMethod: 'ASTM D4265', testDate: '2026-09-29', provenance: 'MEASURED', replicateNumber: 3 }
     ]
   });
   assert('Scenario C: Measured failure overrides predicted PASS in performance validation', measuredFailReport.performanceStatus === 'BELOW_PREDICTED_CRITERIA', measuredFailReport.performanceStatus, 'BELOW_PREDICTED_CRITERIA');
