@@ -443,7 +443,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       entryPoint: 'calculateFormulationChelationCapacity(ingredients, dose, batchMassKg) / calculateWaterHardnessTolerance(...)',
       inputs: [
         { name: 'ingredients', unit: 'FormulationIngredient[] (% w/w)', description: 'Ingredient names, percentage, and optional active matter/purity.' },
-        { name: 'washDoseGrams', unit: 'g', description: 'Wash dose; defaults to 20 g.' },
+        { name: 'washDoseGrams', unit: 'g', description: 'Explicit user-supplied detergent dose; missing values are not evaluated.' },
         { name: 'batchSizeKg', unit: 'kg', description: 'Batch size for batch-capacity reporting; defaults to 100 kg.' },
       ],
       outputs: [
