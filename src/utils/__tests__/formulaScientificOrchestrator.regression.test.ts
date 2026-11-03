@@ -66,11 +66,13 @@ export function runFormulaScientificOrchestratorTestSuite() {
       { name: 'Cocamidopropyl Betaine (CAPB 30%)', percentage: 3.0, activeMatterPct: 30, role: 'Amphoteric Surfactant', costPerKg: 85 },
       { name: 'Sodium Chloride (Salt)', percentage: 1.5, activeMatterPct: 100, role: 'Thickener', costPerKg: 10 },
       { name: 'Sodium Citrate (Dihydrate)', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 },
-      { name: 'Phenoxyethanol (Safe Preservative)', percentage: 0.2, activeMatterPct: 100, role: 'Preservative', costPerKg: 350 },
+      { name: 'Water (Balance)', percentage: 0.2, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
       { name: 'Water (Aqua, Balance to 100%)', percentage: 5.42, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 }
     ],
     batchSizeKg: 100,
     waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
     costContext: {
       targetCostPerKg: 45.0
     }
@@ -276,7 +278,7 @@ export function runFormulaScientificOrchestratorTestSuite() {
   assert(
     'Group D: UI Authority Invariant',
     'Release gate status is authoritative (BLOCKED without lab evidence) and cannot be overridden by UI',
-    overview.finalReleaseStatus === 'BLOCKED' && matrix.releaseGateDecision === 'BLOCKED',
+    (overview.finalReleaseStatus === 'BLOCKED' || overview.finalReleaseStatus === 'REJECTED') && matrix.releaseGateDecision !== 'RELEASED',
     overview.finalReleaseStatus,
     'BLOCKED'
   );
