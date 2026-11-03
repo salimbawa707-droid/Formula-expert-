@@ -51,7 +51,7 @@ export interface PerformanceLabMeasurements {
 }
 
 export interface PerformanceEvaluationOptions {
-  /** Explicit measured/user-supplied wash-water hardness; absent values use a labelled screening assumption only. */
+  /** Explicit measured/user-supplied wash-water hardness. Missing values block the performance calculation. */
   waterHardnessPpm?: number;
   compatibilityStatus?: string;
   hasCriticalCompatibilityAlert?: boolean;
@@ -72,24 +72,24 @@ export interface CategoryKPI {
 
 export interface FormulationPerformanceResult {
   productCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
-  cpi: number; // Category Performance Index (0-100)
-  overallScore: number; // Alias for CPI
-  rating: number; // Backward compatibility alias
+  cpi: number | null; // Category Performance Index (0-100), null when not evaluated
+  overallScore: number | null; // Alias for CPI
+  rating: number | null; // Backward compatibility alias
   cleaningScore: number | null; // Null / Not applicable for Fabric Softener
   isCleaningApplicable: boolean;
-  performanceIndex: number;
+  performanceIndex: number | null;
   primaryPerformanceDomain: string;
   secondaryPerformanceDomain: string;
-  cleaningPower: 'Outstanding' | 'High' | 'Medium' | 'Low' | 'Conditioning / Non-Detergent';
+  cleaningPower: 'Outstanding' | 'High' | 'Medium' | 'Low' | 'Conditioning / Non-Detergent' | 'Unavailable';
   
   // Specific soil & physical domain sub-scores (0-100)
-  degreasingScore: number;
-  greaseRemoval: number;
-  particulateSoilRemoval: number;
-  foamStabilityScore: number;
-  builderContribution: number;
-  enzymeBonus: number;
-  surfactantSynergy: number;
+  degreasingScore: number | null;
+  greaseRemoval: number | null;
+  particulateSoilRemoval: number | null;
+  foamStabilityScore: number | null;
+  builderContribution: number | null;
+  enzymeBonus: number | null;
+  surfactantSynergy: number | null;
 
   // Category KPIs registry
   categoryKPIs: CategoryKPI[];
@@ -104,7 +104,7 @@ export interface FormulationPerformanceResult {
 
   // Expert Reasoning & Diagnostic Fields
   modelType: string;
-  riskLevel: 'Low' | 'Medium' | 'High';
+  riskLevel: 'Low' | 'Medium' | 'High' | 'UNKNOWN';
   keyPositiveFactors: string[];
   keyNegativeFactors: string[];
   limitations: string;
