@@ -32,7 +32,8 @@ export function validateChelatorCapacity(
     typeof capacity !== 'number' ||
     !Number.isFinite(capacity) ||
     capacity <= 0 ||
-    !evidenceId?.trim()
+    !evidenceId?.trim() ||
+    !AUTHORITATIVE_CHELATOR_DATABASE.some(species => species.evidenceId === evidenceId)
   ) {
     return {
       capacityMgCaCO3PerGram: null,
@@ -84,11 +85,19 @@ export function validateChelatorEvidence(input: ChelatorEvidenceInput): {
   status: 'VALID' | 'INSUFFICIENT_DATA';
   reason?: string;
 } {
-  if (!input.evidenceId || !input.evidenceId.trim()) {
+  const registeredSpecies = input.evidenceId
+    ? AUTHORITATIVE_CHELATOR_DATABASE.find(species => species.evidenceId === input.evidenceId)
+    : undefined;
+  if (
+    !registeredSpecies ||
+    !input.citation?.trim() ||
+    input.citation.trim() !== registeredSpecies.citation ||
+    input.status !== registeredSpecies.scientificStatus
+  ) {
     return {
       verified: false,
       status: 'INSUFFICIENT_DATA',
-      reason: 'MISSING_EVIDENCE_IDENTIFIER'
+      reason: 'EVIDENCE_ID_CITATION_OR_STATUS_NOT_REGISTERED'
     };
   }
   return {
