@@ -709,7 +709,12 @@ export class ActiveMatterEngine {
   } {
     const name = (ing.name || '').trim();
     const actualActivePct = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity ?? null;
-    
+
+    // "Balance to 100%" is a formulation instruction, not a commercial-grade assay.
+    if (/\b(balance|q\.?s\.?|quantity\s+sufficient|make[\s-]?up)\b/i.test(name)) {
+      return { hasConflict: false, expectedActivePct: null, actualActivePct, message: '' };
+    }
+
     const match = name.match(/(\d+(?:\.\d+)?)%/);
     if (!match) {
       return { hasConflict: false, expectedActivePct: null, actualActivePct, message: '' };
