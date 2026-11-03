@@ -109,8 +109,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   // -------------------------------------------------------------
   // Add a hazardous ingredient (e.g. powder enzyme) then remove it
   const formulaWithHazard: FormulationIngredient[] = [
-    ...editedIngredients,
-    { id: '1', name: 'Water / Aqua', percentage: 73.7, percent: 73.7, activeMatterPct: 0, costPerKg: 1, role: 'Solvent', category: 'Solvent' },
+    ...editedIngredients.map(ing => ing.id === '1' ? { ...ing, percentage: 73.7, percent: 73.7 } : ing),
     { id: '6', name: 'Subtilisin Protease Enzyme Powder', percentage: 2, percent: 2, activeMatterPct: 100, costPerKg: 800, role: 'Enzyme', category: 'Enzyme' }
   ];
 
