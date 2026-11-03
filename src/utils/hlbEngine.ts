@@ -1,6 +1,20 @@
 import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
 
+// Exact, grade-specific aliases only. Avoid fuzzy substring identity matching.
+const HLB_EXACT_CANONICAL_ALIASES: Record<string, string> = {
+  'sles 70%': 'sles-70',
+  'sles 70% paste': 'sles-70',
+  'sles 28%': 'sles-28',
+  'sles 28% liquid': 'sles-28',
+  'lae-7': 'lae-7',
+  'lae-9': 'lae-9',
+  'labsa 90%': 'labsa-90',
+  'labsa 96%': 'labsa-96',
+  'aos 38%': 'aos-38',
+  'capb 30%': 'capb-30'
+};
+
 /**
  * ============================================================================
  * AUTHORITATIVE HLB & EMULSIFICATION ENGINE (Phase 2 Consolidation)
@@ -158,11 +172,13 @@ export class HLBEngine {
     if (!canonicalMatch && rawName) {
       // HLB identity resolution must not use substring matching: short or generic
       // names can collide with unrelated chemicals (e.g. TEA in Tea Tree Oil).
-      // Ambiguous grade/name matching is left unresolved rather than guessed.
+      // Only exact INCI/canonical/curated grade aliases are accepted.
+      const exactAliasId = HLB_EXACT_CANONICAL_ALIASES[lowerName];
       canonicalMatch = UNIVERSAL_INGREDIENTS.find(u =>
         lowerName === u.name.toLowerCase() ||
         (!!u.inciName && lowerName === u.inciName.toLowerCase()) ||
-        (Array.isArray(u.keywords) && u.keywords.some(keyword => lowerName === String(keyword).toLowerCase()))
+        (Array.isArray(u.keywords) && u.keywords.some(keyword => lowerName === String(keyword).toLowerCase())) ||
+        (!!exactAliasId && u.id === exactAliasId)
       );
     }
 
