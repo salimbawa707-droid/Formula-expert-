@@ -266,7 +266,7 @@ const neutralIngs = [
 ];
 
 const unsupportedPHIngredients = new Set([
-  'SLES 70%', 'AOS 38%', 'CAPB 30%', 'CMC', 'Enzyme Blend',
+  'SLES 70%', 'AOS 38%', 'CAPB 30%', 'Sodium Sulfate', 'CMC', 'Enzyme Blend',
   'Fragrance', 'Optical Brightener', 'Glycerin'
 ]);
 
