@@ -18,6 +18,7 @@ export interface EvaluateFeedbackDecisionInput {
   evaluations: SpecificationEvaluationResult[];
   comparisons?: PredictionVsMeasurementComparison[];
   replicateCount?: number;
+  evidenceVerified?: boolean;
 }
 
 export interface FeedbackDecisionOutput {
@@ -32,13 +33,25 @@ export interface FeedbackDecisionOutput {
 export function determineFeedbackDecision(
   input: EvaluateFeedbackDecisionInput
 ): FeedbackDecisionOutput {
-  const { evaluations, comparisons = [], replicateCount = 1 } = input;
+  const { evaluations, comparisons = [], replicateCount = 1, evidenceVerified = false } = input;
 
   const hasOutofSpec = evaluations.some(e => e.state === 'OUTSIDE_SPECIFICATION');
   const hasPredictionDeviations = evaluations.some(e => e.state === 'PREDICTION_DEVIATION') || comparisons.some(c => !c.isWithinPredictionTolerance);
   const hasInsufficientData = evaluations.some(e => e.state === 'INSUFFICIENT_DATA');
 
-  // Rule 1: Out of spec parameter supported by lab measurement requires reformulation candidate
+  // Fail closed: a numerical deviation without verified laboratory evidence is not actionable.
+  if (!evidenceVerified) {
+    return {
+      actionCategory: 'REQUIRES_MORE_DATA',
+      rationale: 'Observed values are not backed by verified LAB_VALIDATED/CERTIFIED evidence and valid instrument provenance. No reformulation decision is permitted.',
+      recommendedNextStep: 'Complete LIMS evidence verification and instrument-calibration review before evaluating formulation changes.',
+      hasOutofSpec,
+      hasPredictionDeviations,
+      hasInsufficientData: true,
+    };
+  }
+
+  // Rule 1: Out of spec parameter supported by verified lab measurement requires reformulation candidate
   if (hasOutofSpec) {
     return {
       actionCategory: 'REFORMULATION_CANDIDATE',
