@@ -51,7 +51,7 @@ import {
 
 export type ScientificValidityStatus = 'VALID' | 'INVALID' | 'INSUFFICIENT_DATA';
 export type QualityGateSpecificationStatus = 'PASS' | 'OUT_OF_SPEC' | 'NOT_DEFINED' | 'INSUFFICIENT_DATA';
-export type QualityGateCompatibilityStatus = 'COMPATIBLE' | 'COMPATIBLE_WITH_WARNINGS' | 'INCOMPATIBLE' | 'CRITICAL_HAZARD';
+export type QualityGateCompatibilityStatus = 'COMPATIBLE' | 'COMPATIBLE_WITH_WARNINGS' | 'INCOMPATIBLE' | 'CRITICAL_HAZARD' | 'INSUFFICIENT_DATA';
 export type QualityGatePerformanceStatus = 'MEETS_PREDICTED_CRITERIA' | 'BELOW_PREDICTED_CRITERIA' | 'NOT_APPLICABLE' | 'INSUFFICIENT_DATA';
 export type QualityGateEvidenceStatus = 'PREDICTED_ONLY' | 'PARTIALLY_MEASURED' | 'FULLY_LAB_VALIDATED' | 'INSUFFICIENT_DATA';
 export type QualityGateLabReadiness =
