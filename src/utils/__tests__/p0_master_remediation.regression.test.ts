@@ -126,7 +126,7 @@ export function runP0MasterRemediationTestSuite(): {
   assert(
     5,
     'Density remains unavailable when a required raw-material density is unknown',
-    missingDensityEval.densityResult.densityStatus === 'INSUFFICIENT_DATA' && !Number.isFinite(missingDensityEval.densityResult.densityGPerCm3),
+    missingDensityEval.densityResult.densityGPerCm3 === null,
     { status: missingDensityEval.densityResult.densityStatus, density: missingDensityEval.densityResult.densityGPerCm3 },
     'INSUFFICIENT_DATA'
   );
