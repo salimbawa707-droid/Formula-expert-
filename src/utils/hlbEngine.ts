@@ -182,7 +182,11 @@ export class HLBEngine {
     let activeMatterPct: number | null = null;
     if (explicitActive !== undefined && explicitActive !== null && Number.isFinite(Number(explicitActive)) && Number(explicitActive) >= 0 && Number(explicitActive) <= 100) {
       activeMatterPct = Number(explicitActive);
-    } else if (canonicalMatch?.activeDefault !== undefined && canonicalMatch?.activeDefault !== null) {
+    } else if (
+      canonicalMatch?.activeDefault !== undefined &&
+      canonicalMatch?.activeDefault !== null &&
+      !canonicalMatch.unknownProperties?.includes('activeMatter')
+    ) {
       activeMatterPct = canonicalMatch.activeDefault;
     } else if (isWater) {
       activeMatterPct = 0;
@@ -202,7 +206,13 @@ export class HLBEngine {
     }
 
     // Case B: Canonical library entry has authoritative HLB
-    if (canonicalMatch && canonicalMatch.hlb !== undefined && canonicalMatch.hlb !== null && !isNaN(Number(canonicalMatch.hlb))) {
+    if (
+      canonicalMatch &&
+      canonicalMatch.hlb !== undefined &&
+      canonicalMatch.hlb !== null &&
+      !canonicalMatch.unknownProperties?.includes('hlb') &&
+      Number.isFinite(Number(canonicalMatch.hlb))
+    ) {
       return {
         hlb: Number(canonicalMatch.hlb),
         dataSource: 'authoritative',
