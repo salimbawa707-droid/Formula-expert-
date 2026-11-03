@@ -346,6 +346,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   if (orchestratorResult.scientificValidity !== 'VALID') missingCriticalInputs.push('scientificValidity');
   if (blockingIssues.length > 0) missingCriticalInputs.push('blockingIssues');
   if (!Number.isFinite(rawActiveSurfactants) || !Number.isFinite(rawTotalActiveMatter)) missingCriticalInputs.push('activeMatter');
+  if (orchestratorResult.activeMatterResult?.verified !== true) missingCriticalInputs.push('activeMatterProvenance');
   if (!Number.isFinite(rawPH) || rawPH < 0 || rawPH > 14) missingCriticalInputs.push('pH');
   if (!Number.isFinite(rawCompatibility) || rawCompatibility < 0 || rawCompatibility > 100) missingCriticalInputs.push('compatibility');
   const performanceMetric = profile.isCleaningApplicable
@@ -371,10 +372,6 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
       `AI_GRADE_NOT_EVALUABLE: Required scientific/commercial inputs are missing, invalid, or blocked: ${[...new Set(missingCriticalInputs)].join(', ')}. No composite grade is calculated.`,
       [...new Set(missingCriticalInputs)]
     );
-  }
-
-  if (orchestratorResult.activeMatterResult?.verified !== true) {
-    unknownParameters.push('activeMatterProvenance');
   }
 
   const strengths: string[] = [];
@@ -574,7 +571,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
     scientificEngineVersion: AI_GRADE_ENGINE_VERSION,
     ingredientDatabaseVersion: INGREDIENT_DB_VERSION,
     calculationVersion: '2026.1',
-    scientificValidity: orchestratorResult.scientificValidity || 'VALID',
+    scientificValidity: orchestratorResult.scientificValidity,
     performanceStatus: profile.isCleaningApplicable ? 'ACTIVE_DETERGENCY' : 'CONDITIONING_SURFACE_CARE',
     evidenceLevel: labEvidenceResult.evidenceLevel,
     confidence,
