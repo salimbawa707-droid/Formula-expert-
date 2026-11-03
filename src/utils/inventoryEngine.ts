@@ -250,7 +250,7 @@ export function checkProductionBatchAvailability(
     if (!validPercentage) {
       blockReasons.push(`${ing.name || `Ingredient ${index + 1}`}: percentage is missing or outside the valid 0–100% range.`);
     }
-    const percentage = validPercentage ? rawPct : 0;
+    const percentage = validPercentage ? Number(rawPct) : 0;
     totalFormulaPercentage += percentage;
     
     const requiredKg = Number(((batchSizeKg * percentage) / 100).toFixed(3));
