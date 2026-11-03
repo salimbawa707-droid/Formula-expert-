@@ -66,6 +66,7 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
       waterHardnessPpm: 150,
       dosageGramsPerLiter: 2.0,
       washVolumeLiters: 10,
+      batchSizeKg: 100,
       substrate: 'cotton',
       soilType: 'standard sebum',
       washTimeMinutes: 30
@@ -122,7 +123,7 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
     formulaVersion: '1.0.0',
     categoryId: 'LAUNDRY_LIQUID',
     operator: 'Lab Tech',
-    testConditions: { temperatureC: 25, pH: 8.5, waterHardnessPpm: 150, dosageGramsPerLiter: 2.0, washVolumeLiters: 10, substrate: 'cotton', soilType: 'standard sebum', washTimeMinutes: 30 },
+    testConditions: { temperatureC: 25, pH: 8.5, waterHardnessPpm: 150, dosageGramsPerLiter: 2.0, washVolumeLiters: 10, batchSizeKg: 100, substrate: 'cotton', soilType: 'standard sebum', washTimeMinutes: 30 },
     ingredients: baseIngredients,
     measurements: { cleaningScore: 86.5 }
   });
