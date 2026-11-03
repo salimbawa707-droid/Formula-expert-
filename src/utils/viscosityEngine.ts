@@ -362,27 +362,40 @@ export class ViscosityEngine {
       ingredient: ing,
       resolution: ActiveMatterEngine.resolveIngredientActive(ing)
     }));
-    const unresolvedSurfactants = resolvedIngredients.filter(({ resolution }) =>
-      resolution.isSurfactant &&
-      (resolution.activeMatterPct === null || Boolean(resolution.conflict))
-    );
-    if (unresolvedSurfactants.length > 0) {
-      return unavailableReport(
-        `Surfactant active assay is missing or grade-conflicted for: ${unresolvedSurfactants.map(({ ingredient }) => ingredient.name || 'unnamed ingredient').join(', ')}.`
-      );
-    }
 
-    // Recompute the aggregate from this exact formula. Never trust a caller-supplied
+    // Recompute the aggregate from this exact formula. Never trust a caller-provided
     // aggregate that could be stale or scoped to a different ingredient list.
     const activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
     const totalWaterPct = activeMatterReport.totalWaterPct;
     const totalRawPct = activeMatterReport.totalRawPercentage;
 
-    const isAnhydrousOrSolidFormula = 
+    const isAnhydrousOrSolidFormula =
       isSolidCategory || (totalWaterPct < 5.0 && totalRawPct > 70 && !list.some(i => (i.name || '').toLowerCase().includes('water')));
 
+    // Solid/powder products have no liquid viscosity. Resolve this applicability
+    // boundary before liquid-only surfactant assay requirements.
     if (isAnhydrousOrSolidFormula) {
       return this.createUnsupportedSolidReport(productCategory);
+    }
+
+    const hasExplicitActiveAssay = (ingredient: FormulationIngredient): boolean => {
+      const value = ingredient?.activeMatterPct ??
+        (ingredient as any)?.activePercent ??
+        (ingredient as any)?.activeMatterPurity ??
+        (ingredient as any)?.activePct ??
+        (ingredient as any)?.purity;
+      return value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '');
+    };
+
+    const unresolvedSurfactants = resolvedIngredients.filter(({ ingredient, resolution }) =>
+      resolution.isSurfactant &&
+      (resolution.activeMatterPct === null ||
+        (Boolean(resolution.conflict) && hasExplicitActiveAssay(ingredient)))
+    );
+    if (unresolvedSurfactants.length > 0) {
+      return unavailableReport(
+        `Surfactant active assay is missing or grade-conflicted for: ${unresolvedSurfactants.map(({ ingredient }) => ingredient.name || 'unnamed ingredient').join(', ')}.`
+      );
     }
 
     // Step 2: Extract Surfactant, Polymer, Electrolyte, and Hydrotrope Contributions
