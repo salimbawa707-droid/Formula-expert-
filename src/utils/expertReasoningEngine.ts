@@ -110,6 +110,9 @@ export interface ExpertReasoningInput {
   ingredients: FormulationIngredient[];
   productCategory?: string;
   waterHardnessPpm?: number;
+  washVolumeL?: number;
+  washDoseGrams?: number;
+  safetyMarginPct?: number;
   batchSizeKg?: number;
   calculatedPH?: number;
   totalActiveMatter?: number;
@@ -410,16 +413,16 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
 
   // 5. Hard Water Chelation Deficit
   if (waterHardness !== null && (input.hardnessSufficiency === 'insufficient' || (waterHardness > 200 && organicChelatorPct === 0 && inorganicBuilderPct < 5))) {
-    const dynamicReq = calculateDynamicChelatorRequirement(ingredients, waterHardness, 10, 20, 25);
+    const dynamicReq = calculateDynamicChelatorRequirement(ingredients, waterHardness, input.washVolumeL, input.washDoseGrams, input.safetyMarginPct);
     
     issues.push({
       id: 'chelation-deficit',
       issue: `Hard Water Chelation Deficit (${waterHardness} ppm hard water)`,
       whyItMatters: 'Unbound Ca2+ and Mg2+ water hardness ions bind and precipitate anionic surfactants (SLES/LABSA), causing complete loss of washing foaming.',
       scientificBasis: 'Surfactant-calcium precipitation solubility products (Ksp) causing inactivation.',
-      scientificType: 'CALCULATED',
+      scientificType: 'PREDICTIVE',
       severity: 'High',
-      whatToCheck: `Add stoichiometric chelators like GLDA 47% or Sodium Citrate.`
+      whatToCheck: `Confirm hardness and the complete wash scenario; do not assign a chelator percentage without explicit wash volume, dose and grade-specific capacity.`
     });
 
     if (dynamicReq.isSufficient) {
@@ -439,10 +442,10 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
         id: 'rec-chelation',
         problem: `Anionic surfactants are exposed to unsequestered ${waterHardness} ppm hard water ions.`,
         why: 'Triggers calcium-soap precipitate and graying on textiles.',
-        recommendedAction: `Add exactly ${dynamicReq.additionalGLDA47RequiredPct}% GLDA 47% or ${dynamicReq.additionalCitrateRequiredPct}% Sodium Citrate to fully shield active matter.`,
+        recommendedAction: dynamicReq.status === 'CALCULATED' ? `Evaluate the calculated addition of ${dynamicReq.additionalGLDA47RequiredPct}% GLDA 47% or ${dynamicReq.additionalCitrateRequiredPct}% Sodium Citrate against the supplied wash scenario; validate experimentally before use.` : 'No chelator percentage is calculated. Enter exact final wash-liquor volume, detergent dose and safety margin, then verify the exact chelator grade and binding capacity.',
         expectedEffect: 'Binds Ca2+/Mg2+ stoichiometrically, preserving surfactant foam.',
         tradeOff: 'Increases raw material cost, slightly increases formula salt burden.',
-        confidence: 'HIGH',
+        confidence: dynamicReq.status === 'CALCULATED' ? 'MEDIUM' : 'LOW',
         recommendationType: 'ADD_INGREDIENT',
         authority: 'COMPATIBILITY_ENGINE',
         calculationBasis: `deterministic calculation base: ${dynamicReq.calculationBasis}`,
@@ -453,7 +456,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
           ingredientIds,
           relevantEngines: ['ChelatorEngine'],
           inputData: { waterHardness, organicChelatorPct },
-          scientificOutputs: { isSufficient: false, additionalGLDAPct: dynamicReq.additionalGLDA47RequiredPct },
+          scientificOutputs: { status: dynamicReq.status, isSufficient: dynamicReq.status === 'CALCULATED' ? dynamicReq.isSufficient : null, additionalGLDAPct: dynamicReq.status === 'CALCULATED' ? dynamicReq.additionalGLDA47RequiredPct : null },
           evidenceProvenance: 'PREDICTED_STABILITY',
           rulesTriggered: ['HARD_WATER_ANIONIC_PRECIPITATION'],
           uncertainty: 'HIGH_CONFIDENCE'
