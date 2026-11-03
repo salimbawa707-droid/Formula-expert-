@@ -341,7 +341,9 @@ export function executeAtomicBatchDeduction(
     return {
       success: false,
       updatedInventory: currentInventory,
-      errorMessage: `Production blocked: Insufficient stock for ${check.insufficientItems.join(', ')}.`
+      errorMessage: check.blockReasons.length > 0
+        ? `Production blocked: ${check.blockReasons.join(' ')}`
+        : `Production blocked: Insufficient stock for ${check.insufficientItems.join(', ')}.`
     };
   }
 
