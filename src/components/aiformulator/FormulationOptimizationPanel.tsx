@@ -29,7 +29,7 @@ interface FormulationOptimizationPanelProps {
   currentIngredients: FormulationIngredient[];
   productCategory: string;
   batchSizeKg?: number;
-  waterHardnessPpm?: number;
+  waterHardnessPpm?: number | null;
   currentCostPerKg?: number;
   currentCpi?: number;
   currentPH?: number;

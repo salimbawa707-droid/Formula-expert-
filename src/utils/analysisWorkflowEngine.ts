@@ -254,7 +254,7 @@ export interface FormulaAnalysisSnapshot {
   formulaName: string;
   productCategory: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   ingredients: FormulationIngredient[];
   powderLabInputs?: PowderLabMeasurementInputs;
   activeFormulaVersion?: string;
@@ -268,13 +268,13 @@ export function calculateFormulaFingerprint(inputs: {
   formulaName: string;
   productCategory: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   ingredients: Array<{ id?: string; name: string; percentage?: number; activeMatterPct?: number; role?: string; costPerKg?: number | null }>;
   powderLabInputs?: PowderLabMeasurementInputs;
 }): string {
   const cleanCat = (inputs.productCategory || '').trim().toLowerCase();
   const cleanName = (inputs.formulaName || '').trim().toLowerCase();
-  const cleanHardness = Number(inputs.waterHardnessPpm) || 0;
+  const cleanHardness = inputs.waterHardnessPpm === null ? 'UNKNOWN' : String(inputs.waterHardnessPpm);
 
   const sortedIngs = (inputs.ingredients || [])
     .map((ing) => {
@@ -465,7 +465,7 @@ export async function executeStagedScientificAnalysis(
     formulaName: snapshot.formulaName || 'Unnamed Formulation',
     productCategory: snapshot.productCategory,
     batchSizeKg: snapshot.batchSizeKg,
-    waterHardnessPpm: Math.max(0, Number(snapshot.waterHardnessPpm) || 0),
+    waterHardnessPpm: typeof snapshot.waterHardnessPpm === 'number' && Number.isFinite(snapshot.waterHardnessPpm) && snapshot.waterHardnessPpm >= 0 ? snapshot.waterHardnessPpm : null,
     ingredients: rawIngredients.map((i) => ({ ...i })),
     powderLabInputs: snapshot.powderLabInputs ? { ...snapshot.powderLabInputs } : undefined,
     activeFormulaVersion: snapshot.activeFormulaVersion || '1.0.0'
@@ -680,14 +680,16 @@ export async function executeStagedScientificAnalysis(
   if (checkAbort()) throw new Error('Analysis cancelled');
 
   const hardnessPolicy = getProductHardnessPolicy(canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined);
-  const hardnessResult = calculateWaterHardnessTolerance(
-    immutableSnapshot.ingredients,
-    immutableSnapshot.waterHardnessPpm,
-    hardnessPolicy.defaultWashVolumeL,
-    hardnessPolicy.defaultDoseGrams,
-    immutableSnapshot.batchSizeKg,
-    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
-  );
+  const hardnessResult = immutableSnapshot.waterHardnessPpm === null
+    ? { status: 'NOT_EVALUATED', maxSupportedPpm: null, hardnessLoadMg: null, totalSequestrationMg: null }
+    : calculateWaterHardnessTolerance(
+        immutableSnapshot.ingredients,
+        immutableSnapshot.waterHardnessPpm,
+        hardnessPolicy.defaultWashVolumeL,
+        hardnessPolicy.defaultDoseGrams,
+        immutableSnapshot.batchSizeKg,
+        canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
+      );
 
   let chelatorActivePct = 0;
   const chelatorNames: string[] = [];
@@ -713,7 +715,7 @@ export async function executeStagedScientificAnalysis(
   };
 
   completeStage('WATER_CHELATION', 'COMPLETED', {
-    details: `Hardness load: ${immutableSnapshot.waterHardnessPpm} ppm | Max supported: ${hardnessResult.maxSupportedPpm} ppm | Status: ${hardnessResult.status}`,
+    details: immutableSnapshot.waterHardnessPpm === null ? 'Water hardness not supplied; chelation demand and protection were not evaluated.' : `Hardness load: ${immutableSnapshot.waterHardnessPpm} ppm | Max supported: ${hardnessResult.maxSupportedPpm} ppm | Status: ${hardnessResult.status}`,
     intermediate: chelationIntermediate
   });
 
@@ -747,7 +749,7 @@ export async function executeStagedScientificAnalysis(
       ingredients: immutableSnapshot.ingredients,
       productCategory: immutableSnapshot.productCategory,
       batchSizeKg: immutableSnapshot.batchSizeKg,
-      waterHardnessPpm: immutableSnapshot.waterHardnessPpm,
+      waterHardnessPpm: immutableSnapshot.waterHardnessPpm ?? undefined,
       labMeasurements: immutableSnapshot.powderLabInputs || {}
     });
   } else {
@@ -792,7 +794,7 @@ export async function executeStagedScientificAnalysis(
     canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     undefined,
     {
-      waterHardnessPpm: immutableSnapshot.waterHardnessPpm,
+      ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
@@ -804,7 +806,7 @@ export async function executeStagedScientificAnalysis(
     canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     undefined,
     {
-      waterHardnessPpm: immutableSnapshot.waterHardnessPpm,
+      ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
@@ -898,7 +900,7 @@ export async function executeStagedScientificAnalysis(
   const climateAnalysis = analyzeClimateAndHardWater(
     immutableSnapshot.ingredients,
     'Temperate',
-    immutableSnapshot.waterHardnessPpm
+    immutableSnapshot.waterHardnessPpm ?? undefined
   );
 
   const costingIntermediate = {
@@ -935,7 +937,7 @@ export async function executeStagedScientificAnalysis(
       costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
     })),
     batchSizeKg: immutableSnapshot.batchSizeKg,
-    waterHardnessPpm: immutableSnapshot.waterHardnessPpm,
+    ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
     costContext: {
       targetCostPerKg: 45.0
     }
@@ -1008,11 +1010,11 @@ export async function executeStagedScientificAnalysis(
       dimension: 'Hard-Water Protection',
       engineOrFunction: 'chelatorEngine',
       formulaFingerprint: analyzedFingerprint,
-      status: 'CALCULATED',
-      valueDisplay: `${orchestratorResult.hardnessResult.status} (Supports ${orchestratorResult.hardnessResult.maxSupportedPpm} ppm)`,
-      confidenceLevel: '90% (Stoichiometric Ca²⁺ Chelation)',
-      consistencyStatus: 'CONSISTENT',
-      details: `Tested Load: ${immutableSnapshot.waterHardnessPpm} ppm vs Max Capacity: ${orchestratorResult.hardnessResult.maxSupportedPpm} ppm`
+      status: immutableSnapshot.waterHardnessPpm === null ? 'UNKNOWN' : 'CALCULATED',
+      valueDisplay: immutableSnapshot.waterHardnessPpm === null ? 'NOT_EVALUATED — hardness not supplied' : `${orchestratorResult.hardnessResult.status} (Supports ${orchestratorResult.hardnessResult.maxSupportedPpm} ppm)`,
+      confidenceLevel: immutableSnapshot.waterHardnessPpm === null ? 'UNKNOWN' : 'Calculated; not laboratory verified',
+      consistencyStatus: immutableSnapshot.waterHardnessPpm === null ? 'UNVERIFIED' : 'CONSISTENT',
+      details: immutableSnapshot.waterHardnessPpm === null ? 'No hardness input was provided; no protection claim is made.' : `Tested Load: ${immutableSnapshot.waterHardnessPpm} ppm vs Max Capacity: ${orchestratorResult.hardnessResult.maxSupportedPpm} ppm`
     },
     {
       dimension: 'Finished Raw Material Cost',

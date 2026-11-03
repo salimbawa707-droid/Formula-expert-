@@ -185,6 +185,17 @@ export function runExpertReasoningTestSuite() {
   // TEST 9: No Stale Recommendations & Advisory Integrity
   assert(updatedReport.recommendations.every(r => r.problem && r.recommendedAction && r.tradeOff && r.confidence), 'Test 9: All recommendations contain Problem, Why, Action, Expected Effect, Trade-off, and Confidence');
 
+  // TEST 11: Unknown hardness must remain unknown (never assume 150 ppm)
+  const unknownHardnessReport = evaluateExpertReasoning({
+    ingredients: healthyIngredients,
+    productCategory: 'Laundry Liquid',
+    calculatedPH: 8.2,
+    totalActiveMatter: 16.4,
+    totalPercentage: 100.0
+  });
+  assert(!unknownHardnessReport.issues.some(i => i.id === 'chelation-deficit'), 'Test 11: Missing hardness does not trigger a fabricated 150 ppm chelation assessment');
+  assert(unknownHardnessReport.strengths.some(s => s.description.includes('water hardness is unknown')), 'Test 11: Report explicitly states hard-water protection was not evaluated');
+
   // TEST 10: Grounded Scientific Confidence & Types
   const allIssuesHaveValidBasis = healthyReport.issues.concat(excessBuilderReport.issues, ionicConflictReport.issues, enzymeMismatchReport.issues).every(
     i => ['CALCULATED', 'PREDICTIVE', 'EMPIRICAL', 'LABORATORY VERIFIED'].includes(i.scientificType) &&
