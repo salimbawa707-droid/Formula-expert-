@@ -83,10 +83,11 @@ export function ingestExperimentResult(
   ) {
     quality = 'INVALID';
   } else if (
-    input.verificationStatus === 'REJECTED' ||
-    input.evidenceLevel === 'INSUFFICIENT_DATA' ||
-    input.evidenceLevel === 'NOT_TESTED'
+    input.verificationStatus !== 'VERIFIED' ||
+    (input.evidenceLevel !== 'LAB_VALIDATED' && input.evidenceLevel !== 'CERTIFIED')
   ) {
+    // A recorded measurement may enter the ledger, but raw/unreviewed evidence
+    // cannot be treated as an accepted feedback observation.
     quality = 'REQUIRES_REVIEW';
   }
 
