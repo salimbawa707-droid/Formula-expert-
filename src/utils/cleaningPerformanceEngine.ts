@@ -168,12 +168,22 @@ export function calculateCleaningPerformance(
   let hasAntiRedeposition = false;
   let siliconeOrEsterquatPct = 0;
   let missingSurfactantActiveMatter = false;
+  let invalidIngredientPercentage = false;
+  let totalFormulaPercentage = 0;
 
   for (const ing of safeIngs) {
     const name = (ing?.name || '').toLowerCase();
     const cat = (ing?.category || ing?.role || '').toLowerCase();
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    if (pct <= 0) continue;
+    const rawPct = (ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      invalidIngredientPercentage = true;
+      continue;
+    }
+    totalFormulaPercentage += pct;
+    if (pct === 0) continue;
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const resolvedActive = explicitActive === undefined || explicitActive === null
@@ -271,15 +281,20 @@ export function calculateCleaningPerformance(
     missingSurfactantActiveMatter ||
     !Number.isFinite(activeSurfactant) ||
     (requiresTotalActiveMatter && !Number.isFinite(totalActiveMatter));
+  const formulaMassUnbalanced = safeIngs.length === 0 || Math.abs(totalFormulaPercentage - 100) > 0.05;
   // Only LAUNDRY_LIQUID currently applies the wash-water hardness factor in its KPI model.
   // Do not demand irrelevant hardness inputs for glass, toilet, softener, or other categories.
   const requiresHardnessScenario = category === 'LAUNDRY_LIQUID';
   const hardnessUnavailable = requiresHardnessScenario && (!hasExplicitHardness || !hasExplicitWashScenario);
 
-  if (!Number.isFinite(phVal) || activeMatterUnavailable || hardnessUnavailable) {
+  if (!Number.isFinite(phVal) || activeMatterUnavailable || hardnessUnavailable || invalidIngredientPercentage || formulaMassUnbalanced) {
     const reason = !Number.isFinite(phVal)
       ? 'A valid calculated or measured pH (0–14) is required; no default pH is substituted.'
-      : activeMatterUnavailable
+      : invalidIngredientPercentage
+        ? 'One or more ingredient percentages are missing or invalid; the performance model will not treat them as zero.'
+        : formulaMassUnbalanced
+          ? `Formula percentages total ${totalFormulaPercentage.toFixed(3)}%, not 100.000%; performance cannot be evaluated on an incomplete composition.`
+          : activeMatterUnavailable
         ? (missingSurfactantActiveMatter || !Number.isFinite(activeSurfactant)
           ? 'At least one surfactant active-matter input is unknown or invalid; its contribution cannot be treated as zero.'
           : 'Total active matter is incomplete for this product category; residue/mildness KPIs cannot be calculated safely.')
