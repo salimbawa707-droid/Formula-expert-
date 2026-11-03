@@ -310,6 +310,24 @@ export function evaluateScientificQualityGate(
       ? null
       : Number(resolvedActivePurity);
     const activeResolution = ActiveMatterEngine.resolveIngredientActive(ing);
+    const explicitActiveValue = ing?.activeMatterPct ?? ing?.activePercent ?? (ing as any)?.activeMatterPurity ?? (ing as any)?.activePct ?? (ing as any)?.purity;
+    if (
+      explicitActiveValue !== null &&
+      explicitActiveValue !== undefined &&
+      activeResolution.conflict &&
+      !(ing as any)?.confirmedGradeActiveOverride
+    ) {
+      blockingIssues.push({
+        id: `gate-active-grade-conflict-${name}`,
+        code: 'ERR_ACTIVE_MATTER_GRADE_CONFLICT',
+        title: `Active Matter Conflicts With Commercial Grade (${name})`,
+        category: 'VALIDITY',
+        severity: 'FATAL',
+        message: activeResolution.conflict.message,
+        recommendation: 'Correct the active-matter value to match the named commercial grade, or explicitly confirm a documented grade override before calculation.'
+      });
+      scientificValidity = 'INVALID';
+    }
     if (activePurity === null && activeResolution.isSurfactant) {
       majorWarnings.push({
         id: `gate-active-purity-unavailable-${name}`,
