@@ -644,7 +644,10 @@ export function evaluateScientificQualityGate(
       measuredGreaseRemovalPct: labMeasurements.find(m => m.parameterKey === 'greaseCutting')?.value
     },
     {
-      waterHardnessPpm,
+      waterHardnessPpm: waterHardnessPpm ?? undefined,
+      washVolumeL: input.washVolumeL,
+      washDoseGrams: input.washDoseGrams,
+      batchSizeKg: input.batchSizeKg,
       compatibilityStatus,
       hasCriticalCompatibilityAlert: compatibilityStatus === 'INCOMPATIBLE' || compatibilityStatus === 'CRITICAL_HAZARD'
     }
