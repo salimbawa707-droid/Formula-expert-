@@ -90,7 +90,7 @@ export function ingestExperimentResult(
     quality = 'REQUIRES_REVIEW';
   }
 
-  if (quality === 'VALID' || quality === 'REQUIRES_REVIEW') {
+  if (quality === 'VALID') {
     const sameMeasurement = existingResults.find(
       result => result.sampleId === input.sampleId && result.measurementId === input.measurementId
     );
