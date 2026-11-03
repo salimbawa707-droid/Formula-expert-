@@ -109,10 +109,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Gradle 8.5
+      - name: Install Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.5'
+          gradle-version: '8.11.1'
           # The repository's wrapper JAR is malformed; this job invokes the
           # pinned Gradle distribution directly, not the wrapper script.
           validate-wrappers: false
@@ -122,8 +122,8 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Android API 34 SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+      - name: Install Android API 36 SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
