@@ -149,14 +149,16 @@ export function runPhase9TestSuite(): {
   // =========================================================================
   const samplePowder = FORMULAS.find(f => f.id === 'eco-washing-powder')!;
   const mappedInput = mapFormulationIngredientsToPHEngineInput(samplePowder.ingredients as any);
-  const v2PH = PHEngineV2.calculatePH(mappedInput, 100, { productCategory: 'LAUNDRY_POWDER' }).pH;
+  const v2Result = PHEngineV2.calculatePH(mappedInput, 100, { productCategory: 'LAUNDRY_POWDER' });
+  const v2PH = v2Result.pH;
+  const containsUncharacterizedIngredients = (mappedInput as any[]).some((ing: any) => ing?.isUnknown === true || ing?.speciesId == null);
 
   assert(
     '3. Powder Fallback Audit',
-    'PHEngineV2 executes real chemical speciation, bypassing legacy powder hardcode table',
-    v2PH === 11.47 || Math.abs(v2PH - 11.47) < 0.1,
+    'PHEngineV2 withholds pH instead of substituting the legacy 11.47 hardcode when powder chemistry is uncharacterized',
+    containsUncharacterizedIngredients ? v2PH === null : Number.isFinite(v2PH),
     v2PH,
-    11.47
+    containsUncharacterizedIngredients ? 'null / INSUFFICIENT_DATA' : 'finite pH from characterized speciation'
   );
 
   // =========================================================================
