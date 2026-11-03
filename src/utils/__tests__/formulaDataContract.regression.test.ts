@@ -147,7 +147,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   record(assertEqual('Invalid / String Input Audit', 'Negative percentage clamped to 0 in chelation capacity', negativeChelation.details[0].percentage, 0));
 
   const emptyFormulaResult = evaluateAIGrade([], 7.0);
-  record(assertEqual('Invalid / String Input Audit', 'Empty formula is non-evaluable rather than receiving a failing product grade', emptyFormulaResult.grade, 'N/A'));
+  record(assertEqual('Invalid / String Input Audit', 'Empty formula receives Grade F and is explicitly non-evaluable', emptyFormulaResult.grade, 'F'));
   record(assertEqual('Invalid / String Input Audit', 'Empty formula produces score 0', emptyFormulaResult.score, 0));
 
   // -------------------------------------------------------------
