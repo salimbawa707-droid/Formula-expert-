@@ -162,7 +162,7 @@ export class HLBEngine {
       canonicalMatch = UNIVERSAL_INGREDIENTS.find(u =>
         lowerName === u.name.toLowerCase() ||
         (!!u.inciName && lowerName === u.inciName.toLowerCase()) ||
-        (Array.isArray(u.aliases) && u.aliases.some(alias => lowerName === String(alias).toLowerCase()))
+        (Array.isArray(u.keywords) && u.keywords.some(keyword => lowerName === String(keyword).toLowerCase()))
       );
     }
 
