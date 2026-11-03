@@ -357,6 +357,9 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   if (!costCandidate || !Number.isFinite(costCandidate.costPerKg) || costCandidate.isComplete !== true) {
     missingCriticalInputs.push('completeCosting');
   }
+  if (!Number.isFinite(costCandidate?.targetCostPerKg) || (costCandidate?.targetCostPerKg ?? 0) <= 0) {
+    missingCriticalInputs.push('targetCost');
+  }
   if (!regulatoryCandidate || !['COMPLIANT', 'RESTRICTED', 'NON_COMPLIANT'].includes(regulatoryCandidate.status)) {
     missingCriticalInputs.push('regulatoryEvaluation');
   }
