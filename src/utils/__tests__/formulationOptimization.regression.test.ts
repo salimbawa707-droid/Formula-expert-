@@ -88,7 +88,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
   );
 
   const unconfiguredHardnessConstraint = liquidConstraints.find(c => c.type === 'CHELATION_HARDNESS_MINIMUM');
-  const explicitHardnessConstraints = buildProductConstraints('LAUNDRY_LIQUID', undefined, undefined, 200);
+  const explicitHardnessConstraints = buildProductConstraints('LAUNDRY_LIQUID', undefined, undefined, 200, 10, 20);
   const explicitHardnessConstraint = explicitHardnessConstraints.find(c => c.type === 'CHELATION_HARDNESS_MINIMUM');
   assert(unconfiguredHardnessConstraint?.isApplicable === false && unconfiguredHardnessConstraint.targetMin === undefined, 'Test 1B: No implicit hardness benchmark is activated');
   assert(explicitHardnessConstraint?.isApplicable === true && explicitHardnessConstraint.targetMin === 200, 'Test 1C: Explicit hardness benchmark is applied exactly');
@@ -419,7 +419,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
 
   // 19. Chelation Failure Preservation
   const zeroChelatorIngs = testIngs.filter(i => !/citrat|edta|chelator|builder/i.test(i.name));
-  const hardnessBenchmarkConstraints = buildProductConstraints('LAUNDRY_LIQUID', undefined, undefined, 150);
+  const hardnessBenchmarkConstraints = buildProductConstraints('LAUNDRY_LIQUID', undefined, undefined, 150, 10, 20);
   const candZeroChelator = evaluateCandidateFormulation(
     zeroChelatorIngs,
     'LAUNDRY_LIQUID',
