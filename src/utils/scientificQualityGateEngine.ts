@@ -435,7 +435,7 @@ export function evaluateScientificQualityGate(
   const finalPH = isPHMeasured ? measuredPHRecord!.value : computedPH;
 
   if (finalPH === null || !Number.isFinite(finalPH) || finalPH < 0 || finalPH > 14 || (!isPHMeasured && (!phSolverConverged || phModelValidity === 'OUT_OF_RANGE'))) {
-    scientificValidity = 'INSUFFICIENT_DATA';
+    if (scientificValidity !== 'INVALID') scientificValidity = 'INSUFFICIENT_DATA';
     blockingIssues.push({
       id: 'gate-ph-unavailable',
       code: 'ERR_PH_SOLVER_FAILED',
@@ -474,7 +474,7 @@ export function evaluateScientificQualityGate(
   }
 
   if (activeMatterAudit.activeMatterStatus !== 'COMPLETE') {
-    scientificValidity = 'INSUFFICIENT_DATA';
+    if (scientificValidity !== 'INVALID') scientificValidity = 'INSUFFICIENT_DATA';
     const missingAssayNames = activeMatterAudit.contributions
       .filter(item => item.activeMatterPct === null)
       .map(item => item.name);
@@ -530,8 +530,8 @@ export function evaluateScientificQualityGate(
       title: 'Water Hardness Is an Assumed Screening Scenario',
       category: 'SPECIFICATION',
       severity: 'MAJOR',
-      message: 'No measured/user-supplied wash-water hardness was provided. Chelation screening used 150 mg/L as CaCO3 only as an explicit assumed scenario; this is not a measurement and cannot establish local-water suitability.',
-      recommendation: 'Enter a measured water-hardness value (mg/L as CaCO3) for the intended wash water before interpreting the chelation result.'
+      message: 'Chelation screening was not evaluated because explicit wash-water hardness, wash volume, detergent dose, and batch size were not all supplied. No default water-hardness or dose scenario was substituted.',
+      recommendation: 'Enter measured water hardness (mg/L as CaCO3), wash volume (L), detergent dose (g), and batch size (kg) before interpreting the chelation result.'
     });
   }
 
@@ -548,10 +548,19 @@ export function evaluateScientificQualityGate(
   }
 
   // D. Compatibility Engine Output
-  const compRes = calculateFormulationCompatibility(rawIngs, finalPH, canonicalCategory);
-  
-  let compatibilityStatus: QualityGateCompatibilityStatus = 'COMPATIBLE';
-  if (!compRes.compatible) {
+  const compatibilityPHAvailable = Number.isFinite(finalPH) && (isPHMeasured || phSolverConverged);
+  const compRes = compatibilityPHAvailable
+    ? calculateFormulationCompatibility(rawIngs, finalPH, canonicalCategory)
+    : {
+        compatible: false,
+        compatibilityScore: Number.NaN,
+        alerts: [],
+        warnings: ['Compatibility was not evaluated because a finite measured or converged pH is unavailable.'],
+        riskLevel: undefined
+      };
+
+  let compatibilityStatus: QualityGateCompatibilityStatus = compatibilityPHAvailable ? 'COMPATIBLE' : 'INSUFFICIENT_DATA';
+  if (compatibilityPHAvailable && !compRes.compatible) {
     const hasCritical = compRes.alerts.some(a => a.severity === 'Critical');
     compatibilityStatus = hasCritical ? 'INCOMPATIBLE' : 'CRITICAL_HAZARD';
 
@@ -569,7 +578,7 @@ export function evaluateScientificQualityGate(
         });
       }
     }
-  } else if (compRes.warnings.length > 0 || compRes.alerts.length > 0) {
+  } else if (compatibilityPHAvailable && (compRes.warnings.length > 0 || compRes.alerts.length > 0)) {
     compatibilityStatus = 'COMPATIBLE_WITH_WARNINGS';
     for (const alert of compRes.alerts) {
       if (alert.severity === 'Medium' || alert.severity === 'Low') {
