@@ -535,9 +535,9 @@ export function runSpecificationEngineTestSuite(): { passed: number; failed: num
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation filters out injected powder bulkDensity', !liquidEvalWithInjectedPowder.items.some(i => i.parameterKey === 'bulkDensity'), true, true);
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation filters out injected powder dissolutionTime', !liquidEvalWithInjectedPowder.items.some(i => i.parameterKey === 'dissolutionTime'), true, true);
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation retains liquid density parameter', Boolean(liquidEvalWithInjectedPowder.items.some(i => i.parameterKey === 'density')), true, true);
-  assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation evaluates liquid density to PASS', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'density')?.status === 'PASS', true, true);
+  assert('Matrix S-T. Physical Form Routing', 'Predicted liquid density remains NOT_TESTED because the specification requires physical measurement', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'density')?.status === 'NOT_TESTED', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'density')?.status, 'NOT_TESTED');
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation unmeasured viscosity is NOT_TESTED', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'viscosity')?.status === 'NOT_TESTED', true, true);
-  assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation evaluates liquid NVR to PASS', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'liquidNVR')?.status === 'PASS', true, true);
+  assert('Matrix S-T. Physical Form Routing', 'Calculated liquid NVR remains NOT_TESTED because the specification requires physical measurement', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'liquidNVR')?.status === 'NOT_TESTED', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'liquidNVR')?.status, 'NOT_TESTED');
 
   // When physical lab measurement for viscosity is supplied:
   const liquidEvalWithLabViscosity = evaluateSpecifications({
