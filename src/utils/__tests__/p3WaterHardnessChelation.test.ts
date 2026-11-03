@@ -185,6 +185,15 @@ export function runP3WaterHardnessTestSuite() {
   // ---------------------------------------------------------------------------
   // 6. BATCH SCALING INVARIANCE & MASS-BALANCE
   // ---------------------------------------------------------------------------
+  // Missing scenario values must never be replaced with a typical hardness or wash dose.
+  const missingHardnessScenario = calculateWaterHardnessTolerance(testFormula, undefined, 10, 20, 100, 'LAUNDRY_LIQUID');
+  assert(missingHardnessScenario.status === 'NOT_EVALUATED', 'Fail-closed Inputs', 'Missing hardness is NOT_EVALUATED');
+  assert(Number.isNaN(missingHardnessScenario.hardnessLoadMg), 'Fail-closed Inputs', 'Missing hardness load remains unavailable, not zero or assumed');
+  const missingWashScenario = calculateWaterHardnessTolerance(testFormula, 150, undefined, undefined, 100, 'LAUNDRY_LIQUID');
+  assert(missingWashScenario.status === 'NOT_EVALUATED', 'Fail-closed Inputs', 'Missing wash volume/dose is NOT_EVALUATED');
+  const missingDynamicScenario = calculateDynamicChelatorRequirement(testFormula, undefined, 10, 20, 25);
+  assert(missingDynamicScenario.status === 'INSUFFICIENT_DATA', 'Fail-closed Inputs', 'Dynamic chelator requirement rejects missing hardness');
+
   // Manufacturing batch sizes: 100 kg, 10 kg, 1 kg
   // Per-dose capacity (mg CaCO3) and wash hardness load MUST be identical across batch sizes.
   // Batch total capacity (grams CaCO3) scales linearly.
