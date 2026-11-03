@@ -591,11 +591,15 @@ export class FormulaScientificOrchestrator {
       chelationResult: state.chelationResult,
       compatibilityResult: {
         compatible: state.compatible,
-        compatibilityScore: state.compatibilityScore,
-        riskLevel: state.compatible ? (state.compatibilityResult?.warnings.length > 0 ? 'MEDIUM' : 'LOW') : 'CRITICAL',
+        compatibilityScore: Number.isFinite(state.compatibilityScore) ? state.compatibilityScore : null,
+        riskLevel: state.compatibilityResult?.compatibilityStatusSemantic === 'INCOMPATIBLE'
+          ? 'CRITICAL'
+          : state.compatibilityResult?.compatibilityStatusSemantic === 'UNKNOWN' || state.compatibilityResult?.compatibilityStatusSemantic === 'INSUFFICIENT_DATA'
+            ? 'UNKNOWN'
+            : (state.compatibilityResult?.warnings.length > 0 ? 'MEDIUM' : 'LOW'),
         alerts: state.compatibilityResult?.alerts || [],
         warnings: state.compatibilityResult?.warnings || [],
-        stabilityStatus: state.compatibilityScore >= 80 ? 'HIGH_STABILITY' : 'UNSTABLE',
+        stabilityStatus: state.compatibilityResult?.stabilityStatus ?? 'UNKNOWN',
         compatibilityStatusSemantic: state.compatibilityResult?.compatibilityStatusSemantic || 'UNKNOWN',
         evidenceStatus: state.compatibilityResult?.evidenceStatus || 'UNKNOWN'
       },
