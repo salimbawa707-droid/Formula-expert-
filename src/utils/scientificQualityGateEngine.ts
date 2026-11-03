@@ -363,7 +363,7 @@ export function evaluateScientificQualityGate(
 
   // Check if measured pH exists in lab measurements
   const measuredPHRecord = labMeasurements.find(m => m.parameterKey === 'ph' || m.parameterKey === 'powderPH');
-  const isPHMeasured = Boolean(measuredPHRecord && measuredPHRecord.value > 0);
+  const isPHMeasured = Boolean(measuredPHRecord && Number.isFinite(measuredPHRecord.value));
   const finalPH = isPHMeasured ? measuredPHRecord!.value : computedPH;
 
   if (finalPH === null) {
