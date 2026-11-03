@@ -78,7 +78,6 @@ export default function FormulationLibrary({
             activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? null),
             role: ing.role || ing.category || 'Component'
           })),
-          waterHardnessPpm: 150,
           batchSizeKg: f.batchSizeKg || 0,
           costContext: {
             targetCostPerKg: 50
