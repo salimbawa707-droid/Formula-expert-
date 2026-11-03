@@ -84,14 +84,12 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
   });
 
   assert(
-    'Glass cleaner uses a reference benchmark, not measured formula data (1 - 10 cPs)',
-    glassReport.dataSource === 'reference_baseline' &&
-    glassReport.modelMaturity === 'REFERENCE_BASELINE' &&
-    glassReport.viscosityCp <= 10 &&
-    glassReport.rating === 'Water-Thin' &&
-    glassReport.behavior === 'Newtonian',
-    { cp: glassReport.viscosityCp, rating: glassReport.rating, behavior: glassReport.behavior },
-    { cp: '<= 10', rating: 'Water-Thin', behavior: 'Newtonian' }
+    'Glass cleaner without a matching calibrated benchmark does not receive an invented viscosity',
+    glassReport.dataSource === 'unsupported' &&
+    Number.isNaN(glassReport.viscosityCp) &&
+    glassReport.rating === 'Unavailable',
+    { cp: glassReport.viscosityCp, rating: glassReport.rating, dataSource: glassReport.dataSource },
+    { cp: 'unavailable', rating: 'Unavailable', dataSource: 'unsupported' }
   );
 
   // --------------------------------------------------------------------------
