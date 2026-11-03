@@ -129,7 +129,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   // REQUIREMENT 6: Empty Formula / Zero Data Handling
   // --------------------------------------------------------------------------
   const emptyRes = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-  assert('Empty Formula cpi is 0', emptyRes.cpi === 0, emptyRes.cpi, 0);
+  assert('Empty Formula cpi is unavailable', emptyRes.cpi === null, emptyRes.cpi, null);
   assert('Empty Formula Provenance is INSUFFICIENT_DATA', emptyRes.provenance === 'INSUFFICIENT_DATA', emptyRes.provenance, 'INSUFFICIENT_DATA');
   assert('Empty Formula Model Type is Insufficient Ingredient Data', emptyRes.modelType === 'Insufficient Ingredient Data', emptyRes.modelType, 'Insufficient Ingredient Data');
   assert('Empty Formula Limitations States Insufficient Data', emptyRes.limitations.includes('Insufficient formulation ingredient data'), true, true);
@@ -139,7 +139,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   // --------------------------------------------------------------------------
   for (const catId of CANONICAL_PRODUCT_CATEGORY_IDS) {
     const catRes = calculateCleaningPerformance(sampleLaundryFormula, 8.0, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-    assert(`Category Terminology Hardened: ${catId}`, catRes.productCategory === catId, catRes.productCategory, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+    assert(`Category Terminology Hardened: ${catId}`, catRes.productCategory === catId, catRes.productCategory, catId);
     
     if (catId !== 'FABRIC_SOFTENER') {
       const applicable = catRes.categoryKPIs.filter(k => k.isApplicable && k.provenance !== 'NOT_APPLICABLE');
