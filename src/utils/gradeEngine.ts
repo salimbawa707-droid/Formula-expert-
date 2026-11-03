@@ -798,16 +798,26 @@ function evaluateAIGradeFromLegacyOrDraft(
 
   // Active child engine calls
   const effectiveCategory = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined;
-  const cpiRaw = calculateCPI(ingredients, phVal, effectiveCategory);
-  const cpiScore = Math.min(100, Math.max(0, Math.round(cpiRaw)));
+  const performanceResult = calculateCleaningPerformance(ingredients, phVal, effectiveCategory);
+  const rawPerformance = performanceResult.isCleaningApplicable
+    ? performanceResult.cpi
+    : performanceResult.conditioningScore;
+  if (rawPerformance === null || rawPerformance === undefined || !Number.isFinite(rawPerformance)) {
+    return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Performance score is unavailable for this category; no numeric zero is substituted.', ['performance']);
+  }
+  const cpiScore = Math.min(100, Math.max(0, Math.round(rawPerformance)));
 
   const compResult = calculateFormulationCompatibility(ingredients, phVal, effectiveCategory);
+  if (!Number.isFinite(compResult.compatibilityScore)) {
+    return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Compatibility score is unavailable; no numeric zero is substituted.', ['compatibility']);
+  }
   const compatibilityScore = Math.min(100, Math.max(0, Math.round(compResult.compatibilityScore)));
 
-  const healthResult = calculateLabHealthScore(ingredients, phVal);
-  const healthScore = healthResult.finalScore !== null && Number.isFinite(healthResult.finalScore)
-    ? Math.min(100, Math.max(0, Math.round(healthResult.finalScore)))
-    : 0;
+  const healthResult = calculateLabHealthScore(ingredients, phVal, effectiveCategory);
+  if (healthResult.finalScore === null || !Number.isFinite(healthResult.finalScore)) {
+    return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Lab health score is unavailable; no numeric zero is substituted.', ['health']);
+  }
+  const healthScore = Math.min(100, Math.max(0, Math.round(healthResult.finalScore)));
 
   let commercialScore = 0;
   const hasCompletePrices = ingredients.every(i => typeof i.costPerKg === 'number' && Number.isFinite(i.costPerKg) && i.costPerKg >= 0);
