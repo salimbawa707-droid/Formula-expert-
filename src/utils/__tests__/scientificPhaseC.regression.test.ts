@@ -275,7 +275,8 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
   const vTemp = ViscosityEngine.evaluateViscosity([
     { name: 'SLES 70%', percentage: 14.0, activeMatterPct: 70 },
     { name: 'CAPB 30%', percentage: 5.0, activeMatterPct: 30 },
-    { name: 'Sodium Chloride (NaCl)', percentage: 1.5 }
+    { name: 'Sodium Chloride (NaCl)', percentage: 1.5 },
+    { name: 'Water', percentage: 79.5, activeMatterPct: 0 }
   ]);
   assert('20. Arrhenius Temperature Scaling', 'T20: Viscosity at 4°C higher than 25°C, and 40°C lower than 25°C', vTemp.temperatureProfile.temp4C_Cp > vTemp.viscosityCp && vTemp.temperatureProfile.temp40C_Cp < vTemp.viscosityCp, true, true);
 
