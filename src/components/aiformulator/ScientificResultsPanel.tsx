@@ -16,7 +16,7 @@ interface ScientificResultsPanelProps {
   orchestratorResult?: any;
   productCategory: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   totals: any;
   ingredients: any[];
   comparisonFormula?: any | null;
@@ -82,7 +82,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono px-3 py-1 rounded-full bg-[#131d35] border border-slate-700 text-cyan-300 font-bold">
-            Hardness: {waterHardnessPpm} ppm
+            Hardness: {waterHardnessPpm === null ? 'Unknown / not entered' : `${waterHardnessPpm} ppm (user-entered, unverified)`}
           </span>
           <span className="text-xs font-mono px-3 py-1 rounded-full bg-[#131d35] border border-slate-700 text-cyan-300 font-bold">
             Batch: {batchSizeKg} kg
