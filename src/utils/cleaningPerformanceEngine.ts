@@ -130,13 +130,14 @@ export function calculateCleaningPerformance(
   const activeSurfactant = calculateActiveSurfactants(safeIngs);
   const totalActiveMatter = calculateActiveMatter(safeIngs);
 
-  // Parse estimated pH if provided
-  let phVal = 8.0;
-  if (typeof estimatedPH === 'number' && !isNaN(estimatedPH)) {
+  // pH is a required input to this category model. Never substitute a neutral/default
+  // value: doing so can create apparently valid KPIs for an unevaluated formulation.
+  let phVal = Number.NaN;
+  if (typeof estimatedPH === 'number' && Number.isFinite(estimatedPH) && estimatedPH >= 0 && estimatedPH <= 14) {
     phVal = estimatedPH;
   } else if (typeof estimatedPH === 'string' && estimatedPH.trim() !== '') {
-    const parsed = parseFloat(estimatedPH);
-    if (!isNaN(parsed)) phVal = parsed;
+    const parsed = Number(estimatedPH.trim());
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 14) phVal = parsed;
   }
 
   // Surfactant Ionic Distribution Breakdown & Component Classification
@@ -163,6 +164,7 @@ export function calculateCleaningPerformance(
   let hasBleach = false;
   let hasAntiRedeposition = false;
   let siliconeOrEsterquatPct = 0;
+  let missingSurfactantActiveMatter = false;
 
   for (const ing of safeIngs) {
     const name = (ing?.name || '').toLowerCase();
@@ -170,7 +172,22 @@ export function calculateCleaningPerformance(
     const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
     if (pct <= 0) continue;
 
-    const active = Number((ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity ?? getDefaultActiveMatter(ing)) / 100;
+    const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
+    const resolvedActive = explicitActive === undefined || explicitActive === null
+      ? getDefaultActiveMatter(ing)
+      : Number(explicitActive);
+    const activeIsValid = typeof resolvedActive === 'number' &&
+      Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100;
+    const looksLikeSurfactant =
+      cat.includes('surfactant') || cat.includes('anionic') || cat.includes('nonionic') ||
+      cat.includes('amphoteric') || cat.includes('cationic') ||
+      ['labsa', 'sles', 'sls', 'aos', 'sulphonate', 'sulfate', 'betaine', 'capb',
+        'amine oxide', 'ethoxylate', 'glucoside', 'esterquat', 'quat', 'cetrimonium'].some(token => name.includes(token));
+    if (looksLikeSurfactant && !activeIsValid) missingSurfactantActiveMatter = true;
+
+    // Invalid/unknown active matter is never a scientifically meaningful zero.
+    // The complete evaluation is blocked below before any score can be emitted.
+    const active = activeIsValid ? resolvedActive / 100 : 0;
     const activePct = pct * active;
 
     // Ionic classification
@@ -236,6 +253,45 @@ export function calculateCleaningPerformance(
     if (cat.includes('anti-redeposition') || name.includes('cmc') || name.includes('polyacrylate') || name.includes('sokalan') || name.includes('polycarboxylate')) {
       hasAntiRedeposition = true;
     }
+  }
+
+  // Fail closed when a required scientific input is absent or invalid.
+  // The placeholder zero is retained only for the legacy numeric type contract;
+  // provenance and null KPI values make clear that no score was calculated.
+  if (!Number.isFinite(phVal) || missingSurfactantActiveMatter) {
+    const reason = !Number.isFinite(phVal)
+      ? 'A valid calculated or measured pH (0–14) is required; no default pH is substituted.'
+      : 'At least one surfactant has unknown or invalid active matter; its contribution cannot be treated as zero.';
+    const cleaningApplicable = category !== 'FABRIC_SOFTENER' && category !== 'UNKNOWN_PRODUCT_CATEGORY';
+    return {
+      productCategory: category,
+      cpi: 0,
+      overallScore: 0,
+      rating: 0,
+      cleaningScore: null,
+      isCleaningApplicable: cleaningApplicable,
+      performanceIndex: 0,
+      primaryPerformanceDomain: 'Performance evaluation blocked',
+      secondaryPerformanceDomain: 'Required scientific input unavailable',
+      cleaningPower: cleaningApplicable ? 'Low' : 'Conditioning / Non-Detergent',
+      degreasingScore: 0,
+      greaseRemoval: 0,
+      particulateSoilRemoval: 0,
+      foamStabilityScore: 0,
+      builderContribution: 0,
+      enzymeBonus: 0,
+      surfactantSynergy: 0,
+      categoryKPIs: [],
+      applicableKPIs: {},
+      provenance: 'INSUFFICIENT_DATA',
+      isMeasured: false,
+      modelType: 'INSUFFICIENT_DATA_FAIL_CLOSED',
+      riskLevel: 'High',
+      keyPositiveFactors: [],
+      keyNegativeFactors: [reason],
+      limitations: `INSUFFICIENT_DATA: ${reason} No predicted performance KPI or CPI is authorized until the missing input is supplied.`,
+      labValidationGuidance: 'Resolve missing formulation inputs, then validate performance using the relevant standardized laboratory method.'
+    };
   }
 
   // Phase 3 Water Hardness Synchronization
