@@ -110,10 +110,19 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
   assert('A7. Invalid measurement timestamp is INVALID',
     ingestedInvalidTimestamp.dataQuality === 'INVALID');
 
-  const unverifiedInput = { ...validIngestInput, verificationStatus: 'REJECTED' as const };
+  const unverifiedInput = {
+    ...validIngestInput,
+    evidenceLevel: 'LAB_TESTED' as const,
+    verificationStatus: 'UNVERIFIED' as const,
+  };
   const ingestedUnverified = ingestExperimentResult(unverifiedInput);
-  assert('A8. Rejected evidence is retained as REQUIRES_REVIEW and not promoted',
+  assert('A8. Raw LAB_TESTED evidence is retained as REQUIRES_REVIEW and not promoted',
     ingestedUnverified.dataQuality === 'REQUIRES_REVIEW');
+
+  const rejectedInput = { ...validIngestInput, verificationStatus: 'REJECTED' as const };
+  const ingestedRejected = ingestExperimentResult(rejectedInput);
+  assert('A9. Rejected evidence remains REQUIRES_REVIEW even when identity checks run',
+    ingestedRejected.dataQuality === 'REQUIRES_REVIEW');
   const adapterTest = {
     test: {
       testId: 'TEST-LIMS-01', sampleId: 'SMP-LIMS-01', batchId: 'BATCH-LIMS-01',
