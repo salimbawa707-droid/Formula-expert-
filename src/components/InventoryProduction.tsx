@@ -173,10 +173,13 @@ export default function InventoryProduction({
     let lowStockCount = 0;
     let outOfStockCount = 0;
     let inStockCount = 0;
+    let unpricedStockCount = 0;
 
     inventory.forEach(item => {
       if (typeof item.costPerKg === 'number') {
         totalValue += item.currentStockKg * item.costPerKg;
+      } else if (item.currentStockKg > 0) {
+        unpricedStockCount++;
       }
       totalKg += item.currentStockKg;
       const status = getStockStatus(item);
@@ -189,6 +192,7 @@ export default function InventoryProduction({
       totalItems: inventory.length,
       totalKg: Number(totalKg.toFixed(1)),
       totalValue: Number(totalValue.toFixed(2)),
+      unpricedStockCount,
       lowStockCount,
       outOfStockCount,
       inStockCount
@@ -424,9 +428,9 @@ export default function InventoryProduction({
             <DollarSign className="w-4 h-4 text-emerald-600" /> Inventory Valuation
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1 font-mono">
-            ${inventoryMetrics.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {inventoryMetrics.unpricedStockCount > 0 ? 'Incomplete' : `${inventoryMetrics.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
-          <div className="text-xs text-slate-400 mt-1">Standard cost basis</div>
+          <div className="text-xs text-slate-400 mt-1">{inventoryMetrics.unpricedStockCount > 0 ? `${inventoryMetrics.unpricedStockCount} stocked items have no recorded price` : 'Recorded stock cost only'}</div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
