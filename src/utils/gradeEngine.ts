@@ -45,11 +45,11 @@ export interface AIGradePillarScore {
 }
 
 export interface AIGradeBreakdown {
-  cpiScore: number;
-  compatibilityScore: number;
-  healthScore: number;
-  activeMatterScore: number;
-  commercialScore: number;
+  cpiScore: number | null;
+  compatibilityScore: number | null;
+  healthScore: number | null;
+  activeMatterScore: number | null;
+  commercialScore: number | null;
   performanceScore?: number;
   rheologyScore?: number;
   builderScore?: number;
@@ -60,8 +60,8 @@ export interface AIGradeBreakdown {
 
 export interface AIGradeResult {
   grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F' | 'N/A' | string;
-  score: number;
-  numericScore: number;
+  score: number | null;
+  numericScore: number | null;
   gradeType: 'CATEGORY_SPECIFIC_RND_INDEX' | 'GENERIC_SCREENING_INDEX' | 'AI_GRADE_NOT_EVALUABLE' | 'CATEGORY_CONTEXT_INTEGRITY_ERROR';
   productCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
   categoryModelId: string;
@@ -977,11 +977,11 @@ function buildNotEvaluableResult(
     regulatoryStatus: 'INSUFFICIENT_DATA',
     reasoning,
     breakdown: {
-      cpiScore: 0,
-      compatibilityScore: 0,
-      healthScore: 0,
-      activeMatterScore: 0,
-      commercialScore: 0,
+      cpiScore: null,
+      compatibilityScore: null,
+      healthScore: null,
+      activeMatterScore: null,
+      commercialScore: null,
       // A non-evaluable result must still expose explicit uncertainty for every pillar.
       // Omitting statusMap caused callers to receive undefined instead of UNKNOWN.
       statusMap: {
@@ -1033,11 +1033,11 @@ function buildIntegrityErrorResult(
     regulatoryStatus: 'INSUFFICIENT_DATA',
     reasoning,
     breakdown: {
-      cpiScore: 0,
-      compatibilityScore: 0,
-      healthScore: 0,
-      activeMatterScore: 0,
-      commercialScore: 0
+      cpiScore: null,
+      compatibilityScore: null,
+      healthScore: null,
+      activeMatterScore: null,
+      commercialScore: null
     },
     isEvaluable: false
   };
