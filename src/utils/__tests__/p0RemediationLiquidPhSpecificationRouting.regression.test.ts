@@ -171,6 +171,7 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   assert('TEST 28: No duplicate competing pH parameters in liquid template', phParamsLiquidCount === 1);
 
   results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: ${r.details ?? 'no details'}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
