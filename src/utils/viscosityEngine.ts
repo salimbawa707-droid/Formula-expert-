@@ -355,11 +355,26 @@ export class ViscosityEngine {
       return unavailableReport(`Ingredient percentages total ${totalFormulaPct.toFixed(3)}%, not 100.000%; viscosity cannot be estimated for an incomplete composition.`);
     }
 
-    const activeMatterReport = options.activeMatterReport || ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
-    const unknownSurfactantAssays = activeMatterReport.contributions?.filter((item: any) => item.isSurfactant && item.activeMatterPct === null) || [];
-    if (unknownSurfactantAssays.length > 0) {
-      return unavailableReport(`Surfactant active assay is unknown for: ${unknownSurfactantAssays.map((item: any) => item.name).join(', ')}.`);
+    // Resolve the exact supplied ingredient rows at this boundary. A caller-provided
+    // aggregate report may belong to another formula or omit unresolved rows; it is
+    // therefore not sufficient evidence that every surfactant assay is known.
+    const resolvedIngredients = list.map(ing => ({
+      ingredient: ing,
+      resolution: ActiveMatterEngine.resolveIngredientActive(ing)
+    }));
+    const unresolvedSurfactants = resolvedIngredients.filter(({ resolution }) =>
+      resolution.isSurfactant &&
+      (resolution.activeMatterPct === null || Boolean(resolution.conflict))
+    );
+    if (unresolvedSurfactants.length > 0) {
+      return unavailableReport(
+        `Surfactant active assay is missing or grade-conflicted for: ${unresolvedSurfactants.map(({ ingredient }) => ingredient.name || 'unnamed ingredient').join(', ')}.`
+      );
     }
+
+    // Recompute the aggregate from this exact formula. Never trust a caller-supplied
+    // aggregate that could be stale or scoped to a different ingredient list.
+    const activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
     const totalWaterPct = activeMatterReport.totalWaterPct;
     const totalRawPct = activeMatterReport.totalRawPercentage;
 
@@ -422,14 +437,15 @@ export class ViscosityEngine {
     let hydrotropePct = 0; // SXS, SCS
     let organicSolventPct = 0; // Ethanol, IPA, Propylene Glycol, Glycerin
 
-    list.forEach(ing => {
+    resolvedIngredients.forEach(({ ingredient: ing, resolution }) => {
       const name = (ing.name || '').toLowerCase();
       const role = (ing.role || '').toLowerCase();
       const cat = (ing.category || '').toLowerCase();
       const rawPct = Number(ing.percentage ?? ing.percent ?? (ing as any).percentageInFormula);
       if (rawPct <= 0) return;
 
-      const resolution = ActiveMatterEngine.resolveIngredientActive(ing);
+      // Unknown active matter is blocked above for surfactants. Non-surfactant
+      // active-matter values are not used as surfactant contribution.
       const activePct = resolution.activeMatterPct === null
         ? 0
         : (rawPct * resolution.activeMatterPct) / 100;
