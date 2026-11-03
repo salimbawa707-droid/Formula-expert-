@@ -343,7 +343,15 @@ export class ScientificExecutionDAG {
           // Do not copy an ingredient-library estimate into an explicit user assay field.
           // ActiveMatterEngine resolves canonical defaults separately and preserves their provenance.
           const activePct = ing.activeMatterPct ?? ing.activePercent;
-          const isUnknown = ing.isUnknown ?? false;
+          const unresolvedProperties = (matchedUniv as any)?.unknownProperties ?? [];
+          if (!matchedUniv && !state.unknownParameters.includes(`${ing.name}:identity`)) {
+            state.unknownParameters.push(`${ing.name}:identity`);
+          }
+          for (const property of unresolvedProperties) {
+            const key = `${ing.name}:${property}`;
+            if (!state.unknownParameters.includes(key)) state.unknownParameters.push(key);
+          }
+          const isUnknown = ing.isUnknown ?? (!matchedUniv || unresolvedProperties.length > 0);
 
           const hlb = ing.hlb ?? ing.hlbValue ?? matchedUniv?.hlb;
           const density = ing.density ?? (matchedUniv as any)?.density ?? (intel as any)?.densityGPerMl ?? (intel as any)?.density;
