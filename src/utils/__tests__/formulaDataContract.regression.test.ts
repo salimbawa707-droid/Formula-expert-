@@ -351,10 +351,11 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   // Prove pH engine computes pH, Water Hardness computes chelation, Lab Health computes safety, AI Grade orchestrates
   const mappedPHEngineInput = mapFormulationIngredientsToPHEngineInput(controlledFormula);
   const phResult = calculatePHAdvanced(mappedPHEngineInput);
-  record(assertEqual('Engine Separation', 'pHEngine computes standalone pH value', typeof phResult.pH, 'number'));
+  record(assertEqual('Engine Separation', 'pHEngine withholds pH when SLES pH chemistry is not characterized', phResult.pH, null));
+  record(assertEqual('Engine Separation', 'pHEngine exposes solver status for unavailable pH', typeof phResult.solverConverged, 'boolean'));
 
   const standaloneCPI = calculateCPI(controlledFormula);
-  record(assertEqual('Engine Separation', 'CPI engine computes standalone cleaning index', typeof standaloneCPI, 'number'));
+  record(assertEqual('Engine Separation', 'CPI remains unavailable without an explicit wash scenario and calculable pH', standaloneCPI, null));
 
   const standaloneHealth = calculateLabHealthScore(controlledFormula, phResult.pH).finalScore;
   record(assertEqual('Engine Separation', 'Lab Health computes standalone safety score', typeof standaloneHealth, 'number'));
