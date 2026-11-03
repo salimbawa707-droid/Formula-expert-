@@ -385,7 +385,15 @@ export class PHEngine {
       } else if (alkaliType.includes('50%') || alkaliType.includes('Lye (50%)')) {
         bPur = 50;
       } else if (alkaliType.includes('KOH')) {
-        bPur = alkaliType.includes('85%') ? 85 : (alkaliType.includes('90%') ? 90 : 100);
+        if (alkaliType.includes('85%')) {
+          bPur = 85;
+        } else if (alkaliType.includes('90%')) {
+          bPur = 90;
+        } else if (alkaliType.includes('100%')) {
+          bPur = 100;
+        } else {
+          throw new Error('KOH commercial assay is required (85%, 90%, or 100%) before neutralization can be calculated.');
+        }
       }
     }
 
