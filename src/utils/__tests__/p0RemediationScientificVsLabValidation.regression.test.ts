@@ -45,7 +45,11 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     formulaName: 'Calculated Test Formula',
     formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
-    ingredients: validIngredients
+    ingredients: validIngredients,
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
   assert('TEST 1: Calculated-only formula remains LAB_VALIDATION_REQUIRED with PREDICTED_ONLY evidence', qgResult.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED' && qgResult.evidenceStatus === 'PREDICTED_ONLY');
 
