@@ -73,7 +73,14 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     assert(`Category Profile Loaded: ${catId}`, res.productCategory === catId, res.productCategory, catId);
     assert(`Category Has Primary Domain: ${catId}`, res.primaryPerformanceDomain.length > 0, res.primaryPerformanceDomain.length > 0, true);
     assert(`Category Has Applicable KPIs: ${catId}`, res.categoryKPIs.length >= 3, res.categoryKPIs.length >= 3, true);
-    assert(`CPI is within 0-100: ${catId}`, res.cpi >= 0 && res.cpi <= 100, res.cpi, '0-100');
+    assert(
+      `Category performance metric is correctly typed: ${catId}`,
+      catId === 'FABRIC_SOFTENER'
+        ? res.cpi === null && res.conditioningScore !== null && res.conditioningScore >= 0 && res.conditioningScore <= 100
+        : res.cpi !== null && res.cpi >= 0 && res.cpi <= 100,
+      { cpi: res.cpi, conditioningScore: res.conditioningScore },
+      catId === 'FABRIC_SOFTENER' ? 'conditioningScore 0-100, CPI null' : 'CPI 0-100'
+    );
   }
 
   // --------------------------------------------------------------------------
@@ -88,7 +95,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   const softenerRes = calculateCleaningPerformance(softenerStandardFormula, 3.5, 'FABRIC_SOFTENER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Fabric Softener isCleaningApplicable is False', softenerRes.isCleaningApplicable === false, softenerRes.isCleaningApplicable, false);
   assert('Fabric Softener Cleaning Score is Null (NOT_APPLICABLE)', softenerRes.cleaningScore === null, softenerRes.cleaningScore, null);
-  assert('Fabric Softener CPI Evaluates Softening (> 70)', softenerRes.cpi >= 70, softenerRes.cpi, '>= 70');
+  assert('Fabric Softener conditioning score evaluates softening (> 70) while detergent CPI is null', (softenerRes.conditioningScore ?? 0) >= 70 && softenerRes.cpi === null, { conditioningScore: softenerRes.conditioningScore, cpi: softenerRes.cpi }, 'conditioningScore >=70, CPI null');
   assert('Fabric Softener Qualitative Rating is Conditioning', softenerRes.cleaningPower === 'Conditioning / Non-Detergent', softenerRes.cleaningPower, 'Conditioning / Non-Detergent');
   
   const softeningKpi = softenerRes.categoryKPIs.find(k => k.id === 'fabricSofteningIndex');
@@ -104,7 +111,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Water', percentage: 92, category: 'Solvent' }
   ];
   const softenerAnionicRes = calculateCleaningPerformance(softenerWithAnionic, 3.5, 'FABRIC_SOFTENER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-  assert('Anionic Contamination Penalizes Softener CPI (< 50)', softenerAnionicRes.cpi < 50, softenerAnionicRes.cpi, '< 50');
+  assert('Anionic contamination penalizes conditioning score (< 50) while detergent CPI remains null', (softenerAnionicRes.conditioningScore ?? 100) < 50 && softenerAnionicRes.cpi === null, { conditioningScore: softenerAnionicRes.conditioningScore, cpi: softenerAnionicRes.cpi }, 'conditioningScore <50, CPI null');
   assert('Anionic Contamination Negative Factor Flagged', softenerAnionicRes.keyNegativeFactors.some(f => f.includes('Anionic surfactant detected')), true, true);
 
   // --------------------------------------------------------------------------
@@ -195,7 +202,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   const mildHandWash: FormulationIngredient[] = [
     { name: 'SLES 70%', percentage: 8, activeMatterPct: 70, category: 'Anionic Surfactant' }, // 5.6%
     { name: 'CAPB 30%', percentage: 8, activeMatterPct: 30, category: 'Amphoteric Surfactant' }, // 2.4%
-    { name: 'Glycerin', percentage: 2, category: 'Humectant' },
+    { name: 'Glycerin', percentage: 2, activeMatterPct: 100, category: 'Humectant' },
     { name: 'Water', percentage: 82, category: 'Solvent' }
   ];
   const handWashRes = calculateCleaningPerformance(mildHandWash, 5.8, 'HAND_WASH', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
