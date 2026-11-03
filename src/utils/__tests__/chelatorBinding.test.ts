@@ -70,6 +70,8 @@ export function runChelatorBindingTestSuite(): {
     chelators: [{ name: 'GLDA 47% Liquid' }]
   });
   assert('Explicit chelator scenario calculates only with supplied conditions', explicitScenario.status === 'CALCULATED');
+  assert('10% co-builder target is not mislabeled as full hardness protection', explicitScenario.isHardnessLoadFullyCovered === false);
+  assert('Calculated co-builder coverage is approximately 10%', Math.abs((explicitScenario.stoichiometricCoveragePct ?? 0) - 10) < 0.1);
   assert('Green chelator output does not claim a fabricated eco score', explicitScenario.score === 0);
 
   return {
