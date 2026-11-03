@@ -15,7 +15,7 @@ export { INGREDIENT_DATABASE };
  *
  * Mappings:
  * - name: ing.name
- * - rawPercent: ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0
+ * - rawPercent: ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? (ing as any).rawPercent ?? 0
  * - activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity
  */
 export function mapFormulationIngredientToPHEngineInput(
