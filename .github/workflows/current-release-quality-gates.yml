@@ -127,7 +127,7 @@ jobs:
         run: bun run cap:sync
 
       - name: Build genuine debug APK
-        run: ./gradlew --no-daemon assembleDebug
+        run: bash ./gradlew --no-daemon assembleDebug
         working-directory: android
 
       - name: Upload debug APK
