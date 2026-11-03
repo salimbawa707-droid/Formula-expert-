@@ -100,7 +100,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
   };
   const liquidReport = evaluateSpecifications(evalInputLiquid);
   const evaluatedLiquidPh = liquidReport.items.find(i => i.parameterKey === 'ph');
-  assert('TEST 17: Liquid pH 7.57 evaluates against Liquid range', evaluatedLiquidPh?.max === 9.5 && evaluatedLiquidPh?.status === 'PASS', JSON.stringify(evaluatedLiquidPh));
+  assert('TEST 17: Calculated liquid pH is NOT_TESTED until physical lab measurement', evaluatedLiquidPh?.max === 9.5 && evaluatedLiquidPh?.status === 'NOT_TESTED' && evaluatedLiquidPh?.value === 7.57, JSON.stringify(evaluatedLiquidPh));
 
   // 18. Liquid pH 7.57 is not compared against 9.8
   assert('TEST 18: Liquid pH 7.57 not compared against 9.8', evaluatedLiquidPh?.min !== 9.8);
@@ -157,7 +157,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
   assert('TEST 23: Powder evidence observation uses Powder pH specification', evaluatedPowderPh?.parameterKey === 'powderPH');
 
   // 24. Liquid quality gate consumes Liquid pH result
-  assert('TEST 24: Liquid quality gate consumes Liquid pH result', evaluatedLiquidPh?.status === 'PASS', JSON.stringify(evaluatedLiquidPh));
+  assert('TEST 24: Liquid quality gate keeps calculated pH unvalidated pending lab measurement', evaluatedLiquidPh?.status === 'NOT_TESTED' && evaluatedLiquidPh?.value === 7.57, JSON.stringify(evaluatedLiquidPh));
 
   // 25. Powder quality gate consumes Powder pH result
   assert('TEST 25: Powder quality gate consumes Powder pH result', evaluatedPowderPh !== undefined);
