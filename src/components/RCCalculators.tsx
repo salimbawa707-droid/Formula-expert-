@@ -177,7 +177,6 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
     ['glda-47', 'mgda-38', 'mgda-40', 'citrate-dihydrate'].includes(species.id)
   );
   const selectedChelator = greenChelatorOptions.find(species => species.id === selectedChelatorId);
-  const selectedChelatorDetail = greenChelatorResult?.details?.[0];
 
   const greenChelatorResult = calculateGreenChelators({
     waterHardnessPpm: typeof waterHardnessPpm === 'number' ? waterHardnessPpm : (parseFloat(String(waterHardnessPpm)) || 0),
@@ -188,6 +187,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
     maxFormulationCapPct: typeof maxFormulationCapPct === 'number' ? maxFormulationCapPct : (parseFloat(String(maxFormulationCapPct)) || 0),
     chelators: selectedChelatorId ? [{ id: selectedChelatorId, name: selectedChelator?.name || selectedChelatorId }] : []
   } as any);
+  const selectedChelatorDetail = greenChelatorResult?.details?.[0];
 
   const handleLoadActiveFormulaIntoCalculators = () => {
     if (!activeFormula || !activeFormula.ingredients || activeFormula.ingredients.length === 0) return;
@@ -1301,7 +1301,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                 <Beaker className="text-emerald-400 shrink-0 mt-0.5" size={18} />
                 <div>
                   <span className="font-bold block text-emerald-300 mb-0.5">Threshold Co-Builder Science</span>
-                  In modern detergent formulations, eco-chelators like GLDA, Sodium Citrate, and Gluconate are rarely used as sole builders for 100% stoichiometric water softening due to cost and stability caps. Instead, they act as <strong className="text-emerald-400">threshold crystallisation inhibitors</strong> (co-builders) at lower dosages (typically 10% of full stoichiometry), complementing primary alkaline builders like Soda Ash or Zeolites.
+                  This calculator estimates a grade-specific stoichiometric CaCO₃ binding load only. A co-builder fraction is a user-selected scenario parameter, not a validated optimum; threshold inhibition, precipitation control, and wash performance require condition-specific laboratory testing.
                 </div>
               </div>
 
@@ -1327,7 +1327,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   {/* Water Hardness */}
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1 flex justify-between">
-                      <span>Water Hardness</span>
+                      <span>Water Hardness (enter measured value)</span>
                       <span className="font-mono text-emerald-400 font-bold">{waterHardnessPpm} ppm (CaCO₃)</span>
                     </label>
                     <input
@@ -1349,7 +1349,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   {/* Wash Volume */}
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1 flex justify-between">
-                      <span>Wash Water Volume</span>
+                      <span>Wash Water Volume (scenario input)</span>
                       <span className="font-mono text-emerald-400 font-bold">{washVolumeL} Liters</span>
                     </label>
                     <input
@@ -1371,7 +1371,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   {/* Wash Dose */}
                   <div>
                     <label className="block font-semibold text-slate-300 mb-1 flex justify-between">
-                      <span>Detergent Dose per Wash</span>
+                      <span>Detergent Dose per Wash (scenario input)</span>
                       <span className="font-mono text-emerald-400 font-bold">{washDoseGrams || 0} grams</span>
                     </label>
                     <input
@@ -1432,7 +1432,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                     />
                     <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
                       <span>5% (Catalytic)</span>
-                      <span className="text-emerald-400 font-medium">10% (Optimum)</span>
+                      <span className="text-emerald-400 font-medium">10% (Scenario value)</span>
                       <span>100% (Full Sequest.)</span>
                     </div>
                   </div>
@@ -1454,7 +1454,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                     />
                     <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
                       <span>0.5%</span>
-                      <span className="text-emerald-400 font-medium">3.0% (Approved Cap)</span>
+                      <span className="text-emerald-400 font-medium">3.0% (Scenario cap)</span>
                       <span>10.0%</span>
                     </div>
                   </div>
@@ -1599,7 +1599,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                             <div className="bg-amber-950/40 border border-amber-500/30 rounded p-2 text-[9px] text-amber-200 flex items-start gap-1 leading-normal">
                               <AlertCircle className="text-amber-400 shrink-0 mt-0.5" size={12} />
                               <div>
-                                <strong className="font-bold">Grade-specific capacity is a registered reference value, not proof of wash performance. Validate binding under the exact pH, water composition, dose, and temperature before production use.
+                                <strong className="font-bold">Grade-specific capacity:</strong> Registered reference value, not proof of wash performance. Validate binding under the exact pH, water composition, dose, and temperature before production use.
                               </div>
                             </div>
                           ) : (
@@ -1683,7 +1683,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 border-r border-slate-800">(Target Demand / Wash Dose) &times; 100</td>
                         <td className="p-2 text-right text-emerald-400 font-bold">
                           {(() => {
-                            const safeDose = washDoseGrams > 0 ? washDoseGrams : 1;
+                            const safeDose = washDoseGrams;
                             const demandGrams = selectedChelatorDetail?.coBuilderTargetGrams;
                             const calcPct = selectedChelatorDetail?.calculatedWeightPct;
                             if (!Number.isFinite(demandGrams) || !Number.isFinite(calcPct)) return 'Not evaluated';
@@ -1697,7 +1697,6 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 border-r border-slate-800 font-bold">Min(Calculated %, Cap of {maxFormulationCapPct}%)</td>
                         <td className="p-2 text-right text-emerald-300 font-extrabold">
                           {(() => {
-                            const safeDose = washDoseGrams > 0 ? washDoseGrams : 1;
                             const calcPct = selectedChelatorDetail?.calculatedWeightPct;
                             const practical = selectedChelatorDetail?.practicalWeightPct;
                             if (!Number.isFinite(calcPct) || !Number.isFinite(practical)) return 'Not evaluated';
@@ -1711,7 +1710,6 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                         <td className="p-2 border-r border-slate-800">Practical Weight % &times; Wash Dose</td>
                         <td className="p-2 text-right text-emerald-400 font-bold">
                           {(() => {
-                            const safeDose = washDoseGrams > 0 ? washDoseGrams : 1;
                             const practical = selectedChelatorDetail?.practicalWeightPct;
                             const practicalGrams = selectedChelatorDetail?.practicalWeightGrams;
                             if (!Number.isFinite(practical) || !Number.isFinite(practicalGrams)) return 'Not evaluated';
