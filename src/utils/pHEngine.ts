@@ -378,12 +378,23 @@ export class PHEngine {
     const alkaliType = isObj && acidInput?.alkaliType ? acidInput.alkaliType : 'NaOH Flakes (99%)';
 
     let bPur = typeof basePurity === 'number' ? basePurity : 99;
-    if (alkaliType.includes('48%') || alkaliType.includes('Lye (48%)')) {
-      bPur = 48;
-    } else if (alkaliType.includes('50%') || alkaliType.includes('Lye (50%)')) {
-      bPur = 50;
-    } else if (alkaliType.includes('KOH')) {
-      bPur = (alkaliType.includes('85%') ? 85 : (alkaliType.includes('90%') ? 90 : 90));
+    // An explicit assay is authoritative; do not overwrite it from the display label.
+    if (typeof basePurity !== 'number') {
+      if (alkaliType.includes('48%') || alkaliType.includes('Lye (48%)')) {
+        bPur = 48;
+      } else if (alkaliType.includes('50%') || alkaliType.includes('Lye (50%)')) {
+        bPur = 50;
+      } else if (alkaliType.includes('KOH')) {
+        if (alkaliType.includes('85%')) {
+          bPur = 85;
+        } else if (alkaliType.includes('90%')) {
+          bPur = 90;
+        } else if (alkaliType.includes('100%')) {
+          bPur = 100;
+        } else {
+          throw new Error('KOH commercial assay is required (85%, 90%, or 100%) before neutralization can be calculated.');
+        }
+      }
     }
 
     const acidName = `LABSA ${aPur}%`;
