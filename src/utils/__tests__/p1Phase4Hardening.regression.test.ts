@@ -131,8 +131,8 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   const emptyRes = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Empty Formula cpi is unavailable', emptyRes.cpi === null, emptyRes.cpi, null);
   assert('Empty Formula Provenance is INSUFFICIENT_DATA', emptyRes.provenance === 'INSUFFICIENT_DATA', emptyRes.provenance, 'INSUFFICIENT_DATA');
-  assert('Empty Formula Model Type is Insufficient Ingredient Data', emptyRes.modelType === 'Insufficient Ingredient Data', emptyRes.modelType, 'Insufficient Ingredient Data');
-  assert('Empty Formula Limitations States Insufficient Data', emptyRes.limitations.includes('Insufficient formulation ingredient data'), true, true);
+  assert('Empty Formula Model Type is Insufficient Ingredient Data', emptyRes.modelType === 'INSUFFICIENT_DATA_FAIL_CLOSED', emptyRes.modelType, 'INSUFFICIENT_DATA_FAIL_CLOSED');
+  assert('Empty Formula Limitations States Insufficient Data', emptyRes.limitations.some(item => /insufficient data/i.test(item)), emptyRes.limitations, 'An insufficient-data limitation is required');
 
   // --------------------------------------------------------------------------
   // REQUIREMENT 7: All 13 Canonical Categories Terminology Audit
