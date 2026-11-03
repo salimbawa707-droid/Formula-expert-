@@ -134,7 +134,7 @@ export class HLBEngine {
   public static resolveIngredientHLB(ing: FormulationIngredient): {
     hlb: number | null;
     dataSource: HLBDataSource;
-    activeMatterPct: number;
+    activeMatterPct: number | null;
     category: string;
     isSurfactant: boolean;
     isIonic: boolean;
@@ -156,10 +156,13 @@ export class HLBEngine {
       canonicalMatch = UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === lowerName);
     }
     if (!canonicalMatch && rawName) {
-      canonicalMatch = UNIVERSAL_INGREDIENTS.find(u => 
-        lowerName.includes(u.name.toLowerCase()) || 
-        u.name.toLowerCase().includes(lowerName) ||
-        (u.inciName && lowerName.includes(u.inciName.toLowerCase()))
+      // HLB identity resolution must not use substring matching: short or generic
+      // names can collide with unrelated chemicals (e.g. TEA in Tea Tree Oil).
+      // Ambiguous grade/name matching is left unresolved rather than guessed.
+      canonicalMatch = UNIVERSAL_INGREDIENTS.find(u =>
+        lowerName === u.name.toLowerCase() ||
+        (!!u.inciName && lowerName === u.inciName.toLowerCase()) ||
+        (Array.isArray(u.aliases) && u.aliases.some(alias => lowerName === String(alias).toLowerCase()))
       );
     }
 
@@ -177,7 +180,7 @@ export class HLBEngine {
 
     // 2. Active matter resolution
     let activeMatterPct: number | null = null;
-    if (explicitActive !== undefined && explicitActive !== null && !isNaN(Number(explicitActive))) {
+    if (explicitActive !== undefined && explicitActive !== null && Number.isFinite(Number(explicitActive)) && Number(explicitActive) >= 0 && Number(explicitActive) <= 100) {
       activeMatterPct = Number(explicitActive);
     } else if (canonicalMatch?.activeDefault !== undefined && canonicalMatch?.activeDefault !== null) {
       activeMatterPct = canonicalMatch.activeDefault;
@@ -220,20 +223,14 @@ export class HLBEngine {
       if (lowerName === bLower || lowerName === bParen || (bInParen && lowerName === bInParen)) {
         return true;
       }
-      if (bParen && lowerName.includes(bParen)) {
-        return true;
-      }
-      if (bInParen && lowerName.includes(bInParen)) {
-        return true;
-      }
-      return bLower.includes(lowerName);
+      return false;
     });
 
     if (benchMatch && (isSurfactant || isSurfactantCategory || benchMatch.category.toLowerCase().includes('surfactant'))) {
       return {
         hlb: benchMatch.hlb,
         dataSource: 'authoritative',
-        activeMatterPct: explicitActive !== undefined ? Number(explicitActive) : benchMatch.activeDefault,
+        activeMatterPct: activeMatterPct !== null ? activeMatterPct : benchMatch.activeDefault,
         category: resolvedCategory || benchMatch.category,
         isSurfactant: true,
         isIonic: benchMatch.scaleType === 'Davies' || isIonic
@@ -331,10 +328,16 @@ export class HLBEngine {
     let hasNonionicSurfactants = false;
 
     for (const ing of safeIngs) {
-      const pct = Number(ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-      if (isNaN(pct) || pct <= 0) {
+      const rawPct = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+        limitations.push(`INVALID_OR_MISSING_INGREDIENT_PERCENTAGE: ${ing?.name || 'Unknown'}`);
+        surfactantsWithMissingHLB++;
         continue;
       }
+      if (pct === 0) continue;
 
       const resolution = this.resolveIngredientHLB(ing);
 
@@ -413,12 +416,12 @@ export class HLBEngine {
 
     if (!hasSurfactants) {
       overallMethodMeta = 'NOT_APPLICABLE';
-      finalBlendedHLB = 0;
+      finalBlendedHLB = Number.NaN;
     } else if (hasNonionicSurfactants) {
       // Nonionic surfactants present -> calculate authoritative Griffin blended HLB
       finalBlendedHLB = nonionicActiveWeight > 0
         ? Number((nonionicWeightedHLB / nonionicActiveWeight).toFixed(2))
-        : 0;
+        : Number.NaN;
       overallMethodMeta = 'GRIFFIN';
 
       if (hasIonicSurfactants) {
@@ -432,7 +435,7 @@ export class HLBEngine {
       // Only ionic surfactants present -> calculate Davies blended HLB
       finalBlendedHLB = ionicActiveWeight > 0
         ? Number((ionicWeightedHLB / ionicActiveWeight).toFixed(2))
-        : 0;
+        : Number.NaN;
       overallMethodMeta = 'DAVIES';
       limitations.push('All active surfactants are ionic. Blended HLB reflects the extended Davies charge scale.');
     }
@@ -465,7 +468,10 @@ export class HLBEngine {
    * Fast helper for single-number output backwards compatibility.
    */
   public static calculateBlendedHLBNumber(ingredients: FormulationIngredient[]): number {
-    return this.calculateBlendedHLB(ingredients).blendedHLB;
+    const report = this.calculateBlendedHLB(ingredients);
+    return Number.isFinite(report.blendedHLB) && report.isFullyAuthoritative
+      ? report.blendedHLB
+      : Number.NaN;
   }
 
   /**
