@@ -733,7 +733,7 @@ export function getChelatorBindingCapacity(
       (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
       (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
       (s.id === 'gluconate' && n.includes('gluconate')) ||
-      (s.id === 'edta-powder' && n.includes('edta 99')) ||
+      (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium 99'))) ||
       (s.id === 'edta-liquid' && n.includes('edta 39')) ||
       (s.id === 'stpp' && n.includes('stpp')) ||
       (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
