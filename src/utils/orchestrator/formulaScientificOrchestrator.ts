@@ -59,11 +59,11 @@ export class FormulaScientificOrchestrator {
     }
 
     let hasInvalidNumeric = false;
-    for (const ing of rawIngs) {
+    for (const [ingredientIndex, ing] of rawIngs.entries()) {
       const name = (ing?.name || '').trim();
       if (!name) {
         const finding: QualityGateFinding = {
-          id: `val-missing-name-${Math.random()}`,
+          id: `val-missing-name-${ingredientIndex}`,
           code: 'ERR_MISSING_INGREDIENT_NAME',
           title: 'Missing Chemical Name',
           category: 'VALIDITY',
@@ -75,13 +75,19 @@ export class FormulaScientificOrchestrator {
         errors.push(finding);
       }
 
-      const pct = Number(ing.percentage ?? (ing as any).percent ?? 0);
-      if (isNaN(pct) || pct < 0) {
+      const rawPct = ing.percentage ?? (ing as any).percent;
+      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
         hasInvalidNumeric = true;
       }
 
-      const purity = ing.activeMatterPct !== undefined ? Number(ing.activeMatterPct) : (ing.activePercent !== undefined ? Number(ing.activePercent) : undefined);
-      if (purity !== undefined && (isNaN(purity) || purity < 0 || purity > 100)) {
+      const rawPurity = ing.activeMatterPct ?? ing.activePercent;
+      const purity = rawPurity === undefined || rawPurity === null
+        ? undefined
+        : (typeof rawPurity === 'string' && rawPurity.trim() === '' ? Number.NaN : Number(rawPurity));
+      if (purity !== undefined && (!Number.isFinite(purity) || purity < 0 || purity > 100)) {
         const finding: QualityGateFinding = {
           id: `val-invalid-purity-${name}`,
           code: 'ERR_INVALID_ACTIVE_PURITY',
@@ -103,7 +109,7 @@ export class FormulaScientificOrchestrator {
         title: 'Invalid Number in Formula',
         category: 'VALIDITY',
         severity: 'FATAL',
-        message: 'One or more ingredient percentages are negative or NaN.',
+        message: 'One or more ingredient percentages are missing, non-finite, negative, or above 100%.',
         recommendation: 'Correct numeric values in ingredient list.'
       };
       blockingIssues.push(finding);
@@ -145,15 +151,15 @@ export class FormulaScientificOrchestrator {
         },
         scientificValidity: 'INVALID',
         massBalance: {
-          totalPercentage: 0,
+          totalPercentage: null as any,
           isBalanced: false,
-          deviation: -100,
-          waterPercentage: 0,
-          activeSurfactantsTotal: 0,
-          rawSurfactantsTotal: 0
+          deviation: null as any,
+          waterPercentage: null as any,
+          activeSurfactantsTotal: null as any,
+          rawSurfactantsTotal: null as any
         },
-        pHResult: { ph: null, isMeasured: false, provenance: 'PREDICTED', bufferCapacity: null, ionicStrength: null, confidence: 'No calculation', solverConverged: false, warnings: [], slurryBasis: undefined, measuredPH: null, predictionError: null, details: {} },
-        activeMatterResult: { totalSurfactantActivePct: 0, totalActiveMatterPct: 0, meetsCategoryMin: false, categoryMinPct: 0, surfactantBreakdown: { anionic: 0, nonionic: 0, amphoteric: 0, cationic: 0, total: 0 } },
+        pHResult: { ph: null, isMeasured: false, provenance: 'INSUFFICIENT_DATA', bufferCapacity: null, ionicStrength: null, confidence: 'No calculation', solverConverged: false, warnings: ['Calculation skipped after input validation failure.'], slurryBasis: undefined, measuredPH: null, predictionError: null, details: {} },
+        activeMatterResult: { totalSurfactantActivePct: null as any, totalActiveMatterPct: null as any, meetsCategoryMin: false, categoryMinPct: null as any, status: 'INSUFFICIENT_DATA', surfactantBreakdown: { anionic: null as any, nonionic: null as any, amphoteric: null as any, cationic: null as any, total: null as any } },
         hlbResult: {
           blendedHLB: null,
           hasSurfactants: false,
@@ -172,17 +178,17 @@ export class FormulaScientificOrchestrator {
           limitations: ['Formula validation failed.'],
           status: 'NOT_APPLICABLE'
         },
-        hardnessResult: { waterHardnessPpm: 150, status: 'NOT_EVALUATED', maxSupportedPpm: 0, washVolumeL: 10, washDoseGrams: 50, sufficiency: 'UNKNOWN', hardnessLoadMg: 0, totalSequestrationMg: 0 },
-        chelationResult: { isSufficient: false, chelatorActivePct: 0, chelatorNames: [], bindingCapacityCaCO3GPer100g: 0, hardnessProtectionRatio: 0 },
+        hardnessResult: { waterHardnessPpm: null, status: 'NOT_EVALUATED', maxSupportedPpm: null, washVolumeL: null, washDoseGrams: null, sufficiency: 'UNKNOWN', hardnessLoadMg: null, totalSequestrationMg: null },
+        chelationResult: { isSufficient: false, status: 'NOT_EVALUATED', chelatorActivePct: null, chelatorNames: [], bindingCapacityCaCO3GPer100g: null, hardnessProtectionRatio: null },
         compatibilityResult: { compatible: false, compatibilityScore: 0, riskLevel: 'CRITICAL', alerts: [], warnings: [], stabilityStatus: 'UNSTABLE' },
-        cleaningResult: { cpi: 0, overallScore: 0, cleaningScore: 0, scoreType: 'UNKNOWN', modelId: 'MOCK', modelVersion: '1.0', productCategory: 'UNKNOWN_PRODUCT_CATEGORY', isCleaningApplicable: false, qualitativePower: 'Low', cleaningPower: 'Low', degreasingScore: 0, greaseRemoval: 0, particulateSoilRemoval: 0, foamStabilityScore: 0, builderContribution: 0, enzymeBonus: 0, surfactantSynergy: 0, domainScores: { degreasing: 0, greaseRemoval: 0, particulate: 0 }, provenance: 'INSUFFICIENT_DATA', isMeasured: false, confidence: 'LOW', uncertainty: 'High', evidenceLevel: 'COMPUTATIONAL_SCREENING', limitingFactors: [], positiveFactors: [], warnings: [], missingInputs: [], foamProfile: 'None', categorySuitability: 'Poor', categoryKPIs: [] },
-        viscosityResult: { predictedViscosityCp: 0, rating: 'N/A', isFluid: false, flowMechanism: 'N/A', description: 'N/A', viscosityReport: {} as any },
-        densityResult: { densityGPerCm3: 1.0, specificGravity: 1.0, densityKgPerM3: 1000, totalVolumeCm3: 100, totalSolidsPct: 0, nvrPercentage: 0, isNvrComplete: false, dataCompleteness: 0, unknownIngredients: [] },
-        stabilityResult: { shelfLifeMonths: null, shelfLifeStatus: 'UNKNOWN', preservativeStatus: 'Adequate', syneresisRisk: 'LOW' } as any,
-        costResult: { costPerKg: 0, totalBatchCost: 0, isWithinTarget: false, costBreakdown: [], marginChain: {} as any },
-        labEvidenceResult: { evidenceLevel: 'PREDICTED_ONLY', validationState: {} as any, readinessLevel: 'COMPUTATIONAL_READY', verifiedMeasurementsCount: 0, missingMeasurements: [], isLabValidated: false, verdict: 'PREDICTED ONLY' },
-        regulatoryResult: { compliant: false, status: 'NON_COMPLIANT', region: 'GLOBAL', findings: [], restrictedIngredients: [], bannedIngredientsDetected: [], phosphateCompliance: { compliant: false, totalPhosphatePct: 0, maxAllowedPct: 0, status: 'BANNED' }, vocCompliance: { compliant: false, totalVocPct: 0, maxAllowedPct: 0 }, preservativeCompliance: { compliant: false, activePreservatives: [], warnings: [] }, ghsClassification: { signalWord: 'WARNING', hazardStatements: [], precautionaryStatements: [], hazardPictograms: [] } } as any,
-        aiGrade: { grade: 'F', score: 0, breakdown: { cpiScore: 0, compatibilityScore: 0, healthScore: 0, activeMatterScore: 0, commercialScore: 0 }, statusMap: {}, pillars: {} } as any,
+        cleaningResult: { cpi: null, overallScore: null, cleaningScore: null, scoreType: 'INSUFFICIENT_DATA', modelId: 'NOT_EXECUTED', modelVersion: null, productCategory: 'UNKNOWN_PRODUCT_CATEGORY', isCleaningApplicable: false, qualitativePower: 'Unavailable', cleaningPower: 'Unavailable', degreasingScore: null, greaseRemoval: null, particulateSoilRemoval: null, foamStabilityScore: null, builderContribution: null, enzymeBonus: null, surfactantSynergy: null, domainScores: null, provenance: 'INSUFFICIENT_DATA', isMeasured: false, confidence: 'NONE', uncertainty: 'Not evaluated', evidenceLevel: 'NOT_EVALUATED', limitingFactors: [], positiveFactors: [], warnings: [], missingInputs: ['INPUT_VALIDATION_FAILED'], foamProfile: 'Unknown', categorySuitability: 'Unknown', categoryKPIs: [] },
+        viscosityResult: { predictedViscosityCp: null, rating: 'NOT_EVALUATED', isFluid: null, flowMechanism: 'NOT_EVALUATED', description: 'Not evaluated after validation failure.', viscosityReport: {} as any },
+        densityResult: { densityGPerCm3: null, specificGravity: null, densityKgPerM3: null, totalVolumeCm3: null, totalSolidsPct: null, nvrPercentage: null, isNvrComplete: false, dataCompleteness: 0, unknownIngredients: rawIngs.map(ing => ing?.name || 'Unknown ingredient') },
+        stabilityResult: { shelfLifeMonths: null, shelfLifeStatus: 'UNKNOWN', preservativeStatus: 'UNKNOWN', syneresisRisk: 'UNKNOWN' } as any,
+        costResult: { costPerKg: null, totalBatchCost: null, isWithinTarget: null, pricingStatus: 'NOT_EVALUATED', costBreakdown: [], marginChain: {} as any },
+        labEvidenceResult: { evidenceLevel: 'INSUFFICIENT_DATA', validationState: {} as any, readinessLevel: 'BLOCKED', verifiedMeasurementsCount: 0, missingMeasurements: [], isLabValidated: false, verdict: 'NOT EVALUATED — INPUT VALIDATION FAILED' },
+        regulatoryResult: { compliant: false, status: 'NOT_EVALUATED', region: 'GLOBAL', findings: [], restrictedIngredients: [], bannedIngredientsDetected: [], phosphateCompliance: { compliant: false, totalPhosphatePct: null, maxAllowedPct: null, status: 'NOT_EVALUATED' }, vocCompliance: { compliant: false, totalVocPct: null, maxAllowedPct: null, status: 'NOT_EVALUATED' }, preservativeCompliance: { compliant: false, activePreservatives: [], warnings: [] }, ghsClassification: { signalWord: 'NOT_EVALUATED', hazardStatements: [], precautionaryStatements: [], hazardPictograms: [] } } as any,
+        aiGrade: { grade: 'NOT_EVALUATED', score: null, breakdown: {}, statusMap: {}, pillars: {}, reason: 'Input validation failed; no grade was calculated.' } as any,
         confidence: 0,
         uncertainty: { overallLevel: 'HIGH', factors: ['Validation failure'] },
         evidenceLevel: 'PREDICTED_ONLY',
@@ -198,8 +204,8 @@ export class FormulaScientificOrchestrator {
         verdictMatrix: { screeningStatus: 'FAILED', specVerdict: 'NEEDS REVISION', labEvidenceVerdict: 'PREDICTED ONLY', releaseGateDecision: 'BLOCKED', verdictStatus: 'NEEDS REVISION', verdictReasons: [], attentionExplanation: 'Validation failed' },
         qualityGateResult: {} as any,
         provenanceReport: {} as any,
-        foamProfile: 'None',
-        categorySuitability: 'Poor',
+        foamProfile: 'Unknown',
+        categorySuitability: 'Unknown',
         expertReport: {} as any,
         powderReport: null,
         stageDiagnostics,
