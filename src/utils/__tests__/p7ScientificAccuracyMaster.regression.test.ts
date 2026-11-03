@@ -297,6 +297,7 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     'All targets NOT_YET_VALIDATED or PARTIALLY_VALIDATED'
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 
