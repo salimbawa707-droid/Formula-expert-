@@ -174,7 +174,8 @@ export class HLBEngine {
                                  catLower.includes('emulsifier') || 
                                  catLower.includes('solubilizer');
 
-    const isSurfactant = !isWater && (isSurfactantCategory || (explicitHlb !== undefined && explicitHlb !== null && explicitHlb > 0));
+    const hasExplicitHLB = explicitHlb !== undefined && explicitHlb !== null && Number.isFinite(Number(explicitHlb)) && Number(explicitHlb) >= 0;
+    const isSurfactant = !isWater && (isSurfactantCategory || hasExplicitHLB);
 
     const isIonic = catLower.includes('anionic') || catLower.includes('cationic') || catLower.includes('amphoteric');
 
