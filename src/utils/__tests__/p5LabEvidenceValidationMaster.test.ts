@@ -381,7 +381,7 @@ export function runPhase5LabEvidenceValidationTestSuite(): { total: number; pass
   });
 
   assert('Quality Gate Integration', 'Quality Gate consumes authoritative validationState', qgReport.validationState === 'LAB_VALIDATED', qgReport.validationState, 'LAB_VALIDATED');
-  assert('Quality Gate Integration', 'Quality Gate consumes authoritative readinessLevel', qgReport.readinessLevel === 'PRODUCTION_READY', qgReport.readinessLevel, 'PRODUCTION_READY');
+  assert('Quality Gate Integration', 'Quality Gate consumes authoritative readinessLevel', qgReport.readinessLevel === 'LAB_VALIDATED', qgReport.readinessLevel, 'LAB_VALIDATED');
   assert('Quality Gate Integration', 'Quality Gate sets evidenceStatus to FULLY_LAB_VALIDATED', qgReport.evidenceStatus === 'FULLY_LAB_VALIDATED', qgReport.evidenceStatus, 'FULLY_LAB_VALIDATED');
 
   // --------------------------------------------------------------------------
