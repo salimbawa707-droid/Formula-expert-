@@ -83,7 +83,7 @@ export function calculateFormulaCost(
   if (!hasValidBatchSize) warnings.push('INVALID_BATCH_SIZE: Batch size must be a finite value greater than zero.');
 
   const rawItems = safeList.map((ing, idx) => {
-    const rawPctValue = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+    const rawPctValue = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? (ing as any)?.rawPercent;
     const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
       ? Number.NaN
       : Number(rawPctValue);
