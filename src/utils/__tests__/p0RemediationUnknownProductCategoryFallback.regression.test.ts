@@ -331,6 +331,21 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
     !confirmedGradeOverrideGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
   );
 
+  const waterBalanceGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-WATER-BALANCE',
+    formulaName: 'Water Balance Instruction',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' },
+      { name: 'Water (Aqua, Balance to 100%)', percentage: 90, activeMatterPct: 0, role: 'Solvent' }
+    ]
+  });
+  assert(
+    '39. Balance-to-100 wording is not mistaken for a commercial active-matter grade',
+    !waterBalanceGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
+  );
+
   // Even the same formula ID cannot reuse evidence from a different version.
   const wrongVersionPHGate = evaluateScientificQualityGate({
     formulaId: 'FORM-CURRENT',
