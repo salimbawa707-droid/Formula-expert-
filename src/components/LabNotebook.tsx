@@ -51,7 +51,7 @@ export default function LabNotebook(_props?: any) {
   // R&D Experiment Loop States
   const [trialName, setTrialName] = useState('');
   const [trialOperator, setTrialOperator] = useState('');
-  const [trialHardness, setTrialHardness] = useState('150');
+  const [trialHardness, setTrialHardness] = useState('');
   const [trialTemp, setTrialTemp] = useState('25');
   const [trialDosage, setTrialDosage] = useState('2.0');
   const [trialReplicateInput, setTrialReplicateInput] = useState('');
@@ -106,7 +106,7 @@ export default function LabNotebook(_props?: any) {
   const [newOperator, setNewOperator] = useState('');
   const [newSampleId, setNewSampleId] = useState('');
   const [newTemp, setNewTemp] = useState('25');
-  const [newHardness, setNewHardness] = useState('150');
+  const [newHardness, setNewHardness] = useState('');
   const [newSubstrate, setNewSubstrate] = useState('Polyester-Cotton Blend');
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
@@ -1089,7 +1089,7 @@ export default function LabNotebook(_props?: any) {
                     categoryId: selectedCategory,
                     operator: trialOperator,
                     testConditions: {
-                      waterHardnessPpm: Number(trialHardness),
+                      ...(trialHardness.trim() !== '' ? { waterHardnessPpm: Number(trialHardness) } : {}),
                       temperatureC: Number(trialTemp),
                       dosageGramsPerLiter: Number(trialDosage)
                     },
@@ -1105,7 +1105,7 @@ export default function LabNotebook(_props?: any) {
                     `Deviation: ${newTrial.errors.cleaningScore?.absoluteError > 0 ? '+' : ''}${newTrial.errors.cleaningScore?.absoluteError?.toFixed(1)}%. ` +
                     (parsedReplicates.length > 0 ? `Replicate mean: ${newTrial.replicateMean?.cleaningScore?.toFixed(1)}%. ` : '') +
                     `Quality: ${newTrial.qualityStatus}. ` +
-                    `Conditions: Hardness=${trialHardness} ppm, Temp=${trialTemp}°C, Dosage=${trialDosage} g/L.`;
+                    `Conditions: Hardness=${trialHardness.trim() === '' ? 'NOT PROVIDED' : `${trialHardness} ppm (user-entered, unverified)`}, Temp=${trialTemp}°C, Dosage=${trialDosage} g/L.`;
 
                   setNotes((prev: any) => [
                     {
@@ -1171,7 +1171,7 @@ export default function LabNotebook(_props?: any) {
                       value={trialHardness}
                       onChange={(e) => setTrialHardness(e.target.value)}
                       className="w-full px-2 py-1.5 bg-[#131d35] border border-slate-700 rounded text-white focus:outline-none text-center font-mono text-xs"
-                      placeholder="150"
+                      placeholder="Optional — enter measured ppm"
                     />
                   </div>
                   <div>
@@ -1559,13 +1559,13 @@ export default function LabNotebook(_props?: any) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] text-slate-400 uppercase font-bold mb-1">Hardness (ppm):</label>
+                  <label className="block text-[9px] text-slate-400 uppercase font-bold mb-1">Hardness (ppm, if measured):</label>
                   <input
                     type="number"
                     value={newHardness}
                     onChange={(e) => setNewHardness(e.target.value)}
                     className="w-full px-2 py-1.5 bg-[#131d35] border border-slate-700 rounded text-xs text-white focus:outline-none"
-                    placeholder="150"
+                    placeholder="Optional — enter measured ppm"
                   />
                 </div>
                 <div>

@@ -87,7 +87,8 @@ export function runExpertReasoningTestSuite() {
   });
 
   assert(hardWaterDeficitReport.issues.some(i => i.id === 'chelation-deficit'), 'Test 3: Flags hard water chelation deficit (350 ppm demand vs 80 ppm capacity)', 'Detected deficit');
-  assert(hardWaterDeficitReport.recommendations.some(r => r.id === 'rec-chelation'), 'Test 3: Recommends specific builder/chelator addition with calculation basis');
+  assert(hardWaterDeficitReport.recommendations.some(r => r.id === 'rec-chelation'), 'Test 3: Provides a cautious hard-water follow-up recommendation');
+  assert(hardWaterDeficitReport.recommendations.find(r => r.id === 'rec-chelation')?.recommendedAction.includes('No chelator percentage is calculated'), 'Test 3: Does not invent chelator dosage without wash volume and dose');
 
   // TEST 4: Anionic + Cationic Incompatibility Formula
   const ionicConflictReport = evaluateExpertReasoning({

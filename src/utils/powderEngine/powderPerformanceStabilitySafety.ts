@@ -51,18 +51,19 @@ export function calculatePowderDissolution(
   const isResidueMeasured = labInputs?.measuredUndissolvedResiduePct !== undefined;
   const isObservationProvided = labInputs?.dispersibilityObservation !== undefined && labInputs.dispersibilityObservation !== 'not observed';
 
-  const testConditions = (isMeasured || isResidueMeasured || isObservationProvided)
-    ? {
-        doseGPerL: 5.0,
-        waterVolumeMl: 1000,
-        waterTempC: labInputs?.dissolutionWaterTempC ?? 20,
-        waterHardnessPpm: 150,
-        agitationMethod: 'Standard Laboratory Magnetic Stirrer (200 RPM)',
-        agitationRpm: labInputs?.dissolutionAgitationRpm ?? 200,
-        measuredDissolutionTimeSec: labInputs?.measuredDissolutionTimeSec,
-        measuredUndissolvedResiduePct: labInputs?.measuredUndissolvedResiduePct,
-        undissolvedMaterialNotes: labInputs?.dispersibilityNotes
-      }
+  const suppliedTestConditions = {
+    doseGPerL: typeof labInputs?.dissolutionDoseGPerL === 'number' && Number.isFinite(labInputs.dissolutionDoseGPerL) && labInputs.dissolutionDoseGPerL > 0 ? labInputs.dissolutionDoseGPerL : undefined,
+    waterVolumeMl: typeof labInputs?.dissolutionWaterVolumeMl === 'number' && Number.isFinite(labInputs.dissolutionWaterVolumeMl) && labInputs.dissolutionWaterVolumeMl > 0 ? labInputs.dissolutionWaterVolumeMl : undefined,
+    waterTempC: typeof labInputs?.dissolutionWaterTempC === 'number' && Number.isFinite(labInputs.dissolutionWaterTempC) ? labInputs.dissolutionWaterTempC : undefined,
+    waterHardnessPpm: typeof labInputs?.dissolutionWaterHardnessPpm === 'number' && Number.isFinite(labInputs.dissolutionWaterHardnessPpm) && labInputs.dissolutionWaterHardnessPpm >= 0 ? labInputs.dissolutionWaterHardnessPpm : undefined,
+    agitationRpm: typeof labInputs?.dissolutionAgitationRpm === 'number' && Number.isFinite(labInputs.dissolutionAgitationRpm) && labInputs.dissolutionAgitationRpm > 0 ? labInputs.dissolutionAgitationRpm : undefined,
+    measuredDissolutionTimeSec: labInputs?.measuredDissolutionTimeSec,
+    measuredUndissolvedResiduePct: labInputs?.measuredUndissolvedResiduePct,
+    undissolvedMaterialNotes: labInputs?.dispersibilityNotes
+  };
+  const hasSuppliedTestConditions = [suppliedTestConditions.doseGPerL, suppliedTestConditions.waterVolumeMl, suppliedTestConditions.waterTempC, suppliedTestConditions.waterHardnessPpm, suppliedTestConditions.agitationRpm].some(value => value !== undefined);
+  const testConditions = (isMeasured || isResidueMeasured || isObservationProvided) && hasSuppliedTestConditions
+    ? suppliedTestConditions
     : undefined;
 
   return {

@@ -194,7 +194,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     [{ name: 'Sodium Citrate Dihydrate', percentage: 1.0 }],
     300, // 300 ppm hard water
     10,  // 10L wash volume
-    20   // 20g dose
+    20,  // 20g dose
+    25   // explicit 25% safety margin
   );
   assert('3. Chelation', '3.6 Dynamic hardness load correctly calculated for 300 ppm in 10L = 3000 mg CaCO3', dynChel.hardnessLoadMg === 3000, dynChel.hardnessLoadMg, 3000);
 

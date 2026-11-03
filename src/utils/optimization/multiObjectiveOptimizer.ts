@@ -69,6 +69,8 @@ export interface OptimizerConfig {
   mutationRate?: number; // e.g. 0.2
   seed?: number;
   waterHardnessPpm?: number;
+  washVolumeL?: number;
+  washDoseGrams?: number;
   maxEvaluations?: number; // safety cap (e.g. 200)
   strategy?: OptimizationStrategy;
   objectives?: Partial<OptimizationObjectivesConfig>;
@@ -269,7 +271,7 @@ export function evaluateCandidateFormulation(
   constraints: FormulationConstraint[],
   candidateId = `CAND-${Date.now()}`,
   batchSizeKg = 100,
-  scenario?: { waterHardnessPpm?: number }
+  scenario?: { waterHardnessPpm?: number; washVolumeL?: number; washDoseGrams?: number }
 ): {
   metrics: CandidateScientificMetrics;
   objectives: CandidateObjectiveScores;
@@ -305,6 +307,8 @@ export function evaluateCandidateFormulation(
     })),
     batchSizeKg,
     waterHardnessPpm: scenario?.waterHardnessPpm,
+    ...(typeof scenario?.washVolumeL === 'number' ? { machineProfile: { waterVolumeL: scenario.washVolumeL } } : {}),
+    doseGrams: scenario?.washDoseGrams,
   };
 
   const orchestratorResult = FormulaScientificOrchestrator.evaluate(canonicalInput);
@@ -703,7 +707,7 @@ export async function runFormulationOptimization(
   const totalGens = Math.max(1, Math.min(25, config.generations || 8));
   const maxEvalCap = config.maxEvaluations || popSize * (totalGens + 1);
 
-  const constraints = buildProductConstraints(categoryId, config.subCategory, config.customConstraints);
+  const constraints = buildProductConstraints(categoryId, config.subCategory, config.customConstraints, config.waterHardnessPpm, config.washVolumeL, config.washDoseGrams);
   const random = config.seed !== undefined ? createSeededRandom(config.seed) : Math.random;
 
   const allCandidates: ParetoCandidate[] = [];
@@ -717,7 +721,7 @@ export async function runFormulationOptimization(
     constraints,
     'SEED-BASELINE',
     100,
-    { waterHardnessPpm: config.waterHardnessPpm }
+    { waterHardnessPpm: config.waterHardnessPpm, washVolumeL: config.washVolumeL, washDoseGrams: config.washDoseGrams }
   );
   const baselineCandidate: ParetoCandidate = {
     candidateId: 'CAND-SEED-0',
@@ -750,7 +754,7 @@ export async function runFormulationOptimization(
     if (cancellationToken?.isCancelled || evaluationCount >= maxEvalCap) break;
     const perturbed = perturbCandidate(startingIngredients, random, 0.25, constraints);
     const candId = `CAND-G0-${i}`;
-    const evaluated = evaluateCandidateFormulation(perturbed, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm });
+    const evaluated = evaluateCandidateFormulation(perturbed, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm, washVolumeL: config.washVolumeL, washDoseGrams: config.washDoseGrams });
     const candidate: ParetoCandidate = {
       candidateId: candId,
       generation: 0,
@@ -819,7 +823,7 @@ export async function runFormulationOptimization(
 
       const mutatedIngs = perturbCandidate(parent.ingredients, random, config.mutationRate || 0.15, constraints);
       const candId = `CAND-G${gen}-${j}`;
-      const evalRes = evaluateCandidateFormulation(mutatedIngs, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm });
+      const evalRes = evaluateCandidateFormulation(mutatedIngs, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm, washVolumeL: config.washVolumeL, washDoseGrams: config.washDoseGrams });
 
       const offspring: ParetoCandidate = {
         candidateId: candId,

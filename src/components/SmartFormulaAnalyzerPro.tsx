@@ -67,7 +67,7 @@ interface Props {
   grade: "Economy" | "Standard" | "Premium";
   targetCost: number;
   onApplyIngredients?: (updatedIngredients: FormulationIngredient[]) => void;
-  waterHardnessPpm?: number;
+  waterHardnessPpm?: number | null;
   compatibilityScore?: number;
   formulationResult?: any;
 }
@@ -315,7 +315,7 @@ function SmartFormulaAnalyzerProInner({
   grade,
   targetCost,
   onApplyIngredients: _onApplyIngredients,
-  waterHardnessPpm = 150,
+  waterHardnessPpm,
   formulationResult: formulationResultProp
 }: Props) {
   const formulationResult = formulationResultProp || { grade };
@@ -480,10 +480,7 @@ function SmartFormulaAnalyzerProInner({
         productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : rawCategory,
         ingredients: analyzedIngredients as any,
         batchSizeKg: 100,
-        waterHardnessPpm,
-        waterProfile: {
-          hardnessPpm: waterHardnessPpm
-        },
+        ...(waterHardnessPpm !== undefined && waterHardnessPpm !== null ? { waterHardnessPpm, waterProfile: { hardnessPpm: waterHardnessPpm } } : {}),
         costContext: {
           targetCostPerKg: targetCost
         }
@@ -725,7 +722,7 @@ function SmartFormulaAnalyzerProInner({
     analyzedIngs: any[],
     activeSurfactantPct: number,
     ph: number,
-    _curHardnessPpm: number,
+    _curHardnessPpm: number | null | undefined,
     canonicalHardness?: HardnessResultOutput,
     canonicalCleaning?: CleaningResultOutput
   ) => {
@@ -733,7 +730,7 @@ function SmartFormulaAnalyzerProInner({
     let viscosity: "High" | "Medium" | "Low" = "Medium";
     let cleaningPower: "Outstanding" | "High" | "Medium" | "Low" | "N/A" = "Medium";
     let oilRemoval: "Outstanding" | "High" | "Medium" | "Low" = "Medium";
-    let hardWater: "Excellent" | "Good" | "Adequate" | "Poor" | "INSUFFICIENT_DATA" | string = "Adequate";
+    let hardWater: "Excellent" | "Good" | "Adequate" | "Poor" | "INSUFFICIENT_DATA" | string = "INSUFFICIENT_DATA";
     let rinseability: "Excellent" | "Good" | "Medium" | "Difficult" = "Good";
     let safetyRating: "Excellent (Skin-Mild)" | "Standard (Wear Gloves)" | "Industrial Corrosive" = "Standard (Wear Gloves)";
     let shelfLife = "24 Months";
@@ -760,7 +757,7 @@ function SmartFormulaAnalyzerProInner({
     // Authoritative Hard Water Tolerance from Canonical Orchestrator Result
     const hardness = canonicalHardness;
     hardWater = (typeof hardness === 'object' && hardness !== null)
-      ? (hardness.sufficiency ? String(hardness.sufficiency).toUpperCase() : (hardness.status ? String(hardness.status) : (hardness.maxSupportedPpm !== undefined ? `${hardness.maxSupportedPpm} ppm` : "INSUFFICIENT_DATA")))
+      ? (hardness.status === 'NOT_EVALUATED' ? 'INSUFFICIENT_DATA' : (hardness.sufficiency ? String(hardness.sufficiency).toUpperCase() : (hardness.status ? String(hardness.status) : (hardness.maxSupportedPpm !== undefined ? `${hardness.maxSupportedPpm} ppm` : "INSUFFICIENT_DATA"))))
       : "INSUFFICIENT_DATA";
 
     // Authoritative Cleaning Performance from Canonical Orchestrator Result

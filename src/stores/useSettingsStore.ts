@@ -52,7 +52,8 @@ export type LabTheme = 'midnight' | 'daylight';
 export interface AppPreferences {
   category: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
+  waterHardnessSource: 'USER_ENTERED' | 'MEASURED' | 'UNKNOWN';
   currencySymbol: string;
   theme: LabTheme;
 }
@@ -142,7 +143,8 @@ const DEFAULT_AI_SETTINGS: AISettings = {
 const DEFAULT_PREFERENCES: AppPreferences = {
   category: 'Liquid Laundry',
   batchSizeKg: 100,
-  waterHardnessPpm: 150,
+  waterHardnessPpm: null,
+  waterHardnessSource: 'UNKNOWN',
   currencySymbol: '$',
   theme: 'midnight',
 };
@@ -312,10 +314,19 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const savedTheme = (typeof localStorage !== 'undefined' ? (localStorage.getItem('detergent_lab_theme') as LabTheme) : null) || prefRec?.value?.theme || 'midnight';
       applyTheme(savedTheme);
 
+      const savedHardnessHasProvenance = ['USER_ENTERED', 'MEASURED'].includes(String(prefRec?.value?.waterHardnessSource || '').toUpperCase()) &&
+        typeof prefRec?.value?.waterHardnessPpm === 'number' && Number.isFinite(prefRec.value.waterHardnessPpm) && prefRec.value.waterHardnessPpm >= 0;
+      const loadedPreferences: AppPreferences = {
+        ...(prefRec?.value ? { ...DEFAULT_PREFERENCES, ...prefRec.value } : DEFAULT_PREFERENCES),
+        waterHardnessPpm: savedHardnessHasProvenance ? prefRec!.value.waterHardnessPpm : null,
+        waterHardnessSource: savedHardnessHasProvenance ? prefRec!.value.waterHardnessSource : 'UNKNOWN',
+        theme: savedTheme
+      };
+
       set({
         profile: currentProfile,
         aiSettings: aiRec?.value ? { ...DEFAULT_AI_SETTINGS, ...aiRec.value } : DEFAULT_AI_SETTINGS,
-        preferences: prefRec?.value ? { ...DEFAULT_PREFERENCES, ...prefRec.value, theme: savedTheme } : { ...DEFAULT_PREFERENCES, theme: savedTheme },
+        preferences: loadedPreferences,
         syncState: {
           ...get().syncState,
           isCloudConnected: isSupabaseConfigured(),
@@ -387,7 +398,13 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   },
 
   updatePreferences: async (updated) => {
-    const newPrefs = { ...get().preferences, ...updated };
+    const newPrefs: AppPreferences = {
+      ...get().preferences,
+      ...updated,
+      waterHardnessSource: updated.waterHardnessPpm !== undefined
+        ? (updated.waterHardnessPpm === null ? 'UNKNOWN' : (updated.waterHardnessSource || 'USER_ENTERED'))
+        : get().preferences.waterHardnessSource
+    };
     set({ preferences: newPrefs });
     await db.userSettings.put({
       key: 'app_preferences',
