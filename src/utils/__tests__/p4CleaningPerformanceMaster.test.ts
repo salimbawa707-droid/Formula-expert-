@@ -236,7 +236,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   assert('Fabric Softener', 'Cleaning score is strictly null for Fabric Softener', perfSoftener.cleaningScore === null, perfSoftener.cleaningScore, null);
   assert('Fabric Softener', 'isCleaningApplicable is false', perfSoftener.isCleaningApplicable === false, perfSoftener.isCleaningApplicable, false);
   assert('Fabric Softener', 'Qualitative power is Conditioning / Non-Detergent', perfSoftener.cleaningPower === 'Conditioning / Non-Detergent', perfSoftener.cleaningPower, 'Conditioning / Non-Detergent');
-  assert('Fabric Softener', 'Fabric Softening Index is positive', perfSoftener.cpi > 70, perfSoftener.cpi, '>70');
+  assert('Fabric Softener', 'Fabric Softening Index is positive while detergent CPI remains not applicable', (perfSoftener.conditioningScore ?? 0) > 70 && perfSoftener.cpi === null, { conditioningScore: perfSoftener.conditioningScore, cpi: perfSoftener.cpi }, 'conditioningScore >70 and cpi null');
 
   // --------------------------------------------------------------------------
   // TEST GROUP 9: KITCHEN DEGREASER (ALKALINITY + SOLVENT)
