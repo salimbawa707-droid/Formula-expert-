@@ -168,7 +168,8 @@ export function runP0P2FinalIntegrityClosureTestSuite() {
   // TEST 9: Complete formula returns COMPLETE_PRICING
   const completeFormula: FormulationIngredient[] = [
     { id: '1', name: 'LABSA 90%', percentage: 10, costPerKg: 140 },
-    { id: '2', name: 'SLES 70%', percentage: 10, costPerKg: 110 }
+    { id: '2', name: 'SLES 70%', percentage: 10, costPerKg: 110 },
+    { id: '3', name: 'Water / Aqua', percentage: 80, costPerKg: 0, activeMatterPct: 0 }
   ];
   const report9 = calculateFormulaCost(completeFormula, 100);
   assert(
