@@ -32,7 +32,7 @@ export interface FormulaChatContext {
   productType?: string;
   productCategory?: string;
   batchSizeKg?: number;
-  waterHardnessPpm?: number;
+  waterHardnessPpm?: number | null;
   ingredients?: Array<{
     name: string;
     percentage?: number;
