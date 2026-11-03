@@ -71,7 +71,7 @@ export function runLegacyStatusLeakageTestSuite() {
       { name: 'Cocamidopropyl Betaine', percentage: 5, activeMatterPct: 30, category: 'Surfactant' },
       { name: 'Sodium Citrate', percentage: 3, category: 'Builder' },
       { name: 'Citric Acid', percentage: 0.05, category: 'Acid' },
-      { name: 'Phenoxyethanol', percentage: 0.5, category: 'Preservative' }
+      { name: 'Water (Balance)', percentage: 0.5, category: 'Solvent' }
     ]
   };
 
@@ -79,7 +79,11 @@ export function runLegacyStatusLeakageTestSuite() {
     ingredients: formulaB.ingredients,
     productCategory: formulaB.category,
     formulaName: formulaB.name,
-    formulaVersion: '1.0.0'
+    formulaVersion: '1.0.0',
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert(
