@@ -92,13 +92,13 @@ export function runPhase8EndToEndIntegrationTestSuite(): { passed: number; faile
     { id: 'w', name: 'Water', percentage: 80.0 },
     { id: 's', name: 'SLES 70%', percentage: 20.0 }
   ];
-  const fpA = computeFormulaFingerprint('F-01', '1.0.0', recipeA, 'LAUNDRY_LIQUID');
+  const fpA = computeFormulaFingerprint('F-01', '1.0.0', recipeA, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   const recipeB: FormulationIngredient[] = [
     { id: 'w', name: 'Water', percentage: 79.0 },
     { id: 's', name: 'SLES 70%', percentage: 21.0 }
   ];
-  const fpB = computeFormulaFingerprint('F-01', '1.0.0', recipeB, 'LAUNDRY_LIQUID');
+  const fpB = computeFormulaFingerprint('F-01', '1.0.0', recipeB, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   const traceResult = checkResultTraceability(fpA, fpB);
   assert('StalePrevention', 'Recipe change renders recorded fingerprint stale', traceResult.isStale === true, traceResult.isStale, true);
