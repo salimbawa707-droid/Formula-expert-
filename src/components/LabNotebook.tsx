@@ -1559,13 +1559,13 @@ export default function LabNotebook(_props?: any) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] text-slate-400 uppercase font-bold mb-1">Hardness (ppm):</label>
+                  <label className="block text-[9px] text-slate-400 uppercase font-bold mb-1">Hardness (ppm, if measured):</label>
                   <input
                     type="number"
                     value={newHardness}
                     onChange={(e) => setNewHardness(e.target.value)}
                     className="w-full px-2 py-1.5 bg-[#131d35] border border-slate-700 rounded text-xs text-white focus:outline-none"
-                    placeholder="150"
+                    placeholder="Optional — enter measured ppm"
                   />
                 </div>
                 <div>
