@@ -290,8 +290,22 @@ export function evaluateScientificQualityGate(
       totalMassPct += pct;
     }
 
-    const activePurity = Number(ing?.activeMatterPct ?? ing?.activePercent ?? getDefaultActiveMatter(ing));
-    if (isNaN(activePurity) || activePurity < 0 || activePurity > 100) {
+    const resolvedActivePurity = ing?.activeMatterPct ?? ing?.activePercent ?? getDefaultActiveMatter(ing);
+    const activePurity = resolvedActivePurity === null || resolvedActivePurity === undefined
+      ? null
+      : Number(resolvedActivePurity);
+    if (activePurity === null) {
+      blockingIssues.push({
+        id: `gate-active-purity-unavailable-${name}`,
+        code: 'ERR_ACTIVE_MATTER_UNAVAILABLE',
+        title: `Active Matter Assay Unavailable (${name})`,
+        category: 'VALIDITY',
+        severity: 'FATAL',
+        message: `Ingredient '${name}' has no defensible active-matter value. The engine will not treat an unknown assay as 0% or 100%.`,
+        recommendation: 'Enter a supplier COA/verified assay or an explicitly identified grade concentration. Otherwise keep this ingredient active matter UNKNOWN and do not approve the formula.'
+      });
+      scientificValidity = 'INSUFFICIENT_DATA';
+    } else if (!Number.isFinite(activePurity) || activePurity < 0 || activePurity > 100) {
       blockingIssues.push({
         id: `gate-invalid-purity-${name}`,
         code: 'ERR_INVALID_ACTIVE_PURITY',
@@ -771,9 +785,9 @@ export function evaluateScientificQualityGate(
     const hasSpecFatal = blockingIssues.some(i => i.category === 'SPECIFICATION');
 
     if (hasValidityFatal) {
-      if (rawIngs.length === 0) {
+      if (rawIngs.length === 0 || blockingIssues.some(i => i.code === 'ERR_ACTIVE_MATTER_UNAVAILABLE')) {
         finalFormulaStatus = 'INSUFFICIENT_DATA';
-        labReadiness = 'REQUIRES_INGREDIENT_IDENTITY';
+        labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
       } else {
         finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
         labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
