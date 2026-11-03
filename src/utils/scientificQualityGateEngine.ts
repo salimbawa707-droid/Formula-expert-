@@ -887,23 +887,23 @@ export function evaluateScientificQualityGate(
     const hasCompatFatal = blockingIssues.some(i => i.category === 'COMPATIBILITY');
     const hasSpecFatal = blockingIssues.some(i => i.category === 'SPECIFICATION');
 
-    if (hasValidityFatal) {
-      if (blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED')) {
-        finalFormulaStatus = 'OUT_OF_SPEC';
-        labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
-      } else if (rawIngs.length === 0) {
+    const hasMeasuredLabFailure = blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED');
+    // A confirmed, identity-matched laboratory failure must never be hidden by
+    // a separate missing/invalid computational input.
+    if (hasMeasuredLabFailure || hasSpecFatal) {
+      finalFormulaStatus = 'OUT_OF_SPEC';
+      labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
+    } else if (hasCompatFatal) {
+      finalFormulaStatus = 'INCOMPATIBLE';
+      labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
+    } else if (hasValidityFatal) {
+      if (rawIngs.length === 0) {
         finalFormulaStatus = 'INSUFFICIENT_DATA';
-        labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
+        labReadiness = 'REQUIRES_INGREDIENT_IDENTITY';
       } else {
         finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
         labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
       }
-    } else if (hasCompatFatal) {
-      finalFormulaStatus = 'INCOMPATIBLE';
-      labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
-    } else if (hasSpecFatal) {
-      finalFormulaStatus = 'OUT_OF_SPEC';
-      labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else {
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
