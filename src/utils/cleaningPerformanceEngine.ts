@@ -199,9 +199,10 @@ export function calculateCleaningPerformance(
         'amine oxide', 'ethoxylate', 'glucoside', 'esterquat', 'quat', 'cetrimonium'].some(token => name.includes(token));
     if (looksLikeSurfactant && !activeIsValid) missingSurfactantActiveMatter = true;
 
-    // Invalid/unknown active matter is never a scientifically meaningful zero.
-    // The complete evaluation is blocked below before any score can be emitted.
-    const active = activeIsValid ? resolvedActive / 100 : 0;
+    // Never substitute zero for an unavailable surfactant assay. NaN propagates
+    // through any dependent surfactant subtotal, and the fail-closed gate below
+    // withholds every performance score until the required assay is supplied.
+    const active = activeIsValid ? resolvedActive / 100 : Number.NaN;
     const activePct = pct * active;
 
     // Ionic classification
