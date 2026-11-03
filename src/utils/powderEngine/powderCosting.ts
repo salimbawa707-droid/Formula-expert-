@@ -3,7 +3,7 @@ import { ClassifiedIngredient, PowderCostingReport } from './types';
 export function calculatePowderCosting(
   classifiedIngredients: ClassifiedIngredient[],
   batchSizeKg?: number | null,
-  washDoseG: number = 50
+  washDoseG?: number
 ): PowderCostingReport {
   const validBatchSize =
     typeof batchSizeKg === 'number' &&
@@ -33,7 +33,8 @@ export function calculatePowderCosting(
   });
 
   const finalCostPerKg = Number(costPerKg.toFixed(4));
-  const costPerWashDose = Number(((washDoseG / 1000) * finalCostPerKg).toFixed(4));
+  const validWashDose = typeof washDoseG === 'number' && Number.isFinite(washDoseG) && washDoseG > 0 ? washDoseG : null;
+  const costPerWashDose = validWashDose === null ? null : Number(((validWashDose / 1000) * finalCostPerKg).toFixed(4));
 
   contributions.forEach((c) => {
     c.costPercentage = finalCostPerKg > 0 ? Number(((c.costContribution / finalCostPerKg) * 100).toFixed(1)) : 0;
