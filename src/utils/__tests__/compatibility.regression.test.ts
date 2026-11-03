@@ -38,8 +38,8 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
 
   // 1. Empty Formula
   const resEmpty = calculateFormulationCompatibility([], 7.5);
-  assertNear('Empty Formula', 'Empty formula score is 100', resEmpty.compatibilityScore, 100);
-  assertEqual('Empty Formula', 'Empty formula compatible is true', resEmpty.compatible, true);
+  assertEqual('Empty Formula', 'Empty formula score is unavailable', Number.isNaN(resEmpty.compatibilityScore), true);
+  assertEqual('Empty Formula', 'Empty formula compatibility is unknown and not a pass', resEmpty.compatible, false);
   assertEqual('Empty Formula', 'Empty formula has 0 alerts', resEmpty.alerts.length, 0);
 
   // 2. Anionic Surfactant Only
