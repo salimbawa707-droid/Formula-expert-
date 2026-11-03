@@ -922,12 +922,14 @@ export function evaluateScientificQualityGate(
     const hasMeasuredLabFailure =
       validationState === 'LAB_FAILED' ||
       blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED');
+    const hasMeasuredSpecificationFailure =
+      (specReport?.verdict.outOfSpecParameters ?? []).some(item => item.isMeasured === true);
     const hasCompositionFatal = blockingIssues.some(i =>
       i.code === 'ERR_MASS_BALANCE_UNBALANCED' || i.code === 'ERR_INVALID_NUMERIC_INPUT'
     );
-    // A confirmed, identity-matched laboratory failure must never be hidden by
-    // a separate missing/invalid computational input.
-    if (hasMeasuredLabFailure || specificationStatus === 'OUT_OF_SPEC') {
+    // A verified measured failure outranks missing secondary data. Predicted
+    // specification deviations do not outrank an unidentifiable formula.
+    if (hasMeasuredLabFailure || hasMeasuredSpecificationFailure) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else if (hasCompositionFatal || scientificValidity === 'INVALID') {
