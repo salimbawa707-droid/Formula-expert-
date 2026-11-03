@@ -301,9 +301,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
 
   // 6.3 Clean nonionic/water formula receives SCREENING_COMPATIBLE (no known conflict, not proof of infinite stability)
   const compClean = calculateFormulationCompatibility([
-    { name: 'Water', percentage: 89.9 },
-    { name: 'Lauryl Glucoside 50%', percentage: 10, role: 'Nonionic Surfactant' },
-    { name: 'Water (Balance)', percentage: 0.1, role: 'Solvent', category: 'Solvent' }
+    { name: 'Water', percentage: 90 },
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
   ]);
   assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', true, true);
 
@@ -336,7 +335,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // 8. Density Engine Tests
   // =========================================================================
   // 8.1 Pure water density baseline
-  const densWater = calculateDensity([]);
+  const densWater = calculateDensity([{ name: 'Water', percentage: 100 }]);
   assert('8. Density', '8.1 Water baseline gives 1.000 g/cm3 with PREDICTED_DENSITY tag', densWater.densityGPerCm3 === 1.000 && densWater.densityType === 'PREDICTED_DENSITY', true, true);
 
   // 8.2 Concentrated formulation density via harmonic volume additivity
@@ -345,7 +344,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     { name: 'Caustic Soda 50%', percentage: 10 }, // density ~ 1.53
     { name: 'Glycerin', percentage: 20 }           // density ~ 1.26
   ], 100);
-  assert('8. Density', '8.2 Dense solution calculates composite density > 1.05 g/cm3', densMix.densityGPerCm3 > 1.05 && densMix.provenance === 'PREDICTED', true, true);
+  assert('8. Density', '8.2 Dense solution calculates composite density > 1.05 g/cm3', densMix.densityGPerCm3 > 1.05 && densMix.provenance === 'ESTIMATED' && densMix.densityType === 'PREDICTED_DENSITY', true, true);
 
   // =========================================================================
   // 9. Liquid NVR Engine Tests
@@ -354,7 +353,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const nvrRes = calculateLiquidNVR([
     { name: 'Water', percentage: 80 },
     { name: 'Salt', percentage: 20, nonVolatileFraction: 1.0 }
-  ]);
+  ], 100);
   assert('9. Liquid NVR', '9.1 Drying protocol does NOT cite incorrect ASTM D1767', !nvrRes.dryingProtocolAssumed?.includes('ASTM D1767'), true, true);
   assert('9. Liquid NVR', '9.1 Drying protocol cites METHOD_NOT_VERIFIED', Boolean(nvrRes.dryingProtocolAssumed?.includes('METHOD_NOT_VERIFIED')), true, true);
   assert('9. Liquid NVR', '9.2 Theoretical NVR calculates exact mass balance (20.0%)', nvrRes.nvrPercentage === 20.0, nvrRes.nvrPercentage, 20.0);
@@ -482,9 +481,14 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const cpiMeta = SCIENTIFIC_MODEL_REGISTRY['model-cpi-cleaning'];
   const cpiCalc = calculateCleaningPerformance([
     { name: 'Water', percentage: 80 },
-    { name: 'SLES 70%', percentage: 15 },
-    { name: 'CAPB 30%', percentage: 5 }
-  ], 8.5, 'Laundry Liquid');
+    { name: 'SLES 70%', percentage: 15, activeMatterPct: 70 },
+    { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30 }
+  ], 8.5, 'Laundry Liquid', undefined, {
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
+  });
   assert(
     '12. Evidence Gate',
     'E. CPI is HEURISTIC_SCREENING and never outputs measured soil removal without empirical lab input',
@@ -499,9 +503,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // F. Compatibility NO_KNOWN_CONFLICT semantics
   const compMeta = SCIENTIFIC_MODEL_REGISTRY['model-compatibility-screening'];
   const compPreserved = calculateFormulationCompatibility([
-    { name: 'Water', percentage: 89.9 },
-    { name: 'Lauryl Glucoside 50%', percentage: 10, role: 'Nonionic Surfactant' },
-    { name: 'Kathon CG', percentage: 0.1, role: 'Preservative' }
+    { name: 'Water', percentage: 90 },
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
   ]);
   assert(
     '12. Evidence Gate',
@@ -550,7 +553,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     densMeta.modelClass === 'IDEALIZED_PREDICTIVE_MODEL' &&
     densCalc.densityType === 'PREDICTED_DENSITY' &&
     densCalc.isIdealVolumeAdditivity === true &&
-    densCalc.provenance === 'PREDICTED',
+    densCalc.provenance === 'ESTIMATED',
     true,
     true
   );
@@ -560,7 +563,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const nvrCheck = calculateLiquidNVR([
     { name: 'Water', percentage: 70 },
     { name: 'Sodium Citrate', percentage: 30, nonVolatileFraction: 1.0 }
-  ]);
+  ], 100);
   assert(
     '12. Evidence Gate',
     'I. NVR is DETERMINISTIC_MASS_BALANCE and retains METHOD_NOT_VERIFIED without false ASTM D1767',
