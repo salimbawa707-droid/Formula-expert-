@@ -170,7 +170,7 @@ export function generateMasterScientificProvenanceReport(params: {
   productCategory?: string;
   ingredients: FormulationIngredient[];
   recordedFingerprint?: string;
-  speciationResult?: { pH: number; isMeasured?: boolean; confidence?: string };
+  speciationResult?: { pH: number | null; isMeasured?: boolean; confidence?: string };
   activeMatterResult?: { totalActiveMatterPct: number | null; totalSurfactantActivePct: number | null };
   hlbResult?: { blendedHLB: number | null; dataSource?: string };
   chelationResult?: { capacityCaCO3GPer100g: number | null; isSufficient: boolean | null };
@@ -225,7 +225,7 @@ export function generateMasterScientificProvenanceReport(params: {
       'Concentrated surfactant systems (>30% active) may alter water activity',
       'Glass electrode bench measurement mandatory for production specification'
     ],
-    confidence: 'HIGH',
+    confidence: !Number.isFinite(phVal) ? 'LOW' : (isPHMeasured ? 'HIGH' : 'MEDIUM'),
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
