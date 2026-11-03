@@ -194,6 +194,7 @@ export function runP3WaterHardnessTestSuite() {
   const missingDynamicScenario = calculateDynamicChelatorRequirement(testFormula, undefined, 10, 20, 25);
   assert(missingDynamicScenario.status === 'INSUFFICIENT_DATA', 'Fail-closed Inputs', 'Dynamic chelator requirement rejects missing hardness');
 
+  assert(WATER_HARDNESS_SCENARIOS.CUSTOM.hardnessPpm === null, 'Fail-closed Inputs', 'Custom hardness preset has no assumed representative value');
   // Manufacturing batch sizes: 100 kg, 10 kg, 1 kg
   // Per-dose capacity (mg CaCO3) and wash hardness load MUST be identical across batch sizes.
   // Batch total capacity (grams CaCO3) scales linearly.
