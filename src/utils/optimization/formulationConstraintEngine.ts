@@ -106,7 +106,9 @@ export function buildProductConstraints(
   categoryInput: string,
   subCategory?: string,
   customOverrides?: Partial<FormulationConstraint>[],
-  waterHardnessBenchmarkPpm?: number
+  waterHardnessBenchmarkPpm?: number,
+  washVolumeL?: number,
+  washDoseGrams?: number
 ): FormulationConstraint[] {
   const categoryId = normalizeProductCategory(categoryInput);
   const isPowder = isPowderCategory(categoryId);
@@ -245,9 +247,9 @@ export function buildProductConstraints(
       criticality: 'SOFT',
       targetMin: typeof waterHardnessBenchmarkPpm === 'number' && Number.isFinite(waterHardnessBenchmarkPpm) && waterHardnessBenchmarkPpm >= 0 ? waterHardnessBenchmarkPpm : undefined,
       penaltyWeight: 35.0,
-      isApplicable: typeof waterHardnessBenchmarkPpm === 'number' && Number.isFinite(waterHardnessBenchmarkPpm) && waterHardnessBenchmarkPpm >= 0,
+      isApplicable: typeof waterHardnessBenchmarkPpm === 'number' && Number.isFinite(waterHardnessBenchmarkPpm) && waterHardnessBenchmarkPpm >= 0 && typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 && typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0,
       physicalForm: 'ALL',
-      scientificBasis: 'Requires an explicit user-supplied hardness benchmark; no generic 150 ppm scenario is substituted.',
+      scientificBasis: 'Requires explicit water hardness, final wash-liquor volume and detergent dose; no generic wash scenario is substituted.',
     });
   }
 
