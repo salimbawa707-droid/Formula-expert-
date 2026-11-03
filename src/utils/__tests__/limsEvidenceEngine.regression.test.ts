@@ -58,6 +58,7 @@ import {
 import {
   transitionSampleStatus,
   transitionBatchStatus,
+  transitionTestStatus,
 } from '../lims/limsSampleLifecycleEngine';
 import {
   createAuditRecord,
@@ -70,6 +71,7 @@ import {
 } from '../lims/limsEvidencePromotionEngine';
 import { evaluateScientificQualityGate } from '../scientificQualityGateEngine';
 import { evaluateReleaseGate } from '../specificationEngine/releaseGateEngine';
+import { buildLimsIngestionInput } from '../closedLoopRAndD/limsIngestionAdapter';
 
 export interface TestResultSummary {
   passed: number;
@@ -206,6 +208,21 @@ export function runLimsEvidenceEngineTestSuite(): TestResultSummary {
     scheduledTests.length > 0 && phTest !== undefined && phTest.status === 'PENDING',
     'Test 7: Applicable analytical tests generated automatically for sample based on product profile',
     `Tests count: ${scheduledTests.length}, pH test found: ${!!phTest}`
+  );
+
+  const testStarted = transitionTestStatus(phTest!, 'IN_PROGRESS', 'QC Analyst', 'Measurement capture started');
+  const testCompleted = testStarted.entity
+    ? transitionTestStatus(testStarted.entity, 'COMPLETED', 'QC Analyst', 'Measurement recorded')
+    : { success: false };
+  const skippedTestState = transitionTestStatus(phTest!, 'COMPLETED', 'QC Analyst', 'Attempted to skip IN_PROGRESS');
+  assert(
+    testStarted.success &&
+    testStarted.entity?.status === 'IN_PROGRESS' &&
+    testCompleted.success &&
+    testCompleted.entity?.status === 'COMPLETED' &&
+    !skippedTestState.success,
+    'Test 7A: Analytical test lifecycle enforces PENDING → IN_PROGRESS → COMPLETED and rejects skipped states',
+    `Started: ${testStarted.success}, completed: ${testCompleted.success}, skipped transition: ${skippedTestState.success}`
   );
 
   // ---------------------------------------------------------------------------
@@ -447,6 +464,30 @@ export function runLimsEvidenceEngineTestSuite(): TestResultSummary {
     evidenceRecord.verificationStatus === 'UNVERIFIED',
     'Test 22: Recording a measurement does not auto-approve it or promote it to LAB_VALIDATED',
     `Evidence ID: ${evidenceRecord.evidenceId}, Level: ${evidenceRecord.evidenceLevel}`
+  );
+
+  const ingestionInput = buildLimsIngestionInput(phTest!, meas1, evidenceRecord, '1.0.0');
+  assert(
+    ingestionInput.formulaId === meas1.formulaId &&
+    ingestionInput.formulaVersionId === `${meas1.formulaId}@${meas1.formulaVersion}` &&
+    ingestionInput.batchId === meas1.batchId &&
+    ingestionInput.sampleId === meas1.sampleId &&
+    ingestionInput.measurementId === meas1.measurementId &&
+    ingestionInput.evidenceRecordId === evidenceRecord.evidenceId,
+    'Test 22A: LIMS adapter preserves formula/version/batch/sample/test/measurement/evidence lineage exactly',
+    `Lineage: ${ingestionInput.formulaVersionId} / ${ingestionInput.batchId} / ${ingestionInput.measurementId}`
+  );
+
+  let mismatchedLineageBlocked = false;
+  try {
+    buildLimsIngestionInput(phTest!, { ...meas1, batchId: 'BATCH-OTHER' }, evidenceRecord, '1.0.0');
+  } catch {
+    mismatchedLineageBlocked = true;
+  }
+  assert(
+    mismatchedLineageBlocked,
+    'Test 22B: LIMS adapter rejects mismatched batch lineage instead of ingesting an orphan measurement',
+    'Mismatched batch ID rejected'
   );
 
   // ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@ import {
   adjustStockQuantity,
   checkProductionBatchAvailability,
   executeAtomicBatchDeduction,
+  findMatchingInventoryItem,
   InventoryItem
 } from '../inventoryEngine';
 import { ActiveFormulaState } from '../../types';
@@ -30,8 +31,8 @@ export function runInventoryTestSuite() {
   // Test 1: Initial inventory loads correctly
   const initial = getInitialDefaultInventory();
   assert(
-    'Test 1: Initial inventory loads correctly',
-    Array.isArray(initial) && initial.length > 0 && initial.some(i => i.ingredientId === 'labsa-96' && i.currentStockKg === 350),
+    'Test 1: Initial inventory starts with zero physical stock and unknown lot/supplier/cost metadata',
+    Array.isArray(initial) && initial.length > 0 && initial.every(i => i.currentStockKg === 0 && i.costPerKg === null && !i.lotNumber && !i.supplier),
     initial.length
   );
 
@@ -117,7 +118,8 @@ export function runInventoryTestSuite() {
   const inventoryStock: InventoryItem[] = [
     { id: '1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 2.2 },
     { id: '2', ingredientId: 'sles-70', name: 'SLES 70%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 1.8 },
-    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 }
+    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 },
+    { id: '4', ingredientId: 'water', name: 'Water', category: 'Solvent', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: 0 }
   ];
 
   const check1 = checkProductionBatchAvailability(activeFormulaSample, 100, inventoryStock);
@@ -142,7 +144,8 @@ export function runInventoryTestSuite() {
   const tightInventory: InventoryItem[] = [
     { id: '1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 5, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 2.2 }, // Only 5kg available vs 10kg needed!
     { id: '2', ingredientId: 'sles-70', name: 'SLES 70%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 1.8 },
-    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 }
+    { id: '3', ingredientId: 'sodium-carbonate', name: 'Sodium Carbonate', category: 'Builder', currentStockKg: 100, unit: 'kg', minimumStockKg: 20, reorderLevelKg: 50, costPerKg: 0.5 },
+    { id: '4', ingredientId: 'water', name: 'Water', category: 'Solvent', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: 0 }
   ];
   const check2 = checkProductionBatchAvailability(activeFormulaSample, 100, tightInventory);
   assert(
@@ -216,12 +219,98 @@ export function runInventoryTestSuite() {
     `Reload 1: ${reloadedInv1[0].currentStockKg}kg, Reload 2: ${reloadedInv2[0].currentStockKg}kg`
   );
 
-  // Test 15: Stock status threshold calculations
+  // Grade-sensitive inventory identity must never use substring matching.
+  const gradeMismatch = findMatchingInventoryItem(
+    { name: 'LABSA 90%' } as any,
+    [{ id: 'inv-labsa96', ingredientId: 'labsa-96', name: 'LABSA 96%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }]
+  );
+  assert(
+    'Test 15: LABSA 90% cannot consume LABSA 96% inventory by fuzzy name match',
+    gradeMismatch === undefined,
+    String(gradeMismatch?.name)
+  );
+
+  const gradeMismatchWithSharedCas = findMatchingInventoryItem(
+    { name: 'LABSA 90%', casNumber: '68411-30-3' } as any,
+    [{ id: 'inv-labsa96-cas', ingredientId: 'labsa-96', name: 'LABSA 96%', casNumber: '68411-30-3', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }]
+  );
+  assert(
+    'Test 16: CAS match cannot override a conflicting commercial grade concentration',
+    gradeMismatchWithSharedCas === undefined,
+    String(gradeMismatchWithSharedCas?.name)
+  );
+
+  const invalidPctCheck = checkProductionBatchAvailability({
+    name: 'Invalid percentage formula',
+    batchSizeKg: 10,
+    ingredients: [{ name: 'LABSA 90%', percentage: Number.NaN }]
+  }, 10, inventoryStock);
+  assert(
+    'Test 17: Non-finite ingredient percentage blocks production',
+    !invalidPctCheck.canProduce && invalidPctCheck.blockReasons.some(reason => reason.includes('percentage')),
+    invalidPctCheck.blockReasons.join('; ')
+  );
+
+  const unbalancedCheck = checkProductionBatchAvailability({
+    name: 'Unbalanced formula',
+    batchSizeKg: 10,
+    ingredients: [{ name: 'LABSA 90%', percentage: 90 }]
+  }, 10, inventoryStock);
+  assert(
+    'Test 18: Formula mass balance other than 100% blocks production',
+    !unbalancedCheck.canProduce && unbalancedCheck.blockReasons.some(reason => reason.includes('mass balance')),
+    unbalancedCheck.blockReasons.join('; ')
+  );
+
+  // Test 19: Missing legacy inventory metadata stays unknown, never receives fabricated defaults.
+  const legacyUnknown = parseStoredInventory(JSON.stringify([{
+    id: 'legacy-1', ingredientId: 'legacy-1', name: 'Unknown raw material',
+    category: 'Surfactant', currentStockKg: 4, unit: 'kg'
+  }]));
+  assert(
+    'Test 19: Missing legacy cost, lot and supplier remain unknown',
+    legacyUnknown[0].costPerKg === null && legacyUnknown[0].lotNumber === undefined && legacyUnknown[0].supplier === undefined,
+    JSON.stringify({ cost: legacyUnknown[0].costPerKg, lot: legacyUnknown[0].lotNumber, supplier: legacyUnknown[0].supplier })
+  );
+
+  const unknownCostFormula: ActiveFormulaState = {
+    name: 'Unknown cost formula',
+    batchSizeKg: 10,
+    ingredients: [{ name: 'LABSA 90%', percentage: 100 }]
+  };
+  const unknownCostCheck = checkProductionBatchAvailability(unknownCostFormula, 10, [
+    { id: 'c1', ingredientId: 'labsa-90', name: 'LABSA 90%', category: 'Surfactant', currentStockKg: 20, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }
+  ]);
+  assert(
+    'Test 20: Unknown material price yields unavailable batch cost, not zero-cost claim',
+    unknownCostCheck.costComplete === false && unknownCostCheck.totalBatchCost === null &&
+    unknownCostCheck.requirements[0].totalCost === null,
+    String(unknownCostCheck.totalBatchCost)
+  );
+
+  const missingBatchSize = checkProductionBatchAvailability({
+    name: 'No scale formula',
+    ingredients: [{ name: 'LABSA 90%', percentage: 100 }]
+  }, undefined, inventoryStock);
+  assert(
+    'Test 21: Missing batch size fails closed instead of assuming 100 kg',
+    !missingBatchSize.canProduce && missingBatchSize.batchSizeKg === 0 && missingBatchSize.blockReasons.length > 0,
+    JSON.stringify({ canProduce: missingBatchSize.canProduce, batchSizeKg: missingBatchSize.batchSizeKg })
+  );
+
+  const noWaterStock = checkProductionBatchAvailability(activeFormulaSample, 100, inventoryStock.filter(i => i.name !== 'Water'));
+  assert(
+    'Test 22: Water is treated as a tracked raw material, not an infinite synthetic reservoir',
+    !noWaterStock.canProduce && noWaterStock.insufficientItems.includes('Water'),
+    noWaterStock.insufficientItems.join(', ')
+  );
+
+  // Test 23: Stock status threshold calculations
   const statusOut = getStockStatus({ currentStockKg: 0, reorderLevelKg: 50, minimumStockKg: 20 });
   const statusLow = getStockStatus({ currentStockKg: 30, reorderLevelKg: 50, minimumStockKg: 20 });
   const statusIn = getStockStatus({ currentStockKg: 120, reorderLevelKg: 50, minimumStockKg: 20 });
   assert(
-    'Test 15: Stock status logic (OUT OF STOCK, LOW STOCK, IN STOCK)',
+    'Test 23: Stock status logic (OUT OF STOCK, LOW STOCK, IN STOCK)',
     statusOut === 'OUT OF STOCK' && statusLow === 'LOW STOCK' && statusIn === 'IN STOCK',
     `${statusOut} | ${statusLow} | ${statusIn}`
   );

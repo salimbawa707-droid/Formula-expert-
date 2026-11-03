@@ -35,6 +35,9 @@ export function runP8ScientificDecisionTestSuite() {
   assert('Decision engine produces valid report', decisionReport !== null && decisionReport.formulaStatus !== undefined);
   assert('Decision engine consumes authoritative pH', decisionReport.propertyDecisions['pH'] !== undefined);
   assert('Decision engine consumes authoritative active matter', decisionReport.propertyDecisions['activeMatter'] !== undefined);
+  assert('Decision summary never claims scientific validation', decisionReport.formulaStatus !== 'SCIENTIFICALLY_CONSISTENT');
+  assert('Predicted pH is not mislabeled as measured', decisionReport.propertyDecisions['pH'].provenance !== 'MEASURED');
+  assert('Calculated active matter is not promoted to source-backed assay', decisionReport.propertyDecisions['activeMatter'].provenance === 'PREDICTED' || decisionReport.propertyDecisions['activeMatter'].provenance === 'UNKNOWN');
 
   // 2. What-If Scenario simulation (immutable original formula)
   const scenario = ScientificDecisionEngine.simulateWhatIfScenario(testFormula, 'High Active Scenario', (ings) => {

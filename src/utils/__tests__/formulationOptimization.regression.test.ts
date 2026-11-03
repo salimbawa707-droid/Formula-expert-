@@ -49,7 +49,6 @@ import {
   computeOptimizationBaselineKey,
   validateCandidateApplication,
 } from '../optimization/multiObjectiveOptimizer';
-import { analyzeReformulationFeedback } from '../optimization/reformulationFeedbackEngine';
 import { modelManufacturingProcess } from '../manufacturing/processModelingEngine';
 import { FORMULAS } from '../../data/formulas';
 import { FormulationIngredient } from '../../types';
@@ -401,35 +400,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     `All candidates PREDICTED_ONLY: ${allPredicted}`
   );
 
-  // 17. Reformulation Feedback Engine
-  const feedbackReport = analyzeReformulationFeedback('hd-liquid-laundry', '1.0.0', 'LAUNDRY_LIQUID', [
-    {
-      parameterKey: 'ph',
-      parameterName: 'Formulation pH',
-      predictedValue: 8.5,
-      measuredValue: 7.8,
-      unit: 'pH',
-      isLabValidated: true,
-    },
-    {
-      parameterKey: 'viscosity',
-      parameterName: 'Viscosity',
-      predictedValue: 450,
-      measuredValue: 320,
-      unit: 'cP',
-      isLabValidated: true,
-    },
-  ]);
-  assert(
-    feedbackReport.hasSufficientLabEvidence &&
-    feedbackReport.deltaAnalyses.length === 2 &&
-    feedbackReport.deltaAnalyses[0].biasDirection === 'POSITIVE_PREDICTION_BIAS' &&
-    feedbackReport.governanceProposal !== undefined,
-    'Test 18: Reformulation feedback engine calculates absolute error, bias, and suggests penalty tuning',
-    `Findings: ${feedbackReport.systemicFindings.length}, Governance proposal: ${feedbackReport.governanceProposal?.proposalId}`
-  );
-
-  // 18. Process Modeling Engine
+  // 17. Process Modeling Engine
   const procModel = modelManufacturingProcess(testIngs, 'LAUNDRY_LIQUID', 1000);
   assert(
     procModel.status === 'MODELLED_PROCESS' &&

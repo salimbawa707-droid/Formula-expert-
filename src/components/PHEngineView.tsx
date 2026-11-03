@@ -109,7 +109,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     } else if (ing.activeMatterPurity !== undefined && ing.activeMatterPurity !== null) {
       activePercent = Number(ing.activeMatterPurity);
     } else {
-      activePercent = resolvedActive.activeMatterPct;
+      activePercent = resolvedActive.activeMatterPct ?? 0;
     }
 
     if (ActiveMatterEngine.isWaterIngredient(rawName, ing.category || '', ing.role || '')) {
@@ -262,7 +262,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
         id: Date.now().toString(), 
         name: defaultName, 
         rawPercent: 0,
-        activePercent: defaultActive > 0 ? defaultActive : 100
+        activePercent: defaultActive ?? 0
       },
     ]);
   }, []);
@@ -278,9 +278,8 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
         const updated = { ...i, [field]: value };
         if (field === 'name') {
           const defaultActive = ActiveMatterEngine.getDefaultActiveMatter(value);
-          if (defaultActive > 0) {
-            updated.activePercent = defaultActive;
-          }
+          // Changing ingredient identity must never carry over the previous ingredient's assay.
+          updated.activePercent = defaultActive ?? 0;
         }
         return updated;
       })
@@ -566,6 +565,11 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">%</span>
                     </div>
+                    <p className="mt-1 text-[9px] text-amber-300">
+                      {ActiveMatterEngine.getDefaultActiveMatter(ing.name) === null
+                        ? 'No library assay available. Enter the supplier COA value; 0 is not a measured assay.'
+                        : 'Library value is a screening reference only. Confirm the actual supplier COA before treating it as verified.'}
+                    </p>
                   </div>
 
                   <div>

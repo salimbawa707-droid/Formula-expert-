@@ -22,8 +22,12 @@ import {
   EvidenceRecord,
   LimsAuditRecord,
   MeasurementCorrection,
-  StandardUnit
+  StandardUnit,
+  LimsBatchStatus
 } from '../domain/lims/types';
+import type { ExperimentResult } from '../utils/closedLoopRAndD/types';
+import { ingestExperimentResult } from '../utils/closedLoopRAndD/experimentResultIngestionEngine';
+import { buildLimsIngestionInput } from '../utils/closedLoopRAndD/limsIngestionAdapter';
 import { getRegisteredInstruments, InstrumentRecord, registerUserInstrument, UserInstrumentRegistration } from '../domain/lims/instrument';
 import { FORMULAS } from '../data/formulas';
 import { db } from '../db/database';
@@ -37,7 +41,7 @@ import {
 import { CANONICAL_TEST_METHODS } from '../domain/lims/testMethods';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
 import { getValidationPlanForCategory } from '../domain/lims/validationPlan';
-import { transitionSampleStatus } from '../utils/lims/limsSampleLifecycleEngine';
+import { transitionSampleStatus, transitionBatchStatus, transitionTestStatus } from '../utils/lims/limsSampleLifecycleEngine';
 import { createAuditRecord, verifyAuditTrailChain } from '../utils/lims/limsAuditTrailEngine';
 import { buildEvidenceRecordFromMeasurement, createMeasurementCorrection } from '../utils/lims/limsEvidencePromotionEngine';
 import { SpectralAnalysisDashboard } from './SpectralAnalysisDashboard';
@@ -59,6 +63,7 @@ export const LimsDashboard: React.FC = () => {
   const [measurements, setMeasurements] = useState<LabMeasurement[]>([]);
   const [corrections, setCorrections] = useState<MeasurementCorrection[]>([]);
   const [evidenceRecords, setEvidenceRecords] = useState<EvidenceRecord[]>([]);
+  const [experimentResults, setExperimentResults] = useState<ExperimentResult[]>([]);
   const [auditChain, setAuditChain] = useState<LimsAuditRecord[]>([]);
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -70,7 +75,7 @@ export const LimsDashboard: React.FC = () => {
         const saved = record.value as Partial<{
           formulaVersions: FormulaVersion[]; batches: BatchRecord[]; samples: LabSample[];
           tests: LabTest[]; measurements: LabMeasurement[]; corrections: MeasurementCorrection[];
-          evidenceRecords: EvidenceRecord[]; auditChain: LimsAuditRecord[];
+          evidenceRecords: EvidenceRecord[]; experimentResults: ExperimentResult[]; auditChain: LimsAuditRecord[];
         }>;
         if (Array.isArray(saved.formulaVersions)) setFormulaVersions(saved.formulaVersions);
         if (Array.isArray(saved.batches)) setBatches(saved.batches);
@@ -79,6 +84,7 @@ export const LimsDashboard: React.FC = () => {
         if (Array.isArray(saved.measurements)) setMeasurements(saved.measurements);
         if (Array.isArray(saved.corrections)) setCorrections(saved.corrections);
         if (Array.isArray(saved.evidenceRecords)) setEvidenceRecords(saved.evidenceRecords);
+        if (Array.isArray(saved.experimentResults)) setExperimentResults(saved.experimentResults);
         if (Array.isArray(saved.auditChain)) setAuditChain(saved.auditChain);
       })
       .catch(error => console.error('Failed to load local LIMS session:', error))
@@ -90,10 +96,10 @@ export const LimsDashboard: React.FC = () => {
     if (!sessionReady) return;
     db.userSettings.put({
       key: 'lims_session_v1',
-      value: { formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, auditChain },
+      value: { formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, experimentResults, auditChain },
       updatedAt: new Date().toISOString(),
     }).catch(error => console.error('Failed to persist local LIMS session:', error));
-  }, [sessionReady, formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, auditChain]);
+  }, [sessionReady, formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, experimentResults, auditChain]);
 
   // UI Input states
   const [selectedSampleId, setSelectedSampleId] = useState<string>('');
@@ -174,8 +180,19 @@ export const LimsDashboard: React.FC = () => {
     }
 
     try {
-      const measurement = recordLabMeasurement(
+      const startedTest = transitionTestStatus(
         test,
+        'IN_PROGRESS',
+        measAnalyst.trim(),
+        'Measurement capture started.'
+      );
+      if (!startedTest.success || !startedTest.entity) {
+        throw new Error(startedTest.errorMessage || 'Test could not enter IN_PROGRESS.');
+      }
+      const activeTest = startedTest.entity;
+
+      const measurement = recordLabMeasurement(
+        activeTest,
         valNum,
         measUnit,
         CANONICAL_TEST_METHODS.find(method => method.methodId === test.testMethodId)?.procedureReference || test.parameterName,
@@ -196,11 +213,22 @@ export const LimsDashboard: React.FC = () => {
       const instrument = instruments.find(i => i.instrumentId === measInstrumentId);
       const prevEvidence = evidenceRecords.length > 0 ? evidenceRecords[evidenceRecords.length - 1].hash : undefined;
       const evidence = buildEvidenceRecordFromMeasurement(measurement, instrument, measAnalyst, prevEvidence);
+      const methodVersion = CANONICAL_TEST_METHODS.find(method => method.methodId === test.testMethodId)?.version;
+      const ingestionInput = buildLimsIngestionInput(activeTest, measurement, evidence, methodVersion);
+      const ingestionResult = ingestExperimentResult(ingestionInput, experimentResults);
 
-    // Update Test Status to COMPLETED
-    const updatedTests = tests.map(t =>
-      t.testId === test.testId ? { ...t, status: 'COMPLETED' as const, completedAt: new Date().toISOString() } : t
+    // Complete the test through the lifecycle engine so timestamps and notes
+    // are managed by one authoritative transition path.
+    const completedTest = transitionTestStatus(
+      activeTest,
+      'COMPLETED',
+      measAnalyst.trim(),
+      `Measurement ${measurement.measurementId} recorded; ingestion quality ${ingestionResult.dataQuality}`
     );
+    if (!completedTest.success || !completedTest.entity) {
+      throw new Error(completedTest.errorMessage || 'Test lifecycle transition to COMPLETED was rejected.');
+    }
+    const updatedTests = tests.map(t => t.testId === test.testId ? completedTest.entity! : t);
 
     // Append Audit Record
     const lastAudit = auditChain.length > 0 ? auditChain[auditChain.length - 1] : undefined;
@@ -211,18 +239,23 @@ export const LimsDashboard: React.FC = () => {
       measurement.measurementId,
       null,
       measurement,
-      `Recorded ${test.parameterName} = ${valNum} ${measUnit} using instrument ${measInstrumentId}`,
+      `Recorded ${test.parameterName} = ${valNum} ${measUnit} using instrument ${measInstrumentId}; closed-loop ingestion status: ${ingestionResult.dataQuality}`,
       lastAudit
     );
 
       setMeasurements([measurement, ...measurements]);
       setEvidenceRecords([evidence, ...evidenceRecords]);
+      setExperimentResults([ingestionResult, ...experimentResults]);
       setTests(updatedTests);
       setAuditChain([...auditChain, audit]);
       setFormulaVersions(formulaVersions.map(version => version.formulaId === measurement.formulaId && version.formulaVersion === measurement.formulaVersion
         ? { ...version, labValidationStatus: 'LAB_TEST_IN_PROGRESS', validationStatusReason: 'Physical measurements are being collected; senior review and approved acceptance criteria are still required.' }
         : version));
-      setLimsMessage('Measurement recorded with instrument and temperature provenance.');
+      setLimsMessage(
+        ingestionResult.dataQuality === 'VALID'
+          ? 'Measurement recorded with instrument and temperature provenance and added to the closed-loop ingestion ledger.'
+          : `Measurement recorded and retained; closed-loop ingestion quality is ${ingestionResult.dataQuality} and requires review.`
+      );
 
       setMeasValue('');
       setMeasTemperature('');
@@ -233,6 +266,56 @@ export const LimsDashboard: React.FC = () => {
     } catch (error) {
       setLimsMessage(error instanceof Error ? error.message : 'Measurement could not be recorded.');
     }
+  };
+
+  // Handle controlled physical batch lifecycle transitions. Release requires
+  // every required test to be completed, its sample approved, and each test to
+  // have verified LAB_VALIDATED/CERTIFIED evidence from a calibration-valid instrument.
+  const handleBatchTransition = (batch: BatchRecord, targetStatus: LimsBatchStatus) => {
+    const batchTests = tests.filter(test => test.batchId === batch.batchId);
+    const batchSample = samples.find(sample => sample.batchId === batch.batchId);
+    const allTestsApproved =
+      batchTests.length > 0 &&
+      batchTests.every(test =>
+        test.status === 'COMPLETED' &&
+        evidenceRecords.some(evidence =>
+          evidence.testId === test.testId &&
+          evidence.batchId === batch.batchId &&
+          evidence.verificationStatus === 'VERIFIED' &&
+          (evidence.evidenceLevel === 'LAB_VALIDATED' || evidence.evidenceLevel === 'CERTIFIED') &&
+          evidence.instrumentCalibrationValid === true &&
+          Boolean(evidence.verifiedBy?.trim()) &&
+          Boolean(evidence.verifiedAt)
+        )
+      ) &&
+      batchSample?.status === 'APPROVED';
+
+    const result = transitionBatchStatus(
+      batch,
+      targetStatus,
+      batch.operator,
+      `Batch lifecycle transition requested to ${targetStatus}`,
+      allTestsApproved
+    );
+    if (!result.success || !result.entity) {
+      setLimsMessage(result.errorMessage || 'Batch lifecycle transition was rejected.');
+      return;
+    }
+
+    setBatches(batches.map(item => item.batchId === batch.batchId ? result.entity! : item));
+    const lastAudit = auditChain.length > 0 ? auditChain[auditChain.length - 1] : undefined;
+    const audit = createAuditRecord(
+      batch.operator,
+      'TRANSITION_BATCH_STATUS',
+      'BATCH',
+      batch.batchId,
+      { status: result.previousStatus },
+      { status: result.newStatus },
+      result.entity.statusReason || `Batch transitioned to ${targetStatus}`,
+      lastAudit
+    );
+    setAuditChain([...auditChain, audit]);
+    setLimsMessage(`Batch ${batch.batchNumber} status changed to ${targetStatus}.`);
   };
 
   // Handle Controlled Sample Status Transition
@@ -373,6 +456,12 @@ export const LimsDashboard: React.FC = () => {
           {limsMessage}
         </div>
       )}
+      <div className="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px] text-slate-300">
+        Closed-loop ingestion ledger: <strong className="text-white">{experimentResults.length}</strong> records ·
+        <span className="text-emerald-300"> {experimentResults.filter(result => result.dataQuality === 'VALID').length} valid</span> ·
+        <span className="text-amber-300"> {experimentResults.filter(result => result.dataQuality === 'REQUIRES_REVIEW' || result.dataQuality === 'CONFLICT_REQUIRES_REVIEW').length} requiring review</span> ·
+        <span className="text-slate-400"> {experimentResults.filter(result => result.dataQuality === 'DUPLICATE').length} duplicates</span>
+      </div>
 
       {/* SECTION 1: SAMPLE MANAGEMENT */}
       {activeSection === 'samples' && (
@@ -503,6 +592,63 @@ export const LimsDashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
+              {batches.length > 0 && (
+                <div className="mt-5 pt-4 border-t border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-bold text-white">Physical Batch Lifecycle ({batches.length})</h4>
+                    <span className="text-[10px] text-slate-500">Release is evidence-gated</span>
+                  </div>
+                  {batches.map(batch => {
+                    const batchTests = tests.filter(test => test.batchId === batch.batchId);
+                    const batchSample = samples.find(sample => sample.batchId === batch.batchId);
+                    const releaseEvidenceComplete = batchTests.length > 0 &&
+                      batchTests.every(test => test.status === 'COMPLETED' && evidenceRecords.some(evidence =>
+                        evidence.testId === test.testId &&
+                        evidence.batchId === batch.batchId &&
+                        evidence.verificationStatus === 'VERIFIED' &&
+                        (evidence.evidenceLevel === 'LAB_VALIDATED' || evidence.evidenceLevel === 'CERTIFIED') &&
+                        evidence.instrumentCalibrationValid === true &&
+                        Boolean(evidence.verifiedBy?.trim()) &&
+                        Boolean(evidence.verifiedAt)
+                      )) && batchSample?.status === 'APPROVED';
+                    return (
+                      <div key={batch.batchId} className="rounded-lg border border-slate-700 bg-slate-950/50 p-3 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-mono font-bold text-cyan-300">{batch.batchNumber}</span>
+                            <span className="ml-2 text-[10px] text-slate-400">{batch.actualBatchSizeKg} kg actual · {batch.formulaId}</span>
+                          </div>
+                          <span className="text-[10px] font-bold rounded px-2 py-1 bg-slate-800 text-slate-200">{batch.status}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          QC tests: {batchTests.filter(test => test.status === 'COMPLETED').length}/{batchTests.length} completed · Sample: {batchSample?.status || 'MISSING'}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {batch.status === 'PLANNED' && (
+                            <button type="button" onClick={() => handleBatchTransition(batch, 'IN_PROCESS')} className="px-2 py-1 rounded bg-cyan-950/60 border border-cyan-700/50 text-cyan-200 text-[10px] font-bold">Start compounding</button>
+                          )}
+                          {batch.status === 'IN_PROCESS' && (
+                            <>
+                              <button type="button" onClick={() => handleBatchTransition(batch, 'COMPLETED')} className="px-2 py-1 rounded bg-emerald-950/50 border border-emerald-700/50 text-emerald-200 text-[10px] font-bold">Complete batch</button>
+                              <button type="button" onClick={() => handleBatchTransition(batch, 'QUARANTINED')} className="px-2 py-1 rounded bg-amber-950/50 border border-amber-700/50 text-amber-200 text-[10px] font-bold">Quarantine</button>
+                              <button type="button" onClick={() => handleBatchTransition(batch, 'REJECTED')} className="px-2 py-1 rounded bg-rose-950/50 border border-rose-700/50 text-rose-200 text-[10px] font-bold">Reject</button>
+                            </>
+                          )}
+                          {(batch.status === 'COMPLETED' || batch.status === 'QUARANTINED') && (
+                            <>
+                              <button type="button" onClick={() => handleBatchTransition(batch, 'QUARANTINED')} disabled={batch.status === 'QUARANTINED'} className="px-2 py-1 rounded border border-amber-700/50 text-amber-200 text-[10px] font-bold disabled:opacity-40">Quarantine</button>
+                              <button type="button" onClick={() => handleBatchTransition(batch, 'RELEASED')} disabled={!releaseEvidenceComplete} title={releaseEvidenceComplete ? 'Release batch' : 'Requires all tests completed, sample approved, and verified LAB_VALIDATED/CERTIFIED evidence'} className="px-2 py-1 rounded border border-emerald-700/50 text-emerald-200 text-[10px] font-bold disabled:opacity-40">Release batch</button>
+                            </>
+                          )}
+                        </div>
+                        {!releaseEvidenceComplete && (batch.status === 'COMPLETED' || batch.status === 'QUARANTINED') && (
+                          <p className="text-[10px] text-amber-300">Release locked: required test approvals, approved sample, and verified calibrated evidence are not all present.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Draw New Sample Drawer */}

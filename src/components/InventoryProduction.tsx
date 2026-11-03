@@ -15,6 +15,8 @@ import {
   Scale
 } from 'lucide-react';
 import { ActiveFormulaState } from '../types';
+import { normalizeProductCategory } from '../domain/productTaxonomy';
+import { globalManufacturingEngine } from '../utils/manufacturingEngine';
 import {
   InventoryItem,
   ProductionBatchRun,
@@ -107,6 +109,7 @@ export default function InventoryProduction({
   const [adjustMode, setAdjustMode] = useState<'add' | 'remove'>('add');
 
   const [showConfirmBatchModal, setShowConfirmBatchModal] = useState(false);
+  const [operatorName, setOperatorName] = useState('');
   const [operatorNotes, setOperatorNotes] = useState('');
   const [batchSuccessMessage, setBatchSuccessMessage] = useState<string | null>(null);
 
@@ -170,10 +173,13 @@ export default function InventoryProduction({
     let lowStockCount = 0;
     let outOfStockCount = 0;
     let inStockCount = 0;
+    let unpricedStockCount = 0;
 
     inventory.forEach(item => {
       if (typeof item.costPerKg === 'number') {
         totalValue += item.currentStockKg * item.costPerKg;
+      } else if (item.currentStockKg > 0) {
+        unpricedStockCount++;
       }
       totalKg += item.currentStockKg;
       const status = getStockStatus(item);
@@ -186,6 +192,7 @@ export default function InventoryProduction({
       totalItems: inventory.length,
       totalKg: Number(totalKg.toFixed(1)),
       totalValue: Number(totalValue.toFixed(2)),
+      unpricedStockCount,
       lowStockCount,
       outOfStockCount,
       inStockCount
@@ -197,7 +204,7 @@ export default function InventoryProduction({
     setAdjustModalItem(item);
     setAdjustMode(mode);
     setAdjustAmount(mode === 'add' ? 50 : 10);
-    setAdjustLot(item.lotNumber || `LOT-2026-${Math.floor(100 + Math.random() * 900)}`);
+    setAdjustLot(item.lotNumber || '');
   };
 
   const handleApplyAdjustment = () => {
@@ -209,6 +216,31 @@ export default function InventoryProduction({
   };
 
   const handleExecuteProduction = () => {
+    if (!activeFormula || !activeFormula.id || !Array.isArray(activeFormula.ingredients) || activeFormula.ingredients.length === 0) {
+      alert('Production blocked: select a committed active formula. The reference/demo formula is preview-only and cannot deduct stock.');
+      return;
+    }
+    const actor = operatorName.trim();
+    if (!actor) {
+      alert('Enter the responsible operator name before recording a traceable manufacturing batch.');
+      return;
+    }
+
+    const category = normalizeProductCategory(effectiveFormula.category || effectiveFormula.productType || '');
+    if (category === 'UNKNOWN_PRODUCT_CATEGORY' || !effectiveFormula.id) {
+      alert('A valid formula ID and canonical product category are required before manufacturing trace creation.');
+      return;
+    }
+
+    const totalFormulaPct = effectiveFormula.ingredients.reduce(
+      (sum, ingredient) => sum + Number(ingredient.percentage ?? (ingredient as any).percent ?? 0),
+      0
+    );
+    if (!Number.isFinite(totalFormulaPct) || Math.abs(totalFormulaPct - 100) > 0.05) {
+      alert(`Manufacturing blocked: formula mass balance is ${totalFormulaPct.toFixed(3)}%, not 100.00%.`);
+      return;
+    }
+
     const result = executeAtomicBatchDeduction(
       effectiveFormula,
       batchSizeOverride,
@@ -216,22 +248,71 @@ export default function InventoryProduction({
       operatorNotes
     );
 
-    if (result.success && result.batchRun) {
+    if (!result.success || !result.batchRun) {
+      alert(result.errorMessage || 'Failed to execute production batch.');
+      return;
+    }
+
+    try {
+      // Create the trace only after the stock transaction has passed its atomic
+      // preflight. Unknown version metadata is stored explicitly as UNVERSIONED.
+      const formulaMeta = effectiveFormula as any;
+      const manufacturingBatch = globalManufacturingEngine.planBatch({
+        batchNumber: result.batchRun.id,
+        formulaFamilyId: String(formulaMeta.formulaFamilyId || effectiveFormula.id),
+        formulaId: effectiveFormula.id,
+        formulaVersion: String(formulaMeta.version || formulaMeta.formulaVersion || 'UNVERSIONED'),
+        productCategory: category as any,
+        modelVersion: String(formulaMeta.modelVersion || 'UNVERSIONED'),
+        specificationVersion: String(formulaMeta.specificationVersion || 'UNVERSIONED'),
+        ingredientKnowledgeVersion: String(formulaMeta.ingredientKnowledgeVersion || 'UNVERSIONED'),
+        referenceBatchSizeKg: 100,
+        targetBatchSizeKg: batchSizeOverride,
+        densityKgPerL: Number.isFinite(Number(formulaMeta.densityKgPerL)) && Number(formulaMeta.densityKgPerL) > 0
+          ? Number(formulaMeta.densityKgPerL)
+          : undefined,
+        ingredients: effectiveFormula.ingredients,
+        actor,
+      });
+
+      const actualMaterials = result.batchRun.consumedIngredients.map(item => {
+        const stockItem = inventory.find(stock => stock.name.trim().toLowerCase() === item.name.trim().toLowerCase());
+        return {
+          ingredientName: item.name,
+          actualQuantityKg: item.consumedKg,
+          supplier: stockItem?.supplier,
+          lotNumber: stockItem?.lotNumber,
+        };
+      });
+      globalManufacturingEngine.recordMaterialConsumption({
+        batchId: manufacturingBatch.batchId,
+        actualMaterials,
+        actor,
+      });
+
+      const tracedRun = {
+        ...result.batchRun,
+        manufacturingBatchId: manufacturingBatch.batchId,
+        operatorNotes: [result.batchRun.operatorNotes, `Operator: ${actor}`].filter(Boolean).join(' · '),
+      };
       setInventory(result.updatedInventory);
-      setProductionRuns(prev => [result.batchRun!, ...prev]);
+      setProductionRuns(prev => [tracedRun, ...prev]);
       setShowConfirmBatchModal(false);
+      setOperatorName('');
       setOperatorNotes('');
       setBatchSuccessMessage(
-        `Batch ${result.batchRun.id} successfully compounded! ${result.batchRun.consumedIngredients.length} raw materials deducted (${batchSizeOverride} kg total batch mass).`
+        `Stock transaction recorded for ${result.batchRun.id}. Manufacturing trace ${manufacturingBatch.batchId} is MATERIALS_READY; actual output mass, process completion, QC and release remain pending.`
       );
-      setTimeout(() => setBatchSuccessMessage(null), 8000);
-    } else {
-      alert(result.errorMessage || 'Failed to execute production batch.');
+      setTimeout(() => setBatchSuccessMessage(null), 10000);
+    } catch (error) {
+      alert(error instanceof Error
+        ? `Stock was not committed because manufacturing trace creation failed: ${error.message}`
+        : 'Stock was not committed because manufacturing trace creation failed.');
     }
   };
 
   const handleResetToDefaultStock = () => {
-    if (window.confirm('Reset all laboratory inventory to standard baseline stock quantities?')) {
+    if (window.confirm('Reset the stock ledger to zero quantities with unknown lot, supplier and cost data?')) {
       const defaults = getInitialDefaultInventory();
       setInventory(defaults);
       localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(defaults));
@@ -347,9 +428,9 @@ export default function InventoryProduction({
             <DollarSign className="w-4 h-4 text-emerald-600" /> Inventory Valuation
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1 font-mono">
-            ${inventoryMetrics.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {inventoryMetrics.unpricedStockCount > 0 ? 'Incomplete' : `${inventoryMetrics.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
-          <div className="text-xs text-slate-400 mt-1">Standard cost basis</div>
+          <div className="text-xs text-slate-400 mt-1">{inventoryMetrics.unpricedStockCount > 0 ? `${inventoryMetrics.unpricedStockCount} stocked items have no recorded price` : 'Recorded stock cost only'}</div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -423,7 +504,7 @@ export default function InventoryProduction({
             </div>
 
             {/* Availability Status Notification */}
-            {batchCheck.canProduce ? (
+            {batchCheck.canProduce && Boolean(activeFormula?.id && activeFormula.ingredients?.length) ? (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
@@ -455,10 +536,10 @@ export default function InventoryProduction({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-rose-900">
-                      Production Blocked: Shortfall on {batchCheck.insufficientCount} Raw Material(s)
+                      {!activeFormula?.id ? 'Production Blocked: No committed active formula selected' : batchCheck.blockReasons.length > 0 ? 'Production Blocked: Required inputs missing' : `Production Blocked: Shortfall on ${batchCheck.insufficientCount} Raw Material(s)`}
                     </h4>
                     <p className="text-xs text-rose-700">
-                      Cannot compound batch. Insufficient stock for: <span className="font-bold">{batchCheck.insufficientItems.join(', ')}</span>.
+                      {!activeFormula?.id ? 'Select a committed formula; the reference/demo formula is preview-only.' : batchCheck.blockReasons.length > 0 ? batchCheck.blockReasons.join(' ') : <>Cannot compound batch. Insufficient stock for: <span className="font-bold">{batchCheck.insufficientItems.join(', ')}</span>.</>}
                     </p>
                   </div>
                 </div>
@@ -467,7 +548,7 @@ export default function InventoryProduction({
                   disabled
                   className="px-5 py-2.5 bg-slate-300 text-slate-500 text-sm font-bold rounded-lg cursor-not-allowed flex items-center gap-2 shrink-0"
                 >
-                  <XCircle className="w-4 h-4" /> Insufficient Stock
+                  <XCircle className="w-4 h-4" /> Production Blocked
                 </button>
               </div>
             )}
@@ -508,16 +589,16 @@ export default function InventoryProduction({
                           {req.requiredKg.toFixed(2)} kg
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-700">
-                          {req.availableStockKg >= 99999 ? '∞ (Water)' : `${req.availableStockKg.toFixed(1)} kg`}
+                          {`${req.availableStockKg.toFixed(1)} kg`}
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-700">
-                          {req.availableStockKg >= 99999 ? '∞' : `${req.remainingStockKg.toFixed(1)} kg`}
+                          {`${req.remainingStockKg.toFixed(1)} kg`}
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-600 text-xs">
                           {req.costPerKg !== null ? `$${req.costPerKg.toFixed(2)}` : '—'}
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900">
-                          ${req.totalCost.toFixed(2)}
+                          {req.totalCost !== null ? `${req.totalCost.toFixed(2)}` : 'Not available'}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {req.status === 'zero_required' ? (
@@ -551,10 +632,10 @@ export default function InventoryProduction({
                       Total Batch Raw Material Cost:
                     </td>
                     <td className="py-3 px-3 text-right font-mono text-emerald-700 text-base">
-                      ${batchCheck.totalBatchCost.toFixed(2)}
+                      {batchCheck.totalBatchCost !== null ? `${batchCheck.totalBatchCost.toFixed(2)}` : 'Not available'}
                     </td>
                     <td className="py-3 px-4 text-center text-xs text-slate-500">
-                      (${(batchCheck.totalBatchCost / (batchSizeOverride || 1)).toFixed(2)}/kg)
+                      {batchCheck.totalBatchCost !== null && batchCheck.batchSizeKg > 0 ? `(${(batchCheck.totalBatchCost / batchCheck.batchSizeKg).toFixed(2)}/kg)` : '(cost unavailable)'}
                     </td>
                   </tr>
                 </tfoot>
@@ -638,7 +719,7 @@ export default function InventoryProduction({
               <button
                 id="btn-reset-inventory"
                 onClick={handleResetToDefaultStock}
-                title="Reset to baseline laboratory inventory"
+                title="Reset to empty stock baseline"
                 className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 transition"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -810,7 +891,7 @@ export default function InventoryProduction({
                       </div>
                       <div>
                         <span className="text-slate-400 block">Total Batch Cost:</span>
-                        <span className="font-bold font-mono text-emerald-700">${run.totalCost.toFixed(2)}</span>
+                        <span className="font-bold font-mono text-emerald-700">{run.totalCost !== null ? `${run.totalCost.toFixed(2)}` : 'Not available'}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 block">Materials Consumed:</span>
@@ -819,10 +900,21 @@ export default function InventoryProduction({
                       <div>
                         <span className="text-slate-400 block">Status:</span>
                         <span className="font-bold text-emerald-600 inline-flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> Completed
+                          <CheckCircle className="w-3 h-3" /> Stock deducted
                         </span>
                       </div>
                     </div>
+
+                    {run.manufacturingBatchId && (
+                      <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-[11px] text-cyan-900">
+                        <strong>Manufacturing trace:</strong> {run.manufacturingBatchId} ·
+                        <strong className="ml-1">{globalManufacturingEngine.getBatchById(run.manufacturingBatchId)?.status || 'TRACE_UNAVAILABLE'}</strong>
+                        <span className="block mt-1 text-cyan-800">
+                          QC/release state: {globalManufacturingEngine.getBatchById(run.manufacturingBatchId)?.releaseStatus || 'NOT_RECORDED'} ·
+                          Assay status: {globalManufacturingEngine.getBatchById(run.manufacturingBatchId)?.assayValidationStatus || 'UNKNOWN'}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Consumed breakdown chips */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -976,8 +1068,23 @@ export default function InventoryProduction({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Total Batch Material Cost:</span>
-                  <span className="font-bold text-emerald-700">${batchCheck.totalBatchCost.toFixed(2)}</span>
+                  <span className="font-bold text-emerald-700">{batchCheck.totalBatchCost !== null ? `${batchCheck.totalBatchCost.toFixed(2)}` : 'Not available'}</span>
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="operator-name-input" className="block text-xs font-bold text-slate-700 mb-1">
+                  Responsible Operator (Required):
+                </label>
+                <input
+                  id="operator-name-input"
+                  type="text"
+                  required
+                  value={operatorName}
+                  onChange={e => setOperatorName(e.target.value)}
+                  placeholder="Enter operator name"
+                  className="w-full p-2 text-xs border rounded-lg outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
 
               <div>

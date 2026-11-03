@@ -19,7 +19,6 @@ src/utils/dilutionEngine.ts
 src/utils/empiricalCalibrationEngine.ts
 src/utils/empiricalValidationEvaluationEngine.ts
 src/utils/expertReasoningEngine.ts
-src/utils/formulaDevelopmentEngine.ts
 src/utils/gradeEngine.ts
 src/utils/hlbEngine.ts
 src/utils/ingredientIntelligenceEngine.ts
@@ -33,11 +32,9 @@ src/utils/lims/limsEngine.ts
 src/utils/lims/limsEvidencePromotionEngine.ts
 src/utils/lims/limsSampleLifecycleEngine.ts
 src/utils/liquidNvrEngine.ts
-src/utils/machineEngine.ts
 src/utils/manufacturingEngine.ts
 src/utils/manufacturing/processModelingEngine.ts
 src/utils/optimization/formulationConstraintEngine.ts
-src/utils/optimization/reformulationFeedbackEngine.ts
 src/utils/pHEngine.ts
 src/utils/provenanceEngine.ts
 src/utils/regulatoryEngine.ts
@@ -55,5 +52,5 @@ src/utils/spectroscopy/spectralPeakDetectionEngine.ts
 src/utils/spectroscopy/spectralPreprocessingEngine.ts
 src/utils/substitutionEngine.ts
 src/utils/templateRevalidationEngine.ts
-src/utils/troubleshooterEngine.ts
 src/utils/viscosityEngine.ts
+
