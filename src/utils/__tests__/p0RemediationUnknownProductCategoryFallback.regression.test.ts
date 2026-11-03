@@ -277,6 +277,22 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
   assert('32. Unknown category has no pH target range', getTargetPHRange('UNKNOWN_PRODUCT_CATEGORY') === null);
   assert('33. Laundry liquid target range remains available', getTargetPHRange('LAUNDRY_LIQUID')?.min === 7.5 && getTargetPHRange('LAUNDRY_LIQUID')?.max === 9.5);
 
+  const unknownSurfactantAssayGate = evaluateScientificQualityGate({
+    formulaName: 'Unknown Surfactant Assay',
+    formulaVersion: '1.0.0',
+    formulaId: 'FORM-UNKNOWN-SURFACTANT-ASSAY',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'Water', percentage: 95, role: 'Solvent' },
+      { name: 'Unclassified Anionic Surfactant', percentage: 5, role: 'Anionic Surfactant' }
+    ]
+  });
+  assert(
+    '34. Unknown surfactant assay is disclosed and cannot produce VALID',
+    unknownSurfactantAssayGate.majorWarnings.some(issue => issue.code === 'WARN_ACTIVE_MATTER_UNAVAILABLE') &&
+      unknownSurfactantAssayGate.finalFormulaStatus !== 'VALID'
+  );
+
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
