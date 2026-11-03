@@ -52,7 +52,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     washDoseGrams: 50,
     batchSizeKg: 100
   });
-  assert('TEST 1: Calculated-only formula remains LAB_VALIDATION_REQUIRED with PREDICTED_ONLY evidence', qgResult.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED' && qgResult.evidenceStatus === 'PREDICTED_ONLY');
+  assert('TEST 1: Calculated-only formula remains LAB_VALIDATION_REQUIRED with PREDICTED_ONLY evidence', qgResult.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED' && qgResult.evidenceStatus === 'PREDICTED_ONLY', JSON.stringify({status:qgResult.finalFormulaStatus,evidence:qgResult.evidenceStatus,blocking:qgResult.blockingIssues,unknown:qgResult.unknownParameters}));
 
   // TEST 2: Calculated PASS is not LAB_VALIDATED
   assert('TEST 2: Calculated PASS is NOT LAB_VALIDATED', qgResult.evidenceStatus !== 'FULLY_LAB_VALIDATED');
@@ -74,7 +74,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     ingredients: validIngredients,
     qualityGateStatus: qgResult
   });
-  assert('TEST 4: Provenance report for calculated formula yields CALCULATED or SCIENTIFICALLY_SCREENED state', provReport.overallProvenanceState === 'SCIENTIFICALLY_SCREENED' || provReport.overallProvenanceState === 'CALCULATED');
+  assert('TEST 4: Provenance report for calculated formula yields CALCULATED or SCIENTIFICALLY_SCREENED state', provReport.overallProvenanceState === 'SCIENTIFICALLY_SCREENED' || provReport.overallProvenanceState === 'CALCULATED', JSON.stringify(provReport));
 
   const missingVersionProvenance = generateMasterScientificProvenanceReport({
     formulaId: 'FORM-CALC-UNKNOWN-VERSION',
