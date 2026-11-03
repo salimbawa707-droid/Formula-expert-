@@ -187,7 +187,8 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
   const vSub = ViscosityEngine.evaluateViscosity([
     { name: 'SLES 70%', percentage: 14.0, activeMatterPct: 70 },
     { name: 'CAPB 30%', percentage: 5.0, activeMatterPct: 30 },
-    { name: 'Sodium Chloride (NaCl)', percentage: 0.3 }
+    { name: 'Sodium Chloride (NaCl)', percentage: 0.3 },
+    { name: 'Water', percentage: 80.7, activeMatterPct: 0 }
   ], { productCategory: 'Hand Dishwashing Liquid' });
   assert('14. Viscosity Salt Curve', 'T14a: Sub-critical salt region', vSub.saltCurve.curveRegion === 'sub_critical', vSub.saltCurve.curveRegion, 'sub_critical');
 
@@ -195,7 +196,8 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
   const vPeak = ViscosityEngine.evaluateViscosity([
     { name: 'SLES 70%', percentage: 14.0, activeMatterPct: 70 },
     { name: 'CAPB 30%', percentage: 5.0, activeMatterPct: 30 },
-    { name: 'Sodium Chloride (NaCl)', percentage: 1.5 }
+    { name: 'Sodium Chloride (NaCl)', percentage: 1.5 },
+    { name: 'Water', percentage: 79.5, activeMatterPct: 0 }
   ], { productCategory: 'Hand Dishwashing Liquid' });
   assert('14. Viscosity Salt Curve', 'T14b: Optimal Peak Plateau viscosity', vPeak.viscosityCp >= 1500 && vPeak.viscosityCp <= 4500, vPeak.viscosityCp, '1500 - 4500 cPs');
 
@@ -203,7 +205,8 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
   const vOver = ViscosityEngine.evaluateViscosity([
     { name: 'SLES 70%', percentage: 14.0, activeMatterPct: 70 },
     { name: 'CAPB 30%', percentage: 5.0, activeMatterPct: 30 },
-    { name: 'Sodium Chloride (NaCl)', percentage: 4.5 }
+    { name: 'Sodium Chloride (NaCl)', percentage: 4.5 },
+    { name: 'Water', percentage: 76.5, activeMatterPct: 0 }
   ], { productCategory: 'Hand Dishwashing Liquid' });
   assert('14. Viscosity Salt Curve', 'T14c: Over-salted detection & Salting-Out Risk', vOver.saltCurve.saltingOutRisk === true, vOver.saltCurve.saltingOutRisk, true);
 
@@ -292,7 +295,8 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
     { name: 'LABSA 96%', percentage: 10.0, activeMatterPct: 96 },
     { name: 'LAE-7', percentage: 4.0, activeMatterPct: 100 },
     { name: 'Sodium Citrate', percentage: 3.0 },
-    { name: 'Protease Enzyme', percentage: 0.5 }
+    { name: 'Protease Enzyme', percentage: 0.5 },
+    { name: 'Water', percentage: 82.5, activeMatterPct: 0 }
   ], 8.5, 'LAUNDRY_LIQUID');
   assert('22. Cleaning Performance Index', 'T22: High-performance detergent score >= 80', t22CPI.overallScore >= 80, t22CPI.overallScore, '>= 80');
 
