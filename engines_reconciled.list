@@ -36,7 +36,6 @@ src/utils/liquidNvrEngine.ts
 src/utils/manufacturingEngine.ts
 src/utils/manufacturing/processModelingEngine.ts
 src/utils/optimization/formulationConstraintEngine.ts
-src/utils/optimization/reformulationFeedbackEngine.ts
 src/utils/pHEngine.ts
 src/utils/provenanceEngine.ts
 src/utils/regulatoryEngine.ts
