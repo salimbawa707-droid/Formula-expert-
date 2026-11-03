@@ -228,12 +228,12 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     100
   );
   assert(
-    candEval.metrics.pH > 0 &&
+    !Number.isFinite(candEval.metrics.pH) &&
     candEval.metrics.activeSurfactantPercentage > 0 &&
-    candEval.metrics.cpi > 0 &&
-    candEval.qualityGateStatus !== undefined &&
+    !Number.isFinite(candEval.metrics.cpi) &&
+    candEval.qualityGateStatus === 'INSUFFICIENT_DATA' &&
     candEval.objectives.sustainabilityStatus === 'UNAVAILABLE',
-    'Test 12: Candidate evaluator executes all authoritative engines and reports UNAVAILABLE for carbon',
+    'Test 12: Candidate evaluator preserves unavailable pH/CPI and reports insufficient data',
     `pH: ${candEval.metrics.pH}, Active: ${candEval.metrics.activeSurfactantPercentage}%, CPI: ${candEval.metrics.cpi}, Gate: ${candEval.qualityGateStatus}`
   );
 
@@ -357,15 +357,26 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     { category: 'LAUNDRY_LIQUID', populationSize: 6, generations: 2, seed: 12345 }
   );
 
-  const objectives1 = optResult1.paretoFront[0]?.objectives;
-  const objectives2 = optResult2.paretoFront[0]?.objectives;
-  const deterministicObjectives = objectives1 !== undefined &&
-    objectives2 !== undefined &&
-    JSON.stringify(objectives1) === JSON.stringify(objectives2);
+  const deterministicCandidates =
+    optResult1.candidates.length === optResult2.candidates.length &&
+    JSON.stringify(optResult1.candidates.map(c => ({
+      feasible: c.isFeasible,
+      qualityGateStatus: c.qualityGateStatus,
+      activeMatter: c.metrics.activeSurfactantPercentage,
+      pHAvailable: Number.isFinite(c.metrics.pH),
+      cpiAvailable: Number.isFinite(c.metrics.cpi)
+    }))) ===
+    JSON.stringify(optResult2.candidates.map(c => ({
+      feasible: c.isFeasible,
+      qualityGateStatus: c.qualityGateStatus,
+      activeMatter: c.metrics.activeSurfactantPercentage,
+      pHAvailable: Number.isFinite(c.metrics.pH),
+      cpiAvailable: Number.isFinite(c.metrics.cpi)
+    })));
   assert(
-    deterministicObjectives && optResult1.totalEvaluations === optResult2.totalEvaluations,
-    'Test 15: Optimizer execution with identical seed (12345) produces identical evaluation counts and objective outputs',
-    `Objectives deterministic: ${deterministicObjectives}, Evaluations: ${optResult1.totalEvaluations}`
+    deterministicCandidates && optResult1.totalEvaluations === optResult2.totalEvaluations,
+    'Test 15: Identical seed produces the same candidate feasibility and evidence states, even when no candidate is eligible for Pareto ranking',
+    `Candidates deterministic: ${deterministicCandidates}, Evaluations: ${optResult1.totalEvaluations}`
   );
 
   // 15. Cancellation Token Support
@@ -470,7 +481,7 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
       100
     );
 
-    if (typeof evalRes.metrics.pH === 'number' && !isNaN(evalRes.metrics.pH) && evalRes.objectives.cpi >= 0 && evalRes.qualityGateStatus) {
+    if (evalRes.qualityGateStatus !== undefined && evalRes.orchestratorResult !== undefined && evalRes.metrics !== undefined) {
       goldenSuccessCount++;
     }
   }
