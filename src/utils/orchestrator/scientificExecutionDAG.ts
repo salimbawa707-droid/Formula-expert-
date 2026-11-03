@@ -836,7 +836,7 @@ export class ScientificExecutionDAG {
             ingredients: state.resolvedIngredients,
             productCategory: state.canonicalCategory,
             batchSizeKg: state.batchSizeKg,
-            waterHardnessPpm: state.waterHardnessPpm
+            waterHardnessPpm: state.waterHardnessPpm ?? undefined
           });
           const powderStatus = state.powderReport?.verdict?.overallStatus;
           state.powderStatus = powderStatus === 'SCREENING_ONLY' ? 'SCREENING' :
@@ -864,7 +864,7 @@ export class ScientificExecutionDAG {
 
         // If hard water load is severe and chelation is insufficient, active surfactants are penalized
         let effectiveSurfactantAdjustment = state.totalSurfactantActivePct;
-        if (state.waterHardnessPpm > 100 && !hardnessSufficient) {
+        if (state.waterHardnessPpm !== null && state.waterHardnessPpm > 100 && !hardnessSufficient) {
           // Surfactant precipitates/degrades in hard water without chelation
           effectiveSurfactantAdjustment = Math.max(0, state.totalSurfactantActivePct * 0.7);
         }
@@ -878,14 +878,19 @@ export class ScientificExecutionDAG {
           undefined,
           {
             waterHardnessPpm: state.waterHardnessPpm ?? undefined,
-            compatibilityStatus: state.compatibilityResult?.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
-            hasCriticalCompatibilityAlert: !state.compatibilityResult?.compatible
+            washVolumeL: state.hardnessResult?.washVolumeL ?? undefined,
+            washDoseGrams: state.hardnessResult?.washDoseGrams ?? undefined,
+            batchSizeKg: Number.isFinite(state.batchSizeKg) ? state.batchSizeKg : undefined,
+            compatibilityStatus: state.compatibilityStatus,
+            hasCriticalCompatibilityAlert: state.compatibilityStatus === 'BLOCKED' ||
+              (state.compatibilityResult?.alerts || []).some((alert: any) => alert.severity === 'CRITICAL')
           }
         );
 
         state.cleaningResult = perfRes;
         state.cpi = perfRes.provenance === 'INSUFFICIENT_DATA' ? null : perfRes.cpi;
-        state.cleaningStatus = perfRes.provenance === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' : 'SCREENING';
+        state.cleaningStatus = perfRes.provenance === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' :
+          perfRes.provenance === 'NOT_APPLICABLE' ? 'NOT_APPLICABLE' : 'SCREENING';
       }
     });
 
@@ -899,20 +904,21 @@ export class ScientificExecutionDAG {
         const presWarningObj = getPreservativeWarning(state.resolvedIngredients, state.finalEquilibriumPH ?? null);
         const presWarningMsg = presWarningObj ? (typeof presWarningObj === 'string' ? presWarningObj : presWarningObj.message) : null;
 
-        let presStatus: 'ADEQUATE' | 'WARNING' = 'ADEQUATE';
-        if (presWarningMsg) {
-          presStatus = 'WARNING';
-        }
-
-        const syneresisRisk = state.compatibilityResult?.compatibilityScore < 70 ? 'HIGH' : 'LOW';
+        const presStatus: 'UNKNOWN' | 'WARNING' = presWarningMsg ? 'WARNING' : 'UNKNOWN';
+        const compatibilityScore = state.compatibilityResult?.compatibilityScore;
+        const syneresisRisk = Number.isFinite(compatibilityScore)
+          ? (compatibilityScore < 70 ? 'HIGH' : 'LOW')
+          : 'UNKNOWN';
         const isPowder = state.physicalForm === 'POWDER';
 
         state.stabilityResult = {
           shelfLifeMonths: null, // Physically unproven without empirical accelerated aging data
           shelfLifeStatus: 'UNKNOWN',
           preservativeStatus: presStatus,
+          preservativeEfficacyStatus: 'NOT_TESTED',
           preservativeWarning: presWarningMsg,
           syneresisRisk,
+          syneresisRiskProvenance: 'HEURISTIC_SCREENING',
           maturity: 'HEURISTIC_SCREENING',
           evidenceLevel: 'RULE_BASED',
           recommendedTests: isPowder
