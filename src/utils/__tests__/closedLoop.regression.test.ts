@@ -282,9 +282,14 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
 
   const decisionOutSpec = determineFeedbackDecision({
     evaluations: [evalOutSpec],
+    evidenceVerified: true,
   });
   assert('E1. Out of specification evaluation produces REFORMULATION_CANDIDATE action category',
     decisionOutSpec.actionCategory === 'REFORMULATION_CANDIDATE' && decisionOutSpec.hasOutofSpec);
+
+  const unverifiedOutSpecDecision = determineFeedbackDecision({ evaluations: [evalOutSpec], evidenceVerified: false });
+  assert('E1a. Out-of-spec values without verified lab evidence cannot trigger reformulation',
+    unverifiedOutSpecDecision.actionCategory === 'REQUIRES_MORE_DATA' && unverifiedOutSpecDecision.hasInsufficientData);
 
   const evalInSpec = classifyScientificDeviation({
     category: 'LAUNDRY_LIQUID' as any,
@@ -295,6 +300,7 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
 
   const decisionInSpec = determineFeedbackDecision({
     evaluations: [evalInSpec],
+    evidenceVerified: true,
   });
   assert('E2. In specification evaluation produces NO_CHANGE_REQUIRED action category',
     decisionInSpec.actionCategory === 'NO_CHANGE_REQUIRED');
