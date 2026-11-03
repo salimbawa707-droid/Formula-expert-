@@ -934,7 +934,7 @@ export class ScientificExecutionDAG {
             'Syneresis and preservative status are qualitative screening risks only.'
           ]
         };
-        state.stabilityStatus = 'SCREENING';
+        state.stabilityStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'SCREENING';
       }
     });
 
