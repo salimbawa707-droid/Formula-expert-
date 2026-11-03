@@ -29,6 +29,7 @@ export interface TestConditions {
   dilutionRatio?: string;
   dosageGramsPerLiter?: number;
   washVolumeLiters?: number;
+  batchSizeKg?: number;
   substrate?: string;
   soilType?: string;
   washTimeMinutes?: number;
@@ -168,7 +169,8 @@ export class ScientificLearningEngine {
         washVolumeL: input.testConditions.washVolumeLiters,
         washDoseGrams: input.testConditions.dosageGramsPerLiter !== undefined && input.testConditions.washVolumeLiters !== undefined
           ? input.testConditions.dosageGramsPerLiter * input.testConditions.washVolumeLiters
-          : undefined
+          : undefined,
+        batchSizeKg: input.testConditions.batchSizeKg
       });
       if (Number.isFinite(predPerf.cpi) && predPerf.provenance !== 'INSUFFICIENT_DATA') {
         predictions.cleaningScore = predPerf.cpi;
@@ -183,6 +185,7 @@ export class ScientificLearningEngine {
       typeof input.testConditions.waterHardnessPpm === 'number' && Number.isFinite(input.testConditions.waterHardnessPpm) &&
       typeof input.testConditions.dosageGramsPerLiter === 'number' && Number.isFinite(input.testConditions.dosageGramsPerLiter) &&
       typeof input.testConditions.washVolumeLiters === 'number' && Number.isFinite(input.testConditions.washVolumeLiters) &&
+      typeof input.testConditions.batchSizeKg === 'number' && Number.isFinite(input.testConditions.batchSizeKg) && input.testConditions.batchSizeKg > 0 &&
       Boolean(input.testConditions.substrate) && Boolean(input.testConditions.soilType) &&
       typeof input.testConditions.washTimeMinutes === 'number' && Number.isFinite(input.testConditions.washTimeMinutes);
 
