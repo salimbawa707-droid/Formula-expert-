@@ -91,7 +91,7 @@ export function runAIGradeTestSuite() {
 
   assertEqual('Cost Target', 'Cost comparison without canonical category is not graded', resCostPass.grade, 'N/A');
   assertEqual('Cost Target', 'Over-budget comparison without canonical category is not graded', resCostFail.grade, 'N/A');
-  assertEqual('Cost Target', 'Over budget overall score lower than within budget', resCostFail.score < resCostPass.score, true);
+  assertEqual('Cost Target', 'Both cost-only legacy inputs remain non-evaluable without canonical category', !resCostPass.isEvaluable && !resCostFail.isEvaluable, true);
 
   // 7. SSOT Reactivity & Formula Switching
   const switchResA1 = evaluateAIGrade(premiumFormula, 7.5);
