@@ -230,6 +230,16 @@ export function runInventoryTestSuite() {
     String(gradeMismatch?.name)
   );
 
+  const gradeMismatchWithSharedCas = findMatchingInventoryItem(
+    { name: 'LABSA 90%', casNumber: '68411-30-3' } as any,
+    [{ id: 'inv-labsa96-cas', ingredientId: 'labsa-96', name: 'LABSA 96%', casNumber: '68411-30-3', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }]
+  );
+  assert(
+    'Test 16: CAS match cannot override a conflicting commercial grade concentration',
+    gradeMismatchWithSharedCas === undefined,
+    String(gradeMismatchWithSharedCas?.name)
+  );
+
   const invalidPctCheck = checkProductionBatchAvailability({
     name: 'Invalid percentage formula',
     batchSizeKg: 10,
