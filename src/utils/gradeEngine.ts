@@ -971,7 +971,16 @@ function buildNotEvaluableResult(
       compatibilityScore: 0,
       healthScore: 0,
       activeMatterScore: 0,
-      commercialScore: 0
+      commercialScore: 0,
+      // A non-evaluable result must still expose explicit uncertainty for every pillar.
+      // Omitting statusMap caused callers to receive undefined instead of UNKNOWN.
+      statusMap: {
+        performance: 'UNKNOWN',
+        compatibility: 'UNKNOWN',
+        health: 'UNKNOWN',
+        activeMatter: 'UNKNOWN',
+        commercial: 'UNKNOWN'
+      }
     },
     isEvaluable: false
   };
