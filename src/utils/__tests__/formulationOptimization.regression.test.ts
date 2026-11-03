@@ -87,6 +87,12 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
     `Criticality: ${massConstraint?.criticality}, Target: ${massConstraint?.targetValue}%`
   );
 
+  const unconfiguredHardnessConstraint = liquidConstraints.find(c => c.type === 'CHELATION_HARDNESS_MINIMUM');
+  const explicitHardnessConstraints = buildProductConstraints('LAUNDRY_LIQUID', undefined, undefined, 200);
+  const explicitHardnessConstraint = explicitHardnessConstraints.find(c => c.type === 'CHELATION_HARDNESS_MINIMUM');
+  assert(unconfiguredHardnessConstraint?.isApplicable === false && unconfiguredHardnessConstraint.targetMin === undefined, 'Test 1B: No implicit hardness benchmark is activated');
+  assert(explicitHardnessConstraint?.isApplicable === true && explicitHardnessConstraint.targetMin === 200, 'Test 1C: Explicit hardness benchmark is applied exactly');
+
   // 2. Physical-Form Routing: Liquid vs Powder
   const powderConstraints = buildProductConstraints('LAUNDRY_POWDER');
   const liquidHasBulkDensity = liquidConstraints.some(c => c.type === 'POWDER_BULK_DENSITY' && c.isApplicable);
