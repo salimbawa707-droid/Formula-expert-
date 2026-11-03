@@ -679,17 +679,14 @@ export async function executeStagedScientificAnalysis(
   await new Promise((r) => setTimeout(r, 0));
   if (checkAbort()) throw new Error('Analysis cancelled');
 
-  const hardnessPolicy = getProductHardnessPolicy(canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined);
-  const hardnessResult = immutableSnapshot.waterHardnessPpm === null
-    ? { status: 'NOT_EVALUATED', maxSupportedPpm: null, hardnessLoadMg: null, totalSequestrationMg: null }
-    : calculateWaterHardnessTolerance(
-        immutableSnapshot.ingredients,
-        immutableSnapshot.waterHardnessPpm,
-        hardnessPolicy.defaultWashVolumeL,
-        hardnessPolicy.defaultDoseGrams,
-        immutableSnapshot.batchSizeKg,
-        canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
-      );
+  const hardnessResult = calculateWaterHardnessTolerance(
+    immutableSnapshot.ingredients,
+    immutableSnapshot.waterHardnessPpm ?? undefined,
+    undefined,
+    undefined,
+    immutableSnapshot.batchSizeKg,
+    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
+  );
 
   let chelatorActivePct = 0;
   const chelatorNames: string[] = [];
