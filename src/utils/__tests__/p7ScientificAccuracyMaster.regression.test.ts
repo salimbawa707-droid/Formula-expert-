@@ -273,6 +273,43 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     'Defined validity'
   );
 
+  const withinMassTolerance = evaluateScientificQualityGate({
+    formulaName: 'Mass Balance Boundary Pass',
+    formulaVersion: '1.0',
+    productCategory: 'HAND_DISH_LIQUID',
+    ingredients: [
+      { name: 'Water', percentage: 85.04 },
+      { name: 'SLES 70%', percentage: 10 },
+      { name: 'CAPB 30%', percentage: 5 }
+    ]
+  });
+  const outsideMassTolerance = evaluateScientificQualityGate({
+    formulaName: 'Mass Balance Boundary Fail',
+    formulaVersion: '1.0',
+    productCategory: 'HAND_DISH_LIQUID',
+    ingredients: [
+      { name: 'Water', percentage: 85.06 },
+      { name: 'SLES 70%', percentage: 10 },
+      { name: 'CAPB 30%', percentage: 5 }
+    ]
+  });
+  const hasMassBalanceBlock = (report: typeof outsideMassTolerance) =>
+    report.blockingIssues.some(issue => issue.code === 'ERR_MASS_BALANCE_UNBALANCED');
+  assert(
+    'Phase 7 Accuracy',
+    '9.1a Mass balance accepts 100.04% within production tolerance',
+    !hasMassBalanceBlock(withinMassTolerance),
+    withinMassTolerance.blockingIssues.map(issue => issue.code),
+    'No mass-balance blocking issue'
+  );
+  assert(
+    'Phase 7 Accuracy',
+    '9.1b Mass balance blocks 100.06% outside production tolerance',
+    hasMassBalanceBlock(outsideMassTolerance),
+    outsideMassTolerance.blockingIssues.map(issue => issue.code),
+    'ERR_MASS_BALANCE_UNBALANCED'
+  );
+
   const fingerprint = computeFormulaFingerprint('F-TEST-1', '1.0.0', [
     { name: 'Water', percentage: 80 },
     { name: 'SLES 70%', percentage: 20 }
