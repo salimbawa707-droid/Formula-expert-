@@ -101,7 +101,7 @@ for (let i = 0; i < FORMULAS.length; i++) {
 
   // 5. Chelation
   const chelationRes = calculateFormulationChelationCapacity(rawIngs as any);
-  const dynChelation = calculateDynamicChelatorRequirement(rawIngs as any, 150);
+  const dynChelation = calculateDynamicChelatorRequirement(rawIngs as any, 150, 10, 20, 25) // Explicit screening scenario: 150 ppm, 10 L, 20 g, 25% margin;
 
   // 6. Compatibility
   const compat = calculateFormulationCompatibility(rawIngs as any, ph, catId);
