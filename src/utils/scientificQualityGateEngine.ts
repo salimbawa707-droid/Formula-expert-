@@ -971,14 +971,20 @@ export function evaluateScientificQualityGate(
     productCategory: canonicalCategory,
     ingredients: rawIngs,
     speciationResult: { pH: finalPH, isMeasured: isPHMeasured, confidence: phConfidence },
-    activeMatterResult: { totalActiveMatterPct, totalSurfactantActivePct },
+    activeMatterResult: {
+      totalActiveMatterPct: Number.isFinite(totalActiveMatterPct) ? totalActiveMatterPct : null,
+      totalSurfactantActivePct: Number.isFinite(totalSurfactantActivePct) ? totalSurfactantActivePct : null
+    },
     chelationResult: {
       capacityCaCO3GPer100g: hardnessTolerance ? hardnessTolerance.totalSequestrationMg / 1000 : null,
       isSufficient: hardnessTolerance
         ? (hardnessTolerance.status === 'PASS' || hardnessTolerance.status === 'NOT_APPLICABLE')
         : null
     },
-    compatibilityResult: { compatible: compRes.compatible, score: compRes.compatibilityScore },
+    compatibilityResult: {
+      compatible: compRes.compatible,
+      score: Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : null
+    },
     performanceResult: { cpi: performanceRes.cpi, isMeasured: performanceRes.isMeasured },
     labEvidenceReport: validationReport ? {
       validationState: validationReport.validationState,
