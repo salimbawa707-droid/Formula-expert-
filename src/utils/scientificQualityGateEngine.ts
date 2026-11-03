@@ -438,19 +438,27 @@ export function evaluateScientificQualityGate(
   const missingSurfactantAssays = activeMatterAudit.contributions.filter(
     contribution => contribution.isSurfactant && contribution.activeMatterPct === null
   );
-  const totalSurfactantActivePct = calculateActiveSurfactants(rawIngs);
-  const totalActiveMatterPct = calculateActiveMatter(rawIngs);
+  const hasMissingSurfactantAssay = missingSurfactantAssays.length > 0;
+  const totalSurfactantActivePct = hasMissingSurfactantAssay
+    ? Number.NaN
+    : calculateActiveSurfactants(rawIngs);
+  const totalActiveMatterPct = activeMatterAudit.activeMatterStatus === 'COMPLETE'
+    ? calculateActiveMatter(rawIngs)
+    : Number.NaN;
 
-  if (missingSurfactantAssays.length > 0) {
+  if (activeMatterAudit.activeMatterStatus !== 'COMPLETE') {
     scientificValidity = 'INSUFFICIENT_DATA';
+    const missingAssayNames = activeMatterAudit.contributions
+      .filter(item => item.activeMatterPct === null)
+      .map(item => item.name);
     blockingIssues.push({
       id: 'gate-active-matter-unavailable',
-      code: 'ERR_SURFACTANT_ACTIVE_MATTER_UNKNOWN',
-      title: 'Surfactant Active Matter Is Unknown',
+      code: hasMissingSurfactantAssay ? 'ERR_SURFACTANT_ACTIVE_MATTER_UNKNOWN' : 'ERR_INGREDIENT_ACTIVE_MATTER_UNKNOWN',
+      title: hasMissingSurfactantAssay ? 'Surfactant Active Matter Is Unknown' : 'Ingredient Active Matter Is Incomplete',
       category: 'VALIDITY',
       severity: 'FATAL',
-      message: `Active matter is unavailable for ${missingSurfactantAssays.map(item => item.name).join(', ')}. The missing assay must not be treated as zero or used to calculate a verified active-surfactant total.`,
-      recommendation: 'Enter a supplier COA/assay-backed active-matter percentage for every surfactant grade, or mark the result INSUFFICIENT_DATA.'
+      message: `Active matter is unavailable for ${missingAssayNames.join(', ')}. Unknown values are not zero and cannot contribute to a complete total active-matter result.`,
+      recommendation: 'Supply grade-specific COA/assay-backed active-matter values or an authoritative master-library record for every ingredient requiring an active-matter value. Otherwise retain INSUFFICIENT_DATA.'
     });
   }
 
