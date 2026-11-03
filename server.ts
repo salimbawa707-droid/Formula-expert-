@@ -57,7 +57,7 @@ Support questions in English, Hindi, and Hinglish. Always maintain safety precau
         `Formula Name: ${context.formulaName || 'Unnamed'}\n` +
         `Product Category: ${context.productCategory || 'Detergent'}\n` +
         `Batch Size: ${context.batchSizeKg || 100} kg\n` +
-        `Water Hardness: ${context.waterHardnessPpm ?? 150} ppm CaCO3\n` +
+        `Water Hardness: ${context.waterHardnessPpm === null || context.waterHardnessPpm === undefined ? 'UNKNOWN / NOT PROVIDED' : `${context.waterHardnessPpm} ppm CaCO3 (source not independently verified)`}\n` +
         `Current Ingredients: ${JSON.stringify(context.ingredients || [], null, 2)}\n` +
         (context.warnings?.length ? `Active Warnings: ${context.warnings.join('; ')}\n` : '') +
         (context.specVerdict ? `Specification Verdict: ${context.specVerdict}\n` : '');
