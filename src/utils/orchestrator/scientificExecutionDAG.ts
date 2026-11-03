@@ -819,7 +819,7 @@ export class ScientificExecutionDAG {
         const nvrRes = calculateLiquidNVR(state.resolvedIngredients, state.batchSizeKg);
         state.nvrResult = nvrRes;
         state.nvrPercentage = Number.isFinite(nvrRes.nvrPercentage) ? nvrRes.nvrPercentage : Number.NaN;
-        state.nvrStatus = nvrRes.isNvrComplete && Number.isFinite(nvrRes.nvrPercentage) ? 'SCREENING' : 'INSUFFICIENT_DATA';
+        state.nvrStatus = nvrRes.isComplete === true && Number.isFinite(nvrRes.nvrPercentage) ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
