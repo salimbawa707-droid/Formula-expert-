@@ -30,8 +30,13 @@ export function mapFormulationIngredientToPHEngineInput(
 
   // Determine raw percentage with explicit nullish priority
   // Preserves explicit 0 percentage without converting to fallback
+  const rawPercentage =
+    ing.percentage ?? ing.percent ?? ing.percentageInFormula;
   const rawPercent =
-    ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0;
+    rawPercentage === undefined || rawPercentage === null ||
+    (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
+      ? Number.NaN
+      : Number(rawPercentage);
 
   // Determine active concentration percentage with explicit nullish priority
   // Priority: activeMatterPct -> activePercent -> activeMatterPurity
