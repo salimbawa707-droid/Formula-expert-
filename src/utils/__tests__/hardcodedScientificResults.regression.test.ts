@@ -1,4 +1,5 @@
 import { analyzeClimateAndHardWater } from '../climateEngine';
+import { calculateNeutralization } from '../pHEngine';
 import { evaluateScientificQualityGate } from '../scientificQualityGateEngine';
 
 interface TestResult {
@@ -38,13 +39,48 @@ export function runHardcodedScientificResultsRegressionTestSuite() {
     { name: 'Water', percentage: 80, category: 'Solvent' },
     { name: 'SLES 70%', percentage: 15, activeMatterPct: 70, category: 'Surfactant' },
     { name: 'Tetrasodium EDTA 39% Liquid', percentage: 5, activeMatterPct: 39, role: 'Chelator' }
-  ], 'Temperate', 'Hard (120-180 ppm)');
+  ], 'Temperate', 120, 10, 20, 100, 'LAUNDRY_LIQUID');
   assert(
     '3. Climate Engine Dynamic Chelator Calculation',
     'Climate Engine hardness tolerance calculates real ppm capacity from chelator load',
     typeof climateChelated.hardnessInfo.maxSupportedPpm === 'number' && climateChelated.hardnessInfo.maxSupportedPpm > 0,
     climateChelated.hardnessInfo.maxSupportedPpm,
     'number > 0'
+  );
+
+  const climateRangeOnly = analyzeClimateAndHardWater(
+    [{ name: 'Tetrasodium EDTA 39% Liquid', percentage: 5, activeMatterPct: 39, role: 'Chelator' }],
+    'Temperate',
+    'Hard (120-180 ppm)'
+  );
+  assert(
+    '3. Climate Engine Input Integrity',
+    'A hardness range label is not silently converted into a numeric ppm measurement',
+    climateRangeOnly.hardnessInfo.targetPpm === null && climateRangeOnly.calculatedHardnessTolerance === 'NOT_EVALUATED',
+    climateRangeOnly.hardnessInfo.targetPpm,
+    null
+  );
+  assert(
+    '3. Climate Engine Unsupported Scoring Removed',
+    'Climate engine does not emit fabricated stability scores or confidence-rated recommendations',
+    climateChelated.expectedStabilityScore === undefined &&
+      Array.isArray(climateChelated.recommendations) && climateChelated.recommendations.length === 0,
+    climateChelated.recommendations,
+    []
+  );
+
+  const koh85 = calculateNeutralization({
+    labsaQty: 10, labsaPurity: 90, alkaliType: 'KOH 85%'
+  });
+  const koh100 = calculateNeutralization({
+    labsaQty: 10, labsaPurity: 90, alkaliType: 'KOH 100%'
+  });
+  assert(
+    '6. Neutralization Grade Handling',
+    'KOH 100% grade requires less mass than KOH 85% for the same acid equivalents',
+    koh100.requiredBaseKg < koh85.requiredBaseKg,
+    koh100.requiredBaseKg,
+    `less than ${koh85.requiredBaseKg}`
   );
 
   // 4. Lab Evidence Isolation & Provenance Integrity
