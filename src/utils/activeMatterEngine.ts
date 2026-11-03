@@ -129,6 +129,8 @@ export interface ActiveMatterReport {
   activeMatterStatus: 'COMPLETE' | 'INSUFFICIENT_DATA';
   ingredientsCount: number;
   ingredientsWithMissingActive: number;
+  invalidPercentageCount: number;
+  nonAuthoritativeCount: number;
   diagnostics: string[];
   warnings: string[];
 }
@@ -473,7 +475,12 @@ export class ActiveMatterEngine {
     }
 
     // Exact Canonical library direct match
-    if (canonicalMatch && canonicalMatch.activeDefault !== undefined) {
+    if (
+      canonicalMatch &&
+      canonicalMatch.activeDefault !== undefined &&
+      canonicalMatch.activeDefault !== null &&
+      !canonicalMatch.unknownProperties?.includes('activeMatter')
+    ) {
       return {
         activeMatterPct: canonicalMatch.activeDefault,
         dataSource: 'canonical_library_default',
@@ -511,7 +518,9 @@ export class ActiveMatterEngine {
     batchSizeKg: number = 100
   ): ActiveMatterReport {
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-    const validBatchSize = typeof batchSizeKg === 'number' && batchSizeKg > 0 ? batchSizeKg : 100;
+    const hasNonEmptyFormula = safeIngs.length > 0;
+    const hasValidBatchSize = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
+    const validBatchSize = hasValidBatchSize ? batchSizeKg : Number.NaN;
 
     const contributions: IngredientActiveContribution[] = [];
     const diagnostics: string[] = [];
@@ -531,17 +540,47 @@ export class ActiveMatterEngine {
     let totalRawSurfactants = 0;
 
     let ingredientsWithMissingActive = 0;
+    let invalidPercentageCount = 0;
+    let nonAuthoritativeCount = 0;
+
+    if (!hasNonEmptyFormula) {
+      diagnostics.push('Formula contains no ingredients; active-matter evaluation is unavailable.');
+      warnings.push('EMPTY_FORMULA: No ingredient composition was supplied.');
+    }
+    if (!hasValidBatchSize) {
+      diagnostics.push('Batch size is missing or invalid; batch-mass outputs are unavailable.');
+      warnings.push('INVALID_BATCH_SIZE: Supply a finite batch size greater than zero.');
+    }
 
     for (const ing of safeIngs) {
-      const rawPct = Number(ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-      if (isNaN(rawPct) || rawPct < 0) {
+      const rawPctValue = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? (ing as any)?.rawPercent;
+      const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
+        ? Number.NaN
+        : Number(rawPctValue);
+      if (!Number.isFinite(rawPct) || rawPct < 0 || rawPct > 100) {
+        invalidPercentageCount++;
+        diagnostics.push(`Ingredient "${ing?.name || 'Unknown'}" has a missing or invalid percentage; its mass contribution cannot be calculated.`);
+        warnings.push(`INVALID_INGREDIENT_PERCENTAGE: ${ing?.name || 'Unknown'}.`);
         continue;
       }
 
       totalRawMatter += rawPct;
 
       const resolution = this.resolveIngredientActive(ing);
-      
+      const canonicalSourceVerified = Boolean(
+        resolution.canonicalMatch?.provenance?.verificationStatus === 'VERIFIED' &&
+        resolution.canonicalMatch?.provenance?.source?.trim()
+      );
+      const hasNonAuthoritativeResolution =
+        resolution.dataSource === 'reference_default' ||
+        resolution.dataSource === 'derived_from_name' ||
+        resolution.dataSource === 'explicit_override' ||
+        (resolution.dataSource === 'canonical_library_default' && !canonicalSourceVerified);
+      if (hasNonAuthoritativeResolution) {
+        nonAuthoritativeCount++;
+        warnings.push(`NON_AUTHORITATIVE_ACTIVE_MATTER: ${ing?.name || 'Unknown'} uses ${resolution.dataSource}; treat as screening input until supplier/source evidence is reviewed.`);
+      }
+
       const rawAmValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity;
       const amValue = normalizeActiveMatterInputValue(rawAmValue);
       const isInvalidActive =
@@ -667,10 +706,12 @@ export class ActiveMatterEngine {
         totalWaterKg: Number(totalBatchWaterKg.toFixed(3))
       },
       contributions,
-      isFullyAuthoritative: ingredientsWithMissingActive === 0,
-      activeMatterStatus: ingredientsWithMissingActive === 0 ? 'COMPLETE' : 'INSUFFICIENT_DATA',
+      isFullyAuthoritative: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && nonAuthoritativeCount === 0 && hasValidBatchSize,
+      activeMatterStatus: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && hasValidBatchSize ? 'COMPLETE' : 'INSUFFICIENT_DATA',
       ingredientsCount: contributions.length,
       ingredientsWithMissingActive,
+      invalidPercentageCount,
+      nonAuthoritativeCount,
       diagnostics,
       warnings
     };
@@ -680,14 +721,20 @@ export class ActiveMatterEngine {
    * Fast calculation helper: Total Active Solids % (w/w)
    */
   public static calculateTotalActiveMatter(ingredients: FormulationIngredient[]): number {
-    return this.calculateActiveMatterReport(ingredients).totalActiveMatter;
+    const report = this.calculateActiveMatterReport(ingredients);
+    return report.activeMatterStatus === 'COMPLETE' ? report.totalActiveMatter : Number.NaN;
   }
 
   /**
    * Fast calculation helper: Total Active Surfactants % (w/w)
    */
   public static calculateActiveSurfactants(ingredients: FormulationIngredient[]): number {
-    return this.calculateActiveMatterReport(ingredients).surfactants.totalActiveSurfactants;
+    if (!Array.isArray(ingredients) || ingredients.length === 0) return Number.NaN;
+    const report = this.calculateActiveMatterReport(ingredients);
+    const hasMissingSurfactantAssay = report.contributions.some(item => item.isSurfactant && item.activeMatterPct === null);
+    return hasMissingSurfactantAssay || report.invalidPercentageCount > 0
+      ? Number.NaN
+      : report.surfactants.totalActiveSurfactants;
   }
 
   /**
@@ -756,9 +803,9 @@ export function evaluateAuthoritativeActiveMatter(
 
 export function calculateActiveMatter(ingredients: FormulationIngredient[]): number {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  if (safeIngs.length === 0) return 0;
+  if (safeIngs.length === 0) return Number.NaN;
   const report = ActiveMatterEngine.calculateActiveMatterReport(safeIngs);
-  return report.totalActiveMatter;
+  return report.activeMatterStatus === 'COMPLETE' ? report.totalActiveMatter : Number.NaN;
 }
 
 export function calculateActiveMatterResult(ingredients: FormulationIngredient[]): ActiveMatterResultObject {

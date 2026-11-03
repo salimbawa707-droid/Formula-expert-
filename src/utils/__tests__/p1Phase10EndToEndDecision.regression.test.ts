@@ -138,8 +138,8 @@ export function runP1Phase10EndToEndDecisionTestSuite(): { total: number; passed
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: lowPerformanceIngredients
   });
-  assert('Scenario D: Predicted low performance remains a predictive warning', predictedFailReport.performanceStatus === 'BELOW_PREDICTED_CRITERIA', predictedFailReport.performanceStatus, 'BELOW_PREDICTED_CRITERIA');
-  assert('Scenario D (cont): Predicted low performance does not state it is measured', predictedFailReport.performanceResult.isMeasured === false, false, false);
+  assert('Scenario D: No-surfactant formula remains INSUFFICIENT_DATA rather than a fabricated low-performance score', predictedFailReport.performanceStatus === 'INSUFFICIENT_DATA', predictedFailReport.performanceStatus, 'INSUFFICIENT_DATA');
+  assert('Scenario D (cont): Unavailable performance does not state it is measured', predictedFailReport.performanceResult.isMeasured === false, predictedFailReport.performanceResult.isMeasured, false);
 
   // --------------------------------------------------------------------------
   // TEST GROUP 3: Uncertainty & Missing Data Propagation
@@ -198,7 +198,10 @@ export function runP1Phase10EndToEndDecisionTestSuite(): { total: number; passed
   const glda47Report = evaluateScientificQualityGate({
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: glda47Ingredients,
-    waterHardnessPpm: 300
+    waterHardnessPpm: 300,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   const glda99Ingredients: FormulationIngredient[] = [
@@ -208,7 +211,10 @@ export function runP1Phase10EndToEndDecisionTestSuite(): { total: number; passed
   const glda99Report = evaluateScientificQualityGate({
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: glda99Ingredients,
-    waterHardnessPpm: 300
+    waterHardnessPpm: 300,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert('GLDA 99% Powder provides higher sequestration capacity than GLDA 47% Liquid', glda99Report.chelationResult.capacityCaCO3GPer100g > glda47Report.chelationResult.capacityCaCO3GPer100g, true, true);
