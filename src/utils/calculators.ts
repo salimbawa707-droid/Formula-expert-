@@ -1,4 +1,5 @@
 import { FormulationIngredient } from '../types';
+import { calculateFormulaCost as calcFormulaCostAuthoritative } from './costingEngine';
 import { resolveEng002PureComponent, type Eng002PureComponentReference, type ActiveMatterInputSource } from './eng002InputProvenance';
 import { getProductCategory } from '../domain/productTaxonomy';
 import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference, OPEN_BENCHMARK_IDEAL_MIXING_BIAS } from '../data/experimentalReferenceData';
@@ -294,16 +295,10 @@ export function roundCurrency(val: number): number {
 }
 
 export function calculateBatchCost(ingredients: FormulationIngredient[], batchSizeKg: number = 100): number {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  const costPerKg = safeIngs.reduce((acc, ing) => {
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const rawPrice = (ing as any)?.costPerKg ?? (ing as any)?.rawMaterialCostPerKg ?? (ing as any)?.cost ?? (ing as any)?.unitCost;
-    const price = (rawPrice !== undefined && rawPrice !== null && !isNaN(Number(rawPrice)))
-      ? Math.max(0, Number(rawPrice))
-      : 0;
-    return acc + (pct / 100) * price;
-  }, 0);
-  return roundCurrency(costPerKg * batchSizeKg);
+  const report = calcFormulaCostAuthoritative(ingredients, batchSizeKg);
+  // A subtotal is not a finished-batch cost. Call calculateFormulaCost directly
+  // when a caller needs a partial-cost breakdown and its explicit warnings.
+  return report.isComplete ? report.totalBatchCost : Number.NaN;
 }
 
 export function calculateNeutralization(input: any) {
