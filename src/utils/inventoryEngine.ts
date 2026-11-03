@@ -186,7 +186,15 @@ export function findMatchingInventoryItem(
   // 3. CAS match is a precise identity key; do not use substring matching.
   // Grade-sensitive names such as LABSA 90% and LABSA 96% must never cross-match.
   if (ingredient.casNumber) {
-    const casMatch = inventory.find(inv => inv.casNumber === ingredient.casNumber);
+    const ingredientGradeMatch = rawName.match(/(\\d+(?:\\.\\d+)?)\\s*%/);
+    const ingredientGrade = ingredientGradeMatch ? Number(ingredientGradeMatch[1]) : null;
+    const casMatch = inventory.find(inv => {
+      if (inv.casNumber !== ingredient.casNumber) return false;
+      if (ingredientGrade === null) return true;
+      const inventoryGradeMatch = inv.name.match(/(\\d+(?:\\.\\d+)?)\\s*%/);
+      const inventoryGrade = inventoryGradeMatch ? Number(inventoryGradeMatch[1]) : null;
+      return inventoryGrade !== null && inventoryGrade === ingredientGrade;
+    });
     if (casMatch) return casMatch;
   }
 
