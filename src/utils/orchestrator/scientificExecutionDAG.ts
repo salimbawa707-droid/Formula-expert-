@@ -606,7 +606,7 @@ export class ScientificExecutionDAG {
             )
           : {
               status: 'NOT_EVALUATED',
-              waterHardnessPpm: state.waterHardnessPpm,
+              waterHardnessPpm: state.waterHardnessPpm ?? undefined,
               maxSupportedPpm: null,
               washVolumeL: Number.isFinite(washVolumeL) ? washVolumeL : null,
               washDoseGrams: Number.isFinite(washDoseGrams) ? washDoseGrams : null,
@@ -877,7 +877,7 @@ export class ScientificExecutionDAG {
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
           undefined,
           {
-            waterHardnessPpm: state.waterHardnessPpm,
+            waterHardnessPpm: state.waterHardnessPpm ?? undefined,
             compatibilityStatus: state.compatibilityResult?.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
             hasCriticalCompatibilityAlert: !state.compatibilityResult?.compatible
           }
@@ -946,11 +946,19 @@ export class ScientificExecutionDAG {
       dependencies: ['IDENTITY_RESOLUTION'],
       execute: (state) => {
         const formulaCost = calculateFormulaCost(state.resolvedIngredients, state.batchSizeKg);
+        const overheadPct = state.rawInput.costContext?.overheadPct ?? 12;
+        const packagingCostPerUnit = state.rawInput.costContext?.packagingCostPerUnit ?? 15;
+        if (state.rawInput.costContext?.overheadPct === undefined) {
+          state.assumptions.push('Commercial margin chain uses a 12% manufacturing-overhead scenario because no overhead percentage was supplied.');
+        }
+        if (state.rawInput.costContext?.packagingCostPerUnit === undefined) {
+          state.assumptions.push('Commercial margin chain uses a packaging-cost scenario of 15 currency units per sale unit because no packaging cost was supplied.');
+        }
         const marginChain = calculateCommercialMarginChain(
           state.resolvedIngredients,
           state.batchSizeKg,
-          state.rawInput.costContext?.distributorMarginPct ?? 12,
-          state.rawInput.costContext?.retailerMarginPct ?? 15
+          overheadPct,
+          packagingCostPerUnit
         );
 
         state.costResult = {
