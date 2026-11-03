@@ -677,8 +677,8 @@ export function evaluateScientificQualityGate(
     performanceStatus = 'NOT_APPLICABLE';
   } else if (
     rawIngs.length === 0 ||
-    performanceRes.provenance === 'INSUFFICIENT_DATA' ||
-    !Number.isFinite(effectiveCpi)
+    !Number.isFinite(effectiveCpi) ||
+    (!hasMeasuredCleaningScore && performanceRes.provenance === 'INSUFFICIENT_DATA')
   ) {
     performanceStatus = 'INSUFFICIENT_DATA';
   } else if (effectiveCpi < 60) {
@@ -924,11 +924,13 @@ export function evaluateScientificQualityGate(
       blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED');
     const hasMeasuredSpecificationFailure =
       (specReport?.verdict.outOfSpecParameters ?? []).some(item => item.isMeasured === true);
+    const hasKnownSpecificationFailure =
+      rawIngs.length > 0 && (specReport?.verdict.outOfSpecParameters ?? []).length > 0;
     const hasCompositionFatal = blockingIssues.some(i =>
       i.code === 'ERR_MASS_BALANCE_UNBALANCED' || i.code === 'ERR_INVALID_NUMERIC_INPUT'
     );
-    // A verified measured failure outranks missing secondary data. Predicted
-    // specification deviations do not outrank an unidentifiable formula.
+    // A measured or deterministically calculated specification failure is
+    // actionable even if another independent property is unavailable.
     if (hasMeasuredLabFailure || hasMeasuredSpecificationFailure) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
@@ -940,6 +942,9 @@ export function evaluateScientificQualityGate(
       // separate pH/property calculation is unavailable.
       finalFormulaStatus = 'INCOMPATIBLE';
       labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
+    } else if (hasKnownSpecificationFailure) {
+      finalFormulaStatus = 'OUT_OF_SPEC';
+      labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else if (scientificValidity === 'INSUFFICIENT_DATA' || rawIngs.length === 0) {
       // Missing composition/chemistry is not an out-of-spec result: there is
       // insufficient evidence to evaluate the specification at all.
