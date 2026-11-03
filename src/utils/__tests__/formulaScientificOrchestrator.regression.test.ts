@@ -59,15 +59,10 @@ export function runFormulaScientificOrchestratorTestSuite() {
     formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      { name: 'Water', percentage: 70.0, role: 'Solvent', costPerKg: 0 },
-      { name: 'LABSA 90%', percentage: 8.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
-      { name: 'Sodium Hydroxide', percentage: 0.88, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
-      { name: 'SLES 70%', percentage: 10.0, activeMatterPct: 70, role: 'Anionic Surfactant', costPerKg: 95 },
-      { name: 'CAPB 30%', percentage: 3.0, activeMatterPct: 30, role: 'Amphoteric Surfactant', costPerKg: 85 },
-      { name: 'Sodium Chloride', percentage: 1.5, activeMatterPct: 100, role: 'Thickener', costPerKg: 10 },
-      { name: 'Sodium Citrate Dihydrate', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 },
-      { name: 'Water (Balance)', percentage: 0.2, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
-      { name: 'Water (Aqua, Balance to 100%)', percentage: 5.42, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 }
+      { name: 'Water', percentage: 85.67, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
+      { name: 'LABSA 90%', percentage: 12.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
+      { name: 'Sodium Hydroxide', percentage: 1.33, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
+      { name: 'Sodium Citrate Dihydrate', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 }
     ],
     batchSizeKg: 100,
     waterHardnessPpm: 150,
