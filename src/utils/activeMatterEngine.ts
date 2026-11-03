@@ -724,6 +724,7 @@ export class ActiveMatterEngine {
    * Fast calculation helper: Total Active Surfactants % (w/w)
    */
   public static calculateActiveSurfactants(ingredients: FormulationIngredient[]): number {
+    if (!Array.isArray(ingredients) || ingredients.length === 0) return Number.NaN;
     const report = this.calculateActiveMatterReport(ingredients);
     const hasMissingSurfactantAssay = report.contributions.some(item => item.isSurfactant && item.activeMatterPct === null);
     return hasMissingSurfactantAssay || report.invalidPercentageCount > 0
