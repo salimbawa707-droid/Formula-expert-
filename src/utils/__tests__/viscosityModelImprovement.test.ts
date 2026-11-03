@@ -26,15 +26,15 @@ export function runViscosityModelImprovementTestSuite() {
   ];
   const reportLabsa = ViscosityEngine.evaluateViscosity(labsaDishwash);
 
-  assert('SLES vs LABSA baseline prediction (SLES formulation is structured)', reportSles.viscosityCp > 100, { slesCp: reportSles.viscosityCp }, 'SLES Cp > 100');
-  assert('LABSA vs LABSA baseline prediction (LABSA formulation is structured)', reportLabsa.viscosityCp > 100, { labsaCp: reportLabsa.viscosityCp }, 'LABSA Cp > 100');
+  assert('SLES baseline with unassayed CAPB is withheld', reportSles.confidence === 'Unsupported' && !Number.isFinite(reportSles.viscosityCp), { confidence: reportSles.confidence, slesCp: reportSles.viscosityCp, diagnostics: reportSles.diagnostics }, 'Unsupported / unavailable until CAPB assay is supplied');
+  assert('LABSA baseline with unassayed CAPB and no neutralization evidence is withheld', reportLabsa.confidence === 'Unsupported' && !Number.isFinite(reportLabsa.viscosityCp), { confidence: reportLabsa.confidence, labsaCp: reportLabsa.viscosityCp, diagnostics: reportLabsa.diagnostics }, 'Unsupported / unavailable until active assay and neutralization are characterized');
 
   // 3. Unknown surfactant: Should return lower confidence
   const unknownSurfactant: FormulationIngredient[] = [
     { name: 'Exotic-Non-Existent-Chemical', percentage: 10, category: 'Unknown' } // Explicitly trigger missing
   ];
   const reportUnknown = ViscosityEngine.evaluateViscosity(unknownSurfactant);
-  assert('Unknown surfactant confidence is Low', reportUnknown.confidence === 'Low' || reportUnknown.confidence === 'Medium', reportUnknown.confidence, 'Low or Medium');
+  assert('Unknown surfactant is explicitly unsupported rather than assigned guessed rheology', reportUnknown.confidence === 'Unsupported' && !Number.isFinite(reportUnknown.viscosityCp), { confidence: reportUnknown.confidence, viscosityCp: reportUnknown.viscosityCp, diagnostics: reportUnknown.diagnostics }, 'Unsupported / unavailable');
 
   // 4. Powder/Solid inapplicability
   const powder: FormulationIngredient[] = [
