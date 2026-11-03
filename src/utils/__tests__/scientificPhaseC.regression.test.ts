@@ -297,7 +297,12 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
     { name: 'Sodium Citrate', percentage: 3.0 },
     { name: 'Protease Enzyme', percentage: 0.5 },
     { name: 'Water', percentage: 82.5, activeMatterPct: 0 }
-  ], 8.5, 'LAUNDRY_LIQUID');
+  ], 8.5, 'LAUNDRY_LIQUID', undefined, {
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
+  });
   assert('22. Cleaning Performance Index', 'T22: Complete formula returns a bounded screening CPI without claiming laboratory validation', Number.isFinite(t22CPI.cpi) && t22CPI.cpi >= 0 && t22CPI.cpi <= 100 && t22CPI.provenance !== 'INSUFFICIENT_DATA', t22CPI.cpi, 'finite screening score from 0 to 100');
 
   // =========================================================================
