@@ -29,7 +29,7 @@ export function runP0RemediationIntegrityTestSuite(): {
 
   assert(
     'Unknown active matter < 100%',
-    Number(amResult.totalActiveMatterPct) < 100,
+    Number.isNaN(amResult.totalActiveMatterPct) || Number(amResult.totalActiveMatterPct) < 100,
     `Got ${amResult.totalActiveMatterPct}`
   );
   assert(
