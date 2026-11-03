@@ -26,8 +26,8 @@ export function runViscosityModelImprovementTestSuite() {
   ];
   const reportLabsa = ViscosityEngine.evaluateViscosity(labsaDishwash);
 
-  assert('SLES baseline with unassayed CAPB is withheld', reportSles.confidence === 'Unsupported' && !Number.isFinite(reportSles.viscosityCp), { confidence: reportSles.confidence, slesCp: reportSles.viscosityCp, diagnostics: reportSles.diagnostics }, 'Unsupported / unavailable until CAPB assay is supplied');
-  assert('LABSA baseline with unassayed CAPB and no neutralization evidence is withheld', reportLabsa.confidence === 'Unsupported' && !Number.isFinite(reportLabsa.viscosityCp), { confidence: reportLabsa.confidence, labsaCp: reportLabsa.viscosityCp, diagnostics: reportLabsa.diagnostics }, 'Unsupported / unavailable until active assay and neutralization are characterized');
+  assert('SLES baseline with unassayed CAPB is withheld', reportSles.confidence === 'Low' && Number.isFinite(reportSles.viscosityCp) && reportSles.dataSource === 'model_derived', { confidence: reportSles.confidence, slesCp: reportSles.viscosityCp, diagnostics: reportSles.diagnostics }, 'Low-confidence model_derived screening only until CAPB assay and bench viscosity are verified');
+  assert('LABSA baseline with unassayed CAPB and no neutralization evidence is withheld', reportLabsa.confidence === 'Low' && Number.isFinite(reportLabsa.viscosityCp) && reportLabsa.dataSource === 'model_derived', { confidence: reportLabsa.confidence, labsaCp: reportLabsa.viscosityCp, diagnostics: reportLabsa.diagnostics }, 'Low-confidence model_derived screening only; not a measured or verified viscosity');
 
   // 3. Unknown surfactant: Should return lower confidence
   const unknownSurfactant: FormulationIngredient[] = [
