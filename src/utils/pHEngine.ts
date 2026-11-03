@@ -605,12 +605,12 @@ export function runValidationTests() {
     { name: 'Sodium Citrate', rawPercent: 2, activePercent: 100 }
   ], 100);
 
-  // Test 5: Unknown ingredient ignored -> pH = 7.0
+  // Test 5: Unknown ingredient -> pH unavailable (must not inherit neutral default)
   const res5 = engine.calculatePH([
     { name: 'Fragrance', rawPercent: 1, activePercent: 100 }
   ], 100);
 
-  // Test 6: Tea Tree Oil collision protection -> pH = 7.0 (not classified as TEA)
+  // Test 6: Tea Tree Oil collision protection -> pH unavailable (not classified as TEA)
   const res6 = engine.calculatePH([
     { name: 'Tea Tree Oil', rawPercent: 1, activePercent: 100 }
   ], 100);
@@ -628,8 +628,8 @@ export function runValidationTests() {
                  (res2_100.details?.totalBaseMoles > res2_85.details?.totalBaseMoles) &&
                  (Math.abs(res3.pH - 8.34) <= 0.05) &&
                  (res4.pH >= 4.0 && res4.pH <= 4.8) &&
-                 (Math.abs(res5.pH - 7.0) <= 0.05) &&
-                 (Math.abs(res6.pH - 7.0) <= 0.05) &&
+                 (res5.pH === null && !res5.converged) &&
+                 (res6.pH === null && !res6.converged) &&
                  (res7.pH >= 9.0 && res7.pH <= 10.5) &&
                  neutPass;
 
