@@ -708,7 +708,7 @@ export class ActiveMatterEngine {
     message: string;
   } {
     const name = (ing.name || '').trim();
-    const actualActivePct = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? null;
+    const actualActivePct = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity ?? null;
     
     const match = name.match(/(\d+(?:\.\d+)?)%/);
     if (!match) {
