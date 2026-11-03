@@ -190,8 +190,8 @@ export function runAIGradeTestSuite() {
   // Test G: Legacy draft input cannot promote a target specification into an actual pH.
   const targetOnlyDraft = evaluateAIGrade({
     ingredients: premiumFormula,
-    productCategory: 'LAUNDRY_LIQUID',
-    targetpH: 8.5
+    productCategory: 'DISHWASH_MANUAL',
+    targetpH: 7.0
   }, undefined, 150);
   assertEqual('Problem 2 — Test G', 'Target pH alone does not satisfy the current formula pH input', targetOnlyDraft.isEvaluable, false);
   assertEqual('Problem 2 — Test G', 'Target-only pH returns N/A rather than a composite grade', targetOnlyDraft.grade, 'N/A');
@@ -199,8 +199,8 @@ export function runAIGradeTestSuite() {
   // Test H: Legacy heuristic grading must never declare scientific validity.
   const legacyScreening = evaluateAIGrade({
     ingredients: premiumFormula,
-    productCategory: 'LAUNDRY_LIQUID',
-    ph: 8.5
+    productCategory: 'DISHWASH_MANUAL',
+    ph: 7.0
   }, undefined, 150);
   assertEqual('Problem 2 — Test H', 'Legacy grade is explicitly generic screening only', legacyScreening.gradeType, 'GENERIC_SCREENING_INDEX');
   assertEqual('Problem 2 — Test H', 'Legacy grade cannot claim scientific validity', legacyScreening.scientificValidity, 'INSUFFICIENT_DATA');
