@@ -388,9 +388,13 @@ export function evaluateFormulationConstraints(
         break;
       }
       case 'ACTIVE_MATTER_RANGE': {
-        val = metrics.activeSurfactantPercentage;
+        val = Number.isFinite(metrics.activeSurfactantPercentage) ? metrics.activeSurfactantPercentage : 'ACTIVE_MATTER_UNAVAILABLE';
         rangeDisplay = `${c.targetMin ?? '-'}% - ${c.targetMax ?? '-'}%`;
-        if (c.targetMin !== undefined && metrics.activeSurfactantPercentage < c.targetMin) {
+        if (!Number.isFinite(metrics.activeSurfactantPercentage)) {
+          isSatisfied = false;
+          deviation = 1.0;
+          msg = 'Active matter unavailable: one or more required surfactant assays are missing.';
+        } else if (c.targetMin !== undefined && metrics.activeSurfactantPercentage < c.targetMin) {
           isSatisfied = false;
           deviation = (c.targetMin - metrics.activeSurfactantPercentage) / Math.max(1.0, c.targetMin);
           msg = `Active surfactant ${metrics.activeSurfactantPercentage.toFixed(1)}% is below minimum (${c.targetMin}%).`;
@@ -465,9 +469,13 @@ export function evaluateFormulationConstraints(
       }
 
       case 'CHELATION_HARDNESS_MINIMUM': {
-        val = metrics.waterHardnessCapacityPpm;
+        val = Number.isFinite(metrics.waterHardnessCapacityPpm) ? metrics.waterHardnessCapacityPpm : 'CHELATION_CAPACITY_UNAVAILABLE';
         rangeDisplay = `>= ${c.targetMin ?? '-'} ppm CaCO3`;
-        if (c.targetMin !== undefined && metrics.waterHardnessCapacityPpm < c.targetMin) {
+        if (!Number.isFinite(metrics.waterHardnessCapacityPpm)) {
+          isSatisfied = false;
+          deviation = 1.0;
+          msg = 'Chelation capacity unavailable: ingredient grade or binding evidence is incomplete.';
+        } else if (c.targetMin !== undefined && metrics.waterHardnessCapacityPpm < c.targetMin) {
           isSatisfied = false;
           deviation = (c.targetMin - metrics.waterHardnessCapacityPpm) / Math.max(10.0, c.targetMin);
           msg = `Water hardness tolerance ${metrics.waterHardnessCapacityPpm.toFixed(0)} ppm is insufficient for hard water (target >= ${c.targetMin} ppm).`;
@@ -476,9 +484,13 @@ export function evaluateFormulationConstraints(
       }
 
       case 'CPI_MINIMUM': {
-        val = metrics.cpi;
+        val = Number.isFinite(metrics.cpi) ? metrics.cpi : 'CPI_UNAVAILABLE';
         rangeDisplay = `>= ${c.targetMin ?? '-'}`;
-        if (c.targetMin !== undefined && metrics.cpi < c.targetMin) {
+        if (!Number.isFinite(metrics.cpi)) {
+          isSatisfied = false;
+          deviation = 1.0;
+          msg = 'CPI unavailable: pH or wash-scenario inputs are insufficient; no zero score is substituted.';
+        } else if (c.targetMin !== undefined && metrics.cpi < c.targetMin) {
           isSatisfied = false;
           deviation = (c.targetMin - metrics.cpi) / Math.max(10.0, c.targetMin);
           msg = `Cleaning performance index ${metrics.cpi.toFixed(1)} is below benchmark (${c.targetMin}).`;
