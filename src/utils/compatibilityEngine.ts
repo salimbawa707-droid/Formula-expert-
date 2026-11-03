@@ -47,18 +47,18 @@ export interface ExtendedCompatibilityAlert {
 
 export interface PhysicalAndChemicalStabilitySummary {
   physicalStability: {
-    status: 'STABLE' | 'RISK_OF_SEPARATION' | 'RISK_OF_PRECIPITATION' | 'UNSTABLE';
-    score: number;
+    status: 'STABLE' | 'RISK_OF_SEPARATION' | 'RISK_OF_PRECIPITATION' | 'UNSTABLE' | 'UNKNOWN';
+    score: number | null;
     details: string[];
   };
   chemicalStability: {
-    status: 'STABLE' | 'RISK_OF_HYDROLYSIS' | 'RISK_OF_OXIDATION' | 'RISK_OF_DEGRADATION' | 'UNSTABLE';
-    score: number;
+    status: 'STABLE' | 'RISK_OF_HYDROLYSIS' | 'RISK_OF_OXIDATION' | 'RISK_OF_DEGRADATION' | 'UNSTABLE' | 'UNKNOWN';
+    score: number | null;
     details: string[];
   };
   rheologicalStability: {
-    status: 'STABLE' | 'VISCOSITY_COLLAPSE_RISK' | 'OVER_THICKENING_RISK' | 'GELATION_RISK' | 'UNSTABLE';
-    score: number;
+    status: 'STABLE' | 'VISCOSITY_COLLAPSE_RISK' | 'OVER_THICKENING_RISK' | 'GELATION_RISK' | 'UNSTABLE' | 'UNKNOWN';
+    score: number | null;
     details: string[];
   };
   overallStorageStatus: 'COMPUTATIONALLY_STABLE' | 'STABILITY_RISK' | 'LAB_STABILITY_REQUIRED' | 'LAB_STABILITY_FAILED' | 'LAB_STABILITY_VALIDATED';
@@ -79,7 +79,7 @@ export interface FormulationCompatibilityResult {
   }>;
   warnings: string[];
   modelType?: string;
-  riskLevel?: CompatibilitySeverity;
+  riskLevel?: CompatibilitySeverity | 'UNKNOWN';
   keyPositiveFactors?: string[];
   keyNegativeFactors?: string[];
   limitations?: string;
@@ -105,31 +105,24 @@ export function calculateFormulationCompatibility(
     : 'UNKNOWN_PRODUCT_CATEGORY';
 
   // 1. Resolve pH value
-  let phVal = 7.5;
-  if (typeof estimatedPH === 'number' && !isNaN(estimatedPH)) {
+  let phVal = Number.NaN;
+  if (typeof estimatedPH === 'number' && Number.isFinite(estimatedPH) && estimatedPH >= 0 && estimatedPH <= 14) {
     phVal = estimatedPH;
   } else if (typeof estimatedPH === 'string' && estimatedPH.trim() !== '') {
-    const parsed = parseFloat(estimatedPH);
-    if (!isNaN(parsed)) {
+    const parsed = Number(estimatedPH);
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 14) {
       phVal = parsed;
-    } else if (safeIngs.length > 0) {
-      const phOpts: PHCalculationOptions | undefined =
-        canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? { productCategory: canonicalCategory } : undefined;
-      const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
-      const computed = calculatePHAdvanced(mapped, 100, phOpts).pH;
-      if (typeof computed === 'number' && !isNaN(computed)) {
-        phVal = computed;
-      }
     }
   } else if (safeIngs.length > 0) {
     const phOpts: PHCalculationOptions | undefined =
       canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? { productCategory: canonicalCategory } : undefined;
     const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
-    const computed = calculatePHAdvanced(mapped, 100, phOpts).pH;
-    if (typeof computed === 'number' && !isNaN(computed)) {
-      phVal = computed;
+    const computed = calculatePHAdvanced(mapped, 100, phOpts);
+    if (Number.isFinite(computed.pH) && computed.solverConverged) {
+      phVal = computed.pH;
     }
   }
+  const pHAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
 
   // 2. Classify ingredients by functional chemistry & percentage
   let waterPct = 0;
@@ -756,11 +749,14 @@ export function calculateFormulationCompatibility(
   // SCORE & COMPATIBILITY DETERMINATION
   // ============================================================================
   const rawScore = 100 - penaltySum;
-  const compatibilityScore = isNaN(rawScore) ? 100 : Math.max(0, Math.min(100, Math.round(rawScore)));
+  const compatibilityScore = pHAvailable
+    ? Math.max(0, Math.min(100, Math.round(rawScore)))
+    : Number.NaN;
 
   const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = !hasCriticalOrHigh;
+  const compatible = pHAvailable && !hasCriticalOrHigh;
   const warnings = alerts.map(a => a.message);
+  if (!pHAvailable) warnings.push('pH is unavailable or unverified; pH-dependent compatibility rules were not evaluated.');
 
   const keyPositiveFactors: string[] = [];
   const keyNegativeFactors: string[] = alerts.map(a => a.title);
@@ -779,13 +775,15 @@ export function calculateFormulationCompatibility(
   }
 
   const modelType = 'Mechanism-Classified Deterministic Interaction Matrix (Phase 6)';
-  const riskLevel: CompatibilitySeverity = alerts.some(a => a.severity === 'Critical')
-    ? 'Critical'
-    : alerts.some(a => a.severity === 'High')
-    ? 'High'
-    : alerts.some(a => a.severity === 'Medium')
-    ? 'Medium'
-    : 'Low';
+  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = !pHAvailable && !hasCriticalOrHigh
+    ? 'UNKNOWN'
+    : alerts.some(a => a.severity === 'Critical')
+      ? 'Critical'
+      : alerts.some(a => a.severity === 'High')
+        ? 'High'
+        : alerts.some(a => a.severity === 'Medium')
+          ? 'Medium'
+          : 'Low';
 
   const limitations =
     'Predictive thermodynamic and charge compatibility matrix. Does not account for specific surfactant counter-ion packing or high-temperature cloud point depression without experimental confirmation.';
@@ -831,10 +829,10 @@ export function calculateFormulationCompatibility(
   if (safeIngs.length === 0) {
     compatibilityStatusSemantic = 'UNKNOWN';
     evidenceStatus = 'INSUFFICIENT_DATA';
-  } else if (!compatible || alerts.some(a => a.severity === 'Critical')) {
+  } else if (alerts.some(a => a.severity === 'Critical')) {
     compatibilityStatusSemantic = 'INCOMPATIBLE';
     evidenceStatus = 'KNOWN_INCOMPATIBLE';
-  } else if (hasUncharacterizedIngredients) {
+  } else if (!pHAvailable || hasUncharacterizedIngredients) {
     compatibilityStatusSemantic = 'UNKNOWN';
     evidenceStatus = 'INSUFFICIENT_DATA';
     warnings.push('Formulation contains uncharacterized ingredient(s). Physical and chemical compatibility cannot be verified without complete chemical identity (INSUFFICIENT_DATA).');
@@ -881,6 +879,15 @@ export function evaluateFormulationStability(
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   const alerts = existingAlerts || [];
 
+  const phAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
+  if (!phAvailable) {
+    return {
+      physicalStability: { status: 'UNKNOWN', score: null, details: ['pH unavailable; physical stability cannot be screened reliably.'] },
+      chemicalStability: { status: 'UNKNOWN', score: null, details: ['pH unavailable; pH-dependent chemical stability cannot be screened reliably.'] },
+      rheologicalStability: { status: 'UNKNOWN', score: null, details: ['pH unavailable; pH-dependent rheological stability cannot be screened reliably.'] },
+      overallStorageStatus: 'INSUFFICIENT_DATA'
+    };
+  }
   const physicalDetails: string[] = [`Formulation pH = ${phVal.toFixed(1)}${categoryOrId ? ` (${categoryOrId})` : ''}.`];
   if (safeIngs.length === 0) {
     physicalDetails.push('Empty formula.');
