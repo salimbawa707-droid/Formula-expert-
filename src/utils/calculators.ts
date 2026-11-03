@@ -379,14 +379,37 @@ export function calculateCorrectedEcoRating(ingredients: FormulationIngredient[]
 
 export function getPreservativeWarning(ingredients: FormulationIngredient[], _targetPH?: number): { message: string } | string | null {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  const hasPreservative = safeIngs.some(i => (i?.category || i?.role || '').toLowerCase().includes('preservative') || (i?.name || "").toLowerCase().includes('preservative') || (i?.name || "").toLowerCase().includes('isothiazolinone'));
-  const waterPercent = safeIngs.filter(i => (i?.name || "").toLowerCase().includes('water')).reduce((a, b) => a + (b?.percentage || b?.percent || 0), 0);
+  if (safeIngs.length === 0) return null;
 
-  if (waterPercent > 20 && !hasPreservative) {
-    const msg = 'High water activity (>20% water) requires a preservative system to prevent microbial growth.';
-    return { message: msg };
+  const rawWaterPercentages = safeIngs
+    .filter(i => (i?.name || '').toLowerCase().includes('water'))
+    .map(i => i?.percentage ?? (i as any)?.percent ?? (i as any)?.percentageInFormula);
+  const invalidWaterPercentage = rawWaterPercentages.some(value =>
+    value === undefined || value === null || (typeof value === 'string' && value.trim() === '') ||
+    !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 100
+  );
+  const waterPercent = rawWaterPercentages.reduce((sum, value) => sum + (Number.isFinite(Number(value)) ? Number(value) : 0), 0);
+  const aqueousFormula = invalidWaterPercentage || waterPercent > 0;
+  if (!aqueousFormula) return null;
+
+  const preservativeIngredients = safeIngs.filter(i =>
+    (i?.category || i?.role || '').toLowerCase().includes('preservative') ||
+    (i?.name || '').toLowerCase().includes('preservative') ||
+    (i?.name || '').toLowerCase().includes('isothiazolinone') ||
+    (i?.name || '').toLowerCase().includes('phenoxyethanol') ||
+    (i?.name || '').toLowerCase().includes('sodium benzoate') ||
+    (i?.name || '').toLowerCase().includes('potassium sorbate')
+  );
+
+  if (invalidWaterPercentage) {
+    return { message: 'Water percentage is missing or invalid; aqueous-phase microbial risk cannot be screened.' };
   }
-  return null;
+  if (preservativeIngredients.length === 0) {
+    return { message: 'Aqueous formula has no declared preservative system. Water percentage alone does not determine water activity or microbial risk; measure water activity and perform a preservative efficacy/challenge test.' };
+  }
+  return {
+    message: 'A preservative ingredient is present, but presence or nominal percentage does not establish efficacy. Verify pH compatibility, active concentration, and preservative efficacy by an appropriate challenge test before assigning shelf life.'
+  };
 }
 
 export function getTargetPHRange(category: string, _role?: string): { min: number; max: number; label: string } | null {
