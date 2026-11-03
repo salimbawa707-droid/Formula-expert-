@@ -519,12 +519,12 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // G. HLB method metadata distinction
   const hlbMeta = SCIENTIFIC_MODEL_REGISTRY['model-hlb-screening'];
   const hlbNonionicCheck = HLBEngine.calculateBlendedHLB([
-    { name: 'LAE-7', percentage: 5 },
-    { name: 'LAE-9', percentage: 5 }
+    { name: 'LAE-7', percentage: 5, activeMatterPct: 100 },
+    { name: 'LAE-9', percentage: 5, activeMatterPct: 100 }
   ]);
   const hlbIonicCheck = HLBEngine.calculateBlendedHLB([
-    { name: 'SLES 70%', percentage: 10 },
-    { name: 'LABSA 96%', percentage: 5 }
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70 },
+    { name: 'LABSA 96%', percentage: 5, activeMatterPct: 96 }
   ]);
   const hlbNoneCheck = HLBEngine.calculateBlendedHLB([
     { name: 'Water', percentage: 90 },
