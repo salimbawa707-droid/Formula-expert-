@@ -67,7 +67,9 @@ export class RegulatoryComplianceEngine {
     );
 
     // 4. Statutory Rule Evaluation against Registry
-    const applicableRules = RegulatoryRuleRegistryEngine.getRulesForJurisdiction(jurisdictionId);
+    const applicableRules = isKnownJurisdiction
+      ? RegulatoryRuleRegistryEngine.getRulesForJurisdiction(jurisdictionId)
+      : [];
     const passedRules: RuleEvaluationResult[] = [];
     const failedRules: RuleEvaluationResult[] = [];
     const reviewRequiredRules: RuleEvaluationResult[] = [];
@@ -77,6 +79,7 @@ export class RegulatoryComplianceEngine {
     let verifiedPrimaryCount = 0;
     let unverifiedCount = 0;
     let outdatedCount = 0;
+    let evaluatedApplicableRuleCount = 0;
 
     // Custom Banned Chemicals & Unknowns
     const bannedDetected: string[] = [];
@@ -190,6 +193,11 @@ export class RegulatoryComplianceEngine {
         evaluationDate
       );
 
+      // Rules outside the selected product category are not applicable and must
+      // not dilute source coverage or force review for an unrelated product.
+      if (result.status === 'NOT_APPLICABLE') continue;
+      evaluatedApplicableRuleCount++;
+
       // Track evidence statistics
       if (rule.verificationStatus === 'VERIFIED_PRIMARY_SOURCE') verifiedPrimaryCount++;
       else if (rule.verificationStatus === 'OUTDATED') outdatedCount++;
@@ -271,7 +279,10 @@ export class RegulatoryComplianceEngine {
     // Never output COMPLIANT simply because no violation was detected.
     let overallStatus: OverallRegulatoryStatus = 'COMPLIANT';
 
-    if (!productScope.isKnown) {
+    if (!isKnownJurisdiction) {
+      overallStatus = 'REGULATORY_SCOPE_UNKNOWN';
+      warnings.push(`Jurisdiction '${jurisdictionId}' is not present in the regulatory rule registry. Global rules are not silently substituted for an unknown jurisdiction.`);
+    } else if (!productScope.isKnown) {
       overallStatus = 'REGULATORY_SCOPE_UNKNOWN';
       warnings.push(productScope.reason);
     } else if (evaluatedIngredients.length === 0) {
@@ -286,7 +297,7 @@ export class RegulatoryComplianceEngine {
     } else if (jurisdictionId === 'INDIA' && productScope.mapping?.indiaBisStatus === 'NOT_VERIFIED') {
       overallStatus = 'REVIEW_REQUIRED';
       warnings.push(`Category '${input.productCategory}' lacks an active verified BIS standard in India. Compliance cannot be certified.`);
-    } else if (applicableRules.length === 0) {
+    } else if (evaluatedApplicableRuleCount === 0) {
       overallStatus = 'INSUFFICIENT_DATA';
       warnings.push(`No applicable regulatory rules were found for jurisdiction '${jurisdictionId}' and product category '${input.productCategory}'. Absence of a detected rule is not evidence of compliance.`);
     } else if (unverifiedCount > 0 || outdatedCount > 0 || verifiedPrimaryCount === 0) {
@@ -321,7 +332,7 @@ export class RegulatoryComplianceEngine {
         unknownIngredientsDetected: Array.from(new Set(unknownDetected))
       },
       documentationStatus: {
-        primarySourceCoveragePct: applicableRules.length > 0 ? Number(((verifiedPrimaryCount / applicableRules.length) * 100).toFixed(1)) : null as any,
+        primarySourceCoveragePct: evaluatedApplicableRuleCount > 0 ? Number(((verifiedPrimaryCount / evaluatedApplicableRuleCount) * 100).toFixed(1)) : null as any,
         unverifiedRulesCount: unverifiedCount
       },
       evidenceCoverage: {
