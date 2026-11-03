@@ -253,15 +253,10 @@ export function runFormulaDataContractTestSuite(): TestSummary {
     { name: 'Demineralized Water', percentage: 90, activeMatterPct: 0, costPerKg: 0.02 }
   ];
 
-  const canonicalGrade = evaluateAIGrade(formulaCanonical, 7.0);
-  const aliasedGrade = evaluateAIGrade(formulaAliased, 7.0);
-  const zeroGrade = evaluateAIGrade(formulaWithZeros, 7.0);
-
   record(assertEqual('Formula Switching', 'Canonical and aliased formulations retain their distinct calculated active matter', calculateActiveMatter(formulaCanonical) !== calculateActiveMatter(formulaAliased), true));
   record(assertEqual('Formula Switching', 'Explicit zero ingredient is ignored in active-matter calculation', calculateActiveMatter(formulaWithZeros), calculateActiveMatter(formulaCanonical)));
 
   // Restoring canonical formula
-  const restoredGrade = evaluateAIGrade(formulaCanonical, 7.0);
   record(assertEqual('Formula Switching', 'Restored canonical formula active matter equals initial value with no state bleed', calculateActiveMatter(formulaCanonical), calculateActiveMatter(formulaWithZeros)));
 
   // -------------------------------------------------------------
