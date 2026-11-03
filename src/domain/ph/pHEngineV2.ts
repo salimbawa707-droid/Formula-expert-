@@ -43,8 +43,14 @@ export class PHEngineV2 {
       item.moles > 0 &&
       item.resolvedSpecies.pHEffect !== 'neutral'
     );
+    const isPureWaterComposition = composition.ingredients.length > 0 &&
+      composition.ingredients.every(item => item.resolvedSpecies?.isSolventWater === true) &&
+      composition.unrecognizedCount === 0;
     const hasUnrecognizedIngredients = composition.unrecognizedCount > 0;
-    const hasAdequatePHChemistry = hasPHActiveSpecies && !hasUnrecognizedIngredients;
+    // Pure water is a supported special case through water autoionization (Kw).
+    // Other neutral/inert mixtures are not assigned pH 7 merely because the
+    // acid/base model has no recognized contributor.
+    const hasAdequatePHChemistry = (hasPHActiveSpecies || isPureWaterComposition) && !hasUnrecognizedIngredients;
 
     // 2. Numerical equilibrium solver
     const solverRes = NumericalEquilibriumSolver.solve(composition, temperatureC, {
