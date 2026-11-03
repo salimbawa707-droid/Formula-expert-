@@ -66,11 +66,10 @@ export function runLegacyStatusLeakageTestSuite() {
     instructions: ['Mix ingredients'],
     status: 'VALID', // legacy status
     ingredients: [
-      { name: 'Water', percentage: 71.45, category: 'Solvent' },
-      { name: 'SLES 70%', percentage: 20, activeMatterPct: 70, category: 'Surfactant' },
-      { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30, category: 'Surfactant' },
-      { name: 'Sodium Citrate Dihydrate', percentage: 3, category: 'Builder' },
-      { name: 'Sodium Bicarbonate', percentage: 0.55, activeMatterPct: 100, category: 'Builder' }
+      { name: 'Water', percentage: 85.67, activeMatterPct: 0, category: 'Solvent' },
+      { name: 'LABSA 90%', percentage: 12, activeMatterPct: 90, category: 'Anionic Surfactant' },
+      { name: 'Sodium Hydroxide', percentage: 1.33, activeMatterPct: 100, category: 'pH Adjuster' },
+      { name: 'Sodium Citrate Dihydrate', percentage: 1, activeMatterPct: 100, category: 'Builder' }
     ]
   };
 
