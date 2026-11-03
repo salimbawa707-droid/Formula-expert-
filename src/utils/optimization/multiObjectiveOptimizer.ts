@@ -368,7 +368,8 @@ export function evaluateCandidateFormulation(
 
   // 9. Authoritative Cleaning Performance Index (CPI)
   const rawCpi = orchestratorResult.cleaningResult?.cpi;
-  const cpi = orchestratorResult.cleaningResult?.provenance === 'INSUFFICIENT_DATA' ||
+  const cpi = !Number.isFinite(finalPH) ||
+    orchestratorResult.cleaningResult?.provenance === 'INSUFFICIENT_DATA' ||
     !Number.isFinite(rawCpi)
     ? Number.NaN
     : Number(rawCpi.toFixed(1));
