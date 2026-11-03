@@ -35,7 +35,8 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   const validIngredients = [
     { id: 'labsa-90', name: 'LABSA 90%', percentage: 12.0, activeMatterPct: 90, costPerKg: 140, category: 'Anionic Surfactant' },
     { id: 'naoh-50', name: 'Sodium Hydroxide 50%', percentage: 2.65, activeMatterPct: 50, costPerKg: 45, category: 'Neutralizer' },
-    { id: 'water', name: 'Water', percentage: 85.35, activeMatterPct: 0, costPerKg: 0, category: 'Solvent' }
+    { id: 'sodium-bicarbonate', name: 'Sodium Bicarbonate', percentage: 1.0, activeMatterPct: 100, costPerKg: 35, category: 'Builder' },
+    { id: 'water', name: 'Water', percentage: 84.35, activeMatterPct: 0, costPerKg: 0, category: 'Solvent' }
   ];
 
   // TEST 1: Calculated PASS is not LAB_TESTED
