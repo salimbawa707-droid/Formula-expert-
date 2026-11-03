@@ -369,7 +369,13 @@ export class HLBEngine {
       const resolution = this.resolveIngredientHLB(ing);
 
       if (resolution.isSurfactant || (resolution.hlb !== null && resolution.hlb > 0)) {
-        const activeMatterPct = resolution.activeMatterPct;
+        // HLB blending is active-mass weighted. A catalogue/name-derived
+        // commercial default is not a supplier assay and must not silently
+        // become the measured active fraction used in the blend.
+        const explicitActiveMatter = ing.activeMatterPct ?? ing.activePercent ?? (ing as any).activeMatterPurity;
+        const activeMatterPct = explicitActiveMatter === undefined || explicitActiveMatter === null
+          ? null
+          : Number(explicitActiveMatter);
         if (
           activeMatterPct === null ||
           !Number.isFinite(activeMatterPct) ||
