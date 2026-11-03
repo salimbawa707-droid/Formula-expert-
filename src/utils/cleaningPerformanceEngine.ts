@@ -79,6 +79,7 @@ export interface FormulationPerformanceResult {
   overallScore: number | null; // Alias for CPI
   rating: number | null; // Backward compatibility alias
   cleaningScore: number | null; // Null / Not applicable for Fabric Softener
+  conditioningScore: number | null; // Separate non-detergency performance index for conditioning products
   isCleaningApplicable: boolean;
   performanceIndex: number | null;
   primaryPerformanceDomain: string;
@@ -380,7 +381,8 @@ export function calculateCleaningPerformance(
   // ==========================================================================
   const categoryKPIs: CategoryKPI[] = [];
   const applicableKPIs: Record<string, number | null> = {};
-  let cpi = 0;
+  let cpi: number | null = 0;
+  let conditioningScore: number | null = null;
   let cleaningScore: number | null = genericScore;
   let isCleaningApplicable = true;
   let primaryPerformanceDomain = '';
@@ -702,11 +704,14 @@ export function calculateCleaningPerformance(
       const antiStaticKpi = (!hasAnionicContamination && cationicLoading > 0) ? Math.min(95, Math.round(60 + cationicLoading * 4)) : 10;
       const phStabilityKpi = (phVal >= 2.5 && phVal <= 4.5) ? 95 : Math.max(30, Math.round(95 - Math.abs(phVal - 3.5) * 20));
 
-      cpi = Math.min(100, Math.max(0, Math.round(
+      conditioningScore = Math.min(100, Math.max(0, Math.round(
         softeningKpi * 0.50 +
         antiStaticKpi * 0.30 +
         phStabilityKpi * 0.20
       )));
+      // Fabric softener has no detergent-cleaning CPI. Keep conditioning
+      // performance in its own field rather than leaking it into cpi.
+      cpi = null;
 
       categoryKPIs.push(
         { id: 'fabricSofteningIndex', name: 'Predicted Fabric Softening Index', value: softeningKpi, unit: 'pts', provenance: 'PREDICTED', status: softeningKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted cationic surfactant deposition providing soft hand-feel (Model Estimate)', targetMin: 75, isApplicable: true },
@@ -822,7 +827,8 @@ export function calculateCleaningPerformance(
       secondaryPerformanceDomain = 'Generic Surfactant / Builder Evaluation (Category Unspecified)';
       isCleaningApplicable = false;
       cleaningScore = null;
-      cpi = genericScore;
+      conditioningScore = null;
+      cpi = null;
       categoryKPIs.length = 0;
       keyNegativeFactors.push('Product category is unassigned; cleaning/performance model is not validated without a canonical product category.');
       break;
@@ -849,8 +855,9 @@ export function calculateCleaningPerformance(
   // Empty Formula Override Safeguard
   const isEmptyFormula = safeIngs.length === 0;
   if (isEmptyFormula) {
-    cpi = 0;
+    cpi = isCleaningApplicable ? 0 : null;
     if (isCleaningApplicable) cleaningScore = 0;
+    if (!isCleaningApplicable) conditioningScore = null;
     degreasingScore = 0;
     particulateSoilRemoval = 0;
     foamStabilityScore = 0;
@@ -890,7 +897,8 @@ export function calculateCleaningPerformance(
   }
 
   if (calibrationFactor !== 1.0) {
-    cpi = Math.min(100, Math.max(0, Math.round(cpi * calibrationFactor)));
+    if (cpi !== null) cpi = Math.min(100, Math.max(0, Math.round(cpi * calibrationFactor)));
+    if (conditioningScore !== null) conditioningScore = Math.min(100, Math.max(0, Math.round(conditioningScore * calibrationFactor)));
     if (cleaningScore !== null) {
       cleaningScore = Math.min(100, Math.max(0, Math.round(cleaningScore * calibrationFactor)));
     }
@@ -956,7 +964,8 @@ export function calculateCleaningPerformance(
       ? 'MODEL_NOT_VALIDATED'
       : 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL');
 
-  const riskLevel: 'Low' | 'Medium' | 'High' = isEmptyFormula ? 'High' : (cpi >= 75 ? 'Low' : (cpi >= 50 ? 'Medium' : 'High'));
+  const overallPerformance = isCleaningApplicable ? cpi : conditioningScore;
+  const riskLevel: 'Low' | 'Medium' | 'High' = isEmptyFormula ? 'High' : (overallPerformance !== null && overallPerformance >= 75 ? 'Low' : (overallPerformance !== null && overallPerformance >= 50 ? 'Medium' : 'High'));
 
   const limitations = isEmptyFormula
     ? 'Insufficient formulation ingredient data to calculate performance score.'
@@ -969,11 +978,12 @@ export function calculateCleaningPerformance(
   return {
     productCategory: category,
     cpi,
-    overallScore: cpi,
-    rating: cpi,
+    overallScore: overallPerformance,
+    rating: overallPerformance,
     cleaningScore,
+    conditioningScore,
     isCleaningApplicable,
-    performanceIndex: cpi,
+    performanceIndex: overallPerformance,
     primaryPerformanceDomain,
     secondaryPerformanceDomain,
     cleaningPower,
@@ -1010,7 +1020,7 @@ export function calculateCPI(
   categoryOrId?: string,
   labMeasurements?: PerformanceLabMeasurements,
   options?: PerformanceEvaluationOptions
-): number {
+): number | null {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   const res = calculateCleaningPerformance(safeIngs, estimatedPH, categoryOrId, labMeasurements, options);
   return res.cpi;
