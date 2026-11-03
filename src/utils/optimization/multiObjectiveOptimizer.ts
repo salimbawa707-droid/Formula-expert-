@@ -68,6 +68,7 @@ export interface OptimizerConfig {
   generations: number; // e.g. 5 - 20
   mutationRate?: number; // e.g. 0.2
   seed?: number;
+  waterHardnessPpm?: number;
   maxEvaluations?: number; // safety cap (e.g. 200)
   strategy?: OptimizationStrategy;
   objectives?: Partial<OptimizationObjectivesConfig>;
