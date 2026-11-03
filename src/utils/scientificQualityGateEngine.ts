@@ -927,7 +927,7 @@ export function evaluateScientificQualityGate(
     );
     // A confirmed, identity-matched laboratory failure must never be hidden by
     // a separate missing/invalid computational input.
-    if (hasMeasuredLabFailure) {
+    if (hasMeasuredLabFailure || hasSpecFatal) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else if (hasCompositionFatal || scientificValidity === 'INVALID') {
@@ -939,9 +939,6 @@ export function evaluateScientificQualityGate(
     } else if (scientificValidity === 'INSUFFICIENT_DATA' || rawIngs.length === 0) {
       finalFormulaStatus = 'INSUFFICIENT_DATA';
       labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
-    } else if (hasSpecFatal) {
-      finalFormulaStatus = 'OUT_OF_SPEC';
-      labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else {
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
