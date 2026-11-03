@@ -63,44 +63,68 @@ export const WATER_HARDNESS_PRESETS: Record<WaterHardnessPreset, WaterHardnessPr
 };
 
 export function analyzeClimateAndHardWater(
-  _ingredients: FormulationIngredient[],
-  climate: any,
-  waterHardness: any,
-  ..._rest: any[]
+  ingredients: FormulationIngredient[],
+  climate: ClimatePreset | string | null | undefined,
+  waterHardness: number | string | null | undefined,
+  ...scenario: any[]
 ): any {
-  const cStr = String(climate || 'Temperate');
-  const hStr = String(waterHardness || 'Medium');
-  const safeIngs = Array.isArray(_ingredients) ? _ingredients : [];
-  const hasIngs = safeIngs.length > 0;
-  const hardnessRes = hasIngs ? calculateWaterHardnessTolerance(safeIngs) : null;
+  const climateKey = typeof climate === 'string' && climate in CLIMATE_PRESETS
+    ? climate as ClimatePreset
+    : null;
+  const climateInfo = climateKey
+    ? { name: CLIMATE_PRESETS[climateKey].name, tempRange: CLIMATE_PRESETS[climateKey].tempRange, humidityRange: CLIMATE_PRESETS[climateKey].humidityRange }
+    : { name: climate || 'UNSPECIFIED', tempRange: 'NOT_EVALUATED', humidityRange: 'NOT_EVALUATED' };
+
+  // A label such as "Hard (120-180 ppm)" is a range, not a numeric measurement.
+  // Never silently replace it with 150 ppm or another representative point.
+  const hardnessPpm = typeof waterHardness === 'number' && Number.isFinite(waterHardness) && waterHardness >= 0
+    ? waterHardness
+    : null;
+  const [washVolumeL, washDoseGrams, batchSizeKg, productCategory] = scenario;
+  const hasCompleteWashScenario =
+    hardnessPpm !== null &&
+    typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 &&
+    typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
+  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  const hardnessRes = hasCompleteWashScenario && safeIngs.length > 0
+    ? calculateWaterHardnessTolerance(
+        safeIngs,
+        hardnessPpm as number,
+        washVolumeL,
+        washDoseGrams,
+        typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100,
+        typeof productCategory === 'string' ? productCategory : undefined
+      )
+    : null;
+
+  const hardnessLabel = hardnessPpm === null
+    ? (typeof waterHardness === 'string' ? waterHardness : 'NOT_PROVIDED')
+    : `${hardnessPpm} ppm CaCO3`;
 
   return {
-    preservativeAdjustment: cStr.includes('Tropical') ? 'Increase preservative concentration by 20% due to ambient heat microbial risks.' : 'Standard preservative loading.',
-    viscosityAdjustment: cStr.includes('Cold') ? 'Expect higher product viscosity at low temperature; reduce salt by 0.2% to prevent gelling.' : 'Viscosity profiles stable.',
-    chelatorAdjustment: hStr.includes('Hard') ? 'Add 0.5% GLDA or Sodium Citrate to bind polyvalent cations.' : 'Chelator loading adequate.',
-    climateInfo: {
-      name: cStr,
-      storageTemp: '25°C - 45°C',
-      tempRange: '15°C to 50°C'
-    },
+    preservativeAdjustment: 'NOT_EVALUATED: requires preservative identity, concentration, pH, water activity and validated challenge-test data.',
+    viscosityAdjustment: 'NOT_EVALUATED: requires measured rheology at specified temperature and shear conditions.',
+    chelatorAdjustment: hardnessRes
+      ? (hardnessRes.status === 'PASS'
+          ? 'Calculated chelation capacity meets the stated wash scenario; this is a stoichiometric screen, not empirical validation.'
+          : 'Calculated chelation capacity does not meet the stated wash scenario; do not infer a corrective dose without grade- and matrix-specific validation.')
+      : 'NOT_EVALUATED: exact hardness, wash volume and wash dose are required.',
+    climateInfo,
     hardnessInfo: {
-      name: hStr,
+      name: hardnessLabel,
       maxSupportedPpm: hardnessRes ? hardnessRes.maxSupportedPpm : 'NOT_EVALUATED',
-      targetPpm: 150,
-      recommendedChelators: ['GLDA 47%', 'Sodium Citrate', 'EDTA Tetrasodium'],
-      recommendedBuilders: ['Sodium Carbonate', 'Zeolite 4A'],
-      recommendedBuffers: ['Sodium Metasilicate', 'Triethanolamine']
+      targetPpm: hardnessPpm,
+      recommendedChelators: [],
+      recommendedBuilders: [],
+      recommendedBuffers: []
     },
     calculatedHardnessTolerance: hardnessRes ? `${hardnessRes.maxSupportedPpm} ppm CaCO3` : 'NOT_EVALUATED',
-    isHardnessExceeded: hardnessRes ? (hardnessRes.status === 'WARNING' || hardnessRes.status === 'INSUFFICIENT') : false,
-    expectedStabilityScore: hardnessRes ? (hardnessRes.status === 'PASS' ? 95 : hardnessRes.status === 'WARNING' ? 75 : 50) : 'NOT_EVALUATED',
-    thermalRisks: ['Slight viscosity thinning at 45°C oven storage test.'],
-    recommendations: [
-      { id: 'rec-1', title: 'Maintain pH above 6.5', reason: 'Preserves enzyme longevity in warm climates', category: 'Stability', confidenceScore: 90 },
-      { id: 'rec-2', title: 'Dose eco-chelators at 0.3-0.8%', reason: 'Prevents hard water precipitation', category: 'Water Hardness', confidenceScore: 88 }
-    ],
-    industrialNotes: ['Storage in shaded stainless steel tanks recommended.'],
-    recommendedWaterPct: 75,
-    saltStrategyNote: 'Maintain electrolyte below 2.0% w/w.'
+    isHardnessExceeded: hardnessRes
+      ? (hardnessRes.status === 'WARNING' || hardnessRes.status === 'INSUFFICIENT')
+      : null,
+    thermalRisks: [],
+    recommendations: [],
+    industrialNotes: [],
+    reason: hardnessRes ? 'SCENARIO_BASED_STOICHIOMETRIC_SCREEN_ONLY' : 'INSUFFICIENT_INPUTS_FOR_HARDNESS_SCREEN'
   };
 }
