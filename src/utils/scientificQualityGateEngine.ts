@@ -297,16 +297,15 @@ export function evaluateScientificQualityGate(
       : Number(resolvedActivePurity);
     const activeResolution = ActiveMatterEngine.resolveIngredientActive(ing);
     if (activePurity === null && activeResolution.isSurfactant) {
-      blockingIssues.push({
+      majorWarnings.push({
         id: `gate-active-purity-unavailable-${name}`,
-        code: 'ERR_ACTIVE_MATTER_UNAVAILABLE',
+        code: 'WARN_ACTIVE_MATTER_UNAVAILABLE',
         title: `Surfactant Active Matter Unavailable (${name})`,
-        category: 'VALIDITY',
-        severity: 'FATAL',
-        message: `Surfactant ingredient '${name}' has no defensible active-matter value. The engine will not treat an unknown surfactant assay as 0% or 100%.`,
-        recommendation: 'Enter a supplier COA/verified assay or an explicitly identified commercial grade concentration before calculating active surfactant matter.'
+        category: 'EVIDENCE',
+        severity: 'MAJOR',
+        message: `Surfactant ingredient '${name}' has no defensible active-matter value. Its contribution remains unclassified and must not be interpreted as 0% or 100% active.`,
+        recommendation: 'Enter a supplier COA/verified assay or an explicitly identified commercial grade concentration before relying on active surfactant totals.'
       });
-      scientificValidity = 'INSUFFICIENT_DATA';
     } else if (activePurity !== null && (!Number.isFinite(activePurity) || activePurity < 0 || activePurity > 100)) {
       blockingIssues.push({
         id: `gate-invalid-purity-${name}`,
@@ -802,7 +801,7 @@ export function evaluateScientificQualityGate(
       if (blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED')) {
         finalFormulaStatus = 'OUT_OF_SPEC';
         labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
-      } else if (rawIngs.length === 0 || blockingIssues.some(i => i.code === 'ERR_ACTIVE_MATTER_UNAVAILABLE')) {
+      } else if (rawIngs.length === 0) {
         finalFormulaStatus = 'INSUFFICIENT_DATA';
         labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
       } else {
