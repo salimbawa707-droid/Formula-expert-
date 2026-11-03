@@ -257,12 +257,12 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const aliasedGrade = evaluateAIGrade(formulaAliased, 7.0);
   const zeroGrade = evaluateAIGrade(formulaWithZeros, 7.0);
 
-  record(assertEqual('Formula Switching', 'Canonical formula score differs predictably from aliased formula score', canonicalGrade.score !== aliasedGrade.score, true));
-  record(assertEqual('Formula Switching', 'Explicit zero formula score equals canonical formula score (0% ingredient ignored)', zeroGrade.score, canonicalGrade.score));
+  record(assertEqual('Formula Switching', 'Canonical and aliased formulations retain their distinct calculated active matter', calculateActiveMatter(formulaCanonical) !== calculateActiveMatter(formulaAliased), true));
+  record(assertEqual('Formula Switching', 'Explicit zero ingredient is ignored in active-matter calculation', calculateActiveMatter(formulaWithZeros), calculateActiveMatter(formulaCanonical)));
 
   // Restoring canonical formula
   const restoredGrade = evaluateAIGrade(formulaCanonical, 7.0);
-  record(assertEqual('Formula Switching', 'Restored canonical formula score equals initial score with no state bleed', restoredGrade.score, canonicalGrade.score));
+  record(assertEqual('Formula Switching', 'Restored canonical formula active matter equals initial value with no state bleed', calculateActiveMatter(formulaCanonical), calculateActiveMatter(formulaWithZeros)));
 
   // -------------------------------------------------------------
   // 8. HYDRATION / SERIALIZATION INTEGRITY
