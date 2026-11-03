@@ -8,6 +8,7 @@ import {
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import {
+  ActiveMatterEngine,
   calculateActiveSurfactants,
   calculateActiveMatter,
   getDefaultActiveMatter
@@ -290,8 +291,22 @@ export function evaluateScientificQualityGate(
       totalMassPct += pct;
     }
 
-    const activePurity = Number(ing?.activeMatterPct ?? ing?.activePercent ?? getDefaultActiveMatter(ing));
-    if (isNaN(activePurity) || activePurity < 0 || activePurity > 100) {
+    const resolvedActivePurity = ing?.activeMatterPct ?? ing?.activePercent ?? getDefaultActiveMatter(ing);
+    const activePurity = resolvedActivePurity === null || resolvedActivePurity === undefined
+      ? null
+      : Number(resolvedActivePurity);
+    const activeResolution = ActiveMatterEngine.resolveIngredientActive(ing);
+    if (activePurity === null && activeResolution.isSurfactant) {
+      majorWarnings.push({
+        id: `gate-active-purity-unavailable-${name}`,
+        code: 'WARN_ACTIVE_MATTER_UNAVAILABLE',
+        title: `Surfactant Active Matter Unavailable (${name})`,
+        category: 'EVIDENCE',
+        severity: 'MAJOR',
+        message: `Surfactant ingredient '${name}' has no defensible active-matter value. Its contribution remains unclassified and must not be interpreted as 0% or 100% active.`,
+        recommendation: 'Enter a supplier COA/verified assay or an explicitly identified commercial grade concentration before relying on active surfactant totals.'
+      });
+    } else if (activePurity !== null && (!Number.isFinite(activePurity) || activePurity < 0 || activePurity > 100)) {
       blockingIssues.push({
         id: `gate-invalid-purity-${name}`,
         code: 'ERR_INVALID_ACTIVE_PURITY',
@@ -363,7 +378,7 @@ export function evaluateScientificQualityGate(
 
   // Check if measured pH exists in lab measurements
   const measuredPHRecord = labMeasurements.find(m => m.parameterKey === 'ph' || m.parameterKey === 'powderPH');
-  const isPHMeasured = Boolean(measuredPHRecord && measuredPHRecord.value > 0);
+  const isPHMeasured = Boolean(measuredPHRecord && Number.isFinite(measuredPHRecord.value));
   const finalPH = isPHMeasured ? measuredPHRecord!.value : computedPH;
 
   if (finalPH === null) {
@@ -657,6 +672,18 @@ export function evaluateScientificQualityGate(
   const validationState = validationReport.validationState;
   const readinessLevel = validationReport.readinessLevel;
 
+  if (validationState === 'LAB_FAILED') {
+    blockingIssues.push({
+      id: 'gate-laboratory-test-failed',
+      code: 'ERR_LABORATORY_ACCEPTANCE_FAILED',
+      title: 'Laboratory Acceptance Test Failed',
+      category: 'SPECIFICATION',
+      severity: 'FATAL',
+      message: 'At least one identity-matched, version-matched laboratory measurement failed its recorded acceptance criteria.',
+      recommendation: 'Investigate the failed test, correct the formulation or process, and repeat the relevant laboratory test. Do not approve this formula.'
+    });
+  }
+
   let evidenceStatus: QualityGateEvidenceStatus = 'PREDICTED_ONLY';
   if (validationState === 'LAB_VALIDATED') {
     evidenceStatus = 'FULLY_LAB_VALIDATED';
@@ -771,9 +798,12 @@ export function evaluateScientificQualityGate(
     const hasSpecFatal = blockingIssues.some(i => i.category === 'SPECIFICATION');
 
     if (hasValidityFatal) {
-      if (rawIngs.length === 0) {
+      if (blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED')) {
+        finalFormulaStatus = 'OUT_OF_SPEC';
+        labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
+      } else if (rawIngs.length === 0) {
         finalFormulaStatus = 'INSUFFICIENT_DATA';
-        labReadiness = 'REQUIRES_INGREDIENT_IDENTITY';
+        labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
       } else {
         finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
         labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
@@ -788,8 +818,8 @@ export function evaluateScientificQualityGate(
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
     }
-  } else if (evidenceStatus === 'PREDICTED_ONLY' && majorWarnings.length > 0) {
-    // If computational evidence is insufficient (no lab bench results exist yet) AND there are major warnings, return LAB_VALIDATION_REQUIRED
+  } else if (evidenceStatus !== 'FULLY_LAB_VALIDATED') {
+    // Computational predictions or partial measurements cannot authorize a VALID result.
     finalFormulaStatus = 'LAB_VALIDATION_REQUIRED';
     labReadiness = 'READY_FOR_LAB_BENCH';
   } else if (majorWarnings.length > 0) {

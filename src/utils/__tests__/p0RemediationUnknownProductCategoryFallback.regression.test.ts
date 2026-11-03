@@ -8,7 +8,8 @@
 import {
   normalizeProductCategory,
   CANONICAL_PRODUCT_CATEGORY_IDS,
-  getProductCategoryLabel
+  getProductCategoryLabel,
+  getTargetPHRange
 } from '../../domain/productTaxonomy';
 import {
   getScientificProductProfile,
@@ -248,6 +249,49 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
   // 31. Existing valid category tests remain passing
   const masterFormulasOk31 = FORMULAS.length > 0 && FORMULAS.every(f => f.categoryId !== 'UNKNOWN_PRODUCT_CATEGORY');
   assert('31. Existing valid category tests remain passing', masterFormulasOk31);
+
+
+  // 32. A finite measured pH of zero is valid and must not be replaced by prediction.
+  const zeroPHGate = evaluateScientificQualityGate({
+    formulaName: 'Zero pH Measurement Regression',
+    formulaVersion: '1.0.0',
+    productCategory: 'TOILET_CLEANER',
+    ingredients: [{ name: 'Water', percentage: 100, role: 'Solvent' }],
+    labMeasurements: [{
+      measurementId: 'MEAS-PH-ZERO',
+      formulaVersion: '1.0.0',
+      parameterKey: 'ph',
+      value: 0,
+      unit: 'pH units',
+      testDate: '2026-11-03',
+      provenance: 'MEASURED'
+    }]
+  });
+  assert(
+    '32. A measured pH of zero is preserved as measured',
+    zeroPHGate.speciationResult.isMeasured === true &&
+      zeroPHGate.speciationResult.provenance === 'MEASURED' &&
+      zeroPHGate.speciationResult.pH === 0
+  );
+
+  assert('32. Unknown category has no pH target range', getTargetPHRange('UNKNOWN_PRODUCT_CATEGORY') === null);
+  assert('33. Laundry liquid target range remains available', getTargetPHRange('LAUNDRY_LIQUID')?.min === 7.5 && getTargetPHRange('LAUNDRY_LIQUID')?.max === 9.5);
+
+  const unknownSurfactantAssayGate = evaluateScientificQualityGate({
+    formulaName: 'Unknown Surfactant Assay',
+    formulaVersion: '1.0.0',
+    formulaId: 'FORM-UNKNOWN-SURFACTANT-ASSAY',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'Water', percentage: 95, role: 'Solvent' },
+      { name: 'Unclassified Anionic Surfactant', percentage: 5, role: 'Anionic Surfactant' }
+    ]
+  });
+  assert(
+    '34. Unknown surfactant assay is disclosed and cannot produce VALID',
+    unknownSurfactantAssayGate.majorWarnings.some(issue => issue.code === 'WARN_ACTIVE_MATTER_UNAVAILABLE') &&
+      unknownSurfactantAssayGate.finalFormulaStatus !== 'VALID'
+  );
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;

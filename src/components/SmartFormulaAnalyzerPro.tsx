@@ -221,10 +221,14 @@ export const calculateFormulaHealthScore = (ph: number, analyzedIngs: any[], raw
 export const runRiskAnalysis = (ph: number, surfactantPct: number, analyzedIngs: any[], rawCost: number, target: number, preservativePct: number, productType?: string, formulaName?: string) => {
   const warnings: string[] = [];
   
-  const targetRange = getTargetPHRange(productType || 'Dishwash Liquid', formulaName);
-  const isDivergent = ph < targetRange.min - 0.3 || ph > targetRange.max + 0.3;
-  if (isDivergent) {
-    warnings.push(`Validation Warning: Estimated pH (${ph}) diverges from Target pH range (${targetRange.label}) by >0.3 units. Check neutralization ratios.`);
+  const targetRange = productType ? getTargetPHRange(productType, formulaName) : null;
+  if (!targetRange) {
+    warnings.push('pH target comparison unavailable: select a recognized product category. No generic category range was substituted.');
+  } else {
+    const isDivergent = ph < targetRange.min - 0.3 || ph > targetRange.max + 0.3;
+    if (isDivergent) {
+      warnings.push(`Validation Warning: Estimated pH (${ph}) diverges from Target pH range (${targetRange.label}) by >0.3 units. Check neutralization ratios.`);
+    }
   }
 
   let preservativeWarning: string | null = null;

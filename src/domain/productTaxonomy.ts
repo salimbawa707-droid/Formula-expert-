@@ -750,16 +750,14 @@ export function getProductCategoryLabel(idOrLegacy: string | null | undefined): 
 /**
  * Returns the target pH range for a category directly from taxonomy SSOT.
  */
-export function getTargetPHRange(category: string, _role?: string): { min: number; max: number; label: string } {
+export function getTargetPHRange(category: string, _role?: string): { min: number; max: number; label: string } | null {
   const def = getProductCategory(category);
-  if (def) {
-    return {
-      min: def.targetPHMin,
-      max: def.targetPHMax,
-      label: `${def.label} Target (${def.targetPHMin} - ${def.targetPHMax})`
-    };
-  }
-  return { min: 6.0, max: 9.0, label: 'General Detergent Range (6.0 - 9.0)' };
+  if (!def) return null;
+  return {
+    min: def.targetPHMin,
+    max: def.targetPHMax,
+    label: `${def.label} Target (${def.targetPHMin} - ${def.targetPHMax})`
+  };
 }
 
 /**
