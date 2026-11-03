@@ -69,16 +69,16 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     ingredients: validLaundryFormula
   });
 
-  assert('Valid Formula - Scientific Validity is VALID', validGate.scientificValidity === 'VALID', validGate.scientificValidity, 'VALID');
-  assert('Screening Formula - Out-of-spec parameter is not reported as PASS', validGate.specificationStatus === 'OUT_OF_SPEC', validGate.specificationStatus, 'OUT_OF_SPEC');
-  assert('Valid Formula - Compatibility Status is COMPATIBLE', validGate.compatibilityStatus === 'COMPATIBLE' || validGate.compatibilityStatus === 'COMPATIBLE_WITH_WARNINGS', validGate.compatibilityStatus, 'COMPATIBLE');
-  assert('Valid Formula - Performance Status is MEETS_PREDICTED_CRITERIA', validGate.performanceStatus === 'MEETS_PREDICTED_CRITERIA', validGate.performanceStatus, 'MEETS_PREDICTED_CRITERIA');
-  assert('Valid Formula - Evidence Status is PREDICTED_ONLY', validGate.evidenceStatus === 'PREDICTED_ONLY', validGate.evidenceStatus, 'PREDICTED_ONLY');
-  assert('Screening Formula - Predicted-only formula requires lab validation', validGate.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED', validGate.finalFormulaStatus, 'LAB_VALIDATION_REQUIRED');
-  assert('Valid Formula - Lab Readiness is READY_FOR_LAB_BENCH', validGate.labReadiness === 'READY_FOR_LAB_BENCH', validGate.labReadiness, 'READY_FOR_LAB_BENCH');
+  assert('Incomplete Formula Inputs - Missing ingredient assay/pH must not be accepted as scientifically valid', validGate.scientificValidity !== 'VALID', validGate.scientificValidity, 'INSUFFICIENT_DATA or INVALID');
+  assert('Incomplete Formula Inputs - Unavailable measurements do not create specification PASS', validGate.specificationStatus !== 'PASS', validGate.specificationStatus, 'NOT PASS');
+  assert('Incomplete Formula Inputs - Compatibility remains unavailable without evaluable pH', validGate.compatibilityStatus === 'INSUFFICIENT_DATA', validGate.compatibilityStatus, 'INSUFFICIENT_DATA');
+  assert('Incomplete Formula Inputs - Performance remains unavailable without complete wash scenario', validGate.performanceStatus === 'INSUFFICIENT_DATA', validGate.performanceStatus, 'INSUFFICIENT_DATA');
+  assert('Incomplete Formula Inputs - Evidence remains predicted only', validGate.evidenceStatus === 'PREDICTED_ONLY', validGate.evidenceStatus, 'PREDICTED_ONLY');
+  assert('Incomplete Formula Inputs - Solver failure blocks lab readiness', validGate.finalFormulaStatus === 'SCIENTIFICALLY_INVALID', validGate.finalFormulaStatus, 'SCIENTIFICALLY_INVALID');
+  assert('Incomplete Formula Inputs - Lab readiness is blocked by scientific invalidity', validGate.labReadiness === 'BLOCKED_BY_SCIENTIFIC_INVALIDITY', validGate.labReadiness, 'BLOCKED_BY_SCIENTIFIC_INVALIDITY');
 
   assert('Category targets - unverified provenance is explicitly surfaced', validGate.majorWarnings.some(w => w.code === 'WARN_UNVERIFIED_CATEGORY_TARGETS'), validGate.majorWarnings.map(w => w.code), 'WARN_UNVERIFIED_CATEGORY_TARGETS');
-  assert('Missing hardness - assumed 150 ppm is explicitly warned', validGate.majorWarnings.some(w => w.code === 'WARN_ASSUMED_WATER_HARDNESS'), validGate.majorWarnings.map(w => w.code), 'WARN_ASSUMED_WATER_HARDNESS');
+  assert('Missing hardness - no default hardness/dose scenario is silently substituted', validGate.majorWarnings.some(w => w.code === 'WARN_ASSUMED_WATER_HARDNESS' && w.message.includes('No default water-hardness or dose scenario was substituted')), validGate.majorWarnings.map(w => w.code), 'WARN_ASSUMED_WATER_HARDNESS');
 
   // --------------------------------------------------------------------------
   // TEST 2: Unknown Product Category Handling
