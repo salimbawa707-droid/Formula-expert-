@@ -65,9 +65,9 @@ export function runP5PropertyPipelinesTestSuite() {
     formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      { name: 'Water', percentage: 85.67, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
+      { name: 'Water', percentage: 85.68, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
       { name: 'LABSA 90%', percentage: 12.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
-      { name: 'Sodium Hydroxide', percentage: 1.33, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
+      { name: 'Sodium Hydroxide', percentage: 1.32, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
       { name: 'Sodium Citrate Dihydrate', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 }
     ],
     batchSizeKg: 100,
