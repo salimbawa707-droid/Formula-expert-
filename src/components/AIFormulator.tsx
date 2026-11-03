@@ -124,7 +124,7 @@ export interface DeepAnalysisState {
     formulaName: string;
     productCategory: string;
     batchSizeKg: number;
-    waterHardnessPpm: number;
+    waterHardnessPpm: number | null;
     ingredients: FormulationIngredient[];
     powderLabInputs: PowderLabMeasurementInputs;
   };
@@ -138,7 +138,7 @@ export function runDeepScientificAnalysis(snapshot: {
   formulaName: string;
   productCategory: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   ingredients: FormulationIngredient[];
   powderLabInputs: PowderLabMeasurementInputs;
   activeFormulaVersion?: string;
@@ -2204,6 +2204,7 @@ export default function FormulaExpert({
           batchSizeKg,
           batchSize: batchSizeKg,
           waterHardnessPpm,
+          waterHardnessSource: waterHardnessPpm === null ? 'UNKNOWN' : 'USER_ENTERED',
           targetPH: deepAnalysisState.scientificResults?.pH ?? null,
           ingredients
         }}
