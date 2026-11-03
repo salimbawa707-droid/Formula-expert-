@@ -200,7 +200,7 @@ export default function InventoryProduction({
     setAdjustModalItem(item);
     setAdjustMode(mode);
     setAdjustAmount(mode === 'add' ? 50 : 10);
-    setAdjustLot(item.lotNumber || `LOT-2026-${Math.floor(100 + Math.random() * 900)}`);
+    setAdjustLot(item.lotNumber || '');
   };
 
   const handleApplyAdjustment = () => {
@@ -212,6 +212,10 @@ export default function InventoryProduction({
   };
 
   const handleExecuteProduction = () => {
+    if (!activeFormula || !activeFormula.id || !Array.isArray(activeFormula.ingredients) || activeFormula.ingredients.length === 0) {
+      alert('Production blocked: select a committed active formula. The reference/demo formula is preview-only and cannot deduct stock.');
+      return;
+    }
     const actor = operatorName.trim();
     if (!actor) {
       alert('Enter the responsible operator name before recording a traceable manufacturing batch.');
@@ -304,7 +308,7 @@ export default function InventoryProduction({
   };
 
   const handleResetToDefaultStock = () => {
-    if (window.confirm('Reset all laboratory inventory to standard baseline stock quantities?')) {
+    if (window.confirm('Reset the stock ledger to zero quantities with unknown lot, supplier and cost data?')) {
       const defaults = getInitialDefaultInventory();
       setInventory(defaults);
       localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(defaults));
@@ -581,16 +585,16 @@ export default function InventoryProduction({
                           {req.requiredKg.toFixed(2)} kg
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-700">
-                          {req.availableStockKg >= 99999 ? '∞ (Water)' : `${req.availableStockKg.toFixed(1)} kg`}
+                          {`${req.availableStockKg.toFixed(1)} kg`}
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-700">
-                          {req.availableStockKg >= 99999 ? '∞' : `${req.remainingStockKg.toFixed(1)} kg`}
+                          {`${req.remainingStockKg.toFixed(1)} kg`}
                         </td>
                         <td className="py-3 px-3 text-right font-mono text-slate-600 text-xs">
                           {req.costPerKg !== null ? `$${req.costPerKg.toFixed(2)}` : '—'}
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900">
-                          ${req.totalCost.toFixed(2)}
+                          {req.totalCost !== null ? `${req.totalCost.toFixed(2)}` : 'Not available'}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {req.status === 'zero_required' ? (
@@ -624,10 +628,10 @@ export default function InventoryProduction({
                       Total Batch Raw Material Cost:
                     </td>
                     <td className="py-3 px-3 text-right font-mono text-emerald-700 text-base">
-                      ${batchCheck.totalBatchCost.toFixed(2)}
+                      {batchCheck.totalBatchCost !== null ? `${batchCheck.totalBatchCost.toFixed(2)}` : 'Not available'}
                     </td>
                     <td className="py-3 px-4 text-center text-xs text-slate-500">
-                      (${(batchCheck.totalBatchCost / (batchSizeOverride || 1)).toFixed(2)}/kg)
+                      {batchCheck.totalBatchCost !== null && batchCheck.batchSizeKg > 0 ? `(${(batchCheck.totalBatchCost / batchCheck.batchSizeKg).toFixed(2)}/kg)` : '(cost unavailable)'}
                     </td>
                   </tr>
                 </tfoot>
@@ -883,7 +887,7 @@ export default function InventoryProduction({
                       </div>
                       <div>
                         <span className="text-slate-400 block">Total Batch Cost:</span>
-                        <span className="font-bold font-mono text-emerald-700">${run.totalCost.toFixed(2)}</span>
+                        <span className="font-bold font-mono text-emerald-700">{run.totalCost !== null ? `${run.totalCost.toFixed(2)}` : 'Not available'}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 block">Materials Consumed:</span>
