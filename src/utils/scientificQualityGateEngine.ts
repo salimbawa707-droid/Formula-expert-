@@ -934,6 +934,10 @@ export function evaluateScientificQualityGate(
     if (hasMeasuredLabFailure || hasMeasuredSpecificationFailure) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
+    } else if (rawIngs.length === 0) {
+      // An empty input is missing formulation data, not a chemically evaluated failure.
+      finalFormulaStatus = 'INSUFFICIENT_DATA';
+      labReadiness = 'REQUIRES_INGREDIENT_IDENTITY';
     } else if (hasCompositionFatal || scientificValidity === 'INVALID') {
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
