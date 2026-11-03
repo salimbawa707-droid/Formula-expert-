@@ -641,7 +641,8 @@ function evaluateAIGradeFromLegacyOrDraft(
 
     if (phVal === undefined) {
       if (typeof input.ph === 'number' && !isNaN(input.ph)) phVal = input.ph;
-      else if (typeof input.targetpH === 'number' && !isNaN(input.targetpH)) phVal = input.targetpH;
+      // A target specification is not an observed or calculated formula pH.
+      // Only an explicitly supplied current pH field may enter this legacy screening path.
       else if (input.properties && typeof parseFloat(input.properties.pH) === 'number' && !isNaN(parseFloat(input.properties.pH))) {
         phVal = parseFloat(input.properties.pH);
       }
@@ -896,11 +897,17 @@ function evaluateAIGradeFromLegacyOrDraft(
 
   const reasoning = `Grade ${grade} (${finalScore}/100): ${reasons.join(', ')}.${hazardNote}`;
 
+  // Legacy array/object calls do not carry the authoritative orchestrator's
+  // scientific validity, provenance, formula identity, or evidence firewall.
+  // Keep this output explicitly screening-only and prevent an optimistic grade.
+  const legacyScreeningScore = Math.min(65, finalScore);
+  const legacyScreeningGrade = legacyScreeningScore >= 60 ? 'C' : legacyScreeningScore >= 50 ? 'D' : 'F';
+
   return {
-    grade,
-    score: finalScore,
-    numericScore: finalScore,
-    gradeType: profile ? 'CATEGORY_SPECIFIC_RND_INDEX' : 'GENERIC_SCREENING_INDEX',
+    grade: legacyScreeningGrade,
+    score: legacyScreeningScore,
+    numericScore: legacyScreeningScore,
+    gradeType: 'GENERIC_SCREENING_INDEX',
     productCategory: canonicalCategory,
     categoryModelId: profile?.modelId || 'AIGRADE_MODEL_GENERIC_V1',
     categoryModelVersion: profile?.modelVersion || '1.0.0',
@@ -908,8 +915,8 @@ function evaluateAIGradeFromLegacyOrDraft(
     scientificEngineVersion: AI_GRADE_ENGINE_VERSION,
     ingredientDatabaseVersion: INGREDIENT_DB_VERSION,
     calculationVersion: '2026.1',
-    scientificValidity: 'VALID',
-    performanceStatus: profile?.isCleaningApplicable ? 'ACTIVE_DETERGENCY' : 'GENERAL_FORMULATION',
+    scientificValidity: 'INSUFFICIENT_DATA',
+    performanceStatus: profile?.isCleaningApplicable ? 'ACTIVE_DETERGENCY_SCREENING_ONLY' : 'CONDITIONING_SCREENING_ONLY',
     evidenceLevel: 'PREDICTED_ONLY',
     confidence: 'LOW',
     uncertainty: {
@@ -921,15 +928,15 @@ function evaluateAIGradeFromLegacyOrDraft(
         ...(targetCostVal ? [] : ['Target cost is not supplied; commercial pillar is not scored.'])
       ]
     },
-    strengths: finalScore >= 80 ? ['High balanced formula grade.'] : [],
-    weaknesses: finalScore < 60 ? ['Low composite score.'] : [],
-    limitingFactors: [],
-    warnings: compResult.warnings || [],
-    blockingIssues: [],
-    unknownParameters: targetCostVal ? [] : ['targetCost'],
+    strengths: [],
+    weaknesses: ['Legacy heuristic score is capped and is not an authoritative scientific grade.'],
+    limitingFactors: ['Use the Scientific Orchestrator evaluation context for an authoritative category-specific grade.'],
+    warnings: [...(compResult.warnings || []), 'LEGACY_SCREENING_ONLY: Scientific validity, raw-material assay provenance, and laboratory evidence were not established by this legacy path.'],
+    blockingIssues: ['AUTHORITATIVE_ORCHESTRATOR_CONTEXT_REQUIRED'],
+    unknownParameters: [...(targetCostVal ? [] : ['targetCost']), 'scientificProvenance', 'labEvidence'],
     labValidationStatus: 'PREDICTED_ONLY (Laboratory Testing Required Prior to Release)',
     regulatoryStatus: 'NOT_EVALUATED',
-    reasoning,
+    reasoning: `Screening-only grade ${legacyScreeningGrade} (${legacyScreeningScore}/100). ${reasoning} This is not a scientific validity PASS.`,
     breakdown: {
       cpiScore,
       compatibilityScore,
