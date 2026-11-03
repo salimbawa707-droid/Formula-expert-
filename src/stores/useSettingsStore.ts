@@ -52,7 +52,7 @@ export type LabTheme = 'midnight' | 'daylight';
 export interface AppPreferences {
   category: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   currencySymbol: string;
   theme: LabTheme;
 }
@@ -142,7 +142,7 @@ const DEFAULT_AI_SETTINGS: AISettings = {
 const DEFAULT_PREFERENCES: AppPreferences = {
   category: 'Liquid Laundry',
   batchSizeKg: 100,
-  waterHardnessPpm: 150,
+  waterHardnessPpm: null,
   currencySymbol: '$',
   theme: 'midnight',
 };
