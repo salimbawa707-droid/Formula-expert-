@@ -370,6 +370,10 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
     );
   }
 
+  if (orchestratorResult.activeMatterResult?.verified !== true) {
+    unknownParameters.push('activeMatterProvenance');
+  }
+
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const limitingFactors: string[] = [];
@@ -457,14 +461,14 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   }
 
   // E. Commercial Viability Pillar
-  let commercialScore = 80; // Default neutral baseline
-  let commercialStatus: GradePillarStatus = 'KNOWN';
+  let commercialScore = 0;
+  let commercialStatus: GradePillarStatus = 'UNKNOWN';
   const targetCost = costResult.targetCostPerKg;
   const actualCost = costResult.costPerKg;
 
   if (targetCost === undefined || targetCost === null || targetCost <= 0) {
     commercialStatus = 'UNKNOWN';
-    commercialScore = 80;
+    commercialScore = 0;
     unknownParameters.push('targetCost');
     uncertaintyFactors.push('Target raw material cost is not specified; commercial score evaluated at baseline.');
   } else if (actualCost <= targetCost) {
