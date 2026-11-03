@@ -305,11 +305,11 @@ export interface PowderHardWaterReport {
 
 export interface PowderDissolutionReport {
   testConditions?: {
-    doseGPerL: number;
-    waterVolumeMl: number;
-    waterTempC: number;
-    waterHardnessPpm: number;
-    agitationMethod: string;
+    doseGPerL?: number;
+    waterVolumeMl?: number;
+    waterTempC?: number;
+    waterHardnessPpm?: number;
+    agitationMethod?: string;
     agitationRpm?: number;
     measuredDissolutionTimeSec?: number;
     measuredUndissolvedResiduePct?: number;
@@ -445,6 +445,9 @@ export interface PowderLabMeasurementInputs {
   dispersibilityObservation?: 'fully dispersed' | 'partially dispersed' | 'floating' | 'sediment' | 'agglomeration' | 'residue' | 'not observed';
   dispersibilityNotes?: string;
   dissolutionWaterTempC?: number;
+  dissolutionWaterHardnessPpm?: number;
+  dissolutionDoseGPerL?: number;
+  dissolutionWaterVolumeMl?: number;
   dissolutionAgitationRpm?: number;
 
   // Performance & Foam
