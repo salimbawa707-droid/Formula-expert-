@@ -105,7 +105,8 @@ export interface ConstraintEvaluationSummary {
 export function buildProductConstraints(
   categoryInput: string,
   subCategory?: string,
-  customOverrides?: Partial<FormulationConstraint>[]
+  customOverrides?: Partial<FormulationConstraint>[],
+  waterHardnessBenchmarkPpm?: number
 ): FormulationConstraint[] {
   const categoryId = normalizeProductCategory(categoryInput);
   const isPowder = isPowderCategory(categoryId);
@@ -242,11 +243,11 @@ export function buildProductConstraints(
       type: 'CHELATION_HARDNESS_MINIMUM',
       name: 'Water Hardness Chelation Capacity (ppm CaCO3)',
       criticality: 'SOFT',
-      targetMin: 150.0, // Standard water hardness benchmark
+      targetMin: typeof waterHardnessBenchmarkPpm === 'number' && Number.isFinite(waterHardnessBenchmarkPpm) && waterHardnessBenchmarkPpm >= 0 ? waterHardnessBenchmarkPpm : undefined,
       penaltyWeight: 35.0,
-      isApplicable: true,
+      isApplicable: typeof waterHardnessBenchmarkPpm === 'number' && Number.isFinite(waterHardnessBenchmarkPpm) && waterHardnessBenchmarkPpm >= 0,
       physicalForm: 'ALL',
-      scientificBasis: 'Sequestration threshold to prevent Ca/Mg surfactant precipitation under hard water.',
+      scientificBasis: 'Requires an explicit user-supplied hardness benchmark; no generic 150 ppm scenario is substituted.',
     });
   }
 
