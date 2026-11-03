@@ -468,7 +468,7 @@ export class ScientificExecutionDAG {
         state.activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(state.resolvedIngredients, state.batchSizeKg);
         state.totalSurfactantActivePct = calculateActiveSurfactants(state.resolvedIngredients);
         const amResult = calculateActiveMatterResult(state.resolvedIngredients);
-        state.totalActiveMatterPct = Number(amResult.value ?? 0);
+        state.totalActiveMatterPct = amResult.value === null ? Number.NaN : amResult.value;
         if (amResult.status !== 'VALID') {
           state.activeMatterStatus = 'INSUFFICIENT_DATA';
           state.activeMatterVerified = false;
@@ -488,8 +488,13 @@ export class ScientificExecutionDAG {
           const role = (ing.role || '').toLowerCase();
           
           const validation = validateActiveMatterInput(ing.activeMatterPct);
-          const active = (validation.status === 'VALID' ? validation.value! : getDefaultActiveMatter(ing)) / 100;
-          const activePct = ing.percentage * active;
+          const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
+          // Unknown assay is not zero. Keep the contribution out of the numeric
+          // breakdown and preserve INSUFFICIENT_DATA from the authoritative report.
+          if (typeof resolvedActive !== 'number' || !Number.isFinite(resolvedActive) || resolvedActive < 0 || resolvedActive > 100) {
+            continue;
+          }
+          const activePct = ing.percentage * (resolvedActive / 100);
 
           if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
             anionic += activePct;
@@ -745,8 +750,8 @@ export class ScientificExecutionDAG {
         );
 
         state.cleaningResult = perfRes;
-        state.cpi = perfRes.cpi;
-        state.cleaningStatus = 'VALID';
+        state.cpi = perfRes.provenance === 'INSUFFICIENT_DATA' ? null : perfRes.cpi;
+        state.cleaningStatus = perfRes.provenance === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' : 'SCREENING';
       }
     });
 
@@ -931,9 +936,9 @@ export class ScientificExecutionDAG {
           predictedMetrics: {
             pH: state.finalEquilibriumPH ?? null,
             activeSurfactantsPct: state.totalSurfactantActivePct,
-            activeMatterPct: state.totalSurfactantActivePct,
-            viscosityCps: state.viscosityResult?.predictedViscosityCp ?? 0,
-            cpi: state.cpi ?? 0,
+            activeMatterPct: Number.isFinite(state.totalActiveMatterPct) ? state.totalActiveMatterPct : null,
+            viscosityCps: state.viscosityResult?.predictedViscosityCp ?? null,
+            cpi: state.cpi,
             densityGCm3: state.densityGPerCm3,
             waterHardnessTolerancePpm: state.rawCapacity
           },
