@@ -84,8 +84,8 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   ]);
   assert(
     'Group 1: Mandatory Tests',
-    'Test 2: Unknown acid generates diagnostic warning for unmapped acid/base species',
-    (unmappedAcidResult.warnings || []).some(w => w.includes('could not be mapped')),
+    'Test 2: Unknown acid is explicitly reported as unrecognized and pH is withheld',
+    (unmappedAcidResult.warnings || []).some(w => w.includes('PH_UNRECOGNIZED_INGREDIENTS_PRESENT')),
     (unmappedAcidResult.warnings || []).join(' | '),
     'Warning containing unmapped chemical species'
   );
@@ -97,8 +97,8 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   ]);
   assert(
     'Group 1: Mandatory Tests',
-    'Test 3: Unknown alkali result emits diagnostic warning for unmapped chemical species',
-    (unmappedAlkaliResult.warnings || []).some(w => w.includes('could not be mapped')),
+    'Test 3: Unknown alkali is explicitly reported as unrecognized and pH is withheld',
+    (unmappedAlkaliResult.warnings || []).some(w => w.includes('PH_UNRECOGNIZED_INGREDIENTS_PRESENT')),
     (unmappedAlkaliResult.warnings || []).join(' | '),
     'Warning containing unmapped chemical species'
   );
@@ -131,10 +131,10 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   assert(
     'Group 1: Mandatory Tests',
     'Test 5: Unknown polymer formula receives storage status indicating stability testing required',
-    unknownPolymerComp.stabilitySummary?.overallStorageStatus === 'LAB_STABILITY_REQUIRED' ||
-    unknownPolymerComp.compatibilityScore <= 100,
-    unknownPolymerComp.stabilitySummary?.overallStorageStatus,
-    'LAB_STABILITY_REQUIRED'
+    unknownPolymerComp.stabilitySummary?.overallStorageStatus === 'INSUFFICIENT_DATA' &&
+    unknownPolymerComp.evidenceStatus === 'INSUFFICIENT_DATA',
+    { storage: unknownPolymerComp.stabilitySummary?.overallStorageStatus, evidence: unknownPolymerComp.evidenceStatus },
+    'INSUFFICIENT_DATA'
   );
 
   // Test 6 (F): Non-critical unknown (fragrance density) does not block pH
@@ -148,8 +148,8 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   });
   assert(
     'Group 1: Mandatory Tests',
-    'Test 6: Non-critical fragrance does not block pH calculation',
-    typeof fragranceEval.pHResult.ph === 'number' && fragranceEval.pHResult.ph > 0,
+    'Test 6: Uncharacterized fragrance does not receive an assumed neutral pH',
+    fragranceEval.pHResult.ph === null && fragranceEval.scientificValidity === 'INSUFFICIENT_DATA',
     fragranceEval.pHResult.ph,
     'Valid pH number'
   );
@@ -165,8 +165,8 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   });
   assert(
     'Group 1: Mandatory Tests',
-    'Test 7: Enzyme formula evaluates without throwing fatal error',
-    enzymeEval.scientificValidity === 'VALID',
+    'Test 7: Unknown enzyme chemistry remains non-evaluable rather than receiving a VALID verdict',
+    enzymeEval.scientificValidity === 'INSUFFICIENT_DATA' && enzymeEval.aiGrade.grade === 'N/A',
     enzymeEval.scientificValidity,
     'VALID'
   );
@@ -196,8 +196,8 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   ]);
   assert(
     'Group 1: Mandatory Tests',
-    'Test 9: Unknown component density sets density confidence to LOW',
-    unknownDensityRes.confidence === 'LOW' && unknownDensityRes.modelType.includes('Estimated Density'),
+    'Test 9: Unknown component density remains unavailable with LOW confidence',
+    unknownDensityRes.confidence === 'LOW' && unknownDensityRes.densityStatus === 'INSUFFICIENT_DATA' && unknownDensityRes.provenance === 'INSUFFICIENT_DATA',
     unknownDensityRes.confidence,
     'LOW'
   );
@@ -287,8 +287,8 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   });
   assert(
     'Group 1: Mandatory Tests',
-    'Test 15: Formula with non-critical unknown fragrance completes with VALID scientific validity',
-    nonCriticalEval.scientificValidity === 'VALID',
+    'Test 15: Formula with uncharacterized fragrance remains INSUFFICIENT_DATA',
+    nonCriticalEval.scientificValidity === 'INSUFFICIENT_DATA',
     nonCriticalEval.scientificValidity,
     'VALID'
   );
@@ -303,10 +303,10 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
   });
   assert(
     'Group 1: Mandatory Tests',
-    'Test 16: Fully characterized formula evaluates with HIGH confidence and A/A+ Grade',
-    fullyKnownEval.scientificValidity === 'VALID' &&
+    'Test 16: Surfactant-only formula without a verified pH-active system is not assigned a grade',
+    fullyKnownEval.scientificValidity === 'INSUFFICIENT_DATA' &&
     fullyKnownEval.activeMatterResult.totalActiveMatterPct > 10 &&
-    (fullyKnownEval.aiGrade.grade === 'A+' || fullyKnownEval.aiGrade.grade === 'A'),
+    fullyKnownEval.aiGrade.grade === 'N/A',
     fullyKnownEval.aiGrade.grade,
     'A+ or A'
   );

@@ -662,15 +662,23 @@ export function evaluateHistoricalFormulaReproducibility(
   ingredients: FormulationIngredient[],
   category: ProductCategoryId,
   historicalModelVersion: string
-): { isReproducible: boolean; evaluatedResult: FormulationPerformanceResult; modelVersionUsed: string } {
+): {
+  isReproducible: boolean;
+  evaluatedResult: FormulationPerformanceResult;
+  modelVersionUsed: string;
+  reason: string;
+} {
   const normCat = normalizeProductCategory(category);
-  
-  // Deterministic evaluation grounded in specified historical model version
-  const evaluatedResult = calculateCleaningPerformance(ingredients, 8.5, normCat);
+
+  // A version label alone cannot reproduce an historical model. This function
+  // has no immutable model artifact, historical parameter snapshot, or recorded
+  // wash-liquor pH/scenario. Do not silently substitute today's engine or pH 8.5.
+  const evaluatedResult = calculateCleaningPerformance(ingredients, Number.NaN, normCat);
 
   return {
-    isReproducible: true,
+    isReproducible: false,
     evaluatedResult,
-    modelVersionUsed: historicalModelVersion
+    modelVersionUsed: 'UNVERIFIED',
+    reason: `Historical model ${historicalModelVersion} cannot be reproduced: immutable model artifact and original wash-scenario inputs are unavailable.`
   };
 }

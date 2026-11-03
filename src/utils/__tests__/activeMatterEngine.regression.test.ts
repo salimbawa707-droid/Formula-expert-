@@ -58,6 +58,9 @@ export function runActiveMatterRegressionTestSuite() {
   const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'Commercial reference default is not labelled authoritative assay', referenceDefault.dataSource === 'reference_default', referenceDefault.dataSource, 'reference_default');
 
+  const proprietaryUnknown = ActiveMatterEngine.resolveIngredientActive({ canonicalIngredientId: 'aristo-9', name: 'Aristo 9' } as any);
+  assert('Unknown Property Firewall', 'Aristo 9 explicit unknownProperties prevents activeDefault 0 being treated as a measured zero', proprietaryUnknown.activeMatterPct === null && proprietaryUnknown.dataSource === 'missing', { activeMatterPct: proprietaryUnknown.activeMatterPct, dataSource: proprietaryUnknown.dataSource }, { activeMatterPct: null, dataSource: 'missing' });
+
   const sles70Res = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'SLES 70% resolves to 70%', sles70Res.activeMatterPct === 70, sles70Res.activeMatterPct, 70);
 
@@ -137,13 +140,21 @@ export function runActiveMatterRegressionTestSuite() {
   const directActiveSurf = calculateActiveSurfactants(testFormula);
   const directRawSurf = calculateRawSurfactants(testFormula);
 
-  assertNear('Direct Helpers', 'calculateActiveMatter matches report', directActive, report.totalActiveMatter, 0.05);
+  assert('Direct Helpers', 'calculateActiveMatter does not return a partial total when any ingredient assay is missing', Number.isNaN(directActive), directActive, 'NaN / INSUFFICIENT_DATA');
   assertNear('Direct Helpers', 'calculateActiveSurfactants matches report', directActiveSurf, report.surfactants.totalActiveSurfactants, 0.05);
   assertNear('Direct Helpers', 'calculateRawSurfactants matches report', directRawSurf, report.surfactants.totalRawSurfactants, 0.05);
 
   // 7. Edge Cases & Safety Clamping
   const emptyReport = evaluateAuthoritativeActiveMatter([], 100);
-  assert('Edge Cases', 'Empty ingredients return 0% active matter', emptyReport.totalActiveMatter === 0, emptyReport.totalActiveMatter, 0);
+  assert('Edge Cases', 'Empty ingredients remain INSUFFICIENT_DATA', emptyReport.activeMatterStatus === 'INSUFFICIENT_DATA', emptyReport.activeMatterStatus, 'INSUFFICIENT_DATA');
+  assert('Edge Cases', 'Empty formula numeric helper returns unavailable', Number.isNaN(calculateActiveMatter([])), calculateActiveMatter([]), 'NaN / unavailable');
+  assert('Edge Cases', 'Empty formula active-surfactant helper returns unavailable', Number.isNaN(calculateActiveSurfactants([])), calculateActiveSurfactants([]), 'NaN / unavailable');
+
+  const missingPercentageReport = evaluateAuthoritativeActiveMatter([{ name: 'SLES 70%' } as any], 100);
+  assert('Input Validation', 'Missing ingredient percentage blocks active-matter report', missingPercentageReport.activeMatterStatus === 'INSUFFICIENT_DATA' && missingPercentageReport.invalidPercentageCount === 1, { status: missingPercentageReport.activeMatterStatus, invalidPercentageCount: missingPercentageReport.invalidPercentageCount }, { status: 'INSUFFICIENT_DATA', invalidPercentageCount: 1 });
+
+  const referenceOnlyReport = evaluateAuthoritativeActiveMatter([{ name: 'SLES 70%', percentage: 10 } as any], 100);
+  assert('Provenance', 'Name/reference-derived active matter is not fully authoritative', referenceOnlyReport.activeMatterStatus === 'COMPLETE' && referenceOnlyReport.isFullyAuthoritative === false && referenceOnlyReport.nonAuthoritativeCount > 0, { status: referenceOnlyReport.activeMatterStatus, isFullyAuthoritative: referenceOnlyReport.isFullyAuthoritative, nonAuthoritativeCount: referenceOnlyReport.nonAuthoritativeCount }, { status: 'COMPLETE', isFullyAuthoritative: false, nonAuthoritativeCount: '>0' });
 
   const clampedRes = ActiveMatterEngine.resolveIngredientActive({ name: 'Special Chemical', activeMatterPct: 150 });
   assert('Input Validation', 'Active matter > 100% is rejected as unavailable, not silently clamped', clampedRes.activeMatterPct === null && clampedRes.dataSource === 'missing', { activeMatterPct: clampedRes.activeMatterPct, dataSource: clampedRes.dataSource }, { activeMatterPct: null, dataSource: 'missing' });

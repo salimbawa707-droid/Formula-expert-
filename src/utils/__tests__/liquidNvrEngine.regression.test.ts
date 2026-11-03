@@ -50,7 +50,7 @@ export function runLiquidNvrRegressionTestSuite() {
     { name: 'Unknown Botanical Extract', percentage: 15, role: 'Specialty Additive' }
   ];
   const resC = calculateLiquidNVR(ingC, 50);
-  assert('C. Missing Nonvolatile Fraction', 'Unknown ingredient is NOT assumed to be 100% NVR', resC.nvrPercentage === 0.0, resC.nvrPercentage, 0.0);
+  assert('C. Missing Nonvolatile Fraction', 'Unknown ingredient is NOT assumed to be 100% NVR', resC.nvrPercentage === null, resC.nvrPercentage, null);
   assert('C. Missing Nonvolatile Fraction', 'Formula is flagged with INSUFFICIENT_DATA status', resC.status === 'INSUFFICIENT_DATA' && !resC.isComplete, resC.status, 'INSUFFICIENT_DATA');
   assert('C. Missing Nonvolatile Fraction', 'Unknown ingredient is tracked in unknownIngredients list', resC.unknownIngredients.includes('Unknown Botanical Extract'), resC.unknownIngredients, ['Unknown Botanical Extract']);
 
@@ -61,7 +61,7 @@ export function runLiquidNvrRegressionTestSuite() {
     { name: 'Unknown Polymer Blend', percentage: 20 }
   ];
   const resD = calculateLiquidNVR(ingD, 100);
-  assert('D. Mixed Known + Unknown', 'Known portion calculates 14.0% NVR', resD.nvrPercentage === 14.0, resD.nvrPercentage, 14.0);
+  assert('D. Mixed Known + Unknown', 'Known portion calculates 14.0% NVR', resD.nvrPercentage === null, resD.nvrPercentage, null);
   assert('D. Mixed Known + Unknown', 'Data completeness reflects 80% known mass', resD.dataCompleteness === 80.0, resD.dataCompleteness, 80.0);
   assert('D. Mixed Known + Unknown', 'Unknown mass percent is exactly 20.0%', resD.unknownMassPercent === 20.0, resD.unknownMassPercent, 20.0);
 
@@ -71,14 +71,14 @@ export function runLiquidNvrRegressionTestSuite() {
     { name: 'Secret Chemical Compound X', percentage: 10 }
   ];
   const resE = calculateLiquidNVR(ingE, 100);
-  assert('E. Non-100% Fallback', 'Unknown chemical does not default to 10% NVR (100% fraction)', resE.nvrPercentage !== 10.0 && resE.nvrPercentage === 0.0, resE.nvrPercentage, 0.0);
+  assert('E. Non-100% Fallback', 'Unknown chemical does not default to 10% NVR (100% fraction)', resE.nvrPercentage === null, resE.nvrPercentage, null);
 
   // F. Changing an unknown ingredient does not silently fabricate an NVR value
   const ingF1 = [{ name: 'Water', percentage: 80 }, { name: 'Unknown Additive A', percentage: 20 }];
   const ingF2 = [{ name: 'Water', percentage: 80 }, { name: 'Unknown Additive B', percentage: 20 }];
   const resF1 = calculateLiquidNVR(ingF1, 100);
   const resF2 = calculateLiquidNVR(ingF2, 100);
-  assert('F. No Fabricated Value', 'Different unknown ingredients remain transparently unknown without fabricated values', resF1.nvrPercentage === 0.0 && resF2.nvrPercentage === 0.0, { f1: resF1.nvrPercentage, f2: resF2.nvrPercentage }, { f1: 0.0, f2: 0.0 });
+  assert('F. No Fabricated Value', 'Different unknown ingredients remain transparently unknown without fabricated values', resF1.nvrPercentage === null && resF2.nvrPercentage === null, { f1: resF1.nvrPercentage, f2: resF2.nvrPercentage }, { f1: null, f2: null });
 
   // G. Complete-data formula calculates normally
   const ingG = [
@@ -110,6 +110,18 @@ export function runLiquidNvrRegressionTestSuite() {
   const nvrI = calculateLiquidNVR(ingI, 100);
   const activeI = calculateActiveSurfactants(ingI);
   assert('I. Active vs NVR Independence', 'Active Matter and NVR remain distinct independent properties', activeI !== nvrI.nvrPercentage, { active: activeI, nvr: nvrI.nvrPercentage }, 'Distinct values');
+
+  const missingPct = calculateLiquidNVR([{ name: 'Water', percentage: 90 }, { name: 'Unknown additive' } as any], 100);
+  assert('Input Validation', 'Missing ingredient percentage blocks NVR instead of being skipped', missingPct.status === 'INVALID_INPUT' && missingPct.nvrPercentage === null, { status: missingPct.status, nvr: missingPct.nvrPercentage }, { status: 'INVALID_INPUT', nvr: null });
+
+  const invalidFraction = calculateLiquidNVR([{ name: 'Water', percentage: 90 }, { name: 'Polymer', percentage: 10, nonVolatileFraction: 1.2 }], 100);
+  assert('Input Validation', 'Non-volatile fraction above 1.0 is rejected instead of clamped', invalidFraction.status === 'INVALID_INPUT' && invalidFraction.nvrPercentage === null, { status: invalidFraction.status, nvr: invalidFraction.nvrPercentage }, { status: 'INVALID_INPUT', nvr: null });
+
+  const unbalancedFormula = calculateLiquidNVR([{ name: 'Water', percentage: 90, nonVolatileFraction: 0 }], 100);
+  assert('Input Validation', 'Unbalanced composition cannot yield finished-product NVR', unbalancedFormula.status === 'INSUFFICIENT_DATA' && unbalancedFormula.nvrPercentage === null, { status: unbalancedFormula.status, nvr: unbalancedFormula.nvrPercentage }, { status: 'INSUFFICIENT_DATA', nvr: null });
+
+  const invalidBatch = calculateLiquidNVR([{ name: 'Water', percentage: 100 }], 0);
+  assert('Input Validation', 'Invalid batch size is not silently replaced with 100 kg', invalidBatch.status === 'INVALID_INPUT' && invalidBatch.nvrPercentage === null, { status: invalidBatch.status, nvr: invalidBatch.nvrPercentage }, { status: 'INVALID_INPUT', nvr: null });
 
   // J. UI/Provenance distinguishes calculated NVR from lab-measured NVR
   const ingJ = [{ name: 'Base Chemical', percentage: 100, nonVolatileFraction: 0.50 }];

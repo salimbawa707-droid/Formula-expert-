@@ -70,10 +70,10 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   };
   const liquidReport = evaluateSpecifications(evalInputLiquid);
   const liquidPhResult = liquidReport.items.find(i => i.parameterKey === 'ph');
-  assert('TEST 8: Liquid pH 7.57 evaluates as PASS', liquidPhResult?.status === 'PASS');
+  assert('TEST 8: Calculated liquid pH is NOT_TESTED until physical lab measurement', liquidPhResult?.status === 'NOT_TESTED' && liquidPhResult?.currentValue === 7.57, JSON.stringify(liquidPhResult));
 
   // 9. Liquid pH 7.57 is evaluated against Liquid specification
-  assert('TEST 9: Liquid pH 7.57 evaluated against liquid spec max of 9.5', liquidPhResult?.max === 9.5);
+  assert('TEST 9: Liquid pH 7.57 evaluated against liquid spec max of 9.5', liquidPhResult?.max === 9.5, JSON.stringify(liquidPhResult));
 
   // 10. Powder pH continues using Powder specification
   const evalInputPowder: EvaluationInput = {
@@ -129,7 +129,7 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   assert('TEST 17: powderPH is filtered out for liquid', applicableParamsLiquid.some(p => p.parameterKey === 'powderPH') === false);
 
   // 18. Quality Gate / Specifications consume correct Liquid pH result
-  assert('TEST 18: Liquid pH evaluation item has min 7.5', liquidPhResult?.min === 7.5);
+  assert('TEST 18: Liquid pH evaluation item has min 7.5', liquidPhResult?.min === 7.5, JSON.stringify(liquidPhResult));
 
   // 19. No hardcoded UI-only override is used
   assert('TEST 19: Template parameters contain Finished Product pH with key ph', liquidPhParam?.parameterName === 'Finished Product pH');
@@ -156,7 +156,7 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
 
   // 25. Existing PHEngineV2 calculation result remains unchanged by specification routing
   const v2Res = calculatePHAdvanced([], 100, { productCategory: 'LAUNDRY_LIQUID' });
-  assert('TEST 25: PHEngineV2 calculation result is unchanged', typeof v2Res.pH === 'number');
+  assert('TEST 25: Empty composition remains unavailable under PHEngineV2', v2Res.pH === null && v2Res.solverConverged === false);
 
   // 26. Liquid profile is deterministic
   const liquidTpl2 = getSpecificationTemplateForCategory('LAUNDRY_LIQUID');
@@ -170,6 +170,8 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   const phParamsLiquidCount = liquidTpl.parameters.filter(p => p.parameterKey === 'ph').length;
   assert('TEST 28: No duplicate competing pH parameters in liquid template', phParamsLiquidCount === 1);
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: ${r.details ?? 'no details'}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 

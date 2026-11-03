@@ -100,7 +100,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
   };
   const liquidReport = evaluateSpecifications(evalInputLiquid);
   const evaluatedLiquidPh = liquidReport.items.find(i => i.parameterKey === 'ph');
-  assert('TEST 17: Liquid pH 7.57 evaluates against Liquid range', evaluatedLiquidPh?.max === 9.5 && evaluatedLiquidPh?.status === 'PASS');
+  assert('TEST 17: Calculated liquid pH is NOT_TESTED until physical lab measurement', evaluatedLiquidPh?.max === 9.5 && evaluatedLiquidPh?.status === 'NOT_TESTED' && evaluatedLiquidPh?.currentValue === 7.57, JSON.stringify(evaluatedLiquidPh));
 
   // 18. Liquid pH 7.57 is not compared against 9.8
   assert('TEST 18: Liquid pH 7.57 not compared against 9.8', evaluatedLiquidPh?.min !== 9.8);
@@ -157,7 +157,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
   assert('TEST 23: Powder evidence observation uses Powder pH specification', evaluatedPowderPh?.parameterKey === 'powderPH');
 
   // 24. Liquid quality gate consumes Liquid pH result
-  assert('TEST 24: Liquid quality gate consumes Liquid pH result', evaluatedLiquidPh?.status === 'PASS');
+  assert('TEST 24: Liquid quality gate keeps calculated pH unvalidated pending lab measurement', evaluatedLiquidPh?.status === 'NOT_TESTED' && evaluatedLiquidPh?.currentValue === 7.57, JSON.stringify(evaluatedLiquidPh));
 
   // 25. Powder quality gate consumes Powder pH result
   assert('TEST 25: Powder quality gate consumes Powder pH result', evaluatedPowderPh !== undefined);
@@ -224,7 +224,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
 
   // 40. PHEngine pH calculation remains unchanged
   const phCalc = calculatePHAdvanced([], 100, { productCategory: 'LAUNDRY_LIQUID' });
-  assert('TEST 40: PHEngine pH calculation remains unchanged', typeof phCalc.pH === 'number');
+  assert('TEST 40: Empty composition does not receive an inferred neutral pH', phCalc.pH === null && phCalc.solverConverged === false);
 
   // 41. Cost calculation remains unchanged
   assert('TEST 41: Cost calculation logic intact', true);
@@ -238,6 +238,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
   // 44. Existing Liquid regression tests remain passing
   assert('TEST 44: Liquid parameter definition valid', liquidPhParam !== undefined);
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 

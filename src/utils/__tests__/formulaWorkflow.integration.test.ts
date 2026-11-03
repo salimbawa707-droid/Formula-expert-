@@ -45,7 +45,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   // 1. INGREDIENT ADDITION WORKFLOW
   // -------------------------------------------------------------
   const baseIngredients: FormulationIngredient[] = [
-    { id: '1', name: 'Water / Aqua', percentage: 80, percent: 80, activeMatterPct: 0, costPerKg: 1, role: 'Solvent', category: 'Solvent' },
+    { id: '1', name: 'Water / Aqua', percentage: 90, percent: 90, activeMatterPct: 0, costPerKg: 1, role: 'Solvent', category: 'Solvent' },
     { id: '2', name: 'Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', percentage: 10, percent: 10, activeMatterPct: 90, costPerKg: 150, role: 'Anionic Surfactant', category: 'Anionic Surfactant' }
   ];
 
@@ -54,7 +54,8 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
 
   // Add Caustic Soda (NaOH) to neutralize LABSA
   const ingredientsWithNaOH: FormulationIngredient[] = [
-    ...baseIngredients,
+    { id: '1', name: 'Water / Aqua', percentage: 88.7, percent: 88.7, activeMatterPct: 0, costPerKg: 1, role: 'Solvent', category: 'Solvent' },
+    baseIngredients[1],
     { id: '3', name: 'Sodium Hydroxide (Caustic Soda Lye 100%)', percentage: 1.3, percent: 1.3, activeMatterPct: 100, costPerKg: 50, role: 'pH Adjuster', category: 'pH Adjuster' }
   ];
 
@@ -67,7 +68,9 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
 
   // Add SLES & CAPB cumulatively
   const cumulativeFormula: FormulationIngredient[] = [
-    ...ingredientsWithNaOH,
+    { id: '1', name: 'Water / Aqua', percentage: 77.7, percent: 77.7, activeMatterPct: 0, costPerKg: 1, role: 'Solvent', category: 'Solvent' },
+    ingredientsWithNaOH[1],
+    ingredientsWithNaOH[2],
     { id: '4', name: 'Sodium Lauryl Ether Sulfate (SLES 70%)', percentage: 8, percent: 8, activeMatterPct: 70, costPerKg: 120, role: 'Anionic Surfactant', category: 'Anionic Surfactant' },
     { id: '5', name: 'Cocamidopropyl Betaine (CAPB 30%)', percentage: 3, percent: 3, activeMatterPct: 30, costPerKg: 180, role: 'Amphoteric Surfactant', category: 'Amphoteric Surfactant' }
   ];
@@ -84,6 +87,9 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
     if (ing.name.includes('LABSA')) {
       return { ...ing, percentage: 12, percent: 12, costPerKg: 160 };
     }
+    if (ing.id === '1') {
+      return { ...ing, percentage: 75.7, percent: 75.7 };
+    }
     return ing;
   });
 
@@ -96,14 +102,14 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   assertEqual('Ingredient Edit', 'Lab Health score valid after ingredient edit', typeof editedLabHealth?.finalScore === 'number' && editedLabHealth.finalScore >= 0, true);
 
   const editedAIGrade = evaluateAIGrade(editedIngredients, 7.5, 200);
-  assertEqual('Ingredient Edit', 'AI Grade score valid after ingredient edit', typeof editedAIGrade.score === 'number' && editedAIGrade.score >= 0, true);
+  assertEqual('Ingredient Edit', 'AI Grade remains non-evaluable without canonical category and complete wash scenario', editedAIGrade.grade === 'N/A' && editedAIGrade.isEvaluable === false, true);
 
   // -------------------------------------------------------------
   // 3. INGREDIENT REMOVAL WORKFLOW
   // -------------------------------------------------------------
   // Add a hazardous ingredient (e.g. powder enzyme) then remove it
   const formulaWithHazard: FormulationIngredient[] = [
-    ...editedIngredients,
+    ...editedIngredients.map(ing => ing.id === '1' ? { ...ing, percentage: 73.7, percent: 73.7 } : ing),
     { id: '6', name: 'Subtilisin Protease Enzyme Powder', percentage: 2, percent: 2, activeMatterPct: 100, costPerKg: 800, role: 'Enzyme', category: 'Enzyme' }
   ];
 
@@ -151,7 +157,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   const budgetExceededGrade = evaluateAIGrade(cumulativeFormula, 7.5, 20); // low target cost = 20
 
   assertEqual('Target Cost', 'Actual RM cost unaffected by target cost setting', calculateBatchCost(cumulativeFormula, 100), batch100);
-  assertEqual('Target Cost', 'AI Grade commercial score penalizes over-budget formula', budgetExceededGrade.breakdown.commercialScore < budgetWithinGrade.breakdown.commercialScore, true);
+  assertEqual('Target Cost', 'Legacy AI Grade does not invent a commercial score without category and wash scenario', budgetExceededGrade.grade === 'N/A' && budgetWithinGrade.grade === 'N/A', true);
 
   // -------------------------------------------------------------
   // 7. FORMULA SWITCHING WORKFLOW
@@ -195,12 +201,12 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
     ingredients: (formulaC.ingredients || []).map((i: any, idx: number) => ({ ...i, id: `c-${idx}` }))
   };
 
-  const scoreA1 = evaluateAIGrade(activeA.ingredients, 7.5, 100).score;
-  const scoreB = evaluateAIGrade(activeB.ingredients, 11.5, 150).score;
-  const scoreC = evaluateAIGrade(activeC.ingredients, 6.5, 80).score;
+  const scoreA1 = calculateActiveMatter(activeA.ingredients);
+  const scoreB = calculateActiveMatter(activeB.ingredients);
+  const scoreC = calculateActiveMatter(activeC.ingredients);
 
   // Restore A
-  const scoreA2 = evaluateAIGrade(activeA.ingredients, 7.5, 100).score;
+  const scoreA2 = calculateActiveMatter(activeA.ingredients);
 
   assertEqual('Formula Switching', 'Formula A initial score equals restored score', scoreA1, scoreA2);
   assertEqual('Formula Switching', 'Formula B score is distinct from Formula A', scoreB !== scoreA1 && scoreC !== scoreA1, true);
@@ -290,7 +296,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
 
   assertEqual('Cross-Workspace Determinism', 'Active Matter identical across workspace modules', aiFormulatorAM, analyzerProAM);
   assertEqual('Cross-Workspace Determinism', 'CPI score identical across workspace modules', aiFormulatorCPI, analyzerProCPI);
-  assertEqual('Cross-Workspace Determinism', 'Compatibility score identical across workspace modules', aiFormulatorCompat.compatibilityScore, analyzerProCompat.compatibilityScore);
+  assertEqual('Cross-Workspace Determinism', 'Compatibility semantic identical across workspace modules', aiFormulatorCompat.compatibilityStatusSemantic, analyzerProCompat.compatibilityStatusSemantic);
 
   // -------------------------------------------------------------
   // 12. UI-TO-ENGINE DATA PROPAGATION
@@ -299,7 +305,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   assertEqual('Data Propagation', 'pHEngine adapter maps all ingredients', mappedInputs.length, sharedIngs.length);
 
   const phResult = calculatePHAdvanced(mappedInputs, 100);
-  assertEqual('Data Propagation', 'pHEngine returns valid numeric pH', typeof phResult.pH === 'number' && !isNaN(phResult.pH), true);
+  assertEqual('Data Propagation', 'pHEngine withholds pH when wash-liquor chemistry is not fully characterized', phResult.pH === null && phResult.solverConverged === false, true);
 
   console.log("--------------------------------------------------");
   console.log(`TOTAL E2E WORKFLOW TESTS : ${passed + failed}`);

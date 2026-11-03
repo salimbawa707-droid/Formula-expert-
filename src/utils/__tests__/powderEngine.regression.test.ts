@@ -101,10 +101,20 @@ export function runPowderEngineTestSuite(): {
   assert('5. Moisture & Dry Matter', 'Dry matter is unavailable when moisture is unavailable', report1.moistureAndDryMatter.dryMatterPct === null && report1.moistureAndDryMatter.dryMatterMassKg === null, { dryMatterPct: report1.moistureAndDryMatter.dryMatterPct, dryMatterMassKg: report1.moistureAndDryMatter.dryMatterMassKg }, { dryMatterPct: null, dryMatterMassKg: null });
   assert('5. Moisture & Dry Matter', 'Total Formula Mass is 100 kg', report1.moistureAndDryMatter.totalFormulaMassKg === 100, report1.moistureAndDryMatter.totalFormulaMassKg, 100);
 
-  // 6. Powder pH (Alkaline Intended, No Citric Acid Recommendation)
-  assert('6. Powder pH', 'Calculated 1% aqueous pH is alkaline (~10.6)', report1.powderPH.calculatedAqueousPH >= 9.5 && report1.powderPH.calculatedAqueousPH <= 11.5, report1.powderPH.calculatedAqueousPH, '9.5 - 11.5');
-  assert('6. Powder pH', 'isWithinTarget is true for Laundry Powder', report1.powderPH.isWithinTarget === true, report1.powderPH.isWithinTarget, true);
+  // 6. Powder pH: do not infer pH when the real formula contains uncharacterized species.
+  assert('6. Powder pH', 'Uncharacterized optical brightener/fragrance/color block an unsupported calculated pH', report1.powderPH.calculatedAqueousPH === undefined && report1.powderPH.source === 'INSUFFICIENT_DATA', report1.powderPH, 'INSUFFICIENT_DATA with unavailable pH');
+  assert('6. Powder pH', 'Unavailable pH cannot be marked within target', report1.powderPH.isWithinTarget === false, report1.powderPH.isWithinTarget, false);
   assert('6. Powder pH', 'Test basis is 1.0% w/v aqueous solution', report1.powderPH.testBasis.sampleConcentrationPct === 1.0, report1.powderPH.testBasis.sampleConcentrationPct, 1.0);
+
+  const knownPowderPH = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate (Soda Ash)', percentage: 20.0, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate Anhydrous', percentage: 80.0, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert('6. Powder pH', 'Fully characterized carbonate/sulfate system produces a finite calculated aqueous pH', typeof knownPowderPH.powderPH.calculatedAqueousPH === 'number' && Number.isFinite(knownPowderPH.powderPH.calculatedAqueousPH) && knownPowderPH.powderPH.source === 'CALCULATED', knownPowderPH.powderPH, 'Finite CALCULATED pH');
   assert('6. Powder pH', 'No citric acid recommendation in advisories', !report1.verdict.chemistAdvisories.some(a => a.toLowerCase().includes('citric acid')), true, true);
 
   // 7. Absolute Isolation: Zero Liquid Warnings in Verdict
@@ -119,7 +129,7 @@ export function runPowderEngineTestSuite(): {
     { name: 'LAE-7 (100%)', percentage: 4.00, activeMatterPct: 100 },
     { name: 'Sodium Carbonate (Soda Ash Dense)', percentage: 25.00, activeMatterPct: 100 },
     { name: 'Zeolite 4A Builder', percentage: 20.00, activeMatterPct: 100 },
-    { name: 'GLDA Chelating Agent (80%)', percentage: 3.00, activeMatterPct: 80 },
+    { name: 'GLDA 99% Powder', percentage: 3.00, activeMatterPct: 99 },
     { name: 'Sodium Percarbonate Coated', percentage: 10.00, activeMatterPct: 100 },
     { name: 'TAED Bleach Activator', percentage: 2.00, activeMatterPct: 100 },
     { name: 'Polycarboxylate Polymer', percentage: 2.00, activeMatterPct: 100 },
@@ -275,7 +285,7 @@ export function runPowderEngineTestSuite(): {
     productCategory: 'Laundry Powder'
   });
   assert('Matrix K. Insoluble Zeolite', 'Identifies Zeolite 4A as expected insoluble builder mineral', formulaZeoliteBalanced.dissolutionDispersibility.hasInsolubleInorganics === true, formulaZeoliteBalanced.dissolutionDispersibility.hasInsolubleInorganics, true);
-  assert('Matrix K. Insoluble Zeolite', 'Formula with Zeolite 4A passes overall verdict', formulaZeoliteBalanced.verdict.overallStatus === 'BALANCED & COMPLIANT', formulaZeoliteBalanced.verdict.overallStatus, 'BALANCED & COMPLIANT');
+  assert('Matrix K. Insoluble Zeolite', 'Formula with Zeolite 4A is never labelled compliant without required validation evidence', formulaZeoliteBalanced.verdict.overallStatus === 'SCREENING_ONLY' || formulaZeoliteBalanced.verdict.overallStatus === 'INSUFFICIENT_DATA', formulaZeoliteBalanced.verdict.overallStatus, 'SCREENING_ONLY or INSUFFICIENT_DATA');
   assert('Matrix K. Insoluble Zeolite', 'Zeolite is not treated as unexpected insoluble residue failure', formulaZeoliteBalanced.dissolutionDispersibility.hasInsolubleInorganics, true, true);
 
   // Test L: Missing Hardness Capacity
@@ -386,8 +396,8 @@ export function runPowderEngineTestSuite(): {
   // =========================================================================
   assert(
     'P2-DEFECT-01 Powder Engine',
-    'Valid converged pH produces finite calculatedAqueousPH and no NaN string in statusMessage',
-    typeof report1.powderPH.calculatedAqueousPH === 'number' && Number.isFinite(report1.powderPH.calculatedAqueousPH) && !report1.powderPH.statusMessage.includes('NaN'),
+    'Uncharacterized formula withholds pH without leaking NaN into the status message',
+    report1.powderPH.calculatedAqueousPH === undefined && report1.powderPH.source === 'INSUFFICIENT_DATA' && !report1.powderPH.statusMessage.includes('NaN'),
     true,
     true
   );

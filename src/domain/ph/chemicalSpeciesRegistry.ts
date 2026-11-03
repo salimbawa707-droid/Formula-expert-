@@ -680,7 +680,8 @@ export function classifyChemicalSpecies(rawName: string): SpeciesDefinition | nu
   const name = rawName.trim().toLowerCase();
 
   // 1. Water
-  if (name === 'water' || name.includes('aqua') || name.includes('deionized water') || name.includes('dm water') || name.includes('ro water')) {
+  const isBalanceWater = /^water\s*(?:\([^)]*\bbalance\b[^)]*\)|balance\b)/.test(name);
+  if (name === 'water' || isBalanceWater || name.includes('aqua') || name.includes('deionized water') || name.includes('demineralized water') || name.includes('distilled water') || name.includes('tap water') || name.includes('dm water') || name.includes('ro water')) {
     return CHEMICAL_SPECIES_REGISTRY.water;
   }
 
@@ -884,7 +885,7 @@ export function classifyChemicalSpecies(rawName: string): SpeciesDefinition | nu
   if (name.includes('sodium chloride') || name.includes('salt') && !name.includes('quaternary') && !name.includes('complex')) {
     return CHEMICAL_SPECIES_REGISTRY.sodium_chloride;
   }
-  if (name.includes('sodium sulfate') || name.includes('glauber')) {
+  if (name.includes('sodium sulfate') || name.includes('sodium sulphate') || name.includes('glauber')) {
     return CHEMICAL_SPECIES_REGISTRY.sodium_sulfate;
   }
 

@@ -69,7 +69,7 @@ export interface ScientificExecutionState {
   formulaName: string;
   formulaVersion: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
 
   // 1. Normalization
   canonicalCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
@@ -276,23 +276,42 @@ export class ScientificExecutionDAG {
         let totalPct = 0;
         state.normalizedIngredients = rawIngs.map((ing, idx) => {
           const name = (ing?.name || '').trim();
-          const pct = Math.max(0, Number(ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? 0));
-          totalPct += pct;
-          const rawKg = (pct / 100) * state.batchSizeKg;
+          const rawPctValue = ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula;
+          const pct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
+            ? Number.NaN
+            : Number(rawPctValue);
+          const validPercentage = Number.isFinite(pct) && pct >= 0 && pct <= 100;
+          if (!validPercentage) {
+            state.blockingIssues.push({
+              code: 'ERR_INVALID_INGREDIENT_PERCENTAGE',
+              severity: 'FATAL',
+              category: 'VALIDITY',
+              message: `Ingredient ${name || idx + 1} has a missing, non-finite, negative, or above-100% percentage.`
+            });
+          } else {
+            totalPct += pct;
+          }
+          const rawKg = validPercentage && Number.isFinite(state.batchSizeKg)
+            ? (pct / 100) * state.batchSizeKg
+            : Number.NaN;
+          const rawPrice = ing.costPerKg ?? (ing as any).rawMaterialCostPerKg ?? (ing as any).cost;
+          const normalizedPrice = rawPrice === undefined || rawPrice === null || rawPrice === ''
+            ? null
+            : (Number.isFinite(Number(rawPrice)) && Number(rawPrice) >= 0 ? Number(rawPrice) : null);
           return {
             ...ing,
             ingredientId: ing.ingredientId || ing.id || `ing-${idx}`,
             id: ing.ingredientId || ing.id || `ing-${idx}`,
             name,
-            percentage: Number(pct.toFixed(4)),
-            rawKg: Number(rawKg.toFixed(4)),
-            costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null ? Number(ing.costPerKg) : 0
+            percentage: validPercentage ? Number(pct.toFixed(4)) : Number.NaN,
+            rawKg: Number.isFinite(rawKg) ? Number(rawKg.toFixed(4)) : Number.NaN,
+            costPerKg: normalizedPrice as any
           };
         });
 
         state.totalMassPct = totalPct;
         state.isBalanced = Math.abs(totalPct - 100.0) < 0.05;
-        state.deviation = Number((totalPct - 100.0).toFixed(4));
+        state.deviation = Number.isFinite(totalPct) ? Number((totalPct - 100.0).toFixed(4)) : Number.NaN;
         state.formulaFingerprint = computeFormulaFingerprint(
           'FORMULA',
           state.formulaVersion,
@@ -321,19 +340,18 @@ export class ScientificExecutionDAG {
           );
 
           const intel = getIngredientIntelligence(ing.name) || (matchedUniv ? getIngredientIntelligence(matchedUniv.id || matchedUniv.name) : undefined);
-          let activePct = ing.activeMatterPct ?? ing.activePercent;
-          let isUnknown = ing.isUnknown ?? false;
-
-          if (activePct === undefined) {
-            if (matchedUniv && matchedUniv.activeMatter !== undefined) {
-              activePct = matchedUniv.activeMatter;
-            } else {
-              isUnknown = true;
-              state.unknownParameters.push(`${ing.name}:activeMatter`);
-              activePct = 0; // Explicitly 0 for unknown
-            }
+          // Do not copy an ingredient-library estimate into an explicit user assay field.
+          // ActiveMatterEngine resolves canonical defaults separately and preserves their provenance.
+          const activePct = ing.activeMatterPct ?? ing.activePercent;
+          const unresolvedProperties = (matchedUniv as any)?.unknownProperties ?? [];
+          if (!matchedUniv && !state.unknownParameters.includes(`${ing.name}:identity`)) {
+            state.unknownParameters.push(`${ing.name}:identity`);
           }
-          // Remove automatic assumption logs
+          for (const property of unresolvedProperties) {
+            const key = `${ing.name}:${property}`;
+            if (!state.unknownParameters.includes(key)) state.unknownParameters.push(key);
+          }
+          const isUnknown = ing.isUnknown ?? (!matchedUniv || unresolvedProperties.length > 0);
 
           const hlb = ing.hlb ?? ing.hlbValue ?? matchedUniv?.hlb;
           const density = ing.density ?? (matchedUniv as any)?.density ?? (intel as any)?.densityGPerMl ?? (intel as any)?.density;
@@ -367,7 +385,7 @@ export class ScientificExecutionDAG {
         state.canonicalCategory = normalizeProductCategory(rawCategoryInput);
         const categoryDef = getProductCategory(state.canonicalCategory);
         state.categoryLabel = categoryDef ? categoryDef.label : 'Unknown Category';
-        state.physicalForm = categoryDef ? categoryDef.physicalForm : 'LIQUID';
+        state.physicalForm = categoryDef ? categoryDef.physicalForm : 'UNKNOWN';
       }
     });
 
@@ -414,6 +432,7 @@ export class ScientificExecutionDAG {
         const isPowder = state.physicalForm === 'POWDER';
         let computedPH: number | null = null;
         let phConverged = false;
+        let phModelValidity: 'HIGH' | 'MODERATE' | 'LOW' | 'OUT_OF_RANGE' | 'UNKNOWN' = 'UNKNOWN';
         let phBufferCapacity: number | null = null;
         let phIonicStrength: number | null = null;
         let phWarnings: string[] = [];
@@ -431,8 +450,10 @@ export class ScientificExecutionDAG {
               productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
               targetPH: initialGuess
             });
-            computedPH = advPH.pH;
-            phConverged = advPH.solverConverged;
+            phModelValidity = advPH.modelValidity ?? 'UNKNOWN';
+            const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
+            computedPH = pHWithinModelDomain ? advPH.pH : null;
+            phConverged = advPH.solverConverged && pHWithinModelDomain;
             phBufferCapacity = advPH.bufferCapacity;
             phIonicStrength = advPH.ionicStrength;
             phWarnings = advPH.warnings || [];
@@ -443,8 +464,24 @@ export class ScientificExecutionDAG {
           }
         }
 
-        const measuredPHRecord = state.rawInput.labEvidence?.find(m => m.parameterKey === 'ph' || m.parameterKey === 'powderPH');
-        const isPHMeasured = Boolean(measuredPHRecord && measuredPHRecord.value > 0);
+        // A measurement is eligible only for the exact immutable formula identity and version.
+        const hasExplicitFormulaIdentity = Boolean(
+          state.rawInput.formulaId?.trim() &&
+          state.rawInput.formulaVersion?.trim()
+        );
+        const measuredPHRecord = hasExplicitFormulaIdentity
+          ? state.rawInput.labEvidence?.find(m =>
+              m.formulaId === state.rawInput.formulaId &&
+              m.formulaVersion === state.rawInput.formulaVersion &&
+              (m.parameterKey === 'ph' || m.parameterKey === 'powderPH')
+            )
+          : undefined;
+        const isPHMeasured = Boolean(
+          measuredPHRecord &&
+          Number.isFinite(measuredPHRecord.value) &&
+          measuredPHRecord.value >= 0 &&
+          measuredPHRecord.value <= 14
+        );
         const finalPH = isPHMeasured ? Number(measuredPHRecord!.value) : computedPH;
 
         state.finalEquilibriumPH = finalPH;
@@ -454,7 +491,14 @@ export class ScientificExecutionDAG {
         state.phWarnings = phWarnings;
         state.phDetails = phDetails;
         state.slurryBasis = slurryBasis;
-        state.phStatus = (finalPH !== null && !isNaN(finalPH) && (phConverged || isPHMeasured)) ? (isPHMeasured ? 'VALID' : 'SCREENING') : 'INSUFFICIENT_DATA';
+        state.phStatus = (
+          finalPH !== null &&
+          Number.isFinite(finalPH) &&
+          finalPH >= 0 &&
+          finalPH <= 14 &&
+          (phConverged || isPHMeasured) &&
+          (isPHMeasured || phModelValidity !== 'OUT_OF_RANGE')
+        ) ? (isPHMeasured ? 'VALID' : 'SCREENING') : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -468,7 +512,7 @@ export class ScientificExecutionDAG {
         state.activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(state.resolvedIngredients, state.batchSizeKg);
         state.totalSurfactantActivePct = calculateActiveSurfactants(state.resolvedIngredients);
         const amResult = calculateActiveMatterResult(state.resolvedIngredients);
-        state.totalActiveMatterPct = Number(amResult.value ?? 0);
+        state.totalActiveMatterPct = amResult.value === null ? Number.NaN : amResult.value;
         if (amResult.status !== 'VALID') {
           state.activeMatterStatus = 'INSUFFICIENT_DATA';
           state.activeMatterVerified = false;
@@ -488,17 +532,21 @@ export class ScientificExecutionDAG {
           const role = (ing.role || '').toLowerCase();
           
           const validation = validateActiveMatterInput(ing.activeMatterPct);
-          const active = (validation.status === 'VALID' ? validation.value! : getDefaultActiveMatter(ing)) / 100;
-          const activePct = ing.percentage * active;
+          const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
+          // Unknown assay is not zero. Keep the contribution out of the numeric
+          // breakdown and preserve INSUFFICIENT_DATA from the authoritative report.
+          if (typeof resolvedActive === 'number' && Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100) {
+            const activePct = ing.percentage * (resolvedActive / 100);
 
-          if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
-            anionic += activePct;
-          } else if (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside')) {
-            nonionic += activePct;
-          } else if (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb') || name.includes('amine oxide')) {
-            amphoteric += activePct;
-          } else if (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat')) {
-            cationic += activePct;
+            if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
+              anionic += activePct;
+            } else if (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside')) {
+              nonionic += activePct;
+            } else if (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb') || name.includes('amine oxide')) {
+              amphoteric += activePct;
+            } else if (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat')) {
+              cationic += activePct;
+            }
           }
         });
 
@@ -529,49 +577,107 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const hardnessPolicy = getProductHardnessPolicy(state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined);
-        const hardnessRes = calculateWaterHardnessTolerance(
-          state.resolvedIngredients,
-          state.waterHardnessPpm,
-          state.rawInput.machineProfile?.waterVolumeL || hardnessPolicy.defaultWashVolumeL,
-          state.rawInput.dose || hardnessPolicy.defaultDoseGrams,
-          state.batchSizeKg,
+        const hardnessPolicy = getProductHardnessPolicy(
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
         );
+        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.waterVolumeL;
+        const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams;
+        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null
+          ? hardnessPolicy.defaultWashVolumeL
+          : Number(rawWashVolume);
+        const washDoseGrams = rawDose === undefined || rawDose === null
+          ? hardnessPolicy.defaultDoseGrams
+          : Number(rawDose);
+
+        if (rawWashVolume === undefined || rawWashVolume === null) {
+          state.assumptions.push('Wash volume uses the product hardness policy default; replace with the actual wash volume for a production decision.');
+        }
+        if (rawDose === undefined || rawDose === null) {
+          state.assumptions.push('Wash dose uses the product hardness policy default; replace with the actual dose for a production decision.');
+        }
+
+        const scenarioInputsValid =
+          state.waterHardnessPpm !== null &&
+          Number.isFinite(state.waterHardnessPpm) &&
+          Number.isFinite(washVolumeL) && washVolumeL > 0 &&
+          Number.isFinite(washDoseGrams) && washDoseGrams > 0 &&
+          Number.isFinite(state.batchSizeKg) && state.batchSizeKg > 0;
+
+        const hardnessRes = scenarioInputsValid
+          ? calculateWaterHardnessTolerance(
+              state.resolvedIngredients,
+              state.waterHardnessPpm as number,
+              washVolumeL,
+              washDoseGrams,
+              state.batchSizeKg,
+              state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
+            )
+          : {
+              status: 'NOT_EVALUATED',
+              waterHardnessPpm: state.waterHardnessPpm ?? undefined,
+              maxSupportedPpm: null,
+              washVolumeL: Number.isFinite(washVolumeL) ? washVolumeL : null,
+              washDoseGrams: Number.isFinite(washDoseGrams) ? washDoseGrams : null,
+              bindingCapacityCaCO3GPer100g: null,
+              hardnessProtectionRatio: null,
+              missingInputs: [
+                ...(state.waterHardnessPpm === null ? ['WATER_HARDNESS_PPM'] : []),
+                ...(!Number.isFinite(washVolumeL) || washVolumeL <= 0 ? ['WASH_VOLUME_L'] : []),
+                ...(!Number.isFinite(washDoseGrams) || washDoseGrams <= 0 ? ['WASH_DOSE_GRAMS'] : []),
+                ...(!Number.isFinite(state.batchSizeKg) || state.batchSizeKg <= 0 ? ['BATCH_SIZE_KG'] : [])
+              ]
+            };
 
         state.hardnessResult = hardnessRes;
-        state.rawCapacity = (hardnessRes as any).bindingCapacityCaCO3GPer100g ?? 0;
-        state.protectionAssessment = hardnessRes.status === 'PASS' || hardnessRes.status === 'NOT_APPLICABLE' ? 'PASS' : 'INSUFFICIENT';
+        const rawCapacity = (hardnessRes as any).bindingCapacityCaCO3GPer100g;
+        state.rawCapacity = typeof rawCapacity === 'number' && Number.isFinite(rawCapacity) ? rawCapacity : Number.NaN;
+        state.protectionAssessment = hardnessRes.status === 'PASS'
+          ? 'SCREENING_PASS'
+          : hardnessRes.status === 'NOT_APPLICABLE'
+            ? 'NOT_APPLICABLE'
+            : 'INSUFFICIENT';
 
         let chelatorActivePct = 0;
+        let hasUnknownChelatorActiveMatter = false;
         const chelatorNames: string[] = [];
 
         state.resolvedIngredients.forEach((ing) => {
-          const name = ing.name.toLowerCase();
-          const role = (ing.role || '').toLowerCase();
-          const active = (ing.activeMatterPct !== undefined && ing.activeMatterPct !== null ? ing.activeMatterPct : getDefaultActiveMatter(ing)) / 100;
-          const activePct = ing.percentage * active;
+          const name = String(ing.name || '').toLowerCase();
+          const role = String(ing.role || '').toLowerCase();
+          if (!(role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate'))) return;
 
-          if (role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate')) {
-            chelatorActivePct += activePct;
-            chelatorNames.push(ing.name);
+          chelatorNames.push(ing.name);
+          const activeRaw = ing.activeMatterPct ?? getDefaultActiveMatter(ing);
+          if (typeof activeRaw !== 'number' || !Number.isFinite(activeRaw) || activeRaw < 0 || activeRaw > 100) {
+            hasUnknownChelatorActiveMatter = true;
+            return;
           }
+          const pct = Number(ing.percentage);
+          if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+            hasUnknownChelatorActiveMatter = true;
+            return;
+          }
+          chelatorActivePct += pct * (activeRaw / 100);
         });
 
         state.chelationResult = {
-          isSufficient: hardnessRes.status === 'PASS' || hardnessRes.status === 'NOT_APPLICABLE',
-          chelatorActivePct: Number(chelatorActivePct.toFixed(2)),
+          isSufficient: hardnessRes.status === 'PASS' ? true : (hardnessRes.status === 'NOT_APPLICABLE' ? null : false),
+          status: hardnessRes.status === 'PASS' ? 'SCREENING' : hardnessRes.status,
+          chelatorActivePct: hasUnknownChelatorActiveMatter ? null : Number(chelatorActivePct.toFixed(2)),
+          chelatorActiveMatterVerified: !hasUnknownChelatorActiveMatter,
           chelatorNames: Array.from(new Set(chelatorNames)),
-          bindingCapacityCaCO3GPer100g: state.rawCapacity,
-          hardnessProtectionRatio: hardnessRes.hardnessProtectionRatio
+          bindingCapacityCaCO3GPer100g: Number.isFinite(state.rawCapacity) ? state.rawCapacity : null,
+          hardnessProtectionRatio: Number.isFinite(hardnessRes.hardnessProtectionRatio) ? hardnessRes.hardnessProtectionRatio : null
         };
 
-        if (state.resolvedIngredients.length === 0) {
+        if (state.waterHardnessPpm === null || !scenarioInputsValid || hasUnknownChelatorActiveMatter) {
           state.chelationStatus = 'INSUFFICIENT_DATA';
         } else if (hardnessRes.status === 'NOT_APPLICABLE') {
           state.chelationStatus = 'NOT_APPLICABLE';
         } else if (hardnessRes.status === 'PASS') {
-          state.chelationStatus = 'VALID';
+          state.chelationStatus = 'SCREENING';
+        } else if (hardnessRes.status === 'INSUFFICIENT' || hardnessRes.status === 'NOT_EVALUATED') {
+          state.chelationStatus = 'INSUFFICIENT_DATA';
         } else {
           state.chelationStatus = 'SCREENING';
         }
@@ -585,12 +691,25 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER'],
       execute: (state) => {
-        const ph = state.finalEquilibriumPH;
+        const ph = typeof state.finalEquilibriumPH === 'number' &&
+          Number.isFinite(state.finalEquilibriumPH) &&
+          state.finalEquilibriumPH >= 0 &&
+          state.finalEquilibriumPH <= 14
+          ? state.finalEquilibriumPH
+          : undefined;
+        // Run pH-independent interaction checks even when pH is unavailable.
+        // The engine must still withhold its overall verdict until required
+        // pH data exists, but known hazards (e.g. missing preservation or
+        // anionic/cationic clashes) must not disappear behind the pH gate.
         const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory);
         state.compatibilityResult = compRes;
-        state.compatibilityScore = compRes.compatibilityScore;
-        state.compatible = compRes.compatible;
-        state.compatibilityStatus = compRes.compatibilityStatusSemantic === 'INCOMPATIBLE' ? 'BLOCKED' : compRes.compatibilityStatusSemantic === 'UNKNOWN' ? 'UNKNOWN' : compRes.compatibilityStatusSemantic === 'COMPATIBLE_BY_RULE' ? 'VALID' : 'SCREENING';
+        state.compatibilityScore = Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : Number.NaN;
+        state.compatible = compRes.compatible === true;
+        state.compatibilityStatus =
+          compRes.compatibilityStatusSemantic === 'INCOMPATIBLE' ? 'BLOCKED' :
+          compRes.compatibilityStatusSemantic === 'UNKNOWN' || compRes.compatibilityStatusSemantic === 'INSUFFICIENT_DATA'
+            ? 'INSUFFICIENT_DATA'
+            : 'SCREENING';
       }
     });
 
@@ -601,24 +720,30 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const isLiquid = state.physicalForm !== 'POWDER';
+        const isLiquid = state.physicalForm === 'LIQUID' || state.physicalForm === 'GEL' || state.physicalForm === 'EMULSION';
         if (!isLiquid) {
-          state.predictedViscosityCp = null as any;
-          state.viscosityResult = {
-            predictedViscosityCp: null,
-            rating: 'Not Applicable (Solid / Powder)',
-            isFluid: false,
-            flowMechanism: 'None (Dry Powder)',
-            description: 'N/A (Solid / Powder)',
-            status: 'NOT_APPLICABLE',
-            reason: 'SOLID_OR_POWDER',
-            viscosityReport: ViscosityEngine.evaluateViscosity(state.resolvedIngredients, {
-              productCategory: state.canonicalCategory,
-              targetPH: state.finalEquilibriumPH ?? null,
-              activeMatterReport: state.activeMatterReport
-            })
-          };
-          state.viscosityStatus = 'NOT_APPLICABLE';
+          state.predictedViscosityCp = Number.NaN;
+          const isPowder = state.physicalForm === 'POWDER';
+          state.viscosityResult = isPowder
+            ? {
+                predictedViscosityCp: null,
+                rating: 'Not Applicable (Powder)',
+                isFluid: false,
+                flowMechanism: 'Not applicable',
+                description: 'Powder viscosity is not evaluated by the liquid rheology engine.',
+                status: 'NOT_APPLICABLE',
+                reason: 'POWDER_PHYSICAL_FORM'
+              }
+            : {
+                predictedViscosityCp: null,
+                rating: 'Unknown physical form',
+                isFluid: false,
+                flowMechanism: 'Not evaluated',
+                description: 'Physical form is unknown; liquid viscosity was not assumed.',
+                status: 'INSUFFICIENT_DATA',
+                reason: 'UNKNOWN_PHYSICAL_FORM'
+              };
+          state.viscosityStatus = isPowder ? 'NOT_APPLICABLE' : 'INSUFFICIENT_DATA';
           return;
         }
 
@@ -642,8 +767,8 @@ export class ScientificExecutionDAG {
           modelMaturity: 'EMPIRICAL_MODEL',
           viscosityReport: viscReport
         };
-        state.predictedViscosityCp = viscReport.viscosityCp;
-        state.viscosityStatus = 'VALID';
+        state.predictedViscosityCp = Number.isFinite(viscReport.viscosityCp) ? viscReport.viscosityCp : Number.NaN;
+        state.viscosityStatus = Number.isFinite(viscReport.viscosityCp) ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -654,11 +779,31 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['IDENTITY_RESOLUTION'],
       execute: (state) => {
+        if (state.physicalForm === 'POWDER') {
+          state.densityResult = {
+            densityGPerCm3: null,
+            specificGravity: null,
+            densityStatus: 'NOT_APPLICABLE',
+            provenance: 'NOT_APPLICABLE',
+            notes: 'Liquid ideal-volume density model is not a powder bulk/tapped density method.'
+          };
+          state.densityGPerCm3 = Number.NaN;
+          state.specificGravity = Number.NaN;
+          state.densityStatus = 'NOT_APPLICABLE';
+          return;
+        }
+        if (!['LIQUID', 'GEL', 'EMULSION'].includes(state.physicalForm)) {
+          state.densityResult = { densityGPerCm3: null, densityStatus: 'INSUFFICIENT_DATA', provenance: 'INSUFFICIENT_DATA', notes: 'Unknown physical form; density calculation not evaluated.' };
+          state.densityGPerCm3 = Number.NaN;
+          state.specificGravity = Number.NaN;
+          state.densityStatus = 'INSUFFICIENT_DATA';
+          return;
+        }
         const densityRes = calculateDensity(state.resolvedIngredients, state.batchSizeKg * 1000);
         state.densityResult = densityRes;
-        state.densityGPerCm3 = densityRes.densityGPerCm3;
-        state.specificGravity = densityRes.specificGravity || Number((densityRes.densityGPerCm3 / 0.9982).toFixed(3));
-        state.densityStatus = 'VALID';
+        state.densityGPerCm3 = Number.isFinite(densityRes.densityGPerCm3) ? densityRes.densityGPerCm3 : Number.NaN;
+        state.specificGravity = Number.isFinite(densityRes.specificGravity) ? densityRes.specificGravity : Number.NaN;
+        state.densityStatus = densityRes.densityStatus === 'SCREENING_ESTIMATE' ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -669,18 +814,18 @@ export class ScientificExecutionDAG {
       disposition: 'CONDITIONAL_NODE',
       dependencies: ['IDENTITY_RESOLUTION', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const isLiquid = state.physicalForm !== 'POWDER';
+        const isLiquid = state.physicalForm === 'LIQUID' || state.physicalForm === 'GEL' || state.physicalForm === 'EMULSION';
         if (!isLiquid) {
           state.nvrResult = null;
-          state.nvrPercentage = 0;
-          state.nvrStatus = 'NOT_APPLICABLE';
+          state.nvrPercentage = Number.NaN;
+          state.nvrStatus = state.physicalForm === 'POWDER' ? 'NOT_APPLICABLE' : 'INSUFFICIENT_DATA';
           return;
         }
 
         const nvrRes = calculateLiquidNVR(state.resolvedIngredients, state.batchSizeKg);
         state.nvrResult = nvrRes;
-        state.nvrPercentage = nvrRes.nvrPercentage;
-        state.nvrStatus = 'VALID';
+        state.nvrPercentage = Number.isFinite(nvrRes.nvrPercentage) ? nvrRes.nvrPercentage : Number.NaN;
+        state.nvrStatus = nvrRes.isComplete === true && Number.isFinite(nvrRes.nvrPercentage) ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -694,18 +839,21 @@ export class ScientificExecutionDAG {
         const isPowder = state.physicalForm === 'POWDER';
         if (!isPowder) {
           state.powderReport = null;
-          state.powderStatus = 'NOT_APPLICABLE';
+          state.powderStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'NOT_APPLICABLE';
           return;
         }
 
         try {
           state.powderReport = evaluatePowderFormulation({
             ingredients: state.resolvedIngredients,
-            productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : 'Laundry Powder',
+            productCategory: state.canonicalCategory,
             batchSizeKg: state.batchSizeKg,
-            waterHardnessPpm: state.waterHardnessPpm
+            waterHardnessPpm: state.waterHardnessPpm ?? undefined
           });
-          state.powderStatus = 'VALID';
+          const powderStatus = state.powderReport?.verdict?.overallStatus;
+          state.powderStatus = powderStatus === 'SCREENING_ONLY' ? 'SCREENING' :
+            powderStatus === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' :
+            powderStatus === 'BALANCED & COMPLIANT' ? 'SCREENING' : 'FAILED';
         } catch (err: any) {
           state.powderReport = null;
           state.powderStatus = 'FAILED';
@@ -721,11 +869,14 @@ export class ScientificExecutionDAG {
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER', 'WATER_CHELATION', 'COMPATIBILITY'],
       execute: (state) => {
         // Enforce dependencies: chelation and compatibility must complete and pass down states
-        const hardnessSufficient = state.chelationResult?.isSufficient ?? true;
+        const hardnessSufficient =
+          state.chelationStatus === 'NOT_APPLICABLE' && state.waterHardnessPpm === 0
+            ? true
+            : state.chelationResult?.isSufficient === true;
 
         // If hard water load is severe and chelation is insufficient, active surfactants are penalized
         let effectiveSurfactantAdjustment = state.totalSurfactantActivePct;
-        if (state.waterHardnessPpm > 100 && !hardnessSufficient) {
+        if (state.waterHardnessPpm !== null && state.waterHardnessPpm > 100 && !hardnessSufficient) {
           // Surfactant precipitates/degrades in hard water without chelation
           effectiveSurfactantAdjustment = Math.max(0, state.totalSurfactantActivePct * 0.7);
         }
@@ -738,15 +889,20 @@ export class ScientificExecutionDAG {
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
           undefined,
           {
-            waterHardnessPpm: state.waterHardnessPpm,
-            compatibilityStatus: state.compatibilityResult?.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
-            hasCriticalCompatibilityAlert: !state.compatibilityResult?.compatible
+            waterHardnessPpm: state.waterHardnessPpm ?? undefined,
+            washVolumeL: state.hardnessResult?.washVolumeL ?? undefined,
+            washDoseGrams: state.hardnessResult?.washDoseGrams ?? undefined,
+            batchSizeKg: Number.isFinite(state.batchSizeKg) ? state.batchSizeKg : undefined,
+            compatibilityStatus: state.compatibilityStatus,
+            hasCriticalCompatibilityAlert: state.compatibilityStatus === 'BLOCKED' ||
+              (state.compatibilityResult?.alerts || []).some((alert: any) => alert.severity === 'CRITICAL')
           }
         );
 
         state.cleaningResult = perfRes;
-        state.cpi = perfRes.cpi;
-        state.cleaningStatus = 'VALID';
+        state.cpi = perfRes.provenance === 'INSUFFICIENT_DATA' ? null : perfRes.cpi;
+        state.cleaningStatus = perfRes.provenance === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' :
+          perfRes.provenance === 'NOT_APPLICABLE' ? 'NOT_APPLICABLE' : 'SCREENING';
       }
     });
 
@@ -760,42 +916,45 @@ export class ScientificExecutionDAG {
         const presWarningObj = getPreservativeWarning(state.resolvedIngredients, state.finalEquilibriumPH ?? null);
         const presWarningMsg = presWarningObj ? (typeof presWarningObj === 'string' ? presWarningObj : presWarningObj.message) : null;
 
-        let presStatus: 'ADEQUATE' | 'WARNING' = 'ADEQUATE';
-        if (presWarningMsg) {
-          presStatus = 'WARNING';
-        }
-
-        const syneresisRisk = state.compatibilityResult?.compatibilityScore < 70 ? 'HIGH' : 'LOW';
+        const presStatus: 'UNKNOWN' | 'WARNING' = presWarningMsg ? 'WARNING' : 'UNKNOWN';
+        const compatibilityScore = state.compatibilityResult?.compatibilityScore;
+        const syneresisRisk = Number.isFinite(compatibilityScore)
+          ? (compatibilityScore < 70 ? 'HIGH' : 'LOW')
+          : 'UNKNOWN';
         const isPowder = state.physicalForm === 'POWDER';
 
         state.stabilityResult = {
           shelfLifeMonths: null, // Physically unproven without empirical accelerated aging data
           shelfLifeStatus: 'UNKNOWN',
           preservativeStatus: presStatus,
+          preservativeEfficacyStatus: 'NOT_TESTED',
           preservativeWarning: presWarningMsg,
           syneresisRisk,
+          syneresisRiskProvenance: 'HEURISTIC_SCREENING',
           maturity: 'HEURISTIC_SCREENING',
           evidenceLevel: 'RULE_BASED',
-          recommendedTests: isPowder
-            ? [
-                'Room temperature storage (25°C / 60% RH, 12 months)',
-                'Accelerated moisture caking test (40°C / 75% RH, 8 weeks)',
-                'Particle friability & flowability retention',
-                'Active oxygen / bleach retention (ISO 2271 / ASTM D2180)'
-              ]
-            : [
-                '25°C standard storage (ASTM D4333)',
-                '40°C / 75% RH accelerated aging (12 weeks)',
-                'Freeze-thaw stability (3 cycles, -5°C to 25°C)',
-                'Centrifuge phase separation test (3000 rpm, 30 min)',
-                'Active matter retention & microbial challenge testing (USP <51>)'
-              ],
+          recommendedTests: state.physicalForm === 'UNKNOWN'
+            ? []
+            : (isPowder
+              ? [
+                  'Room temperature storage (25°C / 60% RH, 12 months)',
+                  'Accelerated moisture caking test (40°C / 75% RH, 8 weeks)',
+                  'Particle friability & flowability retention',
+                  'Active oxygen / bleach retention (ISO 2271 / ASTM D2180)'
+                ]
+              : [
+                  '25°C standard storage (ASTM D4333)',
+                  '40°C / 75% RH accelerated aging (12 weeks)',
+                  'Freeze-thaw stability (3 cycles, -5°C to 25°C)',
+                  'Centrifuge phase separation test (3000 rpm, 30 min)',
+                  'Active matter retention & microbial challenge testing (USP <51>)'
+                ]),
           limitations: [
             'Shelf life duration cannot be scientifically predicted from ingredient lists alone without real-time or accelerated kinetic testing.',
             'Syneresis and preservative status are qualitative screening risks only.'
           ]
         };
-        state.stabilityStatus = 'SCREENING';
+        state.stabilityStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'SCREENING';
       }
     });
 
@@ -807,20 +966,26 @@ export class ScientificExecutionDAG {
       dependencies: ['IDENTITY_RESOLUTION'],
       execute: (state) => {
         const formulaCost = calculateFormulaCost(state.resolvedIngredients, state.batchSizeKg);
+        const overheadPct = state.rawInput.costContext?.overheadPct ?? 12;
+        const packagingCostPerUnit = state.rawInput.costContext?.packagingCostPerUnit ?? 15;
+        if (state.rawInput.costContext?.overheadPct === undefined) {
+          state.assumptions.push('Commercial margin chain uses a 12% manufacturing-overhead scenario because no overhead percentage was supplied.');
+        }
+        if (state.rawInput.costContext?.packagingCostPerUnit === undefined) {
+          state.assumptions.push('Commercial margin chain uses a packaging-cost scenario of 15 currency units per sale unit because no packaging cost was supplied.');
+        }
         const marginChain = calculateCommercialMarginChain(
           state.resolvedIngredients,
           state.batchSizeKg,
-          state.rawInput.costContext?.distributorMarginPct ?? 12,
-          state.rawInput.costContext?.retailerMarginPct ?? 15
+          overheadPct,
+          packagingCostPerUnit
         );
 
         state.costResult = {
-          costPerKg: formulaCost.costPerKg,
-          totalBatchCost: formulaCost.totalBatchCost,
-          costBreakdown: formulaCost.ingredientCosts || [],
+          ...formulaCost,
           marginChain
         };
-        state.costStatus = 'VALID';
+        state.costStatus = formulaCost.isComplete ? 'VALID' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -837,7 +1002,9 @@ export class ScientificExecutionDAG {
           state.rawInput.regulatoryContext,
           state.finalEquilibriumPH ?? null
         );
-        state.regulatoryStatus = 'VALID';
+        state.regulatoryStatus = state.regulatoryResult.status === 'COMPLIANT'
+          ? 'VALID'
+          : (state.regulatoryResult.status === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' : 'INVALID');
       }
     });
 
@@ -870,9 +1037,9 @@ export class ScientificExecutionDAG {
           plannedVolumeLiters: state.densityGPerCm3 > 0 ? Number((state.batchSizeKg / state.densityGPerCm3).toFixed(3)) : undefined,
           processLossKg: Number((state.batchSizeKg * 0.01).toFixed(3)),
           processLossPercent: 1.0,
-          processSteps: isPowder ? defaultPowderSteps : defaultLiquidSteps
+          processSteps: state.physicalForm === 'UNKNOWN' ? [] : (isPowder ? defaultPowderSteps : defaultLiquidSteps)
         };
-        state.manufacturingStatus = 'ESTIMATED';
+        state.manufacturingStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'ESTIMATED';
       }
     });
 
@@ -892,7 +1059,7 @@ export class ScientificExecutionDAG {
           parameters: specTemplate?.parameters || [],
           labMeasurements: state.rawInput.labEvidence || [],
           powderReport: state.powderReport,
-          costReport: state.costResult ? { costPerKg: state.costResult.costPerKg, totalBatchCost: state.costResult.totalBatchCost } as any : null,
+          costReport: state.costResult ? state.costResult as any : null,
           liquidResults: {
             pH: state.finalEquilibriumPH ?? undefined,
             activeSurfactants: state.totalSurfactantActivePct,
@@ -901,7 +1068,7 @@ export class ScientificExecutionDAG {
             viscosityCp: state.viscosityResult?.predictedViscosityCp ?? undefined,
             density: state.densityGPerCm3,
             liquidNVR: state.nvrPercentage,
-            liquidNVRComplete: state.nvrResult?.isComplete,
+            liquidNVRComplete: state.nvrResult?.isNvrComplete,
             nvrCoveragePct: state.nvrResult?.dataCompleteness,
             costPerKg: state.costResult?.costPerKg
           }
@@ -927,15 +1094,15 @@ export class ScientificExecutionDAG {
           // Evidence matching must use the caller's explicit version, not the display sentinel.
           formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory,
-          isComputationallyValid: state.errors.length === 0,
+          isComputationallyValid: state.errors.length === 0 && state.blockingIssues.length === 0,
           predictedMetrics: {
             pH: state.finalEquilibriumPH ?? null,
             activeSurfactantsPct: state.totalSurfactantActivePct,
-            activeMatterPct: state.totalSurfactantActivePct,
-            viscosityCps: state.viscosityResult?.predictedViscosityCp ?? 0,
-            cpi: state.cpi ?? 0,
+            activeMatterPct: Number.isFinite(state.totalActiveMatterPct) ? state.totalActiveMatterPct : null,
+            viscosityCps: state.viscosityResult?.predictedViscosityCp ?? null,
+            cpi: state.cpi,
             densityGCm3: state.densityGPerCm3,
-            waterHardnessTolerancePpm: state.rawCapacity
+            waterHardnessTolerancePpm: Number.isFinite(state.hardnessResult?.maxSupportedPpm) ? state.hardnessResult.maxSupportedPpm : null
           },
           labEvidenceRecords: labEvidence as any
         });
@@ -980,12 +1147,22 @@ export class ScientificExecutionDAG {
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : (state.rawInput.productCategory || 'UNKNOWN_PRODUCT_CATEGORY'),
           ingredients: state.resolvedIngredients,
           labMeasurements: state.rawInput.labEvidence || [],
-          waterHardnessPpm: state.waterHardnessPpm,
+          waterHardnessPpm: state.waterHardnessPpm ?? undefined,
           batchSizeKg: state.batchSizeKg,
           targetCostPerKg: state.rawInput.costContext?.targetCostPerKg
         });
 
-        state.qualityGateStatus = 'VALID';
+        const finalGateStatus = state.qualityGateResult?.finalFormulaStatus;
+        state.qualityGateStatus =
+          finalGateStatus === 'OUT_OF_SPEC' || finalGateStatus === 'SCIENTIFICALLY_INVALID' || finalGateStatus === 'INCOMPATIBLE'
+            ? 'FAILED'
+            : finalGateStatus === 'INSUFFICIENT_DATA'
+              ? 'INSUFFICIENT_DATA'
+              : finalGateStatus === 'LAB_VALIDATION_REQUIRED'
+                ? 'SCREENING'
+                : (state.qualityGateResult?.scientificValidity === 'VALID' && state.labEvidenceResult?.isLabValidated === true
+                  ? 'VALID'
+                  : 'SCREENING');
       }
     });
 
@@ -1008,21 +1185,27 @@ export class ScientificExecutionDAG {
         const activeMatterOut = {
           totalSurfactantActivePct: state.totalSurfactantActivePct,
           totalActiveMatterPct: state.totalActiveMatterPct,
-          meetsCategoryMin: state.totalSurfactantActivePct >= (getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? 0),
-          categoryMinPct: getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? 0,
+          meetsCategoryMin: Number.isFinite(state.totalSurfactantActivePct)
+            ? state.totalSurfactantActivePct >= (getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? Number.NaN)
+            : null,
+          categoryMinPct: getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? null,
+          verified: state.activeMatterVerified === true,
+          status: state.activeMatterStatus,
           surfactantBreakdown: {
             anionic: state.anionicPct,
             nonionic: state.nonionicPct,
             amphoteric: state.amphotericPct,
             cationic: state.cationicPct,
-            total: state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct
+            total: [state.anionicPct, state.nonionicPct, state.amphotericPct, state.cationicPct].every(Number.isFinite)
+              ? state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct
+              : null
           }
         };
 
         const phOut = {
           ph: state.finalEquilibriumPH,
-          isMeasured: state.labEvidenceResult?.verifiedMeasurementsCount > 0,
-          provenance: state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'MEASURED' : 'PREDICTED',
+          isMeasured: state.phStatus === 'VALID',
+          provenance: state.phStatus === 'VALID' ? 'MEASURED' : (state.phStatus === 'SCREENING' ? 'PREDICTED' : 'INSUFFICIENT_DATA'),
           bufferCapacity: state.phBufferCapacity,
           ionicStrength: state.phIonicStrength,
           confidence: state.phStatus,
@@ -1034,28 +1217,37 @@ export class ScientificExecutionDAG {
           compatibilityScore: state.compatibilityScore,
           alerts: state.compatibilityResult?.alerts || [],
           warnings: state.compatibilityResult?.warnings || [],
-          stabilityStatus: state.compatibilityScore >= 80 ? 'HIGH_STABILITY' : 'UNSTABLE'
+          stabilityStatus: Number.isFinite(state.compatibilityScore)
+            ? (state.compatibilityScore >= 80 ? 'SCREENING_HIGH_COMPATIBILITY' : 'SCREENING_LOW_COMPATIBILITY')
+            : 'UNKNOWN'
         };
 
         const cleaningOut = {
-          cpi: state.cpi ?? 0,
-          overallScore: state.cleaningResult?.overallScore ?? 0,
-          cleaningScore: state.cleaningResult?.cleaningScore ?? 0,
-          isCleaningApplicable: state.cleaningResult?.isCleaningApplicable ?? true,
+          cpi: Number.isFinite(state.cpi) ? state.cpi : null,
+          overallScore: Number.isFinite(state.cleaningResult?.overallScore) ? state.cleaningResult.overallScore : null,
+          cleaningScore: Number.isFinite(state.cleaningResult?.cleaningScore) ? state.cleaningResult.cleaningScore : null,
+          provenance: state.cleaningResult?.provenance ?? 'INSUFFICIENT_DATA',
+          isCleaningApplicable: state.cleaningResult?.isCleaningApplicable ?? false,
           limitingFactors: state.cleaningResult?.keyNegativeFactors || []
         };
 
         const costOut = {
-          costPerKg: state.costResult?.costPerKg ?? 0,
-          totalBatchCost: state.costResult?.totalBatchCost ?? 0,
-          isWithinTarget: state.rawInput.costContext?.targetCostPerKg !== undefined && state.rawInput.costContext?.targetCostPerKg !== null ? state.costResult?.costPerKg <= state.rawInput.costContext.targetCostPerKg : false
+          costPerKg: Number.isFinite(state.costResult?.costPerKg) ? state.costResult.costPerKg : null,
+          totalBatchCost: Number.isFinite(state.costResult?.totalBatchCost) ? state.costResult.totalBatchCost : null,
+          isComplete: state.costResult?.isComplete === true,
+          pricingStatus: state.costResult?.pricingStatus ?? 'UNKNOWN',
+          isWithinTarget: Number.isFinite(state.costResult?.costPerKg) &&
+            typeof state.rawInput.costContext?.targetCostPerKg === 'number' &&
+            Number.isFinite(state.rawInput.costContext.targetCostPerKg)
+              ? state.costResult.costPerKg <= state.rawInput.costContext.targetCostPerKg
+              : null
         };
 
         state.aiGradeResult = evaluateAIGrade({
           formulaIdentity: {
             canonicalCategory: state.canonicalCategory
           },
-          scientificValidity: state.qualityGateResult?.scientificValidity ?? 'VALID',
+          scientificValidity: state.qualityGateResult?.scientificValidity ?? 'INSUFFICIENT_DATA',
           activeMatterResult: activeMatterOut as any,
           pHResult: phOut as any,
           compatibilityResult: compOut as any,
@@ -1063,14 +1255,15 @@ export class ScientificExecutionDAG {
           costResult: costOut as any,
           labEvidenceResult: state.labEvidenceResult as any,
           regulatoryResult: state.regulatoryResult as any,
-          blockingIssues: state.canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' 
-            ? ['CATEGORY_REQUIRED', ...state.blockingIssues] 
-            : state.blockingIssues,
+          blockingIssues: [
+            ...(state.canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' ? ['CATEGORY_REQUIRED'] : []),
+            ...state.blockingIssues.map((issue: any) => String(issue?.code || issue?.message || issue))
+          ],
           warnings: state.warnings,
           unknownParameters: state.unknownParameters
         });
 
-        state.gradeStatus = 'VALID';
+        state.gradeStatus = state.aiGradeResult?.isEvaluable === true ? 'SCREENING' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -1087,9 +1280,9 @@ export class ScientificExecutionDAG {
           waterHardnessPpm: state.waterHardnessPpm,
           batchSizeKg: state.batchSizeKg,
           calculatedPH: state.finalEquilibriumPH,
-          totalActiveMatter: state.totalSurfactantActivePct,
-          totalPercentage: state.totalMassPct,
-          costPerKg: state.costResult?.costPerKg ?? 0,
+          totalActiveMatter: Number.isFinite(state.totalSurfactantActivePct) ? state.totalSurfactantActivePct : undefined,
+          totalPercentage: Number.isFinite(state.totalMassPct) ? state.totalMassPct : undefined,
+          costPerKg: Number.isFinite(state.costResult?.costPerKg) ? state.costResult.costPerKg : undefined,
           cleaningScore: state.cleaningResult?.cleaningScore ?? undefined,
           hardnessSufficiency: state.hardnessResult?.sufficiency,
           maxSupportedHardnessPpm: state.hardnessResult?.maxSupportedPpm,
@@ -1099,7 +1292,9 @@ export class ScientificExecutionDAG {
         });
 
         const climatePreset = state.rawInput.climatePreset || 'Temperate';
-        state.climateResult = analyzeClimateAndHardWater(state.resolvedIngredients, climatePreset as any, state.waterHardnessPpm);
+        state.climateResult = state.waterHardnessPpm === null
+          ? null
+          : analyzeClimateAndHardWater(state.resolvedIngredients, climatePreset as any, state.waterHardnessPpm);
         state.substitutionResult = findSubstitutionsForFormula(state.resolvedIngredients, state.rawInput.regulatoryContext?.jurisdiction || 'Global', 'Cost Reduction');
         state.labHealthResult = calculateLabHealthScore(state.resolvedIngredients, state.finalEquilibriumPH, state.canonicalCategory);
       }
@@ -1146,13 +1341,16 @@ export class ScientificExecutionDAG {
     state: ScientificExecutionState;
     trace: DAGNodeTrace[];
   } {
-    const batchSizeKg = input.batchSizeKg && input.batchSizeKg > 0
-      ? input.batchSizeKg
-      : (input.batchSize && input.batchSize > 0 ? input.batchSize : 100);
+    const rawBatchSize = input.batchSizeKg ?? input.batchSize;
+    const batchSizeDefaulted = rawBatchSize === undefined || rawBatchSize === null;
+    const batchSizeKg = batchSizeDefaulted
+      ? 100
+      : (typeof rawBatchSize === 'number' && Number.isFinite(rawBatchSize) && rawBatchSize > 0 ? rawBatchSize : Number.NaN);
 
-    const waterHardnessPpm = input.waterHardnessPpm !== undefined && input.waterHardnessPpm >= 0
-      ? input.waterHardnessPpm
-      : (input.hardness !== undefined && input.hardness >= 0 ? input.hardness : (input.waterProfile?.hardnessPpm ?? 150));
+    const rawWaterHardness = input.waterHardnessPpm ?? input.hardness ?? input.waterProfile?.hardnessPpm;
+    const waterHardnessPpm = typeof rawWaterHardness === 'number' && Number.isFinite(rawWaterHardness) && rawWaterHardness >= 0
+      ? rawWaterHardness
+      : null;
 
     // Initialize clean, empty intermediate state
     const state: ScientificExecutionState = {
@@ -1165,7 +1363,7 @@ export class ScientificExecutionDAG {
 
       canonicalCategory: 'UNKNOWN_PRODUCT_CATEGORY',
       categoryLabel: 'Unknown Category',
-      physicalForm: 'LIQUID',
+      physicalForm: 'UNKNOWN',
       totalMassPct: 0,
       normalizedIngredients: [],
       isBalanced: false,
@@ -1189,13 +1387,13 @@ export class ScientificExecutionDAG {
       phStatus: 'UNKNOWN',
 
       activeMatterReport: null,
-      totalSurfactantActivePct: 0,
-      totalActiveMatterPct: 0,
-      rawSurfactantsTotal: 0,
-      anionicPct: 0,
-      nonionicPct: 0,
-      amphotericPct: 0,
-      cationicPct: 0,
+      totalSurfactantActivePct: Number.NaN,
+      totalActiveMatterPct: Number.NaN,
+      rawSurfactantsTotal: Number.NaN,
+      anionicPct: Number.NaN,
+      nonionicPct: Number.NaN,
+      amphotericPct: Number.NaN,
+      cationicPct: Number.NaN,
       activeMatterStatus: 'UNKNOWN',
 
       hlbResult: null,
@@ -1204,26 +1402,26 @@ export class ScientificExecutionDAG {
 
       chelationResult: null,
       hardnessResult: null,
-      rawCapacity: 0,
+      rawCapacity: Number.NaN,
       protectionAssessment: '',
       chelationStatus: 'UNKNOWN',
 
       compatibilityResult: null,
-      compatibilityScore: 100,
-      compatible: true,
+      compatibilityScore: Number.NaN,
+      compatible: false,
       compatibilityStatus: 'UNKNOWN',
 
       viscosityResult: null,
-      predictedViscosityCp: 0,
+      predictedViscosityCp: Number.NaN,
       viscosityStatus: 'UNKNOWN',
 
       densityResult: null,
-      densityGPerCm3: 1.0,
-      specificGravity: 1.0,
+      densityGPerCm3: Number.NaN,
+      specificGravity: Number.NaN,
       densityStatus: 'UNKNOWN',
 
       nvrResult: null,
-      nvrPercentage: 0,
+      nvrPercentage: Number.NaN,
       nvrStatus: 'UNKNOWN',
 
       powderReport: null,

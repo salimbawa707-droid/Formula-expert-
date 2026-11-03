@@ -68,7 +68,7 @@ export const PRODUCT_SUBCLASS_IDS = [
 
 export type ProductSubclassId = typeof PRODUCT_SUBCLASS_IDS[number];
 
-export type PhysicalForm = 'LIQUID' | 'POWDER' | 'GEL' | 'EMULSION';
+export type PhysicalForm = 'LIQUID' | 'POWDER' | 'GEL' | 'EMULSION' | 'UNKNOWN';
 
 export type ProductFamily =
   | 'LAUNDRY_CARE'

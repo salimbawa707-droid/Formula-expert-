@@ -23,7 +23,7 @@ import { ScientificValidityStatus, QualityGateEvidenceStatus } from './scientifi
 import { FormulationIngredient } from '../types';
 import { normalizeIngredientTaxonomy } from './calculators';
 import { calculateActiveMatter } from './activeMatterEngine';
-import { calculateCPI } from './cleaningPerformanceEngine';
+import { calculateCleaningPerformance } from './cleaningPerformanceEngine';
 import { calculateFormulationCompatibility } from './compatibilityEngine';
 import { calculateLabHealthScore } from './labHealthEngine';
 import { calculateBatchCost } from './calculators';
@@ -45,11 +45,11 @@ export interface AIGradePillarScore {
 }
 
 export interface AIGradeBreakdown {
-  cpiScore: number;
-  compatibilityScore: number;
-  healthScore: number;
-  activeMatterScore: number;
-  commercialScore: number;
+  cpiScore: number | null;
+  compatibilityScore: number | null;
+  healthScore: number | null;
+  activeMatterScore: number | null;
+  commercialScore: number | null;
   performanceScore?: number;
   rheologyScore?: number;
   builderScore?: number;
@@ -60,8 +60,8 @@ export interface AIGradeBreakdown {
 
 export interface AIGradeResult {
   grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F' | 'N/A' | string;
-  score: number;
-  numericScore: number;
+  score: number | null;
+  numericScore: number | null;
   gradeType: 'CATEGORY_SPECIFIC_RND_INDEX' | 'GENERIC_SCREENING_INDEX' | 'AI_GRADE_NOT_EVALUABLE' | 'CATEGORY_CONTEXT_INTEGRITY_ERROR';
   productCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
   categoryModelId: string;
@@ -334,21 +334,60 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   const warnings: string[] = (orchestratorResult.warnings || []).map((w: any) => typeof w === 'string' ? w : (w.message || w.title || String(w)));
   const unknownParameters: string[] = orchestratorResult.unknownParameters || [];
 
+  const rawActiveSurfactants = orchestratorResult.activeMatterResult?.totalSurfactantActivePct;
+  const rawTotalActiveMatter = orchestratorResult.activeMatterResult?.totalActiveMatterPct;
+  const rawPH = orchestratorResult.pHResult?.ph;
+  const rawCompatibility = orchestratorResult.compatibilityResult?.compatibilityScore;
+  const perfCandidate = orchestratorResult.cleaningResult;
+  const costCandidate = orchestratorResult.costResult;
+  const regulatoryCandidate = orchestratorResult.regulatoryResult;
+  const missingCriticalInputs: string[] = [];
+
+  if (orchestratorResult.scientificValidity !== 'VALID') missingCriticalInputs.push('scientificValidity');
+  if (blockingIssues.length > 0) missingCriticalInputs.push('blockingIssues');
+  if (!Number.isFinite(rawActiveSurfactants) || !Number.isFinite(rawTotalActiveMatter)) missingCriticalInputs.push('activeMatter');
+  if (orchestratorResult.activeMatterResult?.verified !== true) missingCriticalInputs.push('activeMatterProvenance');
+  if (!Number.isFinite(rawPH) || rawPH < 0 || rawPH > 14) missingCriticalInputs.push('pH');
+  if (!Number.isFinite(rawCompatibility) || rawCompatibility < 0 || rawCompatibility > 100) missingCriticalInputs.push('compatibility');
+  const performanceMetric = profile.isCleaningApplicable
+    ? (perfCandidate?.cpi ?? perfCandidate?.overallScore)
+    : (perfCandidate?.conditioningScore ?? perfCandidate?.overallScore);
+  if (!Number.isFinite(performanceMetric) || perfCandidate?.provenance === 'INSUFFICIENT_DATA') {
+    missingCriticalInputs.push(profile.isCleaningApplicable ? 'cleaningPerformance' : 'conditioningPerformance');
+  }
+  if (!costCandidate || !Number.isFinite(costCandidate.costPerKg) || costCandidate.isComplete !== true) {
+    missingCriticalInputs.push('completeCosting');
+  }
+  if (!Number.isFinite(costCandidate?.targetCostPerKg) || (costCandidate?.targetCostPerKg ?? 0) <= 0) {
+    missingCriticalInputs.push('targetCost');
+  }
+  if (!regulatoryCandidate || !['COMPLIANT', 'RESTRICTED', 'NON_COMPLIANT'].includes(regulatoryCandidate.status)) {
+    missingCriticalInputs.push('regulatoryEvaluation');
+  }
+
+  if (missingCriticalInputs.length > 0) {
+    return buildNotEvaluableResult(
+      canonicalCategory,
+      'AI_GRADE_NOT_EVALUABLE',
+      `AI_GRADE_NOT_EVALUABLE: Required scientific/commercial inputs are missing, invalid, or blocked: ${[...new Set(missingCriticalInputs)].join(', ')}. No composite grade is calculated.`,
+      [...new Set(missingCriticalInputs)]
+    );
+  }
+
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const limitingFactors: string[] = [];
   const uncertaintyFactors: string[] = [];
 
   // 3. Extract Authoritative Child Results
-  const activeMatter = orchestratorResult.activeMatterResult?.totalSurfactantActivePct ?? 0;
-  const totalActiveMatter = orchestratorResult.activeMatterResult?.totalActiveMatterPct ?? activeMatter;
-  const rawPh = orchestratorResult.pHResult?.ph;
-  const phVal = (typeof rawPh === 'number' && !isNaN(rawPh)) ? rawPh : undefined;
+  const activeMatter = rawActiveSurfactants as number;
+  const totalActiveMatter = rawTotalActiveMatter as number;
+  const phVal = rawPH as number;
   const compResult = orchestratorResult.compatibilityResult && typeof orchestratorResult.compatibilityResult === 'object' && typeof orchestratorResult.compatibilityResult.compatibilityScore === 'number' && !isNaN(orchestratorResult.compatibilityResult.compatibilityScore)
     ? orchestratorResult.compatibilityResult
     : undefined;
-  const perfResult = orchestratorResult.cleaningResult || { cpi: 0, overallScore: 0, cleaningScore: 0 };
-  const costResult = orchestratorResult.costResult || { costPerKg: 0, isWithinTarget: true, targetCostPerKg: 0 };
+  const perfResult = perfCandidate;
+  const costResult = costCandidate;
   const labEvidenceResult = orchestratorResult.labEvidenceResult || { evidenceLevel: 'PREDICTED_ONLY', isLabValidated: false };
 
   // 4. Calculate Pillar Scores
@@ -358,13 +397,20 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
 
   if (!profile.isCleaningApplicable) {
     // Non-detergent (Fabric Softener): Softening / conditioning score
-    const conditioningScore = (perfResult.cpi && perfResult.cpi > 0) ? perfResult.cpi : (perfResult.overallScore && perfResult.overallScore > 0 ? perfResult.overallScore : 85);
+    const conditioningScore = perfResult.conditioningScore ?? perfResult.overallScore;
+    if (!Number.isFinite(conditioningScore)) {
+      return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Conditioning performance score is unavailable; no default score is substituted.', ['conditioningPerformance']);
+    }
     performanceScore = Math.min(100, Math.max(0, Math.round(conditioningScore)));
     performanceStatus = 'NOT_APPLICABLE'; // Detergency is not applicable
     strengths.push('Cationic softening & fabric hand-feel conditioning model applied.');
   } else {
-    performanceScore = Math.min(100, Math.max(0, Math.round(perfResult.cpi || perfResult.overallScore || 0)));
-    performanceStatus = 'KNOWN';
+    const cleaningScore = perfResult.cpi ?? perfResult.overallScore;
+    if (!Number.isFinite(cleaningScore)) {
+      return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Cleaning performance score is unavailable; no zero-score fallback is substituted.', ['cleaningPerformance']);
+    }
+    performanceScore = Math.min(100, Math.max(0, Math.round(cleaningScore)));
+    performanceStatus = perfResult.provenance === 'MEASURED' ? 'KNOWN' : 'ESTIMATED';
     if (performanceScore >= 80) strengths.push(`High cleaning efficacy (${performanceScore}/100) under category performance model.`);
     else if (performanceScore < 60) limitingFactors.push(`Sub-optimal cleaning score (${performanceScore}/100) for ${canonicalCategory}.`);
   }
@@ -387,8 +433,8 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   // C. Lab Health & Safety Pillar
   let healthScore = 0;
   let healthStatus: GradePillarStatus = 'UNKNOWN';
-  if (phVal !== undefined) {
-    healthStatus = 'KNOWN';
+  if (typeof phVal === 'number' && Number.isFinite(phVal)) {
+    healthStatus = orchestratorResult.pHResult?.isMeasured ? 'KNOWN' : 'ESTIMATED';
     if (phVal < profile.optimalPHRange[0] || phVal > profile.optimalPHRange[1]) {
       const phDeviation = Math.min(phVal < profile.optimalPHRange[0] ? profile.optimalPHRange[0] - phVal : phVal - profile.optimalPHRange[1], 5);
       healthScore = Math.max(40, Math.round(100 - phDeviation * 15));
@@ -422,14 +468,14 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   }
 
   // E. Commercial Viability Pillar
-  let commercialScore = 80; // Default neutral baseline
-  let commercialStatus: GradePillarStatus = 'KNOWN';
+  let commercialScore = 0;
+  let commercialStatus: GradePillarStatus = 'UNKNOWN';
   const targetCost = costResult.targetCostPerKg;
   const actualCost = costResult.costPerKg;
 
   if (targetCost === undefined || targetCost === null || targetCost <= 0) {
     commercialStatus = 'UNKNOWN';
-    commercialScore = 80;
+    commercialScore = 0;
     unknownParameters.push('targetCost');
     uncertaintyFactors.push('Target raw material cost is not specified; commercial score evaluated at baseline.');
   } else if (actualCost <= targetCost) {
@@ -525,7 +571,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
     scientificEngineVersion: AI_GRADE_ENGINE_VERSION,
     ingredientDatabaseVersion: INGREDIENT_DB_VERSION,
     calculationVersion: '2026.1',
-    scientificValidity: orchestratorResult.scientificValidity || 'VALID',
+    scientificValidity: orchestratorResult.scientificValidity,
     performanceStatus: profile.isCleaningApplicable ? 'ACTIVE_DETERGENCY' : 'CONDITIONING_SURFACE_CARE',
     evidenceLevel: labEvidenceResult.evidenceLevel,
     confidence,
@@ -540,7 +586,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
     blockingIssues,
     unknownParameters,
     labValidationStatus,
-    regulatoryStatus: orchestratorResult.regulatoryResult?.complianceStatus || 'COMPLIANT',
+    regulatoryStatus: regulatoryCandidate.status,
     reasoning,
     breakdown: {
       cpiScore: performanceScore,
@@ -552,7 +598,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
         performance: performanceStatus,
         compatibility: compatibilityStatus,
         health: healthStatus,
-        activeMatter: 'KNOWN',
+        activeMatter: orchestratorResult.activeMatterResult?.verified === true ? 'KNOWN' : 'ESTIMATED',
         commercial: commercialStatus
       }
     },
@@ -592,7 +638,8 @@ function evaluateAIGradeFromLegacyOrDraft(
 
     if (phVal === undefined) {
       if (typeof input.ph === 'number' && !isNaN(input.ph)) phVal = input.ph;
-      else if (typeof input.targetpH === 'number' && !isNaN(input.targetpH)) phVal = input.targetpH;
+      // A target specification is not an observed or calculated formula pH.
+      // Only an explicitly supplied current pH field may enter this legacy screening path.
       else if (input.properties && typeof parseFloat(input.properties.pH) === 'number' && !isNaN(parseFloat(input.properties.pH))) {
         phVal = parseFloat(input.properties.pH);
       }
@@ -621,7 +668,7 @@ function evaluateAIGradeFromLegacyOrDraft(
       performanceStatus: 'EMPTY_FORMULATION',
       evidenceLevel: 'INSUFFICIENT_DATA',
       confidence: 'LOW',
-      uncertainty: { level: 'HIGH', factors: ['Formulation contains no ingredients.'] },
+      uncertainty: { level: 'HIGH', factors: ['Formulation contains no ingredients; no scientific, commercial, or regulatory evaluation was performed.'] },
       strengths: [],
       weaknesses: ['Empty formula'],
       limitingFactors: ['No ingredients present'],
@@ -629,7 +676,7 @@ function evaluateAIGradeFromLegacyOrDraft(
       blockingIssues: ['ERR_EMPTY_FORMULATION'],
       unknownParameters: ['ingredients'],
       labValidationStatus: 'NOT_TESTED',
-      regulatoryStatus: 'NON_COMPLIANT',
+      regulatoryStatus: 'NOT_EVALUATED',
       reasoning: 'Empty formulation containing no ingredients.',
       breakdown: {
         cpiScore: 0,
@@ -655,10 +702,18 @@ function evaluateAIGradeFromLegacyOrDraft(
     const role = ing?.role || taxonomy.role;
     const func = ing?.function || taxonomy.function;
     const isSolventOrWater = name.toLowerCase().includes('water') || name.toLowerCase().includes('aqua') || category.toLowerCase().includes('solvent');
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
+    const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
     const rawActiveVal = ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? ing?.activePct ?? ing?.purity;
-    const active = rawActiveVal !== undefined && rawActiveVal !== null ? Number(rawActiveVal) : (isSolventOrWater ? 0 : 0);
-    const cost = Number(ing?.costPerKg ?? ing?.rawMaterialCostPerKg ?? ing?.cost ?? ing?.unitCost ?? 0);
+    const active = rawActiveVal !== undefined && rawActiveVal !== null
+      ? Number(rawActiveVal)
+      : (isSolventOrWater ? 0 : null);
+    const rawCost = ing?.costPerKg ?? ing?.rawMaterialCostPerKg ?? ing?.cost ?? ing?.unitCost;
+    const cost = rawCost === undefined || rawCost === null || rawCost === ''
+      ? null
+      : Number(rawCost);
 
     return {
       ...ing,
@@ -682,7 +737,21 @@ function evaluateAIGradeFromLegacyOrDraft(
   });
 
   const amRes = calculateActiveMatter(ingredients);
-  const activeMatterPct = typeof amRes === 'number' ? amRes : Number(amRes?.value ?? 0);
+  const activeMatterPct = typeof amRes === 'number' ? amRes : Number.NaN;
+
+  if (
+    canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' ||
+    phVal === undefined || !Number.isFinite(phVal) || phVal < 0 || phVal > 14 ||
+    !Number.isFinite(activeMatterPct) ||
+    ingredients.some(i => !Number.isFinite(i.percentage) || i.percentage < 0 || i.percentage > 100)
+  ) {
+    return buildNotEvaluableResult(
+      canonicalCategory,
+      'AI_GRADE_NOT_EVALUABLE',
+      'AI_GRADE_NOT_EVALUABLE: Legacy input is missing a valid canonical category, pH, ingredient percentage, or complete active-matter resolution. No grade is calculated.',
+      ['CANONICAL_CATEGORY', 'PH', 'INGREDIENT_PERCENTAGES', 'ACTIVE_MATTER']
+    );
+  }
 
   // Check for zero active ingredients
   const activeIngsCount = ingredients.filter((i: any) => {
@@ -706,8 +775,8 @@ function evaluateAIGradeFromLegacyOrDraft(
       scientificValidity: 'INVALID',
       performanceStatus: 'ZERO_ACTIVE_MATTER',
       evidenceLevel: 'PREDICTED_ONLY',
-      confidence: 'HIGH',
-      uncertainty: { level: 'LOW', factors: [] },
+      confidence: 'LOW',
+      uncertainty: { level: 'HIGH', factors: ['No active functional matter was identified; regulatory compliance and laboratory performance were not evaluated.'] },
       strengths: [],
       weaknesses: ['Zero active matter'],
       limitingFactors: ['Formulation contains no active surfactant or functional matter.'],
@@ -730,20 +799,31 @@ function evaluateAIGradeFromLegacyOrDraft(
 
   // Active child engine calls
   const effectiveCategory = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined;
-  const cpiRaw = calculateCPI(ingredients, phVal, effectiveCategory);
-  const cpiScore = Math.min(100, Math.max(0, Math.round(cpiRaw)));
+  const performanceResult = calculateCleaningPerformance(ingredients, phVal, effectiveCategory);
+  const rawPerformance = performanceResult.isCleaningApplicable
+    ? performanceResult.cpi
+    : performanceResult.conditioningScore;
+  if (rawPerformance === null || rawPerformance === undefined || !Number.isFinite(rawPerformance)) {
+    return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Performance score is unavailable for this category; no numeric zero is substituted.', ['performance']);
+  }
+  const cpiScore = Math.min(100, Math.max(0, Math.round(rawPerformance)));
 
   const compResult = calculateFormulationCompatibility(ingredients, phVal, effectiveCategory);
+  if (!Number.isFinite(compResult.compatibilityScore)) {
+    return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Compatibility score is unavailable; no numeric zero is substituted.', ['compatibility']);
+  }
   const compatibilityScore = Math.min(100, Math.max(0, Math.round(compResult.compatibilityScore)));
 
-  const healthResult = calculateLabHealthScore(ingredients, phVal);
-  const healthScore = healthResult.finalScore !== null && Number.isFinite(healthResult.finalScore)
-    ? Math.min(100, Math.max(0, Math.round(healthResult.finalScore)))
-    : 0;
+  const healthResult = calculateLabHealthScore(ingredients, phVal, effectiveCategory);
+  if (healthResult.finalScore === null || !Number.isFinite(healthResult.finalScore)) {
+    return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Lab health score is unavailable; no numeric zero is substituted.', ['health']);
+  }
+  const healthScore = Math.min(100, Math.max(0, Math.round(healthResult.finalScore)));
 
-  let commercialScore = 100;
-  const batchCost = calculateBatchCost(ingredients, 1);
-  if (typeof targetCostVal === 'number' && targetCostVal > 0) {
+  let commercialScore = 0;
+  const hasCompletePrices = ingredients.every(i => typeof i.costPerKg === 'number' && Number.isFinite(i.costPerKg) && i.costPerKg >= 0);
+  const batchCost = hasCompletePrices ? calculateBatchCost(ingredients, 1) : Number.NaN;
+  if (typeof targetCostVal === 'number' && Number.isFinite(targetCostVal) && targetCostVal > 0 && hasCompletePrices && Number.isFinite(batchCost)) {
     if (batchCost <= targetCostVal) {
       commercialScore = 100;
     } else {
@@ -814,11 +894,17 @@ function evaluateAIGradeFromLegacyOrDraft(
 
   const reasoning = `Grade ${grade} (${finalScore}/100): ${reasons.join(', ')}.${hazardNote}`;
 
+  // Legacy array/object calls do not carry the authoritative orchestrator's
+  // scientific validity, provenance, formula identity, or evidence firewall.
+  // Keep this output explicitly screening-only and prevent an optimistic grade.
+  const legacyScreeningScore = Math.min(65, finalScore);
+  const legacyScreeningGrade = legacyScreeningScore >= 60 ? 'C' : legacyScreeningScore >= 50 ? 'D' : 'F';
+
   return {
-    grade,
-    score: finalScore,
-    numericScore: finalScore,
-    gradeType: profile ? 'CATEGORY_SPECIFIC_RND_INDEX' : 'GENERIC_SCREENING_INDEX',
+    grade: legacyScreeningGrade,
+    score: legacyScreeningScore,
+    numericScore: legacyScreeningScore,
+    gradeType: 'GENERIC_SCREENING_INDEX',
     productCategory: canonicalCategory,
     categoryModelId: profile?.modelId || 'AIGRADE_MODEL_GENERIC_V1',
     categoryModelVersion: profile?.modelVersion || '1.0.0',
@@ -826,23 +912,28 @@ function evaluateAIGradeFromLegacyOrDraft(
     scientificEngineVersion: AI_GRADE_ENGINE_VERSION,
     ingredientDatabaseVersion: INGREDIENT_DB_VERSION,
     calculationVersion: '2026.1',
-    scientificValidity: 'VALID',
-    performanceStatus: profile?.isCleaningApplicable ? 'ACTIVE_DETERGENCY' : 'GENERAL_FORMULATION',
+    scientificValidity: 'INSUFFICIENT_DATA',
+    performanceStatus: profile?.isCleaningApplicable ? 'ACTIVE_DETERGENCY_SCREENING_ONLY' : 'CONDITIONING_SCREENING_ONLY',
     evidenceLevel: 'PREDICTED_ONLY',
-    confidence: 'MEDIUM',
+    confidence: 'LOW',
     uncertainty: {
-      level: 'MEDIUM',
-      factors: effectiveCategory ? [] : ['Category unassigned; generic screening model applied.']
+      level: 'HIGH',
+      factors: [
+        'Legacy input path uses heuristic screening models and is not laboratory validated.',
+        'Regulatory compliance is not evaluated by this legacy grading path.',
+        ...(hasCompletePrices ? [] : ['One or more ingredient prices are unavailable; commercial pillar is not scored.']),
+        ...(targetCostVal ? [] : ['Target cost is not supplied; commercial pillar is not scored.'])
+      ]
     },
-    strengths: finalScore >= 80 ? ['High balanced formula grade.'] : [],
-    weaknesses: finalScore < 60 ? ['Low composite score.'] : [],
-    limitingFactors: [],
-    warnings: compResult.warnings || [],
-    blockingIssues: [],
-    unknownParameters: targetCostVal ? [] : ['targetCost'],
+    strengths: [],
+    weaknesses: ['Legacy heuristic score is capped and is not an authoritative scientific grade.'],
+    limitingFactors: ['Use the Scientific Orchestrator evaluation context for an authoritative category-specific grade.'],
+    warnings: [...(compResult.warnings || []), 'LEGACY_SCREENING_ONLY: Scientific validity, raw-material assay provenance, and laboratory evidence were not established by this legacy path.'],
+    blockingIssues: ['AUTHORITATIVE_ORCHESTRATOR_CONTEXT_REQUIRED'],
+    unknownParameters: [...(targetCostVal ? [] : ['targetCost']), 'scientificProvenance', 'labEvidence'],
     labValidationStatus: 'PREDICTED_ONLY (Laboratory Testing Required Prior to Release)',
-    regulatoryStatus: 'COMPLIANT',
-    reasoning,
+    regulatoryStatus: 'NOT_EVALUATED',
+    reasoning: `Screening-only grade ${legacyScreeningGrade} (${legacyScreeningScore}/100). ${reasoning} This is not a scientific validity PASS.`,
     breakdown: {
       cpiScore,
       compatibilityScore,
@@ -865,39 +956,48 @@ function buildNotEvaluableResult(
 ): AIGradeResult {
   return {
     grade: 'N/A',
-    score: 0,
-    numericScore: 0,
+    score: null,
+    numericScore: null,
     gradeType,
     productCategory: category,
-    categoryModelId: 'CATEGORY_MODEL_NOT_VALIDATED',
-    categoryModelVersion: '1.0.0',
+    categoryModelId: CATEGORY_GRADING_PROFILES[category as ProductCategoryId]?.modelId ?? 'CATEGORY_MODEL_NOT_VALIDATED',
+    categoryModelVersion: CATEGORY_GRADING_PROFILES[category as ProductCategoryId]?.modelVersion ?? '1.0.0',
     gradingRulesVersion: AI_GRADE_RULES_VERSION,
     scientificEngineVersion: AI_GRADE_ENGINE_VERSION,
     ingredientDatabaseVersion: INGREDIENT_DB_VERSION,
     calculationVersion: '2026.1',
-    scientificValidity: 'INVALID',
+    scientificValidity: 'INSUFFICIENT_DATA',
     performanceStatus: 'NOT_EVALUABLE',
     evidenceLevel: 'INSUFFICIENT_DATA',
     confidence: 'LOW',
     uncertainty: {
       level: 'HIGH',
-      factors: ['Product category is missing, unassigned, or not validated.']
+      factors: [reasoning, ...blockingIssues]
     },
     strengths: [],
-    weaknesses: ['Product category missing or unvalidated'],
-    limitingFactors: ['Category must be assigned to calculate product-specific AI Grade.'],
+    weaknesses: ['Required scientific or commercial inputs are unavailable.'],
+    limitingFactors: [...blockingIssues],
     warnings: [],
     blockingIssues,
-    unknownParameters: ['productCategory'],
+    unknownParameters: [...blockingIssues],
     labValidationStatus: 'NOT_EVALUABLE',
     regulatoryStatus: 'INSUFFICIENT_DATA',
     reasoning,
     breakdown: {
-      cpiScore: 0,
-      compatibilityScore: 0,
-      healthScore: 0,
-      activeMatterScore: 0,
-      commercialScore: 0
+      cpiScore: null,
+      compatibilityScore: null,
+      healthScore: null,
+      activeMatterScore: null,
+      commercialScore: null,
+      // A non-evaluable result must still expose explicit uncertainty for every pillar.
+      // Omitting statusMap caused callers to receive undefined instead of UNKNOWN.
+      statusMap: {
+        performance: 'UNKNOWN',
+        compatibility: 'UNKNOWN',
+        health: 'UNKNOWN',
+        activeMatter: 'UNKNOWN',
+        commercial: 'UNKNOWN'
+      }
     },
     isEvaluable: false
   };
@@ -912,8 +1012,8 @@ function buildIntegrityErrorResult(
 ): AIGradeResult {
   return {
     grade: 'N/A',
-    score: 0,
-    numericScore: 0,
+    score: null,
+    numericScore: null,
     gradeType: 'CATEGORY_CONTEXT_INTEGRITY_ERROR',
     productCategory: category,
     categoryModelId: 'INTEGRITY_ERROR',
@@ -940,11 +1040,11 @@ function buildIntegrityErrorResult(
     regulatoryStatus: 'INSUFFICIENT_DATA',
     reasoning,
     breakdown: {
-      cpiScore: 0,
-      compatibilityScore: 0,
-      healthScore: 0,
-      activeMatterScore: 0,
-      commercialScore: 0
+      cpiScore: null,
+      compatibilityScore: null,
+      healthScore: null,
+      activeMatterScore: null,
+      commercialScore: null
     },
     isEvaluable: false
   };

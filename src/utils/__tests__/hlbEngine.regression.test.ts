@@ -72,13 +72,22 @@ export function runHLBRegressionTestSuite() {
     { name: 'Synthetic Proprietary Polymer X99', percentage: 5, category: 'Surfactant' }
   ];
   const unknownReport = evaluateAuthoritativeHLB(unknownIng);
-  assert('Missing HLB Discipline', 'Surfactant with no HLB data reports missing and 0 blended HLB', unknownReport.surfactantsWithMissingHLB === 1, unknownReport.surfactantsWithMissingHLB, 1);
+  assert('Missing HLB Discipline', 'Surfactant with no HLB data reports missing', unknownReport.surfactantsWithMissingHLB === 1, unknownReport.surfactantsWithMissingHLB, 1);
+  assert('Missing HLB Discipline', 'No valid HLB is emitted when the only surfactant HLB is unknown', Number.isNaN(unknownReport.blendedHLB), unknownReport.blendedHLB, 'NaN / unavailable');
   assert('Missing HLB Discipline', 'Not fully authoritative when data missing', unknownReport.isFullyAuthoritative === false, unknownReport.isFullyAuthoritative, false);
 
   // 5. Zero Proportion & Empty Formulation Safety
   const emptyReport = evaluateAuthoritativeHLB([]);
-  assert('Edge Safety', 'Empty formula yields blended HLB = 0', emptyReport.blendedHLB === 0, emptyReport.blendedHLB, 0);
+  assert('Edge Safety', 'Empty formula yields unavailable HLB', Number.isNaN(emptyReport.blendedHLB), emptyReport.blendedHLB, 'NaN / unavailable');
   assert('Edge Safety', 'Empty formula hasSurfactants is false', emptyReport.hasSurfactants === false, emptyReport.hasSurfactants, false);
+
+  const unknownAssayReport = evaluateAuthoritativeHLB([
+    { name: 'SLES 70%', percentage: 10, category: 'Anionic Surfactant' }
+  ]);
+  assert('Missing Active Matter Discipline', 'Missing SLES assay cannot be treated as 0% active or as a valid HLB blend', Number.isNaN(unknownAssayReport.blendedHLB) && unknownAssayReport.surfactantsWithMissingHLB > 0, { hlb: unknownAssayReport.blendedHLB, missing: unknownAssayReport.surfactantsWithMissingHLB }, 'unavailable HLB');
+
+  const ambiguousName = HLBEngine.resolveIngredientHLB({ name: 'Tea Tree Oil', percentage: 5 });
+  assert('Identity Collision Protection', 'Tea Tree Oil does not resolve through the TEA substring', ambiguousName.hlb === null && ambiguousName.dataSource === 'missing', { hlb: ambiguousName.hlb, source: ambiguousName.dataSource }, { hlb: null, source: 'missing' });
 
   // 6. Explicit Override Respect
   const overrideIng: FormulationIngredient[] = [
@@ -94,6 +103,7 @@ export function runHLBRegressionTestSuite() {
   ]);
   assertNear('Legacy Wrapper', 'calculateHLB tuple wrapper matches 11.79', legacyVal, 11.79, 0.02);
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const total = results.length;
   const passed = results.filter(r => r.passed).length;
   const failed = total - passed;

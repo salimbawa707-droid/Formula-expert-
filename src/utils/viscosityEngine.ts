@@ -53,7 +53,8 @@ export type RheologyBehavior =
   | 'Thixotropic' 
   | 'Yield Stress Fluid' 
   | 'Viscoelastic Wormlike Gel' 
-  | 'Unsupported (Dry Powder / Solid)';
+  | 'Unsupported (Dry Powder / Solid)'
+  | 'Unknown / Not Evaluated';
 
 export type ViscosityMechanism = 
   | 'Micellar Rod / Salt Curve' 
@@ -61,7 +62,8 @@ export type ViscosityMechanism =
   | 'Alkali-Swellable Polymer Gel' 
   | 'Mixed Micellar-Polymer Matrix' 
   | 'Solvent / Dilute Aqueous' 
-  | 'Unsupported Solid / Powder';
+  | 'Unsupported Solid / Powder'
+  | 'Unknown / Not Evaluated';
 
 export type ViscosityRating = 
   | 'Water-Thin' 
@@ -71,7 +73,8 @@ export type ViscosityRating =
   | 'Rich Gel' 
   | 'High Viscosity Paste' 
   | 'Over-Salted / Phase Separation Risk' 
-  | 'Not Applicable (Solid / Powder)';
+  | 'Not Applicable (Solid / Powder)'
+  | 'Unavailable';
 
 export interface ShearRateProfile {
   zeroShearViscosityCp: number;      // Rest / suspension capability
@@ -293,24 +296,106 @@ export class ViscosityEngine {
   ): ViscosityReport {
     const list = Array.isArray(ingredients) ? ingredients : [];
     const productCategory = (options.productCategory || '').trim();
+    const unavailableReport = (reason: string): ViscosityReport => ({
+      viscosityCp: Number.NaN,
+      estViscosityCps: Number.NaN,
+      viscosityRange: 'Unavailable — complete formula inputs required',
+      rating: 'Unavailable',
+      confidence: 'Unsupported',
+      dataSource: 'unsupported',
+      behavior: 'Unknown / Not Evaluated',
+      mechanism: 'Unknown / Not Evaluated',
+      isFluid: false,
+      shearProfile: {
+        zeroShearViscosityCp: Number.NaN,
+        mediumShearViscosityCp: Number.NaN,
+        highShearViscosityCp: Number.NaN,
+        flowIndexN: Number.NaN,
+        yieldStressPa: Number.NaN,
+        recommendedSpindle: 'Not evaluated'
+      },
+      temperatureProfile: {
+        temp4C_Cp: Number.NaN,
+        temp25C_Cp: Number.NaN,
+        temp40C_Cp: Number.NaN,
+        activationEnergyKjMol: Number.NaN,
+        coldGelRisk: false,
+        hotThinningRisk: false
+      },
+      saltCurve: {
+        electrolytePct: Number.NaN,
+        peakSaltPct: Number.NaN,
+        curveRegion: 'sub_critical',
+        saltingOutRisk: false,
+        recommendedSaltAdjustment: 'Not evaluated'
+      },
+      contributingFactors: [],
+      diagnostics: [`INSUFFICIENT_DATA: ${reason}`],
+      warnings: [reason],
+      recommendations: ['Provide a complete 100% formulation, valid ingredient percentages, and grade-specific surfactant active assays before evaluating viscosity.']
+    });
 
     // Step 1: Detect Unsupported / Non-Fluid States (Powders, Bars, Tablets)
     const isSolidCategory = 
       /powder|bar|soap bar|tablet|block|dry blend|granule|pellet/i.test(productCategory);
     
-    const activeMatterReport = options.activeMatterReport || ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
+    if (list.length === 0) return unavailableReport('No ingredient composition was supplied; pure-water viscosity is not substituted for an empty formula.');
+    let totalFormulaPct = 0;
+    for (const [index, ing] of list.entries()) {
+      const rawPct = ing?.percentage ?? ing?.percent ?? (ing as any)?.percentageInFormula;
+      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+        return unavailableReport(`Ingredient ${ing?.name || index + 1} has a missing or invalid percentage.`);
+      }
+      totalFormulaPct += pct;
+    }
+    if (Math.abs(totalFormulaPct - 100) > 0.05) {
+      return unavailableReport(`Ingredient percentages total ${totalFormulaPct.toFixed(3)}%, not 100.000%; viscosity cannot be estimated for an incomplete composition.`);
+    }
+
+    // Resolve the exact supplied ingredient rows at this boundary. A caller-provided
+    // aggregate report may belong to another formula or omit unresolved rows; it is
+    // therefore not sufficient evidence that every surfactant assay is known.
+    const resolvedIngredients = list.map(ing => ({
+      ingredient: ing,
+      resolution: ActiveMatterEngine.resolveIngredientActive(ing)
+    }));
+
+    // Recompute the aggregate from this exact formula. Never trust a caller-provided
+    // aggregate that could be stale or scoped to a different ingredient list.
+    const activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(list, 1.0);
     const totalWaterPct = activeMatterReport.totalWaterPct;
     const totalRawPct = activeMatterReport.totalRawPercentage;
 
-    const isAnhydrousOrSolidFormula = 
+    const isAnhydrousOrSolidFormula =
       isSolidCategory || (totalWaterPct < 5.0 && totalRawPct > 70 && !list.some(i => (i.name || '').toLowerCase().includes('water')));
 
+    // Solid/powder products have no liquid viscosity. Resolve this applicability
+    // boundary before liquid-only surfactant assay requirements.
     if (isAnhydrousOrSolidFormula) {
       return this.createUnsupportedSolidReport(productCategory);
     }
 
-    if (list.length === 0) {
-      return this.createWaterBaselineReport();
+    const hasExplicitActiveAssay = (ingredient: FormulationIngredient): boolean => {
+      const value = ingredient?.activeMatterPct ??
+        (ingredient as any)?.activePercent ??
+        (ingredient as any)?.activeMatterPurity ??
+        (ingredient as any)?.activePct ??
+        (ingredient as any)?.purity;
+      return value !== undefined && value !== null && !(typeof value === 'string' && value.trim() === '');
+    };
+
+    const unresolvedSurfactants = resolvedIngredients.filter(({ ingredient, resolution }) =>
+      resolution.isSurfactant &&
+      (resolution.activeMatterPct === null ||
+        (Boolean(resolution.conflict) && hasExplicitActiveAssay(ingredient)))
+    );
+    if (unresolvedSurfactants.length > 0) {
+      return unavailableReport(
+        `Surfactant active assay is missing or grade-conflicted for: ${unresolvedSurfactants.map(({ ingredient }) => ingredient.name || 'unnamed ingredient').join(', ')}.`
+      );
     }
 
     // Step 2: Extract Surfactant, Polymer, Electrolyte, and Hydrotrope Contributions
@@ -365,15 +450,18 @@ export class ViscosityEngine {
     let hydrotropePct = 0; // SXS, SCS
     let organicSolventPct = 0; // Ethanol, IPA, Propylene Glycol, Glycerin
 
-    list.forEach(ing => {
+    resolvedIngredients.forEach(({ ingredient: ing, resolution }) => {
       const name = (ing.name || '').toLowerCase();
       const role = (ing.role || '').toLowerCase();
       const cat = (ing.category || '').toLowerCase();
-      const rawPct = Number(ing.percentage) || 0;
+      const rawPct = Number(ing.percentage ?? ing.percent ?? (ing as any).percentageInFormula);
       if (rawPct <= 0) return;
 
-      const resolution = ActiveMatterEngine.resolveIngredientActive(ing);
-      const activePct = (rawPct * resolution.activeMatterPct) / 100;
+      // Unknown active matter is blocked above for surfactants. Non-surfactant
+      // active-matter values are not used as surfactant contribution.
+      const activePct = resolution.activeMatterPct === null
+        ? 0
+        : (rawPct * resolution.activeMatterPct) / 100;
 
       // Classify Surfactants
       if (resolution.isSurfactant) {
@@ -702,6 +790,13 @@ export class ViscosityEngine {
         behavior = 'Newtonian';
         confidence = 'Medium';
       }
+    }
+
+    // Unsourced active-matter defaults may support screening calculations, but they
+    // must never inherit High confidence or be presented as supplier-verified assays.
+    if ((activeMatterReport.nonAuthoritativeCount ?? 0) > 0 || activeMatterReport.isFullyAuthoritative === false) {
+      confidence = 'Low';
+      warnings.push('One or more active-matter inputs rely on non-authoritative reference defaults or name-derived estimates; viscosity is a screening estimate and requires supplier COA plus Brookfield measurement.');
     }
 
     // Bound calculated viscosity to physically realistic limits

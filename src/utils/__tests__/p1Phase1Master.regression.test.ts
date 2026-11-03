@@ -222,7 +222,7 @@ export function runP1Phase1MasterTestSuite() {
   assertNear('Chelation Stoichiometry', 'MGDA 38% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0, 155);
   assertNear('Chelation Stoichiometry', 'Sodium Citrate Dihydrate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0, 150);
   assertNear('Chelation Stoichiometry', 'Sodium Gluconate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Gluconate').capacityMgCaCO3PerGram ?? 0, 76);
-  assertNear('Chelation Stoichiometry', 'EDTA Tetrasodium Powder Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram ?? 0, 220);
+  assertNear('Chelation Stoichiometry', 'EDTA Tetrasodium Powder Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram ?? 0, 220);
   assertNear('Chelation Stoichiometry', 'EDTA 39% Liquid Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Tetrasodium EDTA 39% Liquid').capacityMgCaCO3PerGram ?? 0, 103);
   assertNear('Chelation Stoichiometry', 'STPP 94% Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('Sodium Tripolyphosphate (STPP 94%)').capacityMgCaCO3PerGram ?? 0, 180);
   assertNear('Chelation Stoichiometry', 'HEDP Phosphonate Binding Capacity (mg CaCO3 / g)', getChelatorBindingCapacity('HEDP / Etidronate').capacityMgCaCO3PerGram ?? 0, 250);

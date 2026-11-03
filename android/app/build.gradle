@@ -2,10 +2,10 @@ apply plugin: 'com.android.application'
 
 android {
     namespace "com.detergentrnd.formulaexpert"
-    compileSdk 34
+    compileSdk 36
     defaultConfig {
         applicationId "com.detergentrnd.formulaexpert"
-        minSdk 22
+        minSdk 24
         targetSdk 34
         versionCode 10000
         versionName "1.0.0"

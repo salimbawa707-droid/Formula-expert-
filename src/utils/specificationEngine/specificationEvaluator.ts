@@ -234,11 +234,17 @@ export function extractParameterValue(
   if (input.liquidResults) {
     switch (paramKey) {
       case 'massBalance':
-        return { value: input.liquidResults.totalPercentage, provenance: 'CALCULATED', isMeasured: false };
+        return isValidNumber(input.liquidResults.totalPercentage)
+          ? { value: input.liquidResults.totalPercentage, provenance: 'CALCULATED', isMeasured: false }
+          : { value: undefined, provenance: 'INSUFFICIENT_DATA', isMeasured: false };
       case 'activeMatter':
-        return { value: input.liquidResults.activeSurfactants, provenance: 'CALCULATED', isMeasured: false };
+        return isValidNumber(input.liquidResults.activeSurfactants) && input.liquidResults.activeSurfactants >= 0 && input.liquidResults.activeSurfactants <= 100
+          ? { value: input.liquidResults.activeSurfactants, provenance: 'CALCULATED', isMeasured: false }
+          : { value: undefined, provenance: 'INSUFFICIENT_DATA', isMeasured: false };
       case 'ph':
-        return { value: input.liquidResults.pH, provenance: 'CALCULATED', isMeasured: false };
+        return isValidNumber(input.liquidResults.pH) && input.liquidResults.pH >= 0 && input.liquidResults.pH <= 14
+          ? { value: input.liquidResults.pH, provenance: 'CALCULATED', isMeasured: false }
+          : { value: undefined, provenance: 'INSUFFICIENT_DATA', isMeasured: false };
       case 'density':
         if (input.liquidResults.density !== undefined && input.liquidResults.density > 0 && isValidNumber(input.liquidResults.density)) {
           return { value: input.liquidResults.density, provenance: 'CALCULATED', isMeasured: false };
@@ -324,8 +330,23 @@ export function evaluateSpecifications(input: EvaluationInput): SpecificationRep
         }
       }
 
-      // Check min / max bounds
-      if (hasMin && value < param.min!) {
+      // Predicted/calculated values cannot satisfy a parameter explicitly requiring a physical laboratory measurement.
+      // Keep the screening value visible, but do not award PASS or assert a confirmed failure.
+      if (param.requiresLabMeasurement && !isMeasured) {
+        const below = hasMin && value < param.min!;
+        const above = hasMax && value > param.max!;
+        status = 'NOT_TESTED';
+        targetMet = false;
+        if (below) {
+          gapDirection = 'OUT_OF_BOUNDS';
+          statusMessage = `Screening value ${value.toFixed(2)} is below the minimum ${param.min}; physical laboratory measurement is required before any specification verdict.`;
+        } else if (above) {
+          gapDirection = 'OUT_OF_BOUNDS';
+          statusMessage = `Screening value ${value.toFixed(2)} is above the maximum ${param.max}; physical laboratory measurement is required before any specification verdict.`;
+        } else {
+          statusMessage = `Screening value ${value.toFixed(2)} is within the nominal range, but this parameter requires physical laboratory measurement before PASS can be assigned.`;
+        }
+      } else if (hasMin && value < param.min!) {
         status = 'OUT_OF_SPEC';
         statusMessage = `Below minimum threshold (Value: ${value.toFixed(2)}, Min: ${param.min}).`;
         gapDirection = 'OUT_OF_BOUNDS';

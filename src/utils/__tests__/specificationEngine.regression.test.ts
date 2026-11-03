@@ -90,6 +90,17 @@ export function runSpecificationEngineTestSuite(): { passed: number; failed: num
   assert('Matrix A-B. User pH Spec', 'Target is met when measured value equals target', reportB.items[0].targetMet === true, reportB.items[0].targetMet, true);
   assert('Matrix A-B. User pH Spec', 'Provenance is MEASURED', reportB.items[0].provenance === 'MEASURED', reportB.items[0].provenance, 'MEASURED');
 
+  const predictedPHReport = evaluateSpecifications({
+    formulaName: 'Test Liquid A',
+    formulaVersion: '1.0',
+    productCategory: 'Laundry Liquid',
+    parameters: [paramPH],
+    labMeasurements: [],
+    liquidResults: { pH: 10.5 }
+  } as any);
+  assert('Matrix A-B. Predicted pH', 'Predicted pH within target is NOT_TESTED, not PASS', predictedPHReport.items[0].status === 'NOT_TESTED', predictedPHReport.items[0].status, 'NOT_TESTED');
+  assert('Matrix A-B. Predicted pH', 'Predicted pH cannot produce an overall specification PASS', predictedPHReport.verdict.status !== 'PASS', predictedPHReport.verdict.status, 'NOT PASS');
+
   // -------------------------------------------------------------
   // Test C: pH measured outside range -> OUT_OF_SPEC
   // -------------------------------------------------------------
@@ -524,9 +535,9 @@ export function runSpecificationEngineTestSuite(): { passed: number; failed: num
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation filters out injected powder bulkDensity', !liquidEvalWithInjectedPowder.items.some(i => i.parameterKey === 'bulkDensity'), true, true);
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation filters out injected powder dissolutionTime', !liquidEvalWithInjectedPowder.items.some(i => i.parameterKey === 'dissolutionTime'), true, true);
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation retains liquid density parameter', Boolean(liquidEvalWithInjectedPowder.items.some(i => i.parameterKey === 'density')), true, true);
-  assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation evaluates liquid density to PASS', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'density')?.status === 'PASS', true, true);
+  assert('Matrix S-T. Physical Form Routing', 'Predicted liquid density remains NOT_TESTED because the specification requires physical measurement', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'density')?.status === 'NOT_TESTED', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'density')?.status, 'NOT_TESTED');
   assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation unmeasured viscosity is NOT_TESTED', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'viscosity')?.status === 'NOT_TESTED', true, true);
-  assert('Matrix S-T. Physical Form Routing', 'Liquid evaluation evaluates liquid NVR to PASS', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'liquidNVR')?.status === 'PASS', true, true);
+  assert('Matrix S-T. Physical Form Routing', 'Calculated liquid NVR remains NOT_TESTED because the specification requires physical measurement', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'liquidNVR')?.status === 'NOT_TESTED', liquidEvalWithInjectedPowder.items.find(i => i.parameterKey === 'liquidNVR')?.status, 'NOT_TESTED');
 
   // When physical lab measurement for viscosity is supplied:
   const liquidEvalWithLabViscosity = evaluateSpecifications({

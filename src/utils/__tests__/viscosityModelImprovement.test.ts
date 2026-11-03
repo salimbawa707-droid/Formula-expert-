@@ -10,8 +10,8 @@ export function runViscosityModelImprovementTestSuite() {
 
   // 1. Baseline: SLES-based dishwash
   const slesDishwash: FormulationIngredient[] = [
-    { name: 'SLES 70%', percentage: 10, category: 'Anionic Surfactant' }, // 7% active
-    { name: 'CAPB 30%', percentage: 4, category: 'Amphoteric Surfactant' }, // 1.2% active
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' }, // 7% active
+    { name: 'CAPB 30%', percentage: 4, activeMatterPct: 30, category: 'Amphoteric Surfactant' }, // 1.2% active
     { name: 'Sodium Chloride', percentage: 1.5, category: 'Electrolyte' },
     { name: 'Water', percentage: 84.5, category: 'Solvent' }
   ];
@@ -19,22 +19,22 @@ export function runViscosityModelImprovementTestSuite() {
 
   // 2. Baseline: LABSA-based dishwash
   const labsaDishwash: FormulationIngredient[] = [
-    { name: 'LABSA 90%', percentage: 7.7, category: 'Anionic Surfactant' }, // 7% active
+    { name: 'LABSA 90%', percentage: 7.7, activeMatterPct: 90, category: 'Anionic Surfactant' }, // 7% active
     { name: 'CAPB 30%', percentage: 4, category: 'Amphoteric Surfactant' }, // 1.2% active
     { name: 'Sodium Chloride', percentage: 1.5, category: 'Electrolyte' },
     { name: 'Water', percentage: 86.8, category: 'Solvent' }
   ];
   const reportLabsa = ViscosityEngine.evaluateViscosity(labsaDishwash);
 
-  assert('SLES vs LABSA baseline prediction (SLES formulation is structured)', reportSles.viscosityCp > 100, { slesCp: reportSles.viscosityCp }, 'SLES Cp > 100');
-  assert('LABSA vs LABSA baseline prediction (LABSA formulation is structured)', reportLabsa.viscosityCp > 100, { labsaCp: reportLabsa.viscosityCp }, 'LABSA Cp > 100');
+  assert('SLES baseline with unassayed CAPB is withheld', reportSles.confidence === 'Low' && Number.isFinite(reportSles.viscosityCp) && reportSles.dataSource === 'model_derived', { confidence: reportSles.confidence, slesCp: reportSles.viscosityCp, diagnostics: reportSles.diagnostics }, 'Low-confidence model_derived screening only until CAPB assay and bench viscosity are verified');
+  assert('LABSA baseline with unassayed CAPB and no neutralization evidence is withheld', reportLabsa.confidence === 'Low' && Number.isFinite(reportLabsa.viscosityCp) && reportLabsa.dataSource === 'model_derived', { confidence: reportLabsa.confidence, labsaCp: reportLabsa.viscosityCp, diagnostics: reportLabsa.diagnostics }, 'Low-confidence model_derived screening only; not a measured or verified viscosity');
 
   // 3. Unknown surfactant: Should return lower confidence
   const unknownSurfactant: FormulationIngredient[] = [
     { name: 'Exotic-Non-Existent-Chemical', percentage: 10, category: 'Unknown' } // Explicitly trigger missing
   ];
   const reportUnknown = ViscosityEngine.evaluateViscosity(unknownSurfactant);
-  assert('Unknown surfactant confidence is Low', reportUnknown.confidence === 'Low' || reportUnknown.confidence === 'Medium', reportUnknown.confidence, 'Low or Medium');
+  assert('Unknown surfactant is explicitly unsupported rather than assigned guessed rheology', reportUnknown.confidence === 'Unsupported' && !Number.isFinite(reportUnknown.viscosityCp), { confidence: reportUnknown.confidence, viscosityCp: reportUnknown.viscosityCp, diagnostics: reportUnknown.diagnostics }, 'Unsupported / unavailable');
 
   // 4. Powder/Solid inapplicability
   const powder: FormulationIngredient[] = [

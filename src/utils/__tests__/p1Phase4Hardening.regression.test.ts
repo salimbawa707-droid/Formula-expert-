@@ -61,7 +61,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   // --------------------------------------------------------------------------
   // REQUIREMENT 1: Default Formula Provenance & Unmeasured Safeguards
   // --------------------------------------------------------------------------
-  const defaultRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID');
+  const defaultRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Default Formula isMeasured is False', defaultRes.isMeasured === false, defaultRes.isMeasured, false);
   assert('Default Formula Provenance is PREDICTED', defaultRes.provenance === 'PREDICTED', defaultRes.provenance, 'PREDICTED');
   assert('Default Formula Prediction Variance is Undefined', defaultRes.predictionVariance === undefined, defaultRes.predictionVariance, undefined);
@@ -83,7 +83,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
     testDate: '2026-09-29',
     operator: 'Lead Formulation Chemist'
   };
-  const measuredRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID', labData);
+  const measuredRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID', labData, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Measured Result isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
   assert('Composite CPI remains PREDICTED with one measured KPI', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
   assert('Measured Model Type Refers to Standard Protocol', measuredRes.modelType === 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL', true, true);
@@ -108,7 +108,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
     measuredSoilRemovalPct: 40.0,
     testMethod: 'ASTM D4265 Terg-O-Tometer'
   };
-  const divergentRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID', divergentLabData);
+  const divergentRes = calculateCleaningPerformance(sampleLaundryFormula, 8.5, 'LAUNDRY_LIQUID', divergentLabData, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('High Variance (>20%) Generates Negative Factor Warning', divergentRes.keyNegativeFactors.some(f => f.includes('High prediction variance detected')), true, true);
 
   // --------------------------------------------------------------------------
@@ -118,7 +118,7 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
     { name: 'Esterquat 90%', percentage: 6, activeMatterPct: 90, category: 'Cationic Surfactant' },
     { name: 'Water', percentage: 94, category: 'Solvent' }
   ];
-  const softenerRes = calculateCleaningPerformance(softenerFormula, 3.5, 'FABRIC_SOFTENER');
+  const softenerRes = calculateCleaningPerformance(softenerFormula, 3.5, 'FABRIC_SOFTENER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Fabric Softener isCleaningApplicable is False', softenerRes.isCleaningApplicable === false, softenerRes.isCleaningApplicable, false);
   assert('Fabric Softener cleaningScore is Null', softenerRes.cleaningScore === null, softenerRes.cleaningScore, null);
   
@@ -128,17 +128,17 @@ export function runP1Phase4HardeningTestSuite(): { total: number; passed: number
   // --------------------------------------------------------------------------
   // REQUIREMENT 6: Empty Formula / Zero Data Handling
   // --------------------------------------------------------------------------
-  const emptyRes = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID');
-  assert('Empty Formula cpi is 0', emptyRes.cpi === 0, emptyRes.cpi, 0);
+  const emptyRes = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  assert('Empty Formula cpi is unavailable', emptyRes.cpi === null, emptyRes.cpi, null);
   assert('Empty Formula Provenance is INSUFFICIENT_DATA', emptyRes.provenance === 'INSUFFICIENT_DATA', emptyRes.provenance, 'INSUFFICIENT_DATA');
-  assert('Empty Formula Model Type is Insufficient Ingredient Data', emptyRes.modelType === 'Insufficient Ingredient Data', emptyRes.modelType, 'Insufficient Ingredient Data');
-  assert('Empty Formula Limitations States Insufficient Data', emptyRes.limitations.includes('Insufficient formulation ingredient data'), true, true);
+  assert('Empty Formula Model Type is Insufficient Ingredient Data', emptyRes.modelType === 'INSUFFICIENT_DATA_FAIL_CLOSED', emptyRes.modelType, 'INSUFFICIENT_DATA_FAIL_CLOSED');
+  assert('Empty Formula Limitations States Insufficient Data', typeof emptyRes.limitations === 'string' && /insufficient[_ ]data/i.test(emptyRes.limitations), emptyRes.limitations, 'An insufficient-data limitation is required');
 
   // --------------------------------------------------------------------------
   // REQUIREMENT 7: All 13 Canonical Categories Terminology Audit
   // --------------------------------------------------------------------------
   for (const catId of CANONICAL_PRODUCT_CATEGORY_IDS) {
-    const catRes = calculateCleaningPerformance(sampleLaundryFormula, 8.0, catId);
+    const catRes = calculateCleaningPerformance(sampleLaundryFormula, 8.0, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
     assert(`Category Terminology Hardened: ${catId}`, catRes.productCategory === catId, catRes.productCategory, catId);
     
     if (catId !== 'FABRIC_SOFTENER') {

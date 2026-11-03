@@ -334,10 +334,10 @@ export function runPhase10ConsistencyTestSuite(): {
 
   assert(
     'Defect 2: Routing Integrity',
-    'Cleaning result CPI is calculated deterministically',
-    hardWaterResult.cleaningResult.cpi > 0,
-    hardWaterResult.cleaningResult.cpi,
-    '> 0'
+    'Cleaning CPI remains unavailable when no pH-active chemistry can establish wash-liquor pH',
+    hardWaterResult.cleaningResult.cpi === null && hardWaterResult.cleaningResult.provenance === 'INSUFFICIENT_DATA',
+    { cpi: hardWaterResult.cleaningResult.cpi, provenance: hardWaterResult.cleaningResult.provenance },
+    'null / INSUFFICIENT_DATA'
   );
 
   // =========================================================================
@@ -378,6 +378,7 @@ export function runPhase10ConsistencyTestSuite(): {
     true
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
   const total = results.length;

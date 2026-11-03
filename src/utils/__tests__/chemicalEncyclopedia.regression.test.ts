@@ -4,7 +4,8 @@ import {
   searchUniversalIngredients,
   UniversalIngredient
 } from '../../data/universalIngredientLibrary';
-import { calculateActiveMatter, calculateBatchCost } from '../calculators';
+import { calculateActiveMatter } from '../calculators';
+import { calculateFormulaCost } from '../costingEngine';
 
 export function runChemicalEncyclopediaTestSuite() {
   console.log('================================================================');
@@ -173,7 +174,8 @@ export function runChemicalEncyclopediaTestSuite() {
     }
   ];
   const totalActiveMatter = calculateActiveMatter(testFormula as any);
-  const batchCost = calculateBatchCost(testFormula as any, 100);
+  const costReport = calculateFormulaCost(testFormula as any, 100);
+  const batchCost = costReport.totalBatchCost;
   // Expected active matter: 10 * 0.28 + 10 * 0.70 = 2.8 + 7.0 = 9.8%
   // Expected batch RM cost: (10% of 100kg * $0.85) + (10% of 100kg * $1.85) = 10 * 0.85 + 10 * 1.85 = 8.5 + 18.5 = $27.00
   assert(

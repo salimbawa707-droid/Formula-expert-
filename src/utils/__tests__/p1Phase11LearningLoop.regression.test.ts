@@ -62,8 +62,14 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
     operator: 'Dr. Evelyn Carter',
     testConditions: {
       temperatureC: 25,
+      pH: 8.5,
       waterHardnessPpm: 150,
-      dosageGramsPerLiter: 2.0
+      dosageGramsPerLiter: 2.0,
+      washVolumeLiters: 10,
+      batchSizeKg: 100,
+      substrate: 'cotton',
+      soilType: 'standard sebum',
+      washTimeMinutes: 30
     },
     ingredients: baseIngredients,
     measurements: {
@@ -73,9 +79,9 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
 
   assert('Trial 1 successfully registered', typeof trial1.trialId === 'string', true, true);
   assert('Trial 1 registered active category', trial1.categoryId === 'LAUNDRY_LIQUID', trial1.categoryId, 'LAUNDRY_LIQUID');
-  assert('Trial 1 predicted baseline cleaning score', typeof trial1.predictions.cleaningScore === 'number', true, true);
-  assert('Trial 1 has correct absolute error calculation', typeof trial1.errors.cleaningScore.absoluteError === 'number', true, true);
-  assert('Trial 1 is comparable', trial1.isComparable, true, true);
+  assert('Trial 1 predicts cleaning score from explicit pH and matched wash scenario', Number.isFinite(trial1.predictions.cleaningScore), true, true);
+  assert('Trial 1 calculates prediction error only from available prediction', Number.isFinite(trial1.errors.cleaningScore?.absoluteError), true, true);
+  assert('Trial 1 is comparable with complete matched wash conditions', trial1.isComparable, true, true);
 
   // --------------------------------------------------------------------------
   // TEST GROUP 2: Outlier & Replicate Statistical Tracking
@@ -117,7 +123,7 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
     formulaVersion: '1.0.0',
     categoryId: 'LAUNDRY_LIQUID',
     operator: 'Lab Tech',
-    testConditions: { temperatureC: 25, waterHardnessPpm: 150 },
+    testConditions: { temperatureC: 25, pH: 8.5, waterHardnessPpm: 150, dosageGramsPerLiter: 2.0, washVolumeLiters: 10, batchSizeKg: 100, substrate: 'cotton', soilType: 'standard sebum', washTimeMinutes: 30 },
     ingredients: baseIngredients,
     measurements: { cleaningScore: 86.5 }
   });
@@ -128,7 +134,7 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
     formulaVersion: '1.0.0',
     categoryId: 'LAUNDRY_LIQUID',
     operator: 'Lab Tech',
-    testConditions: { temperatureC: 25, waterHardnessPpm: 150 },
+    testConditions: { temperatureC: 25, pH: 8.5, waterHardnessPpm: 150, dosageGramsPerLiter: 2.0, washVolumeLiters: 10, substrate: 'cotton', soilType: 'standard sebum', washTimeMinutes: 30 },
     ingredients: baseIngredients,
     measurements: { cleaningScore: 86.0 }
   });
@@ -139,7 +145,7 @@ export function runP1Phase11LearningLoopTestSuite(): { total: number; passed: nu
     formulaVersion: '1.0.0',
     categoryId: 'LAUNDRY_LIQUID',
     operator: 'Lab Tech',
-    testConditions: { temperatureC: 25, waterHardnessPpm: 150 },
+    testConditions: { temperatureC: 25, pH: 8.5, waterHardnessPpm: 150, dosageGramsPerLiter: 2.0, washVolumeLiters: 10, substrate: 'cotton', soilType: 'standard sebum', washTimeMinutes: 30 },
     ingredients: baseIngredients,
     measurements: { cleaningScore: 85.8 }
   });

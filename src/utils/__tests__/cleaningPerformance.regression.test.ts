@@ -64,9 +64,23 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   assertNear('Zero Preservation', 'Explicit zero active matter', calculateActiveMatter(formulaAlias as any), 7.68);
 
   // 4. CPI Baseline & Cleaning Score Baseline
-  const perfBaseline = calculateCleaningPerformance(formula1 as any, 8.0, 'LAUNDRY_LIQUID');
-  const cpiBaseline = calculateCPI(formula1 as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfBaseline = calculateCleaningPerformance(formula1 as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const cpiBaseline = calculateCPI(formula1 as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assertEqual('CPI & Cleaning Score Equality', 'calculateCPI matches cleaningScore', cpiBaseline, perfBaseline.cleaningScore);
+
+  // Missing pH must not silently inherit a neutral default and emit predictive KPIs.
+  const perfWithoutPH = calculateCleaningPerformance(formula1 as any, undefined, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  assertEqual('Fail-Closed Inputs', 'Missing pH provenance is INSUFFICIENT_DATA', perfWithoutPH.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Missing pH emits no category KPIs', perfWithoutPH.categoryKPIs.length, 0);
+
+  // Unknown active assay on a declared surfactant must not be converted to 0% active.
+  const unknownAssayFormula = [
+    { name: 'Mystery Anionic Surfactant XZ-17', percentage: 10, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, activeMatterPct: 0, category: 'Solvent' }
+  ];
+  const perfWithUnknownAssay = calculateCleaningPerformance(unknownAssayFormula as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  assertEqual('Fail-Closed Inputs', 'Unknown surfactant assay provenance is INSUFFICIENT_DATA', perfWithUnknownAssay.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Unknown surfactant assay emits no category KPIs', perfWithUnknownAssay.categoryKPIs.length, 0);
 
   // 5. No-Enzyme vs Enzyme Formula
   const formulaNoEnzyme = [
@@ -78,8 +92,8 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
     { name: 'Protease Enzyme', percentage: 0.5, activeMatterPct: 100, category: 'Enzymes' },
     { name: 'Water', percentage: 89.5, activeMatterPct: 0 }
   ];
-  const perfNoEnz = calculateCleaningPerformance(formulaNoEnzyme as any, 8.0, 'LAUNDRY_LIQUID');
-  const perfWithEnz = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfNoEnz = calculateCleaningPerformance(formulaNoEnzyme as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfWithEnz = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assertEqual('Enzyme Bonus', 'No enzyme bonus is 0', perfNoEnz.enzymeBonus, 0);
   assertNear('Enzyme Bonus', 'Enzyme bonus is applied (>0)', perfWithEnz.enzymeBonus > 0 ? 1 : 0, 1);
   assertNear('Enzyme Bonus', 'Enzyme formula score higher than no-enzyme', (perfWithEnz.cleaningScore ?? 0) > (perfNoEnz.cleaningScore ?? 0) ? 1 : 0, 1);
@@ -90,30 +104,51 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
     { name: 'Sodium Citrate', percentage: 3, activeMatterPct: 100, category: 'Builder / Chelator' },
     { name: 'Water', percentage: 87, activeMatterPct: 0 }
   ];
-  const perfWithBuilder = calculateCleaningPerformance(formulaWithBuilder as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfWithBuilder = calculateCleaningPerformance(formulaWithBuilder as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assertNear('Builder Contribution', 'Builder contribution applied (>0)', perfWithBuilder.builderContribution > 0 ? 1 : 0, 1);
   assertNear('Builder Contribution', 'Builder formula score higher than base', (perfWithBuilder.cleaningScore ?? 0) > (perfNoEnz.cleaningScore ?? 0) ? 1 : 0, 1);
 
   // 7. Formula A -> B -> C -> A Switching Reactivity
   const formulaA = [
-    { name: 'SLES 70%', percentage: 15, activeMatterPct: 70, category: 'Anionic Surfactant' }
+    { name: 'SLES 70%', percentage: 15, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 85, activeMatterPct: 0, category: 'Solvent' }
   ];
   const formulaB = [
-    { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, category: 'Anionic Surfactant' }
+    { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 95, activeMatterPct: 0, category: 'Solvent' }
   ];
-  const perfA = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID');
-  const perfB = calculateCleaningPerformance(formulaB as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfA = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfB = calculateCleaningPerformance(formulaB as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assertNear('Formula Switching', 'Formula A score higher than Formula B', (perfA.cleaningScore ?? 0) > (perfB.cleaningScore ?? 0) ? 1 : 0, 1);
   
   // Re-evaluation of Formula A produces identical result (Idempotency & No Stale State)
-  const perfA2 = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID');
+  const perfA2 = calculateCleaningPerformance(formulaA as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assertEqual('Idempotency', 'Re-evaluation produces identical result', perfA2.cleaningScore, perfA.cleaningScore);
 
   // 8. AIFormulator vs SmartFormulaAnalyzerPro Determinism
   // Both components consuming calculateCleaningPerformance on formulaWithEnzyme obtain identical output
-  const cpiAIFormulator = calculateCPI(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID');
-  const cpiAnalyzer = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID').overallScore;
+  const cpiAIFormulator = calculateCPI(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const cpiAnalyzer = calculateCleaningPerformance(formulaWithEnzyme as any, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }).overallScore;
   assertEqual('Cross-Component Determinism', 'AIFormulator CPI equals SmartFormulaAnalyzerPro Overall CPI', cpiAIFormulator, cpiAnalyzer);
+
+  const missingPercentagePerformance = calculateCleaningPerformance(
+    [{ name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' }, { name: 'Water', activeMatterPct: 0, category: 'Solvent' }] as any,
+    8.0,
+    'LAUNDRY_LIQUID',
+    undefined,
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
+  );
+  assertEqual('Fail-Closed Inputs', 'Missing ingredient percentage blocks cleaning performance', missingPercentagePerformance.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Missing ingredient percentage emits no CPI', missingPercentagePerformance.cpi, null);
+
+  const unbalancedPerformance = calculateCleaningPerformance(
+    [{ name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' }, { name: 'Water', percentage: 80, activeMatterPct: 0, category: 'Solvent' }] as any,
+    8.0,
+    'LAUNDRY_LIQUID',
+    undefined,
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
+  );
+  assertEqual('Fail-Closed Inputs', 'Unbalanced formula blocks cleaning performance', unbalancedPerformance.provenance, 'INSUFFICIENT_DATA');
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;

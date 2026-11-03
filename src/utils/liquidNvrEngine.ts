@@ -15,13 +15,13 @@ export interface FormulationIngredient {
   activePercent?: number;
 }
 
-export type NVRStatus = 'COMPLETE' | 'INSUFFICIENT_DATA' | 'NVR_DATA_REQUIRED';
+export type NVRStatus = 'COMPLETE' | 'INSUFFICIENT_DATA' | 'NVR_DATA_REQUIRED' | 'INVALID_INPUT';
 
 export interface NVRResult {
-  nvrPercentage: number;
-  nvrMassKg: number;
+  nvrPercentage: number | null;
+  nvrMassKg: number | null;
   knownMassPercent: number;
-  unknownMassPercent: number;
+  unknownMassPercent: number | null;
   dataCompleteness: number; // 0.0 to 100.0%
   status: NVRStatus;
   isComplete: boolean;
@@ -37,22 +37,46 @@ export interface NVRResult {
  */
 export function calculateLiquidNVR(
   ingredients: FormulationIngredient[],
-  batchSizeKg: number = 100
+  batchSizeKg?: number
 ): NVRResult {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  
+  const invalid = (reason: string, unknownIngredients: string[] = []): NVRResult => ({
+    nvrPercentage: null,
+    nvrMassKg: null,
+    knownMassPercent: 0,
+    unknownMassPercent: null,
+    dataCompleteness: 0,
+    status: 'INVALID_INPUT',
+    isComplete: false,
+    unknownIngredients,
+    provenance: 'INSUFFICIENT_DATA',
+    limitations: [reason, 'A complete 100% formulation and a valid batch size are required before finished-product NVR can be calculated.']
+  });
+  if (safeIngs.length === 0) return invalid('No ingredient composition was supplied.');
+  if (typeof batchSizeKg !== 'number' || !Number.isFinite(batchSizeKg) || batchSizeKg <= 0) {
+    return invalid('Batch size is missing or invalid; no 100 kg default is substituted.');
+  }
+
   let knownNvrSum = 0;
   let knownMassSum = 0;
   let unknownMassSum = 0;
   const unknownIngredients: string[] = [];
 
-  for (const ing of safeIngs) {
-    const percentage = Number(ing.percentage ?? ing.percent ?? 0);
-    if (percentage <= 0) continue;
+  for (const [index, ing] of safeIngs.entries()) {
+    const rawPercentage = ing.percentage ?? ing.percent;
+    const percentage = rawPercentage === undefined || rawPercentage === null || (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
+      ? Number.NaN
+      : Number(rawPercentage);
+    if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+      return invalid(`Ingredient ${ing.name || index + 1} has a missing or invalid percentage.`, [ing.name || 'Unknown Ingredient']);
+    }
+    if (percentage === 0) continue;
 
-    if (ing.nonVolatileFraction !== undefined && ing.nonVolatileFraction !== null && !isNaN(ing.nonVolatileFraction)) {
-      // Authoritative non-volatile fraction provided (clamped 0.0 to 1.0)
-      const fraction = Math.max(0, Math.min(1.0, ing.nonVolatileFraction));
+    if (ing.nonVolatileFraction !== undefined && ing.nonVolatileFraction !== null) {
+      if (!Number.isFinite(ing.nonVolatileFraction) || ing.nonVolatileFraction < 0 || ing.nonVolatileFraction > 1) {
+        return invalid(`Ingredient ${ing.name || index + 1} has an invalid non-volatile fraction; values outside 0–1 are rejected, not clamped.`, [ing.name || 'Unknown Ingredient']);
+      }
+      const fraction = ing.nonVolatileFraction;
       knownNvrSum += percentage * fraction;
       knownMassSum += percentage;
     } else if (isKnownVolatile(ing)) {
@@ -71,14 +95,14 @@ export function calculateLiquidNVR(
   const unknownMassPercent = Number(unknownMassSum.toFixed(2));
   const dataCompleteness = totalFormulaMass > 0
     ? Number(((knownMassSum / totalFormulaMass) * 100).toFixed(1))
-    : 100.0;
-
-  const isComplete = unknownMassPercent === 0;
+    : 0;
+  const massBalanced = Math.abs(totalFormulaMass - 100) <= 0.05;
+  const isComplete = unknownMassPercent === 0 && massBalanced;
   const status: NVRStatus = isComplete ? 'COMPLETE' : 'INSUFFICIENT_DATA';
   const provenance = isComplete ? 'CALCULATED' : 'INSUFFICIENT_DATA';
 
-  const nvrPercentage = Number(knownNvrSum.toFixed(2));
-  const nvrMassKg = Number(((nvrPercentage / 100) * batchSizeKg).toFixed(3));
+  const nvrPercentage = isComplete ? Number(knownNvrSum.toFixed(2)) : null;
+  const nvrMassKg = isComplete ? Number(((nvrPercentage! / 100) * batchSizeKg).toFixed(3)) : null;
 
   return {
     nvrPercentage,
@@ -94,7 +118,9 @@ export function calculateLiquidNVR(
     limitations: [
       'Calculated value represents theoretical non-volatile solids based on ingredient specifications.',
       'Physical oven drying may show minor deviations due to water-of-crystallization retention or volatile co-solvent stripping.',
-      'Laboratory gravimetric measurement is required for certified CoA release testing.'
+      'Laboratory gravimetric measurement is required for certified CoA release testing.',
+      ...(!massBalanced ? [`Formula mass totals ${totalFormulaMass.toFixed(2)}%, not 100.00%; finished-product NVR is withheld.`] : []),
+      ...(unknownMassPercent > 0 ? [`${unknownMassPercent.toFixed(2)}% of formula mass has unknown NVR contribution.`] : [])
     ]
   };
 }
@@ -108,10 +134,10 @@ export function isKnownVolatile(ing: FormulationIngredient): boolean {
 
   // Water / Aqueous carriers
   if (
-    name.includes('water') ||
-    name.includes('aqua') ||
-    name.includes('deionized') ||
-    name.includes('demineralized') ||
+    /\bwater\b/.test(name) ||
+    name === 'aqua' ||
+    name === 'deionized water' ||
+    name === 'demineralized water' ||
     name === 'di water' ||
     name === 'ro water'
   ) {
@@ -123,7 +149,7 @@ export function isKnownVolatile(ing: FormulationIngredient): boolean {
     name.includes('ethanol') ||
     name.includes('isopropyl alcohol') ||
     name.includes('isopropanol') ||
-    name.includes('ipa') ||
+    /\bipa\b/.test(name) ||
     name.includes('denatured alcohol') ||
     name.includes('methanol') ||
     name.includes('acetone') ||

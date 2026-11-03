@@ -51,8 +51,11 @@ export interface PerformanceLabMeasurements {
 }
 
 export interface PerformanceEvaluationOptions {
-  /** Explicit measured/user-supplied wash-water hardness; absent values use a labelled screening assumption only. */
+  /** Explicit measured/user-supplied wash-water hardness. Missing values block the performance calculation. */
   waterHardnessPpm?: number;
+  washVolumeL?: number;
+  washDoseGrams?: number;
+  batchSizeKg?: number;
   compatibilityStatus?: string;
   hasCriticalCompatibilityAlert?: boolean;
 }
@@ -72,24 +75,25 @@ export interface CategoryKPI {
 
 export interface FormulationPerformanceResult {
   productCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
-  cpi: number; // Category Performance Index (0-100)
-  overallScore: number; // Alias for CPI
-  rating: number; // Backward compatibility alias
+  cpi: number | null; // Category Performance Index (0-100), null when not evaluated
+  overallScore: number | null; // Alias for CPI
+  rating: number | null; // Backward compatibility alias
   cleaningScore: number | null; // Null / Not applicable for Fabric Softener
+  conditioningScore: number | null; // Separate non-detergency performance index for conditioning products
   isCleaningApplicable: boolean;
-  performanceIndex: number;
+  performanceIndex: number | null;
   primaryPerformanceDomain: string;
   secondaryPerformanceDomain: string;
-  cleaningPower: 'Outstanding' | 'High' | 'Medium' | 'Low' | 'Conditioning / Non-Detergent';
+  cleaningPower: 'Outstanding' | 'High' | 'Medium' | 'Low' | 'Conditioning / Non-Detergent' | 'Unavailable';
   
   // Specific soil & physical domain sub-scores (0-100)
-  degreasingScore: number;
-  greaseRemoval: number;
-  particulateSoilRemoval: number;
-  foamStabilityScore: number;
-  builderContribution: number;
-  enzymeBonus: number;
-  surfactantSynergy: number;
+  degreasingScore: number | null;
+  greaseRemoval: number | null;
+  particulateSoilRemoval: number | null;
+  foamStabilityScore: number | null;
+  builderContribution: number | null;
+  enzymeBonus: number | null;
+  surfactantSynergy: number | null;
 
   // Category KPIs registry
   categoryKPIs: CategoryKPI[];
@@ -104,7 +108,7 @@ export interface FormulationPerformanceResult {
 
   // Expert Reasoning & Diagnostic Fields
   modelType: string;
-  riskLevel: 'Low' | 'Medium' | 'High';
+  riskLevel: 'Low' | 'Medium' | 'High' | 'UNKNOWN';
   keyPositiveFactors: string[];
   keyNegativeFactors: string[];
   limitations: string;
@@ -130,13 +134,14 @@ export function calculateCleaningPerformance(
   const activeSurfactant = calculateActiveSurfactants(safeIngs);
   const totalActiveMatter = calculateActiveMatter(safeIngs);
 
-  // Parse estimated pH if provided
-  let phVal = 8.0;
-  if (typeof estimatedPH === 'number' && !isNaN(estimatedPH)) {
+  // pH is a required input to this category model. Never substitute a neutral/default
+  // value: doing so can create apparently valid KPIs for an unevaluated formulation.
+  let phVal = Number.NaN;
+  if (typeof estimatedPH === 'number' && Number.isFinite(estimatedPH) && estimatedPH >= 0 && estimatedPH <= 14) {
     phVal = estimatedPH;
   } else if (typeof estimatedPH === 'string' && estimatedPH.trim() !== '') {
-    const parsed = parseFloat(estimatedPH);
-    if (!isNaN(parsed)) phVal = parsed;
+    const parsed = Number(estimatedPH.trim());
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 14) phVal = parsed;
   }
 
   // Surfactant Ionic Distribution Breakdown & Component Classification
@@ -163,14 +168,41 @@ export function calculateCleaningPerformance(
   let hasBleach = false;
   let hasAntiRedeposition = false;
   let siliconeOrEsterquatPct = 0;
+  let missingSurfactantActiveMatter = false;
+  let invalidIngredientPercentage = false;
+  let totalFormulaPercentage = 0;
 
   for (const ing of safeIngs) {
     const name = (ing?.name || '').toLowerCase();
     const cat = (ing?.category || ing?.role || '').toLowerCase();
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    if (pct <= 0) continue;
+    const rawPct = (ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      invalidIngredientPercentage = true;
+      continue;
+    }
+    totalFormulaPercentage += pct;
+    if (pct === 0) continue;
 
-    const active = Number((ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity ?? getDefaultActiveMatter(ing)) / 100;
+    const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
+    const resolvedActive = explicitActive === undefined || explicitActive === null
+      ? getDefaultActiveMatter(ing)
+      : Number(explicitActive);
+    const activeIsValid = typeof resolvedActive === 'number' &&
+      Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100;
+    const looksLikeSurfactant =
+      cat.includes('surfactant') || cat.includes('anionic') || cat.includes('nonionic') ||
+      cat.includes('amphoteric') || cat.includes('cationic') ||
+      ['labsa', 'sles', 'sls', 'aos', 'sulphonate', 'sulfate', 'betaine', 'capb',
+        'amine oxide', 'ethoxylate', 'glucoside', 'esterquat', 'quat', 'cetrimonium'].some(token => name.includes(token));
+    if (looksLikeSurfactant && !activeIsValid) missingSurfactantActiveMatter = true;
+
+    // Never substitute zero for an unavailable surfactant assay. NaN propagates
+    // through any dependent surfactant subtotal, and the fail-closed gate below
+    // withholds every performance score until the required assay is supplied.
+    const active = activeIsValid ? resolvedActive / 100 : Number.NaN;
     const activePct = pct * active;
 
     // Ionic classification
@@ -238,10 +270,82 @@ export function calculateCleaningPerformance(
     }
   }
 
-  // Phase 3 Water Hardness Synchronization
+  // Fail closed when a required scientific input is absent or invalid.
+  // The placeholder zero is retained only for the legacy numeric type contract;
+  // provenance and null KPI values make clear that no score was calculated.
+  const requiresTotalActiveMatter = category === 'FLOOR_CLEANER' || category === 'HAND_WASH';
   const hasExplicitHardness = typeof options?.waterHardnessPpm === 'number' && Number.isFinite(options.waterHardnessPpm) && options.waterHardnessPpm >= 0;
-  const hardnessTargetPpm = hasExplicitHardness ? options!.waterHardnessPpm! : 150;
-  const hardnessResult = calculateWaterHardnessTolerance(safeIngs, hardnessTargetPpm, undefined, undefined, undefined, category);
+  const hasExplicitWashScenario =
+    typeof options?.washVolumeL === 'number' && Number.isFinite(options.washVolumeL) && options.washVolumeL > 0 &&
+    typeof options?.washDoseGrams === 'number' && Number.isFinite(options.washDoseGrams) && options.washDoseGrams > 0 &&
+    typeof options?.batchSizeKg === 'number' && Number.isFinite(options.batchSizeKg) && options.batchSizeKg > 0;
+  const activeMatterUnavailable =
+    missingSurfactantActiveMatter ||
+    !Number.isFinite(activeSurfactant) ||
+    (requiresTotalActiveMatter && !Number.isFinite(totalActiveMatter));
+  const formulaMassUnbalanced = safeIngs.length === 0 || Math.abs(totalFormulaPercentage - 100) > 0.05;
+  // Only LAUNDRY_LIQUID currently applies the wash-water hardness factor in its KPI model.
+  // Do not demand irrelevant hardness inputs for glass, toilet, softener, or other categories.
+  const requiresHardnessScenario = category === 'LAUNDRY_LIQUID';
+  const hardnessUnavailable = requiresHardnessScenario && (!hasExplicitHardness || !hasExplicitWashScenario);
+
+  if (!Number.isFinite(phVal) || activeMatterUnavailable || hardnessUnavailable || invalidIngredientPercentage || formulaMassUnbalanced) {
+    const reason = !Number.isFinite(phVal)
+      ? 'A valid calculated or measured pH (0–14) is required; no default pH is substituted.'
+      : invalidIngredientPercentage
+        ? 'One or more ingredient percentages are missing or invalid; the performance model will not treat them as zero.'
+        : formulaMassUnbalanced
+          ? `Formula percentages total ${totalFormulaPercentage.toFixed(3)}%, not 100.000%; performance cannot be evaluated on an incomplete composition.`
+          : activeMatterUnavailable
+        ? (missingSurfactantActiveMatter || !Number.isFinite(activeSurfactant)
+          ? 'At least one surfactant active-matter input is unknown or invalid; its contribution cannot be treated as zero.'
+          : 'Total active matter is incomplete for this product category; residue/mildness KPIs cannot be calculated safely.')
+        : 'Explicit wash-water hardness, wash volume, detergent dose, and batch size are required; no scenario defaults are substituted.';
+    const cleaningApplicable = category !== 'FABRIC_SOFTENER' && category !== 'UNKNOWN_PRODUCT_CATEGORY';
+    return {
+      productCategory: category,
+      cpi: null as any,
+      overallScore: null as any,
+      rating: null as any,
+      cleaningScore: null,
+      conditioningScore: null,
+      isCleaningApplicable: cleaningApplicable,
+      performanceIndex: null as any,
+      primaryPerformanceDomain: 'Performance evaluation blocked',
+      secondaryPerformanceDomain: 'Required scientific input unavailable',
+      cleaningPower: 'Unavailable',
+      degreasingScore: null as any,
+      greaseRemoval: null as any,
+      particulateSoilRemoval: null as any,
+      foamStabilityScore: null as any,
+      builderContribution: null as any,
+      enzymeBonus: null as any,
+      surfactantSynergy: null as any,
+      categoryKPIs: [],
+      applicableKPIs: {},
+      provenance: 'INSUFFICIENT_DATA',
+      isMeasured: false,
+      modelType: 'INSUFFICIENT_DATA_FAIL_CLOSED',
+      riskLevel: 'UNKNOWN' as any,
+      keyPositiveFactors: [],
+      keyNegativeFactors: [reason],
+      limitations: `INSUFFICIENT_DATA: ${reason} No predicted performance KPI or CPI is authorized until the missing input is supplied.`,
+      labValidationGuidance: 'Resolve missing formulation inputs, then validate performance using the relevant standardized laboratory method.'
+    };
+  }
+
+  // Phase 3 Water Hardness Synchronization
+  const hardnessTargetPpm = options?.waterHardnessPpm;
+  const hardnessResult = requiresHardnessScenario
+    ? calculateWaterHardnessTolerance(
+        safeIngs,
+        hardnessTargetPpm!,
+        options!.washVolumeL!,
+        options!.washDoseGrams!,
+        options!.batchSizeKg!,
+        category
+      )
+    : { status: 'NOT_APPLICABLE' as const };
 
   // Base Surfactant Synergy Multiplier
   let surfactantSynergy = 0;
@@ -279,7 +383,8 @@ export function calculateCleaningPerformance(
   // ==========================================================================
   const categoryKPIs: CategoryKPI[] = [];
   const applicableKPIs: Record<string, number | null> = {};
-  let cpi = 0;
+  let cpi: number | null = 0;
+  let conditioningScore: number | null = null;
   let cleaningScore: number | null = genericScore;
   let isCleaningApplicable = true;
   let primaryPerformanceDomain = '';
@@ -296,12 +401,12 @@ export function calculateCleaningPerformance(
       secondaryPerformanceDomain = 'Enzymatic Stain Breakdown & Hard-Water Robustness';
       
       // Hard water penalty if unchelated
-      const hardnessFactor = hardnessResult.status === 'PASS' ? 1.0 : (hardnessResult.status === 'WARNING' ? 0.90 : 0.75);
+      const hardnessFactor = hardnessResult.status === 'PASS' || hardnessResult.status === 'NOT_APPLICABLE' ? 1.0 : (hardnessResult.status === 'WARNING' ? 0.90 : 0.75);
 
       const particulateKpi = Math.min(98, Math.round((45 + activeSurfactant * 2.8 + builderContribution * 1.5 + (hasNonionic ? 12 : 0)) * hardnessFactor));
       const oilyGreaseKpi = Math.min(98, Math.round(45 + activeSurfactant * 3.0 + (hasNonionic ? 15 : 0) + (hasSolvent ? 8 : 0)));
       const enzymaticKpi = enzymeCount > 0 ? Math.min(98, Math.round((60 + enzymeCount * 15 + enzymePct * 15) * enzymeViability)) : 20;
-      const builderKpi = Math.min(95, Math.round(hardnessResult.status === 'PASS' ? 90 : (hardnessResult.status === 'WARNING' ? 70 : 35)));
+      const builderKpi = Math.min(95, Math.round(hardnessResult.status === 'PASS' || hardnessResult.status === 'NOT_APPLICABLE' ? 90 : (hardnessResult.status === 'WARNING' ? 70 : 35)));
       const fabricCompatKpi = (phVal >= 7.0 && phVal <= 9.5) ? 95 : Math.max(50, Math.round(95 - Math.abs(phVal - 8.5) * 10));
 
       cpi = Math.min(100, Math.max(0, Math.round(
@@ -601,11 +706,14 @@ export function calculateCleaningPerformance(
       const antiStaticKpi = (!hasAnionicContamination && cationicLoading > 0) ? Math.min(95, Math.round(60 + cationicLoading * 4)) : 10;
       const phStabilityKpi = (phVal >= 2.5 && phVal <= 4.5) ? 95 : Math.max(30, Math.round(95 - Math.abs(phVal - 3.5) * 20));
 
-      cpi = Math.min(100, Math.max(0, Math.round(
+      conditioningScore = Math.min(100, Math.max(0, Math.round(
         softeningKpi * 0.50 +
         antiStaticKpi * 0.30 +
         phStabilityKpi * 0.20
       )));
+      // Fabric softener has no detergent-cleaning CPI. Keep conditioning
+      // performance in its own field rather than leaking it into cpi.
+      cpi = null;
 
       categoryKPIs.push(
         { id: 'fabricSofteningIndex', name: 'Predicted Fabric Softening Index', value: softeningKpi, unit: 'pts', provenance: 'PREDICTED', status: softeningKpi >= 75 ? 'PREDICTIVE_ONLY' : 'WARNING', description: 'Predicted cationic surfactant deposition providing soft hand-feel (Model Estimate)', targetMin: 75, isApplicable: true },
@@ -721,7 +829,8 @@ export function calculateCleaningPerformance(
       secondaryPerformanceDomain = 'Generic Surfactant / Builder Evaluation (Category Unspecified)';
       isCleaningApplicable = false;
       cleaningScore = null;
-      cpi = genericScore;
+      conditioningScore = null;
+      cpi = null;
       categoryKPIs.length = 0;
       keyNegativeFactors.push('Product category is unassigned; cleaning/performance model is not validated without a canonical product category.');
       break;
@@ -732,11 +841,11 @@ export function calculateCleaningPerformance(
   let cleaningPower: FormulationPerformanceResult['cleaningPower'] = 'Low';
   if (!isCleaningApplicable) {
     cleaningPower = 'Conditioning / Non-Detergent';
-  } else if (cpi >= 90) {
+  } else if (cpi !== null && cpi >= 90) {
     cleaningPower = 'Outstanding';
-  } else if (cpi >= 75) {
+  } else if (cpi !== null && cpi >= 75) {
     cleaningPower = 'High';
-  } else if (cpi >= 60) {
+  } else if (cpi !== null && cpi >= 60) {
     cleaningPower = 'Medium';
   }
 
@@ -748,8 +857,9 @@ export function calculateCleaningPerformance(
   // Empty Formula Override Safeguard
   const isEmptyFormula = safeIngs.length === 0;
   if (isEmptyFormula) {
-    cpi = 0;
+    cpi = isCleaningApplicable ? 0 : null;
     if (isCleaningApplicable) cleaningScore = 0;
+    if (!isCleaningApplicable) conditioningScore = null;
     degreasingScore = 0;
     particulateSoilRemoval = 0;
     foamStabilityScore = 0;
@@ -789,7 +899,8 @@ export function calculateCleaningPerformance(
   }
 
   if (calibrationFactor !== 1.0) {
-    cpi = Math.min(100, Math.max(0, Math.round(cpi * calibrationFactor)));
+    if (cpi !== null) cpi = Math.min(100, Math.max(0, Math.round(cpi * calibrationFactor)));
+    if (conditioningScore !== null) conditioningScore = Math.min(100, Math.max(0, Math.round(conditioningScore * calibrationFactor)));
     if (cleaningScore !== null) {
       cleaningScore = Math.min(100, Math.max(0, Math.round(cleaningScore * calibrationFactor)));
     }
@@ -855,11 +966,12 @@ export function calculateCleaningPerformance(
       ? 'MODEL_NOT_VALIDATED'
       : 'UNVALIDATED_ENGINEERING_HEURISTIC_SCREENING_MODEL');
 
-  const riskLevel: 'Low' | 'Medium' | 'High' = isEmptyFormula ? 'High' : (cpi >= 75 ? 'Low' : (cpi >= 50 ? 'Medium' : 'High'));
+  const overallPerformance = isCleaningApplicable ? cpi : conditioningScore;
+  const riskLevel: 'Low' | 'Medium' | 'High' = isEmptyFormula ? 'High' : (overallPerformance !== null && overallPerformance >= 75 ? 'Low' : (overallPerformance !== null && overallPerformance >= 50 ? 'Medium' : 'High'));
 
   const limitations = isEmptyFormula
     ? 'Insufficient formulation ingredient data to calculate performance score.'
-    : `SCREENING MODEL ONLY: CPI/KPI coefficients and thresholds are engineering heuristics, not experimentally calibrated predictive models. Scores are not measured removal percentages and must not be used as certified product-performance claims. ${hasExplicitHardness ? 'Water hardness was supplied as an input; its measurement provenance remains user-declared.' : 'Water hardness was not supplied; 150 mg/L as CaCO3 is an assumed screening scenario, not a measurement.'} ${isMeasured ? 'Some individual laboratory measurements were supplied; only the matching KPI is labelled MEASURED. The composite CPI remains PREDICTED.' : 'No laboratory measurements were supplied.'} ${hasUnmappedDescalingMeasurement ? 'A descaling-rate measurement was supplied but is not mapped to a validated performance KPI; it was not used for KPI status or variance.' : ''} Standardized Terg-O-Tometer stain-swatch (ASTM D4265/AATCC) or relevant product-specific panel testing is still required.`;
+    : `SCREENING MODEL ONLY: CPI/KPI coefficients and thresholds are engineering heuristics, not experimentally calibrated predictive models. Scores are not measured removal percentages and must not be used as certified product-performance claims. Water hardness was supplied as an input; its measurement provenance remains user-declared. ${isMeasured ? 'Some individual laboratory measurements were supplied; only the matching KPI is labelled MEASURED. The composite CPI remains PREDICTED.' : 'No laboratory measurements were supplied.'} ${hasUnmappedDescalingMeasurement ? 'A descaling-rate measurement was supplied but is not mapped to a validated performance KPI; it was not used for KPI status or variance.' : ''} Standardized Terg-O-Tometer stain-swatch (ASTM D4265/AATCC) or relevant product-specific panel testing is still required.`;
 
   const labValidationGuidance = isCleaningApplicable
     ? 'Standardized soil swatch testing (e.g. EMPA/wfk test monitors under ASTM D4265 / AATCC 135) required for commercial performance claims.'
@@ -868,11 +980,12 @@ export function calculateCleaningPerformance(
   return {
     productCategory: category,
     cpi,
-    overallScore: cpi,
-    rating: cpi,
+    overallScore: overallPerformance,
+    rating: overallPerformance,
     cleaningScore,
+    conditioningScore,
     isCleaningApplicable,
-    performanceIndex: cpi,
+    performanceIndex: overallPerformance,
     primaryPerformanceDomain,
     secondaryPerformanceDomain,
     cleaningPower,
@@ -909,7 +1022,7 @@ export function calculateCPI(
   categoryOrId?: string,
   labMeasurements?: PerformanceLabMeasurements,
   options?: PerformanceEvaluationOptions
-): number {
+): number | null {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   const res = calculateCleaningPerformance(safeIngs, estimatedPH, categoryOrId, labMeasurements, options);
   return res.cpi;

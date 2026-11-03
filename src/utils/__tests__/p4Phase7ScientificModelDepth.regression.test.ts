@@ -218,7 +218,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
       { name: 'Water', percentage: 70 },
       { name: 'SLES 70%', percentage: 14, activeMatterPct: 70 },
       { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30 },
-      { name: 'Sodium Chloride', percentage: 1.5 }
+      { name: 'Sodium Chloride', percentage: 1.5 },
+      { name: 'Water (Balance)', percentage: 9.5, activeMatterPct: 0 }
     ],
     { productCategory: 'Liquid Detergent' }
   );
@@ -251,7 +252,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
       { name: 'Water', percentage: 70 },
       { name: 'LABSA 96%', percentage: 12, activeMatterPct: 96 },
       { name: 'SLES 70%', percentage: 5, activeMatterPct: 70 },
-      { name: 'CAPB 30%', percentage: 3, activeMatterPct: 30 }
+      { name: 'CAPB 30%', percentage: 3, activeMatterPct: 30 },
+      { name: 'Water (Balance)', percentage: 10, activeMatterPct: 0 }
     ],
     7.5,
     'DISHWASH_MANUAL'
@@ -260,18 +262,18 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
 
   // 5.3 Hard water penalty without chelation
   const cpiHardNoChel = calculateCleaningPerformance(
-    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }],
+    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }, { name: 'Water', percentage: 90, activeMatterPct: 0 }],
     8.0,
     'LAUNDRY_LIQUID',
     undefined,
-    { waterHardnessPpm: 400 } // Unchelated very hard water
+    { waterHardnessPpm: 400, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   const cpiSoft = calculateCleaningPerformance(
-    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }],
+    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }, { name: 'Water', percentage: 90, activeMatterPct: 0 }],
     8.0,
     'LAUNDRY_LIQUID',
     undefined,
-    { waterHardnessPpm: 0 } // Soft water
+    { waterHardnessPpm: 0, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('5. Cleaning', '5.3 Unbuffered hard water penalizes particulate and overall detergency', cpiHardNoChel.cpi <= cpiSoft.cpi, true, true);
 
@@ -299,11 +301,11 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
 
   // 6.3 Clean nonionic/water formula receives SCREENING_COMPATIBLE (no known conflict, not proof of infinite stability)
   const compClean = calculateFormulationCompatibility([
-    { name: 'Water', percentage: 89.9 },
-    { name: 'Lauryl Glucoside 50%', percentage: 10, role: 'Nonionic Surfactant' },
-    { name: 'Kathon CG', percentage: 0.1, role: 'Preservative', category: 'Preservative' }
-  ]);
-  assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', true, true);
+    { name: 'Water', percentage: 89.2 },
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' },
+    { name: 'Phenoxyethanol', percentage: 0.8, category: 'Preservative' }
+  ], 8.5, 'LAUNDRY_LIQUID');
+  assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', { semantic: compClean.compatibilityStatusSemantic, evidence: compClean.evidenceStatus, alerts: compClean.alerts.map(a => a.severity) }, 'NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE');
 
   // 6.4 Empty formula receives INSUFFICIENT_DATA
   const compEmpty = calculateFormulationCompatibility([]);
@@ -334,7 +336,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // 8. Density Engine Tests
   // =========================================================================
   // 8.1 Pure water density baseline
-  const densWater = calculateDensity([]);
+  const densWater = calculateDensity([{ name: 'Water', percentage: 100 }]);
   assert('8. Density', '8.1 Water baseline gives 1.000 g/cm3 with PREDICTED_DENSITY tag', densWater.densityGPerCm3 === 1.000 && densWater.densityType === 'PREDICTED_DENSITY', true, true);
 
   // 8.2 Concentrated formulation density via harmonic volume additivity
@@ -343,7 +345,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     { name: 'Caustic Soda 50%', percentage: 10 }, // density ~ 1.53
     { name: 'Glycerin', percentage: 20 }           // density ~ 1.26
   ], 100);
-  assert('8. Density', '8.2 Dense solution calculates composite density > 1.05 g/cm3', densMix.densityGPerCm3 > 1.05 && densMix.provenance === 'PREDICTED', true, true);
+  assert('8. Density', '8.2 Dense solution calculates composite density > 1.05 g/cm3', densMix.densityGPerCm3 > 1.05 && densMix.provenance === 'ESTIMATED' && densMix.densityType === 'PREDICTED_DENSITY', true, true);
 
   // =========================================================================
   // 9. Liquid NVR Engine Tests
@@ -352,7 +354,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const nvrRes = calculateLiquidNVR([
     { name: 'Water', percentage: 80 },
     { name: 'Salt', percentage: 20, nonVolatileFraction: 1.0 }
-  ]);
+  ], 100);
   assert('9. Liquid NVR', '9.1 Drying protocol does NOT cite incorrect ASTM D1767', !nvrRes.dryingProtocolAssumed?.includes('ASTM D1767'), true, true);
   assert('9. Liquid NVR', '9.1 Drying protocol cites METHOD_NOT_VERIFIED', Boolean(nvrRes.dryingProtocolAssumed?.includes('METHOD_NOT_VERIFIED')), true, true);
   assert('9. Liquid NVR', '9.2 Theoretical NVR calculates exact mass balance (20.0%)', nvrRes.nvrPercentage === 20.0, nvrRes.nvrPercentage, 20.0);
@@ -480,9 +482,14 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const cpiMeta = SCIENTIFIC_MODEL_REGISTRY['model-cpi-cleaning'];
   const cpiCalc = calculateCleaningPerformance([
     { name: 'Water', percentage: 80 },
-    { name: 'SLES 70%', percentage: 15 },
-    { name: 'CAPB 30%', percentage: 5 }
-  ], 8.5, 'Laundry Liquid');
+    { name: 'SLES 70%', percentage: 15, activeMatterPct: 70 },
+    { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30 }
+  ], 8.5, 'Laundry Liquid', undefined, {
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
+  });
   assert(
     '12. Evidence Gate',
     'E. CPI is HEURISTIC_SCREENING and never outputs measured soil removal without empirical lab input',
@@ -497,29 +504,29 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // F. Compatibility NO_KNOWN_CONFLICT semantics
   const compMeta = SCIENTIFIC_MODEL_REGISTRY['model-compatibility-screening'];
   const compPreserved = calculateFormulationCompatibility([
-    { name: 'Water', percentage: 89.9 },
-    { name: 'Lauryl Glucoside 50%', percentage: 10, role: 'Nonionic Surfactant' },
-    { name: 'Kathon CG', percentage: 0.1, role: 'Preservative' }
-  ]);
+    { name: 'Water', percentage: 89.2 },
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' },
+    { name: 'Phenoxyethanol', percentage: 0.8, category: 'Preservative' }
+  ], 8.5, 'LAUNDRY_LIQUID');
   assert(
     '12. Evidence Gate',
     'F. Clean preserved formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without claiming infinite lab proof',
     compMeta.modelClass === 'RULE_BASED_SCREENING' &&
     compPreserved.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' &&
     compPreserved.evidenceStatus === 'SCREENING_COMPATIBLE',
-    true,
-    true
+    { semantic: compPreserved.compatibilityStatusSemantic, evidence: compPreserved.evidenceStatus, alerts: compPreserved.alerts.map(a => a.severity) },
+    'NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE'
   );
 
   // G. HLB method metadata distinction
   const hlbMeta = SCIENTIFIC_MODEL_REGISTRY['model-hlb-screening'];
   const hlbNonionicCheck = HLBEngine.calculateBlendedHLB([
-    { name: 'LAE-7', percentage: 5 },
-    { name: 'LAE-9', percentage: 5 }
+    { name: 'LAE-7', percentage: 5, activeMatterPct: 100 },
+    { name: 'LAE-9', percentage: 5, activeMatterPct: 100 }
   ]);
   const hlbIonicCheck = HLBEngine.calculateBlendedHLB([
-    { name: 'SLES 70%', percentage: 10 },
-    { name: 'LABSA 96%', percentage: 5 }
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70 },
+    { name: 'LABSA 96%', percentage: 5, activeMatterPct: 96 }
   ]);
   const hlbNoneCheck = HLBEngine.calculateBlendedHLB([
     { name: 'Water', percentage: 90 },
@@ -548,7 +555,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     densMeta.modelClass === 'IDEALIZED_PREDICTIVE_MODEL' &&
     densCalc.densityType === 'PREDICTED_DENSITY' &&
     densCalc.isIdealVolumeAdditivity === true &&
-    densCalc.provenance === 'PREDICTED',
+    densCalc.provenance === 'ESTIMATED',
     true,
     true
   );
@@ -558,7 +565,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const nvrCheck = calculateLiquidNVR([
     { name: 'Water', percentage: 70 },
     { name: 'Sodium Citrate', percentage: 30, nonVolatileFraction: 1.0 }
-  ]);
+  ], 100);
   assert(
     '12. Evidence Gate',
     'I. NVR is DETERMINISTIC_MASS_BALANCE and retains METHOD_NOT_VERIFIED without false ASTM D1767',
@@ -580,6 +587,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     0
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 

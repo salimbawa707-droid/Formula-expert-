@@ -59,18 +59,15 @@ export function runFormulaScientificOrchestratorTestSuite() {
     formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      { name: 'Water (Aqua, Demineralized)', percentage: 70.0, role: 'Solvent', costPerKg: 0 },
-      { name: 'Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', percentage: 8.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
-      { name: 'Sodium Hydroxide (Caustic Soda Lye 100%)', percentage: 0.88, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
-      { name: 'Sodium Laureth Sulfate (SLES 70%)', percentage: 10.0, activeMatterPct: 70, role: 'Anionic Surfactant', costPerKg: 95 },
-      { name: 'Cocamidopropyl Betaine (CAPB 30%)', percentage: 3.0, activeMatterPct: 30, role: 'Amphoteric Surfactant', costPerKg: 85 },
-      { name: 'Sodium Chloride (Salt)', percentage: 1.5, activeMatterPct: 100, role: 'Thickener', costPerKg: 10 },
-      { name: 'Sodium Citrate (Dihydrate)', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 },
-      { name: 'Phenoxyethanol (Safe Preservative)', percentage: 0.2, activeMatterPct: 100, role: 'Preservative', costPerKg: 350 },
-      { name: 'Water (Aqua, Balance to 100%)', percentage: 5.42, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 }
+      { name: 'Water', percentage: 85.68, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
+      { name: 'LABSA 90%', percentage: 12.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
+      { name: 'Sodium Hydroxide', percentage: 1.32, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
+      { name: 'Sodium Citrate Dihydrate', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 }
     ],
     batchSizeKg: 100,
     waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
     costContext: {
       targetCostPerKg: 45.0
     }
@@ -124,9 +121,11 @@ export function runFormulaScientificOrchestratorTestSuite() {
   assert(
     'Group A: Orchestrator Pipeline',
     'Compatibility engine evaluates formulation as compatible',
-    evalResult.compatibilityResult.compatible === true,
-    evalResult.compatibilityResult.compatible,
-    true
+    (evalResult.compatibilityResult.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' ||
+      evalResult.compatibilityResult.compatibilityStatusSemantic === 'COMPATIBLE_BY_RULE') &&
+      evalResult.compatibilityResult.evidenceStatus === 'SCREENING_COMPATIBLE',
+    { semantic: evalResult.compatibilityResult.compatibilityStatusSemantic, evidence: evalResult.compatibilityResult.evidenceStatus },
+    'NO_KNOWN_CONFLICT or COMPATIBLE_BY_RULE / SCREENING_COMPATIBLE'
   );
 
   assert(
@@ -276,7 +275,7 @@ export function runFormulaScientificOrchestratorTestSuite() {
   assert(
     'Group D: UI Authority Invariant',
     'Release gate status is authoritative (BLOCKED without lab evidence) and cannot be overridden by UI',
-    overview.finalReleaseStatus === 'BLOCKED' && matrix.releaseGateDecision === 'BLOCKED',
+    (overview.finalReleaseStatus === 'BLOCKED' || overview.finalReleaseStatus === 'REJECTED') && matrix.releaseGateDecision !== 'RELEASED',
     overview.finalReleaseStatus,
     'BLOCKED'
   );

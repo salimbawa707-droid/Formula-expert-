@@ -56,9 +56,9 @@ export function runCostingEngineTestSuite() {
   ];
   const report1 = calculateFormulaCost(unpricedFormula, 100);
   assertNear('Test 1: Empty Price', 'Total Batch Cost is 0.00 when unpriced', report1.totalBatchCost, 0.00);
-  assertNear('Test 1: Empty Price', 'Cost per kg is 0.00 when unpriced', report1.costPerKg, 0.00);
+  assertEqual('Test 1: Empty Price', 'Cost per kg is unavailable when any priced ingredient is missing', Number.isNaN(report1.costPerKg), true);
   assertEqual('Test 1: Empty Price', 'Status is PRICE INPUT REQUIRED', report1.status, 'PRICE INPUT REQUIRED');
-  assertEqual('Test 1: Empty Price', 'calculateBatchCost fallback is 0', calculateBatchCost(unpricedFormula, 100), 0);
+  assertEqual('Test 1: Empty Price', 'calculateBatchCost remains unavailable when ingredient prices are incomplete', Number.isNaN(calculateBatchCost(unpricedFormula, 100)), true);
 
   // =========================================================================
   // TEST 2 — SINGLE INGREDIENT PRICE ENTRY
@@ -212,7 +212,9 @@ export function runCostingEngineTestSuite() {
   assertEqual('Test 11: Unknown Price Null', 'u2 costPerKg remains null', report11.ingredientCosts[1].userPrice, null);
   assertEqual('Test 11: Unknown Price Null', 'u3 costPerKg remains null', report11.ingredientCosts[2].userPrice, null);
   assertEqual('Test 11: Unknown Price Null', 'u4 costPerKg remains null', report11.ingredientCosts[3].userPrice, null);
-  assertEqual('Test 11: Unknown Price Null', 'All 4 unknown ingredients recognized as missing', report11.missingPriceCount, 4);
+  assertEqual('Test 11: Unknown Price Null', 'Three absent prices are counted as missing', report11.missingPriceCount, 3);
+  assertEqual('Test 11: Unknown Price Null', 'NaN price is separately counted as invalid', report11.invalidPriceCount, 1);
+  assertEqual('Test 11: Unknown Price Null', 'All four unknown prices remain unpriced', report11.unpricedIngredientCount, 4);
   assertEqual('Test 11: Unknown Price Null', 'Formula pricing status is NO_PRICING', report11.pricingStatus, 'NO_PRICING');
   assertEqual('Test 11: Unknown Price Null', 'costLabel is COST UNAVAILABLE', report11.costLabel, 'COST UNAVAILABLE');
 
@@ -287,6 +289,19 @@ export function runCostingEngineTestSuite() {
   assertEqual('Test 14: Canonical IDs', 'ID labsa preserved', report14.ingredientCosts[0].id, 'labsa');
   assertEqual('Test 14: Canonical IDs', 'ID sles-70 preserved', report14.ingredientCosts[1].id, 'sles-70');
   assertEqual('Test 14: Canonical IDs', 'ID caustic-soda-50 preserved', report14.ingredientCosts[2].id, 'caustic-soda-50');
+  assertEqual('Test 14: Canonical IDs', 'Pricing coverage can be complete for all listed ingredients', report14.pricingStatus, 'COMPLETE_PRICING');
+  assertEqual('Test 14: Canonical IDs', 'Unbalanced formula is not a complete finished-product cost', report14.isComplete, false);
+  assertEqual('Test 14: Canonical IDs', 'Unbalanced formula cost per kg is unavailable', Number.isNaN(report14.costPerKg), true);
+
+  const missingPercentage = calculateFormulaCost([{ name: 'LABSA', costPerKg: 120 } as any], 100);
+  assertEqual('Test 15', 'Missing percentage invalidates formula cost', missingPercentage.invalidPercentageCount, 1);
+  assertEqual('Test 15', 'Missing percentage cannot yield a finished cost per kg', Number.isNaN(missingPercentage.costPerKg), true);
+
+  const invalidBatchSize = calculateFormulaCost([
+    { name: 'LABSA', percentage: 100, costPerKg: 120 } as any
+  ], 0);
+  assertEqual('Test 16', 'Explicit invalid batch size is not replaced with 100 kg', invalidBatchSize.status, 'BATCH SIZE REQUIRED');
+  assertEqual('Test 16', 'Invalid batch size prevents finished cost output', Number.isNaN(invalidBatchSize.costPerKg), true);
 
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;

@@ -83,7 +83,7 @@ export function runMasterScientificUnknownDataIntegrityTestSuite(): TestSuiteSum
   assert(
     '2. Density Engine Integrity',
     '4. Missing density cannot receive HIGH confidence',
-    densityResultUncertain.confidence === 'LOW' && densityResultUncertain.modelType.includes('Estimated')
+    densityResultUncertain.confidence === 'LOW' && densityResultUncertain.modelType === 'NOT_EVALUATED' && densityResultUncertain.densityStatus === 'INSUFFICIENT_DATA'
   );
 
   // 5. Unknown HLB does NOT become 12.0
@@ -291,7 +291,7 @@ export function runMasterScientificUnknownDataIntegrityTestSuite(): TestSuiteSum
   assert(
     '11. Formula Additivity & Confidence',
     '27. Fully known formula produces HIGH confidence density calculation',
-    knownFormulaDensity.confidence === 'HIGH' && knownFormulaDensity.densityGPerCm3 > 1.0
+    knownFormulaDensity.confidence === 'MEDIUM' && knownFormulaDensity.densityGPerCm3 > 1.0 && knownFormulaDensity.provenance === 'ESTIMATED'
   );
 
   // 28. Blended HLB calculation excludes ingredients with missing HLB

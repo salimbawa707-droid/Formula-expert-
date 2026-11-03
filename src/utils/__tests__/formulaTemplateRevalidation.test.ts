@@ -140,6 +140,21 @@ export function runFormulaTemplateRevalidationTestSuite(): {
     );
   }
 
+  // 4a. A non-converged pH is unavailable, not a numeric out-of-spec verdict.
+  const unavailablePHReports = reports.filter(r => r.phReport.predictedPH === null);
+  assert(
+    'Phase 4 pH Fail-Closed',
+    'Every template with unavailable pH reports INSUFFICIENT_DATA and does not throw',
+    unavailablePHReports.every(r => r.phReport.status === 'INSUFFICIENT_DATA' && r.overallStatus === 'INSUFFICIENT_DATA'),
+    `Unavailable pH templates: ${unavailablePHReports.length}`
+  );
+  assert(
+    'Phase 4 Batch Volume',
+    'Template batch volume is not inferred from mass using assumed density',
+    reports.every(r => r.batchVolumeL === null),
+    `Non-null batch volumes: ${reports.filter(r => r.batchVolumeL !== null).length}`
+  );
+
   // 5. Engine Applicability Discipline (Fabric Softener Cleaning Score = NOT_APPLICABLE)
   const softenerReport = reports.find(r => r.canonicalProductCategoryId === 'FABRIC_SOFTENER');
   if (softenerReport) {
@@ -152,16 +167,68 @@ export function runFormulaTemplateRevalidationTestSuite(): {
     );
   }
 
-  // 6. Active Matter Validation
+  // 6. Active Matter Validation — unknown assays must remain unavailable, never zero-filled.
   for (const r of reports) {
     const active = r.activeMatterReport.totalSurfactantActivePct;
+    const activeStatus = r.activeMatterReport.status;
     assert(
       'Phase 4 Active Matter',
-      `Template [${r.templateId}] calculates total active surfactant matter (${active}%)`,
-      typeof active === 'number' && !isNaN(active) && active >= 0,
-      `Active surfactant: ${active}%`
+      `Template [${r.templateId}] does not report a complete numeric active total when assays are missing`,
+      activeStatus === 'INSUFFICIENT_DATA'
+        ? Number.isNaN(active)
+        : (Number.isFinite(active) && active >= 0),
+      `Status: ${activeStatus}; active surfactant: ${active}%`
     );
   }
+
+  // 6a. Unknown assay and missing percentage must not become numeric zeroes.
+  const unknownAssayTemplate: FormulaItem = {
+    id: 'test-unknown-assay',
+    name: 'Unknown Assay Formula',
+    category: 'Liquid Laundry',
+    batchSizeKg: 100,
+    description: 'Unknown surfactant grade must remain unavailable',
+    ingredients: [
+      { id: 'u1', name: 'Unregistered Anionic Surfactant QX-91', percent: 10 },
+      { id: 'u2', name: 'Water', percent: 90 }
+    ],
+    instructions: []
+  };
+  const unknownAssayReport = revalidateFormulaTemplate(unknownAssayTemplate);
+  assert(
+    'Phase 4 Unknown Assay',
+    'Unknown active assay leaves active-solids subtotal unavailable',
+    unknownAssayReport.compositionAudit.activeSolidsPct === null &&
+      unknownAssayReport.activeMatterReport.status === 'INSUFFICIENT_DATA',
+    `Active solids: ${unknownAssayReport.compositionAudit.activeSolidsPct}; active status: ${unknownAssayReport.activeMatterReport.status}`
+  );
+
+  const missingPercentageTemplate: FormulaItem = {
+    id: 'test-missing-percentage',
+    name: 'Missing Percentage Formula',
+    category: 'Liquid Laundry',
+    batchSizeKg: 100,
+    description: 'Missing ingredient percentage must block mass balance',
+    ingredients: [
+      { id: 'm1', name: 'Water' } as any,
+      { id: 'm2', name: 'SLES 70%', percent: 10, activePercent: 70 }
+    ],
+    instructions: []
+  };
+  const missingPercentageReport = revalidateFormulaTemplate(missingPercentageTemplate);
+  assert(
+    'Phase 4 Missing Percentage',
+    'Missing percentage is not substituted with zero in mass balance',
+    missingPercentageReport.compositionAudit.hasMassBalanceIssue &&
+      Number.isNaN(missingPercentageReport.compositionAudit.massBalanceSumPct),
+    `Mass balance: ${missingPercentageReport.compositionAudit.massBalanceSumPct}`
+  );
+  assert(
+    'Phase 4 Batch Volume',
+    'Batch volume remains unavailable without measured density',
+    missingPercentageReport.batchVolumeL === null,
+    `Batch volume: ${missingPercentageReport.batchVolumeL}`
+  );
 
   // 7. Unclamped pH Target Verification
   const unneutralizedFormula: FormulaItem = {

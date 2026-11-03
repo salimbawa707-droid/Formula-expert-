@@ -4,7 +4,7 @@
  * ============================================================================
  */
 
-import { calculatePHAdvanced } from '../pHEngine';
+import { calculatePHAdvanced, mapFormulationIngredientsToPHEngineInput } from '../pHEngineAdapter';
 import { calculateActiveMatter, calculateActiveSurfactants, evaluateAuthoritativeActiveMatter } from '../activeMatterEngine';
 import { evaluateAuthoritativeHLB } from '../hlbEngine';
 import { calculateWaterHardnessTolerance, AUTHORITATIVE_CHELATOR_DATABASE } from '../chelatorEngine';
@@ -45,13 +45,14 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     { name: 'Water', percentage: 80 },
     { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 },
     { name: 'Sodium Hydroxide 50% Solution', percentage: 2.5, activeMatterPct: 50 },
+    { name: 'Water (Balance)', percentage: 7.5, activeMatterPct: 0 }
   ];
-  const phResult = calculatePHAdvanced(neutralIngredients, 100, { productCategory: 'LAUNDRY_LIQUID' });
+  const phResult = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput(neutralIngredients), 100, { productCategory: 'LAUNDRY_LIQUID' });
   assert(
     'Phase 7 Accuracy',
     '1.1 Neutralization computes pH deterministically without fake lab status',
     typeof phResult.pH === 'number' && phResult.pH > 1 && phResult.pH < 14 && phResult.measuredPH === null,
-    phResult.pH,
+    { pH: phResult.pH, modelValidity: phResult.modelValidity, details: phResult.details, warnings: phResult.warnings },
     'Valid pH number (1 - 14)'
   );
 
@@ -115,8 +116,8 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
   // 3. HLB Engine
   const nonionicFormula = [
     { name: 'Water', percentage: 85 },
-    { name: 'Alcohol Ethoxylate 7EO (LAE 7EO)', percentage: 10, hlb: 12.1 },
-    { name: 'Alcohol Ethoxylate 3EO', percentage: 5, hlb: 8.0 }
+    { name: 'Alcohol Ethoxylate 7EO (LAE 7EO)', percentage: 10, activeMatterPct: 100, hlbValue: 12.1 },
+    { name: 'Alcohol Ethoxylate 3EO', percentage: 5, activeMatterPct: 100, hlbValue: 8.0 }
   ];
   const hlbResult = evaluateAuthoritativeHLB(nonionicFormula);
   assert(
@@ -156,7 +157,8 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     { name: 'Water', percentage: 80 },
     { name: 'SLES 70%', percentage: 12, activeMatterPct: 70 },
     { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30 },
-    { name: 'Sodium Chloride', percentage: 1.5 }
+    { name: 'Sodium Chloride', percentage: 1.5 },
+    { name: 'Water (Balance)', percentage: 1.5, activeMatterPct: 0 }
   ];
   const visc = calculateDetailedViscosity(viscIngredients, { productCategory: 'HAND_DISH_LIQUID', targetPH: 7.0 });
   assert(
@@ -186,9 +188,10 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     { name: 'Water', percentage: 80 },
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70 },
     { name: 'Alcohol Ethoxylate 7EO', percentage: 5, activeMatterPct: 100 },
-    { name: 'Sodium Citrate', percentage: 3 }
+    { name: 'Sodium Citrate', percentage: 3 },
+    { name: 'Water (Balance)', percentage: 2, activeMatterPct: 0 }
   ];
-  const perf = calculateCleaningPerformance(cleaningIngredients, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150 });
+  const perf = calculateCleaningPerformance(cleaningIngredients, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert(
     'Phase 7 Accuracy',
     '6.1 Calculates CPI as HEURISTIC_SCREENING and never outputs measured soil removal without lab input',
@@ -230,13 +233,14 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
   const liquidFormula = [
     { name: 'Water', percentage: 80 },
     { name: 'SLES 70%', percentage: 10, density: 1.05 },
-    { name: 'Sodium Chloride', percentage: 2, density: 1.20 }
+    { name: 'Sodium Chloride', percentage: 2, density: 1.20 },
+    { name: 'Water (Balance)', percentage: 8, density: 1.0 }
   ];
   const density = calculateDensity(liquidFormula, 100);
   assert(
     'Phase 7 Accuracy',
     '8.1 Density engine explicitly labels outputs as PREDICTED_DENSITY and IDEALIZED_MODEL',
-    density.densityType === 'PREDICTED_DENSITY' && density.isIdealVolumeAdditivity === true && density.provenance === 'PREDICTED',
+    density.densityType === 'PREDICTED_DENSITY' && density.isIdealVolumeAdditivity === true && density.provenance === 'ESTIMATED',
     density.densityType,
     'PREDICTED_DENSITY'
   );
@@ -293,6 +297,7 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     'All targets NOT_YET_VALIDATED or PARTIALLY_VALIDATED'
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 

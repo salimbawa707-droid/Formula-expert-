@@ -396,7 +396,7 @@ export interface PowderVerdictIssue {
 }
 
 export interface PowderVerdictReport {
-  overallStatus: 'BALANCED & COMPLIANT' | 'INCOMPLETE FORMULA' | 'EXCESS FORMULA' | 'NEEDS ADJUSTMENT' | 'OUT OF SPEC';
+  overallStatus: 'SCREENING_ONLY' | 'INSUFFICIENT_DATA' | 'BALANCED & COMPLIANT' | 'INCOMPLETE FORMULA' | 'EXCESS FORMULA' | 'NEEDS ADJUSTMENT' | 'OUT OF SPEC';
   summary: string;
   strengths: PowderVerdictStrength[];
   issues: PowderVerdictIssue[];

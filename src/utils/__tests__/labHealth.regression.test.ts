@@ -191,10 +191,12 @@ export function runLabHealthTestSuite(): { passed: number; failed: number; resul
 
   // 20. Invalid Numeric Inputs Safety
   const resNaNPH = calculateLabHealthScore(formulaNormal, NaN as any);
-  assertNear('Invalid Input Safety', 'NaN pH falls back safely to pH 7.0', resNaNPH.finalScore, 100);
+  assertEqual('Invalid Input Safety', 'NaN pH remains unassessed when chemistry cannot establish pH', resNaNPH.finalScore, null);
+  assertEqual('Invalid Input Safety', 'NaN pH does not receive a safe rating', resNaNPH.rating, 'ASSESSMENT_INCOMPLETE');
 
   const resInvalidStringPH = calculateLabHealthScore(formulaNormal, 'invalid' as any);
-  assertNear('Invalid Input Safety', 'Invalid string pH falls back safely', resInvalidStringPH.finalScore, 100);
+  assertEqual('Invalid Input Safety', 'Invalid string pH remains unassessed when chemistry cannot establish pH', resInvalidStringPH.finalScore, null);
+  assertEqual('Invalid Input Safety', 'Invalid string pH does not receive a safe rating', resInvalidStringPH.rating, 'ASSESSMENT_INCOMPLETE');
 
   // 21. Canonical Aliases
   const formulaAliases = [

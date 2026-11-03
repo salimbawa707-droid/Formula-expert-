@@ -10,8 +10,8 @@ export interface DensityCalculationResult {
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   modelType: string;
   densityType: 'PREDICTED_DENSITY';
-  densityStatus: 'PREDICTED' | 'SCREENING_ESTIMATE';
-  provenance: 'PREDICTED';
+  densityStatus: 'PREDICTED' | 'SCREENING_ESTIMATE' | 'INSUFFICIENT_DATA';
+  provenance: 'PREDICTED' | 'ESTIMATED' | 'INSUFFICIENT_DATA';
   unknownDensityIngredients?: string[];
   limitations?: string[];
   contributions: Array<{
@@ -72,29 +72,39 @@ export function calculateDensity(
   totalBatchMassGrams: number = 100
 ): DensityCalculationResult {
   const safeList = Array.isArray(ingredients) ? ingredients : [];
+  const unavailable = (
+    reason: string,
+    unknownDensityIngredients: string[] = []
+  ): DensityCalculationResult => ({
+    densityGPerCm3: Number.NaN,
+    densityKgPerM3: Number.NaN,
+    specificGravity: Number.NaN,
+    totalMassGrams: Number.NaN,
+    totalVolumeCm3: Number.NaN,
+    isIdealVolumeAdditivity: true,
+    confidence: 'LOW',
+    modelType: 'NOT_EVALUATED',
+    densityType: 'PREDICTED_DENSITY',
+    densityStatus: 'INSUFFICIENT_DATA',
+    provenance: 'INSUFFICIENT_DATA',
+    unknownDensityIngredients,
+    limitations: [reason, 'A measured density (e.g. pycnometer/digital density meter) is required for production or packaging decisions.'],
+    contributions: [],
+    notes: `INSUFFICIENT_DATA: ${reason}`
+  });
+
   if (safeList.length === 0) {
-    return {
-      densityGPerCm3: 1.000,
-      densityKgPerM3: 1000.0,
-      specificGravity: 1.002,
-      totalMassGrams: totalBatchMassGrams,
-      totalVolumeCm3: totalBatchMassGrams,
-      isIdealVolumeAdditivity: true,
-      confidence: 'HIGH',
-      modelType: 'Pure Water Reference (20°C)',
-      densityType: 'PREDICTED_DENSITY',
-      densityStatus: 'PREDICTED',
-      provenance: 'PREDICTED',
-      contributions: [],
-      notes: 'No ingredients provided. Defaulting to pure water baseline at 20°C (1.000 g/cm³).'
-    };
+    return unavailable('No ingredient composition was supplied; pure-water density is not substituted for an empty formula.');
+  }
+  if (!Number.isFinite(totalBatchMassGrams) || totalBatchMassGrams <= 0) {
+    return unavailable('Total batch mass must be a finite value greater than zero.');
   }
 
+  let totalPercentage = 0;
   let totalMass = 0;
   let totalVolume = 0;
-  let hasUncertainDensity = false;
+  let hasReferenceDensity = false;
   const unknownDensityIngredients: string[] = [];
-
   const rawContributions: Array<{
     name: string;
     massPercentage: number;
@@ -102,56 +112,61 @@ export function calculateDensity(
     volumeCm3: number;
   }> = [];
 
-  safeList.forEach(ing => {
-    const rawPct = Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0);
-    if (rawPct <= 0) return;
+  for (const [index, ing] of safeList.entries()) {
+    const rawPctValue = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
+    const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
+      ? Number.NaN
+      : Number(rawPctValue);
+    if (!Number.isFinite(rawPct) || rawPct < 0 || rawPct > 100) {
+      return unavailable(`Ingredient ${ing?.name || index + 1} has a missing or invalid percentage.`);
+    }
+    totalPercentage += rawPct;
+  }
+
+  if (Math.abs(totalPercentage - 100) > 0.05) {
+    return unavailable(`Ingredient percentages sum to ${totalPercentage.toFixed(3)}%, not 100.000%; final mixture density cannot be calculated.`);
+  }
+
+  for (const ing of safeList) {
+    const rawPct = Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula);
+    if (rawPct === 0) continue;
     const name = ing.name || 'Component';
-    const explicitDensity = typeof ing.density === 'number' && ing.density > 0.1 ? ing.density : undefined;
+    const explicitDensity = typeof ing.density === 'number' && Number.isFinite(ing.density) && ing.density > 0.1
+      ? ing.density
+      : undefined;
     const stdDensity = getStandardComponentDensity(name);
-    
     if (explicitDensity === undefined && stdDensity === null) {
-      hasUncertainDensity = true;
       unknownDensityIngredients.push(name);
+      continue;
     }
 
-    const compDensity = explicitDensity || stdDensity || 1.000;
-
+    if (explicitDensity === undefined) hasReferenceDensity = true;
+    const compDensity = explicitDensity ?? stdDensity!;
     const compMassG = (rawPct / 100) * totalBatchMassGrams;
     const compVolCm3 = compMassG / compDensity;
-
     totalMass += compMassG;
     totalVolume += compVolCm3;
-
     rawContributions.push({
       name,
       massPercentage: rawPct,
       componentDensityGPerCm3: compDensity,
       volumeCm3: compVolCm3
     });
-  });
+  }
 
-  if (totalMass <= 0 || totalVolume <= 0) {
-    return {
-      densityGPerCm3: 1.000,
-      densityKgPerM3: 1000.0,
-      specificGravity: 1.002,
-      totalMassGrams: totalBatchMassGrams,
-      totalVolumeCm3: totalBatchMassGrams,
-      isIdealVolumeAdditivity: true,
-      confidence: 'HIGH',
-      modelType: 'Pure Water Reference (20°C)',
-      densityType: 'PREDICTED_DENSITY',
-      densityStatus: 'PREDICTED',
-      provenance: 'PREDICTED',
-      contributions: [],
-      notes: 'Empty or zero active mass. Defaulting to pure water baseline.'
-    };
+  if (unknownDensityIngredients.length > 0) {
+    return unavailable(
+      'One or more ingredient component densities are unavailable. Unknown densities are not replaced with 1.000 g/cm³.',
+      unknownDensityIngredients
+    );
+  }
+  if (!Number.isFinite(totalMass) || !Number.isFinite(totalVolume) || totalMass <= 0 || totalVolume <= 0) {
+    return unavailable('No valid positive-mass ingredient contributions were available for density calculation.');
   }
 
   const mixDensityGPerCm3 = totalMass / totalVolume;
   const densityKgPerM3 = mixDensityGPerCm3 * 1000.0;
-  const specificGravity = mixDensityGPerCm3 / 0.9982; // Relative to water at 20°C
-
+  const specificGravity = mixDensityGPerCm3 / 0.9982;
   const contributions = rawContributions.map(c => ({
     name: c.name,
     massPercentage: Number(c.massPercentage.toFixed(2)),
@@ -167,21 +182,22 @@ export function calculateDensity(
     totalMassGrams: Number(totalMass.toFixed(2)),
     totalVolumeCm3: Number(totalVolume.toFixed(2)),
     isIdealVolumeAdditivity: true,
-    confidence: hasUncertainDensity ? 'LOW' : 'HIGH',
-    modelType: hasUncertainDensity ? 'Partial Ideal Volume Additivity (Estimated Density)' : 'Ideal Harmonic Volume Additivity',
+    confidence: hasReferenceDensity ? 'LOW' : 'MEDIUM',
+    modelType: 'IDEAL_VOLUME_ADDITIVITY_SCREENING',
     densityType: 'PREDICTED_DENSITY',
-    densityStatus: hasUncertainDensity ? 'SCREENING_ESTIMATE' : 'PREDICTED',
-    provenance: 'PREDICTED',
-    unknownDensityIngredients: hasUncertainDensity ? unknownDensityIngredients : undefined,
+    densityStatus: 'SCREENING_ESTIMATE',
+    provenance: 'ESTIMATED',
+    unknownDensityIngredients: undefined,
     limitations: [
-      'Assumes ideal volume additivity [ρ_mix = Σ m_i / Σ (m_i / ρ_i)].',
-      'Does not model non-ideal excess volume of mixing (contraction or expansion) in concentrated polar solvent/surfactant systems.',
-      'Empirical pycnometer or digital density meter measurement is required for certified packaging density.'
+      'Uses ideal volume additivity: rho_mix = total mass / sum(component mass / component density).',
+      'Built-in component densities are generic screening references, not grade-specific supplier or laboratory measurements.',
+      'Non-ideal excess volume of mixing is not modelled.',
+      'Empirical pycnometer or digital density-meter measurement is required for packaging and production specifications.'
     ],
     contributions,
-    notes: hasUncertainDensity
-      ? 'Formulation contains ingredients with missing/unknown component density. Mixture density is ESTIMATED / INSUFFICIENT_DATA and cannot be reported with HIGH confidence.'
-      : 'Mixture density calculated via ideal volume additivity [ρ_mix = Σ m_i / Σ (m_i / ρ_i)]. Minor excess volume of mixing (<1%) may occur in concentrated alcohol/glycol blends.'
+    notes: hasReferenceDensity
+      ? 'SCREENING ESTIMATE: One or more generic reference densities were used. Do not treat this value as verified.'
+      : 'SCREENING ESTIMATE: User-supplied component densities were used with ideal volume additivity. Independent measurement is still required.'
   };
 }
 

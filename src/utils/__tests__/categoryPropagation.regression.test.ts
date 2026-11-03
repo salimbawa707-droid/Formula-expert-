@@ -267,7 +267,11 @@ export function runCategoryPropagationTestSuite() {
   const stdEval = FormulaScientificOrchestrator.evaluate({
     formulaName: 'Structured Output Standard',
     productCategory: 'LAUNDRY_LIQUID',
-    ingredients: baseIngredients
+    ingredients: baseIngredients,
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert(
@@ -287,14 +291,15 @@ export function runCategoryPropagationTestSuite() {
 
   assert(
     'Group 3: Structured Output',
-    'Score is expressed as clean scale (0-100 index), not misleading accuracy percentage',
-    typeof stdEval.cleaningResult.cpi === 'number' &&
-    stdEval.cleaningResult.cpi >= 0 &&
-    stdEval.cleaningResult.cpi <= 100,
-    stdEval.cleaningResult.cpi,
-    'Number between 0 and 100'
+    'Unavailable pH or uncharacterized ingredients block CPI instead of emitting a fabricated 0-100 score',
+    stdEval.cleaningResult.provenance === 'INSUFFICIENT_DATA'
+      ? stdEval.cleaningResult.cpi === null
+      : typeof stdEval.cleaningResult.cpi === 'number' && stdEval.cleaningResult.cpi >= 0 && stdEval.cleaningResult.cpi <= 100,
+    { cpi: stdEval.cleaningResult.cpi, provenance: stdEval.cleaningResult.provenance, limitations: stdEval.cleaningResult.limitations },
+    'null with INSUFFICIENT_DATA, or a bounded CPI only when all required inputs are available'
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: ${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 

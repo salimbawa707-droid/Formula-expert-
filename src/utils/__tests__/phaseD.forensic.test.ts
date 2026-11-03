@@ -84,8 +84,8 @@ export function runPhaseDForensicTestSuite(): {
   // =========================================================================
   const mappedPHEngine = mapFormulationIngredientsToPHEngineInput(testFormula1);
   const phRes = calculatePHAdvanced(mappedPHEngine);
-  assertNear('3. Engine Execution', 'T3a: pHEngine stoichiometric pH', phRes.pH, 7.00, 0.02);
-  assert('3. Engine Execution', 'T3b: Solver converged flag preserved', phRes.solverConverged === true, phRes.solverConverged, true);
+  assert('3. Engine Execution', 'T3a: pH is withheld because the CAPB grade has no registered acid-base profile', phRes.pH === null, phRes.pH, null);
+  assert('3. Engine Execution', 'T3b: Unknown CAPB chemistry prevents a converged pH claim', phRes.solverConverged === false && (phRes.warnings || []).some(w => w.includes('PH_UNRECOGNIZED_INGREDIENTS_PRESENT')), { converged: phRes.solverConverged, warnings: phRes.warnings }, 'Unavailable pH with unknown-ingredient warning');
 
   const actReport = ActiveMatterEngine.calculateActiveMatterReport(testFormula1);
   // Active = (10 * 0.96) + (5 * 0.30) = 9.6 + 1.5 = 11.1%
@@ -149,10 +149,10 @@ export function runPhaseDForensicTestSuite(): {
   const emptyHLB = HLBEngine.calculateBlendedHLB(emptyFormula);
   const emptyDensity = calculateDensity(emptyFormula);
 
-  assert('7. Boundary Protection', 'T7a: Empty formula pH defaults to pure water 7.00 without NaN', !isNaN(emptyPH.pH) && emptyPH.pH === 7.0, true, true);
+  assert('7. Boundary Protection', 'T7a: Empty composition does not masquerade as pure water pH', emptyPH.pH === null && emptyPH.solverConverged === false, { pH: emptyPH.pH, converged: emptyPH.solverConverged }, 'Unavailable pH');
   assert('7. Boundary Protection', 'T7b: Empty formula active matter is 0.00 without NaN', !isNaN(emptyAct.totalActiveMatter) && emptyAct.totalActiveMatter === 0, true, true);
-  assert('7. Boundary Protection', 'T7c: Empty formula HLB is 0.00 without NaN', !isNaN(emptyHLB.blendedHLB) && emptyHLB.blendedHLB === 0, true, true);
-  assert('7. Boundary Protection', 'T7d: Empty formula density defaults to water 1.000 g/cm³ without NaN', !isNaN(emptyDensity.densityGPerCm3) && emptyDensity.densityGPerCm3 === 1.0, true, true);
+  assert('7. Boundary Protection', 'T7c: Empty formula HLB is not applicable rather than numeric zero', !Number.isFinite(emptyHLB.blendedHLB) && emptyHLB.methodMetadata === 'NOT_APPLICABLE', { hlb: emptyHLB.blendedHLB, method: emptyHLB.methodMetadata }, 'NOT_APPLICABLE');
+  assert('7. Boundary Protection', 'T7d: Empty formula density is unavailable rather than assumed to be water', !Number.isFinite(emptyDensity.densityGPerCm3), emptyDensity.densityGPerCm3, 'UNAVAILABLE');
 
   // =========================================================================
   // 8. Determinism Verification (Same Input == Same Output across runs)

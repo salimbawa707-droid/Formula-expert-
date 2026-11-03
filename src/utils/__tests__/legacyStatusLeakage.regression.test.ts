@@ -66,12 +66,11 @@ export function runLegacyStatusLeakageTestSuite() {
     instructions: ['Mix ingredients'],
     status: 'VALID', // legacy status
     ingredients: [
-      { name: 'Water', percentage: 71.45, category: 'Solvent' },
-      { name: 'SLES 70%', percentage: 20, activeMatterPct: 70, category: 'Surfactant' },
-      { name: 'Cocamidopropyl Betaine', percentage: 5, activeMatterPct: 30, category: 'Surfactant' },
-      { name: 'Sodium Citrate', percentage: 3, category: 'Builder' },
-      { name: 'Citric Acid', percentage: 0.05, category: 'Acid' },
-      { name: 'Phenoxyethanol', percentage: 0.5, category: 'Preservative' }
+      { name: 'Water', percentage: 66.02, activeMatterPct: 0, category: 'Solvent' },
+      { name: 'LABSA 90%', percentage: 13.5, activeMatterPct: 90, category: 'Anionic Surfactant' },
+      { name: 'Sodium Hydroxide 50%', percentage: 2.98, activeMatterPct: 50, category: 'pH Adjuster' },
+      { name: 'GLDA-47', percentage: 16.5, activeMatterPct: 47, category: 'Chelator' },
+      { name: 'Sodium Bicarbonate', percentage: 1, activeMatterPct: 100, category: 'Builder' }
     ]
   };
 
@@ -79,15 +78,19 @@ export function runLegacyStatusLeakageTestSuite() {
     ingredients: formulaB.ingredients,
     productCategory: formulaB.category,
     formulaName: formulaB.name,
-    formulaVersion: '1.0.0'
+    formulaVersion: '1.0.0',
+    waterHardnessPpm: 50,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert(
     'B. Stale VALID Precedence',
-    'VALID legacy status cannot bypass LAB_VALIDATION_REQUIRED when lab tests are missing',
-    gateB.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED' || gateB.finalFormulaStatus === 'VALID' || gateB.finalFormulaStatus === 'VALID_WITH_WARNINGS',
+    'Legacy VALID status cannot bypass the current INCOMPATIBLE scientific gate',
+    gateB.finalFormulaStatus === 'INCOMPATIBLE',
     gateB.finalFormulaStatus,
-    'LAB_VALIDATION_REQUIRED / VALID'
+    'INCOMPATIBLE'
   );
 
   // C. Imported formula with: status = PRODUCTION_READY. Current Quality Gate: OUT_OF_SPEC / NEEDS_ADJUSTMENT
@@ -158,6 +161,7 @@ export function runLegacyStatusLeakageTestSuite() {
     'COMMERCIAL_READY'
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 

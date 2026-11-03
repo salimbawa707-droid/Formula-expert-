@@ -24,10 +24,12 @@ import { FormulationIngredient } from '../types';
 
 export interface TestConditions {
   temperatureC?: number;
+  pH?: number;
   waterHardnessPpm?: number;
   dilutionRatio?: string;
   dosageGramsPerLiter?: number;
   washVolumeLiters?: number;
+  batchSizeKg?: number;
   substrate?: string;
   soilType?: string;
   washTimeMinutes?: number;
@@ -157,25 +159,40 @@ export class ScientificLearningEngine {
     const trialId = `trial-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const category = normalizeProductCategory(input.categoryId) as ProductCategoryId;
     
-    // 1. Run core models to retrieve current active predictions
+    // 1. Predict only when the original wash scenario contains explicit pH.
+    // Never insert a generic pH or a synthetic cleaning-score baseline.
     const predictions: Record<string, number> = {};
-    
-    // Evaluate standard predicted cleaning performance / CPI
-    const predPerf = calculateCleaningPerformance(
-      input.ingredients, 
-      8.5, // Standard baseline physical pH
-      category
-    );
-    predictions['cleaningScore'] = predPerf.cpi;
-    predictions['cpi'] = predPerf.cpi;
-    
-    // Estimate product pH baseline if not explicitly in ingredients list
-    predictions['ph'] = 8.5; // Defaults to baseline physical pH in performance analysis
+    const explicitPH = input.testConditions.pH;
+    if (typeof explicitPH === 'number' && Number.isFinite(explicitPH) && explicitPH >= 0 && explicitPH <= 14) {
+      const predPerf = calculateCleaningPerformance(input.ingredients, explicitPH, category, undefined, {
+        waterHardnessPpm: input.testConditions.waterHardnessPpm,
+        washVolumeL: input.testConditions.washVolumeLiters,
+        washDoseGrams: input.testConditions.dosageGramsPerLiter !== undefined && input.testConditions.washVolumeLiters !== undefined
+          ? input.testConditions.dosageGramsPerLiter * input.testConditions.washVolumeLiters
+          : undefined,
+        batchSizeKg: input.testConditions.batchSizeKg
+      });
+      if (Number.isFinite(predPerf.cpi) && predPerf.provenance !== 'INSUFFICIENT_DATA') {
+        predictions.cleaningScore = predPerf.cpi;
+        predictions.cpi = predPerf.cpi;
+      }
+      predictions.ph = explicitPH;
+    }
+
+    const hasComparableScenario =
+      typeof explicitPH === 'number' && Number.isFinite(explicitPH) && explicitPH >= 0 && explicitPH <= 14 &&
+      typeof input.testConditions.temperatureC === 'number' && Number.isFinite(input.testConditions.temperatureC) &&
+      typeof input.testConditions.waterHardnessPpm === 'number' && Number.isFinite(input.testConditions.waterHardnessPpm) &&
+      typeof input.testConditions.dosageGramsPerLiter === 'number' && Number.isFinite(input.testConditions.dosageGramsPerLiter) &&
+      typeof input.testConditions.washVolumeLiters === 'number' && Number.isFinite(input.testConditions.washVolumeLiters) &&
+      typeof input.testConditions.batchSizeKg === 'number' && Number.isFinite(input.testConditions.batchSizeKg) && input.testConditions.batchSizeKg > 0 &&
+      Boolean(input.testConditions.substrate) && Boolean(input.testConditions.soilType) &&
+      typeof input.testConditions.washTimeMinutes === 'number' && Number.isFinite(input.testConditions.washTimeMinutes);
 
     // 2. Perform Replicate Statistical Evaluation if multiple replicates exist
     const replicateMean: Record<string, number> = {};
     const replicateStdDev: Record<string, number> = {};
-    let qualityStatus: RDExperimentTrial['qualityStatus'] = 'VALIDATED';
+    let qualityStatus: RDExperimentTrial['qualityStatus'] = hasComparableScenario ? 'VALIDATED' : 'NOT_COMPARABLE';
     const findings: string[] = [];
 
     if (input.replicateValues) {
@@ -204,7 +221,11 @@ export class ScientificLearningEngine {
     // 3. Compute detailed single-trial predictions vs actual errors
     const errors: RDExperimentTrial['errors'] = {};
     Object.entries(input.measurements).forEach(([kpi, measuredVal]) => {
-      const predVal = predictions[kpi] ?? 82.0; // Baselines or fallback
+      const predVal = predictions[kpi];
+      if (typeof predVal !== 'number' || !Number.isFinite(predVal)) {
+        findings.push(`KPI "${kpi}" was measured but no comparable prediction is available; prediction error was not fabricated.`);
+        return;
+      }
       const absoluteError = measuredVal - predVal;
       const percentageError = predVal !== 0 ? (Math.abs(absoluteError) / predVal) * 100 : undefined;
       
@@ -226,8 +247,8 @@ export class ScientificLearningEngine {
       }
     });
 
-    // Determine comparability: matches categories and test conditions
-    const isComparable = true; // High-fidelity structured bench input
+    // Comparability requires matched, explicit formula and wash conditions.
+    const isComparable = hasComparableScenario && Object.keys(predictions).length > 0;
 
     const newTrial: RDExperimentTrial = {
       trialId,

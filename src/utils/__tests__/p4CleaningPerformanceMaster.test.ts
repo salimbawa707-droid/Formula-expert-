@@ -85,9 +85,9 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 75 }
   ];
 
-  const resLow = calculateCleaningPerformance(laundryLowActive, 8.5, 'LAUNDRY_LIQUID');
-  const resMed = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID');
-  const resHigh = calculateCleaningPerformance(laundryHighActive, 8.5, 'LAUNDRY_LIQUID');
+  const resLow = calculateCleaningPerformance(laundryLowActive, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const resMed = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const resHigh = calculateCleaningPerformance(laundryHighActive, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   assert('Active Matter Sync', 'Low active < Medium active CPI', (resLow.cleaningScore ?? 0) < (resMed.cleaningScore ?? 0), resLow.cpi, resMed.cpi);
   assert('Active Matter Sync', 'Medium active < High active CPI', (resMed.cleaningScore ?? 0) < (resHigh.cleaningScore ?? 0), resMed.cpi, resHigh.cpi);
@@ -110,8 +110,8 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   ];
 
   // In 300 ppm hard water
-  const perfUnchelatedHard = calculateCleaningPerformance(laundryUnchelated, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 300 });
-  const perfChelatedHard = calculateCleaningPerformance(laundryChelated, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 300 });
+  const perfUnchelatedHard = calculateCleaningPerformance(laundryUnchelated, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 300, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfChelatedHard = calculateCleaningPerformance(laundryChelated, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 300, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   assert('Hardness Sync', 'Chelated formula outperforms unchelated in hard water', (perfChelatedHard.cleaningScore ?? 0) > (perfUnchelatedHard.cleaningScore ?? 0), perfChelatedHard.cpi, perfUnchelatedHard.cpi);
   assert('Hardness Sync', 'Builder contribution is positive for chelated formula', perfChelatedHard.builderContribution > 0, perfChelatedHard.builderContribution, '>0');
@@ -126,8 +126,8 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 88.5 }
   ];
 
-  const perfEnzymeOptimal = calculateCleaningPerformance(laundryWithEnzymeOptimalPH, 8.5, 'LAUNDRY_LIQUID');
-  const perfEnzymeAcidic = calculateCleaningPerformance(laundryWithEnzymeOptimalPH, 3.0, 'LAUNDRY_LIQUID'); // Inactivated by acid
+  const perfEnzymeOptimal = calculateCleaningPerformance(laundryWithEnzymeOptimalPH, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfEnzymeAcidic = calculateCleaningPerformance(laundryWithEnzymeOptimalPH, 3.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }); // Inactivated by acid
 
   assert('Enzyme Catalysis', 'Enzyme bonus is positive at optimal pH 8.5', perfEnzymeOptimal.enzymeBonus > 0, perfEnzymeOptimal.enzymeBonus, '>0');
   assert('Enzyme Catalysis', 'Enzyme bonus reduced at denaturing pH 3.0', perfEnzymeOptimal.enzymeBonus > perfEnzymeAcidic.enzymeBonus, perfEnzymeOptimal.enzymeBonus, perfEnzymeAcidic.enzymeBonus);
@@ -146,8 +146,8 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 96 }
   ];
 
-  const perfDishHigh = calculateCleaningPerformance(dishwashHighGrease, 6.8, 'DISHWASH_MANUAL');
-  const perfDishLow = calculateCleaningPerformance(dishwashLowGrease, 6.8, 'DISHWASH_MANUAL');
+  const perfDishHigh = calculateCleaningPerformance(dishwashHighGrease, 6.8, 'DISHWASH_MANUAL', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfDishLow = calculateCleaningPerformance(dishwashLowGrease, 6.8, 'DISHWASH_MANUAL', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   assert('Manual Dishwash', 'High-active dishwash has higher grease cutting score', perfDishHigh.degreasingScore > perfDishLow.degreasingScore, perfDishHigh.degreasingScore, perfDishLow.degreasingScore);
   assert('Manual Dishwash', 'Amphoteric presence enhances foam stability score', perfDishHigh.foamStabilityScore > perfDishLow.foamStabilityScore, perfDishHigh.foamStabilityScore, perfDishLow.foamStabilityScore);
@@ -167,8 +167,8 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 88 }
   ];
 
-  const perfAutoCompliant = calculateCleaningPerformance(autoDishCompliant, 10.5, 'DISHWASH_AUTOMATIC');
-  const perfAutoHighFoam = calculateCleaningPerformance(autoDishHighFoam, 10.0, 'DISHWASH_AUTOMATIC');
+  const perfAutoCompliant = calculateCleaningPerformance(autoDishCompliant, 10.5, 'DISHWASH_AUTOMATIC', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfAutoHighFoam = calculateCleaningPerformance(autoDishHighFoam, 10.0, 'DISHWASH_AUTOMATIC', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   const zeroFoamKpiCompliant = perfAutoCompliant.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
   const zeroFoamKpiHighFoam = perfAutoHighFoam.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
@@ -190,8 +190,8 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 95 }
   ];
 
-  const perfAcidToilet = calculateCleaningPerformance(acidToiletCleaner, 1.2, 'TOILET_CLEANER');
-  const perfNeutralToilet = calculateCleaningPerformance(neutralBowlCleaner, 7.0, 'TOILET_CLEANER');
+  const perfAcidToilet = calculateCleaningPerformance(acidToiletCleaner, 1.2, 'TOILET_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfNeutralToilet = calculateCleaningPerformance(neutralBowlCleaner, 7.0, 'TOILET_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   const descalingKpiAcid = perfAcidToilet.categoryKPIs.find(k => k.id === 'acidDescalingScore');
   const descalingKpiNeutral = perfNeutralToilet.categoryKPIs.find(k => k.id === 'acidDescalingScore');
@@ -213,8 +213,8 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 92.0 }
   ];
 
-  const perfGlassIdeal = calculateCleaningPerformance(glassIdeal, 9.0, 'GLASS_CLEANER');
-  const perfGlassExcessive = calculateCleaningPerformance(glassExcessiveSurfactant, 9.0, 'GLASS_CLEANER');
+  const perfGlassIdeal = calculateCleaningPerformance(glassIdeal, 9.0, 'GLASS_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const perfGlassExcessive = calculateCleaningPerformance(glassExcessiveSurfactant, 9.0, 'GLASS_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   const streakKpiIdeal = perfGlassIdeal.categoryKPIs.find(k => k.id === 'streakFreeClarity');
   const streakKpiExcessive = perfGlassExcessive.categoryKPIs.find(k => k.id === 'streakFreeClarity');
@@ -231,12 +231,12 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 93.8 }
   ];
 
-  const perfSoftener = calculateCleaningPerformance(fabricSoftenerFormula, 3.2, 'FABRIC_SOFTENER');
+  const perfSoftener = calculateCleaningPerformance(fabricSoftenerFormula, 3.2, 'FABRIC_SOFTENER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   assert('Fabric Softener', 'Cleaning score is strictly null for Fabric Softener', perfSoftener.cleaningScore === null, perfSoftener.cleaningScore, null);
   assert('Fabric Softener', 'isCleaningApplicable is false', perfSoftener.isCleaningApplicable === false, perfSoftener.isCleaningApplicable, false);
   assert('Fabric Softener', 'Qualitative power is Conditioning / Non-Detergent', perfSoftener.cleaningPower === 'Conditioning / Non-Detergent', perfSoftener.cleaningPower, 'Conditioning / Non-Detergent');
-  assert('Fabric Softener', 'Fabric Softening Index is positive', perfSoftener.cpi > 70, perfSoftener.cpi, '>70');
+  assert('Fabric Softener', 'Fabric Softening Index is positive while detergent CPI remains not applicable', (perfSoftener.conditioningScore ?? 0) > 70 && perfSoftener.cpi === null, { conditioningScore: perfSoftener.conditioningScore, cpi: perfSoftener.cpi }, 'conditioningScore >70 and cpi null');
 
   // --------------------------------------------------------------------------
   // TEST GROUP 9: KITCHEN DEGREASER (ALKALINITY + SOLVENT)
@@ -249,7 +249,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 82.0 }
   ];
 
-  const perfDegreaser = calculateCleaningPerformance(heavyDegreaser, 13.0, 'KITCHEN_DEGREASER');
+  const perfDegreaser = calculateCleaningPerformance(heavyDegreaser, 13.0, 'KITCHEN_DEGREASER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
 
   assert('Kitchen Degreaser', 'Heavy alkaline solvent degreaser achieves high saponification & degreasing score', perfDegreaser.cpi >= 80, perfDegreaser.cpi, '>=80');
 
@@ -263,7 +263,7 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'Water', percentage: 83.0 }
   ];
 
-  const perfCarShampoo = calculateCleaningPerformance(carShampooNeutral, 7.2, 'CAR_SHAMPOO');
+  const perfCarShampoo = calculateCleaningPerformance(carShampooNeutral, 7.2, 'CAR_SHAMPOO', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   const waxKpi = perfCarShampoo.categoryKPIs.find(k => k.id === 'waxSafePreservation');
 
   assert('Car Shampoo', 'Neutral pH car shampoo passes wax-safety criteria', waxKpi?.status === 'PREDICTIVE_ONLY', waxKpi?.status, 'PREDICTIVE_ONLY');
@@ -279,7 +279,11 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
 
   const perfIncompatible = calculateCleaningPerformance(incompatibleFormula, 7.0, 'LAUNDRY_LIQUID', undefined, {
     compatibilityStatus: 'INCOMPATIBLE',
-    hasCriticalCompatibilityAlert: true
+    hasCriticalCompatibilityAlert: true,
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert('Compatibility Sync', 'Incompatible formula flags critical negative factor', perfIncompatible.keyNegativeFactors.some(f => f.includes('incompatibility')), true, true);
@@ -291,29 +295,33 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
     { name: 'SLES 70%', percentage: 12, activeMatterPct: 70, category: 'Anionic Surfactant' },
     { name: 'Water', percentage: 88 }
   ];
-  const cpi1 = calculateCPI(testFormula, 8.0, 'LAUNDRY_LIQUID');
-  const cpi2 = calculateCPI(testFormula, 8.0, 'LAUNDRY_LIQUID');
+  const cpi1 = calculateCPI(testFormula, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const cpi2 = calculateCPI(testFormula, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Determinism', 'Identical inputs produce identical CPI', cpi1 === cpi2, cpi1, cpi2);
   assert('Bounding', 'CPI is strictly bounded in 0-100', cpi1 >= 0 && cpi1 <= 100, cpi1, '0-100');
 
   // --------------------------------------------------------------------------
   // TEST GROUP 13: EMPTY & ZERO-ACTIVE ROBUSTNESS
   // --------------------------------------------------------------------------
-  const emptyPerf = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID');
-  assert('Edge Cases', 'Empty formula yields 0 CPI', emptyPerf.cpi === 0, emptyPerf.cpi, 0);
+  const emptyPerf = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  assert('Edge Cases', 'Empty formula CPI is unavailable', emptyPerf.cpi === null, emptyPerf.cpi, null);
   assert('Edge Cases', 'Empty formula provenance is INSUFFICIENT_DATA', emptyPerf.provenance === 'INSUFFICIENT_DATA', emptyPerf.provenance, 'INSUFFICIENT_DATA');
 
   // All 13 canonical categories supported without exceptions
   for (const catId of CANONICAL_PRODUCT_CATEGORY_IDS) {
-    const res = calculateCleaningPerformance(testFormula, 7.5, catId);
-    assert('Taxonomy Coverage', `Category ${catId} evaluated successfully`, typeof res.cpi === 'number' && res.categoryKPIs.length > 0, true, true);
+    const res = calculateCleaningPerformance(testFormula, 7.5, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+    if (catId === 'FABRIC_SOFTENER') {
+      assert('Taxonomy Coverage', 'Fabric softener is not assigned a detergent cleaning CPI', res.isCleaningApplicable === false && res.cpi === null, { applicable: res.isCleaningApplicable, cpi: res.cpi }, { applicable: false, cpi: null });
+    } else {
+      assert('Taxonomy Coverage', `Category ${catId} evaluated as screening only`, typeof res.cpi === 'number' && res.categoryKPIs.length > 0 && res.provenance === 'PREDICTED', { cpi: res.cpi, kpis: res.categoryKPIs.length, provenance: res.provenance }, 'finite screening CPI with category KPIs');
+    }
   }
 
   // P0 SCIENTIFIC HONESTY: heuristic CPI/KPIs cannot claim validated PASS.
-  const screeningOnly = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID');
+  const screeningOnly = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Scientific Provenance', 'Composite CPI remains predicted without lab data', screeningOnly.provenance === 'PREDICTED', screeningOnly.provenance, 'PREDICTED');
   assert('Scientific Provenance', 'Predicted KPI threshold hits are never represented as verified PASS', screeningOnly.categoryKPIs.filter(k => k.provenance === 'PREDICTED').every(k => k.status !== 'PASS' && k.status !== 'MEASURED_PASS'), screeningOnly.categoryKPIs.map(k => k.status), 'PREDICTIVE_ONLY / WARNING');
-  const oneLabMeasurement = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID', { measuredSoilRemovalPct: 82, testMethod: 'ASTM D4265' });
+  const oneLabMeasurement = calculateCleaningPerformance(laundryMediumActive, 8.5, 'LAUNDRY_LIQUID', { measuredSoilRemovalPct: 82, testMethod: 'ASTM D4265' }, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Scientific Provenance', 'One soil measurement does not certify composite CPI', oneLabMeasurement.provenance === 'PREDICTED', oneLabMeasurement.provenance, 'PREDICTED');
   assert('Scientific Provenance', 'One soil measurement only marks the matching soil KPI as measured', oneLabMeasurement.categoryKPIs.filter(k => k.provenance === 'MEASURED').length === 1, oneLabMeasurement.categoryKPIs.filter(k => k.provenance === 'MEASURED').map(k => k.id), 'one matching KPI');
 

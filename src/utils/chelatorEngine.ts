@@ -26,13 +26,30 @@ export interface ValidatedChelatorCapacity {
 
 export function validateChelatorCapacity(
   capacity: number | null | undefined,
-  evidenceId?: string
+  evidenceId?: string,
+  expectedActiveMatterPct?: number
 ): ValidatedChelatorCapacity {
+  const registeredSpecies = evidenceId
+    ? AUTHORITATIVE_CHELATOR_DATABASE.find(species => species.evidenceId === evidenceId)
+    : undefined;
+  const expectedCapacity = registeredSpecies
+    ? (
+        expectedActiveMatterPct === undefined || expectedActiveMatterPct === registeredSpecies.activeDefault
+          ? registeredSpecies.effectiveCommercialCapacityMgPerG
+          : calculateCommercialCapacity({
+              theoreticalActiveCapacityMgPerG: registeredSpecies.theoreticalActiveCapacityMgPerG,
+              activeMatterPct: expectedActiveMatterPct
+            })
+      )
+    : null;
   if (
     typeof capacity !== 'number' ||
     !Number.isFinite(capacity) ||
     capacity <= 0 ||
-    !evidenceId?.trim()
+    !registeredSpecies ||
+    expectedCapacity === null ||
+    !Number.isFinite(expectedCapacity) ||
+    Math.abs(capacity - expectedCapacity) > 0.02
   ) {
     return {
       capacityMgCaCO3PerGram: null,
@@ -84,11 +101,19 @@ export function validateChelatorEvidence(input: ChelatorEvidenceInput): {
   status: 'VALID' | 'INSUFFICIENT_DATA';
   reason?: string;
 } {
-  if (!input.evidenceId || !input.evidenceId.trim()) {
+  const registeredSpecies = input.evidenceId
+    ? AUTHORITATIVE_CHELATOR_DATABASE.find(species => species.evidenceId === input.evidenceId)
+    : undefined;
+  if (
+    !registeredSpecies ||
+    !input.citation?.trim() ||
+    input.citation.trim() !== registeredSpecies.citation ||
+    input.status !== registeredSpecies.scientificStatus
+  ) {
     return {
       verified: false,
       status: 'INSUFFICIENT_DATA',
-      reason: 'MISSING_EVIDENCE_IDENTIFIER'
+      reason: 'EVIDENCE_ID_CITATION_OR_STATUS_NOT_REGISTERED'
     };
   }
   return {
@@ -704,11 +729,11 @@ export function getChelatorBindingCapacity(
     matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
       n.includes(s.id) || 
       n.includes(s.name.toLowerCase()) ||
-      (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
+      (s.id === 'glda-47' && (n.includes('glda-47') || n.includes('glda 47') || n.includes('gl-47'))) ||
       (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
-      (s.id === 'citrate-dihydrate' && (n.includes('citrate dihydrate') || n.includes('sodium citrate'))) ||
+      (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
       (s.id === 'gluconate' && n.includes('gluconate')) ||
-      (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium'))) ||
+      (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium 99'))) ||
       (s.id === 'edta-liquid' && n.includes('edta 39')) ||
       (s.id === 'stpp' && n.includes('stpp')) ||
       (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
@@ -759,7 +784,7 @@ export function getChelatorBindingCapacity(
       theoreticalActiveCapacityMgPerG: matchedSpecies.theoreticalActiveCapacityMgPerG,
       activeMatterPct: _explicitActive
     });
-    return validateChelatorCapacity(scaled, matchedSpecies.evidenceId);
+    return validateChelatorCapacity(scaled, matchedSpecies.evidenceId, _explicitActive);
   }
 
   return validateChelatorCapacity(
@@ -845,21 +870,12 @@ export function calculateFormulationChelationCapacity(
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
     const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
 
-    // Resolve matched species metadata
-    const n = rawName.toLowerCase();
-    const matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
-      n.includes(s.id) || 
-      n.includes(s.name.toLowerCase()) || 
-      (s.id === 'glda-47' && (n.includes('glda') || n.includes('gl-47'))) ||
-      (s.id === 'mgda-38' && n.includes('mgda')) ||
-      (s.id === 'citrate-dihydrate' && n.includes('citrate')) ||
-      (s.id === 'gluconate' && n.includes('gluconate')) ||
-      (s.id === 'edta-powder' && n.includes('edta')) ||
-      (s.id === 'stpp' && n.includes('stpp')) ||
-      (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
-      (s.id === 'hedp' && (n.includes('hedp') || n.includes('etidronate'))) ||
-      (s.id === 'polycarboxylate' && (n.includes('polycarboxylate') || n.includes('polyacrylate')))
-    );
+    // Reuse the exact species resolved by the grade-validated capacity lookup.
+    // A second broad name matcher previously misclassified GLDA-99 powder as
+    // GLDA-47 liquid and generic EDTA as a verified powder grade.
+    const matchedSpecies = capacityResult.evidenceId
+      ? AUTHORITATIVE_CHELATOR_DATABASE.find(s => s.evidenceId === capacityResult.evidenceId)
+      : undefined;
 
     const rawRole = ((ing as any)?.role || (ing as any)?.category || '').toLowerCase();
     const isDeclaredChelator = /chelat|builder|sequestr/i.test(rawRole) || /chelat|sequestr/i.test(rawName);
@@ -1254,8 +1270,13 @@ export interface ChelatorDetail {
 }
 
 export interface GreenChelatorResult {
+  status: 'CALCULATED' | 'INSUFFICIENT_DATA';
+  inputWarnings: string[];
   score: number;
   isGreen: boolean;
+  isHardnessLoadFullyCovered: boolean;
+  totalProvidedSequestrationMg?: number;
+  stoichiometricCoveragePct?: number;
   totalCaCO3ToBindMg?: number;
   stoichiometricTargetMg?: number;
   chelators?: ChelatorDetail[];
@@ -1264,105 +1285,127 @@ export interface GreenChelatorResult {
 }
 
 export function calculateGreenChelators(chelators: GreenChelatorInput[] | any, ..._args: any[]): GreenChelatorResult {
-  let params = {
-    waterHardnessPpm: 150,
-    washVolumeL: 10,
-    washDoseGrams: 20,
-    safetyMarginPct: 25,
-    coBuilderTargetPct: 10,
-    maxFormulationCapPct: 3.0,
-  };
-
-  let inputList: any[] = [];
+  const params: Record<string, unknown> = {};
+  let inputList: GreenChelatorInput[] = [];
 
   if (Array.isArray(chelators)) {
     inputList = chelators;
   } else if (chelators && typeof chelators === 'object') {
-    params = { ...params, ...chelators };
-    if (Array.isArray(chelators.chelators)) {
-      inputList = chelators.chelators;
-    }
+    Object.assign(params, chelators);
+    if (Array.isArray(chelators.chelators)) inputList = chelators.chelators;
   }
 
-  const hardPpm = typeof params.waterHardnessPpm === 'number' ? params.waterHardnessPpm : (parseFloat(String(params.waterHardnessPpm)) || 150);
-  const washVol = typeof params.washVolumeL === 'number' ? params.washVolumeL : (parseFloat(String(params.washVolumeL)) || 10);
-  const washDose = typeof params.washDoseGrams === 'number' && params.washDoseGrams > 0 ? params.washDoseGrams : (parseFloat(String(params.washDoseGrams)) || 20);
-  const margin = typeof params.safetyMarginPct === 'number' ? params.safetyMarginPct : (parseFloat(String(params.safetyMarginPct)) || 25);
-  const coTarget = typeof params.coBuilderTargetPct === 'number' ? params.coBuilderTargetPct : (parseFloat(String(params.coBuilderTargetPct)) || 10);
-  const maxCap = typeof params.maxFormulationCapPct === 'number' ? params.maxFormulationCapPct : (parseFloat(String(params.maxFormulationCapPct)) || 3.0);
+  const readFinite = (key: string): number | null => {
+    const value = params[key];
+    if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+    return value;
+  };
 
-  const totalCaCO3ToBindMg = hardPpm * washVol;
-  const stoichiometricTargetMg = totalCaCO3ToBindMg * (1 + margin / 100);
+  const hardPpm = readFinite('waterHardnessPpm');
+  const washVol = readFinite('washVolumeL');
+  const washDose = readFinite('washDoseGrams');
+  const margin = readFinite('safetyMarginPct');
+  const coTarget = readFinite('coBuilderTargetPct');
+  const maxCap = readFinite('maxFormulationCapPct');
 
-  let details: ChelatorDetail[] = [];
+  const inputWarnings: string[] = [];
+  if (hardPpm === null || hardPpm < 0) inputWarnings.push('Measured water hardness (mg/L as CaCO3) is missing or invalid.');
+  if (washVol === null || washVol <= 0) inputWarnings.push('Wash volume must be supplied and greater than zero.');
+  if (washDose === null || washDose <= 0) inputWarnings.push('Wash dose must be supplied and greater than zero.');
+  if (margin === null || margin < 0) inputWarnings.push('Safety margin must be supplied and non-negative.');
+  if (coTarget === null || coTarget < 0 || coTarget > 100) inputWarnings.push('Co-builder target must be within 0–100%.');
+  if (maxCap === null || maxCap < 0 || maxCap > 100) inputWarnings.push('Maximum formulation cap must be within 0–100%.');
 
-  if (inputList.length > 0) {
-    details = inputList.map((c, i) => {
-      const capRes = c.bindingCapacity 
-        ? { capacityMgCaCO3PerGram: c.bindingCapacity, status: 'VALID' } 
-        : getChelatorBindingCapacity(c.name);
-      
-      const isKnown = capRes.status === 'VALID' && (capRes.capacityMgCaCO3PerGram ?? 0) > 0;
-      const bindingCap = isKnown ? (capRes.capacityMgCaCO3PerGram as number) : 0;
-      const theoGrams = isKnown ? stoichiometricTargetMg / bindingCap : 0;
-      const coGrams = theoGrams * (coTarget / 100);
-      const calcPct = isKnown ? (coGrams / (washDose || 1)) * 100 : 0;
-      const pracPct = isKnown ? Math.min(calcPct, maxCap) : 0;
-      const pracGrams = (pracPct / 100) * washDose;
-
-      return {
-        id: c.id || String(i + 1),
-        name: c.name || "Green Chelator",
-        percent: c.percent || pracPct,
-        isGreen: isKnown,
-        score: isKnown ? (c.score || 90) : 0,
-        bindingCapacity: bindingCap,
-        theoreticalSequestrationGrams: theoGrams,
-        coBuilderTargetGrams: coGrams,
-        calculatedWeightPct: calcPct,
-        practicalWeightPct: pracPct,
-        practicalWeightGrams: pracGrams,
-        citation: isKnown ? (c.citation || 'EU Ecolabel Technical Data') : 'Unknown chelator binding capacity (INSUFFICIENT_DATA)'
-      };
-    });
-  } else {
-    const baseChelators = [
-      { id: 'glda', name: 'Tetrasodium GLDA (47% Liquid)', bindingCapacity: 137, score: 98, citation: 'Dissolvine GL-47-S Technical Specification & Ecolabel Standard' },
-      { id: 'mgda', name: 'Trisodium MGDA (38% Liquid)', bindingCapacity: 155, score: 92, citation: 'Trilon M Technical Bulletin & Biodegradability Assessment' },
-      { id: 'citrate', name: 'Sodium Citrate Dihydrate (Powder)', bindingCapacity: 150, score: 85, citation: 'Hera Project Eco-Safety Evaluation for Trisodium Citrate' }
-    ];
-
-    details = baseChelators.map((c) => {
-      const theoGrams = stoichiometricTargetMg / c.bindingCapacity;
-      const coGrams = theoGrams * (coTarget / 100);
-      const calcPct = (coGrams / (washDose || 1)) * 100;
-      const pracPct = Math.min(calcPct, maxCap);
-      const pracGrams = (pracPct / 100) * washDose;
-
-      return {
-        id: c.id,
-        name: c.name,
-        percent: pracPct,
-        isGreen: true,
-        score: c.score,
-        bindingCapacity: c.bindingCapacity,
-        theoreticalSequestrationGrams: theoGrams,
-        coBuilderTargetGrams: coGrams,
-        calculatedWeightPct: calcPct,
-        practicalWeightPct: pracPct,
-        practicalWeightGrams: pracGrams,
-        citation: c.citation
-      };
-    });
+  if (inputWarnings.length > 0) {
+    return {
+      status: 'INSUFFICIENT_DATA',
+      inputWarnings,
+      score: 0,
+      isGreen: false,
+      isHardnessLoadFullyCovered: false,
+      details: [],
+      chelators: [],
+      recommendation: 'INSUFFICIENT_DATA: Supply measured wash-water hardness, wash volume, dose, safety margin, co-builder target, and formulation cap. No defaults are substituted.'
+    };
   }
 
+  const totalCaCO3ToBindMg = hardPpm! * washVol!;
+  const stoichiometricTargetMg = totalCaCO3ToBindMg * (1 + margin! / 100);
+
+  if (inputList.length === 0) {
+    return {
+      status: 'INSUFFICIENT_DATA',
+      inputWarnings: ['No chelator ingredients were supplied; no chelation capacity or formulation recommendation can be calculated.'],
+      score: 0,
+      isGreen: false,
+      isHardnessLoadFullyCovered: hardPpm === 0,
+      totalProvidedSequestrationMg: 0,
+      stoichiometricCoveragePct: hardPpm === 0 ? 100 : 0,
+      totalCaCO3ToBindMg,
+      stoichiometricTargetMg,
+      chelators: [],
+      details: [],
+      recommendation: 'No chelator inputs supplied. Hardness load is calculated from the supplied scenario, but chelator sufficiency is not evaluated.'
+    };
+  }
+
+  const details = inputList.map((c, i) => {
+    const capRes = getChelatorBindingCapacity(c.name);
+    const isKnown = capRes.status === 'VALID' && (capRes.capacityMgCaCO3PerGram ?? 0) > 0;
+    const bindingCap = isKnown ? (capRes.capacityMgCaCO3PerGram as number) : 0;
+    const theoGrams = isKnown ? stoichiometricTargetMg / bindingCap : 0;
+    const coGrams = theoGrams * (coTarget! / 100);
+    const calcPct = isKnown ? (coGrams / washDose!) * 100 : 0;
+    const pracPct = isKnown ? Math.min(calcPct, maxCap!) : 0;
+    const pracGrams = (pracPct / 100) * washDose!;
+    const providedSequestrationMg = pracGrams * bindingCap;
+    const stoichiometricCoveragePct = stoichiometricTargetMg > 0
+      ? (providedSequestrationMg / stoichiometricTargetMg) * 100
+      : 100;
+    const species = AUTHORITATIVE_CHELATOR_DATABASE.find(item => item.evidenceId === capRes.evidenceId);
+
+    return {
+      id: c.id || String(i + 1),
+      name: c.name || 'Unnamed chelator',
+      percent: c.percent ?? pracPct,
+      isGreen: Boolean(isKnown && species && ['glda-47', 'mgda-38', 'mgda-40', 'citrate-dihydrate'].includes(species.id)),
+      score: 0,
+      bindingCapacity: bindingCap,
+      theoreticalSequestrationGrams: theoGrams,
+      coBuilderTargetGrams: coGrams,
+      calculatedWeightPct: calcPct,
+      practicalWeightPct: pracPct,
+      practicalWeightGrams: pracGrams,
+      providedSequestrationMg,
+      stoichiometricCoveragePct,
+      isStoichiometricallySufficient: providedSequestrationMg >= stoichiometricTargetMg,
+      citation: isKnown ? (species?.citation || 'Registered evidence reference unavailable') : 'Unknown chelator binding capacity (INSUFFICIENT_DATA)'
+    };
+  });
+
+  const hasUnknownChelator = details.some(detail => detail.bindingCapacity <= 0);
+  const hasGreenCandidate = details.some(detail => detail.isGreen);
+  const totalProvidedSequestrationMg = details.reduce((sum, detail) => sum + detail.providedSequestrationMg, 0);
+  const stoichiometricCoveragePct = stoichiometricTargetMg > 0
+    ? (totalProvidedSequestrationMg / stoichiometricTargetMg) * 100
+    : 100;
+  const isHardnessLoadFullyCovered = stoichiometricTargetMg === 0 || totalProvidedSequestrationMg >= stoichiometricTargetMg;
   return {
-    score: 95,
-    isGreen: true,
+    status: hasUnknownChelator ? 'INSUFFICIENT_DATA' : 'CALCULATED',
+    inputWarnings: hasUnknownChelator ? ['At least one chelator grade is unregistered or its capacity is unavailable; unknown capacity was not counted.'] : [],
+    score: 0,
+    isGreen: hasGreenCandidate,
+    isHardnessLoadFullyCovered,
+    totalProvidedSequestrationMg,
+    stoichiometricCoveragePct,
     totalCaCO3ToBindMg,
     stoichiometricTargetMg,
     chelators: details,
-    details: details,
-    recommendation: 'Eco-friendly GLDA/MGDA chelation package optimized for stoichiometry and water hardness.'
+    details,
+    recommendation: hasUnknownChelator
+      ? 'INSUFFICIENT_DATA: Resolve every chelator identity and grade against registered evidence before interpreting formulation sufficiency.'
+      : (hasGreenCandidate
+        ? 'Registered green-chelator candidate grade(s) detected. This is not an environmental certification; verify biodegradation, ecotoxicity, and product-specific dose independently.'
+        : 'Registered chelator capacity was calculated, but no registered green-chelator candidate was identified.')
   };
 }

@@ -275,8 +275,10 @@ export function runP3WaterHardnessTestSuite() {
   // Unneutralized Citric Acid vs Sodium Citrate
   const citricAcidCap = getChelatorBindingCapacity('Citric Acid Monohydrate').capacityMgCaCO3PerGram ?? 0;
   const sodiumCitrateCap = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0;
+  const ambiguousSodiumCitrate = getChelatorBindingCapacity('Sodium Citrate');
   assertNear('Edge Cases', 'Unneutralized Citric Acid has 0 binding capacity', citricAcidCap, 0);
-  assertNear('Edge Cases', 'Sodium Citrate has 150 mg/g binding capacity', sodiumCitrateCap, 150);
+  assertNear('Edge Cases', 'Sodium Citrate Dihydrate has 150 mg/g binding capacity', sodiumCitrateCap, 150);
+  assert(ambiguousSodiumCitrate.status === 'INSUFFICIENT_DATA', 'Edge Cases', 'Generic Sodium Citrate without hydration grade is not assigned a guessed capacity');
 
   // Extreme Hardness (1000 ppm)
   const extremeHardnessRes = calculateWaterHardnessTolerance(testFormula, 1000, 10, 20, 100, 'LAUNDRY_LIQUID');

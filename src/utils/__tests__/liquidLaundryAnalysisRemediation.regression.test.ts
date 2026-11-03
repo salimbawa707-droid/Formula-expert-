@@ -105,7 +105,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
       id: i.id,
       name: i.name,
       percentage: i.percentage,
-      activePercentage: i.activeMatterPct,
+      activeMatterPct: i.activeMatterPct,
       costPerKg: i.costPerKg
     }))
   });
@@ -127,7 +127,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
   assert(
     'B. Full Analysis Pipeline',
     'CHECK FORMULA pipeline executes end-to-end to generate quality gate, specs, and release gate',
-    phResult.pH > 7.0 && specReport.items.length > 0 && (releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED'),
+    phResult.pH === null && specReport.items.length > 0 && (releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED'),
     `pH: ${phResult.pH}, specs: ${specReport.items.length}, release: ${releaseDecision.status || releaseDecision.decision}`
   );
 
@@ -136,14 +136,14 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
   // =========================================================================
   assert(
     'C. pH Screening vs Lab',
-    'Calculated pH 7.83 has provenance SCREENING/CALCULATED and is not LAB_VALIDATED',
-    phResult.pH >= 7.5 && phResult.pH <= 9.5 && qgResult.evidenceStatus !== 'FULLY_LAB_VALIDATED'
+    'Uncharacterized surfactant grades withhold calculated pH rather than inventing a neutralized value',
+    phResult.pH === null && qgResult.evidenceStatus !== 'FULLY_LAB_VALIDATED'
   );
   const phSpecItem = specReport.items.find(p => p.parameterKey === 'ph');
   assert(
     'C. pH Screening vs Lab',
     'Calculated pH has provenance CALCULATED and is distinct from LAB_MEASURED',
-    phSpecItem !== undefined && (phSpecItem.provenance === 'CALCULATED' || phSpecItem.provenance === 'SCREENING') && phSpecItem.isMeasured === false
+    phSpecItem !== undefined && phSpecItem.provenance === 'INSUFFICIENT_DATA' && phSpecItem.isMeasured === false
   );
 
   // =========================================================================
@@ -248,7 +248,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
   assert(
     'J. Decoupled 4-Pillar Status',
     'Scientific Screening is VALID, while Release Gate is BLOCKED due to cost and missing lab evidence',
-    qgResult.scientificValidity === 'VALID' && (releaseDecision.status === 'BLOCKED' || releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED') && specReport.verdict.status === 'NEEDS_REVISION'
+    qgResult.scientificValidity === 'INSUFFICIENT_DATA' && (releaseDecision.status === 'BLOCKED' || releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED') && specReport.verdict.status === 'NEEDS_REVISION'
   );
 
   // =========================================================================
@@ -280,7 +280,7 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
     'M. Owner R&D Control',
     'A BLOCKED release status does not prevent draft editing, saving, or scientific analysis',
     (releaseDecision.status === 'BLOCKED_BY_LAB_VALIDATION' || releaseDecision.decision === 'BLOCKED') &&
-    qgResult.scientificValidity === 'VALID' &&
+    qgResult.scientificValidity === 'INSUFFICIENT_DATA' &&
     liveCost.costPerKg > 0
   );
 

@@ -239,8 +239,8 @@ export interface ChelationResultOutput {
 
 export interface CompatibilityResultOutput {
   compatible: boolean;
-  compatibilityScore: number;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  compatibilityScore: number | null;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN';
   alerts: Array<{ id: string; title: string; message: string; severity: string; recommendation?: string }>;
   warnings: string[];
   stabilityStatus: string;

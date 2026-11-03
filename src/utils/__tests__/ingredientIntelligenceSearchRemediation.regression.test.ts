@@ -202,7 +202,7 @@ export function runIngredientIntelligenceSearchRemediationTestSuite(): TestSuite
   assert(
     '4. Unknown Ingredient Integrity',
     '17. Unknown ingredient without pure density defaults safely without arbitrary invention',
-    densityUnknown.densityGPerCm3 > 0
+    !Number.isFinite(densityUnknown.densityGPerCm3) && densityUnknown.densityStatus === 'INSUFFICIENT_DATA'
   );
 
   const cmcUnknown = calculateMixedCMC([
@@ -319,6 +319,7 @@ export function runIngredientIntelligenceSearchRemediationTestSuite(): TestSuite
     benchmarkFormulasPreserved && INGREDIENT_INTELLIGENCE_REGISTRY['labsa'].grades['90pct'] !== undefined
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: ${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 

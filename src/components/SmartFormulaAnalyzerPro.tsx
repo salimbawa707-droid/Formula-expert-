@@ -231,17 +231,14 @@ export const runRiskAnalysis = (ph: number, surfactantPct: number, analyzedIngs:
     }
   }
 
-  let preservativeWarning: string | null = null;
-  for (const ing of analyzedIngs) {
-    const warningObj = getPreservativeWarning(ing.name, ph);
-    if (warningObj) {
-      const msg = typeof warningObj === 'string' ? warningObj : warningObj.message;
-      preservativeWarning = `Preservative mismatch: ${ing.name} is ${msg}`;
-      break;
-    }
+  if (!Number.isFinite(ph) || ph < 0 || ph > 14) {
+    warnings.push('pH is unavailable or invalid; pH-dependent preservation compatibility was not evaluated.');
   }
-  if (preservativeWarning) {
-    warnings.push(preservativeWarning);
+
+  const preservativeWarningObj = getPreservativeWarning(analyzedIngs, Number.isFinite(ph) ? ph : undefined);
+  if (preservativeWarningObj) {
+    const msg = typeof preservativeWarningObj === 'string' ? preservativeWarningObj : preservativeWarningObj.message;
+    warnings.push(`Preservative efficacy not established: ${msg}`);
   }
 
   if (ph < 6 || ph > 9) {

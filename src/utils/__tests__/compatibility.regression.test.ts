@@ -38,8 +38,8 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
 
   // 1. Empty Formula
   const resEmpty = calculateFormulationCompatibility([], 7.5);
-  assertNear('Empty Formula', 'Empty formula score is 100', resEmpty.compatibilityScore, 100);
-  assertEqual('Empty Formula', 'Empty formula compatible is true', resEmpty.compatible, true);
+  assertEqual('Empty Formula', 'Empty formula score is unavailable', Number.isNaN(resEmpty.compatibilityScore), true);
+  assertEqual('Empty Formula', 'Empty formula compatibility is unknown and not a pass', resEmpty.compatible, false);
   assertEqual('Empty Formula', 'Empty formula has 0 alerts', resEmpty.alerts.length, 0);
 
   // 2. Anionic Surfactant Only
@@ -271,9 +271,11 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   const resInvalidPH1 = calculateFormulationCompatibility(formulaWithPreservative as any, NaN);
   const resInvalidPH2 = calculateFormulationCompatibility(formulaWithPreservative as any, "invalid_string");
   const resInvalidPH3 = calculateFormulationCompatibility(formulaWithPreservative as any, undefined);
-  assertNear('Invalid pH Safety', 'NaN pH falls back safely', resInvalidPH1.compatibilityScore, 100);
-  assertNear('Invalid pH Safety', 'Invalid string pH falls back safely', resInvalidPH2.compatibilityScore, 100);
-  assertNear('Invalid pH Safety', 'Undefined pH falls back safely', resInvalidPH3.compatibilityScore, 100);
+  assertEqual('Invalid pH Safety', 'NaN pH cannot produce a compatibility pass', resInvalidPH1.evidenceStatus, 'INSUFFICIENT_DATA');
+  assertEqual('Invalid pH Safety', 'NaN pH is reported as unknown', resInvalidPH1.compatibilityStatusSemantic, 'UNKNOWN');
+  assertEqual('Invalid pH Safety', 'Invalid string pH cannot produce a compatibility pass', resInvalidPH2.evidenceStatus, 'INSUFFICIENT_DATA');
+  assertEqual('Invalid pH Safety', 'Invalid string pH is reported as unknown', resInvalidPH2.compatibilityStatusSemantic, 'UNKNOWN');
+  assertEqual('Invalid pH Safety', 'Missing pH cannot produce a compatibility pass when calculation is unavailable', resInvalidPH3.evidenceStatus, 'INSUFFICIENT_DATA');
 
   // 27. Boundary pH Exact Values
   const resPH3Exact = calculateFormulationCompatibility(formulaWithPreservative as any, 3.0);

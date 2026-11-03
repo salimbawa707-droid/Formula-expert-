@@ -38,6 +38,15 @@ function assertNear(group: string, name: string, actual: number, expected: numbe
   );
 }
 
+// Adapter boundary: missing percentages must remain unavailable, while an
+// explicit legacy rawPercent value and explicit zero must be preserved.
+const missingPctMapped = mapFormulationIngredientToPHEngineInput({ name: 'LABSA' } as FormulationIngredient);
+assert('Adapter Input Integrity', 'Missing percentage maps to NaN, not an invented zero', Number.isNaN(missingPctMapped.rawPercent), missingPctMapped.rawPercent, 'NaN');
+const legacyRawPctMapped = mapFormulationIngredientToPHEngineInput({ name: 'LABSA', rawPercent: 12 } as any);
+assert('Adapter Input Integrity', 'Legacy rawPercent field is preserved', legacyRawPctMapped.rawPercent === 12, legacyRawPctMapped.rawPercent, 12);
+const explicitZeroPctMapped = mapFormulationIngredientToPHEngineInput({ name: 'LABSA', percentage: 0, rawPercent: 12 } as any);
+assert('Adapter Input Integrity', 'Explicit zero takes precedence over legacy rawPercent', explicitZeroPctMapped.rawPercent === 0, explicitZeroPctMapped.rawPercent, 0);
+
 // ==========================================
 // GROUP A — STRONG ACID / STRONG BASE
 // ==========================================
@@ -266,7 +275,7 @@ const neutralIngs = [
 ];
 
 const unsupportedPHIngredients = new Set([
-  'SLES 70%', 'AOS 38%', 'CAPB 30%', 'CMC', 'Enzyme Blend',
+  'SLES 70%', 'AOS 38%', 'CAPB 30%', 'Sodium Sulfate', 'CMC', 'Enzyme Blend',
   'Fragrance', 'Optical Brightener', 'Glycerin'
 ]);
 

@@ -65,18 +65,15 @@ export function runP5PropertyPipelinesTestSuite() {
     formulaVersion: '1.0.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      { name: 'Water (Aqua, Demineralized)', percentage: 70.0, role: 'Solvent', costPerKg: 0 },
-      { name: 'Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', percentage: 8.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
-      { name: 'Sodium Hydroxide (Caustic Soda Lye 100%)', percentage: 0.88, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
-      { name: 'Sodium Laureth Sulfate (SLES 70%)', percentage: 10.0, activeMatterPct: 70, role: 'Anionic Surfactant', costPerKg: 95 },
-      { name: 'Cocamidopropyl Betaine (CAPB 30%)', percentage: 3.0, activeMatterPct: 30, role: 'Amphoteric Surfactant', costPerKg: 85 },
-      { name: 'Sodium Chloride (Salt)', percentage: 1.5, activeMatterPct: 100, role: 'Thickener', costPerKg: 10 },
-      { name: 'Sodium Citrate (Dihydrate)', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 },
-      { name: 'Phenoxyethanol (Safe Preservative)', percentage: 0.2, activeMatterPct: 100, role: 'Preservative', costPerKg: 350 },
-      { name: 'Water (Aqua, Balance)', percentage: 5.42, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 }
+      { name: 'Water', percentage: 85.68, activeMatterPct: 0, role: 'Solvent', costPerKg: 0 },
+      { name: 'LABSA 90%', percentage: 12.0, activeMatterPct: 90, role: 'Anionic Surfactant', costPerKg: 130 },
+      { name: 'Sodium Hydroxide', percentage: 1.32, activeMatterPct: 100, role: 'pH Adjuster', costPerKg: 45 },
+      { name: 'Sodium Citrate Dihydrate', percentage: 1.0, activeMatterPct: 100, role: 'Chelator', costPerKg: 90 }
     ],
     batchSizeKg: 100,
     waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
     costContext: { targetCostPerKg: 50.0 }
   };
 
@@ -329,9 +326,9 @@ export function runP5PropertyPipelinesTestSuite() {
   assert(
     'Phase 5 Pipelines',
     'U. Calculated NVR remains separate from measured NVR',
-    liquidResult.densityResult.nvrPercentage >= 0 && liquidResult.labEvidenceResult.verifiedMeasurementsCount === 0,
+    !Number.isFinite(liquidResult.densityResult.nvrPercentage) && liquidResult.labEvidenceResult.verifiedMeasurementsCount === 0,
     { nvr: liquidResult.densityResult.nvrPercentage, verifiedCount: liquidResult.labEvidenceResult.verifiedMeasurementsCount },
-    'Calculated NVR without fake lab validation'
+    'NVR withheld because ingredient non-volatile fractions are not characterized; no fake lab validation'
   );
 
   // V. CPI remains screening
@@ -362,6 +359,7 @@ export function runP5PropertyPipelinesTestSuite() {
     '> 0'
   );
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 

@@ -23,14 +23,14 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
   }
 
   // --------------------------------------------------------------------------
-  // TEST 1: Pure Water Baseline
+  // TEST 1: Empty Formula Must Not Become Pure Water
   // --------------------------------------------------------------------------
   const waterReport = ViscosityEngine.evaluateViscosity([]);
   assert(
-    'Empty-ingredient water reference is not a measured formula result',
-    waterReport.viscosityCp === 1 && waterReport.behavior === 'Newtonian' && waterReport.rating === 'Water-Thin' && waterReport.dataSource === 'reference_baseline' && waterReport.modelMaturity === 'REFERENCE_BASELINE',
-    { cp: waterReport.viscosityCp, behavior: waterReport.behavior, rating: waterReport.rating, dataSource: waterReport.dataSource, modelMaturity: waterReport.modelMaturity },
-    { cp: 1, behavior: 'Newtonian', rating: 'Water-Thin', dataSource: 'reference_baseline' }
+    'Empty formula returns unavailable viscosity rather than pure-water baseline',
+    Number.isNaN(waterReport.viscosityCp) && waterReport.dataSource === 'unsupported' && waterReport.rating === 'Unavailable',
+    { cp: waterReport.viscosityCp, rating: waterReport.rating, dataSource: waterReport.dataSource },
+    { cp: 'NaN', rating: 'Unavailable', dataSource: 'unsupported' }
   );
 
   // --------------------------------------------------------------------------
@@ -84,14 +84,12 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
   });
 
   assert(
-    'Glass cleaner uses a reference benchmark, not measured formula data (1 - 10 cPs)',
-    glassReport.dataSource === 'reference_baseline' &&
-    glassReport.modelMaturity === 'REFERENCE_BASELINE' &&
-    glassReport.viscosityCp <= 10 &&
-    glassReport.rating === 'Water-Thin' &&
-    glassReport.behavior === 'Newtonian',
-    { cp: glassReport.viscosityCp, rating: glassReport.rating, behavior: glassReport.behavior },
-    { cp: '<= 10', rating: 'Water-Thin', behavior: 'Newtonian' }
+    'Glass cleaner without a matching calibrated benchmark does not receive an invented viscosity',
+    glassReport.dataSource === 'unsupported' &&
+    Number.isNaN(glassReport.viscosityCp) &&
+    glassReport.rating === 'Unavailable',
+    { cp: glassReport.viscosityCp, rating: glassReport.rating, dataSource: glassReport.dataSource },
+    { cp: 'unavailable', rating: 'Unavailable', dataSource: 'unsupported' }
   );
 
   // --------------------------------------------------------------------------
@@ -305,6 +303,54 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
     typeof wrapperResult.behavior === 'string',
     { estViscosityCps: wrapperResult.estViscosityCps, behavior: wrapperResult.behavior },
     { estViscosityCps: '> 0', behavior: 'string' }
+  );
+
+  const missingAssayReport = ViscosityEngine.evaluateViscosity([
+    { name: 'Mystery Anionic Surfactant', percentage: 10, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, category: 'Solvent' }
+  ], { productCategory: 'Laundry Liquid' });
+  assert(
+    'Unknown surfactant assay blocks viscosity estimate',
+    Number.isNaN(missingAssayReport.viscosityCp) && missingAssayReport.dataSource === 'unsupported',
+    { cp: missingAssayReport.viscosityCp, dataSource: missingAssayReport.dataSource },
+    { cp: 'NaN', dataSource: 'unsupported' }
+  );
+
+  const unbalancedReport = ViscosityEngine.evaluateViscosity([
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 80, category: 'Solvent' }
+  ], { productCategory: 'Laundry Liquid' });
+  assert(
+    'Unbalanced formula blocks viscosity estimate',
+    Number.isNaN(unbalancedReport.viscosityCp) && unbalancedReport.dataSource === 'unsupported',
+    { cp: unbalancedReport.viscosityCp, dataSource: unbalancedReport.dataSource },
+    { cp: 'NaN', dataSource: 'unsupported' }
+  );
+
+
+  const bypassedAggregateReport = ViscosityEngine.evaluateViscosity([
+    { name: 'Mystery Anionic Surfactant', percentage: 10, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, category: 'Solvent' }
+  ], {
+    productCategory: 'Laundry Liquid',
+    activeMatterReport: { contributions: [], totalWaterPct: 90, totalRawPercentage: 100 }
+  });
+  assert(
+    'Caller-supplied aggregate cannot hide unknown assay on the exact formula ingredient',
+    Number.isNaN(bypassedAggregateReport.viscosityCp) && bypassedAggregateReport.dataSource === 'unsupported',
+    { cp: bypassedAggregateReport.viscosityCp, dataSource: bypassedAggregateReport.dataSource },
+    { cp: 'NaN', dataSource: 'unsupported' }
+  );
+
+  const gradeConflictReport = ViscosityEngine.evaluateViscosity([
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 55, category: 'Anionic Surfactant' },
+    { name: 'Water', percentage: 90, category: 'Solvent' }
+  ], { productCategory: 'Laundry Liquid' });
+  assert(
+    'Grade-conflicted surfactant assay blocks viscosity estimate',
+    Number.isNaN(gradeConflictReport.viscosityCp) && gradeConflictReport.dataSource === 'unsupported',
+    { cp: gradeConflictReport.viscosityCp, dataSource: gradeConflictReport.dataSource },
+    { cp: 'NaN', dataSource: 'unsupported' }
   );
 
   const passed = results.filter(r => r.passed).length;

@@ -114,7 +114,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
     { name: 'Special Surfactant', percentage: 10, activeMatterPct: 100, hlbValue: 0 } // Explicit 0 HLB
   ];
   const zeroHLBResult = calculateBlendedHLB(zeroHLBSurfactant);
-  record(assertEqual('Explicit Zero Integrity', '0 HLB value is respected and yields 0 blended HLB', zeroHLBResult, 0));
+  record(assertEqual('Explicit Zero Integrity', '0 HLB value is respected as a valid explicit surfactant HLB', zeroHLBResult, 0));
 
   // -------------------------------------------------------------
   // 3. NULL / UNDEFINED / EMPTY / STRING INPUT AUDIT
@@ -137,7 +137,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
     { name: 'Unknown Additive', percentage: undefined, activeMatterPct: null, costPerKg: undefined }
   ];
   const nullActive = calculateActiveMatter(nullAndUndefinedIngredients);
-  record(assertEqual('Invalid / String Input Audit', 'Null and undefined percentages yield 0 total active matter', nullActive, 0));
+  record(assertEqual('Invalid / String Input Audit', 'Null and undefined percentages remain unavailable rather than being converted to zero', !Number.isFinite(nullActive), true));
 
   const negativePercentageIngredients: any[] = [
     { name: 'LABSA 96%', percentage: -10, activeMatterPct: 96, costPerKg: 1.50 },
@@ -147,7 +147,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   record(assertEqual('Invalid / String Input Audit', 'Negative percentage clamped to 0 in chelation capacity', negativeChelation.details[0].percentage, 0));
 
   const emptyFormulaResult = evaluateAIGrade([], 7.0);
-  record(assertEqual('Invalid / String Input Audit', 'Empty formula produces grade F', emptyFormulaResult.grade, 'F'));
+  record(assertEqual('Invalid / String Input Audit', 'Empty formula receives Grade F and is explicitly non-evaluable', emptyFormulaResult.grade, 'F'));
   record(assertEqual('Invalid / String Input Audit', 'Empty formula produces score 0', emptyFormulaResult.score, 0));
 
   // -------------------------------------------------------------
@@ -160,8 +160,8 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const mgdaBindingCapacity = getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'MGDA 38% Liquid binding capacity is 155 mg CaCO3/g (commercial basis)', mgdaBindingCapacity, 155));
 
-  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram ?? 0;
-  record(assertEqual('Commercial Product Grade', 'EDTA Tetrasodium binding capacity is 220 mg CaCO3/g (commercial basis)', edtaBindingCapacity, 220));
+  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'EDTA Tetrasodium 99% Powder binding capacity is 220 mg CaCO3/g (commercial basis)', edtaBindingCapacity, 220));
 
   const dtpaBindingCapacity = getChelatorBindingCapacity('DTPA Powder').capacityMgCaCO3PerGram ?? 0;
   record(assertEqual('Commercial Product Grade', 'DTPA binding capacity is 200 mg CaCO3/g (commercial basis)', dtpaBindingCapacity, 200));
@@ -183,18 +183,29 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   // 5. DUPLICATE INGREDIENT NAMING AUDIT
   // -------------------------------------------------------------
 
-  const gldaAliases = ['GLDA', 'GLDA-47', 'GLDA 47%', 'Tetrasodium GLDA', 'Dissolvine GL-47-S'];
-  const allGLDAIdentified = gldaAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
-  record(assertEqual('Duplicate Ingredient Naming', 'All GLDA alias representations return identical binding capacity (137 mg/g)', allGLDAIdentified, true));
+  const gldaGradeAliases = ['GLDA-47', 'GLDA 47%', 'Dissolvine GL-47-S'];
+  const allGLDAGradeAliasesIdentified = gldaGradeAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
+  const genericGLDAUnavailable =
+    getChelatorBindingCapacity('GLDA').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('Tetrasodium GLDA').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Grade-specific GLDA-47 aliases return 137 mg/g', allGLDAGradeAliasesIdentified, true));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic GLDA names remain unresolved without commercial grade', genericGLDAUnavailable, true));
 
-  const citrateAliases = ['Sodium Citrate', 'Sodium Citrate Dihydrate', 'Trisodium Citrate'];
-  const allCitrateIdentified = citrateAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 150);
-  record(assertEqual('Duplicate Ingredient Naming', 'All Sodium Citrate representations return identical binding capacity (150 mg/g)', allCitrateIdentified, true));
+  const citrateDihydrateCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram;
+  const citrateAnhydrousCapacity = getChelatorBindingCapacity('Sodium Citrate Anhydrous').capacityMgCaCO3PerGram;
+  const genericCitrateUnavailable =
+    getChelatorBindingCapacity('Sodium Citrate').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('Trisodium Citrate').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Dihydrate citrate retains its grade-specific 150 mg/g value', citrateDihydrateCapacity, 150));
+  record(assertEqual('Duplicate Ingredient Naming', 'Anhydrous citrate retains its distinct grade-specific 170 mg/g value', citrateAnhydrousCapacity, 170));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic citrate names remain unresolved without hydration grade', genericCitrateUnavailable, true));
 
-  const edtaSpecificAliases = ['EDTA Tetrasodium', 'EDTA Tetrasodium 99% Powder'];
-  const allSpecificEDTAIdentified = edtaSpecificAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 220);
-  const genericEDTAUnavailable = getChelatorBindingCapacity('EDTA').capacityMgCaCO3PerGram === null;
-  record(assertEqual('Duplicate Ingredient Naming', 'Tetrasodium EDTA aliases retain the verified 220 mg/g grade and generic EDTA remains unresolved', allSpecificEDTAIdentified && genericEDTAUnavailable, true));
+  const edtaPowderCapacity = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram;
+  const genericEDTAUnavailable =
+    getChelatorBindingCapacity('EDTA').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Tetrasodium EDTA 99% powder retains the verified 220 mg/g grade', edtaPowderCapacity, 220));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic EDTA names remain unresolved without commercial grade', genericEDTAUnavailable, true));
 
   // -------------------------------------------------------------
   // 6. CROSS-WORKSPACE INPUT DETERMINISM
@@ -248,16 +259,11 @@ export function runFormulaDataContractTestSuite(): TestSummary {
     { name: 'Demineralized Water', percentage: 90, activeMatterPct: 0, costPerKg: 0.02 }
   ];
 
-  const canonicalGrade = evaluateAIGrade(formulaCanonical, 7.0);
-  const aliasedGrade = evaluateAIGrade(formulaAliased, 7.0);
-  const zeroGrade = evaluateAIGrade(formulaWithZeros, 7.0);
-
-  record(assertEqual('Formula Switching', 'Canonical formula score differs predictably from aliased formula score', canonicalGrade.score !== aliasedGrade.score, true));
-  record(assertEqual('Formula Switching', 'Explicit zero formula score equals canonical formula score (0% ingredient ignored)', zeroGrade.score, canonicalGrade.score));
+  record(assertEqual('Formula Switching', 'Canonical and aliased formulations retain their distinct calculated active matter', calculateActiveMatter(formulaCanonical) !== calculateActiveMatter(formulaAliased), true));
+  record(assertEqual('Formula Switching', 'Explicit zero ingredient is ignored in active-matter calculation', calculateActiveMatter(formulaWithZeros), calculateActiveMatter(formulaCanonical)));
 
   // Restoring canonical formula
-  const restoredGrade = evaluateAIGrade(formulaCanonical, 7.0);
-  record(assertEqual('Formula Switching', 'Restored canonical formula score equals initial score with no state bleed', restoredGrade.score, canonicalGrade.score));
+  record(assertEqual('Formula Switching', 'Restored canonical formula active matter equals initial value with no state bleed', calculateActiveMatter(formulaCanonical), calculateActiveMatter(formulaWithZeros)));
 
   // -------------------------------------------------------------
   // 8. HYDRATION / SERIALIZATION INTEGRITY
@@ -297,19 +303,19 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const sandboxDraft: FormulationIngredient[] = JSON.parse(JSON.stringify(globalActiveFormula));
   sandboxDraft[0].percentage = 15; // Unapplied draft mutation
 
-  const globalGradeBefore = evaluateAIGrade(globalActiveFormula, 7.0).score;
-  const sandboxGrade = evaluateAIGrade(sandboxDraft, 7.0).score;
+  const globalActiveMatterBefore = calculateActiveMatter(globalActiveFormula);
+  const sandboxActiveMatter = calculateActiveMatter(sandboxDraft);
 
-  record(assertEqual('Sandbox Isolation', 'Unapplied draft mutation in sandbox does NOT alter global active formula score', evaluateAIGrade(globalActiveFormula, 7.0).score, globalGradeBefore));
-  record(assertEqual('Sandbox Isolation', 'Draft sandbox score reflects draft edit (15% LABSA vs 10% LABSA)', sandboxGrade !== globalGradeBefore, true));
+  record(assertEqual('Sandbox Isolation', 'Unapplied draft mutation in sandbox does NOT alter global active matter', calculateActiveMatter(globalActiveFormula), globalActiveMatterBefore));
+  record(assertEqual('Sandbox Isolation', 'Draft sandbox active matter reflects edit (15% LABSA vs 10% LABSA)', sandboxActiveMatter > globalActiveMatterBefore, true));
 
   // Apply sandbox edit
   const appliedGlobalFormula = JSON.parse(JSON.stringify(sandboxDraft));
-  record(assertEqual('Sandbox Isolation', 'Applying sandbox updates global active formula score', evaluateAIGrade(appliedGlobalFormula, 7.0).score, sandboxGrade));
+  record(assertEqual('Sandbox Isolation', 'Applying sandbox updates global active matter', calculateActiveMatter(appliedGlobalFormula), sandboxActiveMatter));
 
   // Reset sandbox
   const resetGlobalFormula = JSON.parse(JSON.stringify(globalActiveFormula));
-  record(assertEqual('Sandbox Isolation', 'Resetting sandbox restores original global formula score', evaluateAIGrade(resetGlobalFormula, 7.0).score, globalGradeBefore));
+  record(assertEqual('Sandbox Isolation', 'Resetting sandbox restores original global active matter', calculateActiveMatter(resetGlobalFormula), globalActiveMatterBefore));
 
   // -------------------------------------------------------------
   // 10. ENGINE OUTPUT CONTRACT VERIFICATION
@@ -326,10 +332,10 @@ export function runFormulaDataContractTestSuite(): TestSummary {
 
   const aiGradeRes = evaluateAIGrade(controlledFormula, 7.5, 200);
   record(assertEqual('Output Property Contract', 'AI Grade engine returns grade (string)', typeof aiGradeRes.grade, 'string'));
-  record(assertEqual('Output Property Contract', 'AI Grade engine returns score (number)', typeof aiGradeRes.score, 'number'));
-  record(assertEqual('Output Property Contract', 'AI Grade breakdown contains authoritative sub-scores', typeof aiGradeRes.breakdown.cpiScore, 'number'));
+  record(assertEqual('Output Property Contract', 'AI Grade does not invent a numeric score when the result is non-evaluable', aiGradeRes.score, null));
+  record(assertEqual('Output Property Contract', 'AI Grade unavailable CPI sub-score remains null', aiGradeRes.breakdown.cpiScore, null));
 
-  const cleaningRes = calculateCleaningPerformance(controlledFormula, 8.0, 'LAUNDRY_LIQUID');
+  const cleaningRes = calculateCleaningPerformance(controlledFormula, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningScore (number)', typeof cleaningRes.cleaningScore, 'number'));
   record(assertEqual('Output Property Contract', 'Cleaning engine returns overallScore (number)', typeof cleaningRes.overallScore, 'number'));
   record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningPower (string)', typeof cleaningRes.cleaningPower, 'string'));
@@ -346,17 +352,18 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   // Prove pH engine computes pH, Water Hardness computes chelation, Lab Health computes safety, AI Grade orchestrates
   const mappedPHEngineInput = mapFormulationIngredientsToPHEngineInput(controlledFormula);
   const phResult = calculatePHAdvanced(mappedPHEngineInput);
-  record(assertEqual('Engine Separation', 'pHEngine computes standalone pH value', typeof phResult.pH, 'number'));
+  record(assertEqual('Engine Separation', 'pHEngine withholds pH when SLES pH chemistry is not characterized', phResult.pH, null));
+  record(assertEqual('Engine Separation', 'pHEngine exposes solver status for unavailable pH', typeof phResult.solverConverged, 'boolean'));
 
   const standaloneCPI = calculateCPI(controlledFormula);
-  record(assertEqual('Engine Separation', 'CPI engine computes standalone cleaning index', typeof standaloneCPI, 'number'));
+  record(assertEqual('Engine Separation', 'CPI remains unavailable without an explicit wash scenario and calculable pH', standaloneCPI, null));
 
   const standaloneHealth = calculateLabHealthScore(controlledFormula, phResult.pH).finalScore;
-  record(assertEqual('Engine Separation', 'Lab Health computes standalone safety score', typeof standaloneHealth, 'number'));
+  record(assertEqual('Engine Separation', 'Lab Health remains unassessed when pH is unavailable', standaloneHealth, null));
 
   const orchestratorGrade = evaluateAIGrade(controlledFormula, phResult.pH, 200);
-  record(assertEqual('Engine Separation', 'AI Grade breakdown incorporates authoritative CPI score', orchestratorGrade.breakdown.cpiScore, Math.round(standaloneCPI)));
-  record(assertEqual('Engine Separation', 'AI Grade breakdown incorporates authoritative Lab Health score', orchestratorGrade.breakdown.healthScore, Math.round(standaloneHealth)));
+  record(assertEqual('Engine Separation', 'AI Grade preserves unavailable CPI score as null', orchestratorGrade.breakdown.cpiScore, null));
+  record(assertEqual('Engine Separation', 'AI Grade preserves unavailable Lab Health score as null', orchestratorGrade.breakdown.healthScore, null));
 
   // -------------------------------------------------------------
   // 12. TAXONOMY NORMALIZATION & INTEGRITY AUDIT

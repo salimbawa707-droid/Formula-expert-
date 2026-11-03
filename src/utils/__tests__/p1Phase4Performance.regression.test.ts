@@ -69,11 +69,18 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   ];
 
   for (const catId of CANONICAL_PRODUCT_CATEGORY_IDS) {
-    const res = calculateCleaningPerformance(baseTestFormula, 8.0, catId);
+    const res = calculateCleaningPerformance(baseTestFormula, 8.0, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
     assert(`Category Profile Loaded: ${catId}`, res.productCategory === catId, res.productCategory, catId);
     assert(`Category Has Primary Domain: ${catId}`, res.primaryPerformanceDomain.length > 0, res.primaryPerformanceDomain.length > 0, true);
     assert(`Category Has Applicable KPIs: ${catId}`, res.categoryKPIs.length >= 3, res.categoryKPIs.length >= 3, true);
-    assert(`CPI is within 0-100: ${catId}`, res.cpi >= 0 && res.cpi <= 100, res.cpi, '0-100');
+    assert(
+      `Category performance metric is correctly typed: ${catId}`,
+      catId === 'FABRIC_SOFTENER'
+        ? res.cpi === null && res.conditioningScore !== null && res.conditioningScore >= 0 && res.conditioningScore <= 100
+        : res.cpi !== null && res.cpi >= 0 && res.cpi <= 100,
+      { cpi: res.cpi, conditioningScore: res.conditioningScore },
+      catId === 'FABRIC_SOFTENER' ? 'conditioningScore 0-100, CPI null' : 'CPI 0-100'
+    );
   }
 
   // --------------------------------------------------------------------------
@@ -85,10 +92,10 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Water', percentage: 93.5, category: 'Solvent' }
   ];
 
-  const softenerRes = calculateCleaningPerformance(softenerStandardFormula, 3.5, 'FABRIC_SOFTENER');
+  const softenerRes = calculateCleaningPerformance(softenerStandardFormula, 3.5, 'FABRIC_SOFTENER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Fabric Softener isCleaningApplicable is False', softenerRes.isCleaningApplicable === false, softenerRes.isCleaningApplicable, false);
   assert('Fabric Softener Cleaning Score is Null (NOT_APPLICABLE)', softenerRes.cleaningScore === null, softenerRes.cleaningScore, null);
-  assert('Fabric Softener CPI Evaluates Softening (> 70)', softenerRes.cpi >= 70, softenerRes.cpi, '>= 70');
+  assert('Fabric Softener conditioning score evaluates softening (> 70) while detergent CPI is null', (softenerRes.conditioningScore ?? 0) >= 70 && softenerRes.cpi === null, { conditioningScore: softenerRes.conditioningScore, cpi: softenerRes.cpi }, 'conditioningScore >=70, CPI null');
   assert('Fabric Softener Qualitative Rating is Conditioning', softenerRes.cleaningPower === 'Conditioning / Non-Detergent', softenerRes.cleaningPower, 'Conditioning / Non-Detergent');
   
   const softeningKpi = softenerRes.categoryKPIs.find(k => k.id === 'fabricSofteningIndex');
@@ -103,8 +110,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'SLES 70%', percentage: 2, activeMatterPct: 70, category: 'Anionic Surfactant' }, // Anionic contaminant!
     { name: 'Water', percentage: 92, category: 'Solvent' }
   ];
-  const softenerAnionicRes = calculateCleaningPerformance(softenerWithAnionic, 3.5, 'FABRIC_SOFTENER');
-  assert('Anionic Contamination Penalizes Softener CPI (< 50)', softenerAnionicRes.cpi < 50, softenerAnionicRes.cpi, '< 50');
+  const softenerAnionicRes = calculateCleaningPerformance(softenerWithAnionic, 3.5, 'FABRIC_SOFTENER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  assert('Anionic contamination penalizes conditioning score (< 50) while detergent CPI remains null', (softenerAnionicRes.conditioningScore ?? 100) < 50 && softenerAnionicRes.cpi === null, { conditioningScore: softenerAnionicRes.conditioningScore, cpi: softenerAnionicRes.cpi }, 'conditioningScore <50, CPI null');
   assert('Anionic Contamination Negative Factor Flagged', softenerAnionicRes.keyNegativeFactors.some(f => f.includes('Anionic surfactant detected')), true, true);
 
   // --------------------------------------------------------------------------
@@ -116,7 +123,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Isopropanol (IPA)', percentage: 5, category: 'Solvent' },
     { name: 'Water', percentage: 92, category: 'Solvent' }
   ];
-  const glassGoodRes = calculateCleaningPerformance(goodGlassCleaner, 9.5, 'GLASS_CLEANER');
+  const glassGoodRes = calculateCleaningPerformance(goodGlassCleaner, 9.5, 'GLASS_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Good Glass Cleaner Has High Streak-Free Score (>= 80)', (glassGoodRes.applicableKPIs['streakFreeClarity'] ?? 0) >= 80, glassGoodRes.applicableKPIs['streakFreeClarity'], '>= 80');
   assert('Good Glass Cleaner CPI is High (>= 75)', glassGoodRes.cpi >= 75, glassGoodRes.cpi, '>= 75');
 
@@ -125,7 +132,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'SLES 70%', percentage: 8, activeMatterPct: 70, category: 'Anionic Surfactant' }, // 5.6% active (too high!)
     { name: 'Water', percentage: 92, category: 'Solvent' }
   ];
-  const glassBadRes = calculateCleaningPerformance(badGlassCleaner, 9.5, 'GLASS_CLEANER');
+  const glassBadRes = calculateCleaningPerformance(badGlassCleaner, 9.5, 'GLASS_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Excess Surfactant Penalizes Glass Streak-Free Score (< 60)', (glassBadRes.applicableKPIs['streakFreeClarity'] ?? 0) < 60, glassBadRes.applicableKPIs['streakFreeClarity'], '< 60');
   assert('Excess Surfactant Triggers Negative Warning in Glass Cleaner', glassBadRes.keyNegativeFactors.some(f => f.includes('too high for glass cleaner')), true, true);
 
@@ -138,7 +145,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Amine Ethoxylate (Acid Thickener)', percentage: 2, activeMatterPct: 100, category: 'Nonionic Surfactant' },
     { name: 'Water', percentage: 88, category: 'Solvent' }
   ];
-  const toiletAcidRes = calculateCleaningPerformance(acidToiletCleaner, 1.5, 'TOILET_CLEANER');
+  const toiletAcidRes = calculateCleaningPerformance(acidToiletCleaner, 1.5, 'TOILET_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Acid Toilet Cleaner Delivers High Descaling Score (>= 80)', (toiletAcidRes.applicableKPIs['acidDescalingScore'] ?? 0) >= 80, toiletAcidRes.applicableKPIs['acidDescalingScore'], '>= 80');
   assert('Acid Toilet Cleaner CPI is High (>= 75)', toiletAcidRes.cpi >= 75, toiletAcidRes.cpi, '>= 75');
 
@@ -147,7 +154,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, category: 'Anionic Surfactant' },
     { name: 'Water', percentage: 95, category: 'Solvent' }
   ];
-  const toiletNeutralRes = calculateCleaningPerformance(neutralToiletCleaner, 7.0, 'TOILET_CLEANER');
+  const toiletNeutralRes = calculateCleaningPerformance(neutralToiletCleaner, 7.0, 'TOILET_CLEANER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Neutral Toilet Cleaner Descaling Score is Low (< 50)', (toiletNeutralRes.applicableKPIs['acidDescalingScore'] ?? 0) < 50, toiletNeutralRes.applicableKPIs['acidDescalingScore'], '< 50');
   assert('Neutral Toilet Cleaner Flags Acid Deficiency', toiletNeutralRes.keyNegativeFactors.some(f => f.includes('insufficiently acidic')), true, true);
 
@@ -162,7 +169,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Protease & Amylase Enzyme', percentage: 1.5, activeMatterPct: 100, category: 'Enzyme' },
     { name: 'Water', percentage: 71.5, category: 'Solvent' }
   ];
-  const autoDishGoodRes = calculateCleaningPerformance(autoDishCompliant, 10.5, 'DISHWASH_AUTOMATIC');
+  const autoDishGoodRes = calculateCleaningPerformance(autoDishCompliant, 10.5, 'DISHWASH_AUTOMATIC', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Zero-Foam Machine Compliance Passes (>= 90)', (autoDishGoodRes.applicableKPIs['zeroFoamCompliance'] ?? 0) >= 90, autoDishGoodRes.applicableKPIs['zeroFoamCompliance'], '>= 90');
   assert('Automatic Dishwash CPI is Robust (>= 75)', autoDishGoodRes.cpi >= 75, autoDishGoodRes.cpi, '>= 75');
 
@@ -171,7 +178,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, category: 'Anionic Surfactant' },
     { name: 'Water', percentage: 90, category: 'Solvent' }
   ];
-  const autoDishBadRes = calculateCleaningPerformance(autoDishHighFoam, 10.0, 'DISHWASH_AUTOMATIC');
+  const autoDishBadRes = calculateCleaningPerformance(autoDishHighFoam, 10.0, 'DISHWASH_AUTOMATIC', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   const zeroFoamKpi = autoDishBadRes.categoryKPIs.find(k => k.id === 'zeroFoamCompliance');
   assert('High Foamer in Machine Dishwash Triggers FAIL Status', zeroFoamKpi?.status === 'FAIL', zeroFoamKpi?.status, 'FAIL');
   assert('High Foamer Machine Warning Generated', autoDishBadRes.keyNegativeFactors.some(f => f.includes('risk of machine pump cavitation')), true, true);
@@ -185,7 +192,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30, category: 'Amphoteric Surfactant' },
     { name: 'Water', percentage: 75, category: 'Solvent' }
   ];
-  const manualDishRes = calculateCleaningPerformance(manualDishwashFormula, 6.8, 'DISHWASH_MANUAL');
+  const manualDishRes = calculateCleaningPerformance(manualDishwashFormula, 6.8, 'DISHWASH_MANUAL', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Manual Dishwash Grease Cutting High (>= 80)', (manualDishRes.applicableKPIs['greaseCutting'] ?? 0) >= 80, manualDishRes.applicableKPIs['greaseCutting'], '>= 80');
   assert('Manual Dishwash Foam Persistence High (>= 80)', (manualDishRes.applicableKPIs['foamPersistence'] ?? 0) >= 80, manualDishRes.applicableKPIs['foamPersistence'], '>= 80');
 
@@ -195,10 +202,10 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   const mildHandWash: FormulationIngredient[] = [
     { name: 'SLES 70%', percentage: 8, activeMatterPct: 70, category: 'Anionic Surfactant' }, // 5.6%
     { name: 'CAPB 30%', percentage: 8, activeMatterPct: 30, category: 'Amphoteric Surfactant' }, // 2.4%
-    { name: 'Glycerin', percentage: 2, category: 'Humectant' },
+    { name: 'Glycerin', percentage: 2, activeMatterPct: 100, category: 'Humectant' },
     { name: 'Water', percentage: 82, category: 'Solvent' }
   ];
-  const handWashRes = calculateCleaningPerformance(mildHandWash, 5.8, 'HAND_WASH');
+  const handWashRes = calculateCleaningPerformance(mildHandWash, 5.8, 'HAND_WASH', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Mild Hand Wash Skin Mildness Index High (>= 75)', (handWashRes.applicableKPIs['skinMildnessIndex'] ?? 0) >= 75, handWashRes.applicableKPIs['skinMildnessIndex'], '>= 75');
   assert('Hand Wash CPI High (>= 75)', handWashRes.cpi >= 75, handWashRes.cpi, '>= 75');
 
@@ -212,7 +219,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'LAE-9', percentage: 5, activeMatterPct: 100, category: 'Nonionic Surfactant' },
     { name: 'Water', percentage: 78, category: 'Solvent' }
   ];
-  const degreaserRes = calculateCleaningPerformance(heavyDegreaser, 12.8, 'KITCHEN_DEGREASER');
+  const degreaserRes = calculateCleaningPerformance(heavyDegreaser, 12.8, 'KITCHEN_DEGREASER', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Heavy Degreaser Alkaline Saponification High (>= 85)', (degreaserRes.applicableKPIs['heavyGreaseSaponification'] ?? 0) >= 85, degreaserRes.applicableKPIs['heavyGreaseSaponification'], '>= 85');
   assert('Heavy Degreaser Solvent Penetration High (>= 80)', (degreaserRes.applicableKPIs['solventGreasePenetration'] ?? 0) >= 80, degreaserRes.applicableKPIs['solventGreasePenetration'], '>= 80');
 
@@ -225,7 +232,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Cocamide DEA', percentage: 2, activeMatterPct: 85, category: 'Nonionic Surfactant' },
     { name: 'Water', percentage: 82, category: 'Solvent' }
   ];
-  const carRes = calculateCleaningPerformance(carShampooFormula, 7.2, 'CAR_SHAMPOO');
+  const carRes = calculateCleaningPerformance(carShampooFormula, 7.2, 'CAR_SHAMPOO', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Car Shampoo Snow Foam Score High (>= 80)', (carRes.applicableKPIs['snowFoamGrimeLifting'] ?? 0) >= 80, carRes.applicableKPIs['snowFoamGrimeLifting'], '>= 80');
   assert('Car Shampoo Lubricity High (>= 75)', (carRes.applicableKPIs['lubricitySlickness'] ?? 0) >= 75, carRes.applicableKPIs['lubricitySlickness'], '>= 75');
   assert('Car Shampoo Wax Safe Score High (>= 90)', (carRes.applicableKPIs['waxSafePreservation'] ?? 0) >= 90, carRes.applicableKPIs['waxSafePreservation'], '>= 90');
@@ -239,15 +246,15 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     { name: 'Sodium Citrate', percentage: 3, category: 'Builder' },
     { name: 'Water', percentage: 83, category: 'Solvent' }
   ];
-  const directRes = calculateCleaningPerformance(laundryFormula, 8.5, 'LAUNDRY_LIQUID');
-  const directCPI = calculateCPI(laundryFormula, 8.5, 'LAUNDRY_LIQUID');
+  const directRes = calculateCleaningPerformance(laundryFormula, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  const directCPI = calculateCPI(laundryFormula, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('calculateCPI Exactly Matches direct result CPI', directCPI === directRes.cpi, directCPI, directRes.cpi);
   assert('overallScore Equals CPI', directRes.overallScore === directRes.cpi, directRes.overallScore, directRes.cpi);
   assert('performanceIndex Equals CPI', directRes.performanceIndex === directRes.cpi, directRes.performanceIndex, directRes.cpi);
   assert('Cleaning Score Matches CPI for Laundry Liquid', directRes.cleaningScore === directRes.cpi, directRes.cleaningScore, directRes.cpi);
 
   // Idempotency: Multiple calls yield identical results
-  const directRes2 = calculateCleaningPerformance(laundryFormula, 8.5, 'LAUNDRY_LIQUID');
+  const directRes2 = calculateCleaningPerformance(laundryFormula, 8.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('Idempotent Evaluation', directRes2.cpi === directRes.cpi && directRes2.cleaningScore === directRes.cleaningScore, true, true);
 
   // --------------------------------------------------------------------------
@@ -263,7 +270,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     laundryFormula,
     8.5,
     'LAUNDRY_LIQUID',
-    { measuredSoilRemovalPct: 82.5, testMethod: 'ASTM D4265 Tergotometer', testDate: '2026-09-29' }
+    { measuredSoilRemovalPct: 82.5, testMethod: 'ASTM D4265 Tergotometer', testDate: '2026-09-29' },
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('Composite CPI remains PREDICTED when one lab measurement is supplied', measuredRes.provenance === 'PREDICTED', measuredRes.provenance, 'PREDICTED');
   assert('Measured isMeasured is True', measuredRes.isMeasured === true, measuredRes.isMeasured, true);
@@ -278,7 +286,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     laundryFormula,
     8.5,
     'LAUNDRY_LIQUID',
-    { measuredSoilRemovalPct: 0, testMethod: 'ASTM D4265 Terg-O-Meter' }
+    { measuredSoilRemovalPct: 0, testMethod: 'ASTM D4265 Terg-O-Meter' },
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('Zero is retained as a valid measured soil-removal result', zeroMeasurementRes.isMeasured === true && zeroMeasurementRes.measuredSoilRemovalPct === 0, { isMeasured: zeroMeasurementRes.isMeasured, measuredSoilRemovalPct: zeroMeasurementRes.measuredSoilRemovalPct }, { isMeasured: true, measuredSoilRemovalPct: 0 });
   assert('Zero soil-removal result is a measured failure, not missing data', zeroMeasurementRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.status === 'MEASURED_FAIL', zeroMeasurementRes.categoryKPIs.find(k => k.id === 'particulateRemoval')?.status, 'MEASURED_FAIL');
@@ -287,7 +296,8 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
     laundryFormula,
     8.5,
     'LAUNDRY_LIQUID',
-    { measuredDescalingRate: 0, testMethod: 'Unmapped descaling method' }
+    { measuredDescalingRate: 0, testMethod: 'Unmapped descaling method' },
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('Unmapped descaling measurement is not misreported as a measured KPI', unmappedDescalingRes.isMeasured === false && unmappedDescalingRes.provenance === 'PREDICTED', { isMeasured: unmappedDescalingRes.isMeasured, provenance: unmappedDescalingRes.provenance }, { isMeasured: false, provenance: 'PREDICTED' });
   assert('Unmapped descaling measurement is disclosed as unused', unmappedDescalingRes.limitations.includes('not mapped to a validated performance KPI'), unmappedDescalingRes.limitations, 'limitations disclose unmapped measurement');
@@ -295,7 +305,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
   // --------------------------------------------------------------------------
   // TEST SECTION 12: getCategoryPerformanceKPIs helper
   // --------------------------------------------------------------------------
-  const kpis = getCategoryPerformanceKPIs(laundryFormula, 'LAUNDRY_LIQUID', 8.5);
+  const kpis = getCategoryPerformanceKPIs(laundryFormula, 'LAUNDRY_LIQUID', 8.5, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assert('getCategoryPerformanceKPIs returns array', Array.isArray(kpis) && kpis.length >= 4, true, true);
   assert('KPI items contain id, name, value, unit, provenance', kpis.every(k => k.id && k.name && k.unit && k.provenance), true, true);
 

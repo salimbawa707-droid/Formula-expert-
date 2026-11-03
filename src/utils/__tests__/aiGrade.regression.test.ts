@@ -32,8 +32,8 @@ export function runAIGradeTestSuite() {
   const resZeroActive = evaluateAIGrade([
     { id: 'water', name: 'Deionized Water', percentage: 100, activePct: 0, category: 'Solvent' } as any
   ]);
-  assertEqual('Zero Active', 'Water-only formula produces Grade F', resZeroActive.grade, 'F');
-  assertEqual('Zero Active', 'Water-only formula produces Score 0', resZeroActive.score, 0);
+  assertEqual('Zero Active', 'Water-only formula without canonical category remains non-evaluable', resZeroActive.grade, 'N/A');
+  assertEqual('Zero Active', 'Water-only formula records non-evaluable status', resZeroActive.isEvaluable, false);
 
   // 2. High-Quality Balanced Premium Formula
   const premiumFormula = [
@@ -45,8 +45,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resPremium = evaluateAIGrade(premiumFormula, 7.5);
-  assertEqual('Premium Formula', 'Balanced formula earns A or A+ grade', resPremium.grade === 'A+' || resPremium.grade === 'A', true);
-  assertEqual('Premium Formula', 'Balanced formula score >= 80', resPremium.score >= 80, true);
+  assertEqual('Premium Formula', 'Legacy formula without canonical category is not graded', resPremium.grade, 'N/A');
+  assertEqual('Premium Formula', 'Missing category prevents a composite score', resPremium.isEvaluable, false);
 
   // 3. Low Active Matter Dilute Formula
   const diluteFormula = [
@@ -55,8 +55,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resDilute = evaluateAIGrade(diluteFormula, 7.0);
-  assertEqual('Dilute Formula', 'Low active formula score < 60', resDilute.score < 60, true);
-  assertEqual('Dilute Formula', 'Low active formula grade is D or F', resDilute.grade === 'D' || resDilute.grade === 'F', true);
+  assertEqual('Dilute Formula', 'Dilute formula without category remains non-evaluable', resDilute.grade, 'N/A');
+  assertEqual('Dilute Formula', 'Missing category is recorded as non-evaluable', resDilute.isEvaluable, false);
 
   // 4. Surfactant Compatibility Hazard Override (Anionic + Cationic)
   const hazardFormula = [
@@ -66,8 +66,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resHazard = evaluateAIGrade(hazardFormula, 7.0);
-  assertEqual('Compatibility Hazard', 'Hazardous formula score <= 50', resHazard.score <= 50, true);
-  assertEqual('Compatibility Hazard', 'Hazardous formula grade is D or F', resHazard.grade === 'D' || resHazard.grade === 'F', true);
+  assertEqual('Compatibility Hazard', 'Hazardous formula without canonical category remains non-evaluable', resHazard.grade, 'N/A');
+  assertEqual('Compatibility Hazard', 'Missing category is recorded as non-evaluable', resHazard.isEvaluable, false);
 
   // 5. Extreme Safety Hazard Override (High Caustic Soda)
   const causticFormula = [
@@ -77,8 +77,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resCaustic = evaluateAIGrade(causticFormula, 13.5);
-  assertEqual('Health Hazard', 'Extreme pH caustic formula score <= 45', resCaustic.score <= 45, true);
-  assertEqual('Health Hazard', 'Extreme pH caustic formula grade is F', resCaustic.grade, 'F');
+  assertEqual('Health Hazard', 'Caustic formula without canonical category remains non-evaluable', resCaustic.grade, 'N/A');
+  assertEqual('Health Hazard', 'Missing category is recorded as non-evaluable', resCaustic.isEvaluable, false);
 
   // 6. Cost Overrun Penalty
   const expensiveFormula = [
@@ -89,9 +89,9 @@ export function runAIGradeTestSuite() {
   const resCostPass = evaluateAIGrade(expensiveFormula, 7.0, 150); // Target cost ₹150, batch cost ₹100
   const resCostFail = evaluateAIGrade(expensiveFormula, 7.0, 50);  // Target cost ₹50, batch cost ₹100
 
-  assertEqual('Cost Target', 'Within budget commercial score is 100', resCostPass.breakdown.commercialScore, 100);
-  assertEqual('Cost Target', 'Over budget commercial score < 100', resCostFail.breakdown.commercialScore < 100, true);
-  assertEqual('Cost Target', 'Over budget overall score lower than within budget', resCostFail.score < resCostPass.score, true);
+  assertEqual('Cost Target', 'Cost comparison without canonical category is not graded', resCostPass.grade, 'N/A');
+  assertEqual('Cost Target', 'Over-budget comparison without canonical category is not graded', resCostFail.grade, 'N/A');
+  assertEqual('Cost Target', 'Both cost-only legacy inputs remain non-evaluable without canonical category', !resCostPass.isEvaluable && !resCostFail.isEvaluable, true);
 
   // 7. SSOT Reactivity & Formula Switching
   const switchResA1 = evaluateAIGrade(premiumFormula, 7.5);
@@ -133,11 +133,9 @@ export function runAIGradeTestSuite() {
     // pHResult explicitly missing
   };
   const resTestA = evaluateAIGrade(inputMissingPH);
-  assertEqual('Problem 2 — Test A', 'Missing pH result marks health status as UNKNOWN', resTestA.breakdown.statusMap?.health, 'UNKNOWN');
-  assertEqual('Problem 2 — Test A', 'Missing pH result healthScore is 0 (not fabricated 100)', resTestA.breakdown.healthScore, 0);
-  assertEqual('Problem 2 — Test A', 'Missing pH result records pH in unknownParameters', resTestA.unknownParameters.includes('pH'), true);
-  assertEqual('Problem 2 — Test A', 'Missing pH result never generates fabricated 7.0 claim in strengths', resTestA.strengths.some(s => s.includes('7.0')), false);
-  assertEqual('Problem 2 — Test A', 'Missing pH result never generates fabricated 7.0 claim in reasoning', resTestA.reasoning.includes('7.0'), false);
+  assertEqual('Problem 2 — Test A', 'Missing pH makes the grade non-evaluable', resTestA.isEvaluable, false);
+  assertEqual('Problem 2 — Test A', 'Missing pH produces N/A grade, not a partial composite grade', resTestA.grade, 'N/A');
+  assertEqual('Problem 2 — Test A', 'Missing pH is recorded in unknown parameters', resTestA.unknownParameters.includes('pH'), true);
 
   // Test B: Missing compatibility result never becomes 100/100 or "compatible: true"
   const inputMissingComp = {
@@ -148,10 +146,9 @@ export function runAIGradeTestSuite() {
     // compatibilityResult explicitly missing
   };
   const resTestB = evaluateAIGrade(inputMissingComp);
-  assertEqual('Problem 2 — Test B', 'Missing compatibility marks compatibility status as UNKNOWN', resTestB.breakdown.statusMap?.compatibility, 'UNKNOWN');
-  assertEqual('Problem 2 — Test B', 'Missing compatibility score is 0 (never fabricated 100)', resTestB.breakdown.compatibilityScore, 0);
-  assertEqual('Problem 2 — Test B', 'Missing compatibility records compatibility in unknownParameters', resTestB.unknownParameters.includes('compatibility'), true);
-  assertEqual('Problem 2 — Test B', 'Missing compatibility records explicit limiting factor', resTestB.limitingFactors.some(f => f.includes('Chemical compatibility analysis is missing')), true);
+  assertEqual('Problem 2 — Test B', 'Missing compatibility makes the grade non-evaluable', resTestB.isEvaluable, false);
+  assertEqual('Problem 2 — Test B', 'Missing compatibility produces N/A grade', resTestB.grade, 'N/A');
+  assertEqual('Problem 2 — Test B', 'Missing compatibility is recorded in unknown parameters', resTestB.unknownParameters.includes('compatibility'), true);
 
   // Test C: Missing scientific results cannot generate favorable compatibility claims or falsely favorable grading
   const inputMissingBoth = {
@@ -162,17 +159,19 @@ export function runAIGradeTestSuite() {
   };
   const resTestC = evaluateAIGrade(inputMissingBoth);
   assertEqual('Problem 2 — Test C', 'Missing compatibility cannot generate favorable full compatibility claim', resTestC.strengths.includes('Full chemical compatibility with no antagonistic raw material interactions.'), false);
-  assertEqual('Problem 2 — Test C', 'Missing scientific results cannot award favorable A or A+ grade', resTestC.grade !== 'A+' && resTestC.grade !== 'A', true);
-  assertEqual('Problem 2 — Test C', 'Missing scientific results composite score is capped (<= 65)', resTestC.score <= 65, true);
+  assertEqual('Problem 2 — Test C', 'Missing critical science produces N/A instead of a capped letter grade', resTestC.grade, 'N/A');
+  assertEqual('Problem 2 — Test C', 'Missing critical science is not evaluable', resTestC.isEvaluable, false);
 
   // Test D: Valid pH and compatibility results continue to produce expected outputs
   const inputValidScience = {
     formulaIdentity: { canonicalCategory: 'LAUNDRY_LIQUID' },
-    activeMatterResult: { totalSurfactantActivePct: 18, totalActiveMatterPct: 18 },
-    pHResult: { ph: 8.5 },
+    scientificValidity: 'VALID',
+    activeMatterResult: { totalSurfactantActivePct: 18, totalActiveMatterPct: 18, verified: true },
+    pHResult: { ph: 8.5, isMeasured: true },
     compatibilityResult: { compatibilityScore: 95, compatible: true, alerts: [] },
-    cleaningResult: { cpi: 90, overallScore: 90 },
-    costResult: { costPerKg: 100, targetCostPerKg: 120, isWithinTarget: true }
+    cleaningResult: { cpi: 90, overallScore: 90, provenance: 'MEASURED' },
+    costResult: { costPerKg: 100, targetCostPerKg: 120, isWithinTarget: true, isComplete: true },
+    regulatoryResult: { status: 'COMPLIANT' }
   };
   const resTestD = evaluateAIGrade(inputValidScience);
   assertEqual('Problem 2 — Test D', 'Valid pH produces KNOWN health status', resTestD.breakdown.statusMap?.health, 'KNOWN');
@@ -188,6 +187,27 @@ export function runAIGradeTestSuite() {
   assertEqual('Problem 2 — Test E', 'Grading rules version provenance is intact', resTestC.gradingRulesVersion, '2026.1');
   assertEqual('Problem 2 — Test E', 'Scientific engine version provenance is intact', resTestC.scientificEngineVersion, '2.0.0');
 
+  // Test G: Legacy draft input cannot promote a target specification into an actual pH.
+  const targetOnlyDraft = evaluateAIGrade({
+    ingredients: premiumFormula,
+    productCategory: 'DISHWASH_MANUAL',
+    targetpH: 7.0
+  }, undefined, 150);
+  assertEqual('Problem 2 — Test G', 'Target pH alone does not satisfy the current formula pH input', targetOnlyDraft.isEvaluable, false);
+  assertEqual('Problem 2 — Test G', 'Target-only pH returns N/A rather than a composite grade', targetOnlyDraft.grade, 'N/A');
+
+  // Test H: Legacy heuristic grading must never declare scientific validity.
+  const legacyScreening = evaluateAIGrade({
+    ingredients: premiumFormula,
+    productCategory: 'DISHWASH_MANUAL',
+    ph: 7.0
+  }, undefined, 150);
+  assertEqual('Problem 2 — Test H', 'Legacy input is either non-evaluable or explicitly generic screening only', legacyScreening.gradeType === 'AI_GRADE_NOT_EVALUABLE' || legacyScreening.gradeType === 'GENERIC_SCREENING_INDEX', true);
+  assertEqual('Problem 2 — Test H', 'Legacy grade cannot claim scientific validity', legacyScreening.scientificValidity, 'INSUFFICIENT_DATA');
+  assertEqual('Problem 2 — Test H', 'Legacy heuristic output never exceeds screening ceiling', legacyScreening.score === null || legacyScreening.score <= 65, true);
+  assertEqual('Problem 2 — Test H', 'Legacy result cannot claim authoritative evaluation', !legacyScreening.isEvaluable || legacyScreening.blockingIssues.includes('AUTHORITATIVE_ORCHESTRATOR_CONTEXT_REQUIRED'), true);
+  assertEqual('Problem 2 — Test H', 'Legacy grade carries an orchestrator provenance blocker', legacyScreening.blockingIssues.includes('AUTHORITATIVE_ORCHESTRATOR_CONTEXT_REQUIRED'), true);
+
   // Test F: Invalid or unavailable results are handled safely without crashes or fabricated claims
   const inputInvalidScience = {
     formulaIdentity: { canonicalCategory: 'LAUNDRY_LIQUID' },
@@ -199,7 +219,8 @@ export function runAIGradeTestSuite() {
   assertEqual('Problem 2 — Test F', 'NaN pH safely produces UNKNOWN health status without crashing', resTestF.breakdown.statusMap?.health, 'UNKNOWN');
   assertEqual('Problem 2 — Test F', 'NaN compatibility safely produces UNKNOWN compatibility status without crashing', resTestF.breakdown.statusMap?.compatibility, 'UNKNOWN');
   assertEqual('Problem 2 — Test F', 'Invalid inputs do not award full compatibility claim', resTestF.strengths.includes('Full chemical compatibility with no antagonistic raw material interactions.'), false);
-  assertEqual('Problem 2 — Test F', 'Invalid inputs result is safe and evaluable structure', resTestF.isEvaluable, true);
+  assertEqual('Problem 2 — Test F', 'Invalid inputs return a safe non-evaluable structure', resTestF.isEvaluable, false);
+  assertEqual('Problem 2 — Test F', 'Invalid inputs return N/A grade', resTestF.grade, 'N/A');
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;

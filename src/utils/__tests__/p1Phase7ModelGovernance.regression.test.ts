@@ -131,8 +131,8 @@ export function runP1Phase7ModelGovernanceTestSuite(): { total: number; passed: 
   // --------------------------------------------------------------------------
   const goldenLaundry = GOLDEN_FORMULA_SET[0];
   const histEval = evaluateHistoricalFormulaReproducibility(goldenLaundry.ingredients, goldenLaundry.category, '1.0.0');
-  assert('14. Historical result retains old model version reference (Reproducibility test)', histEval.isReproducible && histEval.modelVersionUsed === '1.0.0', true, true);
-  assert('15. Same formula + same model version = identical result', typeof histEval.evaluatedResult.cpi === 'number', true, true);
+  assert('14. Historical result is not certified without immutable model artifact and original scenario', histEval.isReproducible === false && histEval.modelVersionUsed === 'UNVERIFIED', true, true);
+  assert('15. Historical result withholds CPI when original wash scenario is unavailable', histEval.evaluatedResult.cpi === null && /immutable model artifact/i.test(histEval.reason), true, true);
 
   // --------------------------------------------------------------------------
   // TEST GROUP 6: Reversible Rollback Semantics

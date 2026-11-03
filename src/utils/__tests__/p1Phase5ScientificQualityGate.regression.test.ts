@@ -69,16 +69,16 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     ingredients: validLaundryFormula
   });
 
-  assert('Valid Formula - Scientific Validity is VALID', validGate.scientificValidity === 'VALID', validGate.scientificValidity, 'VALID');
-  assert('Screening Formula - Out-of-spec parameter is not reported as PASS', validGate.specificationStatus === 'OUT_OF_SPEC', validGate.specificationStatus, 'OUT_OF_SPEC');
-  assert('Valid Formula - Compatibility Status is COMPATIBLE', validGate.compatibilityStatus === 'COMPATIBLE' || validGate.compatibilityStatus === 'COMPATIBLE_WITH_WARNINGS', validGate.compatibilityStatus, 'COMPATIBLE');
-  assert('Valid Formula - Performance Status is MEETS_PREDICTED_CRITERIA', validGate.performanceStatus === 'MEETS_PREDICTED_CRITERIA', validGate.performanceStatus, 'MEETS_PREDICTED_CRITERIA');
-  assert('Valid Formula - Evidence Status is PREDICTED_ONLY', validGate.evidenceStatus === 'PREDICTED_ONLY', validGate.evidenceStatus, 'PREDICTED_ONLY');
-  assert('Screening Formula - Predicted-only formula requires lab validation', validGate.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED', validGate.finalFormulaStatus, 'LAB_VALIDATION_REQUIRED');
-  assert('Valid Formula - Lab Readiness is READY_FOR_LAB_BENCH', validGate.labReadiness === 'READY_FOR_LAB_BENCH', validGate.labReadiness, 'READY_FOR_LAB_BENCH');
+  assert('Incomplete Formula Inputs - Missing ingredient assay/pH must not be accepted as scientifically valid', validGate.scientificValidity !== 'VALID', validGate.scientificValidity, 'INSUFFICIENT_DATA or INVALID');
+  assert('Incomplete Formula Inputs - Unavailable measurements do not create specification PASS', validGate.specificationStatus !== 'PASS', validGate.specificationStatus, 'NOT PASS');
+  assert('Incomplete Formula Inputs - Compatibility remains unavailable without evaluable pH', validGate.compatibilityStatus === 'INSUFFICIENT_DATA', validGate.compatibilityStatus, 'INSUFFICIENT_DATA');
+  assert('Incomplete Formula Inputs - Performance remains unavailable without complete wash scenario', validGate.performanceStatus === 'INSUFFICIENT_DATA', validGate.performanceStatus, 'INSUFFICIENT_DATA');
+  assert('Incomplete Formula Inputs - Evidence remains predicted only', validGate.evidenceStatus === 'PREDICTED_ONLY', validGate.evidenceStatus, 'PREDICTED_ONLY');
+  assert('Incomplete Formula Inputs - Solver failure remains insufficient data and blocks lab readiness', validGate.finalFormulaStatus === 'INSUFFICIENT_DATA', validGate.finalFormulaStatus, 'INSUFFICIENT_DATA');
+  assert('Incomplete Formula Inputs - Lab readiness is blocked by scientific invalidity', validGate.labReadiness === 'BLOCKED_BY_SCIENTIFIC_INVALIDITY', validGate.labReadiness, 'BLOCKED_BY_SCIENTIFIC_INVALIDITY');
 
   assert('Category targets - unverified provenance is explicitly surfaced', validGate.majorWarnings.some(w => w.code === 'WARN_UNVERIFIED_CATEGORY_TARGETS'), validGate.majorWarnings.map(w => w.code), 'WARN_UNVERIFIED_CATEGORY_TARGETS');
-  assert('Missing hardness - assumed 150 ppm is explicitly warned', validGate.majorWarnings.some(w => w.code === 'WARN_ASSUMED_WATER_HARDNESS'), validGate.majorWarnings.map(w => w.code), 'WARN_ASSUMED_WATER_HARDNESS');
+  assert('Missing hardness - no default hardness/dose scenario is silently substituted', validGate.majorWarnings.some(w => w.code === 'WARN_ASSUMED_WATER_HARDNESS' && w.message.includes('No default water-hardness or dose scenario was substituted')), validGate.majorWarnings.map(w => w.code), 'WARN_ASSUMED_WATER_HARDNESS');
 
   // --------------------------------------------------------------------------
   // TEST 2: Unknown Product Category Handling
@@ -106,6 +106,14 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
   assert('Empty Formula - Scientific Validity is INSUFFICIENT_DATA', emptyGate.scientificValidity === 'INSUFFICIENT_DATA', emptyGate.scientificValidity, 'INSUFFICIENT_DATA');
   assert('Empty Formula - Final Status is INSUFFICIENT_DATA', emptyGate.finalFormulaStatus === 'INSUFFICIENT_DATA', emptyGate.finalFormulaStatus, 'INSUFFICIENT_DATA');
   assert('Empty Formula - Performance Status is INSUFFICIENT_DATA', emptyGate.performanceStatus === 'INSUFFICIENT_DATA', emptyGate.performanceStatus, 'INSUFFICIENT_DATA');
+
+  const unknownCategoryGate = evaluateScientificQualityGate({
+    formulaName: 'Unknown Category pH Must Not Default',
+    productCategory: 'UNKNOWN_CATEGORY_FOR_PH_TEST',
+    ingredients: validLaundryFormula
+  });
+  assert('Unknown category does not receive a synthetic neutral pH', unknownCategoryGate.speciationResult.pH === null, unknownCategoryGate.speciationResult.pH, null);
+  assert('Unknown category pH absence blocks scientific validity', unknownCategoryGate.scientificValidity === 'INVALID' || unknownCategoryGate.scientificValidity === 'INSUFFICIENT_DATA', unknownCategoryGate.scientificValidity, 'INVALID or INSUFFICIENT_DATA');
 
   // --------------------------------------------------------------------------
   // TEST 4: Unbalanced Mass Balance Sum Check
@@ -171,7 +179,7 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     });
 
     assert(`Category Quality Gate Evaluated: ${catId}`, catGate.canonicalCategory === catId, catGate.canonicalCategory, catId);
-    assert(`Category Quality Gate Returns Valid Report Structure: ${catId}`, typeof catGate.finalFormulaStatus === 'string' && typeof catGate.speciationResult.pH === 'number', true, true);
+    assert(`Category Quality Gate Returns Valid Report Structure: ${catId}`, typeof catGate.finalFormulaStatus === 'string' && (typeof catGate.speciationResult.pH === 'number' || catGate.speciationResult.pH === null), true, true);
   }
 
   // --------------------------------------------------------------------------
@@ -184,7 +192,9 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     const ings: FormulationIngredient[] = (tpl.ingredients || []).map((i: any) => ({
       name: i.name,
       percentage: Number(i.percentage ?? i.percent ?? 0),
-      activeMatterPct: Number(i.activeMatterPct ?? i.activePercent ?? null),
+      ...((i.activeMatterPct ?? i.activePercent) !== undefined && (i.activeMatterPct ?? i.activePercent) !== null
+        ? { activeMatterPct: Number(i.activeMatterPct ?? i.activePercent) }
+        : {}),
       category: i.category || i.role || 'Additive'
     }));
 
