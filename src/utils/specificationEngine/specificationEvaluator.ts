@@ -234,11 +234,17 @@ export function extractParameterValue(
   if (input.liquidResults) {
     switch (paramKey) {
       case 'massBalance':
-        return { value: input.liquidResults.totalPercentage, provenance: 'CALCULATED', isMeasured: false };
+        return isValidNumber(input.liquidResults.totalPercentage)
+          ? { value: input.liquidResults.totalPercentage, provenance: 'CALCULATED', isMeasured: false }
+          : { value: undefined, provenance: 'INSUFFICIENT_DATA', isMeasured: false };
       case 'activeMatter':
-        return { value: input.liquidResults.activeSurfactants, provenance: 'CALCULATED', isMeasured: false };
+        return isValidNumber(input.liquidResults.activeSurfactants) && input.liquidResults.activeSurfactants >= 0 && input.liquidResults.activeSurfactants <= 100
+          ? { value: input.liquidResults.activeSurfactants, provenance: 'CALCULATED', isMeasured: false }
+          : { value: undefined, provenance: 'INSUFFICIENT_DATA', isMeasured: false };
       case 'ph':
-        return { value: input.liquidResults.pH, provenance: 'CALCULATED', isMeasured: false };
+        return isValidNumber(input.liquidResults.pH) && input.liquidResults.pH >= 0 && input.liquidResults.pH <= 14
+          ? { value: input.liquidResults.pH, provenance: 'CALCULATED', isMeasured: false }
+          : { value: undefined, provenance: 'INSUFFICIENT_DATA', isMeasured: false };
       case 'density':
         if (input.liquidResults.density !== undefined && input.liquidResults.density > 0 && isValidNumber(input.liquidResults.density)) {
           return { value: input.liquidResults.density, provenance: 'CALCULATED', isMeasured: false };
