@@ -190,14 +190,22 @@ export default function LabNotebook(_props?: any) {
   // Calculations for Predictions-vs-Measured Table
   const parsedRecordsWithPredictions = evidenceRecords.map(rec => {
     // Determine target formula ingredients
-    const goldenMatch = GOLDEN_FORMULA_SET.find(g => g.id === rec.formulaId || g.category === rec.categoryId);
-    const ingredients = goldenMatch ? goldenMatch.ingredients : GOLDEN_FORMULA_SET[0].ingredients;
+    // Only an exact formula identity may supply a reference composition.
+    // Category similarity is not formula identity and must not borrow a golden formula.
+    const goldenMatch = GOLDEN_FORMULA_SET.find(g => g.id === rec.formulaId);
+    const ingredients = goldenMatch?.ingredients ?? [];
     
-    // Evaluate predicted KPI value
-    let predictedValue = 82.0; // Default baseline predicted cleaning score
-    if (rec.categoryId) {
-      const predRes = calculateCleaningPerformance(ingredients, 8.5, rec.categoryId);
-      predictedValue = predRes.cpi;
+    // A prediction requires the original explicit wash-liquor pH.
+    // Missing formula identity or pH remains unavailable; no score baseline is invented.
+    const explicitPH = (rec.testConditions as any)?.pH;
+    let predictedValue = Number.NaN;
+    if (goldenMatch && rec.categoryId &&
+        typeof explicitPH === 'number' && Number.isFinite(explicitPH) &&
+        explicitPH >= 0 && explicitPH <= 14) {
+      const predRes = calculateCleaningPerformance(ingredients, explicitPH, rec.categoryId);
+      if (Number.isFinite(predRes.cpi) && predRes.provenance !== 'INSUFFICIENT_DATA') {
+        predictedValue = predRes.cpi;
+      }
     }
 
     // Set comparability input
