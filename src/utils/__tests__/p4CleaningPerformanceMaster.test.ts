@@ -279,7 +279,11 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
 
   const perfIncompatible = calculateCleaningPerformance(incompatibleFormula, 7.0, 'LAUNDRY_LIQUID', undefined, {
     compatibilityStatus: 'INCOMPATIBLE',
-    hasCriticalCompatibilityAlert: true
+    hasCriticalCompatibilityAlert: true,
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert('Compatibility Sync', 'Incompatible formula flags critical negative factor', perfIncompatible.keyNegativeFactors.some(f => f.includes('incompatibility')), true, true);
@@ -300,13 +304,17 @@ export function runPhase4PerformanceTestSuite(): { total: number; passed: number
   // TEST GROUP 13: EMPTY & ZERO-ACTIVE ROBUSTNESS
   // --------------------------------------------------------------------------
   const emptyPerf = calculateCleaningPerformance([], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-  assert('Edge Cases', 'Empty formula yields 0 CPI', emptyPerf.cpi === 0, emptyPerf.cpi, 0);
+  assert('Edge Cases', 'Empty formula CPI is unavailable', emptyPerf.cpi === null, emptyPerf.cpi, null);
   assert('Edge Cases', 'Empty formula provenance is INSUFFICIENT_DATA', emptyPerf.provenance === 'INSUFFICIENT_DATA', emptyPerf.provenance, 'INSUFFICIENT_DATA');
 
   // All 13 canonical categories supported without exceptions
   for (const catId of CANONICAL_PRODUCT_CATEGORY_IDS) {
     const res = calculateCleaningPerformance(testFormula, 7.5, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-    assert('Taxonomy Coverage', `Category ${catId} evaluated successfully`, typeof res.cpi === 'number' && res.categoryKPIs.length > 0, true, true);
+    if (catId === 'FABRIC_SOFTENER') {
+      assert('Taxonomy Coverage', 'Fabric softener is not assigned a detergent cleaning CPI', res.isCleaningApplicable === false && res.cpi === null, { applicable: res.isCleaningApplicable, cpi: res.cpi }, { applicable: false, cpi: null });
+    } else {
+      assert('Taxonomy Coverage', `Category ${catId} evaluated as screening only`, typeof res.cpi === 'number' && res.categoryKPIs.length > 0 && res.provenance === 'PREDICTED', { cpi: res.cpi, kpis: res.categoryKPIs.length, provenance: res.provenance }, 'finite screening CPI with category KPIs');
+    }
   }
 
   // P0 SCIENTIFIC HONESTY: heuristic CPI/KPIs cannot claim validated PASS.
