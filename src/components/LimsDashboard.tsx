@@ -24,6 +24,9 @@ import {
   MeasurementCorrection,
   StandardUnit
 } from '../domain/lims/types';
+import type { ExperimentResult } from '../utils/closedLoopRAndD/types';
+import { ingestExperimentResult } from '../utils/closedLoopRAndD/experimentResultIngestionEngine';
+import { buildLimsIngestionInput } from '../utils/closedLoopRAndD/limsIngestionAdapter';
 import { getRegisteredInstruments, InstrumentRecord, registerUserInstrument, UserInstrumentRegistration } from '../domain/lims/instrument';
 import { FORMULAS } from '../data/formulas';
 import { db } from '../db/database';
@@ -59,6 +62,7 @@ export const LimsDashboard: React.FC = () => {
   const [measurements, setMeasurements] = useState<LabMeasurement[]>([]);
   const [corrections, setCorrections] = useState<MeasurementCorrection[]>([]);
   const [evidenceRecords, setEvidenceRecords] = useState<EvidenceRecord[]>([]);
+  const [experimentResults, setExperimentResults] = useState<ExperimentResult[]>([]);
   const [auditChain, setAuditChain] = useState<LimsAuditRecord[]>([]);
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -70,7 +74,7 @@ export const LimsDashboard: React.FC = () => {
         const saved = record.value as Partial<{
           formulaVersions: FormulaVersion[]; batches: BatchRecord[]; samples: LabSample[];
           tests: LabTest[]; measurements: LabMeasurement[]; corrections: MeasurementCorrection[];
-          evidenceRecords: EvidenceRecord[]; auditChain: LimsAuditRecord[];
+          evidenceRecords: EvidenceRecord[]; experimentResults: ExperimentResult[]; auditChain: LimsAuditRecord[];
         }>;
         if (Array.isArray(saved.formulaVersions)) setFormulaVersions(saved.formulaVersions);
         if (Array.isArray(saved.batches)) setBatches(saved.batches);
@@ -79,6 +83,7 @@ export const LimsDashboard: React.FC = () => {
         if (Array.isArray(saved.measurements)) setMeasurements(saved.measurements);
         if (Array.isArray(saved.corrections)) setCorrections(saved.corrections);
         if (Array.isArray(saved.evidenceRecords)) setEvidenceRecords(saved.evidenceRecords);
+        if (Array.isArray(saved.experimentResults)) setExperimentResults(saved.experimentResults);
         if (Array.isArray(saved.auditChain)) setAuditChain(saved.auditChain);
       })
       .catch(error => console.error('Failed to load local LIMS session:', error))
@@ -90,10 +95,10 @@ export const LimsDashboard: React.FC = () => {
     if (!sessionReady) return;
     db.userSettings.put({
       key: 'lims_session_v1',
-      value: { formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, auditChain },
+      value: { formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, experimentResults, auditChain },
       updatedAt: new Date().toISOString(),
     }).catch(error => console.error('Failed to persist local LIMS session:', error));
-  }, [sessionReady, formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, auditChain]);
+  }, [sessionReady, formulaVersions, batches, samples, tests, measurements, corrections, evidenceRecords, experimentResults, auditChain]);
 
   // UI Input states
   const [selectedSampleId, setSelectedSampleId] = useState<string>('');
@@ -196,6 +201,9 @@ export const LimsDashboard: React.FC = () => {
       const instrument = instruments.find(i => i.instrumentId === measInstrumentId);
       const prevEvidence = evidenceRecords.length > 0 ? evidenceRecords[evidenceRecords.length - 1].hash : undefined;
       const evidence = buildEvidenceRecordFromMeasurement(measurement, instrument, measAnalyst, prevEvidence);
+      const methodVersion = CANONICAL_TEST_METHODS.find(method => method.methodId === test.testMethodId)?.version;
+      const ingestionInput = buildLimsIngestionInput(test, measurement, evidence, methodVersion);
+      const ingestionResult = ingestExperimentResult(ingestionInput, experimentResults);
 
     // Update Test Status to COMPLETED
     const updatedTests = tests.map(t =>
@@ -211,18 +219,23 @@ export const LimsDashboard: React.FC = () => {
       measurement.measurementId,
       null,
       measurement,
-      `Recorded ${test.parameterName} = ${valNum} ${measUnit} using instrument ${measInstrumentId}`,
+      `Recorded ${test.parameterName} = ${valNum} ${measUnit} using instrument ${measInstrumentId}; closed-loop ingestion status: ${ingestionResult.dataQuality}`,
       lastAudit
     );
 
       setMeasurements([measurement, ...measurements]);
       setEvidenceRecords([evidence, ...evidenceRecords]);
+      setExperimentResults([ingestionResult, ...experimentResults]);
       setTests(updatedTests);
       setAuditChain([...auditChain, audit]);
       setFormulaVersions(formulaVersions.map(version => version.formulaId === measurement.formulaId && version.formulaVersion === measurement.formulaVersion
         ? { ...version, labValidationStatus: 'LAB_TEST_IN_PROGRESS', validationStatusReason: 'Physical measurements are being collected; senior review and approved acceptance criteria are still required.' }
         : version));
-      setLimsMessage('Measurement recorded with instrument and temperature provenance.');
+      setLimsMessage(
+        ingestionResult.dataQuality === 'VALID'
+          ? 'Measurement recorded with instrument and temperature provenance and added to the closed-loop ingestion ledger.'
+          : `Measurement recorded and retained; closed-loop ingestion quality is ${ingestionResult.dataQuality} and requires review.`
+      );
 
       setMeasValue('');
       setMeasTemperature('');
@@ -373,6 +386,12 @@ export const LimsDashboard: React.FC = () => {
           {limsMessage}
         </div>
       )}
+      <div className="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px] text-slate-300">
+        Closed-loop ingestion ledger: <strong className="text-white">{experimentResults.length}</strong> records ·
+        <span className="text-emerald-300"> {experimentResults.filter(result => result.dataQuality === 'VALID').length} valid</span> ·
+        <span className="text-amber-300"> {experimentResults.filter(result => result.dataQuality === 'REQUIRES_REVIEW' || result.dataQuality === 'CONFLICT_REQUIRES_REVIEW').length} requiring review</span> ·
+        <span className="text-slate-400"> {experimentResults.filter(result => result.dataQuality === 'DUPLICATE').length} duplicates</span>
+      </div>
 
       {/* SECTION 1: SAMPLE MANAGEMENT */}
       {activeSection === 'samples' && (
