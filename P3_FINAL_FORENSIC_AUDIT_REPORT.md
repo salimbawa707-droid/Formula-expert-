@@ -2,55 +2,60 @@
 
 **Project:** Detergent Formula Expert  
 **Audit date:** 2026-11-03  
-**Audited baseline:** `main` commit `653f890aaaea8613555c62dc81110b493574c40b`  
-**Status:** `PARTIAL — NOT PRODUCTION RELEASE CERTIFIED`  
+**Audited PR head:** `227c03d0b351ed9aca51427c1ce2a0b8eed2f211`  
+**CI run:** [Current Release Quality Gates #41657224079](https://github.com/salimbawa707-droid/Formula-expert-/actions/runs/41657224079)  
+**Software verification:** `PASS — 5/5 jobs`  
+**Scientific release status:** `PARTIAL — NOT PRODUCTION RELEASE CERTIFIED`  
 **Release recommendation:** `BLOCKED`
 
-> This report supersedes earlier statements in this file that described the application as production-release-ready. Those statements are withdrawn because they conflict with the current evidence, open scientific validation work, and the current release-readiness matrix.
+> Software checks passing does not establish chemical accuracy, empirical detergent performance, safety, stability, or commercial compliance. This report deliberately separates code verification from scientific and laboratory evidence.
 
-## 1. Software verification
+## 1. Software verification on the audited PR head
 
-The audited main branch contains 832 Git tree entries. The post-PR #79 merge workflow completed successfully for:
-- Full TypeScript regression suite
-- Phase 6 laboratory-evidence regression suite
-- Evidence syntax and fail-closed guardrails
-- Reproducible dependency installation and frontend production build
+The exact PR head listed above completed all five release-quality workflow jobs successfully:
 
-The Android debug APK job was skipped. No APK was produced by that workflow. A successful software build or regression suite is not evidence of chemical accuracy, empirical detergent performance, safety, or release readiness.
+- Reproducible dependency installation and production frontend build — PASS.
+- Full TypeScript regression suite — PASS: 140/140 modules, 4,785/4,785 assertions, zero failures.
+- P1 Phase 6 laboratory-evidence regression suite — PASS.
+- Evidence syntax, regression, and fail-closed guardrails — PASS.
+- Capacitor Android debug APK — PASS. The retained artifact is `formula-expert-android-debug` (artifact ID `13239443161`).
 
-## 2. Confirmed scientific and release limitations
+The APK is a debug build for integration verification. It is not a signed production release and does not certify scientific correctness.
+
+## 2. Code-level remediation verified in this branch
+
+The following previously identified software defects have been corrected and covered by the passing regression workflow:
+
+1. **Lab evidence identity/version scoping:** Quality-gate measurements are eligible only when both formula ID and formula version are explicitly supplied and exactly match the measurement record. Missing identity/version is not treated as a wildcard.
+2. **Missing pH:** Cleaning-performance evaluation no longer substitutes a default pH. Missing, invalid, or out-of-range pH blocks the affected performance result.
+3. **Unknown surfactant active matter:** An unavailable assay is no longer used as a numeric zero in performance calculations. The dependent calculation is withheld.
+4. **Commercial-grade conflict:** An explicit active-matter value that conflicts with the named commercial grade is a blocking finding unless a documented override is explicitly confirmed. A name-derived grade value is not represented as a supplier COA or measured assay.
+5. **Deterministic missing-name findings:** Missing ingredient-name finding IDs are derived from the ingredient row index, not random values, making repeated reports reproducible for the same ordered input.
+6. **Viscosity input integrity:** Viscosity evaluation resolves the exact supplied ingredient rows, does not trust a caller-supplied aggregate as proof of complete assays, blocks missing/conflicting surfactant assays, and routes powder/solid formulas to not-applicable viscosity rather than liquid calculations.
+
+These are software-integrity corrections. Passing tests show the implemented guards behave as tested; they do not establish the accuracy of every model coefficient or formula prediction.
+
+## 3. Confirmed scientific and release limitations
 
 1. **Category targets:** Category pH and active-surfactant targets remain engineering/screening targets unless a category-specific, traceable source dossier has been reviewed. They must not be presented as universal standards.
 2. **CPI/performance model:** CPI remains a heuristic screening score. Its coefficients have not been calibrated and independently validated against suitable, formula-specific laboratory datasets. Do not describe CPI as a measured or validated cleaning-performance prediction.
 3. **Ingredient active matter:** Reference defaults and name-derived grade concentrations are not supplier COAs or laboratory assays. Missing, conflicting, or unsupported active-matter inputs must remain disclosed and must not be treated as verified.
 4. **Pušić R460:** 144 extracted observations remain `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW`. The recorded independent human second-review count is 0/144. AI transcription or AI self-review is not independent human review.
 5. **Phase gates:** Phase 4B remains OPEN and Phase 5 remains LOCKED until their documented evidence and human-review criteria are met.
-6. **Android:** A successful, retained APK build and artifact verification are still required before Android build readiness can be claimed.
-7. **Security and privacy:** The latest release matrix does not recertify security/privacy, backup/restore, or complete end-to-end acceptance against the audited release commit.
+6. **Android release:** A debug APK was built and retained. A signed production APK/AAB, signing-key custody, Play release validation, and final device acceptance have not been certified by this workflow.
+7. **Security and privacy:** The latest release matrix does not recertify security/privacy, backup/restore, or complete end-to-end acceptance against a production release candidate.
 8. **Connectivity:** Gemini, Supabase, Firebase and related integrations remain in the existing application. The application is not certified as fully offline or free of external service dependencies.
-
-## 3. Additional code-level audit findings
-
-The follow-up review identified a lab-evidence scoping defect in the master scientific quality gate: raw lab measurements were selected by parameter key without first requiring an exact formula ID and formula-version match. This could allow a pH or cleaning measurement from another formula/version to influence the current formula's calculations. A remediation branch now scopes all quality-gate lab measurements to the caller-supplied exact formula ID and version, with regression cases for cross-formula and stale-version pH evidence. This change is pending CI and review; it is not yet part of `main`.
-
-The follow-up review also identified areas requiring further remediation:
-- Performance scoring currently applies a default pH of 8.0 when pH is absent.
-- Performance scoring can numerically treat an unavailable active-matter resolution as zero in its local component calculation.
-- Active-matter grade conflicts are detected by the resolver but require stronger enforcement at the quality-gate boundary.
-- Missing ingredient names currently receive random finding IDs, weakening deterministic report reproducibility.
-
-These findings require code changes and dedicated regression tests before the affected outputs can be treated as reliable.
 
 ## 4. Release decision
 
 **Do not certify this application as 100% scientifically accurate or production-release-ready.**
 
-A release decision requires, at minimum:
-1. Merge and verify the exact formula/version lab-evidence scoping remediation.
-2. Correct the remaining missing-input and active-matter conflict handling without substituting arbitrary defaults.
-3. Validate pH, active-matter, chelation, compatibility, and performance calculations against appropriate independent evidence.
-4. Complete the independent human second review of all 144 Pušić R460 rows and rerun the evidence validator.
-5. Complete category-specific target and commercial-grade ingredient provenance review.
-6. Build and inspect the Android artifact, then complete security, privacy, backup/restore, and end-to-end release acceptance.
+Before scientific release certification, the project still requires:
 
-**A green CI run proves only the software checks that actually ran. It does not prove that a detergent formula will clean, remain stable, be safe, or meet a commercial specification.**
+1. Independent human second review of all 144 Pušić R460 observations, followed by the evidence validator.
+2. Category-specific source dossiers for target pH, active matter, and commercial-grade ingredient properties.
+3. Supplier COAs or appropriate laboratory assays for the actual raw-material grades used in target formulations.
+4. Formula-specific laboratory calibration and independent validation of CPI/performance, viscosity, stability, chelation, compatibility, and other predictive models.
+5. Signed production Android build, security/privacy review, backup/restore verification, and end-to-end acceptance.
+
+**Merge status and release status are separate decisions.** The software changes in this branch passed the defined CI checks, but merging them must not be described as closing Phase 4B/5 or certifying scientific/laboratory accuracy.
