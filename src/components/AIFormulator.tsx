@@ -84,13 +84,13 @@ export function computeFormulaFingerprint(inputs: {
   formulaName: string;
   productCategory: string;
   batchSizeKg: number;
-  waterHardnessPpm: number;
+  waterHardnessPpm: number | null;
   ingredients: Array<{ id?: string; name: string; percentage?: number; activeMatterPct?: number; role?: string; costPerKg?: number | null }>;
   powderLabInputs?: PowderLabMeasurementInputs;
 }): string {
   const cleanCat = (inputs.productCategory || '').trim().toLowerCase();
   const cleanName = (inputs.formulaName || '').trim().toLowerCase();
-  const cleanHardness = Number(inputs.waterHardnessPpm) || 0;
+  const cleanHardness = inputs.waterHardnessPpm === null ? 'UNKNOWN' : String(inputs.waterHardnessPpm);
 
   const sortedIngs = (inputs.ingredients || [])
     .map((ing) => {
@@ -151,7 +151,7 @@ export function runDeepScientificAnalysis(snapshot: {
         ingredients: snapshot.ingredients,
         productCategory: snapshot.productCategory,
         batchSizeKg: snapshot.batchSizeKg,
-        waterHardnessPpm: snapshot.waterHardnessPpm,
+        waterHardnessPpm: snapshot.waterHardnessPpm ?? undefined,
         labMeasurements: snapshot.powderLabInputs
       })
     : null;
@@ -167,7 +167,7 @@ export function runDeepScientificAnalysis(snapshot: {
       costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
     })),
     batchSizeKg: snapshot.batchSizeKg,
-    waterHardnessPpm: snapshot.waterHardnessPpm,
+    ...(snapshot.waterHardnessPpm !== null ? { waterHardnessPpm: snapshot.waterHardnessPpm } : {}),
     costContext: {
       targetCostPerKg: 45.0
     }
@@ -325,9 +325,13 @@ export default function FormulaExpert({
     return activeFormula?.name || "New Formula";
   });
 
-  const [waterHardnessPpm, setWaterHardnessPpm] = useState<number>(() => {
-    const saved = localStorage.getItem("formula_expert_waterHardness");
-    return saved ? Number(saved) : 150;
+  const [waterHardnessPpm, setWaterHardnessPpm] = useState<number | null>(() => {
+    const saved = activeFormula?.waterHardnessSource === 'USER_ENTERED' || activeFormula?.waterHardnessSource === 'MEASURED'
+      ? activeFormula.waterHardnessPpm
+      : undefined;
+    // The legacy key was written even for the old 150 ppm default; its provenance is unknowable.
+    localStorage.removeItem("formula_expert_waterHardness");
+    return typeof saved === 'number' && Number.isFinite(saved) && saved >= 0 ? saved : null;
   });
 
   // 2. Ingredients List State
@@ -422,7 +426,9 @@ export default function FormulaExpert({
     const initBatch = (activeFormula?.batchSizeKg && activeFormula.batchSizeKg > 0)
       ? activeFormula.batchSizeKg
       : ((activeFormula?.batchSize && activeFormula.batchSize > 0) ? activeFormula.batchSize : (localStorage.getItem("formula_expert_batchSize") ? Number(localStorage.getItem("formula_expert_batchSize")) : 100));
-    const initHardness = localStorage.getItem("formula_expert_waterHardness") ? Number(localStorage.getItem("formula_expert_waterHardness")) : 150;
+    const initHardness = activeFormula?.waterHardnessSource === 'USER_ENTERED' || activeFormula?.waterHardnessSource === 'MEASURED'
+      ? (typeof activeFormula.waterHardnessPpm === 'number' && Number.isFinite(activeFormula.waterHardnessPpm) && activeFormula.waterHardnessPpm >= 0 ? activeFormula.waterHardnessPpm : null)
+      : null;
     const initName = activeFormula?.name || "New Formula";
     let initIngs: FormulationIngredient[] = [];
     if (activeFormula?.ingredients && activeFormula.ingredients.length > 0) {
@@ -486,7 +492,7 @@ export default function FormulaExpert({
   // Sync when activeFormula prop updates from Formula Library or external load
   useEffect(() => {
     if (activeFormula?.ingredients && activeFormula.ingredients.length > 0) {
-      const formulaKey = `${activeFormula.id || ''}_${activeFormula.name || ''}_${activeFormula.ingredients.map(i => `${i.name}:${i.percentage}:${i.activeMatterPct}`).join(';')}_${activeFormula.batchSizeKg || activeFormula.batchSize || ''}`;
+      const formulaKey = `${activeFormula.id || ''}_${activeFormula.name || ''}_${activeFormula.ingredients.map(i => `${i.name}:${i.percentage}:${i.activeMatterPct}`).join(';')}_${activeFormula.batchSizeKg || activeFormula.batchSize || ''}_HARDNESS:${activeFormula.waterHardnessSource || 'UNKNOWN'}:${activeFormula.waterHardnessPpm ?? 'UNKNOWN'}`;
       if (formulaKey === lastEmittedFormulaKeyRef.current || formulaKey === lastImportedFormulaKeyRef.current) {
         return;
       }
@@ -508,13 +514,16 @@ export default function FormulaExpert({
       setProductCategory(cat);
       setBatchSizeKg(batch);
       setFormulaName(name);
+      setWaterHardnessPpm(activeFormula.waterHardnessSource === 'USER_ENTERED' || activeFormula.waterHardnessSource === 'MEASURED'
+        ? (typeof activeFormula.waterHardnessPpm === 'number' && Number.isFinite(activeFormula.waterHardnessPpm) && activeFormula.waterHardnessPpm >= 0 ? activeFormula.waterHardnessPpm : null)
+        : null);
       setIngredients(ings);
 
       const snapshot = {
         formulaName: name,
         productCategory: cat,
         batchSizeKg: batch,
-        waterHardnessPpm,
+        waterHardnessPpm: activeFormula.waterHardnessSource === 'USER_ENTERED' || activeFormula.waterHardnessSource === 'MEASURED' ? activeFormula.waterHardnessPpm ?? null : null,
         ingredients: ings,
         powderLabInputs,
         activeFormulaVersion: (activeFormula as any)?.version || '1.0.0'
@@ -540,6 +549,8 @@ export default function FormulaExpert({
         category: productCategory,
         batchSizeKg,
         batchSize: batchSizeKg,
+        waterHardnessPpm,
+        waterHardnessSource: waterHardnessPpm === null ? 'UNKNOWN' : 'USER_ENTERED',
         targetPH: scientificResults?.pH,
         ingredients: ingredients.map((ing, idx) => ({
           ...ing,
@@ -566,7 +577,8 @@ export default function FormulaExpert({
   useEffect(() => {
     localStorage.setItem("formula_expert_category", productCategory);
     localStorage.setItem("formula_expert_batchSize", String(batchSizeKg));
-    localStorage.setItem("formula_expert_waterHardness", String(waterHardnessPpm));
+    if (waterHardnessPpm === null) localStorage.removeItem("formula_expert_waterHardness");
+    else localStorage.setItem("formula_expert_waterHardness", String(waterHardnessPpm));
   }, [productCategory, batchSizeKg, waterHardnessPpm]);
 
   // Handle Category Change (Loads default template, preserving user-entered prices for matching raw materials)
@@ -1323,10 +1335,19 @@ export default function FormulaExpert({
             <input
               type="number"
               min="0"
-              value={waterHardnessPpm}
-              onChange={(e) => setWaterHardnessPpm(Math.max(0, Number(e.target.value) || 0))}
+              value={waterHardnessPpm ?? ""}
+              placeholder="Not entered"
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw.trim() === '') setWaterHardnessPpm(null);
+                else {
+                  const parsed = Number(raw);
+                  setWaterHardnessPpm(Number.isFinite(parsed) && parsed >= 0 ? parsed : null);
+                }
+              }}
               className="w-full bg-[#0e1629] border border-slate-600 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-white font-mono font-bold focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none"
             />
+            <p className="text-[10px] text-slate-400">{waterHardnessPpm === null ? 'Unknown — hard-water assessment will not run.' : 'User-entered value; not laboratory-verified.'}</p>
           </div>
         </div>
 
