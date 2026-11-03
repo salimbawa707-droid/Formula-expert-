@@ -21,10 +21,7 @@ import {
   ActiveMatterEngine,
   calculateActiveMatterResult
 } from '../activeMatterEngine';
-import {
-  calculateWaterHardnessTolerance,
-  getProductHardnessPolicy
-} from '../chelatorEngine';
+import { calculateWaterHardnessTolerance } from '../chelatorEngine';
 import { calculateFormulationCompatibility } from '../compatibilityEngine';
 import { calculateCleaningPerformance } from '../cleaningPerformanceEngine';
 import { ViscosityEngine, calculateDetailedViscosity } from '../viscosityEngine';
@@ -577,24 +574,10 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const hardnessPolicy = getProductHardnessPolicy(
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
-        );
         const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.waterVolumeL;
         const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams;
-        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null
-          ? hardnessPolicy.defaultWashVolumeL
-          : Number(rawWashVolume);
-        const washDoseGrams = rawDose === undefined || rawDose === null
-          ? hardnessPolicy.defaultDoseGrams
-          : Number(rawDose);
-
-        if (rawWashVolume === undefined || rawWashVolume === null) {
-          state.assumptions.push('Wash volume uses the product hardness policy default; replace with the actual wash volume for a production decision.');
-        }
-        if (rawDose === undefined || rawDose === null) {
-          state.assumptions.push('Wash dose uses the product hardness policy default; replace with the actual dose for a production decision.');
-        }
+        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null ? Number.NaN : Number(rawWashVolume);
+        const washDoseGrams = rawDose === undefined || rawDose === null ? Number.NaN : Number(rawDose);
 
         const scenarioInputsValid =
           state.waterHardnessPpm !== null &&
