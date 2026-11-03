@@ -70,7 +70,7 @@ export function runP1Phase4PerformanceTestSuite(): { total: number; passed: numb
 
   for (const catId of CANONICAL_PRODUCT_CATEGORY_IDS) {
     const res = calculateCleaningPerformance(baseTestFormula, 8.0, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
-    assert(`Category Profile Loaded: ${catId}`, res.productCategory === catId, res.productCategory, catId, undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+    assert(`Category Profile Loaded: ${catId}`, res.productCategory === catId, res.productCategory, catId);
     assert(`Category Has Primary Domain: ${catId}`, res.primaryPerformanceDomain.length > 0, res.primaryPerformanceDomain.length > 0, true);
     assert(`Category Has Applicable KPIs: ${catId}`, res.categoryKPIs.length >= 3, res.categoryKPIs.length >= 3, true);
     assert(`CPI is within 0-100: ${catId}`, res.cpi >= 0 && res.cpi <= 100, res.cpi, '0-100');
