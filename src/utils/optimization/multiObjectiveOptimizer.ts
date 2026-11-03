@@ -823,7 +823,7 @@ export async function runFormulationOptimization(
 
       const mutatedIngs = perturbCandidate(parent.ingredients, random, config.mutationRate || 0.15, constraints);
       const candId = `CAND-G${gen}-${j}`;
-      const evalRes = evaluateCandidateFormulation(mutatedIngs, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm });
+      const evalRes = evaluateCandidateFormulation(mutatedIngs, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm, washVolumeL: config.washVolumeL, washDoseGrams: config.washDoseGrams });
 
       const offspring: ParetoCandidate = {
         candidateId: candId,
