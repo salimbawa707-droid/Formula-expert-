@@ -1481,6 +1481,12 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   </span>
                 </div>
 
+                <div className={`rounded-lg border p-3 text-xs ${greenChelatorResult.isHardnessLoadFullyCovered ? 'border-emerald-600/40 bg-emerald-950/20 text-emerald-200' : 'border-amber-500/40 bg-amber-950/20 text-amber-200'}`}>
+                  {greenChelatorResult.isHardnessLoadFullyCovered
+                    ? 'The registered capacity calculation covers the stated stoichiometric load in this model. This is not laboratory validation of wash performance.'
+                    : `This co-builder scenario supplies ${(greenChelatorResult.stoichiometricCoveragePct ?? 0).toFixed(1)}% of the stoichiometric hardness demand. It does NOT fully soften the wash water; validate the complete builder/chelator system.`}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                   <div className="bg-[#131d35] p-3 rounded-lg border border-slate-700">
                     <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-tight">Total CaCO₃ to Bind</span>
