@@ -167,18 +167,19 @@ export function calculateFormulaCost(
 
   if (activeIngredientsCount === 0) {
     pricingStatus = 'UNKNOWN';
-  } else if (missingPriceCount === 0 && invalidPriceCount === 0 && isMassBalanced && hasValidBatchSize) {
+  } else if (missingPriceCount === 0 && invalidPriceCount === 0) {
+    // Pricing coverage can be complete while the formula itself is unbalanced.
+    // Keep those two independent facts separate in the report.
     pricingStatus = 'COMPLETE_PRICING';
-    costLabel = 'TOTAL COST';
-  } else if (completePriceCount > 0 && (missingPriceCount > 0 || invalidPriceCount > 0) && isMassBalanced && hasValidBatchSize) {
+    costLabel = isMassBalanced && hasValidBatchSize ? 'TOTAL COST' : 'COST UNAVAILABLE';
+  } else if (completePriceCount > 0) {
     pricingStatus = 'PARTIAL_PRICING';
-    costLabel = 'PARTIAL COST — EXCLUDES UNPRICED INGREDIENTS';
+    costLabel = isMassBalanced && hasValidBatchSize
+      ? 'PARTIAL COST — EXCLUDES UNPRICED INGREDIENTS'
+      : 'COST UNAVAILABLE';
     warnings.push(`Partial cost subtotal excludes ${missingPriceCount + invalidPriceCount} ingredient(s) with missing or invalid prices.`);
-  } else if (completePriceCount === 0) {
-    pricingStatus = 'NO_PRICING';
   } else {
-    pricingStatus = 'UNKNOWN';
-    if (completePriceCount > 0) costLabel = 'PARTIAL COST — FORMULA MASS BALANCE INCOMPLETE';
+    pricingStatus = 'NO_PRICING';
   }
 
   const ingredientCosts: IngredientCostItem[] = rawItems.map(item => ({
