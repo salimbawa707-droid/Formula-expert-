@@ -357,7 +357,6 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   <span className="text-slate-400 text-[11px]">Select or generate a formula in AI Formula Expert or Formula Library to load it here into R&D Calculators.</span>
                 </div>
               </div>
-              )}
             </div>
           )}
 
@@ -1721,6 +1720,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                   </table>
                 </div>
               </div>
+              )}
             </div>
           )}
         </div>
