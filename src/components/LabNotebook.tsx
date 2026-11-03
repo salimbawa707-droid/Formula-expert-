@@ -202,7 +202,14 @@ export default function LabNotebook(_props?: any) {
     if (goldenMatch && rec.categoryId &&
         typeof explicitPH === 'number' && Number.isFinite(explicitPH) &&
         explicitPH >= 0 && explicitPH <= 14) {
-      const predRes = calculateCleaningPerformance(ingredients, explicitPH, rec.categoryId);
+      const predRes = calculateCleaningPerformance(ingredients, explicitPH, rec.categoryId, undefined, {
+        waterHardnessPpm: (rec.testConditions as any)?.waterHardnessPpm,
+        washVolumeL: (rec.testConditions as any)?.washVolumeLiters,
+        washDoseGrams: (rec.testConditions as any)?.dosageGramsPerLiter !== undefined && (rec.testConditions as any)?.washVolumeLiters !== undefined
+          ? (rec.testConditions as any).dosageGramsPerLiter * (rec.testConditions as any).washVolumeLiters
+          : undefined,
+        batchSizeKg: (rec.testConditions as any)?.batchSizeKg
+      });
       if (Number.isFinite(predRes.cpi) && predRes.provenance !== 'INSUFFICIENT_DATA') {
         predictedValue = predRes.cpi;
       }
