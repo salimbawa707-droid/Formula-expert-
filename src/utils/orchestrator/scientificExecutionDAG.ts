@@ -683,27 +683,25 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER'],
       execute: (state) => {
-        const ph = state.finalEquilibriumPH;
-        if (typeof ph !== 'number' || !Number.isFinite(ph) || ph < 0 || ph > 14) {
-          state.compatibilityResult = {
-            compatible: false,
-            compatibilityScore: null,
-            compatibilityStatusSemantic: 'UNKNOWN',
-            alerts: ['pH is unavailable; pH-dependent compatibility was not evaluated.'],
-            warnings: []
-          };
-          state.compatibilityScore = Number.NaN;
-          state.compatible = false;
-          state.compatibilityStatus = 'INSUFFICIENT_DATA';
-          return;
-        }
+        const ph = typeof state.finalEquilibriumPH === 'number' &&
+          Number.isFinite(state.finalEquilibriumPH) &&
+          state.finalEquilibriumPH >= 0 &&
+          state.finalEquilibriumPH <= 14
+          ? state.finalEquilibriumPH
+          : undefined;
+        // Run pH-independent interaction checks even when pH is unavailable.
+        // The engine must still withhold its overall verdict until required
+        // pH data exists, but known hazards (e.g. missing preservation or
+        // anionic/cationic clashes) must not disappear behind the pH gate.
         const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory);
         state.compatibilityResult = compRes;
         state.compatibilityScore = Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : Number.NaN;
         state.compatible = compRes.compatible === true;
         state.compatibilityStatus =
           compRes.compatibilityStatusSemantic === 'INCOMPATIBLE' ? 'BLOCKED' :
-          compRes.compatibilityStatusSemantic === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'SCREENING';
+          compRes.compatibilityStatusSemantic === 'UNKNOWN' || compRes.compatibilityStatusSemantic === 'INSUFFICIENT_DATA'
+            ? 'INSUFFICIENT_DATA'
+            : 'SCREENING';
       }
     });
 
