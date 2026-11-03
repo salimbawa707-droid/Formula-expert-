@@ -63,7 +63,8 @@ export const INVENTORY_STORAGE_KEY = 'detergent_rd_inventory_v1';
 export const PRODUCTION_RUNS_STORAGE_KEY = 'detergent_rd_production_runs_v1';
 
 /**
- * Generates initial baseline laboratory inventory using canonical items from universalIngredientLibrary
+ * Creates an empty stock ledger from canonical ingredient identities. No physical
+ * quantities, lots, suppliers, or purchase prices are inferred from the master library.
  */
 export function getInitialDefaultInventory(): InventoryItem[] {
   // Ingredient master data defines identity only. It is not proof of physical stock,
@@ -252,11 +253,6 @@ export function checkProductionBatchAvailability(
     const rawPct = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0;
     const percentage = typeof rawPct === 'number' && !isNaN(rawPct) && rawPct >= 0 ? rawPct : 0;
     
-    // Ignore water from physical stock deduction if flagged or standard aqua
-    const isWater = (ing.name || '').toLowerCase().includes('water') ||
-                    (ing.name || '').toLowerCase().includes('aqua') ||
-                    (ing.category || '').toLowerCase().includes('solvent') && (ing.name || '').toLowerCase().includes('deionized');
-
     const requiredKg = Number(((batchSizeKg * percentage) / 100).toFixed(3));
     totalRequiredKg += requiredKg;
 
