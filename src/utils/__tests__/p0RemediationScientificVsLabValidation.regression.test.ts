@@ -30,16 +30,14 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     results.push({ name, passed: condition, details: details ? String(details) : undefined });
   };
 
-  const sampleFormula = FORMULAS[0];
-  const validIngredients = sampleFormula.ingredients.map(i => ({
-    id: i.id,
-    name: i.name,
-    percentage: Number(i.percent ?? (i as any).percentage ?? 0),
-    activePercentage: Number(i.activePercent ?? (i as any).activeDefault ?? null),
-    costPerKg: Number(i.costPerKg ?? 1.0),
-    category: i.category,
-    function: i.function
-  }));
+  // Controlled, mass-balanced acid/base system with explicit grade assays and costs.
+  // This fixture supports a calculated-only screening result without relying on
+  // unknown surfactant pH profiles or invented active-matter defaults.
+  const validIngredients = [
+    { id: 'labsa-90', name: 'LABSA 90%', percentage: 12.0, activeMatterPct: 90, costPerKg: 140, category: 'Anionic Surfactant' },
+    { id: 'naoh-50', name: 'Sodium Hydroxide 50%', percentage: 2.65, activeMatterPct: 50, costPerKg: 45, category: 'Neutralizer' },
+    { id: 'water', name: 'Water', percentage: 85.35, activeMatterPct: 0, costPerKg: 0, category: 'Solvent' }
+  ];
 
   // TEST 1: Calculated PASS is not LAB_TESTED
   const qgResult = evaluateMasterScientificQualityGate({
