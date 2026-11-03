@@ -120,7 +120,7 @@ export function calculateFormulationCompatibility(
     if (Number.isFinite(computed.pH) && computed.solverConverged) phVal = computed.pH;
   }
   const pHAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
-  const hasFormulaData = safeIngs.length > 0;
+  const hasFormulaData = safeIngs.length > 0 && !hasInvalidIngredientPercentage;
 
   // 2. Classify ingredients by functional chemistry & percentage
   let waterPct = 0;
@@ -140,6 +140,7 @@ export function calculateFormulationCompatibility(
   let hasFragranceOrOil = false;
   let hasEnzymeStabilizer = false;
 
+  let hasInvalidIngredientPercentage = false;
   let totalElectrolytePct = 0;
   let fragranceOilPct = 0;
   let anionicPct = 0;
@@ -156,9 +157,16 @@ export function calculateFormulationCompatibility(
   for (const ing of safeIngs) {
     const name = (ing?.name || '').toLowerCase();
     const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent ?? Number.NaN);
+    const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
 
-    if (pct <= 0) continue; // Explicit zero percentage ingredients are physically absent
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      hasInvalidIngredientPercentage = true;
+      continue;
+    }
+    if (pct === 0) continue; // Explicit zero percentage ingredients are physically absent
 
     // Water
     if (name.includes('water') || name.includes('aqua') || (cat.includes('solvent') && name.includes('water'))) {
@@ -755,7 +763,8 @@ export function calculateFormulationCompatibility(
   const compatible = pHAvailable && hasFormulaData && !hasCriticalOrHigh;
   const warnings = alerts.map(a => a.message);
   if (!pHAvailable) warnings.push('pH is unavailable or invalid; pH-dependent compatibility rules were not evaluated.');
-  if (!hasFormulaData) warnings.push('No ingredient composition was supplied; compatibility cannot be evaluated.');
+  if (safeIngs.length === 0) warnings.push('No ingredient composition was supplied; compatibility cannot be evaluated.');
+  if (hasInvalidIngredientPercentage) warnings.push('One or more ingredient percentages are missing, invalid, negative, or above 100%; compatibility cannot be evaluated.');
 
   const keyPositiveFactors: string[] = [];
   const keyNegativeFactors: string[] = alerts.map(a => a.title);
