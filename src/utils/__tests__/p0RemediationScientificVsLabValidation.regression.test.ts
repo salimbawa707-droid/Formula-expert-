@@ -386,7 +386,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
   // TEST 35: Scientific screening and laboratory status remain independently queryable
   const screeningStatus = qgResult.finalFormulaStatus;
   const labStatus = qgResult.evidenceStatus;
-  assert('TEST 35: Scientific validity and evidence status remain independent; a failed validity gate is not hidden by predicted-only evidence', qgResult.scientificValidity !== 'LAB_VALIDATED' && labStatus === 'PREDICTED_ONLY');
+  assert('TEST 35: Scientific validity and evidence status remain independent; a failed validity gate is not hidden by predicted-only evidence', qgResult.finalFormulaStatus === 'INCOMPATIBLE' && labStatus === 'PREDICTED_ONLY');
 
   results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: ${r.details ?? 'no details'}`));

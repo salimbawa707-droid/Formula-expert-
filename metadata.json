@@ -1,6 +1,0 @@
-{
-  "name": "Detergent Formula Expert",
-  "description": "Professional chemical formulation, stoichiometry, active matter calculation, and evidence validation engine for detergents and cleaning products.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

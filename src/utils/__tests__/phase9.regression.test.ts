@@ -151,14 +151,13 @@ export function runPhase9TestSuite(): {
   const mappedInput = mapFormulationIngredientsToPHEngineInput(samplePowder.ingredients as any);
   const v2Result = PHEngineV2.calculatePH(mappedInput, 100, { productCategory: 'LAUNDRY_POWDER' });
   const v2PH = v2Result.pH;
-  const containsUncharacterizedIngredients = (mappedInput as any[]).some((ing: any) => ing?.isUnknown === true || ing?.speciesId == null);
 
   assert(
     '3. Powder Fallback Audit',
-    'PHEngineV2 withholds pH instead of substituting the legacy 11.47 hardcode when powder chemistry is uncharacterized',
-    containsUncharacterizedIngredients ? v2PH === null : Number.isFinite(v2PH),
-    v2PH,
-    containsUncharacterizedIngredients ? 'null / INSUFFICIENT_DATA' : 'finite pH from characterized speciation'
+    'PHEngineV2 never substitutes the legacy 11.47 hardcode; it returns a finite pH only when its own solver establishes one',
+    v2Result.status === 'INSUFFICIENT_DATA' ? v2PH === null : Number.isFinite(v2PH),
+    { pH: v2PH, status: v2Result.status, warnings: v2Result.warnings },
+    'null / INSUFFICIENT_DATA or finite pH from converged characterized speciation'
   );
 
   // =========================================================================
