@@ -240,7 +240,7 @@ export function calculatePowderHardWaterPerformance(
   const powderConcentrationGPerL = washDoseG / washVolumeL;
   const builderDeliveryGPerL = powderConcentrationGPerL * (builderPct / 100);
   return {
-    waterHardnessDemandPpm,
+    waterHardnessDemandPpm: waterHardnessPpm,
     washDoseG,
     washVolumeL,
     builderDeliveryGPerL: Number(builderDeliveryGPerL.toFixed(4)),
