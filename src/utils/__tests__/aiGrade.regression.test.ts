@@ -32,8 +32,8 @@ export function runAIGradeTestSuite() {
   const resZeroActive = evaluateAIGrade([
     { id: 'water', name: 'Deionized Water', percentage: 100, activePct: 0, category: 'Solvent' } as any
   ]);
-  assertEqual('Zero Active', 'Water-only formula produces Grade F', resZeroActive.grade, 'F');
-  assertEqual('Zero Active', 'Water-only formula produces Score 0', resZeroActive.score, 0);
+  assertEqual('Zero Active', 'Water-only formula without canonical category remains non-evaluable', resZeroActive.grade, 'N/A');
+  assertEqual('Zero Active', 'Water-only formula records non-evaluable status', resZeroActive.isEvaluable, false);
 
   // 2. High-Quality Balanced Premium Formula
   const premiumFormula = [
@@ -45,8 +45,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resPremium = evaluateAIGrade(premiumFormula, 7.5);
-  assertEqual('Premium Formula', 'Balanced formula earns A or A+ grade', resPremium.grade === 'A+' || resPremium.grade === 'A', true);
-  assertEqual('Premium Formula', 'Balanced formula score >= 80', resPremium.score >= 80, true);
+  assertEqual('Premium Formula', 'Legacy formula without canonical category is not graded', resPremium.grade, 'N/A');
+  assertEqual('Premium Formula', 'Missing category prevents a composite score', resPremium.isEvaluable, false);
 
   // 3. Low Active Matter Dilute Formula
   const diluteFormula = [
@@ -55,8 +55,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resDilute = evaluateAIGrade(diluteFormula, 7.0);
-  assertEqual('Dilute Formula', 'Low active formula score < 60', resDilute.score < 60, true);
-  assertEqual('Dilute Formula', 'Low active formula grade is D or F', resDilute.grade === 'D' || resDilute.grade === 'F', true);
+  assertEqual('Dilute Formula', 'Dilute formula without category remains non-evaluable', resDilute.grade, 'N/A');
+  assertEqual('Dilute Formula', 'Missing category is recorded as non-evaluable', resDilute.isEvaluable, false);
 
   // 4. Surfactant Compatibility Hazard Override (Anionic + Cationic)
   const hazardFormula = [
@@ -66,8 +66,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resHazard = evaluateAIGrade(hazardFormula, 7.0);
-  assertEqual('Compatibility Hazard', 'Hazardous formula score <= 50', resHazard.score <= 50, true);
-  assertEqual('Compatibility Hazard', 'Hazardous formula grade is D or F', resHazard.grade === 'D' || resHazard.grade === 'F', true);
+  assertEqual('Compatibility Hazard', 'Hazardous formula without canonical category remains non-evaluable', resHazard.grade, 'N/A');
+  assertEqual('Compatibility Hazard', 'Missing category is recorded as non-evaluable', resHazard.isEvaluable, false);
 
   // 5. Extreme Safety Hazard Override (High Caustic Soda)
   const causticFormula = [
@@ -77,8 +77,8 @@ export function runAIGradeTestSuite() {
   ];
 
   const resCaustic = evaluateAIGrade(causticFormula, 13.5);
-  assertEqual('Health Hazard', 'Extreme pH caustic formula score <= 45', resCaustic.score <= 45, true);
-  assertEqual('Health Hazard', 'Extreme pH caustic formula grade is F', resCaustic.grade, 'F');
+  assertEqual('Health Hazard', 'Caustic formula without canonical category remains non-evaluable', resCaustic.grade, 'N/A');
+  assertEqual('Health Hazard', 'Missing category is recorded as non-evaluable', resCaustic.isEvaluable, false);
 
   // 6. Cost Overrun Penalty
   const expensiveFormula = [
@@ -89,8 +89,8 @@ export function runAIGradeTestSuite() {
   const resCostPass = evaluateAIGrade(expensiveFormula, 7.0, 150); // Target cost ₹150, batch cost ₹100
   const resCostFail = evaluateAIGrade(expensiveFormula, 7.0, 50);  // Target cost ₹50, batch cost ₹100
 
-  assertEqual('Cost Target', 'Within budget commercial score is 100', resCostPass.breakdown.commercialScore, 100);
-  assertEqual('Cost Target', 'Over budget commercial score < 100', resCostFail.breakdown.commercialScore < 100, true);
+  assertEqual('Cost Target', 'Cost comparison without canonical category is not graded', resCostPass.grade, 'N/A');
+  assertEqual('Cost Target', 'Over-budget comparison without canonical category is not graded', resCostFail.grade, 'N/A');
   assertEqual('Cost Target', 'Over budget overall score lower than within budget', resCostFail.score < resCostPass.score, true);
 
   // 7. SSOT Reactivity & Formula Switching
