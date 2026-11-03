@@ -927,12 +927,17 @@ export function evaluateScientificQualityGate(
     );
     // A confirmed, identity-matched laboratory failure must never be hidden by
     // a separate missing/invalid computational input.
-    if (hasMeasuredLabFailure) {
+    if (hasMeasuredLabFailure || specificationStatus === 'OUT_OF_SPEC') {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else if (hasCompositionFatal || scientificValidity === 'INVALID') {
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
+    } else if (hasCompatFatal) {
+      // A known fatal ingredient interaction remains actionable even when a
+      // separate pH/property calculation is unavailable.
+      finalFormulaStatus = 'INCOMPATIBLE';
+      labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
     } else if (scientificValidity === 'INSUFFICIENT_DATA' || rawIngs.length === 0) {
       // Missing composition/chemistry is not an out-of-spec result: there is
       // insufficient evidence to evaluate the specification at all.
@@ -941,9 +946,6 @@ export function evaluateScientificQualityGate(
     } else if (hasSpecFatal) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
-    } else if (hasCompatFatal) {
-      finalFormulaStatus = 'INCOMPATIBLE';
-      labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
     } else {
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
