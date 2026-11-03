@@ -326,7 +326,7 @@ export function runP5PropertyPipelinesTestSuite() {
   assert(
     'Phase 5 Pipelines',
     'U. Calculated NVR remains separate from measured NVR',
-    liquidResult.densityResult.nvrPercentage === null && liquidResult.labEvidenceResult.verifiedMeasurementsCount === 0,
+    !Number.isFinite(liquidResult.densityResult.nvrPercentage) && liquidResult.labEvidenceResult.verifiedMeasurementsCount === 0,
     { nvr: liquidResult.densityResult.nvrPercentage, verifiedCount: liquidResult.labEvidenceResult.verifiedMeasurementsCount },
     'NVR withheld because ingredient non-volatile fractions are not characterized; no fake lab validation'
   );

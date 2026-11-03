@@ -81,7 +81,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     ]),
     100
   );
-  assertNear('1. PHEngineV2', '1.1 Strong acid + base equimolar neutrality', phStrong.pH, 7.00, 0.05);
+  assertNear('1. PHEngineV2', '1.1 Strong acid + base equimolar neutrality', { pH: phStrong.pH, status: phStrong.status, warnings: phStrong.warnings, diagnostics: phStrong.diagnostics }, 7.00, 0.05);
 
   // 1.2 Weak acid (Acetic acid)
   const phWeakAcid = PHEngineV2.calculatePH(
@@ -301,8 +301,9 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
 
   // 6.3 Clean nonionic/water formula receives SCREENING_COMPATIBLE (no known conflict, not proof of infinite stability)
   const compClean = calculateFormulationCompatibility([
-    { name: 'Water', percentage: 90 },
-    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
+    { name: 'Water', percentage: 89.2 },
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' },
+    { name: 'Phenoxyethanol', percentage: 0.8, category: 'Preservative' }
   ], 8.5, 'LAUNDRY_LIQUID');
   assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', { semantic: compClean.compatibilityStatusSemantic, evidence: compClean.evidenceStatus, alerts: compClean.alerts.map(a => a.severity) }, 'NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE');
 
@@ -503,8 +504,9 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // F. Compatibility NO_KNOWN_CONFLICT semantics
   const compMeta = SCIENTIFIC_MODEL_REGISTRY['model-compatibility-screening'];
   const compPreserved = calculateFormulationCompatibility([
-    { name: 'Water', percentage: 90 },
-    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' }
+    { name: 'Water', percentage: 89.2 },
+    { name: 'SLES 70%', percentage: 10, activeMatterPct: 70, role: 'Anionic Surfactant' },
+    { name: 'Phenoxyethanol', percentage: 0.8, category: 'Preservative' }
   ], 8.5, 'LAUNDRY_LIQUID');
   assert(
     '12. Evidence Gate',

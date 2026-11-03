@@ -52,7 +52,7 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     'Phase 7 Accuracy',
     '1.1 Neutralization computes pH deterministically without fake lab status',
     typeof phResult.pH === 'number' && phResult.pH > 1 && phResult.pH < 14 && phResult.measuredPH === null,
-    phResult.pH,
+    { pH: phResult.pH, modelValidity: phResult.modelValidity, details: phResult.details, warnings: phResult.warnings },
     'Valid pH number (1 - 14)'
   );
 

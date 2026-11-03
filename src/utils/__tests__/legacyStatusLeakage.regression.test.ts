@@ -87,10 +87,10 @@ export function runLegacyStatusLeakageTestSuite() {
 
   assert(
     'B. Stale VALID Precedence',
-    'VALID legacy status cannot bypass LAB_VALIDATION_REQUIRED when lab tests are missing',
-    gateB.finalFormulaStatus === 'LAB_VALIDATION_REQUIRED' || gateB.finalFormulaStatus === 'VALID' || gateB.finalFormulaStatus === 'VALID_WITH_WARNINGS',
+    'Legacy VALID status cannot bypass the current INCOMPATIBLE scientific gate',
+    gateB.finalFormulaStatus === 'INCOMPATIBLE',
     gateB.finalFormulaStatus,
-    'LAB_VALIDATION_REQUIRED / VALID'
+    'INCOMPATIBLE'
   );
 
   // C. Imported formula with: status = PRODUCTION_READY. Current Quality Gate: OUT_OF_SPEC / NEEDS_ADJUSTMENT
