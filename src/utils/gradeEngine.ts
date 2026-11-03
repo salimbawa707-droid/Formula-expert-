@@ -694,10 +694,18 @@ function evaluateAIGradeFromLegacyOrDraft(
     const role = ing?.role || taxonomy.role;
     const func = ing?.function || taxonomy.function;
     const isSolventOrWater = name.toLowerCase().includes('water') || name.toLowerCase().includes('aqua') || category.toLowerCase().includes('solvent');
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
+    const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
     const rawActiveVal = ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? ing?.activePct ?? ing?.purity;
-    const active = rawActiveVal !== undefined && rawActiveVal !== null ? Number(rawActiveVal) : (isSolventOrWater ? 0 : 0);
-    const cost = Number(ing?.costPerKg ?? ing?.rawMaterialCostPerKg ?? ing?.cost ?? ing?.unitCost ?? 0);
+    const active = rawActiveVal !== undefined && rawActiveVal !== null
+      ? Number(rawActiveVal)
+      : (isSolventOrWater ? 0 : null);
+    const rawCost = ing?.costPerKg ?? ing?.rawMaterialCostPerKg ?? ing?.cost ?? ing?.unitCost;
+    const cost = rawCost === undefined || rawCost === null || rawCost === ''
+      ? null
+      : Number(rawCost);
 
     return {
       ...ing,
@@ -721,7 +729,21 @@ function evaluateAIGradeFromLegacyOrDraft(
   });
 
   const amRes = calculateActiveMatter(ingredients);
-  const activeMatterPct = typeof amRes === 'number' ? amRes : Number(amRes?.value ?? 0);
+  const activeMatterPct = typeof amRes === 'number' ? amRes : Number.NaN;
+
+  if (
+    canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' ||
+    phVal === undefined || !Number.isFinite(phVal) || phVal < 0 || phVal > 14 ||
+    !Number.isFinite(activeMatterPct) ||
+    ingredients.some(i => !Number.isFinite(i.percentage) || i.percentage < 0 || i.percentage > 100)
+  ) {
+    return buildNotEvaluableResult(
+      canonicalCategory,
+      'AI_GRADE_NOT_EVALUABLE',
+      'AI_GRADE_NOT_EVALUABLE: Legacy input is missing a valid canonical category, pH, ingredient percentage, or complete active-matter resolution. No grade is calculated.',
+      ['CANONICAL_CATEGORY', 'PH', 'INGREDIENT_PERCENTAGES', 'ACTIVE_MATTER']
+    );
+  }
 
   // Check for zero active ingredients
   const activeIngsCount = ingredients.filter((i: any) => {
@@ -780,9 +802,10 @@ function evaluateAIGradeFromLegacyOrDraft(
     ? Math.min(100, Math.max(0, Math.round(healthResult.finalScore)))
     : 0;
 
-  let commercialScore = 100;
-  const batchCost = calculateBatchCost(ingredients, 1);
-  if (typeof targetCostVal === 'number' && targetCostVal > 0) {
+  let commercialScore = 0;
+  const hasCompletePrices = ingredients.every(i => typeof i.costPerKg === 'number' && Number.isFinite(i.costPerKg) && i.costPerKg >= 0);
+  const batchCost = hasCompletePrices ? calculateBatchCost(ingredients, 1) : Number.NaN;
+  if (typeof targetCostVal === 'number' && Number.isFinite(targetCostVal) && targetCostVal > 0 && hasCompletePrices && Number.isFinite(batchCost)) {
     if (batchCost <= targetCostVal) {
       commercialScore = 100;
     } else {
@@ -868,10 +891,15 @@ function evaluateAIGradeFromLegacyOrDraft(
     scientificValidity: 'VALID',
     performanceStatus: profile?.isCleaningApplicable ? 'ACTIVE_DETERGENCY' : 'GENERAL_FORMULATION',
     evidenceLevel: 'PREDICTED_ONLY',
-    confidence: 'MEDIUM',
+    confidence: 'LOW',
     uncertainty: {
-      level: 'MEDIUM',
-      factors: effectiveCategory ? [] : ['Category unassigned; generic screening model applied.']
+      level: 'HIGH',
+      factors: [
+        'Legacy input path uses heuristic screening models and is not laboratory validated.',
+        'Regulatory compliance is not evaluated by this legacy grading path.',
+        ...(hasCompletePrices ? [] : ['One or more ingredient prices are unavailable; commercial pillar is not scored.']),
+        ...(targetCostVal ? [] : ['Target cost is not supplied; commercial pillar is not scored.'])
+      ]
     },
     strengths: finalScore >= 80 ? ['High balanced formula grade.'] : [],
     weaknesses: finalScore < 60 ? ['Low composite score.'] : [],
@@ -880,7 +908,7 @@ function evaluateAIGradeFromLegacyOrDraft(
     blockingIssues: [],
     unknownParameters: targetCostVal ? [] : ['targetCost'],
     labValidationStatus: 'PREDICTED_ONLY (Laboratory Testing Required Prior to Release)',
-    regulatoryStatus: 'COMPLIANT',
+    regulatoryStatus: 'NOT_EVALUATED',
     reasoning,
     breakdown: {
       cpiScore,
