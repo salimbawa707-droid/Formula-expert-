@@ -114,7 +114,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
     { name: 'Special Surfactant', percentage: 10, activeMatterPct: 100, hlbValue: 0 } // Explicit 0 HLB
   ];
   const zeroHLBResult = calculateBlendedHLB(zeroHLBSurfactant);
-  record(assertEqual('Explicit Zero Integrity', '0 HLB value is respected and yields 0 blended HLB', zeroHLBResult, 0));
+  record(assertEqual('Explicit Zero Integrity', '0 HLB value is respected as a valid explicit surfactant HLB', zeroHLBResult, 0));
 
   // -------------------------------------------------------------
   // 3. NULL / UNDEFINED / EMPTY / STRING INPUT AUDIT
