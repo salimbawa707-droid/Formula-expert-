@@ -187,9 +187,14 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   const allGLDAIdentified = gldaAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
   record(assertEqual('Duplicate Ingredient Naming', 'All GLDA alias representations return identical binding capacity (137 mg/g)', allGLDAIdentified, true));
 
-  const citrateAliases = ['Sodium Citrate', 'Sodium Citrate Dihydrate', 'Trisodium Citrate'];
-  const allCitrateIdentified = citrateAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 150);
-  record(assertEqual('Duplicate Ingredient Naming', 'All Sodium Citrate representations return identical binding capacity (150 mg/g)', allCitrateIdentified, true));
+  const citrateDihydrateCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram;
+  const citrateAnhydrousCapacity = getChelatorBindingCapacity('Sodium Citrate Anhydrous').capacityMgCaCO3PerGram;
+  const genericCitrateUnavailable =
+    getChelatorBindingCapacity('Sodium Citrate').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('Trisodium Citrate').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Dihydrate citrate retains its grade-specific 150 mg/g value', citrateDihydrateCapacity, 150));
+  record(assertEqual('Duplicate Ingredient Naming', 'Anhydrous citrate retains its distinct grade-specific 170 mg/g value', citrateAnhydrousCapacity, 170));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic citrate names remain unresolved without hydration grade', genericCitrateUnavailable, true));
 
   const edtaSpecificAliases = ['EDTA Tetrasodium', 'EDTA Tetrasodium 99% Powder'];
   const allSpecificEDTAIdentified = edtaSpecificAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 220);
