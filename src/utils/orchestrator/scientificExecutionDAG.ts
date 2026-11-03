@@ -921,20 +921,22 @@ export class ScientificExecutionDAG {
           syneresisRiskProvenance: 'HEURISTIC_SCREENING',
           maturity: 'HEURISTIC_SCREENING',
           evidenceLevel: 'RULE_BASED',
-          recommendedTests: isPowder
-            ? [
-                'Room temperature storage (25°C / 60% RH, 12 months)',
-                'Accelerated moisture caking test (40°C / 75% RH, 8 weeks)',
-                'Particle friability & flowability retention',
-                'Active oxygen / bleach retention (ISO 2271 / ASTM D2180)'
-              ]
-            : [
-                '25°C standard storage (ASTM D4333)',
-                '40°C / 75% RH accelerated aging (12 weeks)',
-                'Freeze-thaw stability (3 cycles, -5°C to 25°C)',
-                'Centrifuge phase separation test (3000 rpm, 30 min)',
-                'Active matter retention & microbial challenge testing (USP <51>)'
-              ],
+          recommendedTests: state.physicalForm === 'UNKNOWN'
+            ? []
+            : (isPowder
+              ? [
+                  'Room temperature storage (25°C / 60% RH, 12 months)',
+                  'Accelerated moisture caking test (40°C / 75% RH, 8 weeks)',
+                  'Particle friability & flowability retention',
+                  'Active oxygen / bleach retention (ISO 2271 / ASTM D2180)'
+                ]
+              : [
+                  '25°C standard storage (ASTM D4333)',
+                  '40°C / 75% RH accelerated aging (12 weeks)',
+                  'Freeze-thaw stability (3 cycles, -5°C to 25°C)',
+                  'Centrifuge phase separation test (3000 rpm, 30 min)',
+                  'Active matter retention & microbial challenge testing (USP <51>)'
+                ]),
           limitations: [
             'Shelf life duration cannot be scientifically predicted from ingredient lists alone without real-time or accelerated kinetic testing.',
             'Syneresis and preservative status are qualitative screening risks only.'
