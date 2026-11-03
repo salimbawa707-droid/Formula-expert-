@@ -30,6 +30,8 @@ import {
   getIngredientCmcData
 } from "../utils/calculators";
 import { FormulaScientificOrchestrator } from "../utils/orchestrator/formulaScientificOrchestrator";
+import { ScientificDecisionEngine, ScientificDecisionReport } from "../utils/scientificDecisionEngine";
+import { ScientificDecisionPanel } from "./aiformulator/ScientificDecisionPanel";
 import { calculateFormulaCost, FormulaCostReport } from "../utils/costingEngine";
 import { normalizeProductCategory } from "../domain/productTaxonomy";
 import CategoryIngredientSelector from "./CategoryIngredientSelector";
@@ -129,6 +131,7 @@ export interface DeepAnalysisState {
   orchestratorResult: any;
   powderReport: any;
   scientificResults: any;
+  decisionReport: ScientificDecisionReport;
 }
 
 export function runDeepScientificAnalysis(snapshot: {
@@ -169,6 +172,8 @@ export function runDeepScientificAnalysis(snapshot: {
       targetCostPerKg: 45.0
     }
   });
+
+  const decisionReport = ScientificDecisionEngine.evaluateDecisionIntelligence(orchResult);
 
   const o = orchResult || {};
   const v = o.verdictMatrix || {};
@@ -231,7 +236,8 @@ export function runDeepScientificAnalysis(snapshot: {
     formulaSnapshot: snapshot,
     orchestratorResult: orchResult,
     powderReport: powderRep,
-    scientificResults: sciResults
+    scientificResults: sciResults,
+    decisionReport
   };
 }
 
@@ -2008,6 +2014,7 @@ export default function FormulaExpert({
               />
             </div>
           )}
+          <ScientificDecisionPanel report={deepAnalysisState.decisionReport} />
         </div>
       )}
 
