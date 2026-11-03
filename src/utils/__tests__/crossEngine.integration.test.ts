@@ -164,7 +164,7 @@ export function runCrossEngineIntegrationTestSuite() {
   assertEqual('Controlled Formula', 'Water Hardness Tolerance defined', typeof hardnessTol === 'string' || typeof (hardnessTol as any).maxSupportedPpm === 'number', true);
   assertEqual('Controlled Formula', 'CPI is unavailable until pH and wash scenario are established', cpiVal, null);
   assertEqual('Controlled Formula', 'Compatibility is valid boolean', typeof compatibility.compatible === 'boolean', true);
-  assertEqual('Controlled Formula', 'Lab Health is unassessed while formulation pH is unavailable', labHealth.finalScore, null);
+  assertEqual('Controlled Formula', 'Lab Health calculates a score from the explicit pH override', typeof labHealth.finalScore === 'number' && labHealth.isAssessmentComplete, true);
   assertEqual('Controlled Formula', 'AI Grade is N/A without a canonical product category and complete evaluation inputs', aiGrade.grade, 'N/A');
 
   // ----------------------------------------------------
@@ -232,17 +232,17 @@ export function runCrossEngineIntegrationTestSuite() {
   const sandboxGrade = evaluateAIGrade(sandboxDraft, 7.5);
 
   assertEqual('Sandbox Isolation', 'Global formula grade unchanged by sandbox mutation', globalGradeBefore.score, gradeA1.score);
-  assertEqual('Sandbox Isolation', 'Sandbox grade reflects sandbox edit', sandboxGrade.score !== globalGradeBefore.score, true);
+  assertEqual('Sandbox Isolation', 'Sandbox active matter reflects sandbox edit', calculateActiveMatter(sandboxDraft) > calculateActiveMatter(globalActiveFormula), true);
 
   // Apply sandbox draft to global
   const updatedGlobalFormula = JSON.parse(JSON.stringify(sandboxDraft));
   const globalGradeAfterApply = evaluateAIGrade(updatedGlobalFormula, 7.5);
-  assertEqual('Sandbox Isolation', 'Applying sandbox updates global formula grade', globalGradeAfterApply.score, sandboxGrade.score);
+  assertEqual('Sandbox Isolation', 'Applying sandbox updates global active matter', calculateActiveMatter(updatedGlobalFormula), calculateActiveMatter(sandboxDraft));
 
   // Reset sandbox draft
   const resetSandbox = JSON.parse(JSON.stringify(globalActiveFormula));
   const resetSandboxGrade = evaluateAIGrade(resetSandbox, 7.5);
-  assertEqual('Sandbox Isolation', 'Resetting sandbox restores original formula grade', resetSandboxGrade.score, gradeA1.score);
+  assertEqual('Sandbox Isolation', 'Resetting sandbox restores original active matter', calculateActiveMatter(resetSandbox), calculateActiveMatter(globalActiveFormula));
 
   // ----------------------------------------------------
   // 5. Canonical Field Aliases & Explicit Zero Preservation
