@@ -89,10 +89,30 @@ export function runClosedLoopTestSuite(): TestSuiteSummary {
   assert('A3. Re-ingesting identical measurementId triggers DUPLICATE status',
     duplicateIngested.dataQuality === 'DUPLICATE');
 
-  const conflictingInput = { ...validIngestInput, measurementId: 'MEAS-502', measuredValue: 9.8 };
+  const replicateInput = { ...validIngestInput, measurementId: 'MEAS-502', measuredValue: 9.8 };
+  const ingestedReplicate = ingestExperimentResult(replicateInput, [ingested1]);
+  assert('A4. Distinct replicate measurement IDs are allowed for the same sample and parameter',
+    ingestedReplicate.dataQuality === 'VALID');
+
+  const conflictingInput = { ...validIngestInput, measuredValue: 9.8 };
   const ingestedConflict = ingestExperimentResult(conflictingInput, [ingested1]);
-  assert('A4. Differing measurement for same sample and parameter triggers CONFLICT_REQUIRES_REVIEW status',
+  assert('A5. Reusing the same measurement identity with a different value triggers CONFLICT_REQUIRES_REVIEW',
     ingestedConflict.dataQuality === 'CONFLICT_REQUIRES_REVIEW');
+
+  const missingVersionInput = { ...validIngestInput, formulaVersionId: '' };
+  const ingestedMissingVersion = ingestExperimentResult(missingVersionInput);
+  assert('A6. Missing formula-version lineage is INCOMPLETE',
+    ingestedMissingVersion.dataQuality === 'INCOMPLETE');
+
+  const invalidTimestampInput = { ...validIngestInput, measurementTimestamp: 'not-a-date' };
+  const ingestedInvalidTimestamp = ingestExperimentResult(invalidTimestampInput);
+  assert('A7. Invalid measurement timestamp is INVALID',
+    ingestedInvalidTimestamp.dataQuality === 'INVALID');
+
+  const unverifiedInput = { ...validIngestInput, verificationStatus: 'REJECTED' as const };
+  const ingestedUnverified = ingestExperimentResult(unverifiedInput);
+  assert('A8. Rejected evidence is retained as REQUIRES_REVIEW and not promoted',
+    ingestedUnverified.dataQuality === 'REQUIRES_REVIEW');
 
   // ==========================================================================
   // SECTION B: PREDICTION VS MEASUREMENT
