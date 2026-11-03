@@ -207,57 +207,46 @@ export function calculatePowderPH(
  */
 export function calculatePowderHardWaterPerformance(
   classifiedIngredients: ClassifiedIngredient[],
-  waterHardnessPpm: number = 150,
-  washDoseG: number = 50,
-  washVolumeL: number = 10
+  waterHardnessPpm?: number,
+  washDoseG?: number,
+  washVolumeL?: number
 ): PowderHardWaterReport {
-  if (!classifiedIngredients || classifiedIngredients.length === 0) {
+  const hasScenario =
+    typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0 &&
+    typeof washDoseG === 'number' && Number.isFinite(washDoseG) && washDoseG > 0 &&
+    typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0;
+  const safeIngredients = Array.isArray(classifiedIngredients) ? classifiedIngredients : [];
+  if (!hasScenario || safeIngredients.length === 0) {
     return {
-      waterHardnessDemandPpm: waterHardnessPpm,
-      washDoseG,
-      washVolumeL,
+      waterHardnessDemandPpm: undefined,
+      washDoseG: undefined,
+      washVolumeL: undefined,
+      builderDeliveryGPerL: undefined,
       builderProtectionRating: 'Insufficient validated data',
       anionicSensitivityRisk: 'Insufficient validated data',
-      details: 'Insufficient formulation data to calculate hard-water builder protection.',
+      details: 'NOT_EVALUATED: provide exact measured water hardness (ppm as CaCO3), wash dose (g), and final wash-liquor volume (L). Builder percentage alone cannot establish Ca/Mg sequestration or anionic surfactant protection.',
       source: 'INSUFFICIENT_DATA'
     };
   }
 
   let builderPct = 0;
-  let chelatorPct = 0;
-  let anionicPct = 0;
-  let nonionicPct = 0;
-
-  classifiedIngredients.forEach((ing) => {
-    if (ing.functionalClass === 'Builder (Precipitation / Ion-Exchange)') builderPct += ing.inputPercentage;
-    if (ing.functionalClass === 'Chelating Agent / Soluble Sequestrant') chelatorPct += ing.inputPercentage;
-    if (ing.functionalClass === 'Anionic Surfactant') anionicPct += ing.inputPercentage;
-    if (ing.functionalClass === 'Nonionic Surfactant') nonionicPct += ing.inputPercentage;
+  safeIngredients.forEach((ing) => {
+    if (ing.functionalClass === 'Builder (Precipitation / Ion-Exchange)' ||
+        ing.functionalClass === 'Anti-redeposition Polymer') {
+      builderPct += ing.inputPercentage;
+    }
   });
 
-  const powderConcentrationGPerL = washDoseG / Math.max(1, washVolumeL);
-  const builderGPerLInWash = powderConcentrationGPerL * (builderPct / 100);
-
-  let builderProtectionRating: PowderHardWaterReport['builderProtectionRating'] = 'Sufficient Protection';
-  let anionicRisk: PowderHardWaterReport['anionicSensitivityRisk'] = 'Protected by Builders';
-
-  if (builderPct < 10 && chelatorPct === 0) {
-    builderProtectionRating = 'Insufficient Builder Loading';
-    anionicRisk = 'Vulnerable to Ca2+ Precipitation';
-  } else if (builderPct < 20 && waterHardnessPpm > 250) {
-    builderProtectionRating = 'Moderate / Borderline';
-    anionicRisk = 'Protected by Builders';
-  }
-
-  const details = `At ${waterHardnessPpm} ppm CaCO₃ hardness demand and ${washDoseG}g wash dose (${washVolumeL}L wash liquor, ~${powderConcentrationGPerL.toFixed(1)} g/L wash liquor concentration), the formulation delivers ${builderGPerLInWash.toFixed(2)} g/L inorganic builder system. Soda Ash precipitates hardness cations as insoluble CaCO₃, protecting anionic LAS-Na from calcium precipitation.`;
-
+  const powderConcentrationGPerL = washDoseG / washVolumeL;
+  const builderDeliveryGPerL = powderConcentrationGPerL * (builderPct / 100);
   return {
     waterHardnessDemandPpm: waterHardnessPpm,
     washDoseG,
     washVolumeL,
-    builderProtectionRating,
-    anionicSensitivityRisk: anionicRisk,
-    details,
-    source: 'CALCULATED'
+    builderDeliveryGPerL: Number(builderDeliveryGPerL.toFixed(4)),
+    builderProtectionRating: 'Insufficient validated data',
+    anionicSensitivityRisk: 'Insufficient validated data',
+    details: `Composition arithmetic only: at ${waterHardnessPpm} ppm CaCO3, ${washDoseG} g dose in ${washVolumeL} L, the formula delivers ${builderDeliveryGPerL.toFixed(4)} g/L of ingredients classified as builders/co-builders. This does not prove hardness removal or surfactant protection; grade-specific stoichiometry, competing ions, pH and measured residual hardness/free Ca2+/Mg2+ are unavailable.`,
+    source: 'SCREENING'
   };
 }

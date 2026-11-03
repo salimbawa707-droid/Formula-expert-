@@ -82,8 +82,8 @@ export function calculatePowderBuilderSystem(classifiedIngredients: ClassifiedIn
  */
 export function calculatePowderChelationSystem(
   classifiedIngredients: ClassifiedIngredient[],
-  washDoseG: number = 50,
-  washVolumeL: number = 10
+  washDoseG?: number,
+  washVolumeL?: number
 ): PowderChelationReport {
   const chelatorIngredients: PowderChelationReport['chelatorIngredients'] = [];
   let totalChelatorPct = 0;
@@ -134,7 +134,7 @@ export function calculatePowderChelationSystem(
       } else {
         capacityMgPerGram = rawCapacity;
         capacityStatus = `Traceable capacity evidence (${evidenceId}): ${rawCapacity} mg CaCO₃/g (${capacityBasis})`;
-        const rawIngredientGrams = washDoseG * (ing.inputPercentage / 100);
+        const rawIngredientGrams = typeof washDoseG === 'number' ? washDoseG * (ing.inputPercentage / 100) : 0;
         const capacityBasisGrams =
           capacityBasis === 'ACTIVE_MATERIAL' || ing.activeMatterPct !== undefined
             ? rawIngredientGrams * (validActivePct / 100)
@@ -173,6 +173,18 @@ export function calculatePowderChelationSystem(
       calciumCapacityMgPerDose: undefined,
       capacityStatus: 'No soluble organic chelating agents (GLDA/EDTA/MGDA/Citrate) present. Builder system relies on carbonate precipitation or aluminosilicate ion-exchange.',
       source: 'NOT_APPLICABLE'
+    };
+  }
+
+  if (typeof washDoseG !== 'number' || !Number.isFinite(washDoseG) || washDoseG <= 0 ||
+      typeof washVolumeL !== 'number' || !Number.isFinite(washVolumeL) || washVolumeL <= 0) {
+    return {
+      totalChelatorPct: Number(totalChelatorPct.toFixed(2)),
+      chelatorIngredients,
+      hasValidatedData: false,
+      calciumCapacityMgPerDose: undefined,
+      capacityStatus: 'NOT_EVALUATED: explicit wash dose (g) and final wash-liquor volume (L) are required to report per-wash chelation capacity. Ingredient-level evidence does not establish a per-wash result.',
+      source: 'INSUFFICIENT_DATA'
     };
   }
 

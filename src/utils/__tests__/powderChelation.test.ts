@@ -53,14 +53,18 @@ export function runPowderChelationTestSuite(): {
   const res5 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 101 }]);
   assert('>100 activeMatterPct is INSUFFICIENT_DATA', res5.source === 'INSUFFICIENT_DATA');
 
-  // Valid 47% active matter
-  const res6 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 47 }]);
+  // Valid ingredient evidence without a wash scenario cannot produce a per-dose capacity.
+  const missingScenario = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 47 }]);
+  assert('Missing dose/volume is INSUFFICIENT_DATA', missingScenario.source === 'INSUFFICIENT_DATA' && missingScenario.calciumCapacityMgPerDose === undefined);
+
+  // Valid 47% active matter with explicit wash scenario
+  const res6 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 47 }], 50, 10);
   assert('Valid 47% source is CALCULATED', res6.source === 'CALCULATED');
   assert('Valid 47% hasValidatedData is true', res6.hasValidatedData === true);
   assert('Valid 47% calciumCapacityMgPerDose is defined', res6.calciumCapacityMgPerDose !== undefined);
 
   // 0% active matter as valid numeric 0
-  const res7 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 0 }]);
+  const res7 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 0 }], 50, 10);
   assert('0% active matter source is CALCULATED', res7.source === 'CALCULATED');
   assert('0% active matter hasValidatedData is true', res7.hasValidatedData === true);
   assert('0% active matter calciumCapacityMgPerDose is 0', res7.calciumCapacityMgPerDose === 0);

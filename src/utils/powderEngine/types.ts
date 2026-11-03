@@ -293,11 +293,12 @@ export interface PowderPHReport {
 }
 
 export interface PowderHardWaterReport {
-  waterHardnessDemandPpm: number;
-  washDoseG: number;
-  washVolumeL: number;
-  builderProtectionRating: 'Sufficient Protection' | 'Moderate / Borderline' | 'Insufficient Builder Loading' | 'Insufficient validated data';
-  anionicSensitivityRisk: 'Protected by Builders' | 'Vulnerable to Ca2+ Precipitation' | 'Insufficient validated data';
+  waterHardnessDemandPpm?: number;
+  washDoseG?: number;
+  washVolumeL?: number;
+  builderDeliveryGPerL?: number;
+  builderProtectionRating: 'Insufficient validated data';
+  anionicSensitivityRisk: 'Insufficient validated data';
   details: string;
   source: ResultSource;
 }
