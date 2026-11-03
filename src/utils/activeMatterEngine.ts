@@ -553,7 +553,7 @@ export class ActiveMatterEngine {
     }
 
     for (const ing of safeIngs) {
-      const rawPctValue = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+      const rawPctValue = ing?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? (ing as any)?.rawPercent;
       const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
         ? Number.NaN
         : Number(rawPctValue);
