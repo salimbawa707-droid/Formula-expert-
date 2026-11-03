@@ -238,6 +238,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
   // 44. Existing Liquid regression tests remain passing
   assert('TEST 44: Liquid parameter definition valid', liquidPhParam !== undefined);
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
