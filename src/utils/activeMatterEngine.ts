@@ -562,8 +562,18 @@ export class ActiveMatterEngine {
       totalRawMatter += rawPct;
 
       const resolution = this.resolveIngredientActive(ing);
-      if (resolution.dataSource === 'reference_default' || resolution.dataSource === 'derived_from_name' || resolution.dataSource === 'explicit_override') {
+      const canonicalSourceVerified = Boolean(
+        resolution.canonicalMatch?.provenance?.verificationStatus === 'VERIFIED' &&
+        resolution.canonicalMatch?.provenance?.source?.trim()
+      );
+      const hasNonAuthoritativeResolution =
+        resolution.dataSource === 'reference_default' ||
+        resolution.dataSource === 'derived_from_name' ||
+        resolution.dataSource === 'explicit_override' ||
+        (resolution.dataSource === 'canonical_library_default' && !canonicalSourceVerified);
+      if (hasNonAuthoritativeResolution) {
         nonAuthoritativeCount++;
+        warnings.push(`NON_AUTHORITATIVE_ACTIVE_MATTER: ${ing?.name || 'Unknown'} uses ${resolution.dataSource}; treat as screening input until supplier/source evidence is reviewed.`);
       }
 
       const rawAmValue = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).activePct ?? (ing as any).purity;
