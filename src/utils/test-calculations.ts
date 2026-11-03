@@ -27,6 +27,7 @@ import { runInventoryTestSuite } from './__tests__/inventory.regression.test';
 import { runIngredientMasterTestSuite } from './__tests__/ingredientMaster.regression.test';
 import { runExpertReasoningTestSuite } from './__tests__/expertReasoning.regression.test';
 import { runViscosityEngineTestSuite } from './__tests__/viscosityEngine.regression.test';
+import { runDensityEngineRegressionTestSuite } from './__tests__/densityEngine.regression.test';
 import { runCostingEngineTestSuite } from './__tests__/costingEngine.regression.test';
 import { runFormulaLibraryVerificationTestSuite } from './__tests__/formulaLibrary.regression.test';
 import { runScientificPhaseCTests } from './__tests__/scientificPhaseC.regression.test';
@@ -148,6 +149,7 @@ const phV2Summary = runPHEngineV2TestSuite();
 const hlbSummary = runHLBRegressionTestSuite();
 const activeMatterSummary = runActiveMatterRegressionTestSuite();
 const viscositySummary = runViscosityEngineTestSuite();
+const densitySummary = runDensityEngineRegressionTestSuite();
 const viscosityImprovementResults = runViscosityModelImprovementTestSuite();
 const viscosityImprovementPassed = viscosityImprovementResults.filter(r => r.passed).length;
 const viscosityImprovementFailed = viscosityImprovementResults.filter(r => !r.passed).length;
@@ -457,6 +459,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'hlbEngine.regression.test.ts', moduleName: 'runHLBRegressionTestSuite', executed: true, passedAssertions: hlbSummary.passed, failedAssertions: hlbSummary.failed, totalAssertions: hlbSummary.passed + hlbSummary.failed, skipped: false },
   { file: 'activeMatterEngine.regression.test.ts', moduleName: 'runActiveMatterRegressionTestSuite', executed: true, passedAssertions: activeMatterSummary.passed, failedAssertions: activeMatterSummary.failed, totalAssertions: activeMatterSummary.passed + activeMatterSummary.failed, skipped: false },
   { file: 'viscosityEngine.regression.test.ts', moduleName: 'runViscosityEngineTestSuite', executed: true, passedAssertions: viscositySummary.passed, failedAssertions: viscositySummary.failed, totalAssertions: viscositySummary.passed + viscositySummary.failed, skipped: false },
+  { file: 'densityEngine.regression.test.ts', moduleName: 'runDensityEngineRegressionTestSuite', executed: true, passedAssertions: densitySummary.passed, failedAssertions: densitySummary.failed, totalAssertions: densitySummary.total, skipped: false },
   { file: 'dilutionEngine.regression.test.ts', moduleName: 'runDilutionRegressionTestSuite', executed: true, passedAssertions: dilutionSummary.passed, failedAssertions: dilutionSummary.failed, totalAssertions: dilutionSummary.passed + dilutionSummary.failed, skipped: false },
   { file: 'powderEngine.regression.test.ts', moduleName: 'runPowderEngineTestSuite', executed: true, passedAssertions: powderSummary.passed, failedAssertions: powderSummary.failed, totalAssertions: powderSummary.passed + powderSummary.failed, skipped: false },
   { file: 'specificationEngine.regression.test.ts', moduleName: 'runSpecificationEngineTestSuite', executed: true, passedAssertions: specSummary.passed, failedAssertions: specSummary.failed, totalAssertions: specSummary.passed + specSummary.failed, skipped: false },
