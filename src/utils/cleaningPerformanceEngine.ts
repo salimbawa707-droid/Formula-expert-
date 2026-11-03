@@ -53,6 +53,9 @@ export interface PerformanceLabMeasurements {
 export interface PerformanceEvaluationOptions {
   /** Explicit measured/user-supplied wash-water hardness. Missing values block the performance calculation. */
   waterHardnessPpm?: number;
+  washVolumeL?: number;
+  washDoseGrams?: number;
+  batchSizeKg?: number;
   compatibilityStatus?: string;
   hasCriticalCompatibilityAlert?: boolean;
 }
@@ -260,11 +263,15 @@ export function calculateCleaningPerformance(
   // provenance and null KPI values make clear that no score was calculated.
   const requiresTotalActiveMatter = category === 'FLOOR_CLEANER' || category === 'HAND_WASH';
   const hasExplicitHardness = typeof options?.waterHardnessPpm === 'number' && Number.isFinite(options.waterHardnessPpm) && options.waterHardnessPpm >= 0;
+  const hasExplicitWashScenario =
+    typeof options?.washVolumeL === 'number' && Number.isFinite(options.washVolumeL) && options.washVolumeL > 0 &&
+    typeof options?.washDoseGrams === 'number' && Number.isFinite(options.washDoseGrams) && options.washDoseGrams > 0 &&
+    typeof options?.batchSizeKg === 'number' && Number.isFinite(options.batchSizeKg) && options.batchSizeKg > 0;
   const activeMatterUnavailable =
     missingSurfactantActiveMatter ||
     !Number.isFinite(activeSurfactant) ||
     (requiresTotalActiveMatter && !Number.isFinite(totalActiveMatter));
-  const hardnessUnavailable = !hasExplicitHardness;
+  const hardnessUnavailable = !hasExplicitHardness || !hasExplicitWashScenario;
 
   if (!Number.isFinite(phVal) || activeMatterUnavailable || hardnessUnavailable) {
     const reason = !Number.isFinite(phVal)
@@ -273,7 +280,7 @@ export function calculateCleaningPerformance(
         ? (missingSurfactantActiveMatter || !Number.isFinite(activeSurfactant)
           ? 'At least one surfactant active-matter input is unknown or invalid; its contribution cannot be treated as zero.'
           : 'Total active matter is incomplete for this product category; residue/mildness KPIs cannot be calculated safely.')
-        : 'Measured/user-supplied wash-water hardness is required; no 150 ppm default is substituted.';
+        : 'Explicit wash-water hardness, wash volume, detergent dose, and batch size are required; no scenario defaults are substituted.';
     const cleaningApplicable = category !== 'FABRIC_SOFTENER' && category !== 'UNKNOWN_PRODUCT_CATEGORY';
     return {
       productCategory: category,
@@ -308,7 +315,14 @@ export function calculateCleaningPerformance(
 
   // Phase 3 Water Hardness Synchronization
   const hardnessTargetPpm = options!.waterHardnessPpm!;
-  const hardnessResult = calculateWaterHardnessTolerance(safeIngs, hardnessTargetPpm, undefined, undefined, undefined, category);
+  const hardnessResult = calculateWaterHardnessTolerance(
+    safeIngs,
+    hardnessTargetPpm,
+    options!.washVolumeL!,
+    options!.washDoseGrams!,
+    options!.batchSizeKg!,
+    category
+  );
 
   // Base Surfactant Synergy Multiplier
   let surfactantSynergy = 0;
