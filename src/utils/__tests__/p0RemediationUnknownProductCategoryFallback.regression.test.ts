@@ -300,6 +300,37 @@ export function runP0RemediationUnknownProductCategoryFallbackTestSuite(): TestS
       wrongFormulaPHGate.speciationResult.provenance === 'PREDICTED'
   );
 
+  const conflictingGradeGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-GRADE-CONFLICT',
+    formulaName: 'Conflicting SLES Grade',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'SLES 70%', percentage: 10, activeMatterPct: 40, role: 'Anionic Surfactant' },
+      { name: 'Water', percentage: 90, role: 'Solvent' }
+    ]
+  });
+  assert(
+    '37. Unconfirmed active matter that conflicts with the named commercial grade is blocked',
+    conflictingGradeGate.scientificValidity === 'INVALID' &&
+      conflictingGradeGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
+  );
+
+  const confirmedGradeOverrideGate = evaluateScientificQualityGate({
+    formulaId: 'FORM-GRADE-OVERRIDE',
+    formulaName: 'Documented SLES Grade Override',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'SLES 70%', percentage: 10, activeMatterPct: 40, confirmedGradeActiveOverride: true, role: 'Anionic Surfactant' },
+      { name: 'Water', percentage: 90, role: 'Solvent' }
+    ]
+  });
+  assert(
+    '38. An explicitly confirmed grade override is not misclassified as an unconfirmed conflict',
+    !confirmedGradeOverrideGate.blockingIssues.some(issue => issue.code === 'ERR_ACTIVE_MATTER_GRADE_CONFLICT')
+  );
+
   // Even the same formula ID cannot reuse evidence from a different version.
   const wrongVersionPHGate = evaluateScientificQualityGate({
     formulaId: 'FORM-CURRENT',
