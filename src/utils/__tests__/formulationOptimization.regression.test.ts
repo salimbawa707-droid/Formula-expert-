@@ -419,10 +419,11 @@ export async function executeOptimizationTestsAsync(): Promise<TestResultSummary
 
   // 19. Chelation Failure Preservation
   const zeroChelatorIngs = testIngs.filter(i => !/citrat|edta|chelator|builder/i.test(i.name));
+  const hardnessBenchmarkConstraints = buildProductConstraints('LAUNDRY_LIQUID', undefined, undefined, 150);
   const candZeroChelator = evaluateCandidateFormulation(
     zeroChelatorIngs,
     'LAUNDRY_LIQUID',
-    liquidConstraints,
+    hardnessBenchmarkConstraints,
     'TEST-ZERO-CHELATOR',
     100
   );
