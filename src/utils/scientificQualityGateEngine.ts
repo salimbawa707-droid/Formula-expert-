@@ -817,7 +817,7 @@ export function evaluateScientificQualityGate(
 
   const uncertainties: string[] = [];
   const requiredLabTests: string[] = [];
-  if (!hasExplicitWaterHardness && productHardnessPolicy.requiresHardnessControl) {
+  if (!hardnessScenarioComplete && productHardnessPolicy.requiresHardnessControl) {
     uncertainties.push('[MISSING_SCREENING_INPUT] Water-hardness protection was not evaluated because measured/user-supplied hardness and a complete wash scenario were not provided.');
   }
   if (categoryDef && categoryDef.specificationEvidenceStatus !== 'SOURCE_VERIFIED') {
@@ -849,13 +849,19 @@ export function evaluateScientificQualityGate(
       }
 
       // Check missing parameters specifically
-      const pct = Number(ing?.percentage ?? ing?.percent ?? 0);
-      if (isNaN(pct) || pct <= 0) {
-        uncertainties.push(`Ingredient '${name}' is missing a valid concentration percentage.`);
+      const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent;
+      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+        uncertainties.push(`Ingredient '${name}' is missing or has an invalid concentration percentage.`);
       }
-      const activePct = Number(ing?.activeMatterPct ?? ing?.activePercent ?? 0);
-      if (isNaN(activePct) || activePct <= 0) {
-        uncertainties.push(`Ingredient '${name}' is missing active matter percentage.`);
+      const rawActivePct = ing?.activeMatterPct ?? ing?.activePercent ?? ing?.activeMatterPurity ?? (ing as any)?.activeMatter;
+      const activePct = rawActivePct === undefined || rawActivePct === null || (typeof rawActivePct === 'string' && rawActivePct.trim() === '')
+        ? Number.NaN
+        : Number(rawActivePct);
+      if (!Number.isFinite(activePct) || activePct < 0 || activePct > 100) {
+        uncertainties.push(`Ingredient '${name}' is missing or has an invalid active-matter percentage.`);
       }
     });
   }
@@ -916,10 +922,12 @@ export function evaluateScientificQualityGate(
     const hasMeasuredLabFailure = blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED');
     // A confirmed, identity-matched laboratory failure must never be hidden by
     // a separate missing/invalid computational input.
-    if (hasMeasuredLabFailure || hasSpecFatal) {
+    if (hasMeasuredLabFailure) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else if (hasCompatFatal) {
+      // A known fatal incompatibility is the most actionable disposition even
+      // when another independent calculation is unavailable.
       finalFormulaStatus = 'INCOMPATIBLE';
       labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
     } else if (hasValidityFatal) {
@@ -930,6 +938,9 @@ export function evaluateScientificQualityGate(
         finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
         labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
       }
+    } else if (hasSpecFatal) {
+      finalFormulaStatus = 'OUT_OF_SPEC';
+      labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
     } else {
       finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
       labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
