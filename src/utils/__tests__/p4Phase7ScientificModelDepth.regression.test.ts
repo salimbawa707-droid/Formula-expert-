@@ -218,7 +218,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
       { name: 'Water', percentage: 70 },
       { name: 'SLES 70%', percentage: 14, activeMatterPct: 70 },
       { name: 'CAPB 30%', percentage: 5, activeMatterPct: 30 },
-      { name: 'Sodium Chloride', percentage: 1.5 }
+      { name: 'Sodium Chloride', percentage: 1.5 },
+      { name: 'Water (Balance)', percentage: 9.5, activeMatterPct: 0 }
     ],
     { productCategory: 'Liquid Detergent' }
   );
@@ -251,7 +252,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
       { name: 'Water', percentage: 70 },
       { name: 'LABSA 96%', percentage: 12, activeMatterPct: 96 },
       { name: 'SLES 70%', percentage: 5, activeMatterPct: 70 },
-      { name: 'CAPB 30%', percentage: 3, activeMatterPct: 30 }
+      { name: 'CAPB 30%', percentage: 3, activeMatterPct: 30 },
+      { name: 'Water (Balance)', percentage: 10, activeMatterPct: 0 }
     ],
     7.5,
     'DISHWASH_MANUAL'
@@ -260,18 +262,18 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
 
   // 5.3 Hard water penalty without chelation
   const cpiHardNoChel = calculateCleaningPerformance(
-    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }],
+    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }, { name: 'Water', percentage: 90, activeMatterPct: 0 }],
     8.0,
     'LAUNDRY_LIQUID',
     undefined,
-    { waterHardnessPpm: 400 } // Unchelated very hard water
+    { waterHardnessPpm: 400, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   const cpiSoft = calculateCleaningPerformance(
-    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }],
+    [{ name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 }, { name: 'Water', percentage: 90, activeMatterPct: 0 }],
     8.0,
     'LAUNDRY_LIQUID',
     undefined,
-    { waterHardnessPpm: 0 } // Soft water
+    { waterHardnessPpm: 0, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
   );
   assert('5. Cleaning', '5.3 Unbuffered hard water penalizes particulate and overall detergency', cpiHardNoChel.cpi <= cpiSoft.cpi, true, true);
 
@@ -301,7 +303,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const compClean = calculateFormulationCompatibility([
     { name: 'Water', percentage: 89.9 },
     { name: 'Lauryl Glucoside 50%', percentage: 10, role: 'Nonionic Surfactant' },
-    { name: 'Kathon CG', percentage: 0.1, role: 'Preservative', category: 'Preservative' }
+    { name: 'Water (Balance)', percentage: 0.1, role: 'Solvent', category: 'Solvent' }
   ]);
   assert('6. Compatibility', '6.3 Clean formula receives NO_KNOWN_CONFLICT / SCREENING_COMPATIBLE without false proof', compClean.compatibilityStatusSemantic === 'NO_KNOWN_CONFLICT' && compClean.evidenceStatus === 'SCREENING_COMPATIBLE', true, true);
 
