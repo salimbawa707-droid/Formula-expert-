@@ -33,6 +33,7 @@ import {
 import {
   applyFeedbackToFormulation,
 } from '../utils/closedLoopRAndD/optimizationFeedbackBridge';
+import { evaluateClosedLoopEvidenceGate } from '../utils/closedLoopRAndD/closedLoopEvidenceGate';
 import {
   ClosedLoopAuditService,
 } from '../utils/closedLoopRAndD/closedLoopAuditService';
@@ -221,6 +222,12 @@ export const ClosedLoopDashboard: React.FC = () => {
     });
   }, [reformulationCandidate, currentFormula]);
 
+  // Fail-closed evidence gate: demo and hardware-preview values are not verified LIMS evidence.
+  const evidenceGate = useMemo(
+    () => evaluateClosedLoopEvidenceGate(observedMeasurements),
+    [observedMeasurements]
+  );
+
   // Human Review Modal State
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
   const [reviewNotes, setReviewNotes] = useState<string>('Evaluated prediction delta and confirmed alkali + salt curve adjustments.');
@@ -228,6 +235,11 @@ export const ClosedLoopDashboard: React.FC = () => {
 
   // Approve & Emit New Formula Version
   const handleApproveIteration = () => {
+    if (!evidenceGate.eligible) {
+      setShowReviewModal(false);
+      window.alert(`Reformulation approval blocked: ${evidenceGate.reasons.join(' ')}`);
+      return;
+    }
     const outputVersion = `V${iterationCycle + 1}.0.0`;
     const rec: ClosedLoopIterationRecord = {
       iterationCycle,
@@ -507,11 +519,18 @@ export const ClosedLoopDashboard: React.FC = () => {
             {feedbackDecision.actionCategory === 'REFORMULATION_CANDIDATE' && (
               <button
                 onClick={() => setShowReviewModal(true)}
+                disabled={!evidenceGate.eligible}
+                title={evidenceGate.eligible ? 'Verified laboratory evidence present' : 'Approval blocked until verified laboratory evidence is attached'}
                 className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-semibold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" />
-                Authorize Reformulation Version V{iterationCycle + 1}.0
+                {evidenceGate.eligible ? 'Authorize Reformulation Version' : 'Approval Blocked — Verified Lab Evidence Required'} V{iterationCycle + 1}.0
               </button>
+            )}
+            {!evidenceGate.eligible && feedbackDecision.actionCategory === 'REFORMULATION_CANDIDATE' && (
+              <p className="text-xs text-amber-300" role="status">
+                Simulated/demo readings cannot authorize a new formula version. {evidenceGate.reasons[0]}
+              </p>
             )}
           </div>
         </div>
