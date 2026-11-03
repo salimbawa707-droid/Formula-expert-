@@ -334,21 +334,56 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   const warnings: string[] = (orchestratorResult.warnings || []).map((w: any) => typeof w === 'string' ? w : (w.message || w.title || String(w)));
   const unknownParameters: string[] = orchestratorResult.unknownParameters || [];
 
+  const rawActiveSurfactants = orchestratorResult.activeMatterResult?.totalSurfactantActivePct;
+  const rawTotalActiveMatter = orchestratorResult.activeMatterResult?.totalActiveMatterPct;
+  const rawPH = orchestratorResult.pHResult?.ph;
+  const rawCompatibility = orchestratorResult.compatibilityResult?.compatibilityScore;
+  const perfCandidate = orchestratorResult.cleaningResult;
+  const costCandidate = orchestratorResult.costResult;
+  const regulatoryCandidate = orchestratorResult.regulatoryResult;
+  const missingCriticalInputs: string[] = [];
+
+  if (orchestratorResult.scientificValidity !== 'VALID') missingCriticalInputs.push('scientificValidity');
+  if (blockingIssues.length > 0) missingCriticalInputs.push('blockingIssues');
+  if (!Number.isFinite(rawActiveSurfactants) || !Number.isFinite(rawTotalActiveMatter)) missingCriticalInputs.push('activeMatter');
+  if (!Number.isFinite(rawPH) || rawPH < 0 || rawPH > 14) missingCriticalInputs.push('pH');
+  if (!Number.isFinite(rawCompatibility) || rawCompatibility < 0 || rawCompatibility > 100) missingCriticalInputs.push('compatibility');
+  const performanceMetric = profile.isCleaningApplicable
+    ? (perfCandidate?.cpi ?? perfCandidate?.overallScore)
+    : (perfCandidate?.conditioningScore ?? perfCandidate?.overallScore);
+  if (!Number.isFinite(performanceMetric) || perfCandidate?.provenance === 'INSUFFICIENT_DATA') {
+    missingCriticalInputs.push(profile.isCleaningApplicable ? 'cleaningPerformance' : 'conditioningPerformance');
+  }
+  if (!costCandidate || !Number.isFinite(costCandidate.costPerKg) || costCandidate.isComplete !== true) {
+    missingCriticalInputs.push('completeCosting');
+  }
+  if (!regulatoryCandidate || !['COMPLIANT', 'RESTRICTED', 'NON_COMPLIANT'].includes(regulatoryCandidate.status)) {
+    missingCriticalInputs.push('regulatoryEvaluation');
+  }
+
+  if (missingCriticalInputs.length > 0) {
+    return buildNotEvaluableResult(
+      canonicalCategory,
+      'AI_GRADE_NOT_EVALUABLE',
+      `AI_GRADE_NOT_EVALUABLE: Required scientific/commercial inputs are missing, invalid, or blocked: ${[...new Set(missingCriticalInputs)].join(', ')}. No composite grade is calculated.`,
+      [...new Set(missingCriticalInputs)]
+    );
+  }
+
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const limitingFactors: string[] = [];
   const uncertaintyFactors: string[] = [];
 
   // 3. Extract Authoritative Child Results
-  const activeMatter = orchestratorResult.activeMatterResult?.totalSurfactantActivePct ?? 0;
-  const totalActiveMatter = orchestratorResult.activeMatterResult?.totalActiveMatterPct ?? activeMatter;
-  const rawPh = orchestratorResult.pHResult?.ph;
-  const phVal = (typeof rawPh === 'number' && !isNaN(rawPh)) ? rawPh : undefined;
+  const activeMatter = rawActiveSurfactants as number;
+  const totalActiveMatter = rawTotalActiveMatter as number;
+  const phVal = rawPH as number;
   const compResult = orchestratorResult.compatibilityResult && typeof orchestratorResult.compatibilityResult === 'object' && typeof orchestratorResult.compatibilityResult.compatibilityScore === 'number' && !isNaN(orchestratorResult.compatibilityResult.compatibilityScore)
     ? orchestratorResult.compatibilityResult
     : undefined;
-  const perfResult = orchestratorResult.cleaningResult || { cpi: 0, overallScore: 0, cleaningScore: 0 };
-  const costResult = orchestratorResult.costResult || { costPerKg: 0, isWithinTarget: true, targetCostPerKg: 0 };
+  const perfResult = perfCandidate;
+  const costResult = costCandidate;
   const labEvidenceResult = orchestratorResult.labEvidenceResult || { evidenceLevel: 'PREDICTED_ONLY', isLabValidated: false };
 
   // 4. Calculate Pillar Scores
@@ -364,7 +399,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
     strengths.push('Cationic softening & fabric hand-feel conditioning model applied.');
   } else {
     performanceScore = Math.min(100, Math.max(0, Math.round(perfResult.cpi || perfResult.overallScore || 0)));
-    performanceStatus = 'KNOWN';
+    performanceStatus = perfResult.provenance === 'MEASURED' ? 'KNOWN' : 'ESTIMATED';
     if (performanceScore >= 80) strengths.push(`High cleaning efficacy (${performanceScore}/100) under category performance model.`);
     else if (performanceScore < 60) limitingFactors.push(`Sub-optimal cleaning score (${performanceScore}/100) for ${canonicalCategory}.`);
   }
@@ -388,7 +423,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   let healthScore = 0;
   let healthStatus: GradePillarStatus = 'UNKNOWN';
   if (phVal !== undefined) {
-    healthStatus = 'KNOWN';
+    healthStatus = orchestratorResult.pHResult?.isMeasured ? 'KNOWN' : 'ESTIMATED';
     if (phVal < profile.optimalPHRange[0] || phVal > profile.optimalPHRange[1]) {
       const phDeviation = Math.min(phVal < profile.optimalPHRange[0] ? profile.optimalPHRange[0] - phVal : phVal - profile.optimalPHRange[1], 5);
       healthScore = Math.max(40, Math.round(100 - phDeviation * 15));
@@ -540,7 +575,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
     blockingIssues,
     unknownParameters,
     labValidationStatus,
-    regulatoryStatus: orchestratorResult.regulatoryResult?.complianceStatus || 'COMPLIANT',
+    regulatoryStatus: regulatoryCandidate.status,
     reasoning,
     breakdown: {
       cpiScore: performanceScore,
@@ -552,7 +587,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
         performance: performanceStatus,
         compatibility: compatibilityStatus,
         health: healthStatus,
-        activeMatter: 'KNOWN',
+        activeMatter: orchestratorResult.activeMatterResult?.verified === true ? 'KNOWN' : 'ESTIMATED',
         commercial: commercialStatus
       }
     },
