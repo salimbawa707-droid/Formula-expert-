@@ -197,7 +197,7 @@ export class FormulaScientificOrchestrator {
         blockingIssues,
         assumptions: [],
         unknownParameters: [],
-        finalScientificStatus: 'SCIENTIFICALLY_INVALID',
+        finalScientificStatus: rawIngs.length === 0 ? 'INSUFFICIENT_DATA' : 'SCIENTIFICALLY_INVALID',
         finalReleaseStatus: 'REJECTED',
         specificationStatus: 'INSUFFICIENT_DATA',
         specificationResult: {} as any,
