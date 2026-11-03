@@ -4,7 +4,7 @@
  * ============================================================================
  */
 
-import { calculatePHAdvanced } from '../pHEngine';
+import { calculatePHAdvanced, mapFormulationIngredientsToPHEngineInput } from '../pHEngineAdapter';
 import { calculateActiveMatter, calculateActiveSurfactants, evaluateAuthoritativeActiveMatter } from '../activeMatterEngine';
 import { evaluateAuthoritativeHLB } from '../hlbEngine';
 import { calculateWaterHardnessTolerance, AUTHORITATIVE_CHELATOR_DATABASE } from '../chelatorEngine';
@@ -47,7 +47,7 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     { name: 'Sodium Hydroxide 50% Solution', percentage: 2.5, activeMatterPct: 50 },
     { name: 'Water (Balance)', percentage: 7.5, activeMatterPct: 0 }
   ];
-  const phResult = calculatePHAdvanced(neutralIngredients, 100, { productCategory: 'LAUNDRY_LIQUID' });
+  const phResult = calculatePHAdvanced(mapFormulationIngredientsToPHEngineInput(neutralIngredients), 100, { productCategory: 'LAUNDRY_LIQUID' });
   assert(
     'Phase 7 Accuracy',
     '1.1 Neutralization computes pH deterministically without fake lab status',

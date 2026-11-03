@@ -81,7 +81,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     ]),
     100
   );
-  assertNear('1. PHEngineV2', '1.1 Strong acid + base equimolar neutrality', { pH: phStrong.pH, status: phStrong.status, warnings: phStrong.warnings, diagnostics: phStrong.diagnostics }, 7.00, 0.05);
+  assertNear('1. PHEngineV2', '1.1 Strong acid + base equimolar neutrality', phStrong.pH, 7.00, 0.05);
 
   // 1.2 Weak acid (Acetic acid)
   const phWeakAcid = PHEngineV2.calculatePH(
