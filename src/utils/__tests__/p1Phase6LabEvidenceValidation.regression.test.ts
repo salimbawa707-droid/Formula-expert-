@@ -354,7 +354,7 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: validLaundryFormula
   });
-  assert('22. Predicted spec result preserved (OUT_OF_SPEC)', gatePredictedPass.specificationStatus === 'OUT_OF_SPEC', gatePredictedPass.specificationStatus, 'OUT_OF_SPEC');
+  assert('22. Predicted in-range/out-of-range spec cannot claim lab OUT_OF_SPEC', gatePredictedPass.specificationStatus === 'INSUFFICIENT_DATA', gatePredictedPass.specificationStatus, 'INSUFFICIENT_DATA');
 
   const gateMissingVersionWithVersionedEvidence = evaluateScientificQualityGate({
     formulaId: 'f-laundry-01',
