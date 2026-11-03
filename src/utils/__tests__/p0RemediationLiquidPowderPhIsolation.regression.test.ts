@@ -224,7 +224,7 @@ export function runP0RemediationLiquidPowderPhIsolationTestSuite(): {
 
   // 40. PHEngine pH calculation remains unchanged
   const phCalc = calculatePHAdvanced([], 100, { productCategory: 'LAUNDRY_LIQUID' });
-  assert('TEST 40: PHEngine pH calculation remains unchanged', typeof phCalc.pH === 'number');
+  assert('TEST 40: Empty composition does not receive an inferred neutral pH', phCalc.pH === null && phCalc.solverConverged === false);
 
   // 41. Cost calculation remains unchanged
   assert('TEST 41: Cost calculation logic intact', true);
