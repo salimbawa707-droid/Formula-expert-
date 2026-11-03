@@ -710,7 +710,8 @@ export async function runFormulationOptimization(
     categoryId,
     constraints,
     'SEED-BASELINE',
-    100
+    100,
+    { waterHardnessPpm: config.waterHardnessPpm }
   );
   const baselineCandidate: ParetoCandidate = {
     candidateId: 'CAND-SEED-0',
@@ -743,7 +744,7 @@ export async function runFormulationOptimization(
     if (cancellationToken?.isCancelled || evaluationCount >= maxEvalCap) break;
     const perturbed = perturbCandidate(startingIngredients, random, 0.25, constraints);
     const candId = `CAND-G0-${i}`;
-    const evaluated = evaluateCandidateFormulation(perturbed, categoryId, constraints, candId, 100);
+    const evaluated = evaluateCandidateFormulation(perturbed, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm });
     const candidate: ParetoCandidate = {
       candidateId: candId,
       generation: 0,
@@ -812,7 +813,7 @@ export async function runFormulationOptimization(
 
       const mutatedIngs = perturbCandidate(parent.ingredients, random, config.mutationRate || 0.15, constraints);
       const candId = `CAND-G${gen}-${j}`;
-      const evalRes = evaluateCandidateFormulation(mutatedIngs, categoryId, constraints, candId, 100);
+      const evalRes = evaluateCandidateFormulation(mutatedIngs, categoryId, constraints, candId, 100, { waterHardnessPpm: config.waterHardnessPpm });
 
       const offspring: ParetoCandidate = {
         candidateId: candId,
