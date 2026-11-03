@@ -329,7 +329,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   record(assertEqual('Output Property Contract', 'AI Grade engine returns score (number)', typeof aiGradeRes.score, 'number'));
   record(assertEqual('Output Property Contract', 'AI Grade breakdown contains authoritative sub-scores', typeof aiGradeRes.breakdown.cpiScore, 'number'));
 
-  const cleaningRes = calculateCleaningPerformance(controlledFormula, 8.0, 'LAUNDRY_LIQUID');
+  const cleaningRes = calculateCleaningPerformance(controlledFormula, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningScore (number)', typeof cleaningRes.cleaningScore, 'number'));
   record(assertEqual('Output Property Contract', 'Cleaning engine returns overallScore (number)', typeof cleaningRes.overallScore, 'number'));
   record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningPower (string)', typeof cleaningRes.cleaningPower, 'string'));
