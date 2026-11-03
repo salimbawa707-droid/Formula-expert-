@@ -397,12 +397,19 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
 
   if (!profile.isCleaningApplicable) {
     // Non-detergent (Fabric Softener): Softening / conditioning score
-    const conditioningScore = (perfResult.cpi && perfResult.cpi > 0) ? perfResult.cpi : (perfResult.overallScore && perfResult.overallScore > 0 ? perfResult.overallScore : 85);
+    const conditioningScore = perfResult.conditioningScore ?? perfResult.overallScore;
+    if (!Number.isFinite(conditioningScore)) {
+      return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Conditioning performance score is unavailable; no default score is substituted.', ['conditioningPerformance']);
+    }
     performanceScore = Math.min(100, Math.max(0, Math.round(conditioningScore)));
     performanceStatus = 'NOT_APPLICABLE'; // Detergency is not applicable
     strengths.push('Cationic softening & fabric hand-feel conditioning model applied.');
   } else {
-    performanceScore = Math.min(100, Math.max(0, Math.round(perfResult.cpi || perfResult.overallScore || 0)));
+    const cleaningScore = perfResult.cpi ?? perfResult.overallScore;
+    if (!Number.isFinite(cleaningScore)) {
+      return buildNotEvaluableResult(canonicalCategory, 'AI_GRADE_NOT_EVALUABLE', 'Cleaning performance score is unavailable; no zero-score fallback is substituted.', ['cleaningPerformance']);
+    }
+    performanceScore = Math.min(100, Math.max(0, Math.round(cleaningScore)));
     performanceStatus = perfResult.provenance === 'MEASURED' ? 'KNOWN' : 'ESTIMATED';
     if (performanceScore >= 80) strengths.push(`High cleaning efficacy (${performanceScore}/100) under category performance model.`);
     else if (performanceScore < 60) limitingFactors.push(`Sub-optimal cleaning score (${performanceScore}/100) for ${canonicalCategory}.`);
@@ -426,7 +433,7 @@ function evaluateAIGradeFromAuthoritativeResult(orchestratorResult: any): AIGrad
   // C. Lab Health & Safety Pillar
   let healthScore = 0;
   let healthStatus: GradePillarStatus = 'UNKNOWN';
-  if (phVal !== undefined) {
+  if (typeof phVal === 'number' && Number.isFinite(phVal)) {
     healthStatus = orchestratorResult.pHResult?.isMeasured ? 'KNOWN' : 'ESTIMATED';
     if (phVal < profile.optimalPHRange[0] || phVal > profile.optimalPHRange[1]) {
       const phDeviation = Math.min(phVal < profile.optimalPHRange[0] ? profile.optimalPHRange[0] - phVal : phVal - profile.optimalPHRange[1], 5);
