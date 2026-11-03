@@ -340,19 +340,10 @@ export class ScientificExecutionDAG {
           );
 
           const intel = getIngredientIntelligence(ing.name) || (matchedUniv ? getIngredientIntelligence(matchedUniv.id || matchedUniv.name) : undefined);
-          let activePct = ing.activeMatterPct ?? ing.activePercent;
-          let isUnknown = ing.isUnknown ?? false;
-
-          if (activePct === undefined) {
-            if (matchedUniv && matchedUniv.activeMatter !== undefined) {
-              activePct = matchedUniv.activeMatter;
-            } else {
-              isUnknown = true;
-              state.unknownParameters.push(`${ing.name}:activeMatter`);
-              activePct = 0; // Explicitly 0 for unknown
-            }
-          }
-          // Remove automatic assumption logs
+          // Do not copy an ingredient-library estimate into an explicit user assay field.
+          // ActiveMatterEngine resolves canonical defaults separately and preserves their provenance.
+          const activePct = ing.activeMatterPct ?? ing.activePercent;
+          const isUnknown = ing.isUnknown ?? false;
 
           const hlb = ing.hlb ?? ing.hlbValue ?? matchedUniv?.hlb;
           const density = ing.density ?? (matchedUniv as any)?.density ?? (intel as any)?.densityGPerMl ?? (intel as any)?.density;
@@ -386,7 +377,7 @@ export class ScientificExecutionDAG {
         state.canonicalCategory = normalizeProductCategory(rawCategoryInput);
         const categoryDef = getProductCategory(state.canonicalCategory);
         state.categoryLabel = categoryDef ? categoryDef.label : 'Unknown Category';
-        state.physicalForm = categoryDef ? categoryDef.physicalForm : 'LIQUID';
+        state.physicalForm = categoryDef ? categoryDef.physicalForm : 'UNKNOWN';
       }
     });
 
