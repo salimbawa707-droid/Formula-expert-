@@ -26,14 +26,30 @@ export interface ValidatedChelatorCapacity {
 
 export function validateChelatorCapacity(
   capacity: number | null | undefined,
-  evidenceId?: string
+  evidenceId?: string,
+  expectedActiveMatterPct?: number
 ): ValidatedChelatorCapacity {
+  const registeredSpecies = evidenceId
+    ? AUTHORITATIVE_CHELATOR_DATABASE.find(species => species.evidenceId === evidenceId)
+    : undefined;
+  const expectedCapacity = registeredSpecies
+    ? (
+        expectedActiveMatterPct === undefined || expectedActiveMatterPct === registeredSpecies.activeDefault
+          ? registeredSpecies.effectiveCommercialCapacityMgPerG
+          : calculateCommercialCapacity({
+              theoreticalActiveCapacityMgPerG: registeredSpecies.theoreticalActiveCapacityMgPerG,
+              activeMatterPct: expectedActiveMatterPct
+            })
+      )
+    : null;
   if (
     typeof capacity !== 'number' ||
     !Number.isFinite(capacity) ||
     capacity <= 0 ||
-    !evidenceId?.trim() ||
-    !AUTHORITATIVE_CHELATOR_DATABASE.some(species => species.evidenceId === evidenceId)
+    !registeredSpecies ||
+    expectedCapacity === null ||
+    !Number.isFinite(expectedCapacity) ||
+    Math.abs(capacity - expectedCapacity) > 0.02
   ) {
     return {
       capacityMgCaCO3PerGram: null,
@@ -768,7 +784,7 @@ export function getChelatorBindingCapacity(
       theoreticalActiveCapacityMgPerG: matchedSpecies.theoreticalActiveCapacityMgPerG,
       activeMatterPct: _explicitActive
     });
-    return validateChelatorCapacity(scaled, matchedSpecies.evidenceId);
+    return validateChelatorCapacity(scaled, matchedSpecies.evidenceId, _explicitActive);
   }
 
   return validateChelatorCapacity(
