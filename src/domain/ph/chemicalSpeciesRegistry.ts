@@ -680,7 +680,8 @@ export function classifyChemicalSpecies(rawName: string): SpeciesDefinition | nu
   const name = rawName.trim().toLowerCase();
 
   // 1. Water
-  if (name === 'water' || /\bwater\b/.test(name) || name.includes('aqua') || name.includes('deionized water') || name.includes('dm water') || name.includes('ro water')) {
+  const isBalanceWater = /^water\s*(?:\([^)]*\bbalance\b[^)]*\)|balance\b)/.test(name);
+  if (name === 'water' || isBalanceWater || name.includes('aqua') || name.includes('deionized water') || name.includes('demineralized water') || name.includes('distilled water') || name.includes('tap water') || name.includes('dm water') || name.includes('ro water')) {
     return CHEMICAL_SPECIES_REGISTRY.water;
   }
 
