@@ -751,7 +751,9 @@ export function evaluateScientificQualityGate(
           });
         }
       }
-    } else if (specReport.verdict.criticalMissingCount > 0 && labMeasurements.length === 0) {
+    } else if (specReport.verdict.criticalMissingCount > 0) {
+      // An unrelated measurement must not satisfy a missing critical test.
+      // The evaluator has already matched measurements to formula identity/version and parameter.
       specificationStatus = 'INSUFFICIENT_DATA';
     }
   } else {
