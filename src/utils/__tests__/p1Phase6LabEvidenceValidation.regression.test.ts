@@ -429,6 +429,7 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
   // Lab Measurement showing Out of Spec pH (e.g. pH 11.5)
   const failedLabPHRecord: DetailedLabEvidenceRecord = {
     measurementId: 'm-ph-fail',
+    formulaId: 'f-laundry-01',
     formulaVersion: '1.0',
     parameterKey: 'ph',
     value: 11.5, // Violated max 9.5 limit
@@ -438,7 +439,9 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
   };
 
   const gateMeasuredFail = evaluateScientificQualityGate({
+    formulaId: 'f-laundry-01',
     formulaName: 'Test Laundry Liquid',
+    formulaVersion: '1.0',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: validLaundryFormula,
     labMeasurements: [failedLabPHRecord]
