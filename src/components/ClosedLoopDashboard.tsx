@@ -196,6 +196,7 @@ export const ClosedLoopDashboard: React.FC = () => {
       evaluations: evaluationSummary.evaluations,
       comparisons,
       replicateCount: 3,
+      evidenceVerified: evaluateClosedLoopEvidenceGate(observedMeasurements).eligible,
     });
   }, [evaluationSummary, comparisons]);
 
