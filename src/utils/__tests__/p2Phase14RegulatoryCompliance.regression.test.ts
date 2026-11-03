@@ -366,7 +366,7 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   });
   assert(
     'Test 15B: Zero applicable rules in an unregistered jurisdiction cannot produce COMPLIANT',
-    decisionNoRules.overallStatus === 'INSUFFICIENT_DATA' &&
+    decisionNoRules.overallStatus === 'REGULATORY_SCOPE_UNKNOWN' &&
       decisionNoRules.documentationStatus.primarySourceCoveragePct === null
   );
 
