@@ -622,13 +622,22 @@ export function evaluateScientificQualityGate(
   );
 
   const measuredCleaningScoreRecord = labMeasurements.find(m => m.parameterKey === 'cleaningScore');
-  const hasMeasuredCleaningScore = measuredCleaningScoreRecord !== undefined && !isNaN(measuredCleaningScoreRecord.value);
-  const effectiveCpi = hasMeasuredCleaningScore ? measuredCleaningScoreRecord.value : performanceRes.cpi;
+  const hasMeasuredCleaningScore = Boolean(
+    measuredCleaningScoreRecord &&
+    Number.isFinite(measuredCleaningScoreRecord.value) &&
+    measuredCleaningScoreRecord.value >= 0 &&
+    measuredCleaningScoreRecord.value <= 100
+  );
+  const effectiveCpi = hasMeasuredCleaningScore ? measuredCleaningScoreRecord!.value : performanceRes.cpi;
 
   let performanceStatus: QualityGatePerformanceStatus = 'MEETS_PREDICTED_CRITERIA';
   if (!performanceRes.isCleaningApplicable) {
     performanceStatus = 'NOT_APPLICABLE';
-  } else if (rawIngs.length === 0) {
+  } else if (
+    rawIngs.length === 0 ||
+    performanceRes.provenance === 'INSUFFICIENT_DATA' ||
+    !Number.isFinite(effectiveCpi)
+  ) {
     performanceStatus = 'INSUFFICIENT_DATA';
   } else if (effectiveCpi < 60) {
     performanceStatus = 'BELOW_PREDICTED_CRITERIA';
