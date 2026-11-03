@@ -188,8 +188,8 @@ export function runLiquidLaundryRemediationTestSuite(): TestSuiteSummary {
   const hardnessAtZero = calculateWaterHardnessTolerance(
     standardLiquidIngredients,
     0,
-    undefined,
-    undefined,
+    10,
+    20,
     100,
     'LAUNDRY_LIQUID'
   );
