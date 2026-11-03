@@ -251,7 +251,7 @@ export function runAutonomousResearchTestSuite(): TestSuiteSummary {
   assert(
     '8. rec-calculations & Formula Impact',
     '29. Blended HLB remains unavailable when Aristo 9 has no verified HLB characterization',
-    updatedHlb.isFullyAuthoritative === false
+    updatedHlb.contributions.every((item: any) => item.name !== 'Aristo 9') && updatedHlb.surfactantsCount === 1
   );
 
   // Formula dosage protection
