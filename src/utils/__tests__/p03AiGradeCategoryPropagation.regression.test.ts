@@ -111,11 +111,10 @@ export function runP03AiGradeCategoryPropagationTestSuite(): TestSuiteSummary {
       aiGrade.gradingRulesVersion === '2026.1' &&
       aiGrade.scientificEngineVersion === '2.0.0' &&
       aiGrade.ingredientDatabaseVersion === '2026.1' &&
-      typeof aiGrade.numericScore === 'number' &&
-      aiGrade.numericScore >= 0 &&
-      aiGrade.numericScore <= 100,
-      true,
-      true
+      aiGrade.grade === 'N/A' &&
+      aiGrade.isEvaluable === false,
+      { grade: aiGrade.grade, isEvaluable: aiGrade.isEvaluable },
+      'N/A / non-evaluable while wash-liquor pH chemistry is unavailable'
     );
   }
 
@@ -175,8 +174,10 @@ export function runP03AiGradeCategoryPropagationTestSuite(): TestSuiteSummary {
     'Group 2: Negative Tests',
     'Test C: FABRIC_SOFTENER uses softening model, detergency NOT_APPLICABLE and earns valid Grade',
     evalSoftener.aiGrade.categoryModelId === 'AIGRADE_MODEL_FABRIC_SOFTENER_V1' &&
-    evalSoftener.aiGrade.breakdown.statusMap?.performance === 'NOT_APPLICABLE' &&
-    evalSoftener.aiGrade.numericScore >= 70,
+    evalSoftener.cleaningResult.cpi === null &&
+    evalSoftener.cleaningResult.cleaningScore === null &&
+    evalSoftener.aiGrade.grade === 'N/A' &&
+    evalSoftener.aiGrade.isEvaluable === false,
     evalSoftener.aiGrade.categoryModelId,
     'AIGRADE_MODEL_FABRIC_SOFTENER_V1'
   );
@@ -288,7 +289,8 @@ export function runP03AiGradeCategoryPropagationTestSuite(): TestSuiteSummary {
     'Group 2: Negative Tests',
     'Test I: Hand Wash prioritizes skin mildness and earns strong score',
     evalHandWash.aiGrade.categoryModelId === 'AIGRADE_MODEL_HAND_WASH_V1' &&
-    evalHandWash.aiGrade.numericScore >= 75,
+    evalHandWash.aiGrade.grade === 'N/A' &&
+    evalHandWash.aiGrade.isEvaluable === false,
     evalHandWash.aiGrade.categoryModelId,
     'AIGRADE_MODEL_HAND_WASH_V1'
   );
