@@ -715,7 +715,7 @@ export default function InventoryProduction({
               <button
                 id="btn-reset-inventory"
                 onClick={handleResetToDefaultStock}
-                title="Reset to baseline laboratory inventory"
+                title="Reset to empty stock baseline"
                 className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 transition"
               >
                 <RotateCcw className="w-4 h-4" />
