@@ -1,4 +1,4 @@
-import { getChelatorBindingCapacity, validateChelatorCapacity } from '../chelatorEngine';
+import { getChelatorBindingCapacity, validateChelatorCapacity, calculateGreenChelators } from '../chelatorEngine';
 
 export function runChelatorBindingTestSuite(): {
   total: number;
@@ -56,6 +56,21 @@ export function runChelatorBindingTestSuite(): {
   assert('Known ingredient status is VALID', res5.status === 'VALID');
   assert('Known ingredient capacity is 137', res5.capacityMgCaCO3PerGram === 137);
   assert('Known ingredient evidenceId is defined', res5.evidenceId !== undefined && res5.evidenceId.length > 0);
+
+  const noScenario = calculateGreenChelators([{ name: 'GLDA 47% Liquid' }]);
+  assert('Green chelator calculator refuses hidden scenario defaults', noScenario.status === 'INSUFFICIENT_DATA' && noScenario.totalCaCO3ToBindMg === undefined);
+
+  const explicitScenario = calculateGreenChelators({
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    safetyMarginPct: 25,
+    coBuilderTargetPct: 10,
+    maxFormulationCapPct: 3,
+    chelators: [{ name: 'GLDA 47% Liquid' }]
+  });
+  assert('Explicit chelator scenario calculates only with supplied conditions', explicitScenario.status === 'CALCULATED');
+  assert('Green chelator output does not claim a fabricated eco score', explicitScenario.score === 0);
 
   return {
     total: passed + failed,
