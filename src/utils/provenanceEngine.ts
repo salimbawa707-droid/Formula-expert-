@@ -29,7 +29,8 @@ export type ProvenanceState =
   | 'ESTIMATED'
   | 'SCIENTIFICALLY_SCREENED'
   | 'LAB_VALIDATION_REQUIRED'
-  | 'LAB_VALIDATED';
+  | 'LAB_VALIDATED'
+  | 'INSUFFICIENT_DATA';
 
 export type ScientificDimensionKey =
   | 'pH'
@@ -170,12 +171,12 @@ export function generateMasterScientificProvenanceReport(params: {
   ingredients: FormulationIngredient[];
   recordedFingerprint?: string;
   speciationResult?: { pH: number; isMeasured?: boolean; confidence?: string };
-  activeMatterResult?: { totalActiveMatterPct: number; totalSurfactantActivePct: number };
-  hlbResult?: { blendedHLB: number; dataSource?: string };
-  chelationResult?: { capacityCaCO3GPer100g: number; isSufficient: boolean };
-  compatibilityResult?: { compatible: boolean; score: number };
+  activeMatterResult?: { totalActiveMatterPct: number | null; totalSurfactantActivePct: number | null };
+  hlbResult?: { blendedHLB: number | null; dataSource?: string };
+  chelationResult?: { capacityCaCO3GPer100g: number | null; isSufficient: boolean | null };
+  compatibilityResult?: { compatible: boolean; score: number | null };
   stabilityResult?: { isPhysicallyStable?: boolean; score?: number };
-  performanceResult?: { cpi: number; isMeasured?: boolean };
+  performanceResult?: { cpi: number | null; isMeasured?: boolean };
   labEvidenceReport?: { validationState?: string; isLabValidated?: boolean; completedTests?: string[] };
   qualityGateStatus?: { finalFormulaStatus: string; scientificValidity: string };
 }): MasterScientificProvenanceReport {
@@ -199,7 +200,9 @@ export function generateMasterScientificProvenanceReport(params: {
   // 1. pH
   const phVal = params.speciationResult?.pH ?? null;
   const isPHMeasured = params.speciationResult?.isMeasured ?? false;
-  const phState: ProvenanceState = isPHMeasured ? 'LAB_VALIDATED' : 'CALCULATED';
+  const phState: ProvenanceState = !Number.isFinite(phVal)
+    ? 'INSUFFICIENT_DATA'
+    : (isPHMeasured ? 'LAB_VALIDATED' : 'SCIENTIFICALLY_SCREENED');
   const phProv: ScientificDimensionProvenance = {
     dimension: 'pH',
     displayName: 'Equilibrium pH',
@@ -228,13 +231,15 @@ export function generateMasterScientificProvenanceReport(params: {
   };
 
   // 2. Active Matter
-  const activeVal = params.activeMatterResult?.totalActiveMatterPct ?? 0;
+  const activeVal = Number.isFinite(params.activeMatterResult?.totalActiveMatterPct)
+    ? params.activeMatterResult!.totalActiveMatterPct
+    : null;
   const amProv: ScientificDimensionProvenance = {
     dimension: 'activeMatter',
     displayName: 'Total Active Matter',
     resultValue: activeVal,
     unit: '% w/w',
-    provenanceState: 'CALCULATED',
+    provenanceState: activeVal === null ? 'INSUFFICIENT_DATA' : 'CALCULATED',
     authoritativeEngine: 'ActiveMatterEngine',
     engineVersion: '1.0.0',
     calculationSource: 'Stoichiometric active surfactant and functional solid summation',
@@ -250,15 +255,17 @@ export function generateMasterScientificProvenanceReport(params: {
       'Active matter excludes volatile solvent loss during elevated temperature batching',
       'Epton biphasic titration or gravimetric solids test required for bench validation'
     ],
-    confidence: 'HIGH',
+    confidence: activeVal === null ? 'LOW' : 'MEDIUM',
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
 
   // 3. HLB
-  const hlbVal = params.hlbResult?.blendedHLB ?? 0;
-  const hlbSource = params.hlbResult?.dataSource || 'authoritative';
-  const hlbState: ProvenanceState = hlbSource === 'authoritative' ? 'DATABASE_DERIVED' : 'ESTIMATED';
+  const hlbVal = Number.isFinite(params.hlbResult?.blendedHLB) ? params.hlbResult!.blendedHLB : null;
+  const hlbSource = params.hlbResult?.dataSource || 'missing';
+  const hlbState: ProvenanceState = hlbVal === null
+    ? 'INSUFFICIENT_DATA'
+    : (hlbSource === 'authoritative' ? 'DATABASE_DERIVED' : (hlbSource === 'estimated' ? 'ESTIMATED' : 'SCIENTIFICALLY_SCREENED'));
   const hlbProv: ScientificDimensionProvenance = {
     dimension: 'hlb',
     displayName: 'Hydrophile-Lipophile Balance (HLB)',
@@ -280,19 +287,21 @@ export function generateMasterScientificProvenanceReport(params: {
       'HLB indicates emulsification tendency; it does not guarantee thermodynamic phase stability',
       'Phase Inversion Temperature (PIT) centrifugation required for emulsion validation'
     ],
-    confidence: 'HIGH',
+    confidence: hlbVal === null ? 'LOW' : (hlbSource === 'authoritative' ? 'MEDIUM' : 'LOW'),
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
 
   // 4. Water Hardness / Chelation
-  const chelVal = params.chelationResult?.capacityCaCO3GPer100g ?? 0;
+  const chelVal = Number.isFinite(params.chelationResult?.capacityCaCO3GPer100g)
+    ? params.chelationResult!.capacityCaCO3GPer100g
+    : null;
   const chelProv: ScientificDimensionProvenance = {
     dimension: 'waterHardness',
     displayName: 'Hardness Tolerance & Chelation Capacity',
     resultValue: chelVal,
     unit: 'g CaCO3 / 100g',
-    provenanceState: 'CALCULATED',
+    provenanceState: chelVal === null ? 'INSUFFICIENT_DATA' : 'SCIENTIFICALLY_SCREENED',
     authoritativeEngine: 'ChelatorEngine',
     engineVersion: '1.0.0',
     calculationSource: 'EDTA/STPP/Citrate/GLDA stoichiometry and Ca2+/Mg2+ sequestration modeling',
@@ -308,19 +317,19 @@ export function generateMasterScientificProvenanceReport(params: {
       'Competition from Fe3+/Al3+ ions or low pH protonation can lower effective binding',
       'Water hardness tolerance bench titration recommended'
     ],
-    confidence: 'HIGH',
+    confidence: chelVal === null ? 'LOW' : 'MEDIUM',
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
 
   // 5. Compatibility
-  const compScore = params.compatibilityResult?.score ?? null;
+  const compScore = Number.isFinite(params.compatibilityResult?.score) ? params.compatibilityResult!.score : null;
   const compProv: ScientificDimensionProvenance = {
     dimension: 'compatibility',
     displayName: 'Chemical & Phase Compatibility',
     resultValue: compScore,
     unit: '/100 score',
-    provenanceState: 'SCIENTIFICALLY_SCREENED',
+    provenanceState: compScore === null ? 'INSUFFICIENT_DATA' : 'SCIENTIFICALLY_SCREENED',
     authoritativeEngine: 'CompatibilityEngine',
     engineVersion: '1.0.0',
     calculationSource: 'Multi-mechanism hazard matrix (Acid/Base, Ionic, Redox, Enzyme, Preservative, Rheology, Phase)',
@@ -336,19 +345,19 @@ export function generateMasterScientificProvenanceReport(params: {
       'Kinetic reaction rates depend on shear, temperature, and raw material addition order',
       'Centrifuge and freeze-thaw chamber physical testing required'
     ],
-    confidence: 'HIGH',
+    confidence: compScore === null ? 'LOW' : 'MEDIUM',
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
 
   // 6. Stability
-  const stabScore = params.stabilityResult?.score ?? compScore;
+  const stabScore = Number.isFinite(params.stabilityResult?.score) ? params.stabilityResult!.score! : null;
   const stabProv: ScientificDimensionProvenance = {
     dimension: 'stability',
     displayName: 'Formulation Physical & Shelf Stability',
     resultValue: stabScore,
     unit: '/100 score',
-    provenanceState: 'SCIENTIFICALLY_SCREENED',
+    provenanceState: stabScore === null ? 'INSUFFICIENT_DATA' : 'SCIENTIFICALLY_SCREENED',
     authoritativeEngine: 'CompatibilityEngine (Stability Module)',
     engineVersion: '1.0.0',
     calculationSource: 'Phase separation, salt-out threshold, and electrolyte packaging evaluation',
@@ -363,15 +372,14 @@ export function generateMasterScientificProvenanceReport(params: {
     limitations: [
       'Accelerated thermal aging (40°C / 75% RH for 12 weeks) mandatory for commercial stability claims'
     ],
-    confidence: 'HIGH',
+    confidence: stabScore === null ? 'LOW' : 'MEDIUM',
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
 
   // 7. CPI / Cleaning Performance
-  const cpiVal = params.performanceResult?.cpi ?? 0;
-  const isCpiMeasured = params.performanceResult?.isMeasured ?? false;
-  const cpiState: ProvenanceState = isCpiMeasured ? 'LAB_VALIDATED' : 'CALCULATED';
+  const cpiVal = Number.isFinite(params.performanceResult?.cpi) ? params.performanceResult!.cpi : null;
+  const cpiState: ProvenanceState = cpiVal === null ? 'INSUFFICIENT_DATA' : 'SCIENTIFICALLY_SCREENED';
   const cpiProv: ScientificDimensionProvenance = {
     dimension: 'cpi',
     displayName: 'Cleaning Performance Index (CPI)',
@@ -392,13 +400,13 @@ export function generateMasterScientificProvenanceReport(params: {
     limitations: [
       'CPI is a predictive model; Terg-O-Tometer or standardized swatch wash tests required for certified performance claims'
     ],
-    confidence: 'HIGH',
+    confidence: cpiVal === null ? 'LOW' : 'MEDIUM',
     isStale: traceabilityCheck.isStale,
     staleReason: traceabilityCheck.staleReason
   };
 
   // 8. Lab Evidence
-  const labStateRaw = params.labEvidenceReport?.validationState || 'CALCULATED';
+  const labStateRaw = params.labEvidenceReport?.validationState || 'INSUFFICIENT_DATA';
   const isLabVal = params.labEvidenceReport?.isLabValidated ?? false;
   let labState: ProvenanceState = 'LAB_VALIDATION_REQUIRED';
   if (isLabVal || labStateRaw === 'LAB_VALIDATED') {
@@ -433,11 +441,13 @@ export function generateMasterScientificProvenanceReport(params: {
   };
 
   // 9. Master Quality Gate
-  const qgStatus = params.qualityGateStatus?.finalFormulaStatus || 'LAB_VALIDATION_REQUIRED';
+  const qgStatus = params.qualityGateStatus?.finalFormulaStatus || 'INSUFFICIENT_DATA';
   let qgState: ProvenanceState = 'LAB_VALIDATION_REQUIRED';
-  if (isLabVal && qgStatus === 'VALID') {
+  if (qgStatus === 'INSUFFICIENT_DATA' || qgStatus === 'SCIENTIFICALLY_INVALID' || qgStatus === 'INCOMPATIBLE') {
+    qgState = 'INSUFFICIENT_DATA';
+  } else if (isLabVal && qgStatus === 'VALID') {
     qgState = 'LAB_VALIDATED';
-  } else if (qgStatus === 'VALID' || qgStatus === 'VALID_WITH_WARNINGS') {
+  } else if (qgStatus === 'VALID' || qgStatus === 'VALID_WITH_WARNINGS' || qgStatus === 'LAB_VALIDATION_REQUIRED') {
     qgState = 'SCIENTIFICALLY_SCREENED';
   }
 
@@ -478,13 +488,17 @@ export function generateMasterScientificProvenanceReport(params: {
   };
 
   // Overall Provenance State Discipline
-  let overallProvenanceState: ProvenanceState = 'CALCULATED';
-  if (isLabVal) {
+  let overallProvenanceState: ProvenanceState;
+  if (qgState === 'INSUFFICIENT_DATA' ||
+      params.qualityGateStatus?.scientificValidity === 'INSUFFICIENT_DATA' ||
+      params.qualityGateStatus?.scientificValidity === 'INVALID') {
+    overallProvenanceState = 'INSUFFICIENT_DATA';
+  } else if (isLabVal && qgStatus === 'VALID') {
     overallProvenanceState = 'LAB_VALIDATED';
-  } else if (compProv.provenanceState === 'SCIENTIFICALLY_SCREENED') {
+  } else if (qgStatus === 'VALID' || qgStatus === 'VALID_WITH_WARNINGS' || qgStatus === 'LAB_VALIDATION_REQUIRED') {
     overallProvenanceState = 'SCIENTIFICALLY_SCREENED';
   } else {
-    overallProvenanceState = 'CALCULATED';
+    overallProvenanceState = 'INSUFFICIENT_DATA';
   }
 
   const assumptionsSummary = [
@@ -509,7 +523,7 @@ export function generateMasterScientificProvenanceReport(params: {
     evaluatedAt,
     overallProvenanceState,
     isLabValidated: isLabVal,
-    isComputationallyScreened: true,
+    isComputationallyScreened: overallProvenanceState === 'SCIENTIFICALLY_SCREENED' || overallProvenanceState === 'LAB_VALIDATED',
     hasStaleResults: traceabilityCheck.isStale,
     dimensions,
     traceabilityChain: {
