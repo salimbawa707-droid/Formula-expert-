@@ -942,20 +942,20 @@ function buildNotEvaluableResult(
     scientificEngineVersion: AI_GRADE_ENGINE_VERSION,
     ingredientDatabaseVersion: INGREDIENT_DB_VERSION,
     calculationVersion: '2026.1',
-    scientificValidity: 'INVALID',
+    scientificValidity: 'INSUFFICIENT_DATA',
     performanceStatus: 'NOT_EVALUABLE',
     evidenceLevel: 'INSUFFICIENT_DATA',
     confidence: 'LOW',
     uncertainty: {
       level: 'HIGH',
-      factors: ['Product category is missing, unassigned, or not validated.']
+      factors: [reasoning, ...blockingIssues]
     },
     strengths: [],
     weaknesses: ['Product category missing or unvalidated'],
     limitingFactors: ['Category must be assigned to calculate product-specific AI Grade.'],
     warnings: [],
     blockingIssues,
-    unknownParameters: ['productCategory'],
+    unknownParameters: [...blockingIssues],
     labValidationStatus: 'NOT_EVALUABLE',
     regulatoryStatus: 'INSUFFICIENT_DATA',
     reasoning,
