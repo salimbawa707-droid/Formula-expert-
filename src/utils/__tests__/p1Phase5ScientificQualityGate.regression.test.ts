@@ -107,6 +107,14 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
   assert('Empty Formula - Final Status is INSUFFICIENT_DATA', emptyGate.finalFormulaStatus === 'INSUFFICIENT_DATA', emptyGate.finalFormulaStatus, 'INSUFFICIENT_DATA');
   assert('Empty Formula - Performance Status is INSUFFICIENT_DATA', emptyGate.performanceStatus === 'INSUFFICIENT_DATA', emptyGate.performanceStatus, 'INSUFFICIENT_DATA');
 
+  const unknownCategoryGate = evaluateScientificQualityGate({
+    formulaName: 'Unknown Category pH Must Not Default',
+    productCategory: 'UNKNOWN_CATEGORY_FOR_PH_TEST',
+    ingredients: validLaundryFormula
+  });
+  assert('Unknown category does not receive a synthetic neutral pH', unknownCategoryGate.speciationResult.pH === null, unknownCategoryGate.speciationResult.pH, null);
+  assert('Unknown category pH absence blocks scientific validity', unknownCategoryGate.scientificValidity === 'INVALID' || unknownCategoryGate.scientificValidity === 'INSUFFICIENT_DATA', unknownCategoryGate.scientificValidity, 'INVALID or INSUFFICIENT_DATA');
+
   // --------------------------------------------------------------------------
   // TEST 4: Unbalanced Mass Balance Sum Check
   // --------------------------------------------------------------------------
@@ -171,7 +179,7 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     });
 
     assert(`Category Quality Gate Evaluated: ${catId}`, catGate.canonicalCategory === catId, catGate.canonicalCategory, catId);
-    assert(`Category Quality Gate Returns Valid Report Structure: ${catId}`, typeof catGate.finalFormulaStatus === 'string' && typeof catGate.speciationResult.pH === 'number', true, true);
+    assert(`Category Quality Gate Returns Valid Report Structure: ${catId}`, typeof catGate.finalFormulaStatus === 'string' && (typeof catGate.speciationResult.pH === 'number' || catGate.speciationResult.pH === null), true, true);
   }
 
   // --------------------------------------------------------------------------
@@ -184,7 +192,9 @@ export function runP1Phase5ScientificQualityGateTestSuite(): { total: number; pa
     const ings: FormulationIngredient[] = (tpl.ingredients || []).map((i: any) => ({
       name: i.name,
       percentage: Number(i.percentage ?? i.percent ?? 0),
-      activeMatterPct: Number(i.activeMatterPct ?? i.activePercent ?? null),
+      ...((i.activeMatterPct ?? i.activePercent) !== undefined && (i.activeMatterPct ?? i.activePercent) !== null
+        ? { activeMatterPct: Number(i.activeMatterPct ?? i.activePercent) }
+        : {}),
       category: i.category || i.role || 'Additive'
     }));
 
