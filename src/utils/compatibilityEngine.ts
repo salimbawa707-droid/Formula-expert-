@@ -121,7 +121,7 @@ export function calculateFormulationCompatibility(
   }
   const pHAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
   let hasInvalidIngredientPercentage = false;
-  const hasFormulaData = safeIngs.length > 0 && !hasInvalidIngredientPercentage;
+  let hasFormulaData = safeIngs.length > 0;
 
   // 2. Classify ingredients by functional chemistry & percentage
   let waterPct = 0;
@@ -360,6 +360,8 @@ export function calculateFormulationCompatibility(
       fragranceOilPct += pct;
     }
   }
+
+  hasFormulaData = safeIngs.length > 0 && !hasInvalidIngredientPercentage;
 
   const alerts: ExtendedCompatibilityAlert[] = [];
   let penaltySum = 0;
