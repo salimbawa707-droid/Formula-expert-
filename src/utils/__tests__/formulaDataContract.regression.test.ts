@@ -331,8 +331,8 @@ export function runFormulaDataContractTestSuite(): TestSummary {
 
   const aiGradeRes = evaluateAIGrade(controlledFormula, 7.5, 200);
   record(assertEqual('Output Property Contract', 'AI Grade engine returns grade (string)', typeof aiGradeRes.grade, 'string'));
-  record(assertEqual('Output Property Contract', 'AI Grade engine returns score (number)', typeof aiGradeRes.score, 'number'));
-  record(assertEqual('Output Property Contract', 'AI Grade breakdown contains authoritative sub-scores', typeof aiGradeRes.breakdown.cpiScore, 'number'));
+  record(assertEqual('Output Property Contract', 'AI Grade does not invent a numeric score when the result is non-evaluable', aiGradeRes.score, null));
+  record(assertEqual('Output Property Contract', 'AI Grade unavailable CPI sub-score remains null', aiGradeRes.breakdown.cpiScore, null));
 
   const cleaningRes = calculateCleaningPerformance(controlledFormula, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningScore (number)', typeof cleaningRes.cleaningScore, 'number'));
@@ -361,8 +361,8 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   record(assertEqual('Engine Separation', 'Lab Health computes standalone safety score', typeof standaloneHealth, 'number'));
 
   const orchestratorGrade = evaluateAIGrade(controlledFormula, phResult.pH, 200);
-  record(assertEqual('Engine Separation', 'AI Grade breakdown incorporates authoritative CPI score', orchestratorGrade.breakdown.cpiScore, Math.round(standaloneCPI)));
-  record(assertEqual('Engine Separation', 'AI Grade breakdown incorporates authoritative Lab Health score', orchestratorGrade.breakdown.healthScore, Math.round(standaloneHealth)));
+  record(assertEqual('Engine Separation', 'AI Grade preserves unavailable CPI score as null', orchestratorGrade.breakdown.cpiScore, null));
+  record(assertEqual('Engine Separation', 'AI Grade preserves unavailable Lab Health score as null', orchestratorGrade.breakdown.healthScore, null));
 
   // -------------------------------------------------------------
   // 12. TAXONOMY NORMALIZATION & INTEGRITY AUDIT
