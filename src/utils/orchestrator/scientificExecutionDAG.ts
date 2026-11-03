@@ -716,22 +716,28 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         const isLiquid = state.physicalForm === 'LIQUID' || state.physicalForm === 'GEL' || state.physicalForm === 'EMULSION';
         if (!isLiquid) {
-          state.predictedViscosityCp = null as any;
-          state.viscosityResult = {
-            predictedViscosityCp: null,
-            rating: 'Not Applicable (Solid / Powder)',
-            isFluid: false,
-            flowMechanism: 'None (Dry Powder)',
-            description: 'N/A (Solid / Powder)',
-            status: 'NOT_APPLICABLE',
-            reason: 'SOLID_OR_POWDER',
-            viscosityReport: ViscosityEngine.evaluateViscosity(state.resolvedIngredients, {
-              productCategory: state.canonicalCategory,
-              targetPH: state.finalEquilibriumPH ?? null,
-              activeMatterReport: state.activeMatterReport
-            })
-          };
-          state.viscosityStatus = state.physicalForm === 'POWDER' ? 'NOT_APPLICABLE' : 'INSUFFICIENT_DATA';
+          state.predictedViscosityCp = Number.NaN;
+          const isPowder = state.physicalForm === 'POWDER';
+          state.viscosityResult = isPowder
+            ? {
+                predictedViscosityCp: null,
+                rating: 'Not Applicable (Powder)',
+                isFluid: false,
+                flowMechanism: 'Not applicable',
+                description: 'Powder viscosity is not evaluated by the liquid rheology engine.',
+                status: 'NOT_APPLICABLE',
+                reason: 'POWDER_PHYSICAL_FORM'
+              }
+            : {
+                predictedViscosityCp: null,
+                rating: 'Unknown physical form',
+                isFluid: false,
+                flowMechanism: 'Not evaluated',
+                description: 'Physical form is unknown; liquid viscosity was not assumed.',
+                status: 'INSUFFICIENT_DATA',
+                reason: 'UNKNOWN_PHYSICAL_FORM'
+              };
+          state.viscosityStatus = isPowder ? 'NOT_APPLICABLE' : 'INSUFFICIENT_DATA';
           return;
         }
 
