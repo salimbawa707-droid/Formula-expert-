@@ -113,6 +113,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.2.1'
+          # The repository's wrapper JAR is malformed; this job invokes the
+          # pinned Gradle distribution directly, not the wrapper script.
+          validate-wrappers: false
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
