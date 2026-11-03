@@ -424,6 +424,7 @@ export function runPhase9TestSuite(): {
   assert(groupEco, 'E8: Certification results are qualified as INTERNAL_SCREENING_ESTIMATE', ec1.certifications[0].classification === 'INTERNAL_SCREENING_ESTIMATE', ec1.certifications[0].classification, 'INTERNAL_SCREENING_ESTIMATE');
   assert(groupEco, 'E8: Screening disclaimer is attached', ec1.certifications[0].disclaimer.includes('not an official'), true, true);
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = results.length - passed;
   const total = results.length;
