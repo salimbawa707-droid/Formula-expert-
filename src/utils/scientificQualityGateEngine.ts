@@ -549,37 +549,38 @@ export function evaluateScientificQualityGate(
 
   // D. Compatibility Engine Output
   const compatibilityPHAvailable = Number.isFinite(finalPH) && (isPHMeasured || phSolverConverged);
-  const compRes = compatibilityPHAvailable
-    ? calculateFormulationCompatibility(rawIngs, finalPH, canonicalCategory)
-    : {
-        compatible: false,
-        compatibilityScore: Number.NaN,
-        alerts: [],
-        warnings: ['Compatibility was not evaluated because a finite measured or converged pH is unavailable.'],
-        riskLevel: undefined
-      };
+  // Evaluate pH-independent interaction rules even when the pH solver is unavailable.
+  // Ionic charge clashes can still be detected from ingredient identity and dosage.
+  const compRes = calculateFormulationCompatibility(
+    rawIngs,
+    compatibilityPHAvailable ? finalPH : undefined,
+    canonicalCategory
+  );
+  const criticalCompatibilityAlerts = compRes.alerts.filter(
+    alert => alert.severity === 'Critical' || alert.severity === 'High'
+  );
 
-  let compatibilityStatus: QualityGateCompatibilityStatus = compatibilityPHAvailable ? 'COMPATIBLE' : 'INSUFFICIENT_DATA';
-  if (compatibilityPHAvailable && !compRes.compatible) {
-    const hasCritical = compRes.alerts.some(a => a.severity === 'Critical');
-    compatibilityStatus = hasCritical ? 'INCOMPATIBLE' : 'CRITICAL_HAZARD';
-
-    for (const alert of compRes.alerts) {
-      if (alert.severity === 'Critical' || alert.severity === 'High') {
-        blockingIssues.push({
-          id: `gate-compat-${alert.id}`,
-          code: 'ERR_CHEMICAL_INCOMPATIBILITY',
-          title: alert.title,
-          category: 'COMPATIBILITY',
-          severity: 'FATAL',
-          message: alert.message,
-          recommendation: alert.recommendation,
-          scientificBasis: alert.message
-        });
-      }
+  let compatibilityStatus: QualityGateCompatibilityStatus = 'INSUFFICIENT_DATA';
+  if (criticalCompatibilityAlerts.length > 0) {
+    compatibilityStatus = criticalCompatibilityAlerts.some(a => a.severity === 'Critical')
+      ? 'INCOMPATIBLE'
+      : 'CRITICAL_HAZARD';
+    for (const alert of criticalCompatibilityAlerts) {
+      blockingIssues.push({
+        id: `gate-compat-${alert.id}`,
+        code: 'ERR_CHEMICAL_INCOMPATIBILITY',
+        title: alert.title,
+        category: 'COMPATIBILITY',
+        severity: 'FATAL',
+        message: alert.message,
+        recommendation: alert.recommendation,
+        scientificBasis: alert.message
+      });
     }
-  } else if (compatibilityPHAvailable && (compRes.warnings.length > 0 || compRes.alerts.length > 0)) {
-    compatibilityStatus = 'COMPATIBLE_WITH_WARNINGS';
+  } else if (compatibilityPHAvailable && compRes.compatible) {
+    compatibilityStatus = compRes.warnings.length > 0 || compRes.alerts.length > 0
+      ? 'COMPATIBLE_WITH_WARNINGS'
+      : 'COMPATIBLE';
     for (const alert of compRes.alerts) {
       if (alert.severity === 'Medium' || alert.severity === 'Low') {
         minorWarnings.push({
@@ -919,25 +920,26 @@ export function evaluateScientificQualityGate(
     const hasCompatFatal = blockingIssues.some(i => i.category === 'COMPATIBILITY');
     const hasSpecFatal = blockingIssues.some(i => i.category === 'SPECIFICATION');
 
-    const hasMeasuredLabFailure = blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED');
+    const hasMeasuredLabFailure =
+      validationState === 'LAB_FAILED' ||
+      blockingIssues.some(i => i.code === 'ERR_LABORATORY_ACCEPTANCE_FAILED');
+    const hasCompositionFatal = blockingIssues.some(i =>
+      i.code === 'ERR_MASS_BALANCE_UNBALANCED' || i.code === 'ERR_INVALID_NUMERIC_INPUT'
+    );
     // A confirmed, identity-matched laboratory failure must never be hidden by
     // a separate missing/invalid computational input.
     if (hasMeasuredLabFailure) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
+    } else if (hasCompositionFatal || scientificValidity === 'INVALID') {
+      finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
+      labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
     } else if (hasCompatFatal) {
-      // A known fatal incompatibility is the most actionable disposition even
-      // when another independent calculation is unavailable.
       finalFormulaStatus = 'INCOMPATIBLE';
       labReadiness = 'BLOCKED_BY_FATAL_INCOMPATIBILITY';
-    } else if (hasValidityFatal) {
-      if (rawIngs.length === 0) {
-        finalFormulaStatus = 'INSUFFICIENT_DATA';
-        labReadiness = 'REQUIRES_INGREDIENT_IDENTITY';
-      } else {
-        finalFormulaStatus = 'SCIENTIFICALLY_INVALID';
-        labReadiness = 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
-      }
+    } else if (scientificValidity === 'INSUFFICIENT_DATA' || rawIngs.length === 0) {
+      finalFormulaStatus = 'INSUFFICIENT_DATA';
+      labReadiness = rawIngs.length === 0 ? 'REQUIRES_INGREDIENT_IDENTITY' : 'BLOCKED_BY_SCIENTIFIC_INVALIDITY';
     } else if (hasSpecFatal) {
       finalFormulaStatus = 'OUT_OF_SPEC';
       labReadiness = 'BLOCKED_BY_SPECIFICATION_FAILURE';
