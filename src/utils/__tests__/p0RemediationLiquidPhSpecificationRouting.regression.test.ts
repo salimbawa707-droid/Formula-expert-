@@ -70,10 +70,10 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   };
   const liquidReport = evaluateSpecifications(evalInputLiquid);
   const liquidPhResult = liquidReport.items.find(i => i.parameterKey === 'ph');
-  assert('TEST 8: Liquid pH 7.57 evaluates as PASS', liquidPhResult?.status === 'PASS');
+  assert('TEST 8: Liquid pH 7.57 evaluates as PASS', liquidPhResult?.status === 'PASS', JSON.stringify(liquidPhResult));
 
   // 9. Liquid pH 7.57 is evaluated against Liquid specification
-  assert('TEST 9: Liquid pH 7.57 evaluated against liquid spec max of 9.5', liquidPhResult?.max === 9.5);
+  assert('TEST 9: Liquid pH 7.57 evaluated against liquid spec max of 9.5', liquidPhResult?.max === 9.5, JSON.stringify(liquidPhResult));
 
   // 10. Powder pH continues using Powder specification
   const evalInputPowder: EvaluationInput = {
@@ -129,7 +129,7 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
   assert('TEST 17: powderPH is filtered out for liquid', applicableParamsLiquid.some(p => p.parameterKey === 'powderPH') === false);
 
   // 18. Quality Gate / Specifications consume correct Liquid pH result
-  assert('TEST 18: Liquid pH evaluation item has min 7.5', liquidPhResult?.min === 7.5);
+  assert('TEST 18: Liquid pH evaluation item has min 7.5', liquidPhResult?.min === 7.5, JSON.stringify(liquidPhResult));
 
   // 19. No hardcoded UI-only override is used
   assert('TEST 19: Template parameters contain Finished Product pH with key ph', liquidPhParam?.parameterName === 'Finished Product pH');
