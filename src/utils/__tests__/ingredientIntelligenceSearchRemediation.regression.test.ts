@@ -202,7 +202,7 @@ export function runIngredientIntelligenceSearchRemediationTestSuite(): TestSuite
   assert(
     '4. Unknown Ingredient Integrity',
     '17. Unknown ingredient without pure density defaults safely without arbitrary invention',
-    densityUnknown.densityGPerCm3 > 0
+    !Number.isFinite(densityUnknown.densityGPerCm3) && densityUnknown.densityStatus === 'INSUFFICIENT_DATA'
   );
 
   const cmcUnknown = calculateMixedCMC([
