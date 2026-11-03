@@ -359,7 +359,7 @@ export function runFormulaDataContractTestSuite(): TestSummary {
   record(assertEqual('Engine Separation', 'CPI remains unavailable without an explicit wash scenario and calculable pH', standaloneCPI, null));
 
   const standaloneHealth = calculateLabHealthScore(controlledFormula, phResult.pH).finalScore;
-  record(assertEqual('Engine Separation', 'Lab Health computes standalone safety score', typeof standaloneHealth, 'number'));
+  record(assertEqual('Engine Separation', 'Lab Health remains unassessed when pH is unavailable', standaloneHealth, null));
 
   const orchestratorGrade = evaluateAIGrade(controlledFormula, phResult.pH, 200);
   record(assertEqual('Engine Separation', 'AI Grade preserves unavailable CPI score as null', orchestratorGrade.breakdown.cpiScore, null));
