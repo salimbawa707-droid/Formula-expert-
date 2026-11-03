@@ -20,13 +20,6 @@
 
 import { ProductCategoryId, CANONICAL_PRODUCT_CATEGORY_IDS, normalizeProductCategory } from '../domain/productTaxonomy';
 import { ScientificValidityStatus, QualityGateEvidenceStatus } from './scientificQualityGateEngine';
-import { FormulationIngredient } from '../types';
-import { normalizeIngredientTaxonomy } from './calculators';
-import { calculateActiveMatter } from './activeMatterEngine';
-import { calculateCleaningPerformance } from './cleaningPerformanceEngine';
-import { calculateFormulationCompatibility } from './compatibilityEngine';
-import { calculateLabHealthScore } from './labHealthEngine';
-import { calculateBatchCost } from './calculators';
 
 export const AI_GRADE_ENGINE_VERSION = '2.0.0';
 export const AI_GRADE_RULES_VERSION = '2026.1';
