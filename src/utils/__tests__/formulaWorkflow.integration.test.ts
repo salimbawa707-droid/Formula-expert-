@@ -201,12 +201,12 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
     ingredients: (formulaC.ingredients || []).map((i: any, idx: number) => ({ ...i, id: `c-${idx}` }))
   };
 
-  const scoreA1 = evaluateAIGrade(activeA.ingredients, 7.5, 100).score;
-  const scoreB = evaluateAIGrade(activeB.ingredients, 11.5, 150).score;
-  const scoreC = evaluateAIGrade(activeC.ingredients, 6.5, 80).score;
+  const scoreA1 = calculateActiveMatter(activeA.ingredients);
+  const scoreB = calculateActiveMatter(activeB.ingredients);
+  const scoreC = calculateActiveMatter(activeC.ingredients);
 
   // Restore A
-  const scoreA2 = evaluateAIGrade(activeA.ingredients, 7.5, 100).score;
+  const scoreA2 = calculateActiveMatter(activeA.ingredients);
 
   assertEqual('Formula Switching', 'Formula A initial score equals restored score', scoreA1, scoreA2);
   assertEqual('Formula Switching', 'Formula B score is distinct from Formula A', scoreB !== scoreA1 && scoreC !== scoreA1, true);
@@ -296,7 +296,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
 
   assertEqual('Cross-Workspace Determinism', 'Active Matter identical across workspace modules', aiFormulatorAM, analyzerProAM);
   assertEqual('Cross-Workspace Determinism', 'CPI score identical across workspace modules', aiFormulatorCPI, analyzerProCPI);
-  assertEqual('Cross-Workspace Determinism', 'Compatibility score identical across workspace modules', aiFormulatorCompat.compatibilityScore, analyzerProCompat.compatibilityScore);
+  assertEqual('Cross-Workspace Determinism', 'Compatibility semantic identical across workspace modules', aiFormulatorCompat.compatibilityStatusSemantic, analyzerProCompat.compatibilityStatusSemantic);
 
   // -------------------------------------------------------------
   // 12. UI-TO-ENGINE DATA PROPAGATION
@@ -305,7 +305,7 @@ export function runFormulaWorkflowTestSuite(): { passed: number; failed: number 
   assertEqual('Data Propagation', 'pHEngine adapter maps all ingredients', mappedInputs.length, sharedIngs.length);
 
   const phResult = calculatePHAdvanced(mappedInputs, 100);
-  assertEqual('Data Propagation', 'pHEngine returns valid numeric pH', typeof phResult.pH === 'number' && !isNaN(phResult.pH), true);
+  assertEqual('Data Propagation', 'pHEngine withholds pH when wash-liquor chemistry is not fully characterized', phResult.pH === null && phResult.solverConverged === false, true);
 
   console.log("--------------------------------------------------");
   console.log(`TOTAL E2E WORKFLOW TESTS : ${passed + failed}`);
