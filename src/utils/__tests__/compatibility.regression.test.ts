@@ -271,9 +271,11 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   const resInvalidPH1 = calculateFormulationCompatibility(formulaWithPreservative as any, NaN);
   const resInvalidPH2 = calculateFormulationCompatibility(formulaWithPreservative as any, "invalid_string");
   const resInvalidPH3 = calculateFormulationCompatibility(formulaWithPreservative as any, undefined);
-  assertNear('Invalid pH Safety', 'NaN pH falls back safely', resInvalidPH1.compatibilityScore, 100);
-  assertNear('Invalid pH Safety', 'Invalid string pH falls back safely', resInvalidPH2.compatibilityScore, 100);
-  assertNear('Invalid pH Safety', 'Undefined pH falls back safely', resInvalidPH3.compatibilityScore, 100);
+  assertEqual('Invalid pH Safety', 'NaN pH cannot produce a compatibility pass', resInvalidPH1.evidenceStatus, 'INSUFFICIENT_DATA');
+  assertEqual('Invalid pH Safety', 'NaN pH is reported as unknown', resInvalidPH1.compatibilityStatusSemantic, 'UNKNOWN');
+  assertEqual('Invalid pH Safety', 'Invalid string pH cannot produce a compatibility pass', resInvalidPH2.evidenceStatus, 'INSUFFICIENT_DATA');
+  assertEqual('Invalid pH Safety', 'Invalid string pH is reported as unknown', resInvalidPH2.compatibilityStatusSemantic, 'UNKNOWN');
+  assertEqual('Invalid pH Safety', 'Missing pH cannot produce a compatibility pass when calculation is unavailable', resInvalidPH3.evidenceStatus, 'INSUFFICIENT_DATA');
 
   // 27. Boundary pH Exact Values
   const resPH3Exact = calculateFormulationCompatibility(formulaWithPreservative as any, 3.0);
