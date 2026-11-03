@@ -367,7 +367,9 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
     'Chelator metal-complexation is not dynamically solved in the pH solver'
   ];
 
-  if (!phWithinTarget) {
+  if (!phAvailable) {
+    scientificWarnings.push('Predicted pH is unavailable; pH target compliance cannot be evaluated.');
+  } else if (!phWithinTarget) {
     scientificWarnings.push(`Predicted pH ${phResult.pH.toFixed(2)} is outside target range (${targetPHMin} - ${targetPHMax})`);
   }
   if (!activeWithinTarget) {
@@ -386,7 +388,7 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   let overallStatus: TemplateScientificStatus = 'VALID';
   let statusReason = 'All scientific and specification criteria satisfied';
 
-  const hasBlockingCompatibility = !compatResult.compatible && compatResult.alerts.some(a => a.severity === 'Critical');
+  const hasBlockingCompatibility = phAvailable && !compatResult.compatible && compatResult.alerts.some(a => a.severity === 'Critical');
   const isInvalidPH = isNaN(phResult.pH) || !isFinite(phResult.pH) || phResult.pH < 0 || phResult.pH > 14;
   const isNonConverged = phResult.converged === false;
 
