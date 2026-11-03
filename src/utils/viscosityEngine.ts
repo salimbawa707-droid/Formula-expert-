@@ -763,6 +763,13 @@ export class ViscosityEngine {
       }
     }
 
+    // Unsourced active-matter defaults may support screening calculations, but they
+    // must never inherit High confidence or be presented as supplier-verified assays.
+    if ((activeMatterReport.nonAuthoritativeCount ?? 0) > 0 || activeMatterReport.isFullyAuthoritative === false) {
+      confidence = 'Low';
+      warnings.push('One or more active-matter inputs rely on non-authoritative reference defaults or name-derived estimates; viscosity is a screening estimate and requires supplier COA plus Brookfield measurement.');
+    }
+
     // Bound calculated viscosity to physically realistic limits
     computedViscosityCp = Math.max(1.0, Math.min(100000, Number(computedViscosityCp.toFixed(1))));
 
