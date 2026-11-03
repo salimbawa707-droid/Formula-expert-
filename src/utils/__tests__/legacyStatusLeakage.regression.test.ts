@@ -66,10 +66,11 @@ export function runLegacyStatusLeakageTestSuite() {
     instructions: ['Mix ingredients'],
     status: 'VALID', // legacy status
     ingredients: [
-      { name: 'Water', percentage: 85.67, activeMatterPct: 0, category: 'Solvent' },
+      { name: 'Water', percentage: 76.35, activeMatterPct: 0, category: 'Solvent' },
       { name: 'LABSA 90%', percentage: 12, activeMatterPct: 90, category: 'Anionic Surfactant' },
       { name: 'Sodium Hydroxide', percentage: 1.33, activeMatterPct: 100, category: 'pH Adjuster' },
-      { name: 'Sodium Citrate Dihydrate', percentage: 1, activeMatterPct: 100, category: 'Builder' }
+      { name: 'GLDA-47', percentage: 8, activeMatterPct: 47, category: 'Chelator' },
+      { name: 'Sodium Bicarbonate', percentage: 2.32, activeMatterPct: 100, category: 'Builder' }
     ]
   };
 
@@ -78,7 +79,7 @@ export function runLegacyStatusLeakageTestSuite() {
     productCategory: formulaB.category,
     formulaName: formulaB.name,
     formulaVersion: '1.0.0',
-    waterHardnessPpm: 150,
+    waterHardnessPpm: 50,
     washVolumeL: 10,
     washDoseGrams: 50,
     batchSizeKg: 100
