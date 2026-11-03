@@ -333,8 +333,8 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           </div>
           <p>{powderPH.statusMessage}</p>
           <div className="pt-1.5 border-t border-slate-800/60 text-slate-400">
-            <strong className="text-slate-300">Hard Water Protection ({hardWater.waterHardnessDemandPpm} ppm demand): </strong>
-            <span className="text-emerald-400 font-medium">{hardWater.builderProtectionRating}</span> — {hardWater.details}
+            <strong className="text-slate-300">Hard Water Assessment ({hardWater.waterHardnessDemandPpm !== undefined ? `${hardWater.waterHardnessDemandPpm} ppm CaCO₃` : 'scenario unavailable'}): </strong>
+            <span className="text-amber-300 font-medium">{hardWater.builderProtectionRating}</span> — {hardWater.details}
           </div>
         </div>
       </div>
@@ -843,9 +843,9 @@ export const PowderEngineDashboard: React.FC<Props> = ({
           </div>
 
           <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800">
-            <span className="text-xs font-mono uppercase text-slate-400">Cost / Wash Dose (50g)</span>
+            <span className="text-xs font-mono uppercase text-slate-400">Cost / Wash Dose</span>
             <div className="text-2xl font-bold text-indigo-400 mt-1">
-              ${costing.costPerWashDose.toFixed(3)}
+              {costing.costPerWashDose !== null ? `${costing.costPerWashDose.toFixed(3)}` : 'Not evaluated'}
             </div>
             <span className="text-[11px] text-slate-500">Consumer unit dose economics</span>
           </div>
