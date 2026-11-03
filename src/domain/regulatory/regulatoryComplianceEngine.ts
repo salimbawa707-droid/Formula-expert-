@@ -47,6 +47,9 @@ export class RegulatoryComplianceEngine {
     const evaluationDate = input.evaluationDate || decisionTimestamp.slice(0, 10);
     const jurisdictionId = input.jurisdiction || 'GLOBAL_UN_GHS';
     const versionInfo = RegulatoryVersioningEngine.getCurrentVersion();
+    const isKnownJurisdiction = versionInfo.jurisdictions.includes(
+      jurisdictionId as (typeof versionInfo.jurisdictions)[number]
+    );
     const datasetChecksum = RegulatoryChecksumEngine.computeCanonicalDatasetChecksum(CANONICAL_REGULATORY_RULES);
 
     // 1. Resolve Product Scope & Taxonomy
