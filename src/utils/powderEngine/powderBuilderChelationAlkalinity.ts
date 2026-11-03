@@ -82,8 +82,8 @@ export function calculatePowderBuilderSystem(classifiedIngredients: ClassifiedIn
  */
 export function calculatePowderChelationSystem(
   classifiedIngredients: ClassifiedIngredient[],
-  washDoseG: number = 50,
-  washVolumeL: number = 10
+  washDoseG?: number,
+  washVolumeL?: number
 ): PowderChelationReport {
   const chelatorIngredients: PowderChelationReport['chelatorIngredients'] = [];
   let totalChelatorPct = 0;
@@ -134,7 +134,7 @@ export function calculatePowderChelationSystem(
       } else {
         capacityMgPerGram = rawCapacity;
         capacityStatus = `Traceable capacity evidence (${evidenceId}): ${rawCapacity} mg CaCO₃/g (${capacityBasis})`;
-        const rawIngredientGrams = washDoseG * (ing.inputPercentage / 100);
+        const rawIngredientGrams = typeof washDoseG === 'number' ? washDoseG * (ing.inputPercentage / 100) : 0;
         const capacityBasisGrams =
           capacityBasis === 'ACTIVE_MATERIAL' || ing.activeMatterPct !== undefined
             ? rawIngredientGrams * (validActivePct / 100)
@@ -161,6 +161,17 @@ export function calculatePowderChelationSystem(
       hasValidatedData: false,
       calciumCapacityMgPerDose: undefined,
       capacityStatus: 'INSUFFICIENT_DATA: Missing or invalid active matter percentage or capacity evidence for one or more chelators.',
+      source: 'INSUFFICIENT_DATA'
+    };
+  }
+
+  if (typeof washDoseG !== 'number' || !Number.isFinite(washDoseG) || washDoseG <= 0) {
+    return {
+      totalChelatorPct: Number(totalChelatorPct.toFixed(2)),
+      chelatorIngredients,
+      hasValidatedData: false,
+      calciumCapacityMgPerDose: undefined,
+      capacityStatus: 'NOT_EVALUATED: explicit wash dose in grams is required to calculate per-dose chelation capacity. Ingredient-level evidence does not establish a per-wash result.',
       source: 'INSUFFICIENT_DATA'
     };
   }
