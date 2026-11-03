@@ -584,7 +584,10 @@ export function getAuditedIngredientCategory(nameOrIng: string | any, role?: str
 }
 
 export function getDefaultActiveMatter(nameOrIng: string | FormulationIngredient): number {
-  return getDefaultActiveMatterAuthoritative(nameOrIng);
+  // Preserve the legacy numeric API without converting an unavailable assay to 0%.
+  // NaN is an explicit unavailable sentinel; callers must check Number.isFinite.
+  const resolved = getDefaultActiveMatterAuthoritative(nameOrIng);
+  return resolved === null || resolved === undefined ? Number.NaN : resolved;
 }
 
 export function getInciName(name: string): string {
