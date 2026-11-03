@@ -98,6 +98,9 @@ export function runP3WaterHardnessTestSuite() {
   assertNear('Hardness Load', 'Moderate Water (150 ppm @ 10 L)', calculateWaterHardnessLoad(150, 10), 1500);
   assertNear('Hardness Load', 'Hard Water (300 ppm @ 10 L)', calculateWaterHardnessLoad(300, 10), 3000);
   assertNear('Hardness Load', 'Very Hard Water (500 ppm @ 10 L)', calculateWaterHardnessLoad(500, 10), 5000);
+  assert(Number.isNaN(calculateWaterHardnessLoad(150)), 'Fail-closed Inputs', 'Missing wash volume does not assume 10 L');
+  assert(Number.isNaN(calculateWaterHardnessLoad(150, 0)), 'Fail-closed Inputs', 'Zero wash volume is rejected');
+  assert(Number.isNaN(calculateWaterHardnessLoad(-1, 10)), 'Fail-closed Inputs', 'Negative hardness is rejected');
 
   // ---------------------------------------------------------------------------
   // 2. WASH VOLUME VARIATIONS (5 L, 10 L, 20 L, 50 L)
@@ -115,6 +118,9 @@ export function runP3WaterHardnessTestSuite() {
     { id: '1', name: 'GLDA 47% Liquid', percentage: 2.0 }, // 137 mg/g
     { id: '2', name: 'Sodium Citrate Dihydrate', percentage: 3.0 } // 150 mg/g
   ];
+  const missingDoseCapacity = calculateFormulationChelationCapacity(testFormula);
+  assert(missingDoseCapacity.status === 'INSUFFICIENT_DATA', 'Fail-closed Inputs', 'Missing wash dose does not assume 20 g');
+  assert(Number.isNaN(missingDoseCapacity.totalSequestrationMg), 'Fail-closed Inputs', 'Missing wash dose does not emit a numeric capacity');
 
   // In 5g dose:
   // GLDA mass = (2/100)*5 = 0.10g -> binds 0.10 * 137 = 13.7 mg
