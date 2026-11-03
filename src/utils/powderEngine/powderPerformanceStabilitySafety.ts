@@ -61,7 +61,7 @@ export function calculatePowderDissolution(
     measuredUndissolvedResiduePct: labInputs?.measuredUndissolvedResiduePct,
     undissolvedMaterialNotes: labInputs?.dispersibilityNotes
   };
-  const hasSuppliedTestConditions = Object.values(suppliedTestConditions).some(value => value !== undefined);
+  const hasSuppliedTestConditions = [suppliedTestConditions.doseGPerL, suppliedTestConditions.waterVolumeMl, suppliedTestConditions.waterTempC, suppliedTestConditions.waterHardnessPpm, suppliedTestConditions.agitationRpm].some(value => value !== undefined);
   const testConditions = (isMeasured || isResidueMeasured || isObservationProvided) && hasSuppliedTestConditions
     ? suppliedTestConditions
     : undefined;
