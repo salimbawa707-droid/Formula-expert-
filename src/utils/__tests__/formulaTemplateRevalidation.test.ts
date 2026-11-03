@@ -140,6 +140,21 @@ export function runFormulaTemplateRevalidationTestSuite(): {
     );
   }
 
+  // 4a. A non-converged pH is unavailable, not a numeric out-of-spec verdict.
+  const unavailablePHReports = reports.filter(r => r.phReport.predictedPH === null);
+  assert(
+    'Phase 4 pH Fail-Closed',
+    'Every template with unavailable pH reports INSUFFICIENT_DATA and does not throw',
+    unavailablePHReports.every(r => r.phReport.status === 'INSUFFICIENT_DATA' && r.overallStatus === 'INSUFFICIENT_DATA'),
+    `Unavailable pH templates: ${unavailablePHReports.length}`
+  );
+  assert(
+    'Phase 4 Batch Volume',
+    'Template batch volume is not inferred from mass using assumed density',
+    reports.every(r => r.batchVolumeL === null),
+    `Non-null batch volumes: ${reports.filter(r => r.batchVolumeL !== null).length}`
+  );
+
   // 5. Engine Applicability Discipline (Fabric Softener Cleaning Score = NOT_APPLICABLE)
   const softenerReport = reports.find(r => r.canonicalProductCategoryId === 'FABRIC_SOFTENER');
   if (softenerReport) {
