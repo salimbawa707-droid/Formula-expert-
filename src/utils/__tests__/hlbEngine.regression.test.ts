@@ -103,6 +103,7 @@ export function runHLBRegressionTestSuite() {
   ]);
   assertNear('Legacy Wrapper', 'calculateHLB tuple wrapper matches 11.79', legacyVal, 11.79, 0.02);
 
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)}`));
   const total = results.length;
   const passed = results.filter(r => r.passed).length;
   const failed = total - passed;
