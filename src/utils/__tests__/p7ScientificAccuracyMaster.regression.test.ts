@@ -45,6 +45,7 @@ export function runP7ScientificAccuracyMasterTestSuite(): { suite: string; passe
     { name: 'Water', percentage: 80 },
     { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96 },
     { name: 'Sodium Hydroxide 50% Solution', percentage: 2.5, activeMatterPct: 50 },
+    { name: 'Water (Balance)', percentage: 7.5, activeMatterPct: 0 }
   ];
   const phResult = calculatePHAdvanced(neutralIngredients, 100, { productCategory: 'LAUNDRY_LIQUID' });
   assert(
