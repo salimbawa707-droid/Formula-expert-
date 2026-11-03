@@ -106,23 +106,21 @@ export function calculateFormulationCompatibility(
 
   // 1. Resolve pH value
   let phVal = Number.NaN;
-  if (typeof estimatedPH === 'number' && Number.isFinite(estimatedPH) && estimatedPH >= 0 && estimatedPH <= 14) {
-    phVal = estimatedPH;
-  } else if (typeof estimatedPH === 'string' && estimatedPH.trim() !== '') {
+  const hasExplicitPHInput = estimatedPH !== undefined && estimatedPH !== null;
+  if (typeof estimatedPH === 'number') {
+    if (Number.isFinite(estimatedPH) && estimatedPH >= 0 && estimatedPH <= 14) phVal = estimatedPH;
+  } else if (typeof estimatedPH === 'string') {
     const parsed = Number(estimatedPH);
-    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 14) {
-      phVal = parsed;
-    }
-  } else if (safeIngs.length > 0) {
+    if (estimatedPH.trim() !== '' && Number.isFinite(parsed) && parsed >= 0 && parsed <= 14) phVal = parsed;
+  } else if (!hasExplicitPHInput && safeIngs.length > 0) {
     const phOpts: PHCalculationOptions | undefined =
       canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? { productCategory: canonicalCategory } : undefined;
     const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
     const computed = calculatePHAdvanced(mapped, 100, phOpts);
-    if (Number.isFinite(computed.pH) && computed.solverConverged) {
-      phVal = computed.pH;
-    }
+    if (Number.isFinite(computed.pH) && computed.solverConverged) phVal = computed.pH;
   }
   const pHAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
+  const hasFormulaData = safeIngs.length > 0;
 
   // 2. Classify ingredients by functional chemistry & percentage
   let waterPct = 0;
@@ -749,14 +747,15 @@ export function calculateFormulationCompatibility(
   // SCORE & COMPATIBILITY DETERMINATION
   // ============================================================================
   const rawScore = 100 - penaltySum;
-  const compatibilityScore = pHAvailable
+  const compatibilityScore = pHAvailable && hasFormulaData
     ? Math.max(0, Math.min(100, Math.round(rawScore)))
     : Number.NaN;
 
   const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = pHAvailable && !hasCriticalOrHigh;
+  const compatible = pHAvailable && hasFormulaData && !hasCriticalOrHigh;
   const warnings = alerts.map(a => a.message);
-  if (!pHAvailable) warnings.push('pH is unavailable or unverified; pH-dependent compatibility rules were not evaluated.');
+  if (!pHAvailable) warnings.push('pH is unavailable or invalid; pH-dependent compatibility rules were not evaluated.');
+  if (!hasFormulaData) warnings.push('No ingredient composition was supplied; compatibility cannot be evaluated.');
 
   const keyPositiveFactors: string[] = [];
   const keyNegativeFactors: string[] = alerts.map(a => a.title);
@@ -775,7 +774,7 @@ export function calculateFormulationCompatibility(
   }
 
   const modelType = 'Mechanism-Classified Deterministic Interaction Matrix (Phase 6)';
-  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = !pHAvailable && !hasCriticalOrHigh
+  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = (!pHAvailable || !hasFormulaData) && !hasCriticalOrHigh
     ? 'UNKNOWN'
     : alerts.some(a => a.severity === 'Critical')
       ? 'Critical'
@@ -880,11 +879,11 @@ export function evaluateFormulationStability(
   const alerts = existingAlerts || [];
 
   const phAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
-  if (!phAvailable) {
+  if (!phAvailable || safeIngs.length === 0) {
     return {
-      physicalStability: { status: 'UNKNOWN', score: null, details: ['pH unavailable; physical stability cannot be screened reliably.'] },
-      chemicalStability: { status: 'UNKNOWN', score: null, details: ['pH unavailable; pH-dependent chemical stability cannot be screened reliably.'] },
-      rheologicalStability: { status: 'UNKNOWN', score: null, details: ['pH unavailable; pH-dependent rheological stability cannot be screened reliably.'] },
+      physicalStability: { status: 'UNKNOWN', score: null, details: [phAvailable ? 'No ingredient composition was supplied; physical stability cannot be evaluated.' : 'pH unavailable; physical stability cannot be screened reliably.'] },
+      chemicalStability: { status: 'UNKNOWN', score: null, details: [phAvailable ? 'No ingredient composition was supplied; chemical stability cannot be evaluated.' : 'pH unavailable; pH-dependent chemical stability cannot be screened reliably.'] },
+      rheologicalStability: { status: 'UNKNOWN', score: null, details: [phAvailable ? 'No ingredient composition was supplied; rheological stability cannot be evaluated.' : 'pH unavailable; pH-dependent rheological stability cannot be screened reliably.'] },
       overallStorageStatus: 'INSUFFICIENT_DATA'
     };
   }
