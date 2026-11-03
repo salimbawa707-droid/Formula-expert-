@@ -453,15 +453,6 @@
       "skipped": false
     },
     {
-      "file": "p1Phase12FormulaDevelopment.regression.test.ts",
-      "moduleName": "runP1Phase12FormulaDevelopmentTestSuite",
-      "executed": true,
-      "passedAssertions": 19,
-      "failedAssertions": 0,
-      "totalAssertions": 19,
-      "skipped": false
-    },
-    {
       "file": "p1Phase13Manufacturing.regression.test.ts",
       "moduleName": "runP1Phase13ManufacturingTestSuite",
       "executed": true,
