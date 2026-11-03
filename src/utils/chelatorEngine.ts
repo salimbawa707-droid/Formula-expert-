@@ -159,8 +159,8 @@ export type WaterHardnessScenarioId = 'SOFT' | 'MODERATE' | 'HARD' | 'VERY_HARD'
 export interface WaterHardnessScenario {
   id: WaterHardnessScenarioId;
   label: string;
-  hardnessPpm: number; // mg/L as CaCO3
-  mgCaCO3PerLiter: number;
+  hardnessPpm: number | null; // mg/L as CaCO3; null for an unfilled custom scenario
+  mgCaCO3PerLiter: number | null;
   description: string;
 }
 
@@ -195,10 +195,10 @@ export const WATER_HARDNESS_SCENARIOS: Record<WaterHardnessScenarioId, WaterHard
   },
   CUSTOM: {
     id: 'CUSTOM',
-    label: 'Custom Water Hardness',
-    hardnessPpm: 150,
-    mgCaCO3PerLiter: 150,
-    description: 'User-defined water hardness conditions.'
+    label: 'Custom Water Hardness — enter a measured value',
+    hardnessPpm: null,
+    mgCaCO3PerLiter: null,
+    description: 'No representative value is assumed; enter the measured hardness.'
   }
 };
 
