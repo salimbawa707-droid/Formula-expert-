@@ -200,7 +200,9 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   }
 
   const catContext = getProductCategoryContext(normCat);
-  const waterHardness = Number(input.waterHardnessPpm ?? 150);
+  const waterHardness = typeof input.waterHardnessPpm === 'number' && Number.isFinite(input.waterHardnessPpm) && input.waterHardnessPpm >= 0
+    ? input.waterHardnessPpm
+    : null;
 
   const issues: SanityIssue[] = [];
   const strengths: FormulationStrength[] = [];
@@ -407,7 +409,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   // =============================================================================
 
   // 5. Hard Water Chelation Deficit
-  if (input.hardnessSufficiency === 'insufficient' || (waterHardness > 200 && organicChelatorPct === 0 && inorganicBuilderPct < 5)) {
+  if (waterHardness !== null && (input.hardnessSufficiency === 'insufficient' || (waterHardness > 200 && organicChelatorPct === 0 && inorganicBuilderPct < 5))) {
     const dynamicReq = calculateDynamicChelatorRequirement(ingredients, waterHardness, 10, 20, 25);
     
     issues.push({
@@ -824,7 +826,9 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   }
 
   const hardWaterIssue = issues.find(i => i.id === 'chelation-deficit' || i.issue.toLowerCase().includes('hard water'));
-  const hardWaterStatusText = waterHardness === 0
+  const hardWaterStatusText = waterHardness === null
+    ? 'Hard-water protection: Not evaluated; water hardness is unknown.'
+    : waterHardness === 0
     ? 'Hard-water protection: Not evaluated at 0 ppm baseline.'
     : hardWaterIssue
     ? 'Hard-water protection: Needs Revision.'
