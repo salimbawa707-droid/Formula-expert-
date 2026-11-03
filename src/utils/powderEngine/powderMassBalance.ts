@@ -19,10 +19,10 @@ export function calculatePowderMassBalance(ingredients: FormulationIngredient[])
       (ing as any)?.percent ??
       (ing as any)?.percentageInFormula;
 
-    if (raw === undefined || raw === null) return false;
+    if (raw === undefined || raw === null || (typeof raw === 'string' && raw.trim() === '')) return true;
 
     const value = Number(raw);
-    return !Number.isFinite(value) || value < 0;
+    return !Number.isFinite(value) || value < 0 || value > 100;
   });
 
   if (invalidInputs.length > 0) {
@@ -33,7 +33,7 @@ export function calculatePowderMassBalance(ingredients: FormulationIngredient[])
       status: 'INVALID_INPUT',
       missingPercentage: 0,
       excessPercentage: 0,
-      statusMessage: 'INVALID INPUT: One or more formulation ingredients have malformed or negative percentages. Invalid inputs must be corrected by formulator.',
+      statusMessage: 'INVALID INPUT: One or more formulation ingredients have missing, malformed, negative, or above-100% percentages. Missing values are not treated as zero; correct every ingredient entry before mass-balance evaluation.',
       source: 'CALCULATED'
     };
   }
