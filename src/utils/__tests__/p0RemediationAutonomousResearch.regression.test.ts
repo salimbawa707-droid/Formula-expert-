@@ -242,16 +242,16 @@ export function runAutonomousResearchTestSuite(): TestSuiteSummary {
   const updatedDensity = calculateDensity(updatedFormula, 100);
   assert(
     '8. rec-calculations & Formula Impact',
-    '28. Formula density is successfully recalculated after database sync',
-    updatedDensity.densityGPerCm3 > 0.95
+    '28. Formula density remains unavailable when neither ingredient has a characterized density',
+    !Number.isFinite(updatedDensity.densityGPerCm3) && updatedDensity.densityStatus === 'INSUFFICIENT_DATA'
   );
 
   // Blended HLB recalculation
   const updatedHlb = HLBEngine.calculateBlendedHLB(updatedFormula);
   assert(
     '8. rec-calculations & Formula Impact',
-    '29. Blended HLB is successfully recalculated after database sync',
-    updatedHlb.blendedHLB > 0
+    '29. Blended HLB remains unavailable when Aristo 9 has no verified HLB characterization',
+    !Number.isFinite(updatedHlb.blendedHLB) || updatedHlb.methodMetadata === 'INSUFFICIENT_DATA'
   );
 
   // Formula dosage protection
