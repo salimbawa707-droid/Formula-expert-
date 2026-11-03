@@ -133,11 +133,9 @@ export function runAIGradeTestSuite() {
     // pHResult explicitly missing
   };
   const resTestA = evaluateAIGrade(inputMissingPH);
-  assertEqual('Problem 2 — Test A', 'Missing pH result marks health status as UNKNOWN', resTestA.breakdown.statusMap?.health, 'UNKNOWN');
-  assertEqual('Problem 2 — Test A', 'Missing pH result healthScore is 0 (not fabricated 100)', resTestA.breakdown.healthScore, 0);
-  assertEqual('Problem 2 — Test A', 'Missing pH result records pH in unknownParameters', resTestA.unknownParameters.includes('pH'), true);
-  assertEqual('Problem 2 — Test A', 'Missing pH result never generates fabricated 7.0 claim in strengths', resTestA.strengths.some(s => s.includes('7.0')), false);
-  assertEqual('Problem 2 — Test A', 'Missing pH result never generates fabricated 7.0 claim in reasoning', resTestA.reasoning.includes('7.0'), false);
+  assertEqual('Problem 2 — Test A', 'Missing pH makes the grade non-evaluable', resTestA.isEvaluable, false);
+  assertEqual('Problem 2 — Test A', 'Missing pH produces N/A grade, not a partial composite grade', resTestA.grade, 'N/A');
+  assertEqual('Problem 2 — Test A', 'Missing pH is recorded in unknown parameters', resTestA.unknownParameters.includes('pH'), true);
 
   // Test B: Missing compatibility result never becomes 100/100 or "compatible: true"
   const inputMissingComp = {
@@ -148,10 +146,9 @@ export function runAIGradeTestSuite() {
     // compatibilityResult explicitly missing
   };
   const resTestB = evaluateAIGrade(inputMissingComp);
-  assertEqual('Problem 2 — Test B', 'Missing compatibility marks compatibility status as UNKNOWN', resTestB.breakdown.statusMap?.compatibility, 'UNKNOWN');
-  assertEqual('Problem 2 — Test B', 'Missing compatibility score is 0 (never fabricated 100)', resTestB.breakdown.compatibilityScore, 0);
-  assertEqual('Problem 2 — Test B', 'Missing compatibility records compatibility in unknownParameters', resTestB.unknownParameters.includes('compatibility'), true);
-  assertEqual('Problem 2 — Test B', 'Missing compatibility records explicit limiting factor', resTestB.limitingFactors.some(f => f.includes('Chemical compatibility analysis is missing')), true);
+  assertEqual('Problem 2 — Test B', 'Missing compatibility makes the grade non-evaluable', resTestB.isEvaluable, false);
+  assertEqual('Problem 2 — Test B', 'Missing compatibility produces N/A grade', resTestB.grade, 'N/A');
+  assertEqual('Problem 2 — Test B', 'Missing compatibility is recorded in unknown parameters', resTestB.unknownParameters.includes('compatibility'), true);
 
   // Test C: Missing scientific results cannot generate favorable compatibility claims or falsely favorable grading
   const inputMissingBoth = {
@@ -162,17 +159,19 @@ export function runAIGradeTestSuite() {
   };
   const resTestC = evaluateAIGrade(inputMissingBoth);
   assertEqual('Problem 2 — Test C', 'Missing compatibility cannot generate favorable full compatibility claim', resTestC.strengths.includes('Full chemical compatibility with no antagonistic raw material interactions.'), false);
-  assertEqual('Problem 2 — Test C', 'Missing scientific results cannot award favorable A or A+ grade', resTestC.grade !== 'A+' && resTestC.grade !== 'A', true);
-  assertEqual('Problem 2 — Test C', 'Missing scientific results composite score is capped (<= 65)', resTestC.score <= 65, true);
+  assertEqual('Problem 2 — Test C', 'Missing critical science produces N/A instead of a capped letter grade', resTestC.grade, 'N/A');
+  assertEqual('Problem 2 — Test C', 'Missing critical science is not evaluable', resTestC.isEvaluable, false);
 
   // Test D: Valid pH and compatibility results continue to produce expected outputs
   const inputValidScience = {
     formulaIdentity: { canonicalCategory: 'LAUNDRY_LIQUID' },
-    activeMatterResult: { totalSurfactantActivePct: 18, totalActiveMatterPct: 18 },
-    pHResult: { ph: 8.5 },
+    scientificValidity: 'VALID',
+    activeMatterResult: { totalSurfactantActivePct: 18, totalActiveMatterPct: 18, verified: true },
+    pHResult: { ph: 8.5, isMeasured: true },
     compatibilityResult: { compatibilityScore: 95, compatible: true, alerts: [] },
-    cleaningResult: { cpi: 90, overallScore: 90 },
-    costResult: { costPerKg: 100, targetCostPerKg: 120, isWithinTarget: true }
+    cleaningResult: { cpi: 90, overallScore: 90, provenance: 'MEASURED' },
+    costResult: { costPerKg: 100, targetCostPerKg: 120, isWithinTarget: true, isComplete: true },
+    regulatoryResult: { status: 'COMPLIANT' }
   };
   const resTestD = evaluateAIGrade(inputValidScience);
   assertEqual('Problem 2 — Test D', 'Valid pH produces KNOWN health status', resTestD.breakdown.statusMap?.health, 'KNOWN');
@@ -199,7 +198,8 @@ export function runAIGradeTestSuite() {
   assertEqual('Problem 2 — Test F', 'NaN pH safely produces UNKNOWN health status without crashing', resTestF.breakdown.statusMap?.health, 'UNKNOWN');
   assertEqual('Problem 2 — Test F', 'NaN compatibility safely produces UNKNOWN compatibility status without crashing', resTestF.breakdown.statusMap?.compatibility, 'UNKNOWN');
   assertEqual('Problem 2 — Test F', 'Invalid inputs do not award full compatibility claim', resTestF.strengths.includes('Full chemical compatibility with no antagonistic raw material interactions.'), false);
-  assertEqual('Problem 2 — Test F', 'Invalid inputs result is safe and evaluable structure', resTestF.isEvaluable, true);
+  assertEqual('Problem 2 — Test F', 'Invalid inputs return a safe non-evaluable structure', resTestF.isEvaluable, false);
+  assertEqual('Problem 2 — Test F', 'Invalid inputs return N/A grade', resTestF.grade, 'N/A');
 
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
