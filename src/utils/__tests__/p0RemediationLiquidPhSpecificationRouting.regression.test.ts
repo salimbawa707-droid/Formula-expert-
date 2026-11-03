@@ -156,7 +156,7 @@ export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {
 
   // 25. Existing PHEngineV2 calculation result remains unchanged by specification routing
   const v2Res = calculatePHAdvanced([], 100, { productCategory: 'LAUNDRY_LIQUID' });
-  assert('TEST 25: PHEngineV2 calculation result is unchanged', typeof v2Res.pH === 'number');
+  assert('TEST 25: Empty composition remains unavailable under PHEngineV2', v2Res.pH === null && v2Res.solverConverged === false);
 
   // 26. Liquid profile is deterministic
   const liquidTpl2 = getSpecificationTemplateForCategory('LAUNDRY_LIQUID');
