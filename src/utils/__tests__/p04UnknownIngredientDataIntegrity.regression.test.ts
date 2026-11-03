@@ -142,7 +142,11 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
     formulaName: 'Fragrance Formula',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      ...knownLiquidIngredients,
+      ...knownLiquidIngredients.map(ingredient =>
+        ingredient.name === 'Water (Balance)'
+          ? { ...ingredient, percentage: ingredient.percentage - 0.5 }
+          : ingredient
+      ),
       { name: 'Special Artisanal Botanical Fragrance', percentage: 0.5, role: 'Fragrance' }
     ]
   });
@@ -159,7 +163,11 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
     formulaName: 'Enzyme Liquid Detergent',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      ...knownLiquidIngredients,
+      ...knownLiquidIngredients.map(ingredient =>
+        ingredient.name === 'Water (Balance)'
+          ? { ...ingredient, percentage: ingredient.percentage - 0.8 }
+          : ingredient
+      ),
       { name: 'Proprietary Bio-Protease Enzyme Solution', percentage: 0.8, role: 'Enzyme' }
     ]
   });
@@ -281,7 +289,11 @@ export function runP04UnknownIngredientDataIntegrityTestSuite(): TestSuiteSummar
     formulaName: 'Formula with Non-Critical Fragrance',
     productCategory: 'LAUNDRY_LIQUID',
     ingredients: [
-      ...knownLiquidIngredients,
+      ...knownLiquidIngredients.map(ingredient =>
+        ingredient.name === 'Water (Balance)'
+          ? { ...ingredient, percentage: ingredient.percentage - 0.3 }
+          : ingredient
+      ),
       { name: 'Fragrance', percentage: 0.3 }
     ]
   });
