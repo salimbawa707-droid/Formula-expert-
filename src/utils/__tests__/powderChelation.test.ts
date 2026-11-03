@@ -22,7 +22,7 @@ export function runPowderChelationTestSuite(): {
   }
 
   const chelator: ClassifiedIngredient = {
-    name: 'GLDA-4Na',
+    name: 'GLDA 47% Liquid (GLDA-4Na)',
     inputPercentage: 10,
     functionalClass: 'Chelating Agent / Soluble Sequestrant',
     isSurfactant: false,
