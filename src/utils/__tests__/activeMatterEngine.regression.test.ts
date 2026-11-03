@@ -58,6 +58,9 @@ export function runActiveMatterRegressionTestSuite() {
   const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'Commercial reference default is not labelled authoritative assay', referenceDefault.dataSource === 'reference_default', referenceDefault.dataSource, 'reference_default');
 
+  const proprietaryUnknown = ActiveMatterEngine.resolveIngredientActive({ canonicalIngredientId: 'aristo-9', name: 'Aristo 9' } as any);
+  assert('Unknown Property Firewall', 'Aristo 9 explicit unknownProperties prevents activeDefault 0 being treated as a measured zero', proprietaryUnknown.activeMatterPct === null && proprietaryUnknown.dataSource === 'missing', { activeMatterPct: proprietaryUnknown.activeMatterPct, dataSource: proprietaryUnknown.dataSource }, { activeMatterPct: null, dataSource: 'missing' });
+
   const sles70Res = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'SLES 70% resolves to 70%', sles70Res.activeMatterPct === 70, sles70Res.activeMatterPct, 70);
 
