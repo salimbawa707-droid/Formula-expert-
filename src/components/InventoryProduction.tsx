@@ -500,7 +500,7 @@ export default function InventoryProduction({
             </div>
 
             {/* Availability Status Notification */}
-            {batchCheck.canProduce ? (
+            {batchCheck.canProduce && Boolean(activeFormula?.id && activeFormula.ingredients?.length) ? (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
@@ -532,10 +532,10 @@ export default function InventoryProduction({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-rose-900">
-                      Production Blocked: Shortfall on {batchCheck.insufficientCount} Raw Material(s)
+                      {!activeFormula?.id ? 'Production Blocked: No committed active formula selected' : batchCheck.blockReasons.length > 0 ? 'Production Blocked: Required inputs missing' : `Production Blocked: Shortfall on ${batchCheck.insufficientCount} Raw Material(s)`}
                     </h4>
                     <p className="text-xs text-rose-700">
-                      Cannot compound batch. Insufficient stock for: <span className="font-bold">{batchCheck.insufficientItems.join(', ')}</span>.
+                      {!activeFormula?.id ? 'Select a committed formula; the reference/demo formula is preview-only.' : batchCheck.blockReasons.length > 0 ? batchCheck.blockReasons.join(' ') : <>Cannot compound batch. Insufficient stock for: <span className="font-bold">{batchCheck.insufficientItems.join(', ')}</span>.</>}
                     </p>
                   </div>
                 </div>
@@ -544,7 +544,7 @@ export default function InventoryProduction({
                   disabled
                   className="px-5 py-2.5 bg-slate-300 text-slate-500 text-sm font-bold rounded-lg cursor-not-allowed flex items-center gap-2 shrink-0"
                 >
-                  <XCircle className="w-4 h-4" /> Insufficient Stock
+                  <XCircle className="w-4 h-4" /> Production Blocked
                 </button>
               </div>
             )}
@@ -1064,7 +1064,7 @@ export default function InventoryProduction({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Total Batch Material Cost:</span>
-                  <span className="font-bold text-emerald-700">${batchCheck.totalBatchCost.toFixed(2)}</span>
+                  <span className="font-bold text-emerald-700">{batchCheck.totalBatchCost !== null ? `${batchCheck.totalBatchCost.toFixed(2)}` : 'Not available'}</span>
                 </div>
               </div>
 
