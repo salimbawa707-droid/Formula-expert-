@@ -624,7 +624,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               <span className={`text-[10px] font-extrabold font-mono px-2.5 py-0.5 rounded-full border ${
                 scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable
                   ? "bg-slate-800 text-slate-400 border-slate-700"
-                  : waterHardnessPpm === 0 || scientificResults.waterHardness.status === "NOT_EVALUATED"
+                  : waterHardnessPpm === null || waterHardnessPpm === 0 || scientificResults.waterHardness.status === "NOT_EVALUATED"
                     ? "bg-slate-800 text-slate-300 border-slate-700"
                     : scientificResults.waterHardness.status === "PASS"
                       ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40"
@@ -634,7 +634,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               }`}>
                 {scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable
                   ? "NOT APPLICABLE"
-                  : waterHardnessPpm === 0 || scientificResults.waterHardness.status === "NOT_EVALUATED"
+                  : waterHardnessPpm === null || waterHardnessPpm === 0 || scientificResults.waterHardness.status === "NOT_EVALUATED"
                     ? "NOT EVALUATED"
                     : scientificResults.waterHardness.status}
               </span>
@@ -648,7 +648,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                   {scientificResults.waterHardness.description || "Category does not rely on wash-liquor water hardness sequestration."}
                 </p>
               </>
-            ) : waterHardnessPpm === 0 || scientificResults.waterHardness.status === "NOT_EVALUATED" ? (
+            ) : waterHardnessPpm === null || waterHardnessPpm === 0 || scientificResults.waterHardness.status === "NOT_EVALUATED" ? (
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-mono font-extrabold text-slate-300">
