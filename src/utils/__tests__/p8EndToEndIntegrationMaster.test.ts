@@ -83,8 +83,8 @@ export function runPhase8EndToEndIntegrationTestSuite(): { passed: number; faile
     { id: 'surf', name: 'SLES 70%', percentage: 30.0, category: 'Anionic Surfactant' }
   ];
 
-  const lowActiveScore = calculateCleaningPerformance(lowActiveRecipe, 8.0, 'LAUNDRY_LIQUID').cpi;
-  const highActiveScore = calculateCleaningPerformance(highActiveRecipe, 8.0, 'LAUNDRY_LIQUID').cpi;
+  const lowActiveScore = calculateCleaningPerformance(lowActiveRecipe, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }).cpi;
+  const highActiveScore = calculateCleaningPerformance(highActiveRecipe, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }).cpi;
   assert('DependencySync', 'Downstream CPI increases with higher active matter', highActiveScore > lowActiveScore, highActiveScore > lowActiveScore, true);
 
   // 4. Stale Result Prevention & Version Isolation
