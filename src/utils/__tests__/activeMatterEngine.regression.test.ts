@@ -145,6 +145,7 @@ export function runActiveMatterRegressionTestSuite() {
   const emptyReport = evaluateAuthoritativeActiveMatter([], 100);
   assert('Edge Cases', 'Empty ingredients remain INSUFFICIENT_DATA', emptyReport.activeMatterStatus === 'INSUFFICIENT_DATA', emptyReport.activeMatterStatus, 'INSUFFICIENT_DATA');
   assert('Edge Cases', 'Empty formula numeric helper returns unavailable', Number.isNaN(calculateActiveMatter([])), calculateActiveMatter([]), 'NaN / unavailable');
+  assert('Edge Cases', 'Empty formula active-surfactant helper returns unavailable', Number.isNaN(calculateActiveSurfactants([])), calculateActiveSurfactants([]), 'NaN / unavailable');
 
   const missingPercentageReport = evaluateAuthoritativeActiveMatter([{ name: 'SLES 70%' } as any], 100);
   assert('Input Validation', 'Missing ingredient percentage blocks active-matter report', missingPercentageReport.activeMatterStatus === 'INSUFFICIENT_DATA' && missingPercentageReport.invalidPercentageCount === 1, { status: missingPercentageReport.activeMatterStatus, invalidPercentageCount: missingPercentageReport.invalidPercentageCount }, { status: 'INSUFFICIENT_DATA', invalidPercentageCount: 1 });
