@@ -92,6 +92,8 @@ export interface MasterScientificQualityGateInput {
   ingredients: FormulationIngredient[];
   labMeasurements?: LabMeasurementRecord[];
   waterHardnessPpm?: number;
+  washVolumeL?: number;
+  washDoseGrams?: number;
   batchSizeKg?: number;
   estimatedPH?: number;
   targetCostPerKg?: number;
@@ -155,14 +157,14 @@ export interface MasterScientificQualityGateReport {
     categoryMinPct: number;
   };
   chelationResult: {
-    isSufficient: boolean;
-    waterHardnessPpm: number;
-    capacityCaCO3GPer100g: number;
+    isSufficient: boolean | null;
+    waterHardnessPpm: number | null;
+    capacityCaCO3GPer100g: number | null;
     status?: string;
     hardnessProtectionRatio?: number;
     hardnessLoadMg?: number;
-    totalSequestrationMg?: number;
-    isApplicable?: boolean;
+    totalSequestrationMg?: number | null;
+    isApplicable?: boolean | null;
   };
   compatibilityResult: {
     compatible: boolean;
@@ -220,7 +222,12 @@ export function evaluateScientificQualityGate(
       )
     : [];
   const hasExplicitWaterHardness = typeof input.waterHardnessPpm === 'number' && Number.isFinite(input.waterHardnessPpm) && input.waterHardnessPpm >= 0;
-  const waterHardnessPpm = hasExplicitWaterHardness ? input.waterHardnessPpm! : 150;
+  const waterHardnessPpm = hasExplicitWaterHardness ? input.waterHardnessPpm! : null;
+  const hasExplicitWashScenario =
+    typeof input.washVolumeL === 'number' && Number.isFinite(input.washVolumeL) && input.washVolumeL > 0 &&
+    typeof input.washDoseGrams === 'number' && Number.isFinite(input.washDoseGrams) && input.washDoseGrams > 0 &&
+    typeof input.batchSizeKg === 'number' && Number.isFinite(input.batchSizeKg) && input.batchSizeKg > 0;
+  const hardnessScenarioComplete = hasExplicitWaterHardness && hasExplicitWashScenario;
 
   const blockingIssues: QualityGateFinding[] = [];
   const majorWarnings: QualityGateFinding[] = [];
@@ -283,11 +290,11 @@ export function evaluateScientificQualityGate(
   let totalMassPct = 0;
   let hasInvalidNumber = false;
 
-  for (const ing of rawIngs) {
+  for (const [ingredientIndex, ing] of rawIngs.entries()) {
     const name = (ing?.name || '').trim();
     if (!name) {
       blockingIssues.push({
-        id: `gate-missing-name-${Math.random()}`,
+        id: `gate-missing-name-${ingredientIndex}`,
         code: 'ERR_MISSING_INGREDIENT_NAME',
         title: 'Missing Ingredient Name',
         category: 'VALIDITY',
@@ -298,8 +305,11 @@ export function evaluateScientificQualityGate(
       scientificValidity = 'INVALID';
     }
 
-    const pct = Number(ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? 0);
-    if (isNaN(pct) || pct < 0) {
+    const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
       hasInvalidNumber = true;
     } else {
       totalMassPct += pct;
@@ -502,16 +512,18 @@ export function evaluateScientificQualityGate(
 
   // C. Hard Water & Chelation Output (Product-Aware)
   const productHardnessPolicy = getProductHardnessPolicy(input.specificationProfileId || input.subCategory || canonicalCategory);
-  const hardnessTolerance = calculateWaterHardnessTolerance(
-    rawIngs,
-    waterHardnessPpm,
-    productHardnessPolicy.defaultWashVolumeL,
-    productHardnessPolicy.defaultDoseGrams,
-    input.batchSizeKg || 0,
-    input.specificationProfileId || input.subCategory || canonicalCategory
-  );
+  const hardnessTolerance = hardnessScenarioComplete
+    ? calculateWaterHardnessTolerance(
+        rawIngs,
+        waterHardnessPpm as number,
+        input.washVolumeL,
+        input.washDoseGrams,
+        input.batchSizeKg,
+        input.specificationProfileId || input.subCategory || canonicalCategory
+      )
+    : null;
 
-  if (!hasExplicitWaterHardness && productHardnessPolicy.requiresHardnessControl) {
+  if (!hardnessScenarioComplete && productHardnessPolicy.requiresHardnessControl) {
     majorWarnings.push({
       id: 'gate-assumed-water-hardness',
       code: 'WARN_ASSUMED_WATER_HARDNESS',
@@ -523,7 +535,7 @@ export function evaluateScientificQualityGate(
     });
   }
 
-  if (rawIngs.length > 0 && hardnessTolerance.isApplicable && waterHardnessPpm > 0 && (hardnessTolerance.status === 'INSUFFICIENT' || hardnessTolerance.status === 'WARNING')) {
+  if (rawIngs.length > 0 && hardnessTolerance?.isApplicable && (waterHardnessPpm ?? 0) > 0 && (hardnessTolerance.status === 'INSUFFICIENT' || hardnessTolerance.status === 'WARNING')) {
     minorWarnings.push({
       id: 'gate-chelation-deficit',
       code: 'WARN_CHELATION_DEFICIT',
@@ -678,8 +690,8 @@ export function evaluateScientificQualityGate(
   let specReport: SpecificationReport | undefined = undefined;
 
   if (canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' && specTemplate) {
-    const densityRes = calculateDensity(rawIngs, (input.batchSizeKg || 0) * 1000);
-    const nvrRes = calculateLiquidNVR(rawIngs, input.batchSizeKg || 0);
+    const densityRes = calculateDensity(rawIngs, (input.batchSizeKg ?? Number.NaN) * 1000);
+    const nvrRes = calculateLiquidNVR(rawIngs, input.batchSizeKg ?? Number.NaN);
 
     specReport = evaluateSpecifications({
       formulaName,
@@ -749,8 +761,8 @@ export function evaluateScientificQualityGate(
       activeMatterPct: totalActiveMatterPct,
       activeSurfactantsPct: totalSurfactantActivePct,
       viscosityCps: viscosityRes.viscosityCp ?? viscosityRes.estViscosityCps,
-      cpi: performanceRes.cpi,
-      waterHardnessTolerancePpm: hardnessTolerance.maxSupportedPpm
+      cpi: Number.isFinite(performanceRes.cpi) ? performanceRes.cpi : null,
+      waterHardnessTolerancePpm: hardnessTolerance?.maxSupportedPpm
     },
     labEvidenceRecords: (labMeasurements as any) || [],
     qualityGateFindings: {
@@ -949,8 +961,10 @@ export function evaluateScientificQualityGate(
     speciationResult: { pH: finalPH, isMeasured: isPHMeasured, confidence: phConfidence },
     activeMatterResult: { totalActiveMatterPct, totalSurfactantActivePct },
     chelationResult: {
-      capacityCaCO3GPer100g: hardnessTolerance.totalSequestrationMg / 1000,
-      isSufficient: hardnessTolerance.status === 'PASS' || hardnessTolerance.status === 'NOT_APPLICABLE'
+      capacityCaCO3GPer100g: hardnessTolerance ? hardnessTolerance.totalSequestrationMg / 1000 : null,
+      isSufficient: hardnessTolerance
+        ? (hardnessTolerance.status === 'PASS' || hardnessTolerance.status === 'NOT_APPLICABLE')
+        : null
     },
     compatibilityResult: { compatible: compRes.compatible, score: compRes.compatibilityScore },
     performanceResult: { cpi: performanceRes.cpi, isMeasured: performanceRes.isMeasured },
@@ -1001,7 +1015,7 @@ export function evaluateScientificQualityGate(
 
     speciationResult: {
       pH: finalPH,
-      provenance: isPHMeasured ? 'MEASURED' : 'PREDICTED',
+      provenance: isPHMeasured ? 'MEASURED' : (finalPH === null ? 'INSUFFICIENT_DATA' : 'PREDICTED'),
       isMeasured: isPHMeasured,
       confidence: phConfidence,
       powderSlurryBasis,
@@ -1014,23 +1028,25 @@ export function evaluateScientificQualityGate(
       categoryMinPct: categoryMinActivePct
     },
     chelationResult: {
-      isSufficient: hardnessTolerance.status === 'PASS' || hardnessTolerance.status === 'NOT_APPLICABLE',
+      isSufficient: hardnessTolerance
+        ? (hardnessTolerance.status === 'PASS' || hardnessTolerance.status === 'NOT_APPLICABLE')
+        : null,
       waterHardnessPpm,
-      capacityCaCO3GPer100g: hardnessTolerance.totalSequestrationMg / 1000,
-      status: hardnessTolerance.status,
-      hardnessProtectionRatio: hardnessTolerance.hardnessProtectionRatio,
-      hardnessLoadMg: hardnessTolerance.hardnessLoadMg,
-      totalSequestrationMg: hardnessTolerance.totalSequestrationMg,
-      isApplicable: hardnessTolerance.isApplicable
+      capacityCaCO3GPer100g: hardnessTolerance ? hardnessTolerance.totalSequestrationMg / 1000 : null,
+      status: hardnessTolerance?.status ?? 'NOT_EVALUATED',
+      hardnessProtectionRatio: hardnessTolerance?.hardnessProtectionRatio,
+      hardnessLoadMg: hardnessTolerance?.hardnessLoadMg,
+      totalSequestrationMg: hardnessTolerance?.totalSequestrationMg,
+      isApplicable: hardnessTolerance?.isApplicable ?? null
     },
     compatibilityResult: {
       compatible: compRes.compatible,
       score: compRes.compatibilityScore,
-      riskLevel: compRes.riskLevel || 'Low',
+      riskLevel: compRes.riskLevel || 'UNKNOWN',
       alertsCount: compRes.alerts.length
     },
     viscosityResult: {
-      predictedViscosityCp: viscosityRes.viscosityCp,
+      predictedViscosityCp: Number.isFinite(viscosityRes.viscosityCp) ? viscosityRes.viscosityCp : null,
       fluidity: viscosityRes.isFluid ? 'Fluid' : 'Non-Fluid / Paste',
       flowMechanism: viscosityRes.mechanism
     },
