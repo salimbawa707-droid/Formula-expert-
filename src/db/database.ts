@@ -9,6 +9,7 @@ export interface FormulaRecord {
   targetPH: number;
   batchSizeKg: number;
   waterHardnessPpm?: number;
+  waterHardnessSource?: 'USER_ENTERED' | 'MEASURED' | 'UNKNOWN';
   description?: string;
   ingredients: FormulationIngredient[];
   instructions?: string[];
