@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+:root {
+  --bg-main: #070b18;
+  --bg-surface: #0e1629;
+  --bg-card: #131d35;
+  --bg-card-secondary: #0b1324;
+  --border-card: rgba(255, 255, 255, 0.12);
+  
+  /* WCAG 2.2 AA Semantic Text Tokens (Midnight Theme) */
+  --text-primary: #f8fafc;        /* 16.5:1 contrast ratio */
+  --text-secondary: #e2e8f0;      /* 13.1:1 contrast ratio */
+  --text-muted: #cbd5e1;          /* 10.1:1 contrast ratio */
+  --text-subtle: #94a3b8;         /* 5.4:1 contrast ratio */
+  --text-accent-teal: #2dd4bf;    /* 7.8:1 contrast ratio */
+  --text-accent-emerald: #4ade80; /* 9.8:1 contrast ratio */
+  --text-accent-amber: #fbbf24;   /* 9.9:1 contrast ratio */
+  --text-accent-rose: #f87171;    /* 6.9:1 contrast ratio */
+
+  /* Dark Card Inner Tokens (For cards that remain dark across themes) */
+  --text-darkcard-title: #f8fafc;
+  --text-darkcard-subtitle: #e2e8f0;
+  --text-darkcard-muted: #cbd5e1;
+  --text-darkcard-body: #f1f5f9;
+}
+
+/* Daylight Laboratory Theme: High-contrast light for bright bench visibility */
+html.theme-daylight {
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-card: #f1f5f9;
+  --bg-card-secondary: #f8fafc;
+  --border-card: #cbd5e1;
+
+  /* WCAG 2.2 AA Semantic Text Tokens (Daylight Theme) */
+  --text-primary: #0f172a;        /* 17.2:1 contrast ratio on white */
+  --text-secondary: #1e293b;      /* 14.8:1 contrast ratio on white */
+  --text-muted: #475569;          /* 7.0:1 contrast ratio on white */
+  --text-subtle: #64748b;         /* 4.6:1 contrast ratio on white */
+  --text-accent-teal: #0d9488;    /* 4.8:1 contrast ratio on white */
+  --text-accent-emerald: #15803d; /* 5.1:1 contrast ratio on white */
+  --text-accent-amber: #b45309;   /* 4.9:1 contrast ratio on white */
+  --text-accent-rose: #be123c;    /* 6.4:1 contrast ratio on white */
+
+  /* Dark Card Inner Tokens for daylight mode */
+  --text-darkcard-title: #0f172a;
+  --text-darkcard-subtitle: #1e293b;
+  --text-darkcard-muted: #475569;
+  --text-darkcard-body: #0f172a;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #070b18;
+  color: #f1f5f9;
+}
+
+html.theme-daylight,
+html.theme-daylight body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Custom Sleek Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070b18;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Glass & Glow utilities */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Mobile & Web Performance Accelerations */
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+button, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Accessible keyboard focus outlines */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #06b6d4;
+  outline-offset: 2px;
+}
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+}
+
+/* Smooth GPU rendering for complex trees */
+.smooth-gpu, .card, table {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.25);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.25);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px -5px rgba(168, 85, 247, 0.25);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.25);
+}
+
+/* Universal Select Option Defaults for All Browsers & Operating Systems */
+select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+  padding: 6px 12px;
+}
+
+html.theme-daylight select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Application Title High-Contrast Formatting */
+.app-header-title {
+  color: #f8fafc;
+}
+
+html.theme-daylight .app-header-title {
+  color: #0f172a;
+}
+
+
+
+

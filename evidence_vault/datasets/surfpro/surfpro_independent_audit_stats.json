@@ -1,0 +1,96 @@
+{
+  "timestamp": "2026-10-17T21:44:31.323Z",
+  "auditScope": "Round 2 Independent Forensic Audit of SurfPro Artifacts",
+  "physicalArtifacts": {
+    "Canonical Master CSV": {
+      "path": "/app/applet/data/evidence/surfpro/S129_SURFPRO.csv",
+      "sizeBytes": 799214
+    },
+    "Experimental Slice CSV": {
+      "path": "/app/applet/data/evidence/surfpro/surfpro_detergent_experimental_slice_v1.csv",
+      "sizeBytes": 121004
+    },
+    "Inspection Stats JSON": {
+      "path": "/app/applet/data/evidence/surfpro/surfpro_inspection_stats.json",
+      "sizeBytes": 3287
+    },
+    "Initial Inspection Script": {
+      "path": "/app/applet/scripts/inspect_surfpro.mjs",
+      "sizeBytes": 13158
+    },
+    "Inspection Report Markdown": {
+      "path": "/app/applet/PHASE4B_SURFPRO_NUMERICAL_INSPECTION_REPORT.md",
+      "sizeBytes": 12353
+    },
+    "Dataset Register Update Markdown": {
+      "path": "/app/applet/PHASE4B_SURFPRO_DATASET_REGISTER_UPDATE.md",
+      "sizeBytes": 9504
+    }
+  },
+  "checksums": {
+    "canonical": {
+      "path": "/app/applet/data/evidence/surfpro/S129_SURFPRO.csv",
+      "size": 799214,
+      "md5": "e5bcd1bbab2fc56717a3cd6a0cf1c152",
+      "sha256": "316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841",
+      "zenodoMd5Match": true,
+      "sha256Match": true
+    },
+    "slice": {
+      "path": "/app/applet/data/evidence/surfpro/surfpro_detergent_experimental_slice_v1.csv",
+      "size": 121004,
+      "md5": "65f14d028832f1f53bace9f9d8b4b8e3",
+      "sha256": "687dc5cdd5dea832f8ac04803f0ecdd34dc64b9abbf505e7c9be2a6fe55fdef8",
+      "sha256Match": true
+    }
+  },
+  "funnelAudit": {
+    "step0_rawRecords": 1624,
+    "step1_classRetained": 720,
+    "step1_classExcluded": 904,
+    "step2_cmcRetained": 661,
+    "step2_cmcExcluded": 59,
+    "step3_stRetained": 223,
+    "step3_stExcluded": 438,
+    "confirmedSubsetCount": 223,
+    "temperatureDistribution": {
+      "20": 34,
+      "22": 2,
+      "23": 4,
+      "25": 181,
+      "24.85": 2
+    }
+  },
+  "discrepancyInvestigation": {
+    "totalDiscrepancies": 37,
+    "classifications": {
+      "TRACEABLE_BOTH_PROPERTIES": 31,
+      "TRACEABLE_ONE_PROPERTY_ONLY": 6
+    },
+    "csvExportPath": "/app/applet/data/evidence/surfpro/surfpro_37_reference_discrepancies.csv"
+  },
+  "engine002ValidationAssessment": {
+    "predictedProperties": [
+      "mixedCMC",
+      "micelleComposition (alpha_i)",
+      "synergyIndex"
+    ],
+    "requiredInputParameters": [
+      "pureComponentCMCs (CMC_i)",
+      "moleFractions (x_i)",
+      "rubinghInteractionBeta"
+    ],
+    "surfProCompatibility": "PARTIAL_INPUT_REFERENCE_ONLY",
+    "limitations": [
+      "SurfPro contains pure single-surfactant data; does not contain mixed binary/ternary titration series.",
+      "Rubingh interaction parameter (beta) requires binary mixture experimental isotherms which are absent in SURFPRO.",
+      "Single-surfactant measurements can only validate pure-component baseline lookup tables or QSPR models, not mixture thermodynamics."
+    ],
+    "dataLeakageStatus": "NOT_FULLY_ASSESSED"
+  },
+  "conclusion": {
+    "phase4BStatus": "ACTIVE / OPEN",
+    "phase5Status": "STRICTLY LOCKED",
+    "labValidatedClassification": "PROHIBITED"
+  }
+}

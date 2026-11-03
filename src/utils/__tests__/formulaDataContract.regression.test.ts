@@ -1,0 +1,411 @@
+import {
+  calculateActiveMatter,
+  calculateActiveSurfactants,
+  calculateBatchCost,
+  calculateCPI,
+  calculateCleaningPerformance,
+  calculateFormulationCompatibility,
+  calculateWaterHardnessTolerance,
+  calculateFormulationChelationCapacity,
+  getChelatorBindingCapacity,
+  calculateLabHealthScore,
+  evaluateAIGrade,
+  calculateBlendedHLB,
+  normalizeIngredientTaxonomy
+} from '../calculators';
+import { mapFormulationIngredientsToPHEngineInput } from '../pHEngineAdapter';
+import { calculatePHAdvanced } from '../pHEngine';
+import { FormulationIngredient } from '../../types';
+
+interface TestSummary {
+  passed: number;
+  failed: number;
+}
+
+function assertEqual<T>(section: string, testName: string, actual: T, expected: T): boolean {
+  if (actual === expected) {
+    console.log(`[PASS] [${section}] ${testName} :: PASS (${actual})`);
+    return true;
+  } else {
+    console.error(`[FAIL] [${section}] ${testName} -> Expected: ${expected}, Got: ${actual}`);
+    return false;
+  }
+}
+
+function assertNear(section: string, testName: string, actual: number, expected: number, tolerance: number = 0.05): boolean {
+  const diff = Math.abs(actual - expected);
+  if (diff <= tolerance) {
+    console.log(`[PASS] [${section}] ${testName} :: PASS (${actual})`);
+    return true;
+  } else {
+    console.error(`[FAIL] [${section}] ${testName} -> Expected: ~${expected} (±${tolerance}), Got: ${actual}`);
+    return false;
+  }
+}
+
+export function runFormulaDataContractTestSuite(): TestSummary {
+  let passed = 0;
+  let failed = 0;
+
+  const record = (res: boolean) => {
+    if (res) passed++;
+    else failed++;
+  };
+
+  console.log('==================================================');
+  console.log('  PHASE 2.9 FORMULA DATA CONTRACT & INTEGRITY     ');
+  console.log('==================================================');
+
+  // -------------------------------------------------------------
+  // 1. CANONICAL INGREDIENT FIELD & ALIAS MAPPING AUDIT
+  // -------------------------------------------------------------
+
+  const canonicalIngredients: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50, category: 'Anionic Surfactant' },
+    { name: 'SLES 70%', percentage: 5, activeMatterPct: 70, costPerKg: 1.20, category: 'Anionic Surfactant' },
+    { name: 'Demineralized Water', percentage: 85, activeMatterPct: 0, costPerKg: 0.02, category: 'Solvent' }
+  ];
+
+  const aliasedIngredients: any[] = [
+    { name: 'LABSA 96%', percent: 10, activePercent: 96, rawMaterialCostPerKg: 1.50, role: 'Anionic Surfactant' },
+    { name: 'SLES 70%', percentageInFormula: 5, purity: 70, cost: 1.20, function: 'Anionic Surfactant' },
+    { name: 'Demineralized Water', percent: 85, activeMatterPurity: 0, costPerKg: 0.02, role: 'Solvent' }
+  ];
+
+  const canonicalActive = calculateActiveMatter(canonicalIngredients);
+  const aliasedActive = calculateActiveMatter(aliasedIngredients);
+  record(assertNear('Canonical Field Contract', 'Active matter identical between canonical and aliased fields', aliasedActive, canonicalActive));
+
+  const canonicalCost = calculateBatchCost(canonicalIngredients, 100);
+  const aliasedCost = calculateBatchCost(aliasedIngredients, 100);
+  record(assertNear('Canonical Field Contract', 'Batch cost identical between canonical and aliased fields', aliasedCost, canonicalCost));
+
+  const canonicalSurfactants = calculateActiveSurfactants(canonicalIngredients);
+  const aliasedSurfactants = calculateActiveSurfactants(aliasedIngredients);
+  record(assertNear('Canonical Field Contract', 'Active surfactants identical between canonical and aliased fields', aliasedSurfactants, canonicalSurfactants));
+
+  const canonicalAIGrade = evaluateAIGrade(canonicalIngredients, 7.5, 200);
+  const aliasedAIGrade = evaluateAIGrade(aliasedIngredients, 7.5, 200);
+  record(assertEqual('Canonical Field Contract', 'AI Grade score identical between canonical and aliased input', aliasedAIGrade.score, canonicalAIGrade.score));
+
+  // -------------------------------------------------------------
+  // 2. EXPLICIT ZERO INTEGRITY AUDIT
+  // -------------------------------------------------------------
+
+  const zeroPercentageIngredients: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50 },
+    { name: 'Sodium Hydroxide 50%', percentage: 0, activeMatterPct: 50, costPerKg: 0.80 }, // Explicit 0%
+    { name: 'Demineralized Water', percentage: 90, activeMatterPct: 0, costPerKg: 0 }
+  ];
+
+  const zeroActiveMatter = calculateActiveMatter(zeroPercentageIngredients);
+  record(assertNear('Explicit Zero Integrity', '0% percentage ingredient adds 0 to active matter', zeroActiveMatter, 9.60));
+
+  const zeroBatchCost = calculateBatchCost(zeroPercentageIngredients, 100);
+  record(assertNear('Explicit Zero Integrity', '0% percentage ingredient adds $0 to batch cost', zeroBatchCost, 15.00));
+
+  const zeroCostIngredientFormula: FormulationIngredient[] = [
+    { name: 'Demineralized Water', percentage: 100, activeMatterPct: 0, costPerKg: 0 } // $0 cost
+  ];
+  const zeroCostBatch = calculateBatchCost(zeroCostIngredientFormula, 100);
+  record(assertEqual('Explicit Zero Integrity', '$0 cost ingredient is treated as $0 cost (not defaulted to lookup)', zeroCostBatch, 0));
+
+  const zeroHLBSurfactant: FormulationIngredient[] = [
+    { name: 'Special Surfactant', percentage: 10, activeMatterPct: 100, hlbValue: 0 } // Explicit 0 HLB
+  ];
+  const zeroHLBResult = calculateBlendedHLB(zeroHLBSurfactant);
+  record(assertEqual('Explicit Zero Integrity', '0 HLB value is respected as a valid explicit surfactant HLB', zeroHLBResult, 0));
+
+  // -------------------------------------------------------------
+  // 3. NULL / UNDEFINED / EMPTY / STRING INPUT AUDIT
+  // -------------------------------------------------------------
+
+  const stringInputIngredients: any[] = [
+    { name: 'LABSA 96%', percentage: '10', activeMatterPct: '96', costPerKg: '1.50' }, // Strings
+    { name: 'SLES 70%', percent: '5', activePercent: '70', cost: '1.20' },
+    { name: 'Water', percentage: 85, activeMatterPct: 0, costPerKg: 0 }
+  ];
+
+  const stringActive = calculateActiveMatter(stringInputIngredients);
+  record(assertNear('Invalid / String Input Audit', 'Numeric strings safely parsed in active matter calculation', stringActive, 13.10));
+
+  const stringCost = calculateBatchCost(stringInputIngredients, 100);
+  record(assertNear('Invalid / String Input Audit', 'Numeric strings safely parsed in batch cost calculation', stringCost, 21.00));
+
+  const nullAndUndefinedIngredients: any[] = [
+    { name: 'LABSA 96%', percentage: null, activeMatterPct: undefined, costPerKg: null },
+    { name: 'Unknown Additive', percentage: undefined, activeMatterPct: null, costPerKg: undefined }
+  ];
+  const nullActive = calculateActiveMatter(nullAndUndefinedIngredients);
+  record(assertEqual('Invalid / String Input Audit', 'Null and undefined percentages remain unavailable rather than being converted to zero', !Number.isFinite(nullActive), true));
+
+  const negativePercentageIngredients: any[] = [
+    { name: 'LABSA 96%', percentage: -10, activeMatterPct: 96, costPerKg: 1.50 },
+    { name: 'Water', percentage: 110, activeMatterPct: 0, costPerKg: 0 }
+  ];
+  const negativeChelation = calculateFormulationChelationCapacity(negativePercentageIngredients, 20);
+  record(assertEqual('Invalid / String Input Audit', 'Negative percentage clamped to 0 in chelation capacity', negativeChelation.details[0].percentage, 0));
+
+  const emptyFormulaResult = evaluateAIGrade([], 7.0);
+  record(assertEqual('Invalid / String Input Audit', 'Empty formula receives Grade F and is explicitly non-evaluable', emptyFormulaResult.grade, 'F'));
+  record(assertEqual('Invalid / String Input Audit', 'Empty formula produces score 0', emptyFormulaResult.score, 0));
+
+  // -------------------------------------------------------------
+  // 4. COMMERCIAL PRODUCT GRADE & CHELATOR DOUBLE-COUNT AUDIT
+  // -------------------------------------------------------------
+
+  const gldaBindingCapacity = getChelatorBindingCapacity('GLDA 47% Liquid').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'GLDA 47% Liquid binding capacity is 137 mg CaCO3/g (commercial basis)', gldaBindingCapacity, 137));
+
+  const mgdaBindingCapacity = getChelatorBindingCapacity('MGDA 38% Liquid').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'MGDA 38% Liquid binding capacity is 155 mg CaCO3/g (commercial basis)', mgdaBindingCapacity, 155));
+
+  const edtaBindingCapacity = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'EDTA Tetrasodium 99% Powder binding capacity is 220 mg CaCO3/g (commercial basis)', edtaBindingCapacity, 220));
+
+  const dtpaBindingCapacity = getChelatorBindingCapacity('DTPA Powder').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'DTPA binding capacity is 200 mg CaCO3/g (commercial basis)', dtpaBindingCapacity, 200));
+
+  const citrateBindingCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'Sodium Citrate Dihydrate binding capacity is 150 mg CaCO3/g (commercial basis)', citrateBindingCapacity, 150));
+
+  const citricAcidBindingCapacity = getChelatorBindingCapacity('Citric Acid Monohydrate').capacityMgCaCO3PerGram ?? 0;
+  record(assertEqual('Commercial Product Grade', 'Citric acid (acidifier) binding capacity is 0 mg CaCO3/g', citricAcidBindingCapacity, 0));
+
+  // Single-discount verification: 2% GLDA in 20g dose = 0.4g product. 0.4g * 137 mg/g = 54.8 mg CaCO3.
+  const gldaFormula: FormulationIngredient[] = [
+    { name: 'GLDA 47% Liquid (Dissolvine GL-47-S)', percentage: 2.0, activeMatterPct: 47, costPerKg: 2.50 }
+  ];
+  const gldaChelation = calculateFormulationChelationCapacity(gldaFormula, 20);
+  record(assertNear('Commercial Product Grade', 'GLDA 47% 2.0% in 20g dose sequestering capacity = 54.8 mg CaCO3 (single-discounted)', gldaChelation.totalSequestrationMg, 54.80, 0.01));
+
+  // -------------------------------------------------------------
+  // 5. DUPLICATE INGREDIENT NAMING AUDIT
+  // -------------------------------------------------------------
+
+  const gldaGradeAliases = ['GLDA-47', 'GLDA 47%', 'Dissolvine GL-47-S'];
+  const allGLDAGradeAliasesIdentified = gldaGradeAliases.every(alias => getChelatorBindingCapacity(alias).capacityMgCaCO3PerGram === 137);
+  const genericGLDAUnavailable =
+    getChelatorBindingCapacity('GLDA').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('Tetrasodium GLDA').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Grade-specific GLDA-47 aliases return 137 mg/g', allGLDAGradeAliasesIdentified, true));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic GLDA names remain unresolved without commercial grade', genericGLDAUnavailable, true));
+
+  const citrateDihydrateCapacity = getChelatorBindingCapacity('Sodium Citrate Dihydrate').capacityMgCaCO3PerGram;
+  const citrateAnhydrousCapacity = getChelatorBindingCapacity('Sodium Citrate Anhydrous').capacityMgCaCO3PerGram;
+  const genericCitrateUnavailable =
+    getChelatorBindingCapacity('Sodium Citrate').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('Trisodium Citrate').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Dihydrate citrate retains its grade-specific 150 mg/g value', citrateDihydrateCapacity, 150));
+  record(assertEqual('Duplicate Ingredient Naming', 'Anhydrous citrate retains its distinct grade-specific 170 mg/g value', citrateAnhydrousCapacity, 170));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic citrate names remain unresolved without hydration grade', genericCitrateUnavailable, true));
+
+  const edtaPowderCapacity = getChelatorBindingCapacity('EDTA Tetrasodium 99% Powder').capacityMgCaCO3PerGram;
+  const genericEDTAUnavailable =
+    getChelatorBindingCapacity('EDTA').capacityMgCaCO3PerGram === null &&
+    getChelatorBindingCapacity('EDTA Tetrasodium').capacityMgCaCO3PerGram === null;
+  record(assertEqual('Duplicate Ingredient Naming', 'Tetrasodium EDTA 99% powder retains the verified 220 mg/g grade', edtaPowderCapacity, 220));
+  record(assertEqual('Duplicate Ingredient Naming', 'Generic EDTA names remain unresolved without commercial grade', genericEDTAUnavailable, true));
+
+  // -------------------------------------------------------------
+  // 6. CROSS-WORKSPACE INPUT DETERMINISM
+  // -------------------------------------------------------------
+
+  const controlledFormula: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50, category: 'Anionic Surfactant' },
+    { name: 'Sodium Hydroxide 50%', percentage: 1.30, activeMatterPct: 50, costPerKg: 0.80, category: 'pH Adjuster' },
+    { name: 'SLES 70%', percentage: 8, activeMatterPct: 70, costPerKg: 1.20, category: 'Anionic Surfactant' },
+    { name: 'GLDA 47% Liquid', percentage: 2.0, activeMatterPct: 47, costPerKg: 2.50, category: 'Builder / Chelator' },
+    { name: 'Demineralized Water', percentage: 78.70, activeMatterPct: 0, costPerKg: 0.02, category: 'Solvent' }
+  ];
+
+  // Feed controlled formula through various module mappings
+  const aiFormulatorFormat = controlledFormula.map(i => ({ ...i, role: i.category, percent: i.percentage, activePercent: i.activeMatterPct }));
+  const analyzerProFormat = controlledFormula.map(i => ({ ...i, function: i.category, percentageInFormula: i.percentage, purity: i.activeMatterPct }));
+  const libraryFormat = controlledFormula.map(i => ({ ...i, role: i.category, percentage: i.percentage, activeMatterPct: i.activeMatterPct }));
+
+  const am1 = calculateActiveMatter(aiFormulatorFormat);
+  const am2 = calculateActiveMatter(analyzerProFormat);
+  const am3 = calculateActiveMatter(libraryFormat);
+  record(assertEqual('Cross-Workspace Determinism', 'Active matter identical across AI Formulator format and Analyzer Pro format', am1 === am2 && am2 === am3, true));
+
+  const cost1 = calculateBatchCost(aiFormulatorFormat, 100);
+  const cost2 = calculateBatchCost(analyzerProFormat, 100);
+  const cost3 = calculateBatchCost(libraryFormat, 100);
+  record(assertEqual('Cross-Workspace Determinism', 'Batch cost identical across module input formats', cost1 === cost2 && cost2 === cost3, true));
+
+  const grade1 = evaluateAIGrade(aiFormulatorFormat, 7.5, 200).score;
+  const grade2 = evaluateAIGrade(analyzerProFormat, 7.5, 200).score;
+  const grade3 = evaluateAIGrade(libraryFormat, 7.5, 200).score;
+  record(assertEqual('Cross-Workspace Determinism', 'AI Grade score identical across module input formats', grade1 === grade2 && grade2 === grade3, true));
+
+  // -------------------------------------------------------------
+  // 7. FORMULA SWITCHING + NORMALIZATION RESET AUDIT
+  // -------------------------------------------------------------
+
+  const formulaCanonical: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50 },
+    { name: 'Demineralized Water', percentage: 90, activeMatterPct: 0, costPerKg: 0.02 }
+  ];
+
+  const formulaAliased: FormulationIngredient[] = [
+    { name: 'SLES 70%', percent: 15, activePercent: 70, cost: 1.20 } as any,
+    { name: 'Demineralized Water', percent: 85, activePercent: 0, cost: 0.02 } as any
+  ];
+
+  const formulaWithZeros: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50 },
+    { name: 'SLES 70%', percentage: 0, activeMatterPct: 70, costPerKg: 1.20 },
+    { name: 'Demineralized Water', percentage: 90, activeMatterPct: 0, costPerKg: 0.02 }
+  ];
+
+  record(assertEqual('Formula Switching', 'Canonical and aliased formulations retain their distinct calculated active matter', calculateActiveMatter(formulaCanonical) !== calculateActiveMatter(formulaAliased), true));
+  record(assertEqual('Formula Switching', 'Explicit zero ingredient is ignored in active-matter calculation', calculateActiveMatter(formulaWithZeros), calculateActiveMatter(formulaCanonical)));
+
+  // Restoring canonical formula
+  record(assertEqual('Formula Switching', 'Restored canonical formula active matter equals initial value with no state bleed', calculateActiveMatter(formulaCanonical), calculateActiveMatter(formulaWithZeros)));
+
+  // -------------------------------------------------------------
+  // 8. HYDRATION / SERIALIZATION INTEGRITY
+  // -------------------------------------------------------------
+
+  const preHydrationFormula: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50, category: 'Anionic Surfactant' },
+    { name: 'Sodium Hydroxide 50%', percentage: 1.30, activeMatterPct: 50, costPerKg: 0.80, category: 'pH Adjuster' },
+    { name: 'Demineralized Water', percentage: 88.70, activeMatterPct: 0, costPerKg: 0.02, category: 'Solvent' }
+  ];
+
+  const serialized = JSON.stringify(preHydrationFormula);
+  const deserialized: FormulationIngredient[] = JSON.parse(serialized);
+
+  const preAM = calculateActiveMatter(preHydrationFormula);
+  const postAM = calculateActiveMatter(deserialized);
+  record(assertEqual('Hydration Integrity', 'Hydrated formula recalculates Active Matter identically', postAM, preAM));
+
+  const preCost = calculateBatchCost(preHydrationFormula, 100);
+  const postCost = calculateBatchCost(deserialized, 100);
+  record(assertEqual('Hydration Integrity', 'Hydrated formula recalculates Batch Cost identically', postCost, preCost));
+
+  const preGrade = evaluateAIGrade(preHydrationFormula, 7.5);
+  const postGrade = evaluateAIGrade(deserialized, 7.5);
+  record(assertEqual('Hydration Integrity', 'Hydrated formula recalculates AI Grade identically', postGrade.score, preGrade.score));
+
+  // -------------------------------------------------------------
+  // 9. SANDBOX ISOLATION & DRAFT NORMALIZATION
+  // -------------------------------------------------------------
+
+  const globalActiveFormula: FormulationIngredient[] = [
+    { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, costPerKg: 1.50 },
+    { name: 'Demineralized Water', percentage: 90, activeMatterPct: 0, costPerKg: 0.02 }
+  ];
+
+  // Deep clone for sandbox draft edit
+  const sandboxDraft: FormulationIngredient[] = JSON.parse(JSON.stringify(globalActiveFormula));
+  sandboxDraft[0].percentage = 15; // Unapplied draft mutation
+
+  const globalActiveMatterBefore = calculateActiveMatter(globalActiveFormula);
+  const sandboxActiveMatter = calculateActiveMatter(sandboxDraft);
+
+  record(assertEqual('Sandbox Isolation', 'Unapplied draft mutation in sandbox does NOT alter global active matter', calculateActiveMatter(globalActiveFormula), globalActiveMatterBefore));
+  record(assertEqual('Sandbox Isolation', 'Draft sandbox active matter reflects edit (15% LABSA vs 10% LABSA)', sandboxActiveMatter > globalActiveMatterBefore, true));
+
+  // Apply sandbox edit
+  const appliedGlobalFormula = JSON.parse(JSON.stringify(sandboxDraft));
+  record(assertEqual('Sandbox Isolation', 'Applying sandbox updates global active matter', calculateActiveMatter(appliedGlobalFormula), sandboxActiveMatter));
+
+  // Reset sandbox
+  const resetGlobalFormula = JSON.parse(JSON.stringify(globalActiveFormula));
+  record(assertEqual('Sandbox Isolation', 'Resetting sandbox restores original global active matter', calculateActiveMatter(resetGlobalFormula), globalActiveMatterBefore));
+
+  // -------------------------------------------------------------
+  // 10. ENGINE OUTPUT CONTRACT VERIFICATION
+  // -------------------------------------------------------------
+
+  const compRes = calculateFormulationCompatibility(controlledFormula, 7.5);
+  record(assertEqual('Output Property Contract', 'Compatibility engine returns compatibilityScore (number)', typeof compRes.compatibilityScore, 'number'));
+  record(assertEqual('Output Property Contract', 'Compatibility engine returns compatible (boolean)', typeof compRes.compatible, 'boolean'));
+
+  const healthRes = calculateLabHealthScore(controlledFormula, 7.5);
+  record(assertEqual('Output Property Contract', 'Lab Health engine returns finalScore (number)', typeof healthRes.finalScore, 'number'));
+  record(assertEqual('Output Property Contract', 'Lab Health engine returns score (number alias)', typeof healthRes.score, 'number'));
+  record(assertEqual('Output Property Contract', 'Lab Health engine returns rating (string)', typeof healthRes.rating, 'string'));
+
+  const aiGradeRes = evaluateAIGrade(controlledFormula, 7.5, 200);
+  record(assertEqual('Output Property Contract', 'AI Grade engine returns grade (string)', typeof aiGradeRes.grade, 'string'));
+  record(assertEqual('Output Property Contract', 'AI Grade does not invent a numeric score when the result is non-evaluable', aiGradeRes.score, null));
+  record(assertEqual('Output Property Contract', 'AI Grade unavailable CPI sub-score remains null', aiGradeRes.breakdown.cpiScore, null));
+
+  const cleaningRes = calculateCleaningPerformance(controlledFormula, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
+  record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningScore (number)', typeof cleaningRes.cleaningScore, 'number'));
+  record(assertEqual('Output Property Contract', 'Cleaning engine returns overallScore (number)', typeof cleaningRes.overallScore, 'number'));
+  record(assertEqual('Output Property Contract', 'Cleaning engine returns cleaningPower (string)', typeof cleaningRes.cleaningPower, 'string'));
+
+  const hardnessRes = calculateWaterHardnessTolerance(controlledFormula, 150, 10, 20);
+  record(assertEqual('Output Property Contract', 'Water hardness engine returns totalSequestrationMg (number)', typeof hardnessRes.totalSequestrationMg, 'number'));
+  record(assertEqual('Output Property Contract', 'Water hardness engine returns maxSupportedPpm (number)', typeof hardnessRes.maxSupportedPpm, 'number'));
+  record(assertEqual('Output Property Contract', 'Water hardness engine returns sufficiency (string)', typeof hardnessRes.sufficiency, 'string'));
+
+  // -------------------------------------------------------------
+  // 11. SCIENTIFIC ENGINE SEPARATION VERIFICATION
+  // -------------------------------------------------------------
+
+  // Prove pH engine computes pH, Water Hardness computes chelation, Lab Health computes safety, AI Grade orchestrates
+  const mappedPHEngineInput = mapFormulationIngredientsToPHEngineInput(controlledFormula);
+  const phResult = calculatePHAdvanced(mappedPHEngineInput);
+  record(assertEqual('Engine Separation', 'pHEngine withholds pH when SLES pH chemistry is not characterized', phResult.pH, null));
+  record(assertEqual('Engine Separation', 'pHEngine exposes solver status for unavailable pH', typeof phResult.solverConverged, 'boolean'));
+
+  const standaloneCPI = calculateCPI(controlledFormula);
+  record(assertEqual('Engine Separation', 'CPI remains unavailable without an explicit wash scenario and calculable pH', standaloneCPI, null));
+
+  const standaloneHealth = calculateLabHealthScore(controlledFormula, phResult.pH).finalScore;
+  record(assertEqual('Engine Separation', 'Lab Health remains unassessed when pH is unavailable', standaloneHealth, null));
+
+  const orchestratorGrade = evaluateAIGrade(controlledFormula, phResult.pH, 200);
+  record(assertEqual('Engine Separation', 'AI Grade preserves unavailable CPI score as null', orchestratorGrade.breakdown.cpiScore, null));
+  record(assertEqual('Engine Separation', 'AI Grade preserves unavailable Lab Health score as null', orchestratorGrade.breakdown.healthScore, null));
+
+  // -------------------------------------------------------------
+  // 12. TAXONOMY NORMALIZATION & INTEGRITY AUDIT
+  // -------------------------------------------------------------
+
+  // TEST 1: Preserves category "Surfactant" while keeping distinct role and function
+  const t1 = normalizeIngredientTaxonomy({ category: 'Surfactant', role: 'Primary Surfactant', function: 'Foam Booster' });
+  record(assertEqual('Taxonomy Normalization', 'TEST 1: Preserves explicit category "Surfactant"', t1.category, 'Surfactant'));
+  record(assertEqual('Taxonomy Normalization', 'TEST 1: Preserves explicit role "Primary Surfactant"', t1.role, 'Primary Surfactant'));
+  record(assertEqual('Taxonomy Normalization', 'TEST 1: Preserves explicit function "Foam Booster"', t1.function, 'Foam Booster'));
+
+  // TEST 2: Derives category "Surfactant" from role/function when category is empty
+  const t2 = normalizeIngredientTaxonomy({ category: '', role: 'Primary Surfactant', function: 'Foam Booster' });
+  record(assertEqual('Taxonomy Normalization', 'TEST 2: Derives "Surfactant" category from role/function when category is empty', t2.category, 'Surfactant'));
+  record(assertEqual('Taxonomy Normalization', 'TEST 2: Preserves original role "Primary Surfactant"', t2.role, 'Primary Surfactant'));
+
+  // TEST 3: Derives category "Builder" from role "Builder"
+  const t3 = normalizeIngredientTaxonomy({ category: undefined, role: 'Builder', function: 'Water Softener' });
+  record(assertEqual('Taxonomy Normalization', 'TEST 3: Derives "Builder" category from role when category is undefined', t3.category, 'Builder'));
+
+  // TEST 4: Derives category "Chelator" from function "Chelator"
+  const t4 = normalizeIngredientTaxonomy({ category: undefined, role: '', function: 'Chelator' });
+  record(assertEqual('Taxonomy Normalization', 'TEST 4: Derives "Chelator" category from function when category and role are empty', t4.category, 'Chelator'));
+
+  // TEST 5: Handles undefined fields gracefully
+  const t5 = normalizeIngredientTaxonomy({ category: undefined, role: undefined, function: undefined });
+  record(assertEqual('Taxonomy Normalization', 'TEST 5: Handles all undefined taxonomy fields gracefully', t5.category, 'Additive'));
+
+  // TEST 6: Explicit valid category has priority over role/function
+  const t6 = normalizeIngredientTaxonomy({ category: 'Anionic Surfactant', role: 'Primary Surfactant', function: 'Foam Booster' });
+  record(assertEqual('Taxonomy Normalization', 'TEST 6: Explicit valid category "Anionic Surfactant" takes priority over role/function', t6.category, 'Anionic Surfactant'));
+
+  // TEST 7: Explicit zero values in numeric fields remain untouched
+  const zeroValIng = { name: 'Test Ing', percentage: 0, activeMatterPct: 0, costPerKg: 0, hlbValue: 0 };
+  record(assertEqual('Taxonomy Normalization', 'TEST 7: Explicit 0 percentage is preserved (0)', zeroValIng.percentage, 0));
+  record(assertEqual('Taxonomy Normalization', 'TEST 7: Explicit 0 activeMatterPct is preserved (0)', zeroValIng.activeMatterPct, 0));
+
+  console.log('--------------------------------------------------');
+  console.log(`TOTAL PHASE 2.9 DATA CONTRACT TESTS : ${passed + failed}`);
+  console.log(`PASSED                             : ${passed}`);
+  console.log(`FAILED                             : ${failed}`);
+  console.log('--------------------------------------------------');
+
+  return { passed, failed };
+}

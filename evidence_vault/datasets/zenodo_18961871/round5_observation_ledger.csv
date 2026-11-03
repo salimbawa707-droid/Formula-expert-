@@ -1,0 +1,11 @@
+filename,sheet_name,used_range_rows,header_rows,metadata_rows,blank_rows,numeric_rows,numeric_cells
+Supplementary_FilmThickness_v1.xlsx,Data,2396,0,2,0,2383,22586
+Supplementary_BubbleSizes_v1.xlsx,20min,4407,0,2,0,4405,26776
+Supplementary_BubbleSizes_v1.xlsx,30min,2386,0,2,0,2384,12242
+Supplementary_RheometerData_v2.xlsx,Contents,7,2,5,0,0,0
+Supplementary_RheometerData_v2.xlsx,AmpSwps_all,301,1,1,11,276,2760
+Supplementary_RheometerData_v2.xlsx,FrqSwps_all,241,1,1,14,210,2100
+Supplementary_RheometerData_v2.xlsx,FoamD_AmpSwpTest,201,1,1,7,184,1840
+Supplementary_RheometerData_v2.xlsx,FoamA_SteadyYield,92,1,1,2,85,680
+Supplementary_RheometerData_v2.xlsx,SteadyShear_5,733,1,1,11,708,5664
+Supplementary_RheometerData_v2.xlsx,SteadyShear_1,733,1,1,11,708,5664

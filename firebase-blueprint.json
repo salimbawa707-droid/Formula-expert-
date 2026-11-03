@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile representation in Firestore",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "email"]
+    },
+    "UserFormula": {
+      "title": "UserFormula",
+      "description": "Formulation recipe saved by user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "productType": { "type": "string", "maxLength": 128 },
+        "grade": { "type": "string", "maxLength": 64 },
+        "batchSizeKg": { "type": "number" },
+        "targetCost": { "type": "number" },
+        "targetPH": { "type": "number" },
+        "ingredients": { "type": "array" },
+        "notes": { "type": "string", "maxLength": 4096 },
+        "status": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "name"]
+    },
+    "UserTrial": {
+      "title": "UserTrial",
+      "description": "Lab trial notebook entry saved by user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "formulaId": { "type": "string", "maxLength": 128 },
+        "observations": { "type": "string", "maxLength": 8192 },
+        "measuredPH": { "type": "number" },
+        "measuredViscosityCp": { "type": "number" },
+        "stabilityVerdict": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document restricted to the authenticated user"
+    },
+    "/users/{userId}/formulas/{formulaId}": {
+      "schema": "UserFormula",
+      "description": "Formulations created and owned by the authenticated user"
+    },
+    "/users/{userId}/trials/{trialId}": {
+      "schema": "UserTrial",
+      "description": "Lab trial entries created and owned by the authenticated user"
+    }
+  }
+}

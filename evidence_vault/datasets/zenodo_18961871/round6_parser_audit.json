@@ -1,0 +1,4250 @@
+{
+  "additional_source_files": [
+    {
+      "filename": "Microscope_Images.zip",
+      "local_bytes_obtained": false,
+      "reason": "Large image archive was outside the tabular XLSX parser run; source metadata only, no local checksum or ZIP validation performed.",
+      "repository_search": "not found as a tracked dataset artifact in the queried repository search",
+      "source_url": "https://zenodo.org/api/records/18961871/files/Microscope_Images.zip/content",
+      "status": "NOT_DOWNLOADED",
+      "zenodo_md5": "b0ae3ce3c90f074361e4f72c9230a5f6",
+      "zenodo_size_bytes": 895495945
+    }
+  ],
+  "audit_id": "zenodo-18961871-xlsx-parser-audit-round6",
+  "audit_type": "read_only_xlsx_integrity_and_structure",
+  "files": [
+    {
+      "checks_run": [
+        {
+          "check": "file_present",
+          "result": "PASS"
+        },
+        {
+          "check": "size_and_hashes",
+          "result": "PASS"
+        },
+        {
+          "check": "zip_crc_and_required_xlsx_parts",
+          "result": "PASS"
+        },
+        {
+          "check": "openpyxl_load_workbook",
+          "result": "PASS"
+        }
+      ],
+      "expected_repository_md5": "cd5bfd6e95fc65e412807d53935c2d96",
+      "expected_repository_sha256": "90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590",
+      "expected_repository_size_bytes": 22280,
+      "filename": "Supplementary_SolutionFlowCurves.xlsx",
+      "md5": "cd5bfd6e95fc65e412807d53935c2d96",
+      "parser": {
+        "result": "PASS",
+        "sheet_count": 1,
+        "sheets": [
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 309,
+              "numeric": 1470,
+              "text": 29
+            },
+            "dimension": "A1:H226",
+            "duplicate_full_row_excess_count_including_blank_cells": 1,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  null,
+                  "Point No.",
+                  "Time",
+                  "Shear Rate",
+                  "Shear Stress",
+                  "Viscosity",
+                  "Torque",
+                  "Temperature"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  "[-]",
+                  "[s]",
+                  "[s-1]",
+                  "[Pa]",
+                  "[Pa s]",
+                  "[N m]",
+                  "[C]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "Water_1",
+                  1,
+                  60,
+                  1,
+                  0.0010426,
+                  0.0010428,
+                  5.5356e-08,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  76,
+                  1.26,
+                  0.0011914,
+                  0.00094608,
+                  6.3253e-08,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  180,
+                  1.58,
+                  0.0014623,
+                  0.00092258,
+                  7.7634e-08,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  240,
+                  2,
+                  0.0020282,
+                  0.0010164,
+                  1.0768e-07,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  300,
+                  2.51,
+                  0.0025492,
+                  0.0010148,
+                  1.3534e-07,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  316,
+                  3.16,
+                  0.0030353,
+                  0.00095959,
+                  1.6115e-07,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  420,
+                  3.98,
+                  0.0040207,
+                  0.0010099,
+                  2.1347e-07,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  480,
+                  5.01,
+                  0.0051,
+                  0.0010175,
+                  2.7077e-07,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  540,
+                  6.31,
+                  0.0062958,
+                  0.00099774,
+                  3.3426e-07,
+                  20
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  600,
+                  7.94,
+                  0.0081175,
+                  0.0010219,
+                  4.3098e-07,
+                  20
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 8,
+            "max_row": 226,
+            "merged_ranges": [],
+            "name": "SolutionFlowCurves",
+            "non_finite_values": [],
+            "nonempty_row_count": 212,
+            "rows_with_numeric_values": 210,
+            "state": "visible"
+          }
+        ]
+      },
+      "repo_expected_md5_match": true,
+      "repo_expected_sha256_match": true,
+      "repo_expected_size_match": true,
+      "repository_path": "evidence_vault/datasets/zenodo_18961871/Supplementary_SolutionFlowCurves.xlsx",
+      "sha256": "90ee8648151c2df423355650db1f82420317a53d4d3de1717ea9d4b34b61d590",
+      "size_bytes": 22280,
+      "source_metadata_md5": "cd5bfd6e95fc65e412807d53935c2d96",
+      "source_url": "https://zenodo.org/api/records/18961871/files/Supplementary_SolutionFlowCurves.xlsx/content",
+      "status": "PARSED",
+      "status_reason": "All source identity, ZIP integrity, and XLSX parser checks passed",
+      "zenodo_md5_match": true,
+      "zip": {
+        "all_member_crcs_pass": true,
+        "first_bad_member": null,
+        "is_zip": true,
+        "member_count": 12,
+        "missing_required_parts": [],
+        "parts": [
+          "[Content_Types].xml",
+          "_rels/.rels",
+          "docProps/app.xml",
+          "docProps/core.xml",
+          "xl/_rels/workbook.xml.rels",
+          "xl/printerSettings/printerSettings1.bin",
+          "xl/sharedStrings.xml",
+          "xl/styles.xml",
+          "xl/theme/theme1.xml",
+          "xl/workbook.xml",
+          "xl/worksheets/_rels/sheet1.xml.rels",
+          "xl/worksheets/sheet1.xml"
+        ],
+        "required_parts_present": true
+      }
+    },
+    {
+      "checks_run": [
+        {
+          "check": "file_present",
+          "result": "PASS"
+        },
+        {
+          "check": "size_and_hashes",
+          "result": "PASS"
+        },
+        {
+          "check": "zip_crc_and_required_xlsx_parts",
+          "result": "PASS"
+        },
+        {
+          "check": "openpyxl_load_workbook",
+          "result": "PASS"
+        }
+      ],
+      "expected_repository_md5": "bc9582baafecd6552f6014216a0844e6",
+      "expected_repository_sha256": "170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428",
+      "expected_repository_size_bytes": 149923,
+      "filename": "Supplementary_FilmThickness_v1.xlsx",
+      "md5": "bc9582baafecd6552f6014216a0844e6",
+      "parser": {
+        "result": "PASS",
+        "sheet_count": 1,
+        "sheets": [
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 22746,
+              "formula": 146,
+              "numeric": 22594,
+              "text": 38
+            },
+            "dimension": "A1:S2396",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 1,
+                "values": [
+                  "Foam A",
+                  null,
+                  null,
+                  "Foam B",
+                  null,
+                  null,
+                  "Foam C",
+                  null,
+                  null,
+                  "Foam D",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 2,
+                "values": [
+                  "Image",
+                  "Number",
+                  "Length_px",
+                  "Image",
+                  "Number",
+                  "Length_px",
+                  "Image",
+                  "Number",
+                  "Length_px",
+                  "Image",
+                  "Number",
+                  "Length_px",
+                  null,
+                  null,
+                  "Film thickness (um)",
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  1,
+                  1,
+                  24.413,
+                  1,
+                  1,
+                  19.849,
+                  1,
+                  1,
+                  78.237,
+                  1,
+                  1,
+                  30.463,
+                  null,
+                  "Foam",
+                  "Median",
+                  "IQR",
+                  "Mean",
+                  "SD",
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "f",
+                  "f",
+                  "f",
+                  "f",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  1,
+                  2,
+                  29.206,
+                  1,
+                  2,
+                  21.024,
+                  1,
+                  2,
+                  18.028,
+                  1,
+                  2,
+                  19.026,
+                  null,
+                  "A",
+                  "=1000*MEDIAN($C:$C)/1095",
+                  "=1000*(QUARTILE($C:$C,3)-QUARTILE($C:$C,1))/1095",
+                  "=1000*AVERAGE($C:$C)/1095",
+                  "=1000*STDEV($C:$C)/1095",
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "f",
+                  "f",
+                  "f",
+                  "f",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  1,
+                  3,
+                  24.331,
+                  1,
+                  3,
+                  17.889,
+                  1,
+                  3,
+                  18.439,
+                  1,
+                  3,
+                  18.028,
+                  null,
+                  "B",
+                  "=1000*MEDIAN($F:$F)/1095",
+                  "=1000*(QUARTILE($F:$F,3)-QUARTILE($F:$F,1))/1095",
+                  "=1000*AVERAGE($F:$F)/1095",
+                  "=1000*STDEV($F:$F)/1095",
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "f",
+                  "f",
+                  "f",
+                  "f",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  1,
+                  4,
+                  28.653,
+                  1,
+                  4,
+                  20.616,
+                  1,
+                  4,
+                  19.416,
+                  1,
+                  4,
+                  18.385,
+                  null,
+                  "C",
+                  "=1000*MEDIAN($I:$I)/1095",
+                  "=1000*(QUARTILE($I:$I,3)-QUARTILE($I:$I,1))/1095",
+                  "=1000*AVERAGE($I:$I)/1095",
+                  "=1000*STDEV($I:$I)/1095",
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "f",
+                  "f",
+                  "f",
+                  "f",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  1,
+                  5,
+                  32.65,
+                  1,
+                  5,
+                  20.248,
+                  1,
+                  5,
+                  23.345,
+                  1,
+                  5,
+                  25.942,
+                  null,
+                  "D",
+                  "=1000*MEDIAN($L:$L)/1095",
+                  "=1000*(QUARTILE($L:$L,3)-QUARTILE($L:$L,1))/1095",
+                  "=1000*AVERAGE($L:$L)/1095",
+                  "=1000*STDEV($L:$L)/1095",
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  1,
+                  6,
+                  22,
+                  1,
+                  6,
+                  20.125,
+                  1,
+                  6,
+                  26.926,
+                  1,
+                  6,
+                  25.495,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  1,
+                  7,
+                  27.295,
+                  1,
+                  7,
+                  20.025,
+                  1,
+                  7,
+                  25.08,
+                  1,
+                  7,
+                  23.087,
+                  null,
+                  "Scale:",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  1,
+                  8,
+                  36.401,
+                  1,
+                  8,
+                  18.868,
+                  1,
+                  8,
+                  47.854,
+                  1,
+                  8,
+                  24.352,
+                  null,
+                  1095,
+                  "px",
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  1,
+                  9,
+                  28.284,
+                  1,
+                  9,
+                  21.401,
+                  1,
+                  9,
+                  44.102,
+                  1,
+                  9,
+                  23.77,
+                  null,
+                  1,
+                  "mm",
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  1,
+                  10,
+                  35.805,
+                  1,
+                  10,
+                  20.125,
+                  1,
+                  10,
+                  32.558,
+                  1,
+                  10,
+                  29.206,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              }
+            ],
+            "formula_count": 146,
+            "formula_samples": [
+              {
+                "cell": "O4",
+                "formula": "=1000*MEDIAN($C:$C)/1095"
+              },
+              {
+                "cell": "P4",
+                "formula": "=1000*(QUARTILE($C:$C,3)-QUARTILE($C:$C,1))/1095"
+              },
+              {
+                "cell": "Q4",
+                "formula": "=1000*AVERAGE($C:$C)/1095"
+              },
+              {
+                "cell": "R4",
+                "formula": "=1000*STDEV($C:$C)/1095"
+              },
+              {
+                "cell": "O5",
+                "formula": "=1000*MEDIAN($F:$F)/1095"
+              },
+              {
+                "cell": "P5",
+                "formula": "=1000*(QUARTILE($F:$F,3)-QUARTILE($F:$F,1))/1095"
+              },
+              {
+                "cell": "Q5",
+                "formula": "=1000*AVERAGE($F:$F)/1095"
+              },
+              {
+                "cell": "R5",
+                "formula": "=1000*STDEV($F:$F)/1095"
+              },
+              {
+                "cell": "O6",
+                "formula": "=1000*MEDIAN($I:$I)/1095"
+              },
+              {
+                "cell": "P6",
+                "formula": "=1000*(QUARTILE($I:$I,3)-QUARTILE($I:$I,1))/1095"
+              },
+              {
+                "cell": "Q6",
+                "formula": "=1000*AVERAGE($I:$I)/1095"
+              },
+              {
+                "cell": "R6",
+                "formula": "=1000*STDEV($I:$I)/1095"
+              },
+              {
+                "cell": "O7",
+                "formula": "=1000*MEDIAN($L:$L)/1095"
+              },
+              {
+                "cell": "P7",
+                "formula": "=1000*(QUARTILE($L:$L,3)-QUARTILE($L:$L,1))/1095"
+              },
+              {
+                "cell": "Q7",
+                "formula": "=1000*AVERAGE($L:$L)/1095"
+              },
+              {
+                "cell": "R7",
+                "formula": "=1000*STDEV($L:$L)/1095"
+              },
+              {
+                "cell": "O15",
+                "formula": "=1000*N15/1095"
+              },
+              {
+                "cell": "P15",
+                "formula": "=COUNTIFS(C:C,\">=\"&$N15,C:C,\"<\"&$N16)/2350"
+              },
+              {
+                "cell": "Q15",
+                "formula": "=COUNTIFS(F:F,\">=\"&$N15,F:F,\"<\"&$N16)/1465"
+              },
+              {
+                "cell": "R15",
+                "formula": "=COUNTIFS(I:I,\">=\"&$N15,I:I,\"<\"&$N16)/2394"
+              }
+            ],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 19,
+            "max_row": 2396,
+            "merged_ranges": [
+              "A1:C1",
+              "D1:F1",
+              "G1:I1",
+              "J1:L1",
+              "P13:S13"
+            ],
+            "name": "Data",
+            "non_finite_values": [],
+            "nonempty_row_count": 2396,
+            "rows_with_numeric_values": 2394,
+            "state": "visible"
+          }
+        ]
+      },
+      "repo_expected_md5_match": true,
+      "repo_expected_sha256_match": true,
+      "repo_expected_size_match": true,
+      "repository_path": "evidence_vault/datasets/zenodo_18961871/Supplementary_FilmThickness_v1.xlsx",
+      "sha256": "170eb18c3c17abab7a6f45aaf8fd8ddb59d6ad3c21b76c55a6e9390e57ff7428",
+      "size_bytes": 149923,
+      "source_metadata_md5": "bc9582baafecd6552f6014216a0844e6",
+      "source_url": "https://zenodo.org/api/records/18961871/files/Supplementary_FilmThickness_v1.xlsx/content",
+      "status": "PARSED",
+      "status_reason": "All source identity, ZIP integrity, and XLSX parser checks passed",
+      "zenodo_md5_match": true,
+      "zip": {
+        "all_member_crcs_pass": true,
+        "first_bad_member": null,
+        "is_zip": true,
+        "member_count": 20,
+        "missing_required_parts": [],
+        "parts": [
+          "[Content_Types].xml",
+          "_rels/.rels",
+          "docProps/app.xml",
+          "docProps/core.xml",
+          "xl/_rels/workbook.xml.rels",
+          "xl/calcChain.xml",
+          "xl/charts/_rels/chart1.xml.rels",
+          "xl/charts/chart1.xml",
+          "xl/charts/colors1.xml",
+          "xl/charts/style1.xml",
+          "xl/drawings/_rels/drawing1.xml.rels",
+          "xl/drawings/drawing1.xml",
+          "xl/persons/person.xml",
+          "xl/printerSettings/printerSettings1.bin",
+          "xl/sharedStrings.xml",
+          "xl/styles.xml",
+          "xl/theme/theme1.xml",
+          "xl/workbook.xml",
+          "xl/worksheets/_rels/sheet1.xml.rels",
+          "xl/worksheets/sheet1.xml"
+        ],
+        "required_parts_present": true
+      }
+    },
+    {
+      "checks_run": [
+        {
+          "check": "file_present",
+          "result": "PASS"
+        },
+        {
+          "check": "size_and_hashes",
+          "result": "PASS"
+        },
+        {
+          "check": "zip_crc_and_required_xlsx_parts",
+          "result": "PASS"
+        },
+        {
+          "check": "openpyxl_load_workbook",
+          "result": "PASS"
+        }
+      ],
+      "expected_repository_md5": "9fcfe68a37d2d92a7999569a07908854",
+      "expected_repository_sha256": "9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad",
+      "expected_repository_size_bytes": 557745,
+      "filename": "Supplementary_BubbleSizes_v1.xlsx",
+      "md5": "9fcfe68a37d2d92a7999569a07908854",
+      "parser": {
+        "result": "PASS",
+        "sheet_count": 2,
+        "sheets": [
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 8470,
+              "formula": 13388,
+              "numeric": 13388,
+              "text": 10
+            },
+            "dimension": "A1:H4407",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 1,
+                "values": [
+                  "Area (px)",
+                  null,
+                  null,
+                  null,
+                  "Radius (mm)",
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "A",
+                  "B",
+                  "C",
+                  "D"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 3,
+                "values": [
+                  500,
+                  16582,
+                  47,
+                  523,
+                  "=SQRT(A3/PI())/219",
+                  "=SQRT(B3/PI())/219",
+                  "=SQRT(C3/PI())/219",
+                  "=SQRT(D3/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 4,
+                "values": [
+                  4752,
+                  254,
+                  5594,
+                  36999,
+                  "=SQRT(A4/PI())/219",
+                  "=SQRT(B4/PI())/219",
+                  "=SQRT(C4/PI())/219",
+                  "=SQRT(D4/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 5,
+                "values": [
+                  661,
+                  15406,
+                  296,
+                  323,
+                  "=SQRT(A5/PI())/219",
+                  "=SQRT(B5/PI())/219",
+                  "=SQRT(C5/PI())/219",
+                  "=SQRT(D5/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 6,
+                "values": [
+                  170,
+                  4639,
+                  1563,
+                  7191,
+                  "=SQRT(A6/PI())/219",
+                  "=SQRT(B6/PI())/219",
+                  "=SQRT(C6/PI())/219",
+                  "=SQRT(D6/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 7,
+                "values": [
+                  6001,
+                  3356,
+                  10221,
+                  16599,
+                  "=SQRT(A7/PI())/219",
+                  "=SQRT(B7/PI())/219",
+                  "=SQRT(C7/PI())/219",
+                  "=SQRT(D7/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 8,
+                "values": [
+                  1583,
+                  310,
+                  3250,
+                  37325,
+                  "=SQRT(A8/PI())/219",
+                  "=SQRT(B8/PI())/219",
+                  "=SQRT(C8/PI())/219",
+                  "=SQRT(D8/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 9,
+                "values": [
+                  8116,
+                  2142,
+                  501,
+                  57660,
+                  "=SQRT(A9/PI())/219",
+                  "=SQRT(B9/PI())/219",
+                  "=SQRT(C9/PI())/219",
+                  "=SQRT(D9/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 10,
+                "values": [
+                  856,
+                  108,
+                  346,
+                  5094,
+                  "=SQRT(A10/PI())/219",
+                  "=SQRT(B10/PI())/219",
+                  "=SQRT(C10/PI())/219",
+                  "=SQRT(D10/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 11,
+                "values": [
+                  653,
+                  2558,
+                  326,
+                  5877,
+                  "=SQRT(A11/PI())/219",
+                  "=SQRT(B11/PI())/219",
+                  "=SQRT(C11/PI())/219",
+                  "=SQRT(D11/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 12,
+                "values": [
+                  1437,
+                  195,
+                  8872,
+                  236,
+                  "=SQRT(A12/PI())/219",
+                  "=SQRT(B12/PI())/219",
+                  "=SQRT(C12/PI())/219",
+                  "=SQRT(D12/PI())/219"
+                ]
+              }
+            ],
+            "formula_count": 13388,
+            "formula_samples": [
+              {
+                "cell": "E3",
+                "formula": "=SQRT(A3/PI())/219"
+              },
+              {
+                "cell": "F3",
+                "formula": "=SQRT(B3/PI())/219"
+              },
+              {
+                "cell": "G3",
+                "formula": "=SQRT(C3/PI())/219"
+              },
+              {
+                "cell": "H3",
+                "formula": "=SQRT(D3/PI())/219"
+              },
+              {
+                "cell": "E4",
+                "formula": "=SQRT(A4/PI())/219"
+              },
+              {
+                "cell": "F4",
+                "formula": "=SQRT(B4/PI())/219"
+              },
+              {
+                "cell": "G4",
+                "formula": "=SQRT(C4/PI())/219"
+              },
+              {
+                "cell": "H4",
+                "formula": "=SQRT(D4/PI())/219"
+              },
+              {
+                "cell": "E5",
+                "formula": "=SQRT(A5/PI())/219"
+              },
+              {
+                "cell": "F5",
+                "formula": "=SQRT(B5/PI())/219"
+              },
+              {
+                "cell": "G5",
+                "formula": "=SQRT(C5/PI())/219"
+              },
+              {
+                "cell": "H5",
+                "formula": "=SQRT(D5/PI())/219"
+              },
+              {
+                "cell": "E6",
+                "formula": "=SQRT(A6/PI())/219"
+              },
+              {
+                "cell": "F6",
+                "formula": "=SQRT(B6/PI())/219"
+              },
+              {
+                "cell": "G6",
+                "formula": "=SQRT(C6/PI())/219"
+              },
+              {
+                "cell": "H6",
+                "formula": "=SQRT(D6/PI())/219"
+              },
+              {
+                "cell": "E7",
+                "formula": "=SQRT(A7/PI())/219"
+              },
+              {
+                "cell": "F7",
+                "formula": "=SQRT(B7/PI())/219"
+              },
+              {
+                "cell": "G7",
+                "formula": "=SQRT(C7/PI())/219"
+              },
+              {
+                "cell": "H7",
+                "formula": "=SQRT(D7/PI())/219"
+              }
+            ],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 8,
+            "max_row": 4407,
+            "merged_ranges": [
+              "A1:D1",
+              "E1:H1"
+            ],
+            "name": "20min",
+            "non_finite_values": [],
+            "nonempty_row_count": 4407,
+            "rows_with_numeric_values": 4405,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 6836,
+              "formula": 6121,
+              "numeric": 6121,
+              "text": 10
+            },
+            "dimension": "A1:H2386",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "s",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 1,
+                "values": [
+                  "Area (px)",
+                  null,
+                  null,
+                  null,
+                  "Radius (mm)",
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "A",
+                  "B",
+                  "C",
+                  "D"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 3,
+                "values": [
+                  100,
+                  11697,
+                  9235,
+                  7,
+                  "=SQRT(A3/PI())/219",
+                  "=SQRT(B3/PI())/219",
+                  "=SQRT(C3/PI())/219",
+                  "=SQRT(D3/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 4,
+                "values": [
+                  2,
+                  546,
+                  3145,
+                  1883,
+                  "=SQRT(A4/PI())/219",
+                  "=SQRT(B4/PI())/219",
+                  "=SQRT(C4/PI())/219",
+                  "=SQRT(D4/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 5,
+                "values": [
+                  497,
+                  17896,
+                  10488,
+                  75,
+                  "=SQRT(A5/PI())/219",
+                  "=SQRT(B5/PI())/219",
+                  "=SQRT(C5/PI())/219",
+                  "=SQRT(D5/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 6,
+                "values": [
+                  663,
+                  33323,
+                  105,
+                  12427,
+                  "=SQRT(A6/PI())/219",
+                  "=SQRT(B6/PI())/219",
+                  "=SQRT(C6/PI())/219",
+                  "=SQRT(D6/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 7,
+                "values": [
+                  3503,
+                  13164,
+                  1968,
+                  22,
+                  "=SQRT(A7/PI())/219",
+                  "=SQRT(B7/PI())/219",
+                  "=SQRT(C7/PI())/219",
+                  "=SQRT(D7/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 8,
+                "values": [
+                  323,
+                  795,
+                  16980,
+                  1527,
+                  "=SQRT(A8/PI())/219",
+                  "=SQRT(B8/PI())/219",
+                  "=SQRT(C8/PI())/219",
+                  "=SQRT(D8/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 9,
+                "values": [
+                  6934,
+                  1113,
+                  3458,
+                  33,
+                  "=SQRT(A9/PI())/219",
+                  "=SQRT(B9/PI())/219",
+                  "=SQRT(C9/PI())/219",
+                  "=SQRT(D9/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 10,
+                "values": [
+                  9867,
+                  521,
+                  1289,
+                  10076,
+                  "=SQRT(A10/PI())/219",
+                  "=SQRT(B10/PI())/219",
+                  "=SQRT(C10/PI())/219",
+                  "=SQRT(D10/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 11,
+                "values": [
+                  3,
+                  953,
+                  536,
+                  3353,
+                  "=SQRT(A11/PI())/219",
+                  "=SQRT(B11/PI())/219",
+                  "=SQRT(C11/PI())/219",
+                  "=SQRT(D11/PI())/219"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "f",
+                  "f",
+                  "f",
+                  "f"
+                ],
+                "row": 12,
+                "values": [
+                  302,
+                  653,
+                  3848,
+                  25435,
+                  "=SQRT(A12/PI())/219",
+                  "=SQRT(B12/PI())/219",
+                  "=SQRT(C12/PI())/219",
+                  "=SQRT(D12/PI())/219"
+                ]
+              }
+            ],
+            "formula_count": 6121,
+            "formula_samples": [
+              {
+                "cell": "E3",
+                "formula": "=SQRT(A3/PI())/219"
+              },
+              {
+                "cell": "F3",
+                "formula": "=SQRT(B3/PI())/219"
+              },
+              {
+                "cell": "G3",
+                "formula": "=SQRT(C3/PI())/219"
+              },
+              {
+                "cell": "H3",
+                "formula": "=SQRT(D3/PI())/219"
+              },
+              {
+                "cell": "E4",
+                "formula": "=SQRT(A4/PI())/219"
+              },
+              {
+                "cell": "F4",
+                "formula": "=SQRT(B4/PI())/219"
+              },
+              {
+                "cell": "G4",
+                "formula": "=SQRT(C4/PI())/219"
+              },
+              {
+                "cell": "H4",
+                "formula": "=SQRT(D4/PI())/219"
+              },
+              {
+                "cell": "E5",
+                "formula": "=SQRT(A5/PI())/219"
+              },
+              {
+                "cell": "F5",
+                "formula": "=SQRT(B5/PI())/219"
+              },
+              {
+                "cell": "G5",
+                "formula": "=SQRT(C5/PI())/219"
+              },
+              {
+                "cell": "H5",
+                "formula": "=SQRT(D5/PI())/219"
+              },
+              {
+                "cell": "E6",
+                "formula": "=SQRT(A6/PI())/219"
+              },
+              {
+                "cell": "F6",
+                "formula": "=SQRT(B6/PI())/219"
+              },
+              {
+                "cell": "G6",
+                "formula": "=SQRT(C6/PI())/219"
+              },
+              {
+                "cell": "H6",
+                "formula": "=SQRT(D6/PI())/219"
+              },
+              {
+                "cell": "E7",
+                "formula": "=SQRT(A7/PI())/219"
+              },
+              {
+                "cell": "F7",
+                "formula": "=SQRT(B7/PI())/219"
+              },
+              {
+                "cell": "G7",
+                "formula": "=SQRT(C7/PI())/219"
+              },
+              {
+                "cell": "H7",
+                "formula": "=SQRT(D7/PI())/219"
+              }
+            ],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 8,
+            "max_row": 2386,
+            "merged_ranges": [
+              "A1:D1",
+              "E1:H1"
+            ],
+            "name": "30min",
+            "non_finite_values": [],
+            "nonempty_row_count": 2386,
+            "rows_with_numeric_values": 2384,
+            "state": "visible"
+          }
+        ]
+      },
+      "repo_expected_md5_match": true,
+      "repo_expected_sha256_match": true,
+      "repo_expected_size_match": true,
+      "repository_path": "evidence_vault/datasets/zenodo_18961871/Supplementary_BubbleSizes_v1.xlsx",
+      "sha256": "9de9b8cc1775a66b26c9d40c1c5d6914ce99f2282ddb0666727acb51e0fb00ad",
+      "size_bytes": 557745,
+      "source_metadata_md5": "9fcfe68a37d2d92a7999569a07908854",
+      "source_url": "https://zenodo.org/api/records/18961871/files/Supplementary_BubbleSizes_v1.xlsx/content",
+      "status": "PARSED",
+      "status_reason": "All source identity, ZIP integrity, and XLSX parser checks passed",
+      "zenodo_md5_match": true,
+      "zip": {
+        "all_member_crcs_pass": true,
+        "first_bad_member": null,
+        "is_zip": true,
+        "member_count": 16,
+        "missing_required_parts": [],
+        "parts": [
+          "[Content_Types].xml",
+          "_rels/.rels",
+          "docProps/app.xml",
+          "docProps/core.xml",
+          "xl/_rels/workbook.xml.rels",
+          "xl/calcChain.xml",
+          "xl/printerSettings/printerSettings1.bin",
+          "xl/printerSettings/printerSettings2.bin",
+          "xl/sharedStrings.xml",
+          "xl/styles.xml",
+          "xl/theme/theme1.xml",
+          "xl/workbook.xml",
+          "xl/worksheets/_rels/sheet1.xml.rels",
+          "xl/worksheets/_rels/sheet2.xml.rels",
+          "xl/worksheets/sheet1.xml",
+          "xl/worksheets/sheet2.xml"
+        ],
+        "required_parts_present": true
+      }
+    },
+    {
+      "checks_run": [
+        {
+          "check": "file_present",
+          "result": "PASS"
+        },
+        {
+          "check": "size_and_hashes",
+          "result": "PASS"
+        },
+        {
+          "check": "zip_crc_and_required_xlsx_parts",
+          "result": "PASS"
+        },
+        {
+          "check": "openpyxl_load_workbook",
+          "result": "PASS"
+        }
+      ],
+      "expected_repository_md5": "c9b5a9cde073eb7c58933eec37a559a6",
+      "expected_repository_sha256": "073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70",
+      "expected_repository_size_bytes": 162970,
+      "filename": "Supplementary_RheometerData_v2.xlsx",
+      "md5": "c9b5a9cde073eb7c58933eec37a559a6",
+      "parser": {
+        "result": "PASS",
+        "sheet_count": 7,
+        "sheets": [
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 10,
+              "text": 14
+            },
+            "dimension": "A1:C8",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  "Sheet name:",
+                  "Contents:"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 3,
+                "values": [
+                  null,
+                  "AmpSwps_all",
+                  "Amplitude sweeps on all foams, A-D"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  "FrqSwps_all",
+                  "Frequency sweeps on all foams, A-D"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  "FoamD_AmpSwpTest",
+                  "Exploring the effect of frequency in amplitude sweeps using Foam D"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  "FoamA_SteadyYield",
+                  "Finding the yield point in steady shear using Foam A, for comparison with oscillatory tests"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  "SteadyShear_5",
+                  "Tests conducted at a constant shear rate of 5 /s"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "s",
+                  "s"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  "SteadyShear_1",
+                  "Tests conducted at a constant shear rate of 1 /s"
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 3,
+            "max_row": 8,
+            "merged_ranges": [],
+            "name": "Contents",
+            "non_finite_values": [],
+            "nonempty_row_count": 7,
+            "rows_with_numeric_values": 0,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 399,
+              "numeric": 2880,
+              "text": 32
+            },
+            "dimension": "A1:K301",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  "Test",
+                  "Point No.",
+                  "Time",
+                  "Frequency",
+                  "Shear Strain",
+                  "Torque",
+                  "Shear Stress",
+                  "Phase Shift Angle",
+                  "Storage Modulus",
+                  "Loss Modulus",
+                  "Complex Viscosity"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  null,
+                  "[s]",
+                  "[rad/s]",
+                  "[1]",
+                  "[N·m]",
+                  "[Pa]",
+                  "[°]",
+                  "[Pa]",
+                  "[Pa]",
+                  "[Pa·s]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "A1",
+                  1,
+                  16.5,
+                  3,
+                  0.00101,
+                  1.8646e-06,
+                  0.051353,
+                  7.8,
+                  50.619,
+                  6.9351,
+                  16.873
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  41.85,
+                  3,
+                  0.00146,
+                  2.7105e-06,
+                  0.074653,
+                  8.03,
+                  50.79,
+                  7.1676,
+                  16.93
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  66.28,
+                  3,
+                  0.00211,
+                  3.9193e-06,
+                  0.10794,
+                  7.68,
+                  50.754,
+                  6.8449,
+                  16.918
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  90.85,
+                  3,
+                  0.00305,
+                  5.6471e-06,
+                  0.15553,
+                  7.64,
+                  50.503,
+                  6.7721,
+                  16.834
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  116.2,
+                  3,
+                  0.00442,
+                  8.159e-06,
+                  0.22471,
+                  7.64,
+                  50.384,
+                  6.7605,
+                  16.795
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  140.7,
+                  3,
+                  0.0064,
+                  1.1701e-05,
+                  0.32227,
+                  7.82,
+                  49.874,
+                  6.8513,
+                  16.625
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  165.5,
+                  3,
+                  0.00927,
+                  1.677e-05,
+                  0.46188,
+                  7.89,
+                  49.351,
+                  6.8384,
+                  16.45
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  189.7,
+                  3,
+                  0.0134,
+                  2.3976e-05,
+                  0.66034,
+                  7.9,
+                  48.719,
+                  6.7643,
+                  16.24
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  213.7,
+                  3,
+                  0.0194,
+                  3.4264e-05,
+                  0.94369,
+                  7.96,
+                  48.07,
+                  6.7222,
+                  16.023
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  237.8,
+                  3,
+                  0.0282,
+                  4.8918e-05,
+                  1.3473,
+                  8.05,
+                  47.379,
+                  6.7012,
+                  15.793
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 11,
+            "max_row": 301,
+            "merged_ranges": [],
+            "name": "AmpSwps_all",
+            "non_finite_values": [],
+            "nonempty_row_count": 290,
+            "rows_with_numeric_values": 288,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 366,
+              "numeric": 2250,
+              "text": 35
+            },
+            "dimension": "A1:K241",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  "Test",
+                  "Point No.",
+                  "Time",
+                  "Frequency",
+                  "Shear Strain",
+                  "Torque",
+                  "Shear Stress",
+                  "Phase Shift Angle",
+                  "Storage Modulus",
+                  "Loss Modulus",
+                  "Complex Viscosity"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  null,
+                  "[s]",
+                  "[rad/s]",
+                  "[1]",
+                  "[N·m]",
+                  "[Pa]",
+                  "[°]",
+                  "[Pa]",
+                  "[Pa]",
+                  "[Pa·s]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "A1",
+                  1,
+                  189.2,
+                  0.1,
+                  0.01,
+                  1.3714e-05,
+                  0.3777,
+                  6.84,
+                  37.319,
+                  4.4735,
+                  375.86
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  332.8,
+                  0.164,
+                  0.0101,
+                  1.3852e-05,
+                  0.3815,
+                  7.28,
+                  37.654,
+                  4.8087,
+                  231.76
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  444,
+                  0.268,
+                  0.0101,
+                  1.4195e-05,
+                  0.39094,
+                  7.64,
+                  38.554,
+                  5.1694,
+                  145
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  525.6,
+                  0.439,
+                  0.0101,
+                  1.4619e-05,
+                  0.40263,
+                  7.85,
+                  39.685,
+                  5.4741,
+                  91.173
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  578.8,
+                  0.72,
+                  0.0101,
+                  1.5236e-05,
+                  0.41962,
+                  8.08,
+                  41.337,
+                  5.8665,
+                  58.013
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  613.6,
+                  1.18,
+                  0.0101,
+                  1.5833e-05,
+                  0.43606,
+                  8,
+                  42.966,
+                  6.0365,
+                  36.808
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  636.4,
+                  1.93,
+                  0.0101,
+                  1.6369e-05,
+                  0.45082,
+                  8.06,
+                  44.413,
+                  6.2891,
+                  23.233
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  651.4,
+                  3.16,
+                  0.0101,
+                  1.6922e-05,
+                  0.46607,
+                  8.34,
+                  45.883,
+                  6.7234,
+                  14.664
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  663.3,
+                  5.18,
+                  0.0101,
+                  1.7478e-05,
+                  0.48137,
+                  9.2,
+                  47.28,
+                  7.6591,
+                  9.2473
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  672.8,
+                  8.48,
+                  0.0101,
+                  1.814e-05,
+                  0.49962,
+                  10.67,
+                  48.852,
+                  9.2052,
+                  5.8599
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 11,
+            "max_row": 241,
+            "merged_ranges": [],
+            "name": "FrqSwps_all",
+            "non_finite_values": [],
+            "nonempty_row_count": 227,
+            "rows_with_numeric_values": 225,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 263,
+              "numeric": 1920,
+              "text": 28
+            },
+            "dimension": "A1:K201",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  "Test",
+                  "Point No.",
+                  "Time",
+                  "Frequency",
+                  "Shear Strain",
+                  "Torque",
+                  "Shear Stress",
+                  "Phase Shift Angle",
+                  "Storage Modulus",
+                  "Loss Modulus",
+                  "Complex Viscosity"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  null,
+                  "[s]",
+                  "[rad/s]",
+                  "[1]",
+                  "[N·m]",
+                  "[Pa]",
+                  "[°]",
+                  "[Pa]",
+                  "[Pa]",
+                  "[Pa·s]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "D-10-1",
+                  1,
+                  10.03,
+                  10,
+                  0.00101,
+                  9.7857e-07,
+                  0.026951,
+                  9.07,
+                  26.48,
+                  4.2283,
+                  2.648
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  23.3,
+                  10,
+                  0.00146,
+                  1.4544e-06,
+                  0.040056,
+                  8.75,
+                  27.2,
+                  4.1876,
+                  2.72
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  36.32,
+                  10,
+                  0.00211,
+                  2.1027e-06,
+                  0.057911,
+                  8.94,
+                  27.14,
+                  4.2673,
+                  2.714
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  49.71,
+                  10,
+                  0.00305,
+                  3.074e-06,
+                  0.084663,
+                  8.05,
+                  27.462,
+                  3.8836,
+                  2.7462
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  62.74,
+                  10,
+                  0.00442,
+                  4.3953e-06,
+                  0.12105,
+                  8.38,
+                  27.092,
+                  3.9911,
+                  2.7092
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  76.15,
+                  10,
+                  0.0064,
+                  6.3556e-06,
+                  0.17504,
+                  8.26,
+                  27.059,
+                  3.9265,
+                  2.7059
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  89.34,
+                  10,
+                  0.00927,
+                  9.1401e-06,
+                  0.25173,
+                  8.25,
+                  26.872,
+                  3.8942,
+                  2.6872
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  102.5,
+                  10,
+                  0.0134,
+                  1.3173e-05,
+                  0.3628,
+                  8.27,
+                  26.741,
+                  3.8858,
+                  2.6741
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  115.5,
+                  10,
+                  0.0194,
+                  1.8968e-05,
+                  0.52242,
+                  8.16,
+                  26.596,
+                  3.8139,
+                  2.6596
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  128.9,
+                  10,
+                  0.0282,
+                  2.7235e-05,
+                  0.75008,
+                  8.3,
+                  26.359,
+                  3.8462,
+                  2.6359
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 11,
+            "max_row": 201,
+            "merged_ranges": [],
+            "name": "FoamD_AmpSwpTest",
+            "non_finite_values": [],
+            "nonempty_row_count": 194,
+            "rows_with_numeric_values": 192,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 105,
+              "numeric": 704,
+              "text": 19
+            },
+            "dimension": "A1:I92",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  "Test",
+                  "Point No.",
+                  "Time",
+                  "Shear Stress",
+                  "Shear Strain",
+                  "Shear Rate",
+                  "Viscosity",
+                  "Torque",
+                  "Rotational Speed"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  null,
+                  "[s]",
+                  "[Pa]",
+                  "[1]",
+                  "[1/s]",
+                  "[Pa·s]",
+                  "[N·m]",
+                  "[1/s]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "A-S-1",
+                  1,
+                  5,
+                  0.019967,
+                  0.00018,
+                  2.34e-05,
+                  851.68,
+                  7.2499e-07,
+                  1.4303e-06
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  10,
+                  0.027006,
+                  0.000321,
+                  4.2e-05,
+                  642.84,
+                  9.8053e-07,
+                  2.5628e-06
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  15,
+                  0.036466,
+                  0.000556,
+                  4.5e-05,
+                  809.57,
+                  1.324e-06,
+                  2.7479e-06
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  20,
+                  0.04924,
+                  0.000911,
+                  8.73e-05,
+                  563.79,
+                  1.7878e-06,
+                  5.3281e-06
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  25.01,
+                  0.06649,
+                  0.00141,
+                  8.74e-05,
+                  760.42,
+                  2.4142e-06,
+                  5.3342e-06
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  30.01,
+                  0.089782,
+                  0.00201,
+                  0.000133,
+                  673.28,
+                  3.2599e-06,
+                  8.1351e-06
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  35.01,
+                  0.12123,
+                  0.0029,
+                  0.000178,
+                  680.67,
+                  4.4019e-06,
+                  1.0866e-05
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  40.01,
+                  0.1637,
+                  0.00398,
+                  0.000224,
+                  730.66,
+                  5.9439e-06,
+                  1.3668e-05
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  45.01,
+                  0.22105,
+                  0.00553,
+                  0.000308,
+                  717.26,
+                  8.0261e-06,
+                  1.8801e-05
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  50.01,
+                  0.29849,
+                  0.00763,
+                  0.000441,
+                  676.59,
+                  1.0838e-05,
+                  2.6914e-05
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 9,
+            "max_row": 92,
+            "merged_ranges": [],
+            "name": "FoamA_SteadyYield",
+            "non_finite_values": [],
+            "nonempty_row_count": 90,
+            "rows_with_numeric_values": 88,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 809,
+              "numeric": 5760,
+              "text": 28
+            },
+            "dimension": "A1:I733",
+            "duplicate_full_row_excess_count_including_blank_cells": 0,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  "Test",
+                  "Point No.",
+                  "Time",
+                  "Shear Rate",
+                  "Rotational Speed",
+                  "Torque",
+                  "Shear Stress",
+                  "Viscosity",
+                  "Shear Strain"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  null,
+                  "[s]",
+                  "[1/s]",
+                  "[1/min]",
+                  "[N·m]",
+                  "[Pa]",
+                  "[Pa·s]",
+                  "[1]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "A1",
+                  1,
+                  10,
+                  5,
+                  18.298,
+                  0.00063582,
+                  17.511,
+                  3.503,
+                  37.4
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  20,
+                  5,
+                  18.298,
+                  0.00060823,
+                  16.752,
+                  3.351,
+                  87.4
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  30,
+                  5,
+                  18.299,
+                  0.00060142,
+                  16.564,
+                  3.3133,
+                  137
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  40,
+                  5,
+                  18.3,
+                  0.00059138,
+                  16.288,
+                  3.2577,
+                  187
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  50,
+                  5,
+                  18.301,
+                  0.00058699,
+                  16.167,
+                  3.2334,
+                  237
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  60,
+                  5,
+                  18.301,
+                  0.00058127,
+                  16.009,
+                  3.2019,
+                  287
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  70,
+                  5,
+                  18.302,
+                  0.00057616,
+                  15.868,
+                  3.1737,
+                  337
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  80,
+                  5,
+                  18.302,
+                  0.00057251,
+                  15.768,
+                  3.1536,
+                  387
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  90,
+                  5,
+                  18.302,
+                  0.00056978,
+                  15.693,
+                  3.1386,
+                  437
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  100,
+                  5,
+                  18.302,
+                  0.00056633,
+                  15.598,
+                  3.1195,
+                  487
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 9,
+            "max_row": 733,
+            "merged_ranges": [],
+            "name": "SteadyShear_5",
+            "non_finite_values": [],
+            "nonempty_row_count": 722,
+            "rows_with_numeric_values": 720,
+            "state": "visible"
+          },
+          {
+            "cell_type_counts_within_dimension": {
+              "blank": 809,
+              "numeric": 5760,
+              "text": 28
+            },
+            "dimension": "A1:I733",
+            "duplicate_full_row_excess_count_including_blank_cells": 1,
+            "error_cells": [],
+            "first_nonempty_rows": [
+              {
+                "cell_types": [
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 1,
+                "values": [
+                  "Test",
+                  "Point No.",
+                  "Time",
+                  "Shear Rate",
+                  "Rotational Speed",
+                  "Torque",
+                  "Shear Stress",
+                  "Viscosity",
+                  "Shear Strain"
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s",
+                  "s"
+                ],
+                "row": 2,
+                "values": [
+                  null,
+                  null,
+                  "[s]",
+                  "[1/s]",
+                  "[1/min]",
+                  "[N·m]",
+                  "[Pa]",
+                  "[Pa·s]",
+                  "[1]"
+                ]
+              },
+              {
+                "cell_types": [
+                  "s",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 3,
+                "values": [
+                  "A1",
+                  1,
+                  10,
+                  1,
+                  3.6597,
+                  0.00052571,
+                  14.479,
+                  14.482,
+                  7.49
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 4,
+                "values": [
+                  null,
+                  2,
+                  20,
+                  1,
+                  3.6597,
+                  0.00051299,
+                  14.129,
+                  14.131,
+                  17.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 5,
+                "values": [
+                  null,
+                  3,
+                  30,
+                  1,
+                  3.66,
+                  0.0005048,
+                  13.903,
+                  13.904,
+                  27.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 6,
+                "values": [
+                  null,
+                  4,
+                  40,
+                  1,
+                  3.6602,
+                  0.0004974,
+                  13.699,
+                  13.7,
+                  37.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 7,
+                "values": [
+                  null,
+                  5,
+                  50,
+                  1,
+                  3.6602,
+                  0.00049274,
+                  13.571,
+                  13.571,
+                  47.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 8,
+                "values": [
+                  null,
+                  6,
+                  60,
+                  1,
+                  3.6603,
+                  0.00048717,
+                  13.417,
+                  13.418,
+                  57.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 9,
+                "values": [
+                  null,
+                  7,
+                  70,
+                  1,
+                  3.6603,
+                  0.00048468,
+                  13.349,
+                  13.349,
+                  67.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 10,
+                "values": [
+                  null,
+                  8,
+                  80,
+                  1,
+                  3.6603,
+                  0.00048214,
+                  13.279,
+                  13.279,
+                  77.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 11,
+                "values": [
+                  null,
+                  9,
+                  90,
+                  1,
+                  3.6603,
+                  0.00047978,
+                  13.214,
+                  13.214,
+                  87.5
+                ]
+              },
+              {
+                "cell_types": [
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n",
+                  "n"
+                ],
+                "row": 12,
+                "values": [
+                  null,
+                  10,
+                  100,
+                  1,
+                  3.6603,
+                  0.00047593,
+                  13.108,
+                  13.108,
+                  97.5
+                ]
+              }
+            ],
+            "formula_count": 0,
+            "formula_samples": [],
+            "hidden_columns": [],
+            "hidden_rows": [],
+            "max_column": 9,
+            "max_row": 733,
+            "merged_ranges": [],
+            "name": "SteadyShear_1",
+            "non_finite_values": [],
+            "nonempty_row_count": 722,
+            "rows_with_numeric_values": 720,
+            "state": "visible"
+          }
+        ]
+      },
+      "repo_expected_md5_match": true,
+      "repo_expected_sha256_match": true,
+      "repo_expected_size_match": true,
+      "repository_path": "evidence_vault/datasets/zenodo_18961871/Supplementary_RheometerData_v2.xlsx",
+      "sha256": "073d40064a6b77c8e14aaea32f16f98b07a4283f326b1680f834437eb302db70",
+      "size_bytes": 162970,
+      "source_metadata_md5": "c9b5a9cde073eb7c58933eec37a559a6",
+      "source_url": "https://zenodo.org/api/records/18961871/files/Supplementary_RheometerData_v2.xlsx/content",
+      "status": "PARSED",
+      "status_reason": "All source identity, ZIP integrity, and XLSX parser checks passed",
+      "zenodo_md5_match": true,
+      "zip": {
+        "all_member_crcs_pass": true,
+        "first_bad_member": null,
+        "is_zip": true,
+        "member_count": 31,
+        "missing_required_parts": [],
+        "parts": [
+          "[Content_Types].xml",
+          "_rels/.rels",
+          "docProps/app.xml",
+          "docProps/core.xml",
+          "xl/_rels/workbook.xml.rels",
+          "xl/persons/person.xml",
+          "xl/printerSettings/printerSettings1.bin",
+          "xl/printerSettings/printerSettings2.bin",
+          "xl/printerSettings/printerSettings3.bin",
+          "xl/printerSettings/printerSettings4.bin",
+          "xl/printerSettings/printerSettings5.bin",
+          "xl/printerSettings/printerSettings6.bin",
+          "xl/printerSettings/printerSettings7.bin",
+          "xl/sharedStrings.xml",
+          "xl/styles.xml",
+          "xl/theme/theme1.xml",
+          "xl/workbook.xml",
+          "xl/worksheets/_rels/sheet1.xml.rels",
+          "xl/worksheets/_rels/sheet2.xml.rels",
+          "xl/worksheets/_rels/sheet3.xml.rels",
+          "xl/worksheets/_rels/sheet4.xml.rels",
+          "xl/worksheets/_rels/sheet5.xml.rels",
+          "xl/worksheets/_rels/sheet6.xml.rels",
+          "xl/worksheets/_rels/sheet7.xml.rels",
+          "xl/worksheets/sheet1.xml",
+          "xl/worksheets/sheet2.xml",
+          "xl/worksheets/sheet3.xml",
+          "xl/worksheets/sheet4.xml",
+          "xl/worksheets/sheet5.xml",
+          "xl/worksheets/sheet6.xml",
+          "xl/worksheets/sheet7.xml"
+        ],
+        "required_parts_present": true
+      }
+    }
+  ],
+  "schema_version": "1.1.0",
+  "source": {
+    "audited_repository_head": "ca37d5df501dbe5d3ef94015963c839face21cf4",
+    "branch_baseline": "ca37d5df501dbe5d3ef94015963c839face21cf4",
+    "doi": "10.5281/zenodo.18961871",
+    "download_http_status": "not captured by browser download UI; successful file downloads verified by bytes and source MD5",
+    "license_note": "CC BY 4.0 applies to the dataset record; attribution required. Article license is separate.",
+    "parser": {
+      "name": "openpyxl",
+      "python": "3.12.14",
+      "version": "3.1.5"
+    },
+    "record_license": "CC-BY-4.0",
+    "record_license_evidence": "Zenodo API metadata.license.id=cc-by-4.0, read from https://zenodo.org/api/records/18961871 on 2026-10-21",
+    "repository": "https://github.com/salimbawa707-droid/Formula-expert-",
+    "retrieval_route": "Official Zenodo record file download links opened in browser; files saved locally then hashed and parsed",
+    "zenodo_api": "https://zenodo.org/api/records/18961871",
+    "zenodo_record": "https://zenodo.org/records/18961871",
+    "zip_validator": "Python zipfile.ZipFile.testzip"
+  }
+}
+

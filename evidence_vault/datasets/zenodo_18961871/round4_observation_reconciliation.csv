@@ -1,0 +1,12 @@
+workbook,sheet_name,total_rows,total_cols,valid_observation_rows,notes
+"Supplementary_SolutionFlowCurves.xlsx","SolutionFlowCurves",226,8,212,"Forensic row count reconciliation"
+"Supplementary_FilmThickness_v1.xlsx","Data",2396,19,2396,"Forensic row count reconciliation"
+"Supplementary_BubbleSizes_v1.xlsx","20min",4407,8,4407,"Forensic row count reconciliation"
+"Supplementary_BubbleSizes_v1.xlsx","30min",2386,8,2386,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","Contents",7,2,7,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","AmpSwps_all",301,11,290,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","FrqSwps_all",241,11,227,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","FoamD_AmpSwpTest",201,11,194,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","FoamA_SteadyYield",92,9,90,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","SteadyShear_5",733,9,722,"Forensic row count reconciliation"
+"Supplementary_RheometerData_v2.xlsx","SteadyShear_1",733,9,722,"Forensic row count reconciliation"

@@ -1,0 +1,1322 @@
+DETergent Formula Expert — ZIP 68
+
+MASTER FORENSIC REMEDIATION & IMPLEMENTATION PROMPT
+
+Complete P0 + P1 Corrections | Source Code + Integration + Tests
+
+You are working on the existing Detergent Formula Expert application, based on the uploaded ZIP 68.
+
+Your task is to IMPLEMENT all remaining defects identified in the ZIP 68 forensic audit. Do not merely write a plan, report, or sample code. Modify the actual application source code.
+
+The objective is to make the scientific calculations, data validation, evidence handling, release gates, laboratory assay validation, UI, and automated tests internally consistent.
+
+==================================================
+
+0. ABSOLUTE PROJECT RULES
+
+==================================================
+
+0.1 Preserve the existing application
+
+This is the existing Detergent Formula Expert application, not a new offline-only rebuild.
+
+PRESERVE:
+
+- Gemini Bot.
+- Gemini API integration.
+- Gemini API key configuration.
+- Gemini research functionality.
+- Supabase integration.
+- Firebase integration.
+- Existing user authentication.
+- Existing cloud sync.
+- Existing database structure, unless a migration is strictly necessary.
+- Existing ingredient library.
+- All 13 canonical product categories.
+- Existing scientifically valid calculation engines.
+- Existing UI and features.
+
+DO NOT:
+
+- Remove Gemini.
+- Disable Gemini.
+- Remove API integrations.
+- Remove Firebase or Supabase.
+- Replace the existing application architecture.
+- Delete existing features to make tests pass.
+- Rewrite valid scientific engines without necessity.
+- Invent scientific values or evidence.
+
+Gemini-generated answers must remain distinguishable from measured or verified scientific results.
+
+0.2 Scientific data integrity
+
+Every scientifically relevant value must have an explicit provenance classification:
+
+- MEASURED
+- SUPPLIER_REPORTED
+- DERIVED
+- USER_OVERRIDE
+- MODEL_PREDICTED
+- ESTIMATED
+- UNKNOWN
+- UNAVAILABLE
+
+A missing value must never silently become:
+
+- 0
+- 1
+- 1.0
+- 7.0
+- 100
+- 100 kg
+- Any other fabricated default.
+
+IMPORTANT:
+A mathematically valid zero is allowed when zero is the actual measured or derived result.
+
+Do not mechanically remove all zero values. Distinguish a genuine zero from a missing-data fallback.
+
+A value without sufficient evidence must not produce a verified scientific PASS.
+
+Software tests are not laboratory validation.
+
+==================================================
+
+1. ACTIVE MATTER ENGINE — CRITICAL FIX
+
+==================================================
+
+Files to inspect and modify
+
+- "src/utils/activeMatterEngine.ts"
+- "src/utils/orchestrator/scientificExecutionDAG.ts"
+- "src/utils/analysisWorkflowEngine.ts"
+- "src/utils/calculators.ts"
+- "src/utils/scientificQualityGateEngine.ts"
+- "src/utils/cleaningPerformanceEngine.ts"
+- "src/utils/hlbEngine.ts"
+- "src/components/AIFormulator.tsx"
+- "src/components/PHEngineView.tsx"
+- "src/data/universalIngredientLibrary.ts"
+
+Search the entire repository for:
+
+- "activeDefault"
+- "getDefaultActiveMatter"
+- "AUTHORITATIVE_ACTIVE_BENCHMARKS"
+- "activeMatterPct"
+- "activePercent"
+- "activeMatterPurity"
+- "calculateActiveMatter"
+- "activeMatterStatus"
+
+ACTION A — REPLACE automatic active-matter resolution
+
+The existing code automatically resolves active matter through:
+
+- Canonical ingredient defaults.
+- Benchmark databases.
+- Ingredient-name matching.
+- Percentage embedded in ingredient names.
+- Generic fallback values.
+
+Remove automatic resolution from VERIFIED calculation paths.
+
+Create this type:
+
+export type ScientificProvenance =
+  | 'MEASURED'
+  | 'SUPPLIER_REPORTED'
+  | 'DERIVED'
+  | 'USER_OVERRIDE'
+  | 'MODEL_PREDICTED'
+  | 'ESTIMATED'
+  | 'UNKNOWN'
+  | 'UNAVAILABLE';
+
+export interface ActiveMatterInput {
+  value: number | null;
+  provenance: ScientificProvenance;
+  ingredientId: string;
+  commercialGradeId?: string | null;
+  evidenceId?: string | null;
+  basis: 'COMMERCIAL_PRODUCT' | 'ACTIVE_MATERIAL' | null;
+}
+
+export interface ActiveMatterValidation {
+  value: number | null;
+  status: 'VALID' | 'INSUFFICIENT_DATA' | 'INVALID';
+  provenance: ScientificProvenance;
+  verified: boolean;
+  blockingReasons: string[];
+}
+
+Create:
+
+"src/utils/activeMatterValidation.ts"
+
+Implement:
+
+export function validateActiveMatter(
+  input: ActiveMatterInput
+): ActiveMatterValidation {
+  const reasons: string[] = [];
+
+  if (
+    typeof input.value !== 'number' ||
+    !Number.isFinite(input.value) ||
+    input.value < 0 ||
+    input.value > 100
+  ) {
+    return {
+      value: null,
+      status: 'INSUFFICIENT_DATA',
+      provenance: input.provenance,
+      verified: false,
+      blockingReasons: ['ACTIVE_MATTER_VALUE_UNAVAILABLE_OR_INVALID']
+    };
+  }
+
+  if (!input.ingredientId) {
+    reasons.push('INGREDIENT_ID_REQUIRED');
+  }
+
+  if (
+    input.provenance === 'UNKNOWN' ||
+    input.provenance === 'UNAVAILABLE' ||
+    input.provenance === 'ESTIMATED' ||
+    input.provenance === 'MODEL_PREDICTED'
+  ) {
+    reasons.push('PROVENANCE_NOT_ELIGIBLE_FOR_VERIFIED_CALCULATION');
+  }
+
+  if (
+    input.provenance === 'SUPPLIER_REPORTED' &&
+    !input.evidenceId
+  ) {
+    reasons.push('SUPPLIER_EVIDENCE_REQUIRED');
+  }
+
+  if (
+    input.provenance === 'MEASURED' &&
+    !input.evidenceId
+  ) {
+    reasons.push('MEASUREMENT_EVIDENCE_REQUIRED');
+  }
+
+  if (reasons.length > 0) {
+    return {
+      value: input.value,
+      status: 'INSUFFICIENT_DATA',
+      provenance: input.provenance,
+      verified: false,
+      blockingReasons: reasons
+    };
+  }
+
+  return {
+    value: input.value,
+    status: 'VALID',
+    provenance: input.provenance,
+    verified: true,
+    blockingReasons: []
+  };
+}
+
+IMPORTANT:
+This is the basic input validator, not proof that a supplied evidence ID is genuine. Evidence IDs must also be checked against the actual evidence registry.
+
+A USER_OVERRIDE may be used for exploratory calculations, but must remain unverified.
+
+ACTION B — PATCH "getDefaultActiveMatter()"
+
+Do not automatically return a canonical benchmark as verified active matter.
+
+If exact commercial grade and approved evidence are unavailable, return null or an explicit INSUFFICIENT_DATA result.
+
+Do not silently match GLDA, LABSA, AOS, SLES or another ingredient by a generic name when commercial grade matters.
+
+ACTION C — PATCH "calculateActiveMatter()"
+
+Do not return only a number.
+
+Return a structured result:
+
+export interface ActiveMatterResult {
+  value: number | null;
+  status: 'VALID' | 'INSUFFICIENT_DATA' | 'INVALID';
+  verified: boolean;
+  provenance: ScientificProvenance | null;
+  missingIngredientIds: string[];
+  blockingReasons: string[];
+}
+
+If any required ingredient has unknown active matter, the complete active-matter result must be INSUFFICIENT_DATA.
+
+Do not calculate a partial result and present it as the final verified active matter.
+
+ACTION D — PATCH scientificExecutionDAG
+
+Remove:
+
+- Line-level fallback to "getDefaultActiveMatter()".
+- Unconditional "activeMatterStatus = 'VALID'".
+- Secondary automatic active-matter resolution.
+
+The DAG must consume the actual structured validation result.
+
+Required logic:
+
+if (activeMatterResult.status !== 'VALID') {
+  state.activeMatterStatus = 'INSUFFICIENT_DATA';
+  state.activeMatterVerified = false;
+} else {
+  state.activeMatterStatus = 'VALID';
+  state.activeMatterVerified = activeMatterResult.verified;
+}
+
+Do not allow a later workflow stage to overwrite INSUFFICIENT_DATA with VALID.
+
+ACTION E — ingredient master library
+
+Modify:
+
+"src/data/universalIngredientLibrary.ts"
+
+Separate:
+
+- Commercial concentration.
+- Surfactant active matter.
+- Purity.
+- Solids.
+- Water content.
+- Density.
+
+Do not force every ingredient to have a numeric activeDefault.
+
+Unknown active matter must be represented explicitly.
+
+Preserve all 430 existing ingredient records. Do not delete records just because their data is incomplete.
+
+==================================================
+
+2. CHELATOR ENGINE — MATHEMATICAL AND EVIDENCE FIX
+
+==================================================
+
+Files
+
+- "src/utils/powderEngine/powderBuilderChelationAlkalinity.ts"
+- "src/utils/chelatorEngine.ts"
+- "src/data/scientificEvidenceRegistry.ts"
+- "src/data/universalIngredientLibrary.ts"
+
+ACTION A — fix capacity validation
+
+Capacity must be finite and strictly positive.
+
+Replace any validation accepting "rawCapacity >= 0" with:
+
+function isValidChelationCapacity(
+  value: unknown
+): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value > 0
+  );
+}
+
+Zero capacity must not be accepted as a valid measured chelation capacity.
+
+If capacity is unknown, return INSUFFICIENT_DATA. Do not use zero as a replacement.
+
+ACTION B — correct capacity basis mathematics
+
+Required capacity basis:
+
+type CapacityBasis =
+  | 'ACTIVE_MATERIAL'
+  | 'COMMERCIAL_PRODUCT';
+
+When capacity is specified per gram of active material:
+
+effectiveCapacityPerGramCommercial =
+  activeFraction * capacityPerGramActiveMaterial;
+
+When capacity is specified per gram of commercial product:
+
+effectiveCapacityPerGramCommercial =
+  capacityPerGramCommercialProduct;
+
+Never multiply by active fraction again when the capacity is already on a commercial-product basis.
+
+Implement one shared function:
+
+export function calculateCommercialCapacity(input: {
+  capacity: number | null;
+  capacityBasis: CapacityBasis | null;
+  activeMatterPercent: number | null;
+}): {
+  value: number | null;
+  status: 'VALID' | 'INSUFFICIENT_DATA';
+  reason?: string;
+} {
+  if (!isValidChelationCapacity(input.capacity)) {
+    return {
+      value: null,
+      status: 'INSUFFICIENT_DATA',
+      reason: 'CAPACITY_UNAVAILABLE'
+    };
+  }
+
+  if (input.capacityBasis === 'COMMERCIAL_PRODUCT') {
+    return {
+      value: input.capacity,
+      status: 'VALID'
+    };
+  }
+
+  if (input.capacityBasis === 'ACTIVE_MATERIAL') {
+    if (
+      typeof input.activeMatterPercent !== 'number' ||
+      !Number.isFinite(input.activeMatterPercent) ||
+      input.activeMatterPercent <= 0 ||
+      input.activeMatterPercent > 100
+    ) {
+      return {
+        value: null,
+        status: 'INSUFFICIENT_DATA',
+        reason: 'ACTIVE_MATTER_REQUIRED'
+      };
+    }
+
+    return {
+      value:
+        input.capacity *
+        (input.activeMatterPercent / 100),
+      status: 'VALID'
+    };
+  }
+
+  return {
+    value: null,
+    status: 'INSUFFICIENT_DATA',
+    reason: 'CAPACITY_BASIS_UNKNOWN'
+  };
+}
+
+Use this shared function in every chelation calculation path.
+
+ACTION C — remove generic grade matching
+
+Inspect "src/utils/chelatorEngine.ts".
+
+Remove unsafe matches such as:
+
+(s.id === 'glda-47' &&
+  (n.includes('glda') || n.includes('gl-47')))
+
+Do not infer GLDA-47 from generic GLDA.
+
+Require exact ingredient ID and commercial grade ID.
+
+The same principle applies to all chelators.
+
+ACTION D — remove unverified defaults
+
+Remove the following from VERIFIED calculation paths:
+
+- Wash dose = 20 g.
+- Batch size = 100 kg.
+- Unknown capacity = 0.
+- Default product grade from a generic ingredient name.
+
+A user may select an exploratory scenario, but its assumptions must be visibly labelled and cannot produce verified PASS.
+
+ACTION E — integrate the evidence registry
+
+Use:
+
+"src/data/scientificEvidenceRegistry.ts"
+
+The registry must be imported and actually called by "chelatorEngine.ts".
+
+Implement:
+
+export interface EvidenceValidationResult {
+  valid: boolean;
+  evidenceId: string | null;
+  reasons: string[];
+}
+
+export function validateChelatorEvidence(input: {
+  evidenceId?: string | null;
+  ingredientId: string;
+  commercialGradeId: string;
+  capacityValue: number;
+  capacityUnit: string;
+  capacityBasis: CapacityBasis;
+}): EvidenceValidationResult {
+  // Implement against the actual approved registry.
+  // Do not accept an arbitrary non-empty evidence ID.
+  // Require exact matching fields and approved review status.
+  // Require the referenced document to be traceable.
+  // Return valid=false if any condition is missing.
+}
+
+Do not fabricate missing PDFs or source records.
+
+If a document is absent, the evidence must remain UNAVAILABLE.
+
+The registry must verify:
+
+- Exact ingredient.
+- Exact grade.
+- Exact chemical form.
+- Hydration state where applicable.
+- Capacity value.
+- Capacity unit.
+- Capacity basis.
+- Source document.
+- Page/table/section.
+- Review status.
+- Reviewer identity.
+
+ACTION F — powder chelation integration
+
+In "powderBuilderChelationAlkalinity.ts":
+
+- Validate water hardness.
+- Validate wash dose.
+- Validate wash volume.
+- Validate chelator percentage.
+- Validate commercial grade.
+- Validate active matter when required.
+- Validate capacity evidence.
+- Validate units.
+
+Do not return a chelation PASS if any required input is unavailable.
+
+Use null for unavailable calculated values and include blocking reasons.
+
+==================================================
+
+3. POWDER ENGINE — REMOVE ALL BATCH-SIZE AND PARAMETER FALLBACKS
+
+==================================================
+
+Files
+
+- "src/utils/powderEngine/index.ts"
+- "src/utils/powderEngine/powderMoistureDryMatter.ts"
+- "src/utils/chelatorEngine.ts"
+- "src/utils/costingEngine.ts"
+- All batch calculation consumers.
+
+Search for:
+
+- "batchSizeKg = 100"
+- "?? 100"
+- "|| 100"
+- "washDose = 50"
+- "washVolume = 10"
+- "hardness = 150"
+
+ACTION A — batch size
+
+Use:
+
+export function validateBatchSize(
+  value: unknown
+): number | null {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value > 0
+  ) ? value : null;
+}
+
+Missing batch size must not be converted to 100 kg.
+
+Update every batch-size-dependent calculation.
+
+ACTION B — separate user-selectable scenarios
+
+Water hardness, wash dose and wash volume may be user-selectable scenario assumptions.
+
+However:
+
+- Do not silently apply them.
+- Show their values and source.
+- Label them USER_SELECTED or ESTIMATED where appropriate.
+- Do not claim a measured result.
+- Do not produce verified PASS from estimated scenario inputs.
+
+A scenario result may still be displayed as an exploratory prediction.
+
+ACTION C — downstream integration
+
+When batch size is unavailable:
+
+- Block batch manufacturing quantities.
+- Block batch mass calculations.
+- Block batch costing that requires batch mass.
+- Block manufacturing protocol generation.
+- Do not block independent calculations that genuinely do not need batch size.
+
+==================================================
+
+4. DENSITY AND COA / BATCH SHEET FIX
+
+==================================================
+
+Files
+
+- "src/components/aiformulator/ScientificResultsPanel.tsx"
+- "src/components/aiformulator/AnalyticalMetricsPanel.tsx"
+- "src/components/COAAndBatchSheetModal.tsx"
+- Every density consumer.
+
+Search for:
+
+- "1.035"
+- "?? 1"
+- "?? 1.0"
+- "|| 1"
+- "density"
+- "densityGPerMl"
+
+Create shared validator:
+
+export function validateDensity(
+  value: unknown
+): number | null {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value > 0
+  ) ? value : null;
+}
+
+The validator must not independently establish scientific evidence.
+
+For verified density, require:
+
+- Actual density value.
+- Unit.
+- Temperature.
+- Measurement method or supplier source.
+- Evidence ID.
+- Provenance.
+
+Remove the hardcoded 1.035 fallback from COA/Batch Sheet.
+
+When density is unavailable:
+
+- Display UNAVAILABLE.
+- Do not calculate volume.
+- Do not create stock volume.
+- Do not generate verified batch instructions.
+
+Do not invent density to keep the UI populated.
+
+==================================================
+
+5. STOCK-TO-VOLUME CONVERSION — COMPLETE INTEGRATION
+
+==================================================
+
+File
+
+"src/utils/labAutomation/experimentProtocolGenerator.ts"
+
+Inspect all callers and adapters, including:
+
+- Opentrons adapter.
+- Experiment protocol generator.
+- Stock preparation workflow.
+- Conversion evidence handling.
+
+ACTION A — explicit input contract
+
+export interface StockConversionInput {
+  targetBatchMassG: number | null;
+  targetPercent: number | null;
+  stockConcentrationPercent: number | null;
+  stockDensityGPerMl: number | null;
+  concentrationBasis: 'W_W' | 'W_V' | null;
+  targetBasis:
+    | 'COMMERCIAL_INGREDIENT'
+    | 'ACTIVE_MATERIAL'
+    | null;
+  stockActiveMatterPercent: number | null;
+  densityEvidenceId: string | null;
+  conversionEvidenceId: string | null;
+}
+
+ACTION B — W/W equation
+
+For a commercial ingredient target:
+
+targetIngredientMassG =
+  targetBatchMassG * targetPercent / 100;
+
+requiredStockMassG =
+  targetIngredientMassG /
+  (stockConcentrationPercent / 100);
+
+requiredStockVolumeMl =
+  requiredStockMassG / stockDensityGPerMl;
+
+For an active-material target:
+
+targetActiveMassG =
+  targetBatchMassG * targetPercent / 100;
+
+requiredCommercialStockMassG =
+  targetActiveMassG /
+  (stockActiveMatterPercent / 100);
+
+requiredStockVolumeMl =
+  requiredCommercialStockMassG /
+  stockDensityGPerMl;
+
+Do not use the same equation for W/W and W/V.
+
+For W/V, implement a separate dimensionally correct equation and document the units.
+
+ACTION C — strict validation
+
+Block conversion if:
+
+- Target batch mass is missing.
+- Target percentage is invalid.
+- Stock concentration is missing.
+- Concentration basis is unknown.
+- Target basis is unknown.
+- Density is missing.
+- Density evidence is missing.
+- Required active matter is missing.
+- Conversion evidence is missing.
+
+Do not silently substitute density.
+
+ACTION D — Opentrons integration
+
+Before generating robot instructions:
+
+- Check conversion status.
+- Check pipette minimum volume.
+- Check pipette maximum volume.
+- Check source well available volume.
+- Check destination well capacity.
+- Check unit consistency.
+- Check evidence.
+- Check stock concentration basis.
+
+If any check fails, return a blocking protocol-generation error.
+
+Do not generate a robot protocol with guessed volumes.
+
+==================================================
+
+6. RELEASE GATE — REMOVE ALL APPROVAL BYPASSES
+
+==================================================
+
+File
+
+"src/utils/specificationEngine/releaseGateEngine.ts"
+
+Inspect:
+
+- "evaluateReleaseGate()"
+- Snapshot-based release evaluator.
+- Quick release path.
+- Any other function that can return APPROVED or RELEASED.
+
+ACTION A — one authoritative validator
+
+Create one shared function:
+
+export interface ReleaseValidationResult {
+  isReady: boolean;
+  verified: boolean;
+  status: 'APPROVED' | 'BLOCKED';
+  blockingIssues: string[];
+}
+
+All release routes must call the same authoritative validator.
+
+Do not maintain a weaker quick path.
+
+ACTION B — required blocking conditions
+
+Block release when:
+
+- Ingredient list is empty.
+- Product category is missing.
+- Formula identity/version is missing.
+- Ingredient quantity is invalid.
+- Mass balance is invalid.
+- Required active matter is unavailable.
+- Active matter provenance is not eligible.
+- Required laboratory assay is unavailable.
+- Laboratory evidence is missing.
+- Required pH is unavailable.
+- Required specification is not satisfied.
+- Formula contains unresolved blocking warnings.
+- Evidence record is invalid.
+- Required tests are incomplete.
+
+ACTION C — empty formula guard
+
+if (!Array.isArray(ingredients) || ingredients.length === 0) {
+  return {
+    isReady: false,
+    verified: false,
+    status: 'BLOCKED',
+    blockingIssues: [
+      'EMPTY_FORMULA_RELEASE_BLOCKED'
+    ]
+  };
+}
+
+ACTION D — laboratory evidence
+
+A non-empty lab measurement array is not sufficient.
+
+Each required measurement must have:
+
+- Measurement value.
+- Unit.
+- Sample ID.
+- Test method.
+- Measurement date.
+- Laboratory identity.
+- Evidence reference.
+- Provenance.
+- Valid status.
+
+Do not allow a fabricated measurement object to satisfy release.
+
+An approved calculation result is not the same as a laboratory-approved batch.
+
+ACTION E — final decision
+
+No function may return RELEASED merely because:
+
+- Numeric values exist.
+- Formula calculation completed.
+- AI analysis completed.
+- A test passed.
+- A non-empty array exists.
+
+Release requires all mandatory gates to pass.
+
+==================================================
+
+7. MANUFACTURING ASSAY — REAL LAB EVIDENCE REQUIRED
+
+==================================================
+
+File
+
+"src/utils/manufacturingEngine.ts"
+
+Also update:
+
+- Batch record types.
+- Assay persistence.
+- UI.
+- "makeReleaseDecision()".
+- All release consumers.
+
+ACTION A — replace numeric-only assay validation
+
+Do not accept:
+
+validateManufacturingAssay(50)
+
+as laboratory proof.
+
+Use a structured record:
+
+export interface ManufacturingAssayRecord {
+  value: number | null;
+  unit: string;
+  basis: string;
+  method: string | null;
+  sampleId: string | null;
+  testedAt: string | null;
+  laboratoryId: string | null;
+  analystId: string | null;
+  evidenceId: string | null;
+  provenance: ScientificProvenance;
+}
+
+Implement a validator:
+
+export function validateManufacturingAssay(
+  record: ManufacturingAssayRecord
+): {
+  valid: boolean;
+  status: 'COMPLETE' | 'INCOMPLETE' | 'INVALID';
+  reasons: string[];
+} {
+  const reasons: string[] = [];
+
+  if (
+    typeof record.value !== 'number' ||
+    !Number.isFinite(record.value) ||
+    record.value < 0 ||
+    record.value > 100
+  ) {
+    reasons.push('INVALID_ASSAY_VALUE');
+  }
+
+  if (!record.unit) reasons.push('UNIT_REQUIRED');
+  if (!record.basis) reasons.push('BASIS_REQUIRED');
+  if (!record.method) reasons.push('METHOD_REQUIRED');
+  if (!record.sampleId) reasons.push('SAMPLE_ID_REQUIRED');
+  if (!record.testedAt) reasons.push('TEST_DATE_REQUIRED');
+  if (!record.laboratoryId) reasons.push('LABORATORY_REQUIRED');
+  if (!record.analystId) reasons.push('ANALYST_REQUIRED');
+  if (!record.evidenceId) reasons.push('EVIDENCE_REQUIRED');
+
+  if (record.provenance !== 'MEASURED') {
+    reasons.push('LAB_MEASURED_PROVENANCE_REQUIRED');
+  }
+
+  return {
+    valid: reasons.length === 0,
+    status: reasons.length === 0 ? 'COMPLETE' : 'INCOMPLETE',
+    reasons
+  };
+}
+
+Add evidence registry verification for "evidenceId". A non-empty string is not sufficient.
+
+ACTION B — update assayValidationStatus
+
+COMPLETE must mean all required assays have valid laboratory evidence.
+
+Numeric active-matter values alone cannot produce COMPLETE.
+
+ACTION C — release integration
+
+Every route to "RELEASED" must check assay validation.
+
+Search the whole repository for:
+
+- "makeReleaseDecision"
+- "assayValidationStatus"
+- "RELEASED"
+- "validateManufacturingAssay"
+
+No bypass path is permitted.
+
+==================================================
+
+8. LAB HEALTH — REMOVE FALSE SAFE SCORES
+
+==================================================
+
+Files
+
+- "src/utils/labHealthEngine.ts"
+- "src/components/AIFormulator.tsx"
+- All Lab Health UI and report consumers.
+
+ACTION A — remove this fallback
+
+Defective:
+
+const finalScore = isNaN(rawScore)
+  ? 100
+  : Math.max(0, Math.min(100, Math.round(rawScore)));
+
+Replace with:
+
+const finalScore =
+  Number.isFinite(rawScore) && !pHUnavailable
+    ? Math.max(0, Math.min(100, Math.round(rawScore)))
+    : null;
+
+ACTION B — update result type
+
+export interface LabHealthResult {
+  finalScore: number | null;
+  rating:
+    | 'ASSESSMENT_INCOMPLETE'
+    | 'REQUIRES_REVIEW'
+    | 'PASSING';
+  pHStatus: 'AVAILABLE' | 'UNAVAILABLE';
+  isAssessmentComplete: boolean;
+  alerts: string[];
+}
+
+Preserve any existing required fields and adapt their types safely.
+
+ACTION C — remove AIFormulator fallback
+
+Remove:
+
+health: o?.labHealthResult || {
+  finalScore: 100,
+  rating: 'Passing / Safe',
+  alerts: []
+}
+
+Replace with an explicit incomplete state.
+
+When no valid Lab Health result exists:
+
+- Score = null.
+- Rating = ASSESSMENT_INCOMPLETE.
+- Status = NOT ASSESSED.
+- No green PASS.
+- No SAFE label.
+
+ACTION D — update every consumer
+
+Search:
+
+- "finalScore"
+- "LabHealthResult"
+- "pHStatus"
+- "isAssessmentComplete"
+- "Passing / Safe"
+- "rating"
+
+Update UI, reports, exports, dashboards and release checks.
+
+==================================================
+
+9. pH ENGINE — COMPLETE REGRESSION FIX
+
+==================================================
+
+File
+
+"src/domain/ph/pHEngineV2.ts"
+
+Preserve the scientifically valid solver.
+
+Inspect all four reported regression failures.
+
+Do not modify equations merely to make tests pass.
+
+Required behaviour:
+
+- Failed convergence means pH unavailable.
+- Invalid ionic strength must not be replaced by zero.
+- Failed solver must not feed downstream equilibrium calculations.
+- Confidence calculation requires valid converged results.
+- Invalid pH cannot produce a specification PASS.
+- No fallback to pH 7.
+
+Update every caller to handle unavailable pH.
+
+Add regression tests for:
+
+- Non-convergence.
+- Invalid concentration.
+- Missing ionic strength.
+- Invalid equilibrium input.
+- Null pH downstream.
+- Confidence unavailable when solver fails.
+
+Do not weaken existing scientific tolerances or tests.
+
+==================================================
+
+10. FORMULA TEMPLATE SCIENTIFIC STATUS
+
+==================================================
+
+Files
+
+- "src/data/formulas.ts"
+- Formula template validator.
+- Specification engine.
+- Formula library UI.
+- Formula reports.
+
+Preserve all 39 templates and all 13 categories.
+
+Do not delete templates simply because they are not laboratory validated.
+
+Distinguish:
+
+- STRUCTURALLY_VALID
+- CALCULATED_CHECKS_PASS
+- SCIENTIFICALLY_INCOMPLETE
+- LAB_VALIDATION_REQUIRED
+- LAB_VALIDATED
+
+Do not label a template scientifically or laboratory validated merely because:
+
+- Percentages total 100%.
+- Active percentage is numeric.
+- pH calculation returned a value.
+- Compatibility checks passed.
+
+Do not show "VALID" without explaining what was validated.
+
+If ingredient costs are unavailable, costing must show INCOMPLETE rather than a fabricated commercial cost.
+
+==================================================
+
+11. PARAMETER FALLBACK AND PROVENANCE AUDIT
+
+==================================================
+
+Perform a repository-wide audit.
+
+Search for:
+
+- "?? 0"
+- "|| 0"
+- "?? 100"
+- "|| 100"
+- "?? 1"
+- "|| 1"
+- "?? 1.0"
+- "|| 1.0"
+- "?? 7"
+- "|| 7"
+- "batchSizeKg = 100"
+- "activeDefault"
+- "getDefaultActiveMatter"
+- "Passing / Safe"
+- "finalScore = isNaN"
+- "density = 1.035"
+- "washDose = 20"
+- "washDose = 50"
+- "washVolume = 10"
+- "hardness = 150"
+
+For every occurrence:
+
+1. Identify the actual parameter.
+2. Identify whether zero is a genuine valid value.
+3. Determine whether the fallback represents a missing-data assumption.
+4. Check all callers.
+5. Check UI display.
+6. Check whether the value can affect PASS/FAIL or release.
+7. Fix scientifically invalid fallbacks.
+8. Document legitimate scenario defaults.
+
+Do not remove valid mathematical zero.
+
+Do not let a scenario assumption silently become a verified measurement.
+
+==================================================
+
+12. TEST SUITE REPAIR
+
+==================================================
+
+Required test files
+
+Update and execute:
+
+1. "src/utils/__tests__/powderMoisture.test.ts"
+2. "src/utils/__tests__/powderChelation.test.ts"
+3. "src/utils/__tests__/chelatorBinding.test.ts"
+4. "src/utils/__tests__/manufacturingAssay.test.ts"
+5. "src/utils/__tests__/activeMatterInputGuard.test.ts"
+6. "src/utils/__tests__/activeMatterIntegrity.test.ts"
+7. "src/utils/__tests__/phInputGuard.test.ts"
+8. "src/utils/__tests__/p0_remediation_integrity.test.ts"
+
+Also execute the complete existing regression suite.
+
+Required negative tests
+
+- Missing batch size cannot become 100 kg.
+- Missing density cannot become 1.0 or 1.035.
+- Unknown active matter cannot become a verified numeric result.
+- Ingredient-name matching cannot establish commercial grade.
+- Generic GLDA cannot resolve GLDA-47 capacity.
+- Commercial-product capacity cannot be multiplied by active fraction again.
+- Zero capacity cannot pass validation.
+- Fake evidence ID cannot validate a capacity.
+- Missing source document cannot create verified evidence.
+- Missing stock density cannot generate stock volume.
+- W/W and W/V equations cannot be interchanged.
+- Empty formula cannot be approved.
+- Numeric lab measurement without evidence cannot pass.
+- Numeric assay without laboratory evidence cannot complete assay validation.
+- Unknown pH cannot generate a safe numeric score.
+- Invalid Lab Health result cannot default to 100.
+- Failed pH convergence cannot produce PASS.
+- Unverified template cannot be labelled LAB_VALIDATED.
+- Gemini-generated output cannot be labelled MEASURED or LAB_VALIDATED.
+
+Test integrity
+
+Inspect:
+
+- "package.json"
+- "src/utils/test-calculations.ts"
+- Test runner configuration.
+- Test registration/imports.
+
+The standard test command must execute the complete required suite.
+
+A test file merely existing is not proof that it ran.
+
+Do not:
+
+- Delete failing tests.
+- Skip failing suites.
+- Weaken assertions.
+- Replace real tests with hardcoded PASS.
+- Report tests as executed if they were only discovered.
+
+==================================================
+
+13. BUILD AND TYPE SAFETY
+
+==================================================
+
+Inspect the actual package manager and lockfile.
+
+Update scripts carefully.
+
+Required:
+
+- Full TypeScript check.
+- Full automated regression suite.
+- Production build.
+- Test registration verification.
+- No unresolved imports.
+- No unsafe null handling.
+- No TypeScript errors.
+
+If a TypeScript configuration is missing, add a configuration compatible with the existing project and dependencies. Do not introduce incompatible compiler settings.
+
+Do not report production build success if only an applet compilation succeeded.
+
+If the environment cannot execute a command, report NOT EXECUTED.
+
+Do not invent successful build output.
+
+==================================================
+
+14. UI AND USER EXPERIENCE INTEGRATION
+
+==================================================
+
+Update the UI wherever a value becomes unavailable or unverified.
+
+Display clear labels:
+
+- VERIFIED MEASURED
+- SUPPLIER REPORTED
+- DERIVED
+- USER OVERRIDE
+- ESTIMATED
+- AI PREDICTED
+- UNKNOWN
+- UNAVAILABLE
+- LAB VALIDATION REQUIRED
+- ASSESSMENT INCOMPLETE
+
+For missing required inputs:
+
+- Show the exact missing parameter.
+- Explain why it is needed.
+- Do not show a fake zero or safe value.
+- Do not show a green PASS.
+- Do not crash the interface.
+
+Preserve Gemini Bot functionality.
+
+Gemini responses must have a visible AI-generated label where relevant.
+
+Gemini output can support research and explanation but cannot automatically become approved laboratory evidence.
+
+==================================================
+
+15. FINAL ACCEPTANCE CRITERIA
+
+==================================================
+
+A correction is COMPLETE only if all five layers are updated:
+
+1. Scientific calculation/helper.
+2. Types and validation.
+3. Every production caller.
+4. UI and persistence.
+5. Automated tests.
+
+Do not mark a correction PASS if only the helper was fixed.
+
+For each correction, report:
+
+- Source file changed.
+- Function changed.
+- Exact old behaviour.
+- Exact new behaviour.
+- All callers updated.
+- Tests executed.
+- Test result.
+- Remaining limitations.
+
+FINAL DELIVERY REQUIRED
+
+Produce:
+
+1. Complete updated application ZIP.
+2. Modified file list.
+3. Added file list.
+4. Deleted file list, if any.
+5. P0 correction matrix.
+6. P1 correction matrix.
+7. Active Matter provenance audit.
+8. Chelator evidence traceability audit.
+9. Powder parameter fallback audit.
+10. Release Gate bypass audit.
+11. Manufacturing assay audit.
+12. Lab Health false-safe audit.
+13. pH regression audit.
+14. Formula template validation audit.
+15. Test execution manifest.
+16. TypeScript result.
+17. Production build result.
+18. Remaining defects list.
+
+Use PASS / PARTIAL / FAIL / NOT VERIFIED.
+
+Do not claim 100% completion or RELEASE READY unless all mandatory conditions pass.
+
+==================================================
+
+EXECUTION INSTRUCTION
+
+==================================================
+
+Start by inspecting the actual ZIP 68 source.
+
+Implement all corrections in the real project.
+
+Do not stop after producing a plan.
+
+Do not create a separate demonstration project.
+
+Do not merely add new validators while leaving old calculation paths active.
+
+Search and update every production caller.
+
+Preserve Gemini Bot, Gemini API, Supabase, Firebase, authentication, cloud sync and all existing application features.
+
+Fix the underlying defects, run the full tests, run TypeScript checks, run the production build, and deliver the complete updated ZIP.
+
+If a scientific value lacks evidence, preserve the application functionality but mark that calculation INSUFFICIENT_DATA. Never invent a scientific value to make the result pass.
+
+BEGIN IMPLEMENTATION NOW.

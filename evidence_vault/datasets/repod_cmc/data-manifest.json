@@ -1,0 +1,37 @@
+{
+  "dataset": {
+    "title": "Conductometric measurements determining CMC for multicharged cationic surfactants",
+    "author": "Sebastian Balicki",
+    "year": 2026,
+    "doi": "10.18150/IMF2OE",
+    "version": "1.0",
+    "license": "CC BY 4.0",
+    "retrieved": "2026-10-19",
+    "source": "https://repod.icm.edu.pl/dataset.xhtml?persistentId=doi:10.18150/IMF2OE"
+  },
+  "files": {
+    "C12_DNNH3MeSO3_dicephalic_quadruple.txt": {
+      "bytes": 2158,
+      "md5": "c46781d8ce8ebfba16ba991509627481",
+      "sha256": "bf11d87fbd9fe33fa901bd6cd71da05586176071ce0df2210277310ad6081c78",
+      "measurement_rows": 79
+    },
+    "C12_DNNH3MeSO3_dicephalic.txt": {
+      "bytes": 2161,
+      "md5": "82613d9ecc8c68b5e41f32b1cdde2ef1",
+      "sha256": "27c9acf93f7102c83403aca7c759f5ac1eca3941d5aa88f48b94d7b981115d20",
+      "measurement_rows": 79
+    },
+    "C12_GNQNNH3MeSO3_gemini_quadruple.txt": {
+      "bytes": 1293,
+      "md5": "0381371333d3e336202747e5f8291dce",
+      "sha256": "c7fcc3fb7d33a428a840d1205ce02741e43834b7d8e7de5fc4b7204a64c74f20",
+      "measurement_rows": 44
+    },
+    "repod_cmc_measurements.csv": {
+      "bytes": 37713,
+      "md5": "07e01f07b2fdb4072cc6089f41e1d0ab",
+      "sha256": "4e6a80bf964238c694d681000006d073e89c463151452428587102518f1a5641"
+    }
+  }
+}
