@@ -100,7 +100,13 @@ export async function runFormulaAnalysisWorkflowTestSuite(): Promise<{
     assert('1. Live Totals', 'Live raw sum updates to 103.00% immediately', updatedRaw === 103.0, updatedRaw, 103.0);
     assert('1. Live Totals', 'Live raw surfactants updates to 29.00%', updatedRawSurfactants === 29.0, updatedRawSurfactants, 29.0);
     assert('1. Live Totals', 'Live active surfactants updates to 20.70%', Math.abs(updatedActiveSurfactants - 20.7) < 0.05, updatedActiveSurfactants, 20.7);
-    assert('1. Live Totals', 'Live cost increases with SLES dosage', updatedCost.costPerKg > initialCost.costPerKg, updatedCost.costPerKg > initialCost.costPerKg, true);
+    assert('1. Live Totals', 'Unbalanced 103% edit does not produce a complete-batch cost', updatedCost.isComplete === false && !Number.isFinite(updatedCost.costPerKg), updatedCost.costPerKg, 'unavailable');
+
+    const balancedEditedIngredients = editedIngredients.map(ing =>
+      ing.id === 'ing-1' ? { ...ing, percentage: 67.0 } : { ...ing }
+    );
+    const balancedUpdatedCost = calculateFormulaCost(balancedEditedIngredients, 100);
+    assert('1. Live Totals', 'Balanced SLES dosage increase raises complete-formula cost', balancedUpdatedCost.isComplete && balancedUpdatedCost.costPerKg > initialCost.costPerKg, balancedUpdatedCost.costPerKg, `greater than ${initialCost.costPerKg}`);
   }
 
   // =========================================================================
