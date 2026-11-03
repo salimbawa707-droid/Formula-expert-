@@ -267,7 +267,11 @@ export function runCategoryPropagationTestSuite() {
   const stdEval = FormulaScientificOrchestrator.evaluate({
     formulaName: 'Structured Output Standard',
     productCategory: 'LAUNDRY_LIQUID',
-    ingredients: baseIngredients
+    ingredients: baseIngredients,
+    waterHardnessPpm: 150,
+    washVolumeL: 10,
+    washDoseGrams: 50,
+    batchSizeKg: 100
   });
 
   assert(
