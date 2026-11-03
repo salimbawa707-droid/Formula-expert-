@@ -19,7 +19,6 @@ src/utils/dilutionEngine.ts
 src/utils/empiricalCalibrationEngine.ts
 src/utils/empiricalValidationEvaluationEngine.ts
 src/utils/expertReasoningEngine.ts
-src/utils/formulaDevelopmentEngine.ts
 src/utils/gradeEngine.ts
 src/utils/hlbEngine.ts
 src/utils/ingredientIntelligenceEngine.ts
@@ -54,3 +53,4 @@ src/utils/spectroscopy/spectralPreprocessingEngine.ts
 src/utils/substitutionEngine.ts
 src/utils/templateRevalidationEngine.ts
 src/utils/viscosityEngine.ts
+
