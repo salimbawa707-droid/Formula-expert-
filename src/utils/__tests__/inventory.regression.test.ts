@@ -5,6 +5,7 @@ import {
   adjustStockQuantity,
   checkProductionBatchAvailability,
   executeAtomicBatchDeduction,
+  findMatchingInventoryItem,
   InventoryItem
 } from '../inventoryEngine';
 import { ActiveFormulaState } from '../../types';
@@ -216,6 +217,39 @@ export function runInventoryTestSuite() {
     'Test 14: Repeated render/reload does not deduct stock twice',
     reloadedInv1[0].currentStockKg === 90 && reloadedInv2[0].currentStockKg === 90,
     `Reload 1: ${reloadedInv1[0].currentStockKg}kg, Reload 2: ${reloadedInv2[0].currentStockKg}kg`
+  );
+
+  // Grade-sensitive inventory identity must never use substring matching.
+  const gradeMismatch = findMatchingInventoryItem(
+    { name: 'LABSA 90%' } as any,
+    [{ id: 'inv-labsa96', ingredientId: 'labsa-96', name: 'LABSA 96%', category: 'Surfactant', currentStockKg: 100, unit: 'kg', minimumStockKg: 0, reorderLevelKg: 0, costPerKg: null }]
+  );
+  assert(
+    'Test 15: LABSA 90% cannot consume LABSA 96% inventory by fuzzy name match',
+    gradeMismatch === undefined,
+    String(gradeMismatch?.name)
+  );
+
+  const invalidPctCheck = checkProductionBatchAvailability({
+    name: 'Invalid percentage formula',
+    batchSizeKg: 10,
+    ingredients: [{ name: 'LABSA 90%', percentage: Number.NaN }]
+  }, 10, inventoryStock);
+  assert(
+    'Test 16: Non-finite ingredient percentage blocks production',
+    !invalidPctCheck.canProduce && invalidPctCheck.blockReasons.some(reason => reason.includes('percentage')),
+    invalidPctCheck.blockReasons.join('; ')
+  );
+
+  const unbalancedCheck = checkProductionBatchAvailability({
+    name: 'Unbalanced formula',
+    batchSizeKg: 10,
+    ingredients: [{ name: 'LABSA 90%', percentage: 90 }]
+  }, 10, inventoryStock);
+  assert(
+    'Test 17: Formula mass balance other than 100% blocks production',
+    !unbalancedCheck.canProduce && unbalancedCheck.blockReasons.some(reason => reason.includes('mass balance')),
+    unbalancedCheck.blockReasons.join('; ')
   );
 
   // Test 15: Missing legacy inventory metadata stays unknown, never receives fabricated defaults.
