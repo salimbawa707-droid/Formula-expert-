@@ -569,49 +569,107 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const hardnessPolicy = getProductHardnessPolicy(state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined);
-        const hardnessRes = calculateWaterHardnessTolerance(
-          state.resolvedIngredients,
-          state.waterHardnessPpm,
-          state.rawInput.machineProfile?.waterVolumeL || hardnessPolicy.defaultWashVolumeL,
-          state.rawInput.dose || hardnessPolicy.defaultDoseGrams,
-          state.batchSizeKg,
+        const hardnessPolicy = getProductHardnessPolicy(
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
         );
+        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.waterVolumeL;
+        const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams;
+        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null
+          ? hardnessPolicy.defaultWashVolumeL
+          : Number(rawWashVolume);
+        const washDoseGrams = rawDose === undefined || rawDose === null
+          ? hardnessPolicy.defaultDoseGrams
+          : Number(rawDose);
+
+        if (rawWashVolume === undefined || rawWashVolume === null) {
+          state.assumptions.push('Wash volume uses the product hardness policy default; replace with the actual wash volume for a production decision.');
+        }
+        if (rawDose === undefined || rawDose === null) {
+          state.assumptions.push('Wash dose uses the product hardness policy default; replace with the actual dose for a production decision.');
+        }
+
+        const scenarioInputsValid =
+          state.waterHardnessPpm !== null &&
+          Number.isFinite(state.waterHardnessPpm) &&
+          Number.isFinite(washVolumeL) && washVolumeL > 0 &&
+          Number.isFinite(washDoseGrams) && washDoseGrams > 0 &&
+          Number.isFinite(state.batchSizeKg) && state.batchSizeKg > 0;
+
+        const hardnessRes = scenarioInputsValid
+          ? calculateWaterHardnessTolerance(
+              state.resolvedIngredients,
+              state.waterHardnessPpm as number,
+              washVolumeL,
+              washDoseGrams,
+              state.batchSizeKg,
+              state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
+            )
+          : {
+              status: 'NOT_EVALUATED',
+              waterHardnessPpm: state.waterHardnessPpm,
+              maxSupportedPpm: null,
+              washVolumeL: Number.isFinite(washVolumeL) ? washVolumeL : null,
+              washDoseGrams: Number.isFinite(washDoseGrams) ? washDoseGrams : null,
+              bindingCapacityCaCO3GPer100g: null,
+              hardnessProtectionRatio: null,
+              missingInputs: [
+                ...(state.waterHardnessPpm === null ? ['WATER_HARDNESS_PPM'] : []),
+                ...(!Number.isFinite(washVolumeL) || washVolumeL <= 0 ? ['WASH_VOLUME_L'] : []),
+                ...(!Number.isFinite(washDoseGrams) || washDoseGrams <= 0 ? ['WASH_DOSE_GRAMS'] : []),
+                ...(!Number.isFinite(state.batchSizeKg) || state.batchSizeKg <= 0 ? ['BATCH_SIZE_KG'] : [])
+              ]
+            };
 
         state.hardnessResult = hardnessRes;
-        state.rawCapacity = (hardnessRes as any).bindingCapacityCaCO3GPer100g ?? 0;
-        state.protectionAssessment = hardnessRes.status === 'PASS' || hardnessRes.status === 'NOT_APPLICABLE' ? 'PASS' : 'INSUFFICIENT';
+        const rawCapacity = (hardnessRes as any).bindingCapacityCaCO3GPer100g;
+        state.rawCapacity = typeof rawCapacity === 'number' && Number.isFinite(rawCapacity) ? rawCapacity : Number.NaN;
+        state.protectionAssessment = hardnessRes.status === 'PASS'
+          ? 'SCREENING_PASS'
+          : hardnessRes.status === 'NOT_APPLICABLE'
+            ? 'NOT_APPLICABLE'
+            : 'INSUFFICIENT';
 
         let chelatorActivePct = 0;
+        let hasUnknownChelatorActiveMatter = false;
         const chelatorNames: string[] = [];
 
         state.resolvedIngredients.forEach((ing) => {
-          const name = ing.name.toLowerCase();
-          const role = (ing.role || '').toLowerCase();
-          const active = (ing.activeMatterPct !== undefined && ing.activeMatterPct !== null ? ing.activeMatterPct : getDefaultActiveMatter(ing)) / 100;
-          const activePct = ing.percentage * active;
+          const name = String(ing.name || '').toLowerCase();
+          const role = String(ing.role || '').toLowerCase();
+          if (!(role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate'))) return;
 
-          if (role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate')) {
-            chelatorActivePct += activePct;
-            chelatorNames.push(ing.name);
+          chelatorNames.push(ing.name);
+          const activeRaw = ing.activeMatterPct ?? getDefaultActiveMatter(ing);
+          if (typeof activeRaw !== 'number' || !Number.isFinite(activeRaw) || activeRaw < 0 || activeRaw > 100) {
+            hasUnknownChelatorActiveMatter = true;
+            return;
           }
+          const pct = Number(ing.percentage);
+          if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+            hasUnknownChelatorActiveMatter = true;
+            return;
+          }
+          chelatorActivePct += pct * (activeRaw / 100);
         });
 
         state.chelationResult = {
-          isSufficient: hardnessRes.status === 'PASS' || hardnessRes.status === 'NOT_APPLICABLE',
-          chelatorActivePct: Number(chelatorActivePct.toFixed(2)),
+          isSufficient: hardnessRes.status === 'PASS' ? true : (hardnessRes.status === 'NOT_APPLICABLE' ? null : false),
+          status: hardnessRes.status === 'PASS' ? 'SCREENING' : hardnessRes.status,
+          chelatorActivePct: hasUnknownChelatorActiveMatter ? null : Number(chelatorActivePct.toFixed(2)),
+          chelatorActiveMatterVerified: !hasUnknownChelatorActiveMatter,
           chelatorNames: Array.from(new Set(chelatorNames)),
-          bindingCapacityCaCO3GPer100g: state.rawCapacity,
-          hardnessProtectionRatio: hardnessRes.hardnessProtectionRatio
+          bindingCapacityCaCO3GPer100g: Number.isFinite(state.rawCapacity) ? state.rawCapacity : null,
+          hardnessProtectionRatio: Number.isFinite(hardnessRes.hardnessProtectionRatio) ? hardnessRes.hardnessProtectionRatio : null
         };
 
-        if (state.resolvedIngredients.length === 0) {
+        if (state.waterHardnessPpm === null || !scenarioInputsValid || hasUnknownChelatorActiveMatter) {
           state.chelationStatus = 'INSUFFICIENT_DATA';
         } else if (hardnessRes.status === 'NOT_APPLICABLE') {
           state.chelationStatus = 'NOT_APPLICABLE';
         } else if (hardnessRes.status === 'PASS') {
-          state.chelationStatus = 'VALID';
+          state.chelationStatus = 'SCREENING';
+        } else if (hardnessRes.status === 'INSUFFICIENT' || hardnessRes.status === 'NOT_EVALUATED') {
+          state.chelationStatus = 'INSUFFICIENT_DATA';
         } else {
           state.chelationStatus = 'SCREENING';
         }
