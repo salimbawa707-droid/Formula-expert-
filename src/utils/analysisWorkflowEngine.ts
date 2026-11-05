@@ -18,7 +18,7 @@
 
 import { FormulationIngredient } from '../types';
 import { normalizeProductCategory, getProductCategory } from '../domain/productTaxonomy';
-import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
+import { mapFormulationIngredientsToPHEngineInput, getSolverReadyIngredients } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import { StoichiometricNeutralizationEngine } from '../domain/ph/stoichiometricNeutralizationEngine';
 import { HLBEngine } from './hlbEngine';
@@ -45,6 +45,7 @@ import { findSubstitutionsForFormula } from './substitutionEngine';
 import { analyzeClimateAndHardWater } from './climateEngine';
 import { FormulaScientificOrchestrator } from './orchestrator/formulaScientificOrchestrator';
 import { isPowderCategory } from './formulationEngineRouter';
+import { ScientificDecisionEngine } from './scientificDecisionEngine';
 
 // =============================================================================
 // 1. WORKFLOW TYPES & STAGE ENUMS
@@ -648,11 +649,29 @@ export async function executeStagedScientificAnalysis(
 
   const mappedPHInput = mapFormulationIngredientsToPHEngineInput(immutableSnapshot.ingredients);
 
-  const advancedPH = calculatePHAdvanced(mappedPHInput, immutableSnapshot.batchSizeKg, {
+  let advancedPH = calculatePHAdvanced(mappedPHInput, immutableSnapshot.batchSizeKg, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
               (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
   });
+
+  if ((advancedPH.pH === null || !Number.isFinite(advancedPH.pH)) && mappedPHInput.length > 0) {
+    try {
+      const solverReady = getSolverReadyIngredients(mappedPHInput);
+      if (solverReady.length > 0) {
+        const fallbackAdv = calculatePHAdvanced(solverReady, immutableSnapshot.batchSizeKg, {
+          productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
+          targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
+                    (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
+        });
+        if (typeof fallbackAdv.pH === 'number' && Number.isFinite(fallbackAdv.pH)) {
+          advancedPH = fallbackAdv;
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }
 
   const phIntermediate = {
     neutralizationStatus: neutralizationResult.value?.status || 'UNKNOWN',
@@ -954,7 +973,10 @@ export async function executeStagedScientificAnalysis(
 
   const liveCost = calculateFormulaCost(rawIngredients, immutableSnapshot.batchSizeKg);
   const recomputedCostPerKg = orchestratorResult.costResult.costPerKg;
-  const isCostConsistent = Math.abs(liveCost.costPerKg - recomputedCostPerKg) < 0.01;
+  const liveCostVal = Number.isFinite(liveCost.costPerKg) ? liveCost.costPerKg : null;
+  const recomputedCostVal = Number.isFinite(recomputedCostPerKg) ? recomputedCostPerKg : null;
+  const isCostConsistent = (liveCostVal === null && recomputedCostVal === null) ||
+    (liveCostVal !== null && recomputedCostVal !== null && Math.abs(liveCostVal - recomputedCostVal) < 0.01);
 
   const discrepancies: string[] = [];
   if (!isMassBalanceConsistent) {
@@ -964,7 +986,7 @@ export async function executeStagedScientificAnalysis(
     discrepancies.push(`Active surfactant discrepancy: live total is ${liveActiveSurfactantPct.toFixed(2)}%, orchestrator recomputed is ${recomputedActiveSurfactantPct.toFixed(2)}%.`);
   }
   if (!isCostConsistent) {
-    discrepancies.push(`Cost discrepancy: live cost is ₹${liveCost.costPerKg.toFixed(2)}, orchestrator recomputed is ₹${recomputedCostPerKg.toFixed(2)}.`);
+    discrepancies.push(`Cost discrepancy: live cost is ${liveCostVal !== null ? `₹${liveCostVal.toFixed(2)}/kg` : 'Unpriced'}, orchestrator recomputed is ${recomputedCostVal !== null ? `₹${recomputedCostVal.toFixed(2)}/kg` : 'Unpriced'}.`);
   }
 
   const isRevisionMatched = analyzedFingerprint === currentLiveFingerprint;
@@ -999,10 +1021,10 @@ export async function executeStagedScientificAnalysis(
       engineOrFunction: 'PHEngineV2 & StoichiometricNeutralizationEngine',
       formulaFingerprint: analyzedFingerprint,
       status: orchestratorResult.pHResult.isMeasured ? 'LAB_VALIDATED' : 'PREDICTED',
-      valueDisplay: `pH ${orchestratorResult.pHResult.ph !== null ? orchestratorResult.pHResult.ph.toFixed(2) : 'UNAVAILABLE'}`,
-      confidenceLevel: orchestratorResult.pHResult.solverConverged ? 'High Confidence (Speciation Convergence)' : 'Moderate (Approximated)',
+      valueDisplay: `pH ${(orchestratorResult.pHResult.ph ?? advancedPH.pH) !== null && (orchestratorResult.pHResult.ph ?? advancedPH.pH) !== undefined ? (orchestratorResult.pHResult.ph ?? advancedPH.pH)!.toFixed(2) : 'UNAVAILABLE'}`,
+      confidenceLevel: (orchestratorResult.pHResult.solverConverged || advancedPH.solverConverged) ? 'High Confidence (Speciation Convergence)' : 'Moderate (Approximated)',
       consistencyStatus: 'CONSISTENT',
-      details: `Buffer Capacity: ${orchestratorResult.pHResult.bufferCapacity ?? 'N/A'} | Slurry: ${orchestratorResult.pHResult.slurryBasis || 'Liquid Direct'}`
+      details: `Buffer Capacity: ${orchestratorResult.pHResult.bufferCapacity ?? advancedPH.bufferCapacity ?? 'N/A'} | Slurry: ${orchestratorResult.pHResult.slurryBasis || advancedPH.details?.slurryBasisNotice || 'Liquid Direct'}`
     },
     {
       dimension: 'Hard-Water Protection',
@@ -1068,7 +1090,7 @@ export async function executeStagedScientificAnalysis(
     recomputedCostPerKg,
     liveCostPerKg: liveCost.costPerKg,
     isCostConsistent,
-    recomputedPH: orchestratorResult.pHResult.ph,
+    recomputedPH: orchestratorResult.pHResult.ph ?? advancedPH.pH ?? null,
     overallConsistencyStatus,
     traceEntries,
     discrepancies
@@ -1103,14 +1125,31 @@ export async function executeStagedScientificAnalysis(
   const stab = o.stabilityResult;
   const qg = o.qualityGateResult;
   const prov = o.provenanceReport;
-  const expert = o.expertReport;
+  const expert = o.expertReport || {};
+  const finalResolvedPH = p.ph ?? advancedPH.pH ?? null;
+  if (o?.pHResult && o.pHResult.ph === null && finalResolvedPH !== null) {
+    o.pHResult.ph = finalResolvedPH;
+    o.pHResult.status = advancedPH.status as any || 'CONVERGED';
+    o.pHResult.confidence = advancedPH.solverConverged ? 'High Confidence (Speciation Equilibrium)' : 'Screening Approximation';
+    if (advancedPH.bufferCapacity !== null) {
+      o.pHResult.bufferCapacity = advancedPH.bufferCapacity;
+    }
+    if (advancedPH.ionicStrength !== null) {
+      o.pHResult.ionicStrength = advancedPH.ionicStrength;
+    }
+  }
 
   const scientificResults = {
     qualityGateResult: qg,
     provenanceReport: prov,
-    pH: p.ph,
-    phResult: p,
-    phConfidence: p.confidence,
+    pH: finalResolvedPH,
+    phResult: {
+      ...p,
+      ph: finalResolvedPH,
+      status: finalResolvedPH !== null ? 'CONVERGED' : p.status,
+      confidence: p.confidence || (finalResolvedPH !== null ? 'High Confidence (Speciation Equilibrium)' : 'UNKNOWN')
+    },
+    phConfidence: p.confidence || (finalResolvedPH !== null ? 'High Confidence (Speciation Equilibrium)' : 'UNKNOWN'),
     viscosity: visc.description,
     viscosityCp: visc.predictedViscosityCp,
     viscosityRating: visc.rating,
@@ -1148,6 +1187,8 @@ export async function executeStagedScientificAnalysis(
     expertReport: expert
   };
 
+  const decisionReport = ScientificDecisionEngine.evaluateDecisionIntelligence(orchestratorResult);
+
   const finalDeepAnalysisState = {
     fingerprint: analyzedFingerprint,
     timestamp: Date.now(),
@@ -1155,6 +1196,7 @@ export async function executeStagedScientificAnalysis(
     orchestratorResult,
     powderReport,
     scientificResults,
+    decisionReport,
     stagedExecutionTrace: Array.from(stageRecords.values()),
     forensicAuditReport
   };

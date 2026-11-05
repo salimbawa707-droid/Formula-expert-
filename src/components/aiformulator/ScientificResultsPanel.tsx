@@ -184,7 +184,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
         >
           <Activity className="w-3.5 h-3.5" />
           Execution Trace Viewer
-          {trace && (
+          {trace?.executionOrder && (
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40">
               {trace.executionOrder.length} Nodes
             </span>
@@ -241,14 +241,14 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {scientificResults.pH.toFixed(2)}
+                {typeof scientificResults?.pH === 'number' ? scientificResults.pH.toFixed(2) : (typeof scientificResults?.phResult?.ph === 'number' ? scientificResults.phResult.ph.toFixed(2) : 'N/A')}
               </span>
               <span className="text-xs text-token-secondary font-bold">
                 Target: {getTargetPHRange(productCategory)?.min ?? 'Not defined'} - {getTargetPHRange(productCategory)?.max ?? 'Not defined'}
               </span>
             </div>
             <p className="text-[11px] text-cyan-300 font-bold leading-tight">
-              Calculated Equilibrium pH: {scientificResults.pH.toFixed(2)} — SCREENING
+              Calculated Equilibrium pH: {typeof scientificResults?.pH === 'number' ? scientificResults.pH.toFixed(2) : (typeof scientificResults?.phResult?.ph === 'number' ? scientificResults.phResult.ph.toFixed(2) : 'N/A')} — SCREENING
             </p>
             <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
               <span className="text-token-secondary font-bold">Measured Finished Product pH:</span>
@@ -257,9 +257,12 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               </span>
             </div>
             <p className="text-[11px] text-token-primary leading-tight font-medium">
-              Newton-Raphson charge balance ({scientificResults.pH < 7 ? "Acidic" : scientificResults.pH > 7 ? "Alkaline" : "Neutral"}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || "Theoretical Model"}</span>. Physical electrode test required for release.
+              Newton-Raphson charge balance ({(() => {
+                const val = typeof scientificResults?.pH === 'number' ? scientificResults.pH : (typeof scientificResults?.phResult?.ph === 'number' ? scientificResults.phResult.ph : null);
+                return val !== null ? (val < 6.8 ? "Acidic" : val > 8.5 ? "Alkaline" : "Neutral") : "Equilibrium Pending";
+              })()}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || scientificResults?.phConfidence || "Theoretical Model"}</span>. Physical electrode test required for release.
             </p>
-            {scientificResults.pH > 9.5 && scientificResults.details?.recognizedContributors?.includes('sodium_citrate') && !scientificResults.details?.recognizedContributors?.includes('citric_acid') && (
+            {typeof scientificResults?.pH === 'number' && scientificResults.pH > 9.5 && scientificResults.details?.recognizedContributors?.includes('sodium_citrate') && !scientificResults.details?.recognizedContributors?.includes('citric_acid') && (
               <div className="mt-2 text-[11px] bg-amber-950/50 border border-amber-500/40 rounded-lg p-2 text-amber-200">
                 💡 <strong>Chemist Tip:</strong> &ldquo;Sodium Citrate&rdquo; is an alkaline/buffer salt and does not neutralize excess Caustic Soda. To lower pH from alkaline into target range, add <strong>Citric Acid (Anhydrous/Solution)</strong> acidifier.
               </div>
@@ -437,7 +440,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 {productCategory.toLowerCase().includes("powder")
                   ? "Total Dry Solids"
                   : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
-                  ? `Known NVR coverage: ${(scientificResults.nvrResult.dataCompleteness ?? 0).toFixed(0)}%`
+                  ? `Known NVR coverage: ${(scientificResults?.nvrResult?.dataCompleteness ?? 0).toFixed(0)}%`
                   : "Non-Volatile Residue"}
               </span>
             </div>
@@ -445,7 +448,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               {productCategory.toLowerCase().includes("powder")
                 ? `Dry powder matter: ${(scientificResults?.totalSolids ?? 0).toFixed(1)}% • Hydrate moisture: ${(100 - (scientificResults?.totalSolids ?? 0)).toFixed(1)}%.`
                 : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
-                ? `NVR: INSUFFICIENT_DATA • Known NVR coverage: ${(scientificResults.nvrResult.dataCompleteness ?? 0).toFixed(0)}%. Insufficient NVR data for ${(scientificResults.nvrResult.unknownIngredients || []).join(', ')}.`
+                ? `NVR: INSUFFICIENT_DATA • Known NVR coverage: ${(scientificResults?.nvrResult?.dataCompleteness ?? 0).toFixed(0)}%. Insufficient NVR data for ${(scientificResults?.nvrResult?.unknownIngredients || []).join(', ')}.`
                 : `Volatile solvent fraction: ${(100 - (scientificResults?.totalSolids ?? 0)).toFixed(1)}% • Non-volatile residue: ${(scientificResults?.totalSolids ?? 0).toFixed(1)}% (Calculated).`}
             </p>
             {!productCategory.toLowerCase().includes("powder") && (
@@ -478,7 +481,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-mono font-extrabold text-white">
-                    {scientificResults.hlb > 0 ? scientificResults.hlb.toFixed(1) : "N/A"}
+                    {typeof scientificResults?.hlb === 'number' && scientificResults.hlb > 0 ? scientificResults.hlb.toFixed(1) : "N/A"}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">Blended HLB</span>
                 </div>
@@ -517,7 +520,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                     {scientificResults.cmc?.available ? Math.round(scientificResults.cmc.ppm) : "Unavailable"}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">
-                    {scientificResults.cmc?.available ? `ppm (${scientificResults.cmc.molar.toFixed(2)} mM)` : "no prediction"}
+                    {scientificResults?.cmc?.available ? `ppm (${(scientificResults?.cmc?.molar ?? 0).toFixed(2)} mM)` : "no prediction"}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
@@ -737,19 +740,19 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">11. Compatibility</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                scientificResults.compatibility.compatible ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-rose-950/80 text-rose-300 border-rose-500/40"
+                scientificResults?.compatibility?.compatible ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-rose-950/80 text-rose-300 border-rose-500/40"
               }`}>
-                {scientificResults.compatibility.compatible ? "PASSED" : "HAZARD"}
+                {scientificResults?.compatibility?.compatible ? "PASSED" : "HAZARD"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {scientificResults.compatibility.compatibilityScore}
+                {scientificResults?.compatibility?.compatibilityScore ?? 100}
               </span>
               <span className="text-xs text-slate-400 font-semibold">/ 100 Rating</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {scientificResults.compatibility.warnings[0] || "No anionic/cationic precipitation or degradation hazards."}
+              {scientificResults?.compatibility?.warnings?.[0] || "No anionic/cationic precipitation or degradation hazards."}
             </p>
           </div>
 
@@ -762,7 +765,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               </span>
             </div>
             <span className="text-xs font-bold text-white block truncate mt-1">
-              {scientificResults.categorySuitability}
+              {scientificResults?.categorySuitability || productCategory}
             </span>
             <p className="text-[11px] text-slate-400 leading-tight">
               Tested against manufacturing standards for {productCategory}.
@@ -782,19 +785,19 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">13. Safety / GHS Status</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                scientificResults.health.finalScore >= 75 ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-amber-950/80 text-amber-300 border-amber-500/40"
+                (scientificResults?.health?.finalScore ?? 100) >= 75 ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-amber-950/80 text-amber-300 border-amber-500/40"
               }`}>
-                {scientificResults.health.rating}
+                {scientificResults?.health?.rating || "SAFE"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {scientificResults.health.finalScore}
+                {scientificResults?.health?.finalScore ?? 100}
               </span>
               <span className="text-xs text-slate-400 font-semibold">/ 100 GHS Score</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {scientificResults.health.alerts[0]?.message || "GHS safety rating passed. Standard personal protective equipment applies."}
+              {scientificResults?.health?.alerts?.[0]?.message || "GHS safety rating passed. Standard personal protective equipment applies."}
             </p>
           </div>
 

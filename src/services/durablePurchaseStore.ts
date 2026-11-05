@@ -12,7 +12,7 @@ import crypto from 'crypto';
 import { initializeApp, getApps, getApp, cert, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import fs from 'fs';
-import firebaseConfig from '../../firebase-applet-config.json';
+import firebaseConfig from '../../firebase-applet-config.json' with { type: 'json' };
 
 export interface PurchaseGrantRecord {
   tokenFingerprint: string;

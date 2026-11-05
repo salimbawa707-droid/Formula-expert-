@@ -22,9 +22,9 @@ export const SpecificationExplorerPanel: React.FC<SpecificationExplorerPanelProp
   const specs = [
     {
       parameter: 'Equilibrium pH',
-      calculated: pHResult.ph.toFixed(2),
+      calculated: typeof pHResult?.ph === 'number' ? pHResult.ph.toFixed(2) : 'N/A',
       unit: '',
-      status: pHResult.ph >= 4 && pHResult.ph <= 11.5 ? 'PASS' : 'WARN',
+      status: typeof pHResult?.ph === 'number' ? (pHResult.ph >= 4 && pHResult.ph <= 11.5 ? 'PASS' : 'WARN') : 'WARN',
       provenance: 'PHEngineV2'
     },
     {

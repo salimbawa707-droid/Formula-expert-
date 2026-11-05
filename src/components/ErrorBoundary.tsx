@@ -49,8 +49,8 @@ export default class ErrorBoundary extends Component<Props, State> {
               <div className="text-[10px] font-bold text-red-400 uppercase tracking-wider font-mono">
                 Error Stack
               </div>
-              <p className="text-[11px] text-slate-400 font-mono mt-1 break-words">
-                {this.state.error?.message || 'Unknown runtime anomaly'}
+              <p className="text-[11px] text-slate-400 font-mono mt-1 break-words whitespace-pre-wrap max-h-48 overflow-y-auto">
+                {this.state.error?.stack || this.state.error?.message || 'Unknown runtime anomaly'}
               </p>
             </div>
 

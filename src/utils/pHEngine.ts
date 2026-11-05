@@ -305,6 +305,13 @@ export const INGREDIENT_DATABASE: Record<string, {
     eqPerMole: 1,
     pHEffect: 'base',
     description: 'Organic primary amine base neutralizer'
+  },
+  'Water (Deionized / Aqua)': {
+    type: 'water',
+    mw: 18.015,
+    eqPerMole: 0,
+    pHEffect: 'neutral',
+    description: 'Aqueous formulation solvent carrier'
   }
 };
 

@@ -7,9 +7,7 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
-    // Keep Vite's default host allowlist to prevent DNS-rebinding access.
-    hmr: process.env.DISABLE_HMR !== 'true',
-    watch: process.env.DISABLE_HMR === 'true' ? null : {}
+    hmr: false
   },
   preview: {
     port: 3000

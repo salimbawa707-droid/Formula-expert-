@@ -52,9 +52,21 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "userId", "title"]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Transient health check document for connection verification",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string" }
+      }
     }
   },
   "firestore": {
+    "/test/{docId}": {
+      "schema": "TestConnection",
+      "description": "Public health check endpoint for testing Firestore connectivity"
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "User profile document restricted to the authenticated user"

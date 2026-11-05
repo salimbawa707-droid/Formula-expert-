@@ -510,7 +510,7 @@ export const StagedAnalysisWorkflowCard: React.FC<StagedAnalysisWorkflowCardProp
               {showFullForensicTrace ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
             <span className="text-[11px] text-slate-400 font-mono">
-              {forensicReport.traceEntries.length} scientific dimensions certified
+              {(forensicReport?.traceEntries?.length ?? 0)} scientific dimensions certified
             </span>
           </div>
 

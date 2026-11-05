@@ -22,7 +22,8 @@ import {
   Bot,
   Database,
   CheckCircle2,
-  Users
+  Users,
+  ShieldCheck
 } from 'lucide-react';
 import { ChemicalLabelVisionScannerModal } from './components/scanner/ChemicalLabelVisionScannerModal';
 import { CollaborativeFormulaRoomModal } from './components/collaborative/CollaborativeFormulaRoomModal';
@@ -32,6 +33,8 @@ import { normalizeProductCategory } from './domain/productTaxonomy';
 import { getDefaultActiveMatter } from './utils/activeMatterEngine';
 
 import AccountMenu from './components/AccountMenu';
+import { useSettingsStore } from './stores/useSettingsStore';
+import { auth } from './services/firebaseClient';
 const AIFormulator = lazy(() => import('./components/AIFormulator'));
 const ChemicalEncyclopedia = lazy(() => import('./components/ChemicalEncyclopedia'));
 const FormulationLibrary = lazy(() => import('./components/FormulationLibrary'));
@@ -51,6 +54,7 @@ const ClosedLoopDashboard = lazy(() => import('./components/ClosedLoopDashboard'
 const ScienceLabWorkbench = lazy(() => import('./components/ScienceLabWorkbench').then((module) => ({ default: module.ScienceLabWorkbench })));
 const GeminiChemistryChatModal = lazy(() => import('./components/GeminiChemistryChatModal').then((module) => ({ default: module.GeminiChemistryChatModal })));
 const ScientificRoadmapVault = lazy(() => import('./components/ScientificRoadmapVault').then((module) => ({ default: module.ScientificRoadmapVault })));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 
 import { ActiveFormulaState } from './types';
 
@@ -421,7 +425,8 @@ export type TabType =
   | 'lab_automation'
   | 'closed_loop'
   | 'validation_suite'
-  | 'scientific_vault';
+  | 'scientific_vault'
+  | 'admin_dashboard';
 
 const AlignmentBadge: React.FC<{ activeFormula: ActiveFormulaState }> = ({ activeFormula }) => {
   const score = React.useMemo(() => {
@@ -470,7 +475,26 @@ export default function App() {
     setShowOnboarding(false);
   };
 
+  const { profile } = useSettingsStore();
+  const [currentUser, setCurrentUser] = useState(() => auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const isOwner = (profile.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
+                  (currentUser?.email?.toLowerCase() === 'salimbawa707@gmail.com');
+
   const [activeTab, setActiveTab] = useState<TabType>('formula_expert');
+
+  useEffect(() => {
+    if (activeTab === 'admin_dashboard' && !isOwner) {
+      setActiveTab('formula_expert');
+    }
+  }, [activeTab, isOwner]);
   const [lang, setLang] = useState<string>('en');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -691,6 +715,7 @@ export default function App() {
     { id: 'closed_loop' as TabType, label: "Closed-Loop R&D", icon: Workflow, accent: "text-purple-400" },
     { id: 'validation_suite' as TabType, label: t.validation, icon: Award, accent: "text-blue-400" },
     { id: 'scientific_vault' as TabType, label: "Evidence Vault & Roadmap", icon: Database, accent: "text-teal-400" },
+    ...(isOwner ? [{ id: 'admin_dashboard' as TabType, label: "Admin Console", icon: ShieldCheck, accent: "text-blue-400" }] : []),
   ];
 
   return (
@@ -1008,6 +1033,10 @@ export default function App() {
 
           {activeTab === 'scientific_vault' && (
             <ScientificRoadmapVault />
+          )}
+
+          {activeTab === 'admin_dashboard' && (
+            <AdminDashboard />
           )}
 
           </Suspense>

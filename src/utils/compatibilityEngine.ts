@@ -1,5 +1,5 @@
 import { FormulationIngredient } from '../types';
-import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
+import { mapFormulationIngredientsToPHEngineInput, getSolverReadyIngredients } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import { calculateActiveSurfactants } from './activeMatterEngine';
 import { getAuditedIngredientCategory } from './calculators';

@@ -22,20 +22,21 @@ interface Props {
   history: HistoryPoint[];
 }
 
-export const LabAlignmentTrendGraph: React.FC<Props> = ({ history }) => {
+export const LabAlignmentTrendGraph: React.FC<Props> = ({ history = [] }) => {
+  const safeHistory = Array.isArray(history) ? history : [];
   const chartData = useMemo(() => {
-    return history.map(point => ({
+    return safeHistory.map(point => ({
       ...point,
       displayTime: new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       displayDate: new Date(point.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })
     }));
-  }, [history]);
+  }, [safeHistory]);
 
-  const lastScore = history.length > 0 ? history[history.length - 1].score : 0;
-  const prevScore = history.length > 1 ? history[history.length - 2].score : lastScore;
+  const lastScore = safeHistory.length > 0 ? safeHistory[safeHistory.length - 1].score : 0;
+  const prevScore = safeHistory.length > 1 ? safeHistory[safeHistory.length - 2].score : lastScore;
   const delta = lastScore - prevScore;
 
-  if (history.length < 2) {
+  if (safeHistory.length < 2) {
     return (
       <div className="bg-[#0e1629] border border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center text-center gap-3 h-[300px]">
         <History className="w-10 h-10 text-slate-700" />

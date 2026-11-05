@@ -627,10 +627,15 @@ export default function ChemicalEncyclopedia(_props?: any) {
                                   {/* 2D SVG & SMILES */}
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                                     {m.svgDepiction ? (
-                                      <div
-                                        className="bg-white/5 border border-slate-700 rounded-lg p-2 flex items-center justify-center overflow-hidden max-h-40 [&>svg]:max-h-36 [&>svg]:w-auto"
-                                        dangerouslySetInnerHTML={{ __html: m.svgDepiction }}
-                                      />
+                                      <div className="bg-white/5 border border-slate-700 rounded-lg p-2 flex items-center justify-center overflow-hidden max-h-40">
+                                        <img
+                                          className="max-h-36 w-auto max-w-full object-contain"
+                                          src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(m.svgDepiction)}`}
+                                          alt={`2D chemical structure for ${m.canonicalSmiles || 'selected molecule'}`}
+                                          loading="lazy"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      </div>
                                     ) : (
                                       <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-3 text-center text-[11px] text-slate-500">
                                         2D depiction not generated

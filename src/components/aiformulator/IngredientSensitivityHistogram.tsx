@@ -145,14 +145,18 @@ export const IngredientSensitivityHistogram: React.FC<Props> = ({
         <div>
           <span className="block font-bold text-slate-300 uppercase tracking-tighter text-[9px] mb-0.5">Primary Tuning Vector:</span>
           <span>
-            {sensitivityData.find(d => d.isOutsideTolerance) ? (
-              <>
-                <strong className="text-rose-400">{sensitivityData.find(d => d.isOutsideTolerance)?.name}</strong> is currently outside the 5% tolerance threshold. Adjusting it by ±0.5% yields a significant Lab-Alignment shift of {sensitivityData.find(d => d.isOutsideTolerance)?.impact.toFixed(3)} points.
-              </>
+            {sensitivityData.length > 0 ? (
+              sensitivityData.find(d => d.isOutsideTolerance) ? (
+                <>
+                  <strong className="text-rose-400">{sensitivityData.find(d => d.isOutsideTolerance)?.name || 'Ingredient'}</strong> is currently outside the 5% tolerance threshold. Adjusting it by ±0.5% yields a significant Lab-Alignment shift of {sensitivityData.find(d => d.isOutsideTolerance)?.impact?.toFixed(3) ?? '0.000'} points.
+                </>
+              ) : (
+                <>
+                  Adjusting <strong className="text-indigo-300">{sensitivityData[0]?.name || 'Ingredient'}</strong> by ±0.5% yields the most significant shift in Lab-Alignment ({sensitivityData[0]?.impact?.toFixed(3) ?? '0.000'} points).
+                </>
+              )
             ) : (
-              <>
-                Adjusting <strong className="text-indigo-300">{sensitivityData[0]?.name}</strong> by ±0.5% yields the most significant shift in Lab-Alignment ({sensitivityData[0]?.impact.toFixed(3)} points).
-              </>
+              <span>Add ingredients with valid percentage values to evaluate formulation tuning vectors.</span>
             )}
           </span>
         </div>

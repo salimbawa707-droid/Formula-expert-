@@ -6,8 +6,28 @@ import {
   calculatePHAdvanced as calculatePHAdvancedV2,
   calculatePHSimple as calculatePHSimpleV2
 } from './pHEngine';
+import { classifyChemicalSpecies } from '../domain/ph/chemicalSpeciesRegistry';
 
 export { INGREDIENT_DATABASE };
+
+/**
+ * Filters formulation ingredients to those with registered acid/base/buffer/solvent/electrolyte chemistry.
+ * Non-reactive excipients (fragrance, dyes, preservatives, etc.) are excluded from the ionic speciation solver
+ * so that the solver converges on the true thermodynamic equilibrium while implicit water mass covers the balance.
+ */
+export function getSolverReadyIngredients(rawIngredients: IngredientInput[]): IngredientInput[] {
+  if (!Array.isArray(rawIngredients) || rawIngredients.length === 0) return [];
+
+  const recognized = rawIngredients.filter(ing => {
+    if (!ing || !ing.name) return false;
+    const name = ing.name.trim();
+    if (INGREDIENT_DATABASE[name]) return true;
+    const species = classifyChemicalSpecies(name);
+    return species !== null;
+  });
+
+  return recognized.length > 0 ? recognized : rawIngredients;
+}
 
 /**
  * Standardized pure adapter that maps a single application FormulationIngredient

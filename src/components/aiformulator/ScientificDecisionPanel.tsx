@@ -20,8 +20,14 @@ function displayValue(value: unknown): string {
 }
 
 export const ScientificDecisionPanel: React.FC<ScientificDecisionPanelProps> = ({ report }) => {
-  const properties = Object.entries(report.propertyDecisions || {});
-  const hasFindings = report.problems.length > 0 || report.recommendations.length > 0;
+  if (!report) {
+    return null;
+  }
+
+  const properties = Object.entries(report?.propertyDecisions || {});
+  const problems = report?.problems || [];
+  const recommendations = report?.recommendations || [];
+  const hasFindings = problems.length > 0 || recommendations.length > 0;
 
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4 md:p-5 space-y-4" aria-label="Rule-based scientific decision support">
@@ -31,7 +37,7 @@ export const ScientificDecisionPanel: React.FC<ScientificDecisionPanelProps> = (
           <p className="text-xs text-slate-400 mt-1">Screening guidance derived from the current authoritative formula evaluation.</p>
         </div>
         <span className="inline-flex w-fit rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3 py-1 text-[11px] font-bold text-cyan-200">
-          {STATUS_LABELS[report.formulaStatus]}
+          {report?.formulaStatus ? (STATUS_LABELS[report.formulaStatus] || report.formulaStatus) : 'Decision Support'}
         </span>
       </div>
 
@@ -55,10 +61,10 @@ export const ScientificDecisionPanel: React.FC<ScientificDecisionPanelProps> = (
         </div>
       )}
 
-      {report.problems.length > 0 && (
+      {problems.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-rose-200">Problems requiring attention ({report.problems.length})</h4>
-          {report.problems.map(problem => (
+          <h4 className="text-xs font-bold uppercase tracking-wider text-rose-200">Problems requiring attention ({problems.length})</h4>
+          {problems.map(problem => (
             <article key={problem.id} className="rounded-lg border border-rose-500/25 bg-rose-950/15 p-3 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-white">{problem.property}</span>
@@ -73,10 +79,10 @@ export const ScientificDecisionPanel: React.FC<ScientificDecisionPanelProps> = (
         </div>
       )}
 
-      {report.recommendations.length > 0 && (
+      {recommendations.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-200">Screening recommendations ({report.recommendations.length})</h4>
-          {report.recommendations.map(item => (
+          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-200">Screening recommendations ({recommendations.length})</h4>
+          {recommendations.map(item => (
             <article key={item.id} className="rounded-lg border border-cyan-500/20 bg-cyan-950/10 p-3 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-white">{item.recommendedChange}</span>
@@ -85,7 +91,7 @@ export const ScientificDecisionPanel: React.FC<ScientificDecisionPanelProps> = (
               <p className="text-[11px] text-slate-300">{item.reason}</p>
               <p className="text-[11px] text-slate-400">Expected impact: {item.expectedImpact}</p>
               <p className="text-[10px] text-slate-500">Maturity: {item.modelMaturity} · Uncertainty: {item.uncertainty}</p>
-              {item.limitations.length > 0 && <p className="text-[10px] text-amber-200">Limitations: {item.limitations.join(' ')}</p>}
+              {(item.limitations?.length ?? 0) > 0 && <p className="text-[10px] text-amber-200">Limitations: {(item.limitations || []).join(' ')}</p>}
             </article>
           ))}
         </div>
@@ -96,8 +102,8 @@ export const ScientificDecisionPanel: React.FC<ScientificDecisionPanelProps> = (
       )}
 
       <div className="border-t border-slate-800 pt-2 flex flex-wrap justify-between gap-2 text-[9px] text-slate-500 font-mono">
-        <span>Formula fingerprint: {report.formulaFingerprint}</span>
-        <span>Evaluated: {new Date(report.evaluatedAt).toLocaleString()}</span>
+        <span>Formula fingerprint: {report.formulaFingerprint || 'PENDING'}</span>
+        <span>Evaluated: {report.evaluatedAt ? new Date(report.evaluatedAt).toLocaleString() : 'N/A'}</span>
       </div>
     </section>
   );

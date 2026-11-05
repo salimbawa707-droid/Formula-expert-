@@ -1,7 +1,7 @@
 import { FormulationIngredient } from '../types';
 import { ActiveMatterEngine } from './activeMatterEngine';
 import { calculatePHAdvanced } from './pHEngine';
-import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
+import { mapFormulationIngredientsToPHEngineInput, getSolverReadyIngredients } from './pHEngineAdapter';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
 import { PHCalculationOptions } from '../domain/ph/types';
 import { validatePHInput } from './phInputGuard';

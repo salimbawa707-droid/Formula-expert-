@@ -12,7 +12,8 @@
     "test": "bun run test:phase6",
     "test:all": "bun run src/utils/test-calculations.ts",
     "cap:sync": "cap sync android",
-    "android:debug": "bun run cap:sync && node scripts/build_android_debug.mjs"
+    "android:debug": "bun run cap:sync && node scripts/build_android_debug.mjs",
+    "test:correction-static": "node scripts/verify-correction-static.mjs"
   },
   "dependencies": {
     "3dmol": "^2.5.5",
@@ -42,7 +43,11 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2",
     "vite": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=22.6.0"
   }
 }

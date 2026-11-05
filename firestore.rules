@@ -12,6 +12,13 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'salimbawa707@gmail.com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -71,28 +78,33 @@ service cloud.firestore {
 
     // 4. Match Blocks
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().id == existing().id;
-      allow delete: if isOwner(userId) && isValidId(userId);
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
+      allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidUser(incoming());
+      allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidUser(incoming()) && incoming().id == existing().id;
+      allow delete: if (isOwner(userId) || isAdmin()) && isValidId(userId);
 
       match /formulas/{formulaId} {
-        allow get, delete: if isOwner(userId) && isValidId(userId) && isValidId(formulaId);
-        allow list: if isOwner(userId) && isValidId(userId);
-        allow create: if isOwner(userId) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId) && incoming().userId == existing().userId;
+        allow get, delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(formulaId);
+        allow list: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId);
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId) && incoming().userId == existing().userId;
       }
 
       match /trials/{trialId} {
-        allow get, delete: if isOwner(userId) && isValidId(userId) && isValidId(trialId);
-        allow list: if isOwner(userId) && isValidId(userId);
-        allow create: if isOwner(userId) && isValidId(userId) && isValidId(trialId) && isValidTrial(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(userId) && isValidId(trialId) && isValidTrial(incoming(), userId) && incoming().userId == existing().userId;
+        allow get, delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(trialId);
+        allow list: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(trialId) && isValidTrial(incoming(), userId);
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(trialId) && isValidTrial(incoming(), userId) && incoming().userId == existing().userId;
       }
     }
 
     match /collab_sessions/{sessionId} {
       allow read, write: if isSignedIn() && isValidId(sessionId);
+    }
+
+    match /test/{docId} {
+      allow get: if isValidId(docId);
     }
   }
 }

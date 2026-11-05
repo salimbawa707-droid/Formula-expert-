@@ -418,12 +418,12 @@ import { initializeApp, getApps, getApp, cert, type App } from 'firebase-admin/a
 import { getAuth } from 'firebase-admin/auth';
 import { google } from 'googleapis';
 import fs from 'fs';
-import firebaseConfig from '../../firebase-applet-config.json';
+import firebaseConfig from '../../firebase-applet-config.json' with { type: 'json' };
 
 import {
   DurablePurchaseStore,
   isGenuineTestEnvironment
-} from './durablePurchaseStore';
+} from './durablePurchaseStore.ts';
 
 let firebaseAdminApp: App | null = null;
 
@@ -620,8 +620,9 @@ export async function verifyAuthToken(
       return { valid: false, error: 'Cryptographic verification failed: Missing uid in decoded token.' };
     }
 
-    // Role comes strictly from server-assigned custom claims on the token
-    const role: 'user' | 'admin' = (decodedToken.admin === true || decodedToken.role === 'admin')
+    // Role comes strictly from server-assigned custom claims on the token or designated owner email
+    const isOwnerAdmin = typeof decodedToken.email === 'string' && decodedToken.email.toLowerCase() === 'salimbawa707@gmail.com';
+    const role: 'user' | 'admin' = (decodedToken.admin === true || decodedToken.role === 'admin' || isOwnerAdmin)
       ? 'admin'
       : 'user';
 

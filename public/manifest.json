@@ -1,0 +1,16 @@
+{
+  "name": "Detergent Formula Expert",
+  "short_name": "Formula Expert",
+  "description": "Professional chemical formulation, stoichiometry, active matter calculation, and evidence validation engine.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

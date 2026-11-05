@@ -1,7 +1,7 @@
 import type { User } from 'firebase/auth';
 import { app, auth } from './firebaseAuthClient';
 export { auth, signInWithGoogle, signOutUser } from './firebaseAuthClient';
-import rawAppletConfig from '../../firebase-applet-config.json';
+import rawAppletConfig from '../../firebase-applet-config.json' with { type: 'json' };
 import { 
   getFirestore, 
   doc, 
@@ -71,11 +71,17 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 // Connection test on boot
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('the client is offline or connection timed out')), 3500)
+    );
+    await Promise.race([
+      getDocFromServer(doc(db, 'test', 'connection')),
+      timeoutPromise
+    ]);
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn("Please check your Firebase configuration or network connectivity.");
+      console.info("[Firebase] Firestore client operating in offline mode.");
     }
     return false;
   }

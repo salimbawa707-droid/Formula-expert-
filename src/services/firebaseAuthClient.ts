@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, type User } from 'firebase/auth';
-import rawAppletConfig from '../../firebase-applet-config.json';
+import rawAppletConfig from '../../firebase-applet-config.json' with { type: 'json' };
 
 const env = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
 const fallbackApiKey = 'AIzaSyCSoBbyRjYpzWIjsHbKLAfgWbh6SxcONMc';

@@ -16,7 +16,7 @@ import {
   FlaskConical
 } from 'lucide-react';
 import { IngredientInput, PHAdvancedResult, PHSimpleResult, ActiveFormulaState } from '../types';
-import { INGREDIENT_DATABASE, calculatePHAdvanced, calculatePHSimple } from '../utils/pHEngineAdapter';
+import { INGREDIENT_DATABASE, calculatePHAdvanced, calculatePHSimple, getSolverReadyIngredients } from '../utils/pHEngineAdapter';
 import { normalizeProductCategory } from '../domain/productTaxonomy';
 import { PHCalculationOptions } from '../domain/ph/types';
 import { 
@@ -25,7 +25,14 @@ import {
   DEFAULT_ACID_REAGENTS 
 } from '../utils/phDosingEligibility';
 
-const AVAILABLE_INGREDIENTS = Object.keys(INGREDIENT_DATABASE).sort();
+export { getSolverReadyIngredients };
+
+export const AVAILABLE_INGREDIENTS = Object.keys(INGREDIENT_DATABASE).sort();
+
+export const DEFAULT_INITIAL_INGREDIENTS: IngredientInput[] = [
+  { id: '1', name: 'Sodium Hydroxide (NaOH 100%)', rawPercent: 0.44, activePercent: 100 },
+  { id: '2', name: 'Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', rawPercent: 4.0, activePercent: 90 },
+];
 
 interface PHEngineViewProps {
   activeFormula?: ActiveFormulaState | null;
@@ -39,6 +46,11 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     const exactMatch = AVAILABLE_INGREDIENTS.find(k => (k || "").toLowerCase() === lower);
     if (exactMatch) return exactMatch;
     
+    if (lower.includes('water') || lower.includes('aqua')) {
+      const match = AVAILABLE_INGREDIENTS.find(k => (k || "").toLowerCase().includes('water'));
+      if (match) return match;
+    }
+
     if (lower.includes('labsa') || lower.includes('sulfonic')) {
       if (lower.includes('96')) {
         const m96 = AVAILABLE_INGREDIENTS.find(k => k.includes('96%'));
@@ -131,52 +143,90 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     if (activeFormula && activeFormula.ingredients && activeFormula.ingredients.length > 0) {
       return activeFormula.ingredients.map(mapFormulaIngToPHEngine);
     }
-    return [
-      { id: '1', name: 'Sodium Hydroxide (NaOH 100%)', rawPercent: 0.44, activePercent: 100 },
-      { id: '2', name: 'Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', rawPercent: 4.0, activePercent: 90 },
-    ];
+    try {
+      const saved = localStorage.getItem("aiformulator_formulationResult");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.ingredients) && parsed.ingredients.length > 0) {
+          return parsed.ingredients.map(mapFormulaIngToPHEngine);
+        }
+      }
+    } catch (e) {}
+    return DEFAULT_INITIAL_INGREDIENTS;
   });
+
   const [batchSize, setBatchSize] = useState<number>(() => {
     if (activeFormula?.batchSize && activeFormula.batchSize > 0) return activeFormula.batchSize;
     if ((activeFormula as any)?.batchSizeKg && (activeFormula as any).batchSizeKg > 0) return (activeFormula as any).batchSizeKg;
+    try {
+      const saved = localStorage.getItem("aiformulator_formulationResult");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.batchSize && parsed.batchSize > 0) return parsed.batchSize;
+        if (parsed?.batchSizeKg && parsed.batchSizeKg > 0) return parsed.batchSizeKg;
+      }
+    } catch (e) {}
     return 100;
   });
+
   const [targetPH, _setTargetPH] = useState<number>(7.00);
+
   const [simpleResult, setSimpleResult] = useState<PHSimpleResult | null>(() => {
-    if (activeFormula && activeFormula.ingredients && activeFormula.ingredients.length > 0) {
-      const initialIngs = activeFormula.ingredients.map((ing, idx) => ({
-        id: `active-init-${idx}`,
-        name: findMatchingPHEngineIngredient(ing.name),
-        rawPercent: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activePercent: ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity ?? (UNIVERSAL_INGREDIENTS.find(u => u.name.toLowerCase() === ing.name.toLowerCase() || u.id === (ing as any).id)?.activeDefault ?? (ing.name.toLowerCase().includes('water') || ing.name.toLowerCase().includes('aqua') ? 0 : 0)),
-      }));
-      const bSize = activeFormula.batchSize || (activeFormula as any).batchSizeKg || 0;
-      const catRaw = (activeFormula as any)?.canonicalProductCategoryId || (activeFormula as any)?.categoryId || activeFormula?.category || activeFormula?.productType;
+    try {
+      let targetFormula = activeFormula;
+      if (!targetFormula || !targetFormula.ingredients || targetFormula.ingredients.length === 0) {
+        const saved = localStorage.getItem("aiformulator_formulationResult");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.ingredients) && parsed.ingredients.length > 0) {
+            targetFormula = parsed;
+          }
+        }
+      }
+      const ings = targetFormula && targetFormula.ingredients && targetFormula.ingredients.length > 0
+        ? targetFormula.ingredients.map(mapFormulaIngToPHEngine)
+        : DEFAULT_INITIAL_INGREDIENTS;
+      const bSize = (targetFormula?.batchSize && targetFormula.batchSize > 0)
+        ? targetFormula.batchSize
+        : 100;
+      const catRaw = (targetFormula as any)?.canonicalProductCategoryId || (targetFormula as any)?.categoryId || targetFormula?.category || targetFormula?.productType;
       const normCat = catRaw ? normalizeProductCategory(catRaw) : undefined;
       const phOptions: PHCalculationOptions | undefined = (normCat && normCat !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCat } : undefined;
-      try {
-        return calculatePHSimple(initialIngs, bSize, phOptions);
-      } catch (e) {
-        return null;
-      }
+      const solverReady = getSolverReadyIngredients(ings);
+      return calculatePHSimple(solverReady, bSize, phOptions);
+    } catch (e) {
+      return null;
     }
-    return null;
   });
+
   const [advancedResult, setAdvancedResult] = useState<PHAdvancedResult | null>(() => {
-    if (activeFormula && activeFormula.ingredients && activeFormula.ingredients.length > 0) {
-      const initialIngs = activeFormula.ingredients.map(mapFormulaIngToPHEngine);
-      const bSize = activeFormula.batchSize || (activeFormula as any).batchSizeKg || 0;
-      const catRaw = (activeFormula as any)?.canonicalProductCategoryId || (activeFormula as any)?.categoryId || activeFormula?.category || activeFormula?.productType;
+    try {
+      let targetFormula = activeFormula;
+      if (!targetFormula || !targetFormula.ingredients || targetFormula.ingredients.length === 0) {
+        const saved = localStorage.getItem("aiformulator_formulationResult");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.ingredients) && parsed.ingredients.length > 0) {
+            targetFormula = parsed;
+          }
+        }
+      }
+      const ings = targetFormula && targetFormula.ingredients && targetFormula.ingredients.length > 0
+        ? targetFormula.ingredients.map(mapFormulaIngToPHEngine)
+        : DEFAULT_INITIAL_INGREDIENTS;
+      const bSize = (targetFormula?.batchSize && targetFormula.batchSize > 0)
+        ? targetFormula.batchSize
+        : 100;
+      const catRaw = (targetFormula as any)?.canonicalProductCategoryId || (targetFormula as any)?.categoryId || targetFormula?.category || targetFormula?.productType;
       const normCat = catRaw ? normalizeProductCategory(catRaw) : undefined;
       const phOptions: PHCalculationOptions | undefined = (normCat && normCat !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCat } : undefined;
-      try {
-        return calculatePHAdvanced(initialIngs, bSize, phOptions);
-      } catch (e) {
-        return null;
-      }
+      const solverReady = getSolverReadyIngredients(ings);
+      return calculatePHAdvanced(solverReady, bSize, phOptions);
+    } catch (e) {
+      return null;
     }
-    return null;
   });
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [liveSync, setLiveSync] = useState<boolean>(true);
@@ -223,8 +273,9 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     const phOptions: PHCalculationOptions | undefined = (normCat && normCat !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCat } : undefined;
 
     try {
-      const simple = calculatePHSimple(importedIngredients, bSize, phOptions);
-      const advanced = calculatePHAdvanced(importedIngredients, bSize, phOptions);
+      const solverReady = getSolverReadyIngredients(importedIngredients);
+      const simple = calculatePHSimple(solverReady, bSize, phOptions);
+      const advanced = calculatePHAdvanced(solverReady, bSize, phOptions);
       setSimpleResult(simple);
       setAdvancedResult(advanced);
       setSyncNotification(`Successfully re-synced "${targetFormula.name || 'Active Formula'}" into pH Engine!`);
@@ -242,13 +293,22 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     handleLoadActiveFormula();
   }, [handleLoadActiveFormula]);
 
-  // Synchronize PHEngineView with activeFormula automatically when present
+  // Synchronize PHEngineView with activeFormula automatically when present or from localStorage
   useEffect(() => {
-    if (liveSync && activeFormula && activeFormula.ingredients && activeFormula.ingredients.length > 0) {
-      const formulaKey = `${activeFormula.id || ''}_${activeFormula.name || ''}_${JSON.stringify(activeFormula.ingredients)}_${activeFormula.batchSize || ''}`;
-      if (lastSyncedRef.current !== formulaKey) {
-        lastSyncedRef.current = formulaKey;
-        handleLoadActiveFormula();
+    if (liveSync) {
+      const currentFormula = activeFormula || (() => {
+        try {
+          const s = localStorage.getItem("aiformulator_formulationResult");
+          return s ? JSON.parse(s) : null;
+        } catch { return null; }
+      })();
+
+      if (currentFormula && currentFormula.ingredients && currentFormula.ingredients.length > 0) {
+        const formulaKey = `${currentFormula.id || ''}_${currentFormula.name || ''}_${JSON.stringify(currentFormula.ingredients)}_${currentFormula.batchSize || ''}`;
+        if (lastSyncedRef.current !== formulaKey) {
+          lastSyncedRef.current = formulaKey;
+          handleLoadActiveFormula();
+        }
       }
     }
   }, [liveSync, activeFormula, handleLoadActiveFormula]);
@@ -295,8 +355,9 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
       const phOptions: PHCalculationOptions | undefined = (normCat && normCat !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCat } : undefined;
 
       try {
-        const simple = calculatePHSimple(ingredients, batchSize, phOptions);
-        const advanced = calculatePHAdvanced(ingredients, batchSize, phOptions);
+        const solverReady = getSolverReadyIngredients(ingredients);
+        const simple = calculatePHSimple(solverReady, batchSize, phOptions);
+        const advanced = calculatePHAdvanced(solverReady, batchSize, phOptions);
         setSimpleResult(simple);
         setAdvancedResult(advanced);
       } catch (err: any) {
@@ -310,7 +371,24 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
         setLoading(false);
       }
     }, 300);
-  }, [ingredients, batchSize]);
+  }, [ingredients, batchSize, activeFormula]);
+
+  // Live recalculate whenever user alters ingredients or batch size in the workspace
+  useEffect(() => {
+    if (!liveSync) return;
+    const catRaw = (activeFormula as any)?.canonicalProductCategoryId || (activeFormula as any)?.categoryId || activeFormula?.category || activeFormula?.productType;
+    const normCat = catRaw ? normalizeProductCategory(catRaw) : undefined;
+    const phOptions: PHCalculationOptions | undefined = (normCat && normCat !== 'UNKNOWN_PRODUCT_CATEGORY') ? { productCategory: normCat } : undefined;
+    const solverReady = getSolverReadyIngredients(ingredients);
+    try {
+      const simple = calculatePHSimple(solverReady, batchSize, phOptions);
+      const advanced = calculatePHAdvanced(solverReady, batchSize, phOptions);
+      setSimpleResult(simple);
+      setAdvancedResult(advanced);
+    } catch (e) {
+      // Keep previous
+    }
+  }, [ingredients, batchSize, liveSync, activeFormula]);
 
   const totalPercent = ingredients.reduce((sum, i) => sum + (i.rawPercent ?? 0), 0);
 
@@ -337,8 +415,15 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
   const isUnavailable = evaluation.status === 'UNAVAILABLE';
 
   const currentpH = evaluation.validatedPH;
-  const excessAcid = evaluation.validatedAcidEquivalents ?? 0;
-  const excessBase = evaluation.validatedBaseEquivalents ?? 0;
+  const displayPH = (evaluation.validatedPH !== null && evaluation.validatedPH !== undefined)
+    ? evaluation.validatedPH
+    : (advancedResult?.pH !== null && advancedResult?.pH !== undefined)
+      ? advancedResult.pH
+      : (advancedResult?.finalPH !== null && advancedResult?.finalPH !== undefined)
+        ? advancedResult.finalPH
+        : null;
+  const excessAcid = evaluation.validatedAcidEquivalents ?? advancedResult?.excessAcidEquivalents ?? 0;
+  const excessBase = evaluation.validatedBaseEquivalents ?? advancedResult?.excessBaseEquivalents ?? 0;
   const activeBaseGramsNeeded = evaluation.activeReagentGramsNeeded ?? 0;
   const commercialAlkaliGrams = evaluation.commercialReagentGrams ?? 0;
   const commercialAlkaliKg = evaluation.commercialReagentKg ?? 0;
@@ -346,8 +431,8 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
   const commercialAcidGrams = evaluation.commercialReagentGrams ?? 0;
   const commercialAcidKg = evaluation.commercialReagentKg ?? 0;
 
-  const isHighSensitivity = evaluation.isCalculationValid && (
-    (currentpH !== null && Math.abs(currentpH - targetPH) < 3.5) ||
+  const isHighSensitivity = (evaluation.isCalculationValid || displayPH !== null) && (
+    (displayPH !== null && Math.abs(displayPH - targetPH) < 3.5) ||
     excessAcid < 0.05 ||
     excessBase < 0.05
   );
@@ -700,8 +785,8 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 block mb-0.5">Calculated pH</span>
                   <span className="text-xs font-semibold text-slate-200 block">
-                    {currentpH !== null
-                      ? currentpH < 6.8 ? 'Acidic Formulation' : currentpH > 8.5 ? 'Alkaline Formulation' : 'Neutral Formulation'
+                    {displayPH !== null
+                      ? displayPH < 6.8 ? 'Acidic Formulation' : displayPH > 8.5 ? 'Alkaline Formulation' : 'Neutral Formulation'
                       : 'pH Unavailable'}
                   </span>
                   <span className="text-[11px] text-slate-400 block mt-0.5">
@@ -713,15 +798,15 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                 </div>
                 <div className="text-right">
                   <span className={`text-4xl font-black font-mono ${
-                    currentpH === null
+                    displayPH === null
                       ? 'text-amber-400'
-                      : currentpH >= 6.5 && currentpH <= 8.5 
+                      : displayPH >= 6.5 && displayPH <= 8.5 
                         ? 'text-emerald-400' 
-                        : currentpH < 5.0 || currentpH > 11.0 
+                        : displayPH < 5.0 || displayPH > 11.0 
                           ? 'text-rose-400' 
                           : 'text-amber-400'
                   }`}>
-                    {currentpH !== null ? currentpH.toFixed(2) : '—'}
+                    {displayPH !== null ? displayPH.toFixed(2) : '—'}
                   </span>
                 </div>
               </div>
@@ -729,8 +814,8 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="flex justify-between py-1 border-b border-slate-800">
                   <span>Solver State:</span>
-                  <span className={evaluation.isCalculationValid ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
-                    {evaluation.isCalculationValid ? "✓ Converged (Residual ≈ 0)" : "Non-Converged / Unavailable"}
+                  <span className={(evaluation.isCalculationValid || advancedResult?.solverConverged || (advancedResult as any)?.converged) ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                    {(evaluation.isCalculationValid || advancedResult?.solverConverged || (advancedResult as any)?.converged) ? "✓ Converged (Residual ≈ 0)" : "Non-Converged / Unavailable"}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800">
@@ -809,10 +894,10 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
               <div className="bg-[#131d35] p-4 rounded-xl border border-slate-700 space-y-1">
                 <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider block">Equilibrium pH</span>
                 <div className="text-2xl font-black text-white font-mono">
-                  {currentpH !== null ? currentpH.toFixed(2) : '—'}
+                  {displayPH !== null ? displayPH.toFixed(2) : '—'}
                 </div>
                 <span className="text-[11px] text-slate-400 block">
-                  {currentpH !== null ? `Delta: ${Math.abs(currentpH - targetPH).toFixed(2)} pH units` : 'Delta: —'}
+                  {displayPH !== null ? `Delta: ${Math.abs(displayPH - targetPH).toFixed(2)} pH units` : 'Delta: —'}
                 </span>
               </div>
 

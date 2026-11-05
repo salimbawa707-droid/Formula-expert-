@@ -198,7 +198,7 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
       </div>
 
       {/* EXPERT FORMULATION REASONING & RECOMMENDATIONS */}
-      {scientificResults.expertReport && (
+      {scientificResults?.expertReport && (
         <div className="space-y-4 pt-2 border-t border-slate-800">
           {/* Category Context Strip */}
           <div className="bg-[#131d35] p-3.5 rounded-xl border border-slate-700 text-xs flex flex-wrap items-center justify-between gap-2.5">
@@ -206,31 +206,31 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
               <Award className="w-4 h-4 text-cyan-400 shrink-0" />
               <div>
                 <span className="font-bold text-white uppercase tracking-wider">Target Profile: </span>
-                <span className="text-slate-300 font-semibold">{scientificResults.expertReport.productCategoryContext.category}</span>
+                <span className="text-slate-300 font-semibold">{scientificResults?.expertReport?.productCategoryContext?.category || productCategory}</span>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
               <span className="px-2 py-0.5 rounded-md bg-slate-800 text-cyan-300 border border-slate-700">
-                pH: {scientificResults.expertReport.productCategoryContext.targetPHMin} - {scientificResults.expertReport.productCategoryContext.targetPHMax}
+                pH: {scientificResults?.expertReport?.productCategoryContext?.targetPHMin ?? 6.0} - {scientificResults?.expertReport?.productCategoryContext?.targetPHMax ?? 9.0}
               </span>
               <span className="px-2 py-0.5 rounded-md bg-slate-800 text-emerald-300 border border-slate-700">
-                Actives: ≥{scientificResults.expertReport.productCategoryContext.targetActiveMatterMin}%
+                Actives: ≥{scientificResults?.expertReport?.productCategoryContext?.targetActiveMatterMin ?? 10}%
               </span>
               <span className="px-2 py-0.5 rounded-md bg-slate-800 text-blue-300 border border-slate-700">
-                {scientificResults.expertReport.productCategoryContext.foamExpectation}
+                {scientificResults?.expertReport?.productCategoryContext?.foamExpectation || 'Standard Foam'}
               </span>
             </div>
           </div>
 
           {/* Grounded Strengths */}
-          {scientificResults.expertReport.strengths.length > 0 && (
+          {((scientificResults?.expertReport?.strengths?.length ?? 0) > 0) && (
             <div className="space-y-2">
               <h4 className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CheckCheck className="w-4 h-4 text-emerald-400" />
-                Formulation Strengths ({scientificResults.expertReport.strengths.length})
+                Formulation Strengths ({scientificResults?.expertReport?.strengths?.length ?? 0})
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                {scientificResults.expertReport.strengths.map((str: any) => (
+                {(scientificResults?.expertReport?.strengths || []).map((str: any) => (
                   <div key={str.id} className="bg-[#131d35] border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
@@ -250,14 +250,14 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
           )}
 
           {/* Flagged Forensic Issues */}
-          {scientificResults.expertReport.issues.length > 0 && (
+          {((scientificResults?.expertReport?.issues?.length ?? 0) > 0) && (
             <div className="space-y-2">
               <h4 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
-                Sanity Check & Chemical Flags ({scientificResults.expertReport.issues.length})
+                Sanity Check & Chemical Flags ({scientificResults?.expertReport?.issues?.length ?? 0})
               </h4>
               <div className="space-y-2.5">
-                {scientificResults.expertReport.issues.map((iss: any) => (
+                {(scientificResults?.expertReport?.issues || []).map((iss: any) => (
                   <div key={iss.id} className="bg-[#131d35] border border-slate-700/80 rounded-xl p-3.5 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-white flex items-center gap-1.5">
@@ -274,7 +274,7 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
                             ? "bg-amber-950/80 text-amber-300 border-amber-500/50"
                             : "bg-slate-800 text-slate-300 border-slate-700"
                         }`}>
-                          {iss.severity.toUpperCase()} SEVERITY
+                          {(iss.severity || 'LOW').toUpperCase()} SEVERITY
                         </span>
                         <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
                           {iss.scientificType}
@@ -302,14 +302,14 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
           )}
 
           {/* Practical Expert Recommendations */}
-          {scientificResults.expertReport.recommendations.length > 0 && (
+          {((scientificResults?.expertReport?.recommendations?.length ?? 0) > 0) && (
             <div className="space-y-2">
               <h4 className="text-xs font-extrabold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Lightbulb className="w-4 h-4 text-cyan-400" />
-                Professional Chemist Advisory ({scientificResults.expertReport.recommendations.length})
+                Professional Chemist Advisory ({scientificResults?.expertReport?.recommendations?.length ?? 0})
               </h4>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {scientificResults.expertReport.recommendations.map((rec: any) => (
+                {(scientificResults?.expertReport?.recommendations || []).map((rec: any) => (
                   <div key={rec.id} className="bg-[#131d35] border border-cyan-500/30 rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-bold text-cyan-300">

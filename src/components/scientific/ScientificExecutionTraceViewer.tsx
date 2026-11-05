@@ -313,8 +313,8 @@ export const ScientificExecutionTraceViewer: React.FC<ScientificExecutionTraceVi
               <div className="space-y-2 text-xs">
                 <span className="font-extrabold text-slate-300 text-[11px] block">Upstream Dependencies</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedNode.upstreamDependencies.length > 0 ? (
-                    selectedNode.upstreamDependencies.map((dep) => (
+                  {(selectedNode?.upstreamDependencies?.length ?? 0) > 0 ? (
+                    (selectedNode?.upstreamDependencies || []).map((dep) => (
                       <span
                         key={dep}
                         onClick={() => setSelectedNodeId(dep)}
@@ -330,8 +330,8 @@ export const ScientificExecutionTraceViewer: React.FC<ScientificExecutionTraceVi
 
                 <span className="font-extrabold text-slate-300 text-[11px] block pt-2">Downstream Consumers</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedNode.downstreamConsumers.length > 0 ? (
-                    selectedNode.downstreamConsumers.map((dc) => (
+                  {(selectedNode?.downstreamConsumers?.length ?? 0) > 0 ? (
+                    (selectedNode?.downstreamConsumers || []).map((dc) => (
                       <span
                         key={dc}
                         onClick={() => setSelectedNodeId(dc)}
@@ -350,7 +350,7 @@ export const ScientificExecutionTraceViewer: React.FC<ScientificExecutionTraceVi
               <div className="space-y-1 text-xs">
                 <span className="font-extrabold text-slate-300 text-[11px] block">Inputs Consumed</span>
                 <pre className="bg-[#0b1324] border border-slate-800 rounded-lg p-2.5 text-[10px] font-mono text-cyan-200 overflow-x-auto max-h-36">
-                  {JSON.stringify(selectedNode.inputsConsumed, null, 2)}
+                  {JSON.stringify(selectedNode?.inputsConsumed, null, 2)}
                 </pre>
               </div>
 
@@ -358,7 +358,7 @@ export const ScientificExecutionTraceViewer: React.FC<ScientificExecutionTraceVi
               <div className="space-y-1 text-xs">
                 <span className="font-extrabold text-slate-300 text-[11px] block">Canonical States Consumed</span>
                 <div className="flex flex-wrap gap-1 font-mono text-[10px] text-slate-300">
-                  {selectedNode.intermediateStatesConsumed.map((st) => (
+                  {(selectedNode?.intermediateStatesConsumed || []).map((st) => (
                     <span key={st} className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
                       {st}
                     </span>
@@ -370,18 +370,18 @@ export const ScientificExecutionTraceViewer: React.FC<ScientificExecutionTraceVi
               <div className="space-y-1 text-xs">
                 <span className="font-extrabold text-slate-300 text-[11px] block">Outputs Produced</span>
                 <pre className="bg-[#0b1324] border border-slate-800 rounded-lg p-2.5 text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-36">
-                  {JSON.stringify(selectedNode.outputsProduced, null, 2)}
+                  {JSON.stringify(selectedNode?.outputsProduced, null, 2)}
                 </pre>
               </div>
 
               {/* UNCERTAINTY NOTES */}
-              {selectedNode.uncertaintyNotes.length > 0 && (
+              {(selectedNode?.uncertaintyNotes?.length ?? 0) > 0 && (
                 <div className="space-y-1 bg-amber-950/30 border border-amber-500/40 rounded-lg p-2.5 text-xs text-amber-200">
                   <span className="font-bold flex items-center gap-1 text-[11px]">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-400" /> Scientific Uncertainty & Risk Notes
                   </span>
                   <ul className="list-disc list-inside text-[10px] space-y-0.5 text-amber-200/90 pt-1">
-                    {selectedNode.uncertaintyNotes.map((note, idx) => (
+                    {(selectedNode?.uncertaintyNotes || []).map((note, idx) => (
                       <li key={idx}>{note}</li>
                     ))}
                   </ul>
