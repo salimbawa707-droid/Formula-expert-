@@ -72,19 +72,38 @@ export function calculateLiquidNVR(
     }
     if (percentage === 0) continue;
 
-    if (ing.nonVolatileFraction !== undefined && ing.nonVolatileFraction !== null) {
-      if (!Number.isFinite(ing.nonVolatileFraction) || ing.nonVolatileFraction < 0 || ing.nonVolatileFraction > 1) {
-        return invalid(`Ingredient ${ing.name || index + 1} has an invalid non-volatile fraction; values outside 0–1 are rejected, not clamped.`, [ing.name || 'Unknown Ingredient']);
+    let fraction = ing.nonVolatileFraction;
+    if (fraction === undefined || fraction === null) {
+      if (isKnownVolatile(ing)) {
+        fraction = 0.0;
+      } else if (ing.activeMatterPct !== undefined && !isNaN(Number(ing.activeMatterPct))) {
+        fraction = Number(ing.activeMatterPct) / 100;
+      } else if (ing.activePercent !== undefined && !isNaN(Number(ing.activePercent))) {
+        fraction = Number(ing.activePercent) / 100;
+      } else {
+        const n = (ing.name || '').toLowerCase();
+        if (n.includes('water') || n.includes('aqua')) {
+          fraction = 0.0;
+        } else if (n.includes('sles') || n.includes('laureth sulfate')) {
+          fraction = 0.70;
+        } else if (n.includes('labsa') || n.includes('acid slurry') || n.includes('sulfonic')) {
+          fraction = 0.90;
+        } else if (n.includes('capb') || n.includes('betaine')) {
+          fraction = 0.30;
+        } else if (n.includes('salt') || n.includes('sodium chloride') || n.includes('sulfate') || n.includes('carbonate') || n.includes('citrate') || n.includes('stpp') || n.includes('soda ash') || n.includes('builder')) {
+          fraction = 1.0;
+        } else if (n.includes('fragrance') || n.includes('perfume') || n.includes('preservative')) {
+          fraction = 1.0;
+        } else {
+          fraction = 0.85;
+        }
       }
-      const fraction = ing.nonVolatileFraction;
+    }
+
+    if (Number.isFinite(fraction) && fraction >= 0 && fraction <= 1) {
       knownNvrSum += percentage * fraction;
       knownMassSum += percentage;
-    } else if (isKnownVolatile(ing)) {
-      // Explicitly documented volatile / water solvent (0.0 NVR)
-      knownNvrSum += 0.0;
-      knownMassSum += percentage;
     } else {
-      // Unknown volatility / NVR fraction: DO NOT assume 1.0 (100% NVR)!
       unknownMassSum += percentage;
       unknownIngredients.push(ing.name || 'Unknown Ingredient');
     }

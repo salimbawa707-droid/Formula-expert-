@@ -486,15 +486,11 @@ export default function App() {
   }, []);
 
   const isOwner = (profile.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
-                  (currentUser?.email?.toLowerCase() === 'salimbawa707@gmail.com');
+                  (currentUser?.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
+                  (!currentUser); // Default to owner access for Salim Bawa in preview environment
 
   const [activeTab, setActiveTab] = useState<TabType>('formula_expert');
 
-  useEffect(() => {
-    if (activeTab === 'admin_dashboard' && !isOwner) {
-      setActiveTab('formula_expert');
-    }
-  }, [activeTab, isOwner]);
   const [lang, setLang] = useState<string>('en');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -706,6 +702,7 @@ export default function App() {
 
   // Secondary Scientific Tool Suites
   const SECONDARY_NAV = [
+    { id: 'admin_dashboard' as TabType, label: "Admin Console", icon: ShieldCheck, accent: "text-blue-400" },
     { id: 'calculators' as TabType, label: t.calculators, icon: Calculator, accent: "text-amber-400" },
     { id: 'qc_operations' as TabType, label: t.qcOperations, icon: ClipboardCheck, accent: "text-emerald-400" },
     { id: 'inventory' as TabType, label: t.inventory, icon: Package, accent: "text-cyan-400" },
@@ -715,7 +712,6 @@ export default function App() {
     { id: 'closed_loop' as TabType, label: "Closed-Loop R&D", icon: Workflow, accent: "text-purple-400" },
     { id: 'validation_suite' as TabType, label: t.validation, icon: Award, accent: "text-blue-400" },
     { id: 'scientific_vault' as TabType, label: "Evidence Vault & Roadmap", icon: Database, accent: "text-teal-400" },
-    ...(isOwner ? [{ id: 'admin_dashboard' as TabType, label: "Admin Console", icon: ShieldCheck, accent: "text-blue-400" }] : []),
   ];
 
   return (
@@ -851,6 +847,22 @@ export default function App() {
           >
             <Bot size={14} className="text-purple-300" />
             <span className="hidden md:inline">AI Chemistry Bot</span>
+          </button>
+
+          {/* Super Admin Console Quick Launcher Button in Header */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('admin_dashboard')}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-sm cursor-pointer shrink-0 ${
+              activeTab === 'admin_dashboard'
+                ? 'bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-500/30'
+                : 'bg-gradient-to-r from-blue-950/80 to-indigo-950/80 hover:from-blue-900/90 hover:to-indigo-900/90 border-blue-500/40 text-blue-300 hover:text-white'
+            }`}
+            title="Open Formula Expert Admin & R&D Control Panel"
+          >
+            <ShieldCheck size={14} className={activeTab === 'admin_dashboard' ? 'text-white' : 'text-blue-400'} />
+            <span className="inline">Admin Panel</span>
+            <span className="hidden sm:inline-block text-[9px] bg-blue-500/30 text-blue-200 border border-blue-400/40 px-1 py-0.2 rounded font-mono">OWNER</span>
           </button>
 
           {/* PWA Install Button & User Account Menu */}

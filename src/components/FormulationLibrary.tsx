@@ -277,7 +277,7 @@ export default function FormulationLibrary({
                   <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-2">
                     <span>{formula.ingredients?.length || 0} Raw Materials</span>
                     <span className="font-mono text-purple-300">
-                      Predicted pH: {reval?.phReport.predictedPH.toFixed(2) ?? formula.targetPH}
+                      Predicted pH: {typeof reval?.phReport?.predictedPH === 'number' && !isNaN(reval.phReport.predictedPH) ? reval.phReport.predictedPH.toFixed(2) : (formula.targetPH ?? 'N/A')}
                     </span>
                   </div>
                 </div>
@@ -325,12 +325,12 @@ export default function FormulationLibrary({
                     {currentFormula.ingredients.map((ing, idx) => (
                       <tr key={idx} className="hover:bg-[#131d35]/40 transition-colors">
                         <td className="py-2.5 px-3.5 font-bold text-white">{ing.name}</td>
-                        <td className="py-2.5 px-3.5 text-slate-400 text-xs font-medium">{ing.category || ing.function || "Additive"}</td>
+                        <td className="py-2.5 px-3.5 text-slate-400 text-xs font-medium">{ing.category || (ing as any).function || "Additive"}</td>
                         <td className="py-2.5 px-3.5 text-right font-mono font-bold text-slate-200">
-                          {Number(ing.percent ?? ing.percentage ?? 0).toFixed(2)}%
+                          {(Number(ing.percent ?? ing.percentage ?? 0) || 0).toFixed(2)}%
                         </td>
                         <td className="py-2.5 px-3.5 text-right font-mono text-purple-300 font-extrabold">
-                          {((Number(ing.percent ?? ing.percentage ?? 0) / 100) * (currentFormula.batchSizeKg || 0)).toFixed(2)} kg
+                          {(((Number(ing.percent ?? ing.percentage ?? 0) || 0) / 100) * (currentFormula.batchSizeKg || 0)).toFixed(2)} kg
                         </td>
                       </tr>
                     ))}

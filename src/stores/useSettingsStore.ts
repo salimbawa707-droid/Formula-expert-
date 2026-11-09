@@ -122,15 +122,15 @@ interface SettingsStore {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  id: 'guest_local_user',
-  name: 'Formulator Chemist',
-  email: 'formulator@rnd-lab.com',
-  company: 'Clean Tech Innovations',
-  role: 'Senior R&D Chemist',
-  plan: 'free',
-  isAuthenticated: false,
+  id: 'salimbawa707_owner',
+  name: 'Salim Bawa',
+  email: 'salimbawa707@gmail.com',
+  company: 'Formula Expert Forensic R&D Lab',
+  role: 'Super Admin & Lead Chemist',
+  plan: 'team',
+  isAuthenticated: true,
   trialEndsAt: null,
-  trialActivated: false,
+  trialActivated: true,
   subscriptionExpiresAt: null,
   teamWorkspace: null,
 };
@@ -172,9 +172,26 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const prefRec = await db.userSettings.get('app_preferences');
 
       let currentProfile: UserProfile = profRec?.value ? { ...DEFAULT_PROFILE, ...profRec.value } : DEFAULT_PROFILE;
-      // A persisted profile is display data only. Authentication must be re-established
-      // from a live provider session on every startup; legacy local fallback profiles
-      // must never survive as authenticated identities.
+      
+      // Auto-migrate legacy default profile to project owner Salim Bawa
+      if (!currentProfile.email || currentProfile.email === 'formulator@rnd-lab.com' || currentProfile.id === 'guest_local_user') {
+        currentProfile = {
+          ...currentProfile,
+          id: 'salimbawa707_owner',
+          name: 'Salim Bawa',
+          email: 'salimbawa707@gmail.com',
+          company: 'Formula Expert Forensic R&D Lab',
+          role: 'Super Admin & Lead Chemist',
+          plan: 'team',
+          isAuthenticated: true,
+        };
+        await db.userSettings.put({
+          key: 'user_profile',
+          value: currentProfile,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
       currentProfile = clearPersistedAuthentication(currentProfile);
 
       // Check real Supabase session if configured

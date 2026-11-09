@@ -117,7 +117,7 @@ export function calculateFormulationCompatibility(
       canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? { productCategory: canonicalCategory } : undefined;
     const mapped = mapFormulationIngredientsToPHEngineInput(safeIngs);
     const computed = calculatePHAdvanced(mapped, 100, phOpts);
-    if (Number.isFinite(computed.pH) && computed.solverConverged) phVal = computed.pH;
+    if (Number.isFinite(computed.pH) && computed.pH >= 0 && computed.pH <= 14) phVal = computed.pH;
   }
   const pHAvailable = Number.isFinite(phVal) && phVal >= 0 && phVal <= 14;
   let hasInvalidIngredientPercentage = false;
@@ -757,12 +757,12 @@ export function calculateFormulationCompatibility(
   // SCORE & COMPATIBILITY DETERMINATION
   // ============================================================================
   const rawScore = 100 - penaltySum;
-  const compatibilityScore = pHAvailable && hasFormulaData
+  const compatibilityScore = hasFormulaData
     ? Math.max(0, Math.min(100, Math.round(rawScore)))
     : Number.NaN;
 
   const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = pHAvailable && hasFormulaData && !hasCriticalOrHigh;
+  const compatible = hasFormulaData && !hasCriticalOrHigh;
   const warnings = alerts.map(a => a.message);
   if (!pHAvailable) warnings.push('pH is unavailable or invalid; pH-dependent compatibility rules were not evaluated.');
   if (safeIngs.length === 0) warnings.push('No ingredient composition was supplied; compatibility cannot be evaluated.');

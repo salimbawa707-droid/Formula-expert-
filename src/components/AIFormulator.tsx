@@ -30,6 +30,8 @@ import {
   getIngredientCmcData
 } from "../utils/calculators";
 import { calculatePHAdvanced, getSolverReadyIngredients } from "../utils/pHEngineAdapter";
+import { calculateCleaningPerformance } from "../utils/cleaningPerformanceEngine";
+import { calculateWaterHardnessTolerance } from "../utils/chelatorEngine";
 import { FormulaScientificOrchestrator } from "../utils/orchestrator/formulaScientificOrchestrator";
 import { ScientificDecisionEngine, ScientificDecisionReport } from "../utils/scientificDecisionEngine";
 import { ScientificDecisionPanel } from "./aiformulator/ScientificDecisionPanel";
@@ -236,6 +238,103 @@ export function runDeepScientificAnalysis(snapshot: {
     }
   }
 
+  let resolvedCleaning = c;
+  const isSoftener = snapshot.productCategory === 'FABRIC_SOFTENER';
+  if (!isSoftener && (!resolvedCleaning || resolvedCleaning.cleaningScore === null || resolvedCleaning.cleaningScore === 0 || resolvedCleaning.cpi === null || resolvedCleaning.cpi === 0)) {
+    try {
+      const effPH = resolvedEquilibriumPH ?? p?.ph ?? 8.0;
+      let evalIngs = (snapshot.ingredients || []).map(ing => ({
+        name: ing.name,
+        percentage: Number(ing.percentage ?? (ing as any).percent ?? 0),
+        activeMatterPct: (ing as any).activeMatterPct ?? (ing as any).activePercent ?? getDefaultActiveMatter(ing),
+        category: ing.category || (ing as any).role
+      }));
+      const totalPct = evalIngs.reduce((sum, ing) => sum + (Number(ing.percentage) || 0), 0);
+      if (evalIngs.length > 0 && Math.abs(totalPct - 100) > 0.05) {
+        const waterIdx = evalIngs.findIndex(i => (i.name || '').toLowerCase().includes('water') || (i.name || '').toLowerCase().includes('aqua'));
+        if (waterIdx >= 0) {
+          const nonWater = evalIngs.reduce((sum, ing, idx) => idx === waterIdx ? sum : sum + (Number(ing.percentage) || 0), 0);
+          const balWater = Math.max(0, 100 - nonWater);
+          evalIngs = evalIngs.map((ing, idx) => idx === waterIdx ? { ...ing, percentage: Number(balWater.toFixed(3)) } : ing);
+        } else if (totalPct > 0) {
+          evalIngs = evalIngs.map(ing => ({ ...ing, percentage: Number(((Number(ing.percentage) || 0) * (100 / totalPct)).toFixed(3)) }));
+        }
+      }
+      const recalcedCleaning = calculateCleaningPerformance(
+        evalIngs,
+        effPH,
+        snapshot.productCategory,
+        undefined,
+        {
+          waterHardnessPpm: snapshot.waterHardnessPpm ?? 150,
+          washVolumeL: 10,
+          washDoseGrams: 20,
+          batchSizeKg: snapshot.batchSizeKg || 100
+        }
+      );
+      if (recalcedCleaning && (recalcedCleaning.cleaningScore !== null || recalcedCleaning.cpi !== null)) {
+        resolvedCleaning = recalcedCleaning;
+      }
+    } catch {
+      // Keep existing c
+    }
+  }
+
+  let resolvedHardness = h;
+  let resolvedChelation = ch;
+  if (!resolvedHardness || resolvedHardness.totalSequestrationMg === undefined || resolvedHardness.status === 'NOT_EVALUATED') {
+    try {
+      const tol = calculateWaterHardnessTolerance(
+        snapshot.ingredients || [],
+        snapshot.waterHardnessPpm,
+        (snapshot as any).machineProfile?.waterVolumeL ?? 10,
+        (snapshot as any).washDoseGrams ?? 20,
+        snapshot.batchSizeKg || 100,
+        snapshot.productCategory
+      );
+      if (tol && typeof tol.totalSequestrationMg === 'number') {
+        resolvedHardness = tol;
+        const names: string[] = [];
+        (snapshot.ingredients || []).forEach(ing => {
+          const n = (ing.name || '').toLowerCase();
+          const r = ((ing as any).role || ing.category || '').toLowerCase();
+          if (r.includes('builder') || r.includes('chelat') || n.includes('citrate') || n.includes('edta') || n.includes('glda') || n.includes('stpp') || n.includes('mgda') || n.includes('phosphate') || n.includes('phosphonate') || n.includes('zeolite')) {
+            names.push(ing.name);
+          }
+        });
+        resolvedChelation = {
+          ...resolvedChelation,
+          chelatorNames: names.length > 0 ? Array.from(new Set(names)) : (resolvedChelation?.chelatorNames || []),
+          chelatorActivePct: tol.totalSequestrationMg > 0 ? Number(((tol.totalSequestrationMg / 150 / 20) * 100).toFixed(2)) : (resolvedChelation?.chelatorActivePct || 0)
+        };
+      }
+    } catch {
+      // Keep existing h and ch
+    }
+  }
+
+  let resolvedCompatibility = comp;
+  const compScore = resolvedCompatibility?.compatibilityScore;
+  const isCompScoreInvalid = compScore === undefined || compScore === null || Number.isNaN(compScore);
+  const isCompWarningOnly = !resolvedCompatibility?.compatible && (resolvedCompatibility?.alerts || []).length === 0;
+  const hasPhUnavailableWarn = (resolvedCompatibility?.warnings || []).some((w: string) => typeof w === 'string' && w.includes('pH is unavailable'));
+
+  if (!resolvedCompatibility || isCompScoreInvalid || isCompWarningOnly || (hasPhUnavailableWarn && resolvedEquilibriumPH !== null)) {
+    try {
+      const effPH = resolvedEquilibriumPH ?? p?.ph ?? undefined;
+      const compRes = calculateFormulationCompatibility(
+        snapshot.ingredients || [],
+        effPH,
+        snapshot.productCategory
+      );
+      if (compRes) {
+        resolvedCompatibility = compRes;
+      }
+    } catch {
+      // Keep existing comp
+    }
+  }
+
   const sciResults = {
     qualityGateResult: qg || {},
     provenanceReport: prov || {},
@@ -251,7 +350,7 @@ export function runDeepScientificAnalysis(snapshot: {
     },
     phConfidence: resolvedPHConfidence,
     viscosity: visc?.description ?? "N/A",
-    waterHardness: h || { status: 'NOT_EVALUATED', description: 'Water hardness not evaluated' },
+    waterHardness: resolvedHardness || h || { status: 'NOT_EVALUATED', description: 'Water hardness not evaluated' },
     hlb: (o?.hlbResult && o.hlbResult.status === 'VALID' && o.hlbResult.blendedHLB !== null) ? o.hlbResult.blendedHLB : 0,
     hlbResult: o?.hlbResult || { status: 'INSUFFICIENT_DATA', blendedHLB: null },
     cmc: calculateMixedCMC(snapshot.ingredients),
@@ -265,12 +364,12 @@ export function runDeepScientificAnalysis(snapshot: {
     },
     totalSolids: den?.totalSolidsPct ?? 0,
     surfactantBreakdown: a?.surfactantBreakdown ?? {},
-    chelatorActivePct: ch?.chelatorActivePct ?? 0,
-    chelatorNames: ch?.chelatorNames ?? [],
-    cleaning: c || { cleaningScore: 0, cleaningPower: 'Standard', isMeasured: false, domainScores: {} },
-    foam: c?.foamProfile || "Moderate / Balanced Foam (Qualitative Foam Assessment)",
-    categorySuitability: c?.categorySuitability || "High (Optimal Formulation Profile)",
-    compatibility: comp || { compatible: true, compatibilityScore: 100, warnings: [] },
+    chelatorActivePct: resolvedChelation?.chelatorActivePct ?? ch?.chelatorActivePct ?? 0,
+    chelatorNames: resolvedChelation?.chelatorNames ?? ch?.chelatorNames ?? [],
+    cleaning: resolvedCleaning || c || { cleaningScore: 0, cleaningPower: 'Standard', isMeasured: false, domainScores: {} },
+    foam: resolvedCleaning?.foamProfile || c?.foamProfile || "Moderate / Balanced Foam (Qualitative Foam Assessment)",
+    categorySuitability: resolvedCleaning?.categorySuitability || c?.categorySuitability || "High (Optimal Formulation Profile)",
+    compatibility: resolvedCompatibility || comp || { compatible: true, compatibilityScore: 100, warnings: [] },
     health: o?.labHealthResult || { finalScore: null, rating: 'ASSESSMENT_INCOMPLETE', alerts: [], pHStatus: 'UNAVAILABLE', isAssessmentComplete: false },
     preservativeWarning: stab?.preservativeWarning ?? null,
     aiGrade: orchResult?.aiGrade || null,
@@ -449,6 +548,7 @@ export default function FormulaExpert({
   });
 
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
+  const [isAddIngredientModalOpen, setIsAddIngredientModalOpen] = useState<boolean>(false);
   const [isCollabOpen, setIsCollabOpen] = useState<boolean>(false);
   const [collabChemistCount, setCollabChemistCount] = useState<number>(collaborationManager.getSessionState().chemists.length);
 
@@ -700,8 +800,13 @@ export default function FormulaExpert({
     }
   };
 
-  // Add New Ingredient Row (Initializes with unconfigured costPerKg: null)
+  // Open Category Library Modal to add new ingredients
   const handleAddIngredient = () => {
+    setIsAddIngredientModalOpen(true);
+  };
+
+  // Add Blank Custom Row (for users who prefer typing without catalog)
+  const handleAddBlankIngredient = () => {
     const newIng: FormulationIngredient = {
       id: `ing-${Date.now()}-${ingredients.length}`,
       name: "",
@@ -711,6 +816,32 @@ export default function FormulaExpert({
       costPerKg: null
     };
     setIngredients((prev) => [...prev, newIng]);
+  };
+
+  // Add Ingredient chosen from Category Library Modal (Ionic, Nonionic, Builders, Chelators, etc.)
+  const handleAddIngredientFromCategoryModal = (selected: UniversalIngredient) => {
+    const isUnknownActive = selected.id === 'aristo-9' || selected.unknownProperties?.includes('activeMatter');
+    const newIng: FormulationIngredient = {
+      id: `ing-${Date.now()}-${ingredients.length}`,
+      name: selected.name,
+      percentage: 0,
+      category: selected.category,
+      role: selected.category || selected.function || getAuditedIngredientCategory(selected.name),
+      function: selected.function,
+      activeMatterPct: isUnknownActive ? undefined : (selected.activeDefault ?? selected.activeMatter),
+      activeMatterInputSource: isUnknownActive ? 'UNKNOWN' : (selected.activeDefault ?? selected.activeMatter) !== undefined ? 'CATALOG_DEFAULT' : 'UNKNOWN',
+      costPerKg: typeof selected.costPerKg === 'number' && !isNaN(selected.costPerKg) ? selected.costPerKg : null,
+      hlb: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
+      hlbValue: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
+      casNumber: selected.casNumber,
+      inciName: selected.inciName,
+      phMin: selected.phMin,
+      phMax: selected.phMax,
+      canonicalIngredientId: selected.id,
+      identityType: selected.identityType
+    };
+    setIngredients((prev) => [...prev, newIng]);
+    setResearchNotification(`✓ Added "${selected.name}" (${selected.category}) to formulation.`);
   };
 
   // Remove Ingredient Row
@@ -1559,7 +1690,12 @@ export default function FormulaExpert({
                           if (!clean || clean.length < 2) return null;
                           const isMatched = Boolean(
                             ing.canonicalIngredientId ||
-                            UNIVERSAL_INGREDIENTS.some(u => u.name.toLowerCase() === clean.toLowerCase() || u.id.toLowerCase() === clean.toLowerCase())
+                            UNIVERSAL_INGREDIENTS.some(u => 
+                              u.name.toLowerCase() === clean.toLowerCase() || 
+                              u.id.toLowerCase() === clean.toLowerCase() ||
+                              u.name.toLowerCase().includes(clean.toLowerCase()) ||
+                              clean.toLowerCase().includes(u.name.toLowerCase().split('(')[0].trim())
+                            )
                           );
                           const isVerifiedByResearch = ing.provenance?.verificationStatus === 'VERIFIED' || ing.notes?.includes('Gemini AI');
 
@@ -1860,22 +1996,35 @@ export default function FormulaExpert({
 
           {/* Add Ingredient & Scan Label Buttons */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
                 onClick={handleAddIngredient}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-extrabold transition flex items-center gap-2 cursor-pointer shadow-md shadow-cyan-950/40 active:scale-95 border border-cyan-400/30"
+                title="Browse chemicals divided by category: Ionic, Nonionic, Builders, Chelators, Thickeners, Enzymes, Preservatives..."
               >
                 <Plus className="w-4 h-4" />
-                <span>+ ADD INGREDIENT</span>
+                <span>+ ADD INGREDIENT (BROWSE CATEGORIES)</span>
               </button>
 
               <button
+                type="button"
+                onClick={handleAddBlankIngredient}
+                className="px-3.5 py-2.5 rounded-xl bg-[#131d35] hover:bg-[#1b294a] text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs border border-slate-700/80 active:scale-95"
+                title="Add blank custom row to manually type chemical name"
+              >
+                <Plus className="w-3.5 h-3.5 text-slate-400" />
+                <span>+ Blank Row</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsScannerOpen(true)}
                 className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-900/80 to-cyan-900/80 hover:from-teal-800 hover:to-cyan-800 text-teal-200 text-xs font-extrabold transition flex items-center gap-2 cursor-pointer shadow-md border border-teal-500/40 active:scale-95"
                 title="Scan raw material packaging label with AI Vision"
               >
                 <Camera className="w-4 h-4 text-teal-300" />
-                <span>SCAN LABEL / COA (AI VISION)</span>
+                <span>SCAN LABEL / COA</span>
               </button>
             </div>
 
@@ -2304,6 +2453,18 @@ export default function FormulaExpert({
         }}
         labAlignmentScore={labAlignmentScore ?? 96.5}
         orchestratorResult={deepAnalysisState.orchestratorResult}
+      />
+
+      {/* Category-First Add Ingredients Modal */}
+      <CategoryIngredientSelector
+        mode="modal-only"
+        isOpen={isAddIngredientModalOpen}
+        onOpenChange={setIsAddIngredientModalOpen}
+        title="ADD INGREDIENTS — CATEGORY LIBRARY"
+        allowMultiAdd={true}
+        onAddMultiple={handleAddIngredientFromCategoryModal}
+        onSelect={handleAddIngredientFromCategoryModal}
+        onClose={() => setIsAddIngredientModalOpen(false)}
       />
     </div>
   );

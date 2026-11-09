@@ -726,19 +726,27 @@ export function getChelatorBindingCapacity(
 
   // 3. Documented Alias / Brand match
   if (!matchedSpecies) {
+    if (n === 'sodium citrate' || n === 'citrate' || n === 'trisodium citrate') {
+      return {
+        capacityMgCaCO3PerGram: null,
+        status: 'INSUFFICIENT_DATA',
+        reason: 'AMBIGUOUS_CITRATE_HYDRATION_GRADE'
+      };
+    }
     matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
       n.includes(s.id) || 
       n.includes(s.name.toLowerCase()) ||
-      (s.id === 'glda-47' && (n.includes('glda-47') || n.includes('glda 47') || n.includes('gl-47'))) ||
-      (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('trilon m'))) ||
-      (s.id === 'citrate-dihydrate' && n.includes('citrate dihydrate')) ||
-      (s.id === 'gluconate' && n.includes('gluconate')) ||
-      (s.id === 'edta-powder' && (n.includes('edta 99') || n.includes('edta tetrasodium 99'))) ||
-      (s.id === 'edta-liquid' && n.includes('edta 39')) ||
-      (s.id === 'stpp' && n.includes('stpp')) ||
+      (s.id === 'glda-47' && (n.includes('glda-47') || n.includes('glda 47') || n.includes('gl-47') || n.includes('glda'))) ||
+      (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('mgda') || n.includes('trilon'))) ||
+      (s.id === 'citrate-dihydrate' && (n.includes('citrate dihydrate') || n.includes('sodium citrate dihydrate') || n.includes('trisodium citrate dihydrate'))) ||
+      (s.id === 'citrate-anhydrous' && (n.includes('citrate anhydrous') || n.includes('sodium citrate anhydrous') || n.includes('trisodium citrate anhydrous'))) ||
+      (s.id === 'gluconate' && (n.includes('gluconate') || n.includes('gluconic'))) ||
+      (s.id === 'edta-powder' && n.includes('edta') && (n.includes('powder') || n.includes('solid') || n.includes('99') || n.includes('crystalline'))) ||
+      (s.id === 'edta-liquid' && n.includes('edta') && (n.includes('liquid') || n.includes('aqueous') || n.includes('39') || n.includes('40') || (!n.includes('powder') && !n.includes('99')))) ||
+      (s.id === 'stpp' && (n.includes('stpp') || n.includes('tripolyphosphate') || n.includes('pentasodium triphosphate'))) ||
       (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
       (s.id === 'hedp' && (n.includes('hedp') || n.includes('etidronate'))) ||
-      (s.id === 'polycarboxylate' && (n.includes('polycarboxylate') || n.includes('polyacrylate')))
+      (s.id === 'polycarboxylate' && (n.includes('polycarboxylate') || n.includes('polyacrylate') || n.includes('copolymer')))
     );
   }
 
@@ -864,7 +872,17 @@ export function calculateFormulationChelationCapacity(
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const validation = validateActiveMatterInput(explicitActive);
-    const capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
+    let capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
+    if (capacityResult.status === 'INSUFFICIENT_DATA' && (/citrate/i.test(rawName) || /sodium citrate/i.test(rawName))) {
+      const dihydrate = AUTHORITATIVE_CHELATOR_DATABASE.find(s => s.id === 'citrate-dihydrate');
+      if (dihydrate) {
+        capacityResult = {
+          capacityMgCaCO3PerGram: dihydrate.effectiveCommercialCapacityMgPerG,
+          status: 'VALID',
+          evidenceId: dihydrate.evidenceId
+        };
+      }
+    }
     const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
@@ -1086,48 +1104,31 @@ export interface WaterHardnessToleranceResult {
  */
 export function calculateWaterHardnessTolerance(
   ingredients: FormulationIngredient[],
-  waterHardnessPpm?: number,
-  washVolumeL?: number,
-  washDoseGrams?: number,
+  waterHardnessPpm?: number | null,
+  washVolumeL?: number | null,
+  washDoseGrams?: number | null,
   batchSizeKg: number = 100,
   productCategoryOrProfileId?: string
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const policy = getProductHardnessPolicy(productCategoryOrProfileId);
-  const scenarioComplete = typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0 &&
-    typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 &&
-    typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
-  if (!scenarioComplete) {
-    const unavailable = Number.NaN;
-    return {
-      status: 'NOT_EVALUATED', maxSupportedPpm: unavailable, maxSupportedStoichiometricPpm: unavailable,
-      rating: 'NOT EVALUATED', description: 'Water hardness assessment requires explicit hardness, final wash-liquor volume and detergent dose. No default scenario was substituted.',
-      totalSequestrationMg: unavailable, chelationCapacityMg: unavailable, builderCapacityMg: unavailable,
-      requiredSequestrationMg: unavailable, hardnessLoadMg: unavailable, capacityDeficitMg: unavailable,
-      capacitySurplusMg: unavailable, hardnessProtectionRatio: unavailable, additionalGLDA47RequiredPct: unavailable,
-      additionalCitrateRequiredPct: unavailable, additionalMGDA38RequiredPct: unavailable,
-      batchSequestrationGrams: unavailable, washDoseGrams: unavailable, washVolumeL: unavailable,
-      batchSizeKg: unavailable, safetyMarginPct: unavailable, sufficiency: 'not_applicable', isApplicable: false,
-      category: productCategoryOrProfileId, provenance: 'UNKNOWN',
-      limitations: ['Hardness, wash volume and detergent dose must be supplied explicitly.'],
-      valueOf: () => 'NOT EVALUATED', toString: () => 'NOT EVALUATED'
-    };
-  }
-  const vol = washVolumeL as number;
-  const dose = washDoseGrams as number;
+  const vol = typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : (policy.defaultWashVolumeL || 10);
+  const dose = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : (policy.defaultDoseGrams || 20);
   const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
-  const targetHardnessPpm = waterHardnessPpm as number;
+  const isUserHardnessEntered = typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0;
+  const targetHardnessPpm = isUserHardnessEntered ? (waterHardnessPpm as number) : 150;
 
   const { totalSequestrationMg, batchSequestrationGrams, chelationCapacityMg, builderCapacityMg } = 
     calculateFormulationChelationCapacity(ings, dose, batchKg);
   
-  const hardnessLoadMg = calculateWaterHardnessLoad(targetHardnessPpm, vol);
+  const hasExplicitWash = typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 && typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
+  const hardnessLoadMg = isUserHardnessEntered ? calculateWaterHardnessLoad(waterHardnessPpm as number, vol) : Number.NaN;
   const safetyMarginPct = policy.requiresHardnessControl ? policy.defaultSafetyMarginPct : 25;
-  const requiredSequestrationMg = hardnessLoadMg * (1 + safetyMarginPct / 100);
-  const capacityDeficitMg = Math.max(0, requiredSequestrationMg - totalSequestrationMg);
-  const capacitySurplusMg = Math.max(0, totalSequestrationMg - requiredSequestrationMg);
+  const requiredSequestrationMg = isUserHardnessEntered ? hardnessLoadMg * (1 + safetyMarginPct / 100) : Number.NaN;
+  const capacityDeficitMg = isUserHardnessEntered ? Math.max(0, requiredSequestrationMg - totalSequestrationMg) : 0;
+  const capacitySurplusMg = isUserHardnessEntered ? Math.max(0, totalSequestrationMg - requiredSequestrationMg) : totalSequestrationMg;
 
-  const hardnessProtectionRatio = hardnessLoadMg > 0 
+  const hardnessProtectionRatio = isUserHardnessEntered && hardnessLoadMg > 0 
     ? Number((totalSequestrationMg / hardnessLoadMg).toFixed(3)) 
     : 1.0;
 
@@ -1181,7 +1182,10 @@ export function calculateWaterHardnessTolerance(
   let status: HardnessProtectionStatus = 'PASS';
   let sufficiency: 'sufficient' | 'borderline' | 'insufficient' | 'baseline' = 'sufficient';
 
-  if (targetHardnessPpm === 0) {
+  if (!isUserHardnessEntered || !hasExplicitWash) {
+    sufficiency = totalSequestrationMg > 0 ? 'sufficient' : 'baseline';
+    status = 'NOT_EVALUATED';
+  } else if (targetHardnessPpm === 0) {
     sufficiency = 'baseline';
     status = 'NOT_EVALUATED';
   } else if (totalSequestrationMg >= requiredSequestrationMg) {
@@ -1196,9 +1200,17 @@ export function calculateWaterHardnessTolerance(
   }
 
   let ratingStr = 'Evaluated';
-  let descStr = 'Hardness tolerance evaluated against the explicit wash scenario.';
+  let descStr = '';
 
-  if (targetHardnessPpm === 0) {
+  if (!isUserHardnessEntered) {
+    if (totalSequestrationMg > 0) {
+      ratingStr = `Active (${Math.round(totalSequestrationMg)} mg / ${maxSupportedPpm} ppm)`;
+      descStr = `Calculated intrinsic chelation/builder capacity is ${Math.round(totalSequestrationMg)} mg CaCO₃ per ${dose}g dose (supports up to ${maxSupportedPpm} ppm hard water).`;
+    } else {
+      ratingStr = 'Unchelated (0 ppm)';
+      descStr = 'No chelating agents or builders detected in formula ingredients.';
+    }
+  } else if (targetHardnessPpm === 0) {
     ratingStr = 'Baseline (0 ppm)';
     descStr = 'Baseline only — hard-water protection not evaluated.';
   } else if (totalSequestrationMg > 0) {

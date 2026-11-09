@@ -402,15 +402,15 @@ export const FormulationOptimizationPanel: React.FC<FormulationOptimizationPanel
                     <div className="text-[11px] text-slate-300 space-y-1">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Calculated pH:</span>
-                        <span className="font-mono font-bold text-white">{cand.metrics.pH.toFixed(2)}</span>
+                        <span className="font-mono font-bold text-white">{typeof cand?.metrics?.pH === 'number' && !isNaN(cand.metrics.pH) ? cand.metrics.pH.toFixed(2) : 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Active Surfactant:</span>
-                        <span className="font-mono font-bold text-white">{cand.metrics.activeSurfactantPercentage.toFixed(1)}%</span>
+                        <span className="font-mono font-bold text-white">{typeof cand?.metrics?.activeSurfactantPercentage === 'number' && !isNaN(cand.metrics.activeSurfactantPercentage) ? `${cand.metrics.activeSurfactantPercentage.toFixed(1)}%` : 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Hard Water Tol:</span>
-                        <span className="font-mono font-bold text-white">{cand.metrics.waterHardnessCapacityPpm.toFixed(0)} ppm</span>
+                        <span className="font-mono font-bold text-white">{typeof cand?.metrics?.waterHardnessCapacityPpm === 'number' && !isNaN(cand.metrics.waterHardnessCapacityPpm) ? `${cand.metrics.waterHardnessCapacityPpm.toFixed(0)} ppm` : 'N/A'}</span>
                       </div>
                     </div>
                   </div>
