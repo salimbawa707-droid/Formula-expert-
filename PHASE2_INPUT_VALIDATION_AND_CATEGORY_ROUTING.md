@@ -204,3 +204,28 @@ New tests cover category policy surfactant restrictions, required evidence batte
 - CI run #773 was queued after the hand-wash profile correction. Its final result is not yet recorded here.
 - No Phase 2 completion claim is made until the full TypeScript regression suite, production frontend build, evidence gates, and required Android checks complete successfully against the latest branch head.
 - PR #94 remains draft and unmerged.
+
+
+## Phase 2 acceptance — 2026-11-24
+
+### Additional input-integrity closure
+- Staged analysis now normalizes supported percentage aliases but preserves missing/invalid percentage as unavailable; missing and explicit zero produce different fingerprints.
+- Staged formula mass balance no longer coerces missing percentages to zero or infers the unallocated remainder as water.
+- Active-matter percentage validity is independent of batch-mass availability. Batch-specific active kg remains unavailable when no explicit batch size is supplied.
+- Formula Expert, pH view, formula library and specification dashboard preserve missing ingredient percentages, assays, prices and batch size as unavailable instead of displaying zero or 100% defaults.
+- Formula library no longer injects an arbitrary ₹50/kg target-cost gate when no target is supplied.
+- Costing and commercial margin chain require explicit batch size, overhead and packaging assumptions. Incomplete cost outputs remain unavailable; trade markups and the 18% tax uplift are surfaced as scenario assumptions.
+- Total-solids calculation requires a complete 100% composition. Density reports disclose the 100 g reference-mass assumption when no batch mass is supplied. Viscosity reports disclose that the primary scalar remains a 25 °C reference and reject out-of-range temperature inputs.
+- Legacy batch-cost wrapper no longer assumes a 100 kg batch.
+- PHEngineView preserves missing raw percentage and active assay as invalid/unavailable input, rather than converting them to zero or 100%.
+
+### Phase 2 verification evidence
+- Audit branch commit: `40e4625c1541cc01f0b9709eb73bd3de78c869ce`
+- GitHub workflow run #801: full TypeScript regression suite **PASS — 139/139 modules, 4,982/4,982 assertions, 0 failed**.
+- Production frontend build: **PASS**.
+- Evidence syntax, regression and fail-closed gates: **PASS**.
+- P1 Phase 6 lab-evidence regression suite: **PASS**.
+- Android debug APK build and instrumentation remain part of the broader release workflow; they are not a Phase 2 scientific acceptance criterion and must still pass before any release/merge decision.
+
+### Phase 2 disposition
+**Phase 2 input validation and category-routing remediation is accepted on the basis of the passing scientific regression and frontend/evidence gates above.** Phases 3–10 remain open. PR #94 remains draft and unmerged; no production release is authorized.
