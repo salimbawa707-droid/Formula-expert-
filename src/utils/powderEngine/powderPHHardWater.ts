@@ -161,7 +161,13 @@ export function calculatePowderPH(
     }
   } else {
     isWithinTarget = false;
-    statusMessage = `1% aqueous test solution pH calculation failed to converge (UNAVAILABLE). Cannot verify compliance against ${targetLabel || 'target specification'}.`;
+    statusMessage = !concentrationValid
+      ? 'INVALID_INPUT: slurry concentration must be a finite value greater than 0% and no more than 100%.'
+      : classifiedIngredients.length === 0
+        ? 'INSUFFICIENT_DATA: no powder ingredients were supplied; no pH value or heuristic baseline is returned.'
+        : !hasPHActiveChemistry && !isMeasuredAvailable
+          ? 'INSUFFICIENT_DATA: no acid/base or secondary buffer chemistry is identified and no measured pH was supplied.'
+          : `UNAVAILABLE: pH calculation did not produce a valid result. Cannot verify compliance against ${targetLabel || 'target specification'}.`;
   }
 
   // 3. DEFINE EXPLICIT SCIENTIFIC SLURRY PREPARATION CONFIGURATION
