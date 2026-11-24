@@ -518,7 +518,7 @@ export async function executeStagedScientificAnalysis(
       liveMassBalancePct: Number.NaN,
       isMassBalanceConsistent: false,
       recomputedActiveSurfactantPct: Number.NaN,
-      liveActiveSurfactantPct: calculateActiveSurfactants(rawIngredients),
+      liveActiveSurfactantPct: Number.NaN,
       isActiveSurfactantConsistent: false,
       recomputedCostPerKg: Number.NaN,
       liveCostPerKg: calculateFormulaCost(rawIngredients, snapshot.batchSizeKg).costPerKg,
@@ -1011,11 +1011,11 @@ export async function executeStagedScientificAnalysis(
   const recomputedMassBalancePct = orchestratorResult.massBalance.totalPercentage;
   const isMassBalanceConsistent = Number.isFinite(liveMassBalancePct) && Number.isFinite(recomputedMassBalancePct) && Math.abs(liveMassBalancePct - recomputedMassBalancePct) < 0.05;
 
-  const liveActiveSurfactantPct = calculateActiveSurfactants(rawIngredients);
+  const liveActiveSurfactantPct = calculateActiveSurfactants(immutableSnapshot.ingredients);
   const recomputedActiveSurfactantPct = orchestratorResult.activeMatterResult.totalSurfactantActivePct;
   const isActiveSurfactantConsistent = Number.isFinite(liveActiveSurfactantPct) && Number.isFinite(recomputedActiveSurfactantPct) && Math.abs(liveActiveSurfactantPct - recomputedActiveSurfactantPct) < 0.05;
 
-  const liveCost = calculateFormulaCost(rawIngredients, immutableSnapshot.batchSizeKg);
+  const liveCost = calculateFormulaCost(immutableSnapshot.ingredients, immutableSnapshot.batchSizeKg);
   const recomputedCostPerKg = orchestratorResult.costResult.costPerKg;
   const liveCostVal = Number.isFinite(liveCost.costPerKg) ? liveCost.costPerKg : null;
   const recomputedCostVal = Number.isFinite(recomputedCostPerKg) ? recomputedCostPerKg : null;
