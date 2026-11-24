@@ -56,6 +56,45 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
   }
 
   // =========================================================================
+  // PHASE 2 INPUT INTEGRITY: Missing and invalid composition inputs fail closed
+  // =========================================================================
+  const missingPctPH = PHEngineV2.calculatePH([{ name: 'Sodium Hydroxide', activePercent: 100 } as any], 100);
+  assert(
+    'Phase 2 Input Integrity',
+    'Missing ingredient percentage is INVALID_FORMULA, not silently zero',
+    missingPctPH.status === 'INVALID_FORMULA' && missingPctPH.pH === null,
+    { status: missingPctPH.status, pH: missingPctPH.pH },
+    'INVALID_FORMULA / null'
+  );
+
+  const aboveRangePctPH = PHEngineV2.calculatePH([{ name: 'Sodium Hydroxide', rawPercent: 101, activePercent: 100 } as any], 100);
+  assert(
+    'Phase 2 Input Integrity',
+    'Ingredient percentage above 100 is rejected',
+    aboveRangePctPH.status === 'INVALID_FORMULA' && aboveRangePctPH.pH === null,
+    { status: aboveRangePctPH.status, pH: aboveRangePctPH.pH },
+    'INVALID_FORMULA / null'
+  );
+
+  const invalidAssayPH = PHEngineV2.calculatePH([{ name: 'Sodium Hydroxide', rawPercent: 1, activePercent: 150 } as any], 100);
+  assert(
+    'Phase 2 Input Integrity',
+    'Active assay above 100% is rejected',
+    invalidAssayPH.status === 'INVALID_FORMULA' && invalidAssayPH.pH === null,
+    { status: invalidAssayPH.status, pH: invalidAssayPH.pH },
+    'INVALID_FORMULA / null'
+  );
+
+  const invalidBatchPH = PHEngineV2.calculatePH([{ name: 'Water', rawPercent: 100 } as any], 0);
+  assert(
+    'Phase 2 Input Integrity',
+    'Non-positive batch mass is rejected',
+    invalidBatchPH.status === 'INVALID_FORMULA' && invalidBatchPH.pH === null,
+    { status: invalidBatchPH.status, pH: invalidBatchPH.pH },
+    'INVALID_FORMULA / null'
+  );
+
+  // =========================================================================
   // TEST 1: Pure Water Near Neutral pH
   // =========================================================================
   const t1Res = PHEngineV2.calculatePH(
