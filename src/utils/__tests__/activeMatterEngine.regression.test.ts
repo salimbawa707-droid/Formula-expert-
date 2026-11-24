@@ -109,6 +109,10 @@ export function runActiveMatterRegressionTestSuite() {
   // NaCl, citric acid, preservative and fragrance remain unclassified, not assumed 100% active.
   assertNear('Mass Breakdown', 'Known total active matter is 22.0%', report.totalActiveMatter, 22.0, 0.05);
   assertNear('Mass Breakdown', 'Known total active kg for 100kg batch is 22.0kg', report.totalActiveKg, 22.0, 0.05);
+  const reportWithoutBatch = ActiveMatterEngine.calculateActiveMatterReport(testFormula);
+  assertNear('Batch Basis', 'Composition-based active matter percentage does not require a batch size', reportWithoutBatch.totalActiveMatter, 22.0, 0.05);
+  assert('Batch Basis', 'Missing batch size does not invent 100 kg active mass', Number.isNaN(reportWithoutBatch.totalActiveKg), reportWithoutBatch.totalActiveKg, 'NaN / unavailable');
+
   assertNear('Mass Breakdown', 'Unknown active assay mass is 5.0%', report.totalUnclassifiedPercentage, 5.0, 0.05);
   assert('Mass Breakdown', 'Report remains INSUFFICIENT_DATA while ingredient assays are missing', report.activeMatterStatus === 'INSUFFICIENT_DATA', report.activeMatterStatus, 'INSUFFICIENT_DATA');
   
