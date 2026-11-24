@@ -795,26 +795,30 @@ export function getCategoryRequiredLabBattery(category: ProductCategoryId | 'UNK
   switch (category) {
     case 'LAUNDRY_POWDER':
       return ['pH', 'activeMatter', 'moisture', 'bulkDensity'];
+    case 'LAUNDRY_LIQUID':
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore'];
     case 'FABRIC_SOFTENER':
-      return ['pH', 'viscosity', 'activeMatter', 'softness'];
+      return ['pH', 'viscosity', 'activeMatter', 'softness', 'staticReduction'];
     case 'TOILET_CLEANER':
-      return ['pH', 'viscosity', 'descalingRate'];
+      return ['pH', 'viscosity', 'descalingRate', 'clingRheology'];
     case 'BATHROOM_CLEANER':
-      return ['pH', 'viscosity', 'soapScumRemoval'];
+      return ['pH', 'viscosity', 'soapScumRemoval', 'surfaceCompatibility'];
     case 'GLASS_CLEANER':
-      return ['pH', 'streakRating', 'opticalTransmission'];
+      return ['pH', 'streakRating', 'residueStreaking', 'opticalTransmission'];
     case 'HAND_WASH':
       return ['pH', 'viscosity', 'activeSurfactants', 'mildness'];
     case 'DISHWASH_AUTOMATIC':
-      return ['pH', 'zeroFoamCompliance', 'foodSoilRemoval'];
+      return ['pH', 'zeroFoamCompliance', 'foodSoilRemoval', 'rinseResidue'];
     case 'DISHWASH_MANUAL':
-      return ['pH', 'viscosity', 'activeSurfactants', 'greaseCutting'];
-    case 'LAUNDRY_LIQUID':
+      return ['pH', 'viscosity', 'activeSurfactants', 'greaseCutting', 'mildness', 'foamStability'];
     case 'FLOOR_CLEANER':
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'residueStreaking', 'glossRetention'];
     case 'MULTIPURPOSE_CLEANER':
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'surfaceCompatibility', 'greaseEmulsification'];
     case 'KITCHEN_DEGREASER':
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'bakedGreaseRemoval', 'saponificationRate'];
     case 'CAR_SHAMPOO':
-      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore'];
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'paintworkLubricity', 'rinseSpotting', 'foamStability'];
     default:
       return [];
   }
