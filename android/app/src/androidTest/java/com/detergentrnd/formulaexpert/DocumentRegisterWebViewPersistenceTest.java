@@ -53,6 +53,19 @@ public class DocumentRegisterWebViewPersistenceTest {
         return result.get();
     }
 
+    private static String evaluateAsync(ActivityScenario<MainActivity> scenario, String expression) throws Exception {
+        String start = evaluate(scenario,
+            "(()=>{window.__nativeDocTestResult=null;Promise.resolve().then(()=>(" + expression + ")).then(v=>window.__nativeDocTestResult=String(v)).catch(e=>window.__nativeDocTestResult='ERROR:'+e.message);return 'STARTED'})()");
+        assertTrue("Async JavaScript operation did not start: " + start, start != null && start.contains("STARTED"));
+        long deadline = System.currentTimeMillis() + 15000;
+        while (System.currentTimeMillis() < deadline) {
+            String value = evaluate(scenario, "window.__nativeDocTestResult");
+            if (value != null && !value.equals("null")) return value;
+            Thread.sleep(200);
+        }
+        throw new AssertionError("Async JavaScript operation timed out");
+    }
+
     private static ActivityScenario<MainActivity> launch() {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         Intent intent = new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -81,15 +94,15 @@ public class DocumentRegisterWebViewPersistenceTest {
         ActivityScenario<MainActivity> first = launch();
         openDocsRegister(first);
 
-        String write = evaluate(first,
-            "new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result;if(!db.objectStoreNames.contains('documents')){db.close();reject(new Error('documents store missing'));return;}const tx=db.transaction('documents','readwrite');const blob=new Blob(['ANDROID-WEBVIEW-PDF-PERSISTENCE'],{type:'application/pdf'});tx.objectStore('documents').put({id:'android-webview-persistence-test',title:'Android WebView persistence test',documentType:'SDS',reviewStatus:'UNREVIEWED',fileName:'android-webview-test.pdf',mimeType:'application/pdf',fileSizeBytes:blob.size,attachment:blob,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});tx.oncomplete=()=>{db.close();resolve('WRITE_OK')};tx.onerror=()=>reject(tx.error)}}).then(x=>x).catch(e=>'ERROR:'+e.message)");
+        String write = evaluateAsync(first,
+            "(async()=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});if(!db.objectStoreNames.contains('documents'))throw new Error('documents store missing');await new Promise((resolve,reject)=>{const tx=db.transaction('documents','readwrite');const blob=new Blob(['ANDROID-WEBVIEW-PDF-PERSISTENCE'],{type:'application/pdf'});tx.objectStore('documents').put({id:'android-webview-persistence-test',title:'Android WebView persistence test',documentType:'SDS',reviewStatus:'UNREVIEWED',fileName:'android-webview-test.pdf',mimeType:'application/pdf',fileSizeBytes:blob.size,attachment:blob,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();return 'WRITE_OK'})()");
         assertTrue("IndexedDB write must succeed: " + write, write != null && write.contains("WRITE_OK"));
         first.close();
 
         ActivityScenario<MainActivity> second = launch();
         openDocsRegister(second);
-        String read = evaluate(second,
-            "new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result;const tx=db.transaction('documents','readonly');const get=tx.objectStore('documents').get('android-webview-persistence-test');get.onsuccess=async()=>{const row=get.result;if(!row||!(row.attachment instanceof Blob)){db.close();resolve('MISSING_BLOB');return;}const text=await row.attachment.text();db.close();resolve(text==='ANDROID-WEBVIEW-PDF-PERSISTENCE'?'READ_OK':'BAD_BYTES')};get.onerror=()=>reject(get.error)}}).then(x=>x).catch(e=>'ERROR:'+e.message)");
+        String read = evaluateAsync(second,
+            "(async()=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});const row=await new Promise((resolve,reject)=>{const tx=db.transaction('documents','readonly');const req=tx.objectStore('documents').get('android-webview-persistence-test');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});if(!row||!(row.attachment instanceof Blob)){db.close();return 'MISSING_BLOB'}const text=await row.attachment.text();db.close();return text==='ANDROID-WEBVIEW-PDF-PERSISTENCE'?'READ_OK':'BAD_BYTES'})()");
         assertTrue("Stored PDF Blob and bytes must survive activity restart: " + read, read != null && read.contains("READ_OK"));
 
         CountDownLatch downloadLatch = new CountDownLatch(1);
