@@ -206,12 +206,24 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
 
   // Current Formula Snapshot
   const currentSnapshot: FormulaVersionSnapshot = useMemo(() => {
-    const totalPct = ingredients.reduce((sum, i) => sum + (Number(i.percentage) || 0), 0);
-    const activePct = powderReport
+    const validPercentages = ingredients.map(i => Number(i.percentage));
+    const compositionValid = ingredients.length > 0 && validPercentages.every(pct => Number.isFinite(pct) && pct >= 0 && pct <= 100);
+    const totalPct = compositionValid ? validPercentages.reduce((sum, pct) => sum + pct, 0) : Number.NaN;
+    const validActiveMatter = ingredients.map(i => Number(i.activeMatterPct));
+    const activeMatterComplete = compositionValid && validActiveMatter.every(pct => Number.isFinite(pct) && pct >= 0 && pct <= 100);
+    const activePct = powderReport && Number.isFinite(powderReport.activeMatter?.totalSurfactantActivePct)
       ? powderReport.activeMatter.totalSurfactantActivePct
-      : liquidResults?.activeSurfactants ?? ingredients.reduce((sum, i) => sum + ((Number(i.percentage) || 0) * (Number(i.activeMatterPct) || 0) / 100), 0);
-    const costKg = costReport?.costPerKg ?? powderReport?.costing.costPerKg ?? 0;
-    const batchCost = costReport?.totalBatchCost ?? powderReport?.costing.totalBatchCost ?? (costKg * batchSizeKg);
+      : (Number.isFinite(liquidResults?.activeSurfactants)
+        ? liquidResults!.activeSurfactants as number
+        : (activeMatterComplete
+          ? ingredients.reduce((sum, i, idx) => sum + (validPercentages[idx] * validActiveMatter[idx] / 100), 0)
+          : Number.NaN));
+    const candidateCostKg = costReport?.costPerKg ?? powderReport?.costing?.costPerKg;
+    const costKg = typeof candidateCostKg === 'number' && Number.isFinite(candidateCostKg) ? candidateCostKg : Number.NaN;
+    const candidateBatchCost = costReport?.totalBatchCost ?? powderReport?.costing?.totalBatchCost;
+    const batchCost = typeof candidateBatchCost === 'number' && Number.isFinite(candidateBatchCost)
+      ? candidateBatchCost
+      : (Number.isFinite(costKg) && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? costKg * batchSizeKg : Number.NaN);
 
     return {
       versionId: `snap-${formulaVersion}-${Date.now()}`,
@@ -222,9 +234,9 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
       ingredients: ingredients.map(i => ({
         id: i.id,
         name: i.name,
-        percentage: Number(i.percentage) || 0,
-        activeMatterPct: Number(i.activeMatterPct) || 0,
-        costPerKg: Number(i.costPerKg) || 0,
+        percentage: Number.isFinite(i.percentage) ? i.percentage : Number.NaN,
+        activeMatterPct: Number.isFinite(i.activeMatterPct) ? i.activeMatterPct : Number.NaN,
+        costPerKg: typeof i.costPerKg === 'number' && Number.isFinite(i.costPerKg) ? i.costPerKg : Number.NaN,
         role: i.role
       })),
       totalPercentage: totalPct,
@@ -1318,7 +1330,7 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
             </div>
             <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
               <span className="text-[10px] font-mono text-slate-400 block">Active Surfactant</span>
-              <span className="font-mono font-bold text-cyan-300 text-sm">{currentSnapshot.activeMatterPct.toFixed(2)}%</span>
+              <span className="font-mono font-bold text-cyan-300 text-sm">{Number.isFinite(currentSnapshot.activeMatterPct) ? `${currentSnapshot.activeMatterPct.toFixed(2)}%` : 'N/A'}</span>
             </div>
             <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
               <span className="text-[10px] font-mono text-slate-400 block">Finished Cost / kg</span>
@@ -1351,7 +1363,7 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
                       <td className="py-1.5 px-3 text-slate-400 font-sans">{ing.role || '-'}</td>
                       <td className="py-1.5 px-3 text-right text-slate-200">{Number(ing.percentage).toFixed(2)}%</td>
                       <td className="py-1.5 px-3 text-right text-slate-300">{((Number(ing.percentage) / 100) * batchSizeKg).toFixed(2)} kg</td>
-                      <td className="py-1.5 px-3 text-right text-cyan-300">{Number(ing.activeMatterPct || 0).toFixed(1)}%</td>
+                      <td className="py-1.5 px-3 text-right text-cyan-300">{Number.isFinite(ing.activeMatterPct) ? `${ing.activeMatterPct.toFixed(1)}%` : 'N/A'}</td>
                     </tr>
                   ))}
                 </tbody>
