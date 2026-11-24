@@ -13,14 +13,6 @@ const DOCUMENT_TYPES: { value: RndDocumentType; label: string }[] = [
   { value: 'OTHER', label: 'Other' }
 ];
 
-const ACCEPTED_MIME_TYPES = new Set([
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-  'text/plain',
-  'text/csv',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-]);
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
 function createDocumentId(): string {
@@ -74,9 +66,8 @@ async function validateAttachment(file: File): Promise<{ error?: string; mimeTyp
   }
   if (extension === 'txt' || extension === 'csv') {
     try {
-      const text = await file.text();
+      const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
       if (text.includes('\\u0000')) return { error: 'The selected text file contains binary data.' };
-      new TextEncoder().encode(text); // Ensure the text is representable as UTF-8.
     } catch {
       return { error: 'The selected text file is not valid readable text.' };
     }
@@ -84,10 +75,11 @@ async function validateAttachment(file: File): Promise<{ error?: string; mimeTyp
   return { mimeType: declared && declared !== 'application/octet-stream' ? declared : expected };
 }
 
-function dateState(expiryDate?: string): 'CURRENT' | 'EXPIRING' | 'EXPIRED' | 'NO_EXPIRY' {
+function dateState(expiryDate?: string): 'CURRENT' | 'EXPIRING' | 'EXPIRED' | 'NO_EXPIRY' | 'INVALID' {
   if (!expiryDate) return 'NO_EXPIRY';
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDate)) return 'INVALID';
   const expiry = new Date(`${expiryDate}T23:59:59`);
-  if (!Number.isFinite(expiry.getTime())) return 'NO_EXPIRY';
+  if (!Number.isFinite(expiry.getTime()) || expiry.toISOString().slice(0, 10) !== expiryDate) return 'INVALID';
   const days = Math.ceil((expiry.getTime() - Date.now()) / 86400000);
   if (days < 0) return 'EXPIRED';
   if (days <= 30) return 'EXPIRING';
@@ -341,8 +333,8 @@ export default function DocsLibrary() {
           const validity = dateState(doc.expiryDate);
           return <article key={doc.id} className="space-y-3 rounded-xl border border-slate-700 bg-[#0e1629] p-4">
             <div className="flex items-start justify-between gap-3"><div><span className="text-xs font-bold uppercase tracking-wide text-blue-300">{DOCUMENT_TYPES.find(t => t.value === doc.documentType)?.label || doc.documentType}</span><h3 className="mt-1 font-bold text-white">{doc.title}</h3><p className="mt-1 text-xs text-slate-400">{doc.issuer || 'Issuer not recorded'}{doc.referenceNumber ? ` · ${doc.referenceNumber}` : ''}</p></div><button onClick={() => void deleteDocument(doc.id)} aria-label={`Delete ${doc.title}`} className="rounded-lg p-2 text-slate-500 hover:bg-rose-950/40 hover:text-rose-300"><Trash2 className="h-4 w-4" /></button></div>
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-400"><div>Jurisdiction: <span className="text-slate-200">{doc.jurisdiction || 'Not specified'}</span></div><div>Revision: <span className="text-slate-200">{doc.revision || 'Not specified'}</span></div><div>Issue: <span className="text-slate-200">{doc.issueDate || 'Not recorded'}</span></div><div>Review / expiry: <span className={validity === 'EXPIRED' ? 'text-rose-300' : validity === 'EXPIRING' ? 'text-amber-300' : 'text-slate-200'}>{doc.expiryDate || 'No date'}</span></div></div>
-            <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3"><span className={`rounded-full border px-2.5 py-1 text-xs ${doc.reviewStatus === 'REVIEWED_BY_USER' ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300' : doc.reviewStatus === 'REJECTED' ? 'border-rose-500/30 bg-rose-950/30 text-rose-300' : 'border-amber-500/30 bg-amber-950/30 text-amber-300'}`}>{statusLabel(doc.reviewStatus)}</span>{validity === 'EXPIRED' && <span className="inline-flex items-center gap-1 text-xs text-rose-300"><AlertTriangle className="h-3 w-3" />Past review date</span>}{doc.reviewedBy && <span className="text-xs text-slate-400">Reviewer: {doc.reviewedBy}</span>}</div>
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-400"><div>Jurisdiction: <span className="text-slate-200">{doc.jurisdiction || 'Not specified'}</span></div><div>Revision: <span className="text-slate-200">{doc.revision || 'Not specified'}</span></div><div>Issue: <span className="text-slate-200">{doc.issueDate || 'Not recorded'}</span></div><div>Review / expiry: <span className={(validity === 'EXPIRED' || validity === 'INVALID') ? 'text-rose-300' : validity === 'EXPIRING' ? 'text-amber-300' : 'text-slate-200'}>{doc.expiryDate || 'No date'}{validity === 'INVALID' ? ' · Invalid date' : ''}</span></div></div>
+            <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3"><span className={`rounded-full border px-2.5 py-1 text-xs ${doc.reviewStatus === 'REVIEWED_BY_USER' ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300' : doc.reviewStatus === 'REJECTED' ? 'border-rose-500/30 bg-rose-950/30 text-rose-300' : 'border-amber-500/30 bg-amber-950/30 text-amber-300'}`}>{statusLabel(doc.reviewStatus)}</span>{(validity === 'EXPIRED' || validity === 'INVALID') && <span className="inline-flex items-center gap-1 text-xs text-rose-300"><AlertTriangle className="h-3 w-3" />{validity === 'EXPIRED' ? 'Past review date' : 'Invalid expiry date'}</span>}{doc.reviewedBy && <span className="text-xs text-slate-400">Reviewer: {doc.reviewedBy}</span>}</div>
             <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-slate-500">{doc.fileName || (doc.sourceUrl ? 'Source link only' : 'No file')} · {formatSize(doc.fileSizeBytes)}</span><div className="flex gap-2">{doc.attachment && <button onClick={() => downloadAttachment(doc)} className="inline-flex items-center gap-1 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"><Download className="h-3.5 w-3.5" />Download</button>}{doc.reviewStatus === 'UNREVIEWED' && <button onClick={() => void reviewDocument(doc)} className="inline-flex items-center gap-1 rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-600"><CheckCircle2 className="h-3.5 w-3.5" />Mark reviewed</button>}{doc.reviewStatus === 'REVIEWED_BY_USER' && <button onClick={() => void unreviewDocument(doc)} className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300">Reopen review</button>}{doc.sourceUrl && <a href={doc.sourceUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-blue-300">Source</a>}</div></div>
           </article>;
         })}</div>}
