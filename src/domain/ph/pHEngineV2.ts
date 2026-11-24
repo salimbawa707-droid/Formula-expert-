@@ -31,6 +31,78 @@ export class PHEngineV2 {
     const temperatureC = options.temperatureC ?? 25.0;
     const activityModel: ActivityModelType = options.activityModel ?? 'ideal';
 
+    // Fail closed before composition normalization can coerce missing or invalid fields.
+    const inputErrors: string[] = [];
+    if (!Array.isArray(ingredients)) {
+      inputErrors.push('Ingredient list must be an array.');
+    } else {
+      if (!Number.isFinite(totalMassKg) || totalMassKg <= 0) inputErrors.push('Total batch mass must be a finite value greater than zero.');
+      ingredients.forEach((ingredient, index) => {
+        if (!ingredient || typeof ingredient.name !== 'string' || !ingredient.name.trim()) {
+          inputErrors.push(`Ingredient ${index + 1} has no valid name.`);
+          return;
+        }
+        const hasRawMass = ingredient.rawKg !== undefined && ingredient.rawKg !== null;
+        const hasWeightMass = ingredient.weightKg !== undefined && ingredient.weightKg !== null;
+        if (hasRawMass && (!Number.isFinite(Number(ingredient.rawKg)) || Number(ingredient.rawKg) < 0)) {
+          inputErrors.push(`Ingredient ${ingredient.name} has invalid rawKg.`);
+        } else if (!hasRawMass && hasWeightMass && (!Number.isFinite(Number(ingredient.weightKg)) || Number(ingredient.weightKg) < 0)) {
+          inputErrors.push(`Ingredient ${ingredient.name} has invalid weightKg.`);
+        } else if (!hasRawMass && !hasWeightMass) {
+          const rawPct = ingredient.rawPercent;
+          const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+            ? Number.NaN
+            : Number(rawPct);
+          if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+            inputErrors.push(`Ingredient ${ingredient.name} has a missing or invalid percentage (0–100%).`);
+          }
+        }
+        const rawAssay = ingredient.activePercent ?? ingredient.purity;
+        if (rawAssay !== undefined && rawAssay !== null) {
+          const assay = Number(rawAssay);
+          if (!Number.isFinite(assay) || assay < 0 || assay > 100) {
+            inputErrors.push(`Ingredient ${ingredient.name} has an invalid active assay/purity (0–100%).`);
+          }
+        }
+      });
+    }
+    if (!Number.isFinite(temperatureC) || temperatureC <= -273.15 || temperatureC > 200) {
+      inputErrors.push('Temperature must be a finite value above absolute zero and no more than 200 °C.');
+    }
+    if (options.slurryConcentrationPct !== undefined &&
+      (!Number.isFinite(options.slurryConcentrationPct) || options.slurryConcentrationPct <= 0 || options.slurryConcentrationPct > 100)) {
+      inputErrors.push('Powder slurry concentration must be greater than 0% and no more than 100%.');
+    }
+    if (inputErrors.length > 0) {
+      return {
+        pH: null,
+        finalPH: null,
+        status: 'INVALID_FORMULA',
+        method: 'INPUT_VALIDATION',
+        converged: false,
+        iterations: 0,
+        residual: null,
+        stepSize: 0,
+        ionicStrength: null,
+        activityModel,
+        modelValidity: 'OUT_OF_RANGE',
+        temperatureC,
+        assumptions: [],
+        warnings: inputErrors,
+        confidence: 0,
+        measuredPH: null,
+        predictionError: null,
+        excessAcidEquivalents: 0,
+        excessBaseEquivalents: 0,
+        excessStrongAcidEquivalents: 0,
+        excessStrongBaseEquivalents: 0,
+        excessStrongAcid: 0,
+        excessStrongBase: 0,
+        netEquivalents: 0,
+        netMoles: 0
+      };
+    }
+
     // 1. Normalize composition
     const composition = normalizeFormulationComposition(ingredients, totalMassKg, options);
     (composition as any).activityModel = activityModel;
