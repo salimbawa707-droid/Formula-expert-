@@ -1111,9 +1111,9 @@ export function calculateWaterHardnessTolerance(
   waterHardnessPpm?: number | null,
   washVolumeL?: number | null,
   washDoseGrams?: number | null,
-  batchSizeKg: number = 100,
+  batchSizeKg?: number,
   productCategoryOrProfileId?: string,
-  requireExplicitScenarioInputs: boolean = false
+  requireExplicitScenarioInputs: boolean = true
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const policy = getProductHardnessPolicy(productCategoryOrProfileId);
