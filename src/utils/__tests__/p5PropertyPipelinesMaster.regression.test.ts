@@ -36,6 +36,7 @@ import { ScientificExecutionDAG } from '../orchestrator/scientificExecutionDAG';
 import { CanonicalFormulaInput } from '../orchestrator/types';
 import { computeFormulaFingerprint } from '../provenanceEngine';
 import { isEngineApplicable } from '../../domain/scientificProductProfiles';
+import { calculateTotalSolids } from '../densityEngine';
 
 interface TestResult {
   group: string;
@@ -521,6 +522,36 @@ export function runP5PropertyPipelinesTestSuite() {
     liquidResult.compatibilityResult.compatibilityStatusSemantic === 'COMPATIBLE_BY_RULE',
     liquidResult.compatibilityResult.compatibilityStatusSemantic,
     'NO_KNOWN_CONFLICT or COMPATIBLE_BY_RULE'
+  );
+
+  // Y. Total-solids calculations fail closed on missing/incomplete composition.
+  assert(
+    'Phase 5 Pipelines',
+    'Y1. Empty ingredient list does not report zero total solids',
+    Number.isNaN(calculateTotalSolids([] as any)),
+    calculateTotalSolids([] as any),
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 5 Pipelines',
+    'Y2. Missing ingredient percentage does not become zero solids',
+    Number.isNaN(calculateTotalSolids([{ name: 'Sodium Sulfate' } as any])),
+    calculateTotalSolids([{ name: 'Sodium Sulfate' } as any]),
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 5 Pipelines',
+    'Y3. Incomplete formula mass balance does not produce total solids',
+    Number.isNaN(calculateTotalSolids([{ name: 'Water', percentage: 80 }, { name: 'Sodium Sulfate', percentage: 10 }] as any)),
+    calculateTotalSolids([{ name: 'Water', percentage: 80 }, { name: 'Sodium Sulfate', percentage: 10 }] as any),
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 5 Pipelines',
+    'Y4. Complete formula reports explicit solids percentage',
+    calculateTotalSolids([{ name: 'Water', percentage: 90 }, { name: 'Sodium Sulfate', percentage: 10 }] as any) === 10,
+    calculateTotalSolids([{ name: 'Water', percentage: 90 }, { name: 'Sodium Sulfate', percentage: 10 }] as any),
+    10
   );
 
   // X. Pricing behavior remains unchanged
