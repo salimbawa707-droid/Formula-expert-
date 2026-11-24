@@ -69,8 +69,10 @@ export function getStandardComponentDensity(name: string): number | null {
 
 export function calculateDensity(
   ingredients: FormulationIngredient[] = [],
-  totalBatchMassGrams: number = 100
+  totalBatchMassGrams?: number
 ): DensityCalculationResult {
+  const massBasisAssumed = totalBatchMassGrams === undefined || totalBatchMassGrams === null;
+  const massBasisGrams = massBasisAssumed ? 100 : totalBatchMassGrams as number;
   const safeList = Array.isArray(ingredients) ? ingredients : [];
   const unavailable = (
     reason: string,
@@ -88,6 +90,7 @@ export function calculateDensity(
     densityStatus: 'INSUFFICIENT_DATA',
     provenance: 'INSUFFICIENT_DATA',
     unknownDensityIngredients,
+    assumptions: massBasisAssumed ? ['A 100 g reference mass basis was used because totalBatchMassGrams was not supplied; density is composition-based, while total mass and volume reflect this reference basis.'] : [],
     limitations: [reason, 'A measured density (e.g. pycnometer/digital density meter) is required for production or packaging decisions.'],
     contributions: [],
     notes: `INSUFFICIENT_DATA: ${reason}`
@@ -96,7 +99,7 @@ export function calculateDensity(
   if (safeList.length === 0) {
     return unavailable('No ingredient composition was supplied; pure-water density is not substituted for an empty formula.');
   }
-  if (!Number.isFinite(totalBatchMassGrams) || totalBatchMassGrams <= 0) {
+  if (!Number.isFinite(massBasisGrams) || massBasisGrams <= 0) {
     return unavailable('Total batch mass must be a finite value greater than zero.');
   }
 
@@ -142,7 +145,7 @@ export function calculateDensity(
       unknownDensityIngredients.push(name);
       continue;
     }
-    const compMassG = (rawPct / 100) * totalBatchMassGrams;
+    const compMassG = (rawPct / 100) * massBasisGrams;
     const compVolCm3 = compMassG / compDensity;
     totalMass += compMassG;
     totalVolume += compVolCm3;
@@ -177,6 +180,7 @@ export function calculateDensity(
     specificGravity: Number(specificGravity.toFixed(3)),
     totalMassGrams: Number(totalMass.toFixed(2)),
     totalVolumeCm3: Number(totalVolume.toFixed(2)),
+    assumptions: massBasisAssumed ? ['A 100 g reference mass basis was used because totalBatchMassGrams was not supplied; density is composition-based, while total mass and volume reflect this reference basis.'] : [],
     isIdealVolumeAdditivity: true,
     confidence: hasReferenceDensity ? 'LOW' : 'MEDIUM',
     modelType: 'IDEAL_VOLUME_ADDITIVITY_SCREENING',
@@ -191,9 +195,9 @@ export function calculateDensity(
       'Empirical pycnometer or digital density-meter measurement is required for packaging and production specifications.'
     ],
     contributions,
-    notes: hasReferenceDensity
+    notes: (hasReferenceDensity
       ? 'SCREENING ESTIMATE: One or more generic reference densities were used. Do not treat this value as verified.'
-      : 'SCREENING ESTIMATE: User-supplied component densities were used with ideal volume additivity. Independent measurement is still required.'
+      : 'SCREENING ESTIMATE: User-supplied component densities were used with ideal volume additivity. Independent measurement is still required.') + (massBasisAssumed ? ' A 100 g reference mass basis was assumed.' : '')
   };
 }
 
