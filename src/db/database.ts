@@ -92,6 +92,34 @@ export interface UserSettingRecord {
   updatedAt: string;
 }
 
+/** Local-only document register. REVIEWED_BY_USER is an attestation, not proof of authenticity or regulatory compliance. */
+export type RndDocumentType = 'SDS' | 'COA' | 'TDS' | 'SOP' | 'REGULATION' | 'CLAIM_EVIDENCE' | 'TEST_REPORT' | 'OTHER';
+export type RndDocumentReviewStatus = 'UNREVIEWED' | 'REVIEWED_BY_USER' | 'REJECTED';
+
+export interface RndDocumentRecord {
+  id: string;
+  title: string;
+  documentType: RndDocumentType;
+  issuer?: string;
+  referenceNumber?: string;
+  revision?: string;
+  jurisdiction?: string;
+  ingredientOrFormula?: string;
+  sourceUrl?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewStatus: RndDocumentReviewStatus;
+  reviewNotes?: string;
+  fileName?: string;
+  mimeType?: string;
+  fileSizeBytes?: number;
+  attachment?: Blob;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * A researched ingredient profile created when an ingredient is not already
  * available in the local ingredient library. Values are only persisted when
@@ -121,10 +149,11 @@ export class DetergentDatabase extends Dexie {
   specRecords!: Table<SpecRecord, string>;
   userSettings!: Table<UserSettingRecord, string>;
   researchedIngredients!: Table<ResearchedIngredientRecord, string>;
+  documents!: Table<RndDocumentRecord, string>;
 
   constructor() {
     super('DetergentFormulaExpertDB');
-    
+
     this.version(1).stores({
       formulas: 'id, name, category, productType, isFavorite, updatedAt',
       inventory: 'id, name, category, stockKg, updatedAt',
@@ -146,6 +175,20 @@ export class DetergentDatabase extends Dexie {
       specRecords: 'category, updatedAt',
       userSettings: 'key, updatedAt',
       researchedIngredients: 'id, queryName, canonicalName, grade, status, updatedAt'
+    });
+
+    // v3 adds an offline-first document register. Attachments remain in the
+    // user's local IndexedDB; they are not uploaded or shared with a server.
+    this.version(3).stores({
+      formulas: 'id, name, category, productType, isFavorite, updatedAt',
+      inventory: 'id, name, category, stockKg, updatedAt',
+      productionRuns: 'id, batchNumber, formulaId, date, status, createdAt',
+      labNotes: 'id, title, date, formulaId, createdAt',
+      formulaVersions: 'id, formulaId, versionNumber, timestamp',
+      specRecords: 'category, updatedAt',
+      userSettings: 'key, updatedAt',
+      researchedIngredients: 'id, queryName, canonicalName, grade, status, updatedAt',
+      documents: 'id, title, documentType, reviewStatus, jurisdiction, expiryDate, updatedAt'
     });
   }
 }
