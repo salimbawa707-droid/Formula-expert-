@@ -446,7 +446,34 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         return;
       }
 
-      // Check unique value diversity
+      // Numeric properties are comparable only when every contributing source states
+      // the same grade, unit, measurement basis, method and test conditions.
+      const propertySources = uniqueSources.filter(source =>
+        source.extractedParameters?.[prop] !== undefined && source.extractedParameters?.[prop] !== null
+      );
+      const numericProperty = values.every(value => typeof value === 'number' && Number.isFinite(value));
+      if (numericProperty) {
+        const metadataKeys = [`${prop}Unit`, `${prop}Basis`, `${prop}Method`, `${prop}Conditions`];
+        const metadataComplete = propertySources.length === values.length && propertySources.every(source =>
+          metadataKeys.every(key => typeof source.extractedParameters?.[key] === 'string' && source.extractedParameters[key].trim().length > 0)
+        );
+        const signatures = propertySources.map(source => metadataKeys
+          .map(key => String(source.extractedParameters[key]).trim().toLowerCase().replace(/\\s+/g, ' '))
+          .concat([String(source.extractedParameters.grade || '').trim().toLowerCase()])
+          .join('|'));
+        const metadataEquivalent = signatures.length > 0 && signatures.every(signature => signature === signatures[0]);
+        if (!metadataComplete || !metadataEquivalent) {
+          comparisonReport.push({
+            property: prop,
+            comparisonStatus: 'INSUFFICIENT_DATA',
+            values,
+            notes: 'Numeric observations are not calculation-grade comparable: source-level grade, units, measurement basis, method and test conditions must all be explicit and equivalent.'
+          });
+          return;
+        }
+      }
+
+      // Check exact value diversity; no percentage tolerance is applied.
       const uniqueVals = Array.from(new Set(values.map(v => typeof v === 'string' ? v.toLowerCase() : v)));
       if (uniqueVals.length === 1) {
         comparisonReport.push({
