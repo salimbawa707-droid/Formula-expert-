@@ -179,24 +179,16 @@ export function calculateFormulationCompatibility(
       waterPct += pct;
     }
 
-    // Anionic
-    if (
-      cat.includes('anionic') ||
-      name.includes('labsa') ||
-      name.includes('sles') ||
-      name.includes('sls') ||
-      name.includes('aos') ||
-      name.includes('sulfate') ||
-      name.includes('sulphonate') ||
-      name.includes('sulfonate') ||
-      name.includes('soap')
-    ) {
-      // Exclude short-chain aryl hydrotropes (SCS, SXS) which lack surfactant micelle foaming properties
-      if (!name.includes('cumene') && !name.includes('xylene') && !name.includes('scs') && !name.includes('sxs')) {
-        hasAnionic = true;
-        anionicPct += pct;
-        anionicIngs.push(ing.name);
-      }
+    // Anionic surfactants: do not classify every sulfate/sulfonate salt as a surfactant.
+    // Sodium sulfate and similar inorganic salts are builders/fillers, not anionic detergents.
+    const hasExplicitAnionicRole = cat.includes('anionic');
+    const hasKnownAnionicSurfactantIdentity =
+      /\\blabsa\\b|linear alkylbenzene sulfonic acid|alkylbenzene sulfonate|\\bsles\\b|sodium laureth sulfate|\\bsls\\b|sodium lauryl sulfate|sodium dodecyl sulfate|\\bsds\\b|\\baos\\b|alpha olefin sulfonate|alkyl ether sulfate|alkyl sulfate surfactant|\\bsoap\\b/i.test(name);
+    const isShortChainHydrotrope = /cumene|xylene|\\bscs\\b|\\bsxs\\b/.test(name);
+    if (!isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
+      hasAnionic = true;
+      anionicPct += pct;
+      anionicIngs.push(ing.name);
     }
 
     // Cationic
