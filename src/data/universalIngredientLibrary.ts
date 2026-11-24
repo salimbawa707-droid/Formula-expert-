@@ -5305,22 +5305,24 @@ const INGREDIENT_IDENTITY_ALIASES: Record<string, { id: string; gradeCompatible:
   'naoh 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   // Common water names used in formula templates and manual entry.
   // Resolve to the catalog water identity, but require grade/source confirmation.
-  'water': { id: 'dm-water', gradeCompatible: false },
-  'aqua': { id: 'dm-water', gradeCompatible: false },
-  'h2o': { id: 'dm-water', gradeCompatible: false },
-  'di water': { id: 'dm-water', gradeCompatible: false },
-  'd i water': { id: 'dm-water', gradeCompatible: false },
-  'deionized water': { id: 'dm-water', gradeCompatible: false },
-  'deionised water': { id: 'dm-water', gradeCompatible: false },
-  'demineralized water': { id: 'dm-water', gradeCompatible: false },
-  'demineralised water': { id: 'dm-water', gradeCompatible: false },
-  'distilled water': { id: 'dm-water', gradeCompatible: false },
-  'purified water': { id: 'dm-water', gradeCompatible: false },
-  'reverse osmosis water': { id: 'dm-water', gradeCompatible: false },
-  'ro water': { id: 'dm-water', gradeCompatible: false },
-  'water aqua': { id: 'dm-water', gradeCompatible: false },
-  'demineralized water aqua': { id: 'dm-water', gradeCompatible: false },
-  'demineralised water aqua': { id: 'dm-water', gradeCompatible: false }
+  'water': { id: 'dm-water', gradeCompatible: true },
+  'aqua': { id: 'dm-water', gradeCompatible: true },
+  'h2o': { id: 'dm-water', gradeCompatible: true },
+  'di water': { id: 'dm-water', gradeCompatible: true },
+  'd i water': { id: 'dm-water', gradeCompatible: true },
+  'deionized water': { id: 'dm-water', gradeCompatible: true },
+  'deionised water': { id: 'dm-water', gradeCompatible: true },
+  'demineralized water': { id: 'dm-water', gradeCompatible: true },
+  'demineralised water': { id: 'dm-water', gradeCompatible: true },
+  'distilled water': { id: 'dm-water', gradeCompatible: true },
+  'purified water': { id: 'dm-water', gradeCompatible: true },
+  'reverse osmosis water': { id: 'dm-water', gradeCompatible: true },
+  'ro water': { id: 'dm-water', gradeCompatible: true },
+  'water aqua': { id: 'dm-water', gradeCompatible: true },
+  'demineralized water aqua': { id: 'dm-water', gradeCompatible: true },
+  'demineralised water aqua': { id: 'dm-water', gradeCompatible: true },
+  'tap water': { id: 'dm-water', gradeCompatible: false },
+  'municipal water': { id: 'dm-water', gradeCompatible: false }
 };
 
 export function resolveUniversalIngredientIdentity(query: string): IngredientIdentityResolution | null {
@@ -5328,6 +5330,14 @@ export function resolveUniversalIngredientIdentity(query: string): IngredientIde
   if (!raw) return null;
   const normalized = normalizeIngredientIdentity(raw);
   if (!normalized) return null;
+
+  // In detergent formulas, an unspecified "Water/Aqua/H2O" means the
+  // catalog's standard demineralized carrier. Explicit tap/municipal water
+  // remains grade-review-only because hardness and dissolved solids vary.
+  if (['water', 'aqua', 'h2o'].includes(normalized)) {
+    const standardWater = UNIVERSAL_INGREDIENTS.find(item => item.id === 'dm-water');
+    if (standardWater) return { ingredient: standardWater, matchType: 'ALIAS', gradeCompatible: true };
+  }
 
   const identityValues = (item: UniversalIngredient): string[] => [
     item.id, item.name, item.productName, item.inciName, item.casNumber,
