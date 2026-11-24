@@ -891,13 +891,14 @@ export default function FormulaExpert({
             : val
         };
         if (field === "name") {
-          const matched = resolveUniversalIngredientIdentity(String(val))?.ingredient;
+          const matchedResolution = resolveUniversalIngredientIdentity(String(val));
+          const matched = matchedResolution?.ingredient;
           if (matched) {
             const isUnknownActive = matched.id === 'aristo-9' || matched.unknownProperties?.includes('activeMatter');
             updated.name = matched.name;
-            const preserveUserActiveMatter = ing.activeMatterInputSource === 'USER_ENTERED';
+            const preserveUserActiveMatter = ing.activeMatterInputSource === 'USER_ENTERED' || matchedResolution?.gradeCompatible === false;
             updated.activeMatterPct = preserveUserActiveMatter ? ing.activeMatterPct : isUnknownActive ? undefined : matched.activeDefault;
-            updated.activeMatterInputSource = preserveUserActiveMatter ? 'USER_ENTERED' : isUnknownActive ? 'UNKNOWN' : matched.activeDefault !== undefined ? 'CATALOG_DEFAULT' : 'UNKNOWN';
+            updated.activeMatterInputSource = preserveUserActiveMatter ? (ing.activeMatterInputSource || 'UNKNOWN') : isUnknownActive ? 'UNKNOWN' : matched.activeDefault !== undefined ? 'CATALOG_DEFAULT' : 'UNKNOWN';
             updated.activeMatterEvidenceId = undefined;
             updated.activeMatterEvidenceUrl = undefined;
             updated.canonicalIngredientId = matched.id;
@@ -1706,6 +1707,16 @@ export default function FormulaExpert({
                             );
                           }
 
+                          if (identityResolution && !identityResolution.gradeCompatible) {
+                            return (
+                              <div className="mt-1.5 flex items-center gap-2">
+                                <span className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded font-medium">
+                                  Catalog identity matched · commercial grade needs review
+                                </span>
+                              </div>
+                            );
+                          }
+
                           if (!isMatched) {
                             return (
                               <div className="mt-1.5 flex items-center gap-2">
@@ -1899,6 +1910,16 @@ export default function FormulaExpert({
                             <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded font-mono font-semibold flex items-center gap-1 shadow-sm">
                               <Check className="w-2.5 h-2.5 text-emerald-400" />
                               Gemini TDS Verified: {ing.activeMatterPct ?? null}% Active ({ing.role || ing.category})
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      if (identityResolution && !identityResolution.gradeCompatible) {
+                        return (
+                          <div className="mt-1 flex items-center gap-2 p-1.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                            <span className="text-[10px] text-amber-300 font-medium">
+                              Catalog identity matched · commercial grade needs review
                             </span>
                           </div>
                         );
