@@ -38,6 +38,11 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
   const [copiedFingerprint, setCopiedFingerprint] = useState(false);
 
   const evalResult = orchestratorResult || scientificResults?.orchestratorResult || scientificResults;
+  const safetyScore = typeof scientificResults?.health?.finalScore === 'number' && Number.isFinite(scientificResults.health.finalScore)
+    ? scientificResults.health.finalScore
+    : null;
+  const safetyRating = scientificResults?.health?.rating || 'NOT EVALUATED';
+  const safetyMessage = scientificResults?.health?.alerts?.[0]?.message || 'No safety assessment is available. Review ingredient SDS records and complete the required hazard evaluation.';
   // ... rest of the code
 
   const handleDownloadDossier = () => {
@@ -62,8 +67,8 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
   };
 
   const provenanceReport = scientificResults?.provenanceReport || scientificResults?.qualityGateResult?.provenanceReport;
-  const overallState = provenanceReport?.overallProvenanceState || (scientificResults?.isLabValidated ? 'LAB_VALIDATED' : 'SCIENTIFICALLY_SCREENED');
-  const fingerprint = provenanceReport?.formulaFingerprint || evalResult?.provenance?.fingerprint || 'ID[F-1.0]|VER[1.0.0]';
+  const overallState = provenanceReport?.overallProvenanceState || (scientificResults?.isLabValidated ? 'LAB_VALIDATED' : (scientificResults?.screeningStatus && scientificResults.screeningStatus !== 'NOT_EVALUATED' ? 'SCIENTIFICALLY_SCREENED' : 'NOT_EVALUATED'));
+  const fingerprint = provenanceReport?.formulaFingerprint || evalResult?.provenance?.fingerprint || 'PENDING — NOT EVALUATED';
   const trace = evalResult?.executionTrace;
 
   const handleCopyFingerprint = () => {
@@ -810,19 +815,21 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">13. Safety / GHS Status</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                (scientificResults?.health?.finalScore ?? 100) >= 75 ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-amber-950/80 text-amber-300 border-amber-500/40"
+                safetyScore === null
+                  ? "bg-slate-900/80 text-slate-300 border-slate-700"
+                  : safetyScore >= 75 ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-amber-950/80 text-amber-300 border-amber-500/40"
               }`}>
-                {scientificResults?.health?.rating || "SAFE"}
+                {safetyRating}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {scientificResults?.health?.finalScore ?? 100}
+                {safetyScore ?? 'N/A'}
               </span>
               <span className="text-xs text-slate-400 font-semibold">/ 100 GHS Score</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {scientificResults?.health?.alerts?.[0]?.message || "GHS safety rating passed. Standard personal protective equipment applies."}
+              {safetyMessage}
             </p>
           </div>
 
