@@ -85,6 +85,7 @@ export class ClaimComplianceEngine {
 
     const evaluations: ClaimEvaluationResult[] = [];
     let hasSubstantiationIssue = false;
+    let hasProhibitedClaim = false;
 
     for (const rawClaim of intendedClaims) {
       const normalizedKey = rawClaim.toUpperCase().replace(/[\s-]/g, '_');
@@ -118,6 +119,7 @@ export class ClaimComplianceEngine {
             reason: 'Formula contains inorganic phosphate builder (STPP); claim "Phosphate-Free" is false and prohibited.'
           });
           hasSubstantiationIssue = true;
+          hasProhibitedClaim = true;
           continue;
         }
       }
@@ -156,7 +158,7 @@ export class ClaimComplianceEngine {
     }
 
     return {
-      overallStatus: hasSubstantiationIssue ? 'REVIEW_REQUIRED' : 'PASS',
+      overallStatus: hasProhibitedClaim ? 'FAIL' : hasSubstantiationIssue ? 'REVIEW_REQUIRED' : 'PASS',
       evaluations
     };
   }
