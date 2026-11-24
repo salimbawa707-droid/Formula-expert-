@@ -73,7 +73,7 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
 
   const autoDishAnionic = calculateFormulationCompatibility(formulaAnionicOnly as any, 10.0, 'DISHWASH_AUTOMATIC');
   assertEqual('Category Surfactant Policy', 'Automatic dishwash rejects anionic surfactant systems', autoDishAnionic.compatible, false);
-  assertEqual('Category Surfactant Policy', 'Automatic dishwash emits low-foam profile violation', autoDishAnionic.alerts.some(a => a.id === 'category-policy-anionic-dishwash_automatic'), true);
+  assertEqual('Category Surfactant Policy', 'Automatic dishwash emits low-foam profile violation', autoDishAnionic.alerts.some(a => a.id === 'autodish-foam-overflow-hazard'), true);
 
   const softenerCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 4.0, 'FABRIC_SOFTENER');
   assertEqual('Category Surfactant Policy', 'Fabric softener permits cationic surfactants by profile', softenerCationic.alerts.some(a => a.id === 'category-policy-cationic-fabric_softener'), false);
