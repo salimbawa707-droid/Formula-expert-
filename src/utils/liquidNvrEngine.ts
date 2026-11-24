@@ -76,10 +76,6 @@ export function calculateLiquidNVR(
     if (fraction === undefined || fraction === null) {
       if (isKnownVolatile(ing)) {
         fraction = 0.0;
-      } else if (ing.activeMatterPct !== undefined && !isNaN(Number(ing.activeMatterPct))) {
-        fraction = Number(ing.activeMatterPct) / 100;
-      } else if (ing.activePercent !== undefined && !isNaN(Number(ing.activePercent))) {
-        fraction = Number(ing.activePercent) / 100;
       }
     }
 
