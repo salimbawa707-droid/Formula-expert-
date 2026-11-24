@@ -182,3 +182,46 @@ The prior `P0_ENGINE_DEPENDENCY_MATRIX.md` is treated as an architecture declara
 No production source code was changed in this initial inventory checkpoint. No changes were made to `main`. No merge is requested or permitted by this phase checkpoint. The audit branch is isolated from `main`.
 
 A module is not considered COMPLETE merely because it compiles, has a test, appears in the DAG, or has a caller. Scientific validation requires independently traceable equations/data, units, valid input domains, uncertainty/assumptions, boundary/reference cases, and (where applicable) matched physical lab evidence.
+
+
+## 7. First-pass implementation trace — verified discrepancies
+
+The complete `scientificExecutionDAG.ts` file was fetched and its actual registrations were counted by matching each `this.nodes.set(...)` declaration. It registers **23 nodes**, not 24.
+
+Actual registered IDs:
+`NORMALIZATION`, `IDENTITY_RESOLUTION`, `CATEGORY_ROUTING`, `NEUTRALIZATION`, `PH_EQUILIBRIUM`, `ACTIVE_MATTER`, `HLB`, `WATER_CHELATION`, `COMPATIBILITY`, `VISCOSITY`, `DENSITY`, `NVR`, `POWDER_ENGINE`, `CLEANING_CPI`, `STABILITY_SCREENING`, `COSTING`, `REGULATORY`, `MANUFACTURING`, `SPECIFICATION`, `LAB_EVIDENCE`, `QUALITY_GATE`, `GRADE`, `RECOMMENDATIONS`.
+
+This creates a concrete documentation/code discrepancy:
+- The DAG file header and comments say 24 engines/nodes.
+- The implementation registers 23 node IDs.
+- Climate analysis, substitution recommendations, and lab-health scoring are executed inside the RECOMMENDATIONS node rather than being independent registered nodes.
+- No node named FINALIZATION is registered in the DAG, although the architecture matrix lists FINALIZATION as node 24.
+- The architecture matrix's 24-node sequence therefore does not match the actual registration list one-to-one.
+
+**Phase 1 action required:** establish whether these are intentional nested services and correct the architecture inventory/documentation to describe the real runtime graph. Do not add a fake node solely to make the count 24.
+
+### Early dependency / provenance risks recorded for later phases
+
+These are source-level observations for later scientific phases, not fixes made in Phase 1:
+
+1. In `NEUTRALIZATION`, the code sets `pHIntermediate` to constants 7.0, 3.0, or 11.0 based on neutralization status. The value is then passed to PHEngineV2 as `targetPH` / initial solver guess. It must never be presented as a calculated pH. Later pH phase must prove this seed cannot bias final results or leak into user-facing metrics.
+2. In `WATER_CHELATION`, missing wash dose and wash volume use category policy defaults, with assumptions recorded. Invalid/non-positive supplied values also fall back to defaults (10 L / 20 g fallback path), but the visible assumption is only appended for missing values. Batch size also has a final 100 kg fallback in this node. Later chelation/input-validation phases must ensure invalid supplied values are blocked or explicitly marked as defaulted, not silently treated as measured inputs.
+3. In `COSTING`, missing overhead and packaging cost use scenario defaults (12% and 15 currency units) and assumptions are recorded. Later costing phase must verify these values remain scenario-only and cannot be confused with actual costs.
+4. In `PH_EQUILIBRIUM`, the DAG calls `calculatePHAdvanced` through `src/utils/pHEngine.ts`; that wrapper delegates to PHEngineV2. The powder engine separately computes slurry pH through `powderEngine/powderPHHardWater.ts`. Phase 1 must map all downstream consumers and prove there is no accidental mixing of liquid-equilibrium pH and powder-slurry pH.
+5. `evaluatePowderFormulation` is also an exported entry point and defaults a missing product category to `Laundry Powder`. The authoritative orchestrator may validate category first, but direct callers must be enumerated before deciding whether this default is safe.
+
+## 8. Current checkpoint
+
+- [x] Repository baseline and main SHA verified.
+- [x] Recursive source/test counts captured.
+- [x] 13 product category IDs verified in the canonical taxonomy.
+- [x] 11 staged workflow IDs verified in `analysisWorkflowEngine.ts`.
+- [x] Actual DAG registration count and IDs extracted from implementation.
+- [x] Concrete 24-declared-versus-23-registered mismatch recorded.
+- [ ] Full exported API inventory and importer/caller graph.
+- [ ] All category-to-node execution paths.
+- [ ] Test-to-engine coverage matrix.
+- [ ] Orphan/dead/test-only module classification.
+- [ ] Final Phase 1 report and audit-branch CI.
+
+**Checkpoint status remains IN PROGRESS.** No source code was changed, no PR was opened, and no merge was attempted.
