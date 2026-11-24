@@ -64,7 +64,17 @@ export class RegulatoryComplianceEngine {
     const calculatedPH = input.calculatedPH;
 
     // Missing assay/measurement inputs must remain visible and block certification.
-    const ingredientMissingData = evaluatedIngredients.flatMap(ing => ing.missingDataPoints.map(detail => `${ing.rawName}: ${detail}`));
+    const compositionTotalPct = evaluatedIngredients.reduce((sum, ing) => sum + ing.asSuppliedPct, 0);
+    const compositionPercentagesValid = evaluatedIngredients.every(ing =>
+      Number.isFinite(ing.asSuppliedPct) && ing.asSuppliedPct >= 0 && ing.asSuppliedPct <= 100
+    );
+    const compositionMissingData = !compositionPercentagesValid || Math.abs(compositionTotalPct - 100) > 0.01
+      ? [`Formula composition totals ${Number.isFinite(compositionTotalPct) ? compositionTotalPct.toFixed(3) : 'an invalid value'}%; provide valid ingredient percentages totaling 100.000% ±0.010% before regulatory concentration calculations.`]
+      : [];
+    const ingredientMissingData = [
+      ...evaluatedIngredients.flatMap(ing => ing.missingDataPoints.map(detail => `${ing.rawName}: ${detail}`)),
+      ...compositionMissingData
+    ];
 
     // 3. Mixture GHS Hazard Classification
     const ghsClassification = MixtureGHSValidationEngine.evaluateGHSClassification(
