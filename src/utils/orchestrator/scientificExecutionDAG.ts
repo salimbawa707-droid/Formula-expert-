@@ -314,7 +314,8 @@ export class ScientificExecutionDAG {
           'FORMULA',
           state.formulaVersion,
           state.normalizedIngredients as any,
-          state.canonicalCategory
+          state.canonicalCategory,
+          state.rawInput.productSubProfileId
         );
       }
     });
@@ -1209,6 +1210,7 @@ export class ScientificExecutionDAG {
           // Do not turn the internal unknown-version sentinel into an evidence target.
           formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : (state.rawInput.productCategory || 'UNKNOWN_PRODUCT_CATEGORY'),
+          productSubProfileId: state.rawInput.productSubProfileId,
           ingredients: state.resolvedIngredients,
           labMeasurements: state.rawInput.labEvidence || [],
           waterHardnessPpm: state.waterHardnessPpm ?? undefined,
