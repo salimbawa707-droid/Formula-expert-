@@ -28,11 +28,12 @@ export function calculatePowderPH(
   let targetMax: number | undefined;
   let targetLabel = '';
   let isSpecified = true;
+  const customTargetProvided = labInputs?.customPHTargetMin !== undefined || labInputs?.customPHTargetMax !== undefined;
 
-  if (labInputs?.customPHTargetMin !== undefined || labInputs?.customPHTargetMax !== undefined) {
-    targetMin = labInputs.customPHTargetMin ?? null;
-    targetMax = labInputs.customPHTargetMax ?? 11.5;
-    targetLabel = labInputs.customPHTargetLabel || `User-Defined Specification Target (${targetMin} – ${targetMax})`;
+  if (customTargetProvided) {
+    targetMin = labInputs?.customPHTargetMin;
+    targetMax = labInputs?.customPHTargetMax;
+    targetLabel = labInputs.customPHTargetLabel || `User-Defined Specification Target (${targetMin ?? 'missing'} – ${targetMax ?? 'missing'})`;
   } else if (isDelicate) {
     targetMin = 7.0;
     targetMax = 8.5;
@@ -53,6 +54,12 @@ export function calculatePowderPH(
     isSpecified = false;
     targetLabel = 'Target not specified';
   }
+
+  const targetRangeValid = !customTargetProvided || (
+    typeof targetMin === 'number' && Number.isFinite(targetMin) && targetMin >= 0 && targetMin <= 14 &&
+    typeof targetMax === 'number' && Number.isFinite(targetMax) && targetMax >= 0 && targetMax <= 14 &&
+    targetMin <= targetMax
+  );
 
   // 1. CALCULATE LEGACY HEURISTIC FOR NON_AUTHORITATIVE DIAGNOSTIC USE
   let legacyHeuristicPH: number | undefined = classifiedIngredients.length > 0 ? 10.5 : undefined;
@@ -147,7 +154,10 @@ export function calculatePowderPH(
   let isWithinTarget = false;
   let statusMessage = '';
 
-  if (effectivePH !== undefined && Number.isFinite(effectivePH) && !isNaN(effectivePH)) {
+  if (!targetRangeValid) {
+    isWithinTarget = false;
+    statusMessage = 'INVALID_INPUT: custom pH target must include valid minimum and maximum values between 0 and 14, with minimum no greater than maximum.';
+  } else if (effectivePH !== undefined && Number.isFinite(effectivePH) && !isNaN(effectivePH)) {
     if (isSpecified && targetMin !== undefined && targetMax !== undefined) {
       isWithinTarget = effectivePH >= targetMin && effectivePH <= targetMax;
       statusMessage = isWithinTarget
