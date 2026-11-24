@@ -6,10 +6,19 @@ function assert(condition: unknown, message: string): void {
 }
 
 async function main(): Promise<void> {
-  const metrologyRegression = await IngredientResearchService.researchMultiSource(
-    { ingredientName: 'Aristo-9' },
-    'TEST_MODE'
-  );
+  const originalIdentityResolver = IngredientResearchService.resolveIdentity;
+  let metrologyRegression: MultiSourceResearchResult;
+  try {
+    IngredientResearchService.resolveIdentity = (() => ({
+      ingredient: null, resolvedName: 'Aristo-9', confidence: 'UNRESOLVED'
+    })) as typeof IngredientResearchService.resolveIdentity;
+    metrologyRegression = await IngredientResearchService.researchMultiSource(
+      { ingredientName: 'Aristo-9' },
+      'TEST_MODE'
+    );
+  } finally {
+    IngredientResearchService.resolveIdentity = originalIdentityResolver;
+  }
   assert(metrologyRegression.propertiesExtracted.pH === undefined, 'numeric pH observations without matched unit/basis/method/conditions must not enter calculation properties');
   assert(metrologyRegression.propertiesExtracted.activeMatter === undefined, 'active matter without explicit assay metrology must not enter calculation properties');
   assert(
