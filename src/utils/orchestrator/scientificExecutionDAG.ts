@@ -590,33 +590,23 @@ export class ScientificExecutionDAG {
         const hardnessPolicy = getProductHardnessPolicy(
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
         );
-        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.waterVolumeL;
-        const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams;
-        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null
-          ? hardnessPolicy.defaultWashVolumeL
-          : Number(rawWashVolume);
-        const washDoseGrams = rawDose === undefined || rawDose === null
-          ? hardnessPolicy.defaultDoseGrams
-          : Number(rawDose);
-
-        if (rawWashVolume === undefined || rawWashVolume === null) {
-          state.assumptions.push('Wash volume uses the product hardness policy default; replace with the actual wash volume for a production decision.');
-        }
-        if (rawDose === undefined || rawDose === null) {
-          state.assumptions.push('Wash dose uses the product hardness policy default; replace with the actual dose for a production decision.');
-        }
-
-        const effectiveWashVol = Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : (hardnessPolicy.defaultWashVolumeL || 10);
-        const effectiveWashDose = Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : (hardnessPolicy.defaultDoseGrams || 20);
-        const effectiveBatchKg = Number.isFinite(state.batchSizeKg) && state.batchSizeKg > 0 ? state.batchSizeKg : 100;
+        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? (state.rawInput as any).waterVolumeL;
+        const rawDose = state.rawInput.dose ?? (state.rawInput as any).washDoseGrams ?? state.rawInput.doseGrams;
+        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null ? undefined : Number(rawWashVolume);
+        const washDoseGrams = rawDose === undefined || rawDose === null ? undefined : Number(rawDose);
+        const rawBatchSize = state.rawInput.batchSizeKg ?? state.rawInput.batchSize;
+        const explicitBatchSizeKg = typeof rawBatchSize === 'number' && Number.isFinite(rawBatchSize) && rawBatchSize > 0
+          ? rawBatchSize
+          : Number.NaN;
 
         const hardnessRes = calculateWaterHardnessTolerance(
           state.resolvedIngredients,
           state.waterHardnessPpm,
-          effectiveWashVol,
-          effectiveWashDose,
-          effectiveBatchKg,
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
+          washVolumeL,
+          washDoseGrams,
+          explicitBatchSizeKg,
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
+          true
         );
 
         state.hardnessResult = hardnessRes;
