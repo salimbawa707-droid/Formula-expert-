@@ -21,10 +21,7 @@ import {
   ActiveMatterEngine,
   calculateActiveMatterResult
 } from '../activeMatterEngine';
-import {
-  calculateWaterHardnessTolerance,
-  getProductHardnessPolicy
-} from '../chelatorEngine';
+import { calculateWaterHardnessTolerance } from '../chelatorEngine';
 import { calculateFormulationCompatibility } from '../compatibilityEngine';
 import { calculateCleaningPerformance } from '../cleaningPerformanceEngine';
 import { ViscosityEngine, calculateDetailedViscosity } from '../viscosityEngine';
@@ -635,9 +632,6 @@ export class ScientificExecutionDAG {
           return;
         }
 
-        const hardnessPolicy = getProductHardnessPolicy(
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
-        );
         const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.washVolumeL ?? state.rawInput.waterVolumeL;
         const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams ?? state.rawInput.doseGrams;
         const washVolumeL = rawWashVolume === undefined || rawWashVolume === null ? undefined : Number(rawWashVolume);
