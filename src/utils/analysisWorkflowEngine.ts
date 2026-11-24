@@ -651,13 +651,25 @@ export async function executeStagedScientificAnalysis(
 
   let advancedPH = calculatePHAdvanced(mappedPHInput, immutableSnapshot.batchSizeKg, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-    targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
+    targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 :
               (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
   });
+  const hasSecondaryAcidBaseChemistry =
+    (neutralizationResult.value?.secondaryAcidsPresent?.length ?? 0) > 0 ||
+    (neutralizationResult.value?.secondaryBasesPresent?.length ?? 0) > 0;
+  const hasPHActiveChemistry = neutralizationResult.value?.status !== 'NO_REACTION' || hasSecondaryAcidBaseChemistry;
+  if (!hasPHActiveChemistry) {
+    advancedPH = {
+      ...advancedPH,
+      pH: null,
+      solverConverged: false,
+      warnings: [...(advancedPH.warnings || []), 'No identified acid/base or secondary buffer chemistry is present; solvent-water equilibrium is not accepted as formulation pH.']
+    };
+  }
 
   const phIntermediate = {
     neutralizationStatus: neutralizationResult.value?.status || 'UNKNOWN',
-    neutralizationFraction: neutralizationResult.value?.primaryNeutralizationFraction ?? 1.0,
+    neutralizationFraction: neutralizationResult.value?.primaryNeutralizationFraction ?? null,
     equilibriumPH: advancedPH.pH,
     solverConverged: advancedPH.solverConverged,
     bufferCapacity: advancedPH.bufferCapacity,
@@ -732,6 +744,7 @@ export async function executeStagedScientificAnalysis(
   await new Promise((r) => setTimeout(r, 0));
   if (checkAbort()) throw new Error('Analysis cancelled');
 
+  const viscosityTemperatureAssumed = immutableSnapshot.temperatureC === undefined || immutableSnapshot.temperatureC === null;
   const viscosityTemperatureC = immutableSnapshot.temperatureC ?? 25;
   const viscReport = ViscosityEngine.evaluateViscosity(immutableSnapshot.ingredients, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
@@ -762,13 +775,16 @@ export async function executeStagedScientificAnalysis(
     totalSolidsPct,
     nvrPercentage: nvrResult?.nvrPercentage ?? null,
     isNvrComplete: nvrResult?.isComplete ?? false,
+    viscosityTemperatureC,
+    viscosityTemperatureProvenance: viscosityTemperatureAssumed ? 'ENGINEERING_REFERENCE_ASSUMPTION' : 'USER_SUPPLIED',
     powderPropertiesDeferredToAuthoritativeDAG: isPowder
   };
 
-  completeStage('RHEOLOGY_DENSITY', 'COMPLETED', {
+  completeStage('RHEOLOGY_DENSITY', viscosityTemperatureAssumed ? 'COMPLETED_WITH_WARNINGS' : 'COMPLETED', {
     details: isPowder
-      ? `Powder physical properties deferred to authoritative DAG evaluation | Solids: ${totalSolidsPct.toFixed(1)}%`
-      : `Viscosity: ${viscReport.viscosityCp} cPs | Density: ${densityResult.densityGPerCm3.toFixed(3)} g/cm³ | NVR: ${nvrResult?.nvrPercentage?.toFixed(1) ?? 'N/A'}%`,
+      ? `Powder physical properties deferred to authoritative DAG evaluation | Solids: ${Number.isFinite(totalSolidsPct) ? totalSolidsPct.toFixed(1) : 'N/A'}%`
+      : `Viscosity: ${Number.isFinite(viscReport.viscosityCp) ? viscReport.viscosityCp : 'N/A'} cPs | Density: ${Number.isFinite(densityResult.densityGPerCm3) ? densityResult.densityGPerCm3.toFixed(3) : 'N/A'} g/cm³ | NVR: ${nvrResult?.nvrPercentage?.toFixed(1) ?? 'N/A'}%`,
+    warnings: viscosityTemperatureAssumed ? ['Viscosity uses 25 °C as an explicit engineering reference assumption; supply actual test temperature for a production decision.'] : [],
     intermediate: rheologyIntermediate
   });
 
