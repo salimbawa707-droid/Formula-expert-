@@ -1,7 +1,7 @@
 import { db, ResearchedIngredientRecord } from '../db/database';
 import { FormulationIngredient } from '../types';
 import { IngredientResearchService, MultiSourceResearchResult } from './ingredientResearchService';
-import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS, resolveUniversalIngredientIdentity } from '../data/universalIngredientLibrary';
 
 /**
  * Runtime bridge between the local ingredient library, Gemini-grounded research,
@@ -21,6 +21,11 @@ export class IngredientResearchBridge {
     const clean = name.trim();
     if (!clean) return null;
     const normalized = this.normalize(clean);
+    const catalogResolution = resolveUniversalIngredientIdentity(clean);
+    if (catalogResolution) {
+      if (!catalogResolution.gradeCompatible) return { __ambiguousMatch: true } as any;
+      return catalogResolution.ingredient;
+    }
     const matchesExactly = (ingredient: any) => [
       ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName,
       ingredient.casNumber, ...(Array.isArray(ingredient.keywords) ? ingredient.keywords : [])

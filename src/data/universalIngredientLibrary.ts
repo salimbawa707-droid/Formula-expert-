@@ -5302,33 +5302,104 @@ const INGREDIENT_IDENTITY_ALIASES: Record<string, { id: string; gradeCompatible:
   'sodium hydroxide caustic soda lye 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   'caustic soda 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   'sodium hydroxide 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
-  'naoh 100%': { id: 'naoh-flakes-99', gradeCompatible: false }
+  'naoh 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
+  // Common water names used in formula templates and manual entry.
+  // Resolve to the catalog water identity, but require grade/source confirmation.
+  'water': { id: 'dm-water', gradeCompatible: true },
+  'aqua': { id: 'dm-water', gradeCompatible: true },
+  'h2o': { id: 'dm-water', gradeCompatible: true },
+  'di water': { id: 'dm-water', gradeCompatible: true },
+  'd i water': { id: 'dm-water', gradeCompatible: true },
+  'deionized water': { id: 'dm-water', gradeCompatible: true },
+  'deionised water': { id: 'dm-water', gradeCompatible: true },
+  'demineralized water': { id: 'dm-water', gradeCompatible: true },
+  'demineralised water': { id: 'dm-water', gradeCompatible: true },
+  'distilled water': { id: 'dm-water', gradeCompatible: true },
+  'purified water': { id: 'dm-water', gradeCompatible: true },
+  'reverse osmosis water': { id: 'dm-water', gradeCompatible: true },
+  'ro water': { id: 'dm-water', gradeCompatible: true },
+  'water aqua': { id: 'dm-water', gradeCompatible: true },
+  'demineralized water aqua': { id: 'dm-water', gradeCompatible: true },
+  'demineralised water aqua': { id: 'dm-water', gradeCompatible: true },
+  'tap water': { id: 'dm-water', gradeCompatible: false },
+  'municipal water': { id: 'dm-water', gradeCompatible: false }
 };
 
 export function resolveUniversalIngredientIdentity(query: string): IngredientIdentityResolution | null {
   const raw = String(query || '').trim();
   if (!raw) return null;
   const normalized = normalizeIngredientIdentity(raw);
-  const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item =>
-    [item.id, item.name, item.productName, item.inciName, item.casNumber, ...(item.keywords || [])]
-      .filter(Boolean)
-      .some(value => normalizeIngredientIdentity(String(value)) === normalized)
-  );
+  if (!normalized) return null;
+
+  // In detergent formulas, an unspecified "Water/Aqua/H2O" means the
+  // catalog's standard demineralized carrier. Explicit tap/municipal water
+  // remains grade-review-only because hardness and dissolved solids vary.
+  if (['water', 'aqua', 'h2o'].includes(normalized)) {
+    const standardWater = UNIVERSAL_INGREDIENTS.find(item => item.id === 'dm-water');
+    if (standardWater) return { ingredient: standardWater, matchType: 'ALIAS', gradeCompatible: true };
+  }
+  // "MEA" is overloaded in trade usage: this app reserves the bare acronym
+  // for monoethanolamine. Cocamide MEA must be entered as "CMEA" explicitly.
+  if (normalized === 'mea') {
+    const monoethanolamine = UNIVERSAL_INGREDIENTS.find(item => item.id === 'mea-99');
+    if (monoethanolamine) return { ingredient: monoethanolamine, matchType: 'ALIAS', gradeCompatible: false };
+  }
+
+  const identityValues = (item: UniversalIngredient): string[] => [
+    item.id, item.name, item.productName, item.inciName, item.casNumber,
+    ...(Array.isArray(item.keywords) ? item.keywords : [])
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  const genericQueries = new Set(['salt', 'acid', 'base', 'water', 'chemical', 'powder', 'liquid']);
+
+  // The catalog already maintains a curated alias vocabulary for common
+  // industry abbreviations and trade names (LABSA, SLES, AOS, CAPB, STPP,
+  // GLDA, EDTA, NaOH, etc.). Include it in identity resolution rather than
+  // using it only for the search box.
+  const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item => {
+    const exactIdentity = identityValues(item).some(value => normalizeIngredientIdentity(value) === normalized);
+    const aliasText = ` ${getIngredientAliasKeywords(item).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
+    const queryPhrase = ` ${raw.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
+    const aliasIdentity = normalized.length >= 3 && !genericQueries.has(normalized) &&
+      aliasText.includes(queryPhrase);
+    return exactIdentity || aliasIdentity;
+  });
   if (canonicalMatches.length === 1) {
     return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: true };
   }
   if (canonicalMatches.length > 1) {
-    // A shared CAS/alias identifies a known chemical family, not a unique
-    // commercial grade. Keep it local and require grade selection; never call Gemini.
     return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: false };
   }
 
   const alias = INGREDIENT_IDENTITY_ALIASES[raw.toLowerCase()];
   const normalizedAlias = alias || Object.entries(INGREDIENT_IDENTITY_ALIASES)
     .find(([key]) => normalizeIngredientIdentity(key) === normalized)?.[1];
-  if (!normalizedAlias) return null;
-  const ingredient = UNIVERSAL_INGREDIENTS.find(item => item.id === normalizedAlias.id);
-  return ingredient ? { ingredient, matchType: 'ALIAS', gradeCompatible: normalizedAlias.gradeCompatible } : null;
+  if (normalizedAlias) {
+    const ingredient = UNIVERSAL_INGREDIENTS.find(item => item.id === normalizedAlias.id);
+    if (ingredient) {
+      return { ingredient, matchType: 'ALIAS', gradeCompatible: normalizedAlias.gradeCompatible };
+    }
+  }
+
+  // Controlled partial-name resolution handles common formula shorthand and
+  // spelling/grade suffix differences across the FULL catalog. It only searches
+  // identity fields (never descriptions/functions), requires a meaningful query,
+  // and never silently chooses a grade when multiple records share the identity.
+  if (normalized.length >= 6 && !genericQueries.has(normalized)) {
+    const partialMatches = UNIVERSAL_INGREDIENTS.filter(item =>
+      identityValues(item).some(value => {
+        const candidate = normalizeIngredientIdentity(value);
+        return candidate.length >= normalized.length && candidate.includes(normalized);
+      })
+    );
+    if (partialMatches.length === 1) {
+      return { ingredient: partialMatches[0], matchType: 'ALIAS', gradeCompatible: false };
+    }
+    if (partialMatches.length > 1) {
+      return { ingredient: partialMatches[0], matchType: 'ALIAS', gradeCompatible: false };
+    }
+  }
+
+  return null;
 }
 
 export function getAllCategories(): string[] {
@@ -5366,10 +5437,13 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
   if (cas === '1310-58-3' || name.includes('potassium hydroxide') || id.includes('koh')) {
     aliases += ' koh caustic potash potassium hydroxide';
   }
-  if (cas === '102-71-6' || name.includes('triethanolamine') || id.includes('tea')) {
+  if (cas === '102-71-6' || name.includes('triethanolamine') || id === 'tea' || id.startsWith('tea-')) {
     aliases += ' tea triethanolamine';
   }
-  if (cas === '141-43-5' || name.includes('monoethanolamine') || id.includes('mea')) {
+  if (cas === '68140-00-1' || name.includes('cocamide mea') || id === 'cmea' || id.startsWith('cmea-')) {
+    aliases += ' cmea cocamide mea';
+  }
+  if (cas === '141-43-5' || name.includes('monoethanolamine') || id === 'mea' || id.startsWith('mea-')) {
     aliases += ' mea monoethanolamine';
   }
   if (cas === '27176-87-0' || name.includes('dodecylbenzene') || name.includes('acid slurry') || id.includes('labsa')) {

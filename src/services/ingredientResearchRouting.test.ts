@@ -33,6 +33,13 @@ async function main(): Promise<void> {
   assert(directLegacy.requiresUserApproval === false, 'legacy API must return local known ingredient without approval gate');
   assert(directLegacy.parameters.activeMatter === 90, 'legacy API must return local active matter rather than empty research data');
 
+  const directWater = await IngredientResearchService.researchMultiSource({ ingredientName: 'Water' }, 'test-key');
+  assert(directWater.notes?.includes('intentionally skipped'), 'generic water must resolve to the standard local carrier without Gemini');
+  assert(directWater.sourcesRetrieved.length === 0, 'generic water must not perform web research');
+  const waterBridge = await IngredientResearchBridge.resolveForFormula('Water', { apiKey: 'test-key' });
+  assert(waterBridge.source === 'LOCAL_LIBRARY', 'formula bridge must resolve generic water from the master catalog');
+  assert(waterBridge.ingredient?.id === 'dm-water', 'generic water must map to the canonical demineralized-water record');
+
   const originalSettingsGet = db.userSettings.get.bind(db.userSettings);
   try {
     const dynamicIngredient = {

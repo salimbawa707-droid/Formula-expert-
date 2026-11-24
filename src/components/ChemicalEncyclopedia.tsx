@@ -86,18 +86,7 @@ export default function ChemicalEncyclopedia(_props?: any) {
     setSuccessMessage('');
     setResearchResult(null);
 
-    const steps = [
-      'Resolving ingredient identity and alternate spelling aliases...',
-      'Crawling Level 1 Manufacturer Product Datasheets...',
-      'Extracting physical, chemical, and surfactant parameters...',
-      'Performing multi-source cross-checking and validating data...',
-      'Acquisition complete. Verification gate awaiting approval.'
-    ];
-
-    for (let i = 0; i < steps.length; i++) {
-      setResearchProgress(steps[i]);
-      await new Promise(resolve => setTimeout(resolve, i === 0 ? 300 : 400));
-    }
+    setResearchProgress('Sending a live Gemini request with Google Search grounding. This can take up to 90 seconds if a compatibility fallback is needed...');
 
     try {
       const response = await apiFetch('/api/ai/research-ingredient', {
@@ -105,10 +94,11 @@ export default function ChemicalEncyclopedia(_props?: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nameOrAlias: researchQuery })
       });
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error('Research failed / Offline search mode triggered.');
+        throw new Error(data.error || data.details || `Research request failed (HTTP ${response.status}).`);
       }
-      const data = await response.json();
+      setResearchProgress('Validating source references and extracted ingredient properties...');
       if (data.localMatch) {
         setErrorMessage(data.message || 'Ingredient already exists locally. Gemini was skipped.');
         return;

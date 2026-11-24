@@ -225,6 +225,63 @@ export function runChemicalEncyclopediaTestSuite() {
     'Test 20: Ambiguous generic salt is not silently identified as sodium chloride'
   );
 
+  // 20A. Water and its common names are known catalog identities, not unlisted chemicals.
+  const waterQueries = [
+    'Water', 'Aqua', 'H2O', 'DI Water', 'Deionized Water',
+    'Deionised Water', 'Demineralized Water', 'Distilled Water',
+    'Purified Water', 'RO Water'
+  ];
+  const waterAliasesPassed = waterQueries.every(query =>
+    resolveUniversalIngredientIdentity(query)?.ingredient.id === 'dm-water'
+  );
+  assert(
+    waterAliasesPassed,
+    'Test 20A: Common water names resolve to the catalog water identity',
+    waterQueries.join(', ')
+  );
+
+  // 20B. Every canonical database record must resolve by its own display name.
+  const unresolvedCatalogNames = UNIVERSAL_INGREDIENTS
+    .filter(item => !resolveUniversalIngredientIdentity(item.name))
+    .map(item => item.id);
+  assert(
+    unresolvedCatalogNames.length === 0,
+    'Test 20B: Every ingredient in the complete master database resolves by its display name',
+    `Unresolved records: ${unresolvedCatalogNames.length}`
+  );
+
+  // 20C. Common base-identity shorthand should be recognized without choosing a grade.
+  const sodiumCarbonateResolution = resolveUniversalIngredientIdentity('Sodium Carbonate');
+  assert(
+    Boolean(sodiumCarbonateResolution?.ingredient) && sodiumCarbonateResolution?.gradeCompatible === false,
+    'Test 20C: Shared base chemical names resolve to a known identity while requiring grade review'
+  );
+
+  // 20D. The curated industry abbreviation aliases are used by identity resolution,
+  // not just by the encyclopedia search box.
+  const industryAliases = ['LABSA', 'SLES', 'AOS', 'SLS', 'NaOH', 'KOH', 'CAPB', 'TEA', 'MEA', 'STPP', 'GLDA', 'EDTA'];
+  const unresolvedIndustryAliases = industryAliases.filter(query => !resolveUniversalIngredientIdentity(query));
+  assert(
+    unresolvedIndustryAliases.length === 0,
+    'Test 20D: Common detergent raw-material abbreviations resolve to known catalog identities',
+    `Unresolved: ${unresolvedIndustryAliases.join(', ') || 'none'}`
+  );
+  const teaResolution = resolveUniversalIngredientIdentity('TEA');
+  assert(
+    teaResolution?.ingredient.id === 'tea-99',
+    'Test 20E: TEA abbreviation resolves to triethanolamine, not protease records sharing a substring'
+  );
+  const meaResolution = resolveUniversalIngredientIdentity('MEA');
+  assert(
+    meaResolution?.ingredient.id === 'mea-99' && meaResolution.gradeCompatible === false,
+    'Test 20F: MEA abbreviation resolves to monoethanolamine while retaining grade review'
+  );
+  const cmeaResolution = resolveUniversalIngredientIdentity('CMEA');
+  assert(
+    cmeaResolution?.ingredient.id.startsWith('cmea-'),
+    'Test 20G: CMEA abbreviation resolves to Cocamide MEA records'
+  );
+
   // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
   searchUniversalIngredients('SLES', 'Anionic Surfactant');
