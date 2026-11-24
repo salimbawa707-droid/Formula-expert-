@@ -944,6 +944,13 @@ export default function FormulaExpert({
   // Gemini AI Unknown Chemical & Raw Material Web Research Handler
   const handleResearchUnknownIngredient = async (ingId: string, ingredientName: string) => {
     if (!ingredientName.trim() || researchingIngId) return;
+    const existing = resolveUniversalIngredientIdentity(ingredientName.trim());
+    if (existing?.ingredient) {
+      setResearchNotification(existing.gradeCompatible
+        ? '"' + existing.ingredient.name + '" already exists in the database. Gemini was not called.'
+        : '"' + existing.ingredient.name + '" is already in the database; verify the commercial grade. Gemini was not called.');
+      return;
+    }
     setResearchingIngId(ingId);
     setResearchNotification(`🔍 Researching TDS & specifications for "${ingredientName.trim()}" on web via Gemini AI...`);
     try {
@@ -954,6 +961,17 @@ export default function FormulaExpert({
       });
       if (!res.ok) throw new Error('Research failed or server unavailable');
       const researchData = await res.json();
+
+      if (researchData.localMatch) {
+        setResearchNotification(researchData.message || 'Ingredient already exists locally. Gemini was skipped.');
+        return;
+      }
+      if (researchData.requiresUserApproval !== false) {
+        const summary = typeof researchData.summary === 'string' ? ' ' + researchData.summary : '';
+        setResearchNotification('Research candidate found, but it is not verified. Check the original manufacturer TDS/COA before adding it to the database.' + summary);
+        return;
+      }
+
 
       // Apply verified data to backend/canonical memory
       const applyRes = await apiFetch('/api/ai/apply-verified-ingredient', {
