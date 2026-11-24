@@ -529,7 +529,7 @@ export default function FormulaExpert({
       ingredients,
       powderLabInputs
     });
-  }, [formulaName, productCategory, batchSizeKg, waterHardnessPpm, ingredients, powderLabInputs]);
+  }, [formulaName, productCategory, activeFormula?.productSubProfileId, batchSizeKg, waterHardnessPpm, ingredients, powderLabInputs]);
 
   // Stale analysis indicator flag
   const isStale = useMemo(() => {
@@ -695,7 +695,7 @@ export default function FormulaExpert({
           percentage: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
           percent: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
           activeMatterPct: readFormulaActiveMatter(ing),
-          costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+          costPerKg: readFormulaCost(ing),
           role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
         }))
       };
@@ -1275,6 +1275,7 @@ export default function FormulaExpert({
       name: savedName,
       category,
       batchSizeKg,
+      productSubProfileId: activeFormula?.productSubProfileId,
       targetPH: scientificResults.pH,
       description: `Custom ${category} formulation with ${ingredients.length} active components.`,
       instructions: [
@@ -2334,7 +2335,7 @@ export default function FormulaExpert({
               ...i,
               id: i.id || `opt-${idx}`,
               percentage: readFormulaPercentage(i),
-              costPerKg: i.costPerKg !== undefined && i.costPerKg !== null && !isNaN(Number(i.costPerKg)) ? Number(i.costPerKg) : undefined
+              costPerKg: readFormulaCost(i) ?? undefined
             })));
             if (candName) {
               setFormulaName(candName);
