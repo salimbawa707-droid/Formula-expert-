@@ -629,8 +629,8 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                         step="0.000001"
                         min="0"
                         max="100"
-                        value={rawPctVal}
-                        onChange={e => updateIngredient(ingId, 'rawPercent', parseFloat(e.target.value) || 0)}
+                        value={Number.isFinite(rawPctVal) ? rawPctVal : ''}
+                        onChange={e => updateIngredient(ingId, 'rawPercent', e.target.value.trim() === '' ? Number.NaN : Number(e.target.value))}
                         className="w-full pl-3 pr-7 py-1.5 border border-slate-700 rounded-lg text-xs font-mono font-bold text-white bg-[#0e1629] focus:ring-2 focus:ring-amber-500 outline-none"
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">%</span>
@@ -647,7 +647,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                         step="0.1"
                         min="0"
                         max="100"
-                        value={Number.isFinite(ing.activePercent) ? ing.activePercent : (ActiveMatterEngine.getDefaultActiveMatter(ing.name) ?? '')}
+                        value={Number.isFinite(ing.activePercent) ? ing.activePercent : ''}
                         onChange={e => updateIngredient(ingId, 'activePercent', e.target.value.trim() === '' ? Number.NaN : Number(e.target.value))}
                         className="w-full pl-3 pr-7 py-1.5 border border-slate-700 bg-[#0e1629] rounded-lg text-xs font-mono font-bold text-slate-200 text-center focus:ring-2 focus:ring-amber-500 outline-none"
                       />
