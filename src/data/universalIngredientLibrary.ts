@@ -5434,7 +5434,7 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
   if (cas === '102-71-6' || name.includes('triethanolamine') || id === 'tea' || id.startsWith('tea-')) {
     aliases += ' tea triethanolamine';
   }
-  if (cas === '141-43-5' || name.includes('monoethanolamine') || id.includes('mea')) {
+  if (cas === '141-43-5' || name.includes('monoethanolamine') || id === 'mea' || id.startsWith('mea-')) {
     aliases += ' mea monoethanolamine';
   }
   if (cas === '27176-87-0' || name.includes('dodecylbenzene') || name.includes('acid slurry') || id.includes('labsa')) {
