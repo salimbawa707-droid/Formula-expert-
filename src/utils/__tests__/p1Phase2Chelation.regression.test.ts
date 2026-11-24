@@ -310,7 +310,7 @@ export function runP1Phase2ChelationTestSuite() {
   const highCapacityFormula: FormulationIngredient[] = [
     { id: '1', name: 'Sodium Citrate Dihydrate', percentage: 100 } // In 20g dose = 20g * 150 = 3000 mg
   ];
-  const tolHigh = calculateWaterHardnessTolerance(highCapacityFormula, 100, 10, 20);
+  const tolHigh = calculateWaterHardnessTolerance(highCapacityFormula, 100, 10, 20, 100);
   assert(tolHigh.sufficiency === 'sufficient', 'Sufficiency Logic', 'High Capacity Formula is SUFFICIENT');
 
   // Strict DAG mode must not invent 150 ppm, wash volume, dose, or batch size.
