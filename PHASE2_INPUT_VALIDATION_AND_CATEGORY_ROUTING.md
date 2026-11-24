@@ -155,3 +155,26 @@ These were found during the Phase 2 sweep and are assigned to later phases becau
 | DAG mass-balance state is computed, but all downstream execution and release-gate consequences need a dedicated proof across categories | Phase 10 — Integration & Certification | Prove unbalanced formula cannot be marked production-ready; retain exploratory screening only with clear status |
 
 These are not considered fixed by this Phase 2 report. They are durable phase handoffs and must be checked off in their assigned phase before the final ten-phase audit can pass.
+
+
+## Category policy enforcement — profile rules connected to execution
+
+A further cross-category review found that the profile registry declared allowed surfactant classes and special product test requirements, but not all of those flags were enforced by the actual calculation/release path.
+
+**Changes:**
+- `compatibilityEngine` now reads the canonical `ScientificProductProfile.calculationPolicy` and rejects anionic or cationic surfactants whenever the category profile disallows that class. This covers categories beyond the previous special-case checks for automatic dishwash and fabric softener.
+- Existing alert IDs for automatic dishwash foam overflow and fabric-softener anionic contamination are preserved for compatibility with existing consumers/tests.
+- `getCategoryRequiredLabBattery` now includes profile-critical measured tests:
+  - Toilet and bathroom cleaner: cling rheology
+  - Manual dishwash and hand wash: mildness; manual dishwash also foam stability
+  - Automatic dishwash: zero-foam compliance, rinse residue and residue/streak testing
+  - Floor and glass cleaner: residue/streak metrics; floor cleaner also gloss retention
+  - Multipurpose cleaner: surface compatibility, grease emulsification and residue/streak testing
+  - Kitchen degreaser: baked-grease removal and saponification rate
+  - Car shampoo: paintwork lubricity, rinse spotting, foam stability and residue/streak testing
+  - Fabric softener: static reduction
+- Lab evidence validation now supports mandatory measured-only tests with no model predictor. Such a measurement can satisfy the evidence battery, but LIMS promotion still requires registered instrument, calibration, sample/batch lineage and analyst controls; it is not falsely compared to a fabricated prediction.
+
+New tests cover category policy surfactant restrictions, required evidence battery membership and measured-only cling evidence.
+
+**Phase 2 remains IN PROGRESS until the latest CI passes and any additional input/routing defects are resolved.**
