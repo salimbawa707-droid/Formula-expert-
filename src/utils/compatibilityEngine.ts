@@ -109,6 +109,7 @@ export function calculateFormulationCompatibility(
     ? tryGetScientificProductProfile(canonicalCategory, subProfileOrFormulaName)
     : undefined;
   const calculationPolicy = categoryProfile?.calculationPolicy;
+  const invalidSubProfile = Boolean(subProfileOrFormulaName) && canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' && !categoryProfile;
 
   // 1. Resolve pH value
   let phVal = Number.NaN;
@@ -762,9 +763,10 @@ export function calculateFormulationCompatibility(
     : Number.NaN;
 
   const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = hasFormulaData && !hasCriticalOrHigh;
+  const compatible = hasFormulaData && !hasCriticalOrHigh && !invalidSubProfile;
   const warnings = alerts.map(a => a.message);
   if (!pHAvailable) warnings.push('pH is unavailable or invalid; pH-dependent compatibility rules were not evaluated.');
+  if (invalidSubProfile) warnings.push('The supplied product sub-profile does not belong to the selected canonical category; category-specific compatibility cannot be evaluated.');
   if (safeIngs.length === 0) warnings.push('No ingredient composition was supplied; compatibility cannot be evaluated.');
   if (hasInvalidIngredientPercentage) warnings.push('One or more ingredient percentages are missing, invalid, negative, or above 100%; compatibility cannot be evaluated.');
 
@@ -785,7 +787,7 @@ export function calculateFormulationCompatibility(
   }
 
   const modelType = 'Mechanism-Classified Deterministic Interaction Matrix (Phase 6)';
-  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = (!pHAvailable || !hasFormulaData) && !hasCriticalOrHigh
+  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = (!pHAvailable || !hasFormulaData || invalidSubProfile) && !hasCriticalOrHigh
     ? 'UNKNOWN'
     : alerts.some(a => a.severity === 'Critical')
       ? 'Critical'
@@ -836,8 +838,8 @@ export function calculateFormulationCompatibility(
     return name.includes('unknown') || name.includes('uncharacterized') || (cat.includes('unknown') && !name.includes('water'));
   });
 
-  if (safeIngs.length === 0) {
-    compatibilityStatusSemantic = 'UNKNOWN';
+  if (safeIngs.length === 0 || invalidSubProfile) {
+    compatibilityStatusSemantic = 'INSUFFICIENT_DATA';
     evidenceStatus = 'INSUFFICIENT_DATA';
   } else if (alerts.some(a => a.severity === 'Critical')) {
     compatibilityStatusSemantic = 'INCOMPATIBLE';
