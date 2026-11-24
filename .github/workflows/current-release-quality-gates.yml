@@ -174,7 +174,7 @@ jobs:
           disable-linux-hw-accel: auto
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
-          script: cd android && ./gradlew --no-daemon connectedDebugAndroidTest
+          script: cd android && bash ./gradlew --no-daemon connectedDebugAndroidTest
 
       - name: Upload Android instrumentation reports
         if: always()
