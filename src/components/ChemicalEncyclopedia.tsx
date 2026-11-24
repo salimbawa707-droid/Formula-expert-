@@ -86,7 +86,7 @@ export default function ChemicalEncyclopedia(_props?: any) {
     setSuccessMessage('');
     setResearchResult(null);
 
-    setResearchProgress('Sending a live Gemini request with Google Search grounding. This can take up to 45 seconds...');
+    setResearchProgress('Sending a live Gemini request with Google Search grounding. This can take up to 90 seconds if a compatibility fallback is needed...');
 
     try {
       const response = await apiFetch('/api/ai/research-ingredient', {
