@@ -139,30 +139,20 @@ export class ClaimComplianceEngine {
         }
       }
 
-      // Claims requiring clinical/laboratory test reports flag CLAIM_NOT_SUBSTANTIATED unless lab report exists
-      if (def.claimKey === 'HYPOALLERGENIC' || def.claimKey === 'ANTIBACTERIAL' || def.claimKey === 'BIODEGRADABLE') {
-        evaluations.push({
-          claimName: def.claimName,
-          status: 'CLAIM_NOT_SUBSTANTIATED',
-          requiredEvidenceType: def.requiredEvidenceType,
-          hasRequiredEvidence: false,
-          permittedWording: def.permittedWording,
-          prohibitedWording: def.prohibitedWording,
-          reason: `Claim '${def.claimName}' requires mandatory lab/clinical trial report (${def.requiredEvidenceType}). Evidence is currently missing; status set to CLAIM_NOT_SUBSTANTIATED.`
-        });
-        hasSubstantiationIssue = true;
-        continue;
-      }
-
+      // No document/evidence input is accepted by this API. Therefore absence of
+      // a detected ingredient is not proof of a negative claim, and no claim can
+      // be marked SUBSTANTIATED here. A future evidence-aware evaluator must
+      // validate linked, current, jurisdiction-appropriate evidence explicitly.
       evaluations.push({
         claimName: def.claimName,
-        status: 'SUBSTANTIATED',
+        status: 'CLAIM_NOT_SUBSTANTIATED',
         requiredEvidenceType: def.requiredEvidenceType,
-        hasRequiredEvidence: true,
+        hasRequiredEvidence: false,
         permittedWording: def.permittedWording,
         prohibitedWording: def.prohibitedWording,
-        reason: `Claim '${def.claimName}' complies with formula composition rules in ${jurisdiction}.`
+        reason: `Claim '${def.claimName}' has no linked, reviewed evidence record. Formula-name screening alone cannot substantiate a negative or performance claim in ${jurisdiction}.`
       });
+      hasSubstantiationIssue = true;
     }
 
     return {
