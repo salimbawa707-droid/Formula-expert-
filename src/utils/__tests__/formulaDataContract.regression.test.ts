@@ -144,7 +144,9 @@ export function runFormulaDataContractTestSuite(): TestSummary {
     { name: 'Water', percentage: 110, activeMatterPct: 0, costPerKg: 0 }
   ];
   const negativeChelation = calculateFormulationChelationCapacity(negativePercentageIngredients, 20);
-  record(assertEqual('Invalid / String Input Audit', 'Negative percentage clamped to 0 in chelation capacity', negativeChelation.details[0].percentage, 0));
+  record(assertEqual('Invalid / String Input Audit', 'Negative and above-100% ingredient percentages block chelation capacity', negativeChelation.status, 'INSUFFICIENT_DATA'));
+  record(assertEqual('Invalid / String Input Audit', 'Both invalid ingredient percentages are counted', negativeChelation.invalidIngredientCount, 2));
+  record(assertEqual('Invalid / String Input Audit', 'Invalid composition does not emit a numeric chelation total', Number.isNaN(negativeChelation.totalSequestrationMg), true));
 
   const emptyFormulaResult = evaluateAIGrade([], 7.0);
   record(assertEqual('Invalid / String Input Audit', 'Empty formula receives Grade F and is explicitly non-evaluable', emptyFormulaResult.grade, 'F'));
