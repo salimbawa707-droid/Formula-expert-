@@ -5309,12 +5309,19 @@ export function resolveUniversalIngredientIdentity(query: string): IngredientIde
   const raw = String(query || '').trim();
   if (!raw) return null;
   const normalized = normalizeIngredientIdentity(raw);
-  const canonical = UNIVERSAL_INGREDIENTS.find(item =>
-    [item.id, item.name, item.productName, item.inciName, ...(item.keywords || [])]
+  const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item =>
+    [item.id, item.name, item.productName, item.inciName, item.casNumber, ...(item.keywords || [])]
       .filter(Boolean)
       .some(value => normalizeIngredientIdentity(String(value)) === normalized)
   );
-  if (canonical) return { ingredient: canonical, matchType: 'CANONICAL', gradeCompatible: true };
+  if (canonicalMatches.length === 1) {
+    return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: true };
+  }
+  if (canonicalMatches.length > 1) {
+    // A shared CAS/alias identifies a known chemical family, not a unique
+    // commercial grade. Keep it local and require grade selection; never call Gemini.
+    return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: false };
+  }
 
   const alias = INGREDIENT_IDENTITY_ALIASES[raw.toLowerCase()];
   const normalizedAlias = alias || Object.entries(INGREDIENT_IDENTITY_ALIASES)
