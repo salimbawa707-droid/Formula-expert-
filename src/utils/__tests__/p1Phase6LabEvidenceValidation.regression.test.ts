@@ -30,6 +30,7 @@ import {
   evaluateCategoryModelValidation,
   proposeCalibrationCandidates,
   evaluateFormulaScientificValidation,
+  getCategoryRequiredLabBattery,
   CATEGORY_EVIDENCE_MATRIX,
   DetailedLabEvidenceRecord
 } from '../labEvidenceEngine';
@@ -480,6 +481,43 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
 
   assert('29. All 39 canonical formula templates remain intact', FORMULAS.length >= 39, FORMULAS.length, 39);
   assert('30. All 13 Canonical Product Categories Defined in Evidence Matrix', CANONICAL_PRODUCT_CATEGORY_IDS.every(id => Boolean(CATEGORY_EVIDENCE_MATRIX[id])), true, true);
+
+  const requiredCategoryEvidence = [
+    ['TOILET_CLEANER', 'clingRheology'],
+    ['DISHWASH_MANUAL', 'mildness'],
+    ['DISHWASH_MANUAL', 'foamStability'],
+    ['DISHWASH_AUTOMATIC', 'zeroFoamCompliance'],
+    ['FLOOR_CLEANER', 'residueStreaking'],
+    ['FLOOR_CLEANER', 'glossRetention'],
+    ['GLASS_CLEANER', 'residueStreaking'],
+    ['HAND_WASH', 'mildness'],
+    ['KITCHEN_DEGREASER', 'bakedGreaseRemoval'],
+    ['CAR_SHAMPOO', 'paintworkLubricity']
+  ] as const;
+  const categoryEvidenceGaps = requiredCategoryEvidence.filter(([category, key]) =>
+    !getCategoryRequiredLabBattery(category as any).includes(key)
+  );
+  assert(
+    '31. Product-specific required lab battery covers profile safety/performance policies',
+    categoryEvidenceGaps.length === 0,
+    categoryEvidenceGaps,
+    []
+  );
+
+  const toiletValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-toilet-cling',
+    formulaVersion: '1.0',
+    productCategory: 'TOILET_CLEANER',
+    isComputationallyValid: true,
+    predictedMetrics: { pH: 2.0, viscosityCps: 500 },
+    labEvidenceRecords: []
+  });
+  assert(
+    '32. Toilet cleaner cannot be lab-validated without cling rheology evidence',
+    toiletValidation.missingTests.includes('clingRheology') && !toiletValidation.isLabValidated,
+    toiletValidation.missingTests,
+    'clingRheology required'
+  );
 
   // --------------------------------------------------------------------------
   // SUMMARY
