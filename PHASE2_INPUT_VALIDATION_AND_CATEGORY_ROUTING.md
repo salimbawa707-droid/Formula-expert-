@@ -112,3 +112,32 @@ The AIFormulator view model and result panels previously displayed defaults such
 - Android debug APK job was cancelled by subsequent branch updates; no APK build result is claimed.
 
 **Current state:** Phase 2 remains IN PROGRESS. Regression tests and full CI must be rerun against the latest branch head. The draft PR remains unmerged.
+
+
+## Further Phase 2 input-domain hardening
+
+### 8. Hardness and chelation scenario defaults removed at engine boundaries
+
+- `calculateWaterHardnessTolerance` now requires explicit hardness, wash volume, dose and batch size by default; strict validation is no longer opt-in.
+- `calculateFormulationChelationCapacity` no longer substitutes a 20 g dose or 100 kg batch. Dose is required for a per-dose capacity; without batch size, per-dose capacity may remain available but batch-scaled sequestration is unavailable.
+- `cleaningPerformanceEngine` now fails closed by default for categories that require a hardness scenario. The caller must explicitly opt out of strictness; missing hardness/wash scenario returns `INSUFFICIENT_DATA` and no CPI.
+- `climateEngine` now requires explicit batch size in addition to hardness, wash volume and dose before producing a hardness-tolerance result.
+- Reference tests and analysis scripts that intentionally calculate capacity now supply explicit dose/batch scenarios.
+
+### 9. pH input and powder-slurry domain checks
+
+- `PHEngineV2.calculatePH` now validates ingredient identity, percentage or mass, assay/purity, batch mass, temperature and powder slurry concentration before composition normalization. Missing or out-of-range values return `INVALID_FORMULA` with `pH: null`.
+- `calculatePowderPH` no longer accepts an empty ingredient list as an 8.0/10.5 heuristic pH. It returns `INSUFFICIENT_DATA` unless a valid measured pH or calculated pH from identified acid/base or buffer chemistry exists.
+- Explicit `customPHConcentrationPct = 0` is rejected rather than replaced by the 1% reference.
+- Custom powder pH target ranges must have finite bounds between 0 and 14 and minimum no greater than maximum.
+
+### New regression coverage
+
+- PHEngineV2 missing percentage, >100% percentage, >100% assay and zero batch size.
+- Powder pH empty list, zero slurry concentration, inert powder with no acid/base chemistry, and inverted target bounds.
+- Hardness strict-by-default behavior with missing batch.
+- Chelation capacity missing dose and missing batch behavior.
+- Cleaning CPI missing wash scenario returns `INSUFFICIENT_DATA` by default.
+- All 13 canonical categories are checked against profile applicability for HLB, chelation and cleaning.
+
+**Verification remains pending:** the latest PR quality-gate run is pending; none of these latest additions is marked passing until the run completes and any failures are fixed.
