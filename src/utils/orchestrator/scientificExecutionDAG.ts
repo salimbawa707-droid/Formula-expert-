@@ -867,9 +867,6 @@ export class ScientificExecutionDAG {
 
         state.adjustedEffectiveCleaningInput = effectiveSurfactantAdjustment;
 
-        const categoryPolicy = getProductHardnessPolicy(
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
-        );
         const effectiveHardnessPpm = typeof state.waterHardnessPpm === 'number' && Number.isFinite(state.waterHardnessPpm) && state.waterHardnessPpm >= 0
           ? state.waterHardnessPpm
           : undefined;
