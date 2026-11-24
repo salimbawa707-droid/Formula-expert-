@@ -608,6 +608,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       const primaryManufacturerSource = ['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(sourceRecord.sourceType);
       const p = sourceRecord.extractedParameters || {};
       const activeMatterMetrologyComplete = property !== 'activeMatter' || (
+        typeof val === 'number' && Number.isFinite(val) && val >= 0 && val <= 100 &&
         ['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '')) &&
         ['AS_SUPPLIED', 'AS_RECEIVED'].includes(String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_')) &&
         typeof p.activeMatterMethod === 'string' && p.activeMatterMethod.trim().length >= 4 &&
