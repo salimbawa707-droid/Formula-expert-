@@ -1,4 +1,4 @@
-import { UNIVERSAL_INGREDIENTS, UniversalIngredient, searchUniversalIngredients } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
 import { db } from '../db/database';
 import { GoogleGenAI, Type } from '@google/genai';
 import { calculateActiveMatter, calculateActiveSurfactants, calculateRawSurfactants } from '../utils/activeMatterEngine';
@@ -529,7 +529,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         confidence: resolution.confidence,
         parameters: {},
         provenance: {},
-        requiresUserApproval: false
+        requiresUserApproval: true
       };
     }
 
