@@ -270,7 +270,9 @@ export class IngredientResearchBridge {
         title: source.title,
         publisher: source.publisher,
         sourceType: source.sourceType,
-        retrievedAt: source.retrievedAt
+        retrievedAt: source.retrievedAt,
+        extractedParameters: source.extractedParameters,
+        rawContent: source.rawContent
       })),
       sourceIds: research.sourcesRetrieved.map(source => source.sourceId),
       sourceUrls: research.sourcesRetrieved.map(source => source.url).filter((url): url is string => Boolean(url)),
