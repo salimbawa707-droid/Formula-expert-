@@ -185,8 +185,11 @@ export interface FormulaItem {
   name: string;
   category: string;
   categoryId?: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
+  productSubProfileId?: string;
   targetPH: number;
   batchSizeKg: number;
+  batchSize?: number;
+  targetCost?: number | null;
   description: string;
   ingredients: FormulationIngredient[];
   instructions: string[];
