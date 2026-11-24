@@ -25,6 +25,7 @@ const duplicateEntries = legacyEntries.filter((entry, index) => legacyEntries.in
 const missingEntries = uniqueEntries.filter((entry) => !fs.existsSync(path.join(root, entry)));
 const auditCsvLines = fs.existsSync(auditCsvPath) ? fs.readFileSync(auditCsvPath, 'utf8').trim().split(/\r?\n/) : [];
 const auditCsvPaths = auditCsvLines.slice(1).map((line) => line.match(/^\"([^\"]+)\"/)?.[1]).filter(Boolean);
+const duplicateAuditCsvPaths = auditCsvPaths.filter((entry, index) => auditCsvPaths.indexOf(entry) !== index);
 const csvOnlyPaths = auditCsvPaths.filter((entry) => !uniqueEntries.includes(entry));
 const listOnlyPaths = uniqueEntries.filter((entry) => !auditCsvPaths.includes(entry));
 const sourceFiles = walk(srcRoot).filter(isSource).filter((file) => !isTest(file));
@@ -34,7 +35,7 @@ const broadCandidates = sourceFiles.filter((file) => /(engine|calculator|optimiz
 const srcCoreExists = fs.existsSync(path.join(srcRoot, 'core'));
 const result = {
   auditedDefinition: 'source-tree inventory; counts are intentionally non-interchangeable',
-  legacyList: { entries: legacyEntries.length, uniqueEntries: uniqueEntries.length, duplicateEntries, missingEntries, expectedEntries: 55, auditCsvRows: auditCsvPaths.length, csvOnlyPaths, listOnlyPaths },
+  legacyList: { entries: legacyEntries.length, uniqueEntries: uniqueEntries.length, duplicateEntries, missingEntries, expectedEntries: 55, auditCsvRows: auditCsvPaths.length, duplicateAuditCsvPaths, csvOnlyPaths, listOnlyPaths },
   sourceFilenameCounts: {
     engineNamedSourceFilesExcludingUi: engineNamedSourceOnly.length,
     engineNamedFilesIncludingUi: engineNamedIncludingUi.length,
@@ -47,6 +48,7 @@ console.log(JSON.stringify(result, null, 2));
 if (legacyEntries.length !== 55) fail(`legacy list count changed: expected 55, got ${legacyEntries.length}`);
 if (!fs.existsSync(auditCsvPath)) fail('engine audit CSV is missing');
 if (auditCsvPaths.length !== 55) fail(`engine audit CSV row count changed: expected 55, got ${auditCsvPaths.length}`);
+if (duplicateAuditCsvPaths.length) fail(`engine audit CSV has duplicate paths: ${JSON.stringify(duplicateAuditCsvPaths)}`);
 if (csvOnlyPaths.length || listOnlyPaths.length) fail(`engine audit CSV/list mismatch: csvOnly=${JSON.stringify(csvOnlyPaths)}, listOnly=${JSON.stringify(listOnlyPaths)}`);
 if (uniqueEntries.length !== legacyEntries.length) fail(`legacy list has duplicate paths: ${JSON.stringify(duplicateEntries)}`);
 if (missingEntries.length) fail(`legacy list paths missing from source tree: ${JSON.stringify(missingEntries)}`);
