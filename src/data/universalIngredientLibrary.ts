@@ -5298,7 +5298,6 @@ const INGREDIENT_IDENTITY_ALIASES: Record<string, { id: string; gradeCompatible:
   'cbs-x': { id: 'cbs-x', gradeCompatible: true },
   'tinopal cbs-x': { id: 'cbs-x', gradeCompatible: true },
   'sodium chloride salt': { id: 'sodium-chloride-uni', gradeCompatible: true },
-  'salt': { id: 'sodium-chloride-uni', gradeCompatible: false },
   'sodium hydroxide caustic soda lye 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   'caustic soda 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   'sodium hydroxide 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
