@@ -343,6 +343,9 @@ export function runPowderEngineTestSuite(): {
   assert('Matrix P. Safety Profile', 'Safety evaluation source is SCREENING', report1.safety.source === 'SCREENING', report1.safety.source, 'SCREENING');
   assert('Matrix P. Safety Profile', 'Flags formal GHS as INSUFFICIENT_DATA requiring supplier SDS', report1.safety.formalGHSStatus.includes('INSUFFICIENT_DATA'), true, true);
   assert('Matrix P. Safety Profile', 'Includes dust PPE recommendations for powder handling', report1.safety.recommendedPPE.some(p => p.toLowerCase().includes('dust') || p.toLowerCase().includes('respirator')), true, true);
+  assert('Matrix P. Safety Profile', 'Formal powder GHS signal word remains UNDETERMINED without supplier SDS dossiers', report1.safety.signalWord === 'UNDETERMINED', report1.safety.signalWord, 'UNDETERMINED');
+  assert('Matrix P. Safety Profile', 'Screening heuristics never populate formal GHS classes or H-statements', report1.safety.ghsHazardClasses.length === 0 && report1.safety.hazardStatements.length === 0 && report1.safety.precautionaryStatements.length === 0, report1.safety.ghsHazardClasses, []);
+  assert('Matrix P. Safety Profile', 'Missing formal hazard evidence is reflected in insufficient safety data', report1.safety.hasInsufficientSafetyData === true, report1.safety.hasInsufficientSafetyData, true);
 
   // Test Q: Stability Data Handling
   assert('Matrix Q. Stability Profile', 'Stability evaluation source is PREDICTED', report1.stability.source === 'PREDICTED', report1.stability.source, 'PREDICTED');
