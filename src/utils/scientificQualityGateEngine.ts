@@ -557,7 +557,8 @@ export function evaluateScientificQualityGate(
   const compRes = calculateFormulationCompatibility(
     rawIngs,
     compatibilityPHAvailable ? finalPH : undefined,
-    canonicalCategory
+    canonicalCategory,
+    input.productSubProfileId
   );
   const criticalCompatibilityAlerts = compRes.alerts.filter(
     alert => alert.severity === 'Critical' || alert.severity === 'High'
