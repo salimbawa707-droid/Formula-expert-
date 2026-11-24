@@ -535,6 +535,8 @@ export default function FormulaExpert({
       },
       waterHardness: res.waterHardness || {
         status: 'NOT_EVALUATED',
+        isApplicable: true,
+        description: 'Explicit hardness and wash-scenario inputs are required.',
         totalSequestrationMg: null,
         chelationCapacityMg: null,
         builderCapacityMg: null,
