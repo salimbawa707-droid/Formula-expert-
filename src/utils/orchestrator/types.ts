@@ -21,6 +21,7 @@ import {
 import { PerformanceProvenance } from '../cleaningPerformanceEngine';
 import { RegulatoryContext, RegulatoryEvaluationReport } from '../regulatoryEngine';
 import { AIGradeResult } from '../gradeEngine';
+import type { PowderLabMeasurementInputs } from '../powderEngine/types';
 
 // =============================================================================
 // EVALUATION PIPELINE STAGES
@@ -132,6 +133,7 @@ export interface CanonicalFormulaInput {
   climatePreset?: string;
   labEvidence?: LabMeasurementRecord[];
   researchEvidence?: any[];
+  powderLabInputs?: PowderLabMeasurementInputs;
 }
 
 // =============================================================================
