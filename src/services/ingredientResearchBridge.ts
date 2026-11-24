@@ -122,6 +122,16 @@ export class IngredientResearchBridge {
       ingredient.activeMatterInputSource = 'SOURCE_BACKED';
       ingredient.activeMatterEvidenceId = activeMatterEvidenceSource?.sourceId;
       ingredient.activeMatterEvidenceUrl = activeMatterEvidenceSource?.url || undefined;
+      ingredient.activeMatterEvidenceSourceType = activeMatterEvidenceSource?.sourceType as FormulationIngredient['activeMatterEvidenceSourceType'];
+      if (activeMatterEvidenceSource) {
+        ingredient.provenance = {
+          sourceType: 'OFFICIAL_MANUFACTURER',
+          source: activeMatterEvidenceSource.publisher,
+          sourceUrl: activeMatterEvidenceSource.url || undefined,
+          verificationStatus: 'VERIFIED',
+          verifiedAt: new Date().toISOString().slice(0, 10)
+        };
+      }
     }
     if (density !== undefined) ingredient.density = density;
     if (hlb !== undefined) {
