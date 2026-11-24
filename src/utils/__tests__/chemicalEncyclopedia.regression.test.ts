@@ -273,8 +273,13 @@ export function runChemicalEncyclopediaTestSuite() {
   );
   const meaResolution = resolveUniversalIngredientIdentity('MEA');
   assert(
-    meaResolution?.ingredient.id === 'mea-99',
-    'Test 20F: MEA abbreviation resolves to monoethanolamine, not Cocamide MEA records'
+    meaResolution?.ingredient.id === 'mea-99' && meaResolution.gradeCompatible === false,
+    'Test 20F: MEA abbreviation resolves to monoethanolamine while retaining grade review'
+  );
+  const cmeaResolution = resolveUniversalIngredientIdentity('CMEA');
+  assert(
+    cmeaResolution?.ingredient.id.startsWith('cmea-'),
+    'Test 20G: CMEA abbreviation resolves to Cocamide MEA records'
   );
 
   // 21. Immutability of Master Dataset
