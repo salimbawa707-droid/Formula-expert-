@@ -183,8 +183,8 @@ export function calculateFormulationCompatibility(
     // Sodium sulfate and similar inorganic salts are builders/fillers, not anionic detergents.
     const hasExplicitAnionicRole = cat.includes('anionic');
     const hasKnownAnionicSurfactantIdentity =
-      /\\blabsa\\b|linear alkylbenzene sulfonic acid|alkylbenzene sulfonate|\\bsles\\b|sodium laureth sulfate|\\bsls\\b|sodium lauryl sulfate|sodium dodecyl sulfate|\\bsds\\b|\\baos\\b|alpha olefin sulfonate|alkyl ether sulfate|alkyl sulfate surfactant|\\bsoap\\b/i.test(name);
-    const isShortChainHydrotrope = /cumene|xylene|\\bscs\\b|\\bsxs\\b/.test(name);
+      /\blabsa\b|linear alkylbenzene sulfonic acid|alkylbenzene sulfonate|\bsles\b|sodium laureth sulfate|\bsls\b|sodium lauryl sulfate|sodium dodecyl sulfate|\bsds\b|\baos\b|alpha olefin sulfonate|alkyl ether sulfate|alkyl sulfate surfactant|\bsoap\b/i.test(name);
+    const isShortChainHydrotrope = /cumene|xylene|\bscs\b|\bsxs\b/.test(name);
     if (!isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
       hasAnionic = true;
       anionicPct += pct;
