@@ -931,6 +931,13 @@ export function evaluateFormulaScientificValidation(input: FormulaValidationEval
 
       completedTests.push(paramKey);
       provenanceMap[paramKey] = record.sourceType === 'USER_ENTERED' ? 'USER_ENTERED_LAB' : 'LABORATORY_MEASURED';
+    } else if (requiredBattery.some(req => req.toLowerCase() === lowerKey)) {
+      // Some mandatory category tests are deliberately measured-only: there is no validated predictor to compare against.
+      // A valid MEASURED record can satisfy the evidence battery, but promotion still requires full LIMS/instrument controls.
+      const isPass = record.status !== 'OUT_OF_SPEC' && record.qualityStatus !== 'INVALID_MEASUREMENT';
+      if (!isPass) hasFailedTests = true;
+      completedTests.push(paramKey);
+      provenanceMap[paramKey] = record.sourceType === 'USER_ENTERED' ? 'USER_ENTERED_LAB' : 'LABORATORY_MEASURED';
     }
   }
 
