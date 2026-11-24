@@ -114,6 +114,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "description": "Commercial liquid detergent chemical and enzyme booster blend manufactured by Blue Chem India (Ahmedabad, Gujarat). Chemical composition and active matter assay are proprietary/unspecified by the manufacturer; scientific properties must be treated as UNKNOWN / INSUFFICIENT_DATA.",
     "manufacturer": "Blue Chem India",
     "productName": "Aristo 9",
+    "keywords": ["Aristo 9 Blue Chem"],
     "provenance": {
       "sourceType": "OFFICIAL_MANUFACTURER",
       "source": "Blue Chem India",
