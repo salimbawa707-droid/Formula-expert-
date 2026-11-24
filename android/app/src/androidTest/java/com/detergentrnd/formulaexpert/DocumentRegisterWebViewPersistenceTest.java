@@ -2,6 +2,9 @@ package com.detergentrnd.formulaexpert;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -95,7 +98,7 @@ public class DocumentRegisterWebViewPersistenceTest {
         openDocsRegister(first);
 
         String write = evaluateAsync(first,
-            "(async()=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});if(!db.objectStoreNames.contains('documents'))throw new Error('documents store missing');await new Promise((resolve,reject)=>{const tx=db.transaction('documents','readwrite');const blob=new Blob(['ANDROID-WEBVIEW-PDF-PERSISTENCE'],{type:'application/pdf'});tx.objectStore('documents').put({id:'android-webview-persistence-test',title:'Android WebView persistence test',documentType:'SDS',reviewStatus:'UNREVIEWED',fileName:'android-webview-test.pdf',mimeType:'application/pdf',fileSizeBytes:blob.size,attachment:blob,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();return 'WRITE_OK'})()");
+            "(async()=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});if(!db.objectStoreNames.contains('documents'))throw new Error('documents store missing');await new Promise((resolve,reject)=>{const tx=db.transaction('documents','readwrite');const blob=new Blob(['ANDROID-WEBVIEW-PDF-PERSISTENCE'],{type:'application/pdf'});tx.objectStore('documents').put({id:'android-webview-persistence-test',title:'Android WebView persistence test',documentType:'SDS',reviewStatus:'UNREVIEWED',fileName:'formula-expert-webview-persistence-test.pdf',mimeType:'application/pdf',fileSizeBytes:blob.size,attachment:blob,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();return 'WRITE_OK'})()");
         assertTrue("IndexedDB write must succeed: " + write, write != null && write.contains("WRITE_OK"));
         first.close();
 
@@ -105,22 +108,28 @@ public class DocumentRegisterWebViewPersistenceTest {
             "(async()=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('DetergentFormulaExpertDB');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});const row=await new Promise((resolve,reject)=>{const tx=db.transaction('documents','readonly');const req=tx.objectStore('documents').get('android-webview-persistence-test');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});if(!row||!(row.attachment instanceof Blob)){db.close();return 'MISSING_BLOB'}const text=await row.attachment.text();db.close();return text==='ANDROID-WEBVIEW-PDF-PERSISTENCE'?'READ_OK':'BAD_BYTES'})()");
         assertTrue("Stored PDF Blob and bytes must survive activity restart: " + read, read != null && read.contains("READ_OK"));
 
-        CountDownLatch downloadLatch = new CountDownLatch(1);
-        AtomicReference<String> downloadedUrl = new AtomicReference<>();
-        AtomicReference<WebView> webViewRef = new AtomicReference<>();
-        second.onActivity(activity -> {
-            WebView webView = findWebView(activity.getWindow().getDecorView());
-            webViewRef.set(webView);
-            webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
-                downloadedUrl.set(url);
-                downloadLatch.countDown();
-            });
-        });
         String click = evaluate(second,
-            "(()=>{const blob=new Blob(['DOWNLOAD-CHECK'],{type:'application/pdf'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='android-webview-download-check.pdf';document.body.appendChild(a);a.click();a.remove();return 'ANCHOR_CLICKED'})()");
-        assertTrue("Attachment download anchor should be dispatched: " + click, click != null && click.contains("ANCHOR_CLICKED"));
-        assertTrue("Android WebView must dispatch blob attachment to DownloadListener", downloadLatch.await(8, TimeUnit.SECONDS));
-        assertNotNull(downloadedUrl.get());
+            "(()=>{const card=[...document.querySelectorAll('article')].find(x=>(x.innerText||'').includes('Android WebView persistence test'));if(!card)return 'NO_CARD';const button=[...card.querySelectorAll('button')].find(x=>(x.innerText||'').includes('Download'));if(!button)return 'NO_DOWNLOAD_BUTTON';button.click();return 'DOWNLOAD_CLICKED'})()");
+        assertTrue("Document card download button should be available: " + click, click != null && click.contains("DOWNLOAD_CLICKED"));
+
+        String saved = evaluateAsync(second,
+            "(async()=>{for(let i=0;i<75;i++){const status=document.querySelector('[role=status]');if(status&&(status.innerText||'').includes('Saved to Downloads/Formula Expert'))return status.innerText;await new Promise(r=>setTimeout(r,200));}throw new Error('native download confirmation timeout')})()");
+        assertTrue("Native Android download should confirm the saved path: " + saved,
+            saved != null && saved.contains("formula-expert-webview-persistence-test.pdf"));
+
+        Uri downloads = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        String[] projection = { MediaStore.Downloads.DISPLAY_NAME, MediaStore.Downloads.RELATIVE_PATH };
+        String[] selectionArgs = { "formula-expert-webview-persistence-test.pdf" };
+        try (Cursor cursor = InstrumentationRegistry.getInstrumentation().getTargetContext()
+                .getContentResolver().query(downloads, projection,
+                    MediaStore.Downloads.DISPLAY_NAME + "=?", selectionArgs,
+                    MediaStore.Downloads.DATE_ADDED + " DESC")) {
+            assertNotNull("MediaStore query must return a cursor", cursor);
+            assertTrue("Attachment must exist in public Downloads/Formula Expert", cursor.moveToFirst());
+            String relativePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Downloads.RELATIVE_PATH));
+            assertTrue("Attachment must be saved in the Formula Expert Downloads folder: " + relativePath,
+                relativePath != null && relativePath.contains("Download/Formula Expert"));
+        }
         second.close();
     }
 }
