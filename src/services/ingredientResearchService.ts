@@ -755,6 +755,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       (updatedIng as any).activeMatterInputSource = 'SOURCE_BACKED';
       (updatedIng as any).activeMatterEvidenceId = provenance.activeMatter.sourceId;
       (updatedIng as any).activeMatterEvidenceUrl = provenance.activeMatter.sourceUrl;
+      (updatedIng as any).activeMatterEvidenceSourceType = provenance.activeMatter.sourceType as 'MANUFACTURER_TDS' | 'MANUFACTURER_SPECIFICATION';
       if (updatedIng.unknownProperties) {
         updatedIng.unknownProperties = updatedIng.unknownProperties.filter((p: string) => p !== 'activeMatter');
       }
@@ -846,6 +847,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
             activeMatterInputSource: (updatedIng as any).activeMatterInputSource || 'UNKNOWN',
             activeMatterEvidenceId: (updatedIng as any).activeMatterEvidenceId,
             activeMatterEvidenceUrl: (updatedIng as any).activeMatterEvidenceUrl,
+            activeMatterEvidenceSourceType: (updatedIng as any).activeMatterEvidenceSourceType,
             provenance: (updatedIng as any).provenance
           };
         }
