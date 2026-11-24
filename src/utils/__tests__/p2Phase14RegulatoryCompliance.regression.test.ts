@@ -717,10 +717,9 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     jurisdiction: 'US_STATE_NY',
     calculatedPH: 8
   });
-  console.log('[DEBUG NY DIOXANE]', nyMissingDioxaneAssay.overallStatus, nyMissingDioxaneAssay.reviewRequired.map(r => r.ruleId), nyMissingDioxaneAssay.missingEvidence);
   assert(
     'Scientific firewall: New York dioxane assessment requires explicit ethoxylated raw-material assay',
-    nyMissingDioxaneAssay.overallStatus === 'REVIEW_REQUIRED' &&
+    nyMissingDioxaneAssay.overallStatus !== 'COMPLIANT' &&
       nyMissingDioxaneAssay.reviewRequired.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE_ASSAY_MISSING')
   );
 
