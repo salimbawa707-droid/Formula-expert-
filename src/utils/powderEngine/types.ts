@@ -361,7 +361,7 @@ export interface PowderSafetyReport {
   handlingPrecautions: string[];
   regulatoryDisclaimer: string;
   ghsHazardClasses: string[];
-  signalWord: 'DANGER' | 'WARNING' | 'NONE';
+  signalWord: 'DANGER' | 'WARNING' | 'NONE' | 'UNDETERMINED';
   hazardStatements: string[];
   precautionaryStatements: string[];
   hasInsufficientSafetyData: boolean;
