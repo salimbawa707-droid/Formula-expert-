@@ -594,6 +594,21 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     decisionBanned.overallStatus === 'NON_COMPLIANT' && decisionBanned.failedRules.some(r => r.ruleId === 'RULE_EU_REACH_NPE_BAN')
   );
 
+  const globalNpeScreen = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 95, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'Nonylphenol Ethoxylate (NPE-9)', percentage: 5, casNumber: '9016-45-9', activePercentage: 100 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'GLOBAL_UN_GHS',
+    calculatedPH: 8
+  });
+  assert(
+    'Jurisdiction firewall: name-only NPE keyword screening does not invent a universal statutory ban',
+    !globalNpeScreen.failedRules.some(r => r.ruleId === 'REG_BANNED_SUBSTANCE') &&
+      globalNpeScreen.reviewRequired.some(r => r.ruleId === 'RULE_NAME_BASED_CHEMICAL_SCREENING')
+  );
+
   const testInputIndiaSTPP: RegulatoryEvaluationInput = {
     ingredients: [
       { name: 'Sodium Tripolyphosphate (STPP)', percentage: 10.0 },
