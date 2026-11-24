@@ -588,7 +588,7 @@ export class ScientificExecutionDAG {
         }
         state.hlbResult = HLBEngine.calculateBlendedHLB(state.resolvedIngredients);
         state.hlbValue = state.hlbResult.hasSurfactants ? state.hlbResult.blendedHLB : null;
-        state.hlbStatus = state.hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE';
+        state.hlbStatus = state.hlbResult.hasSurfactants ? 'VALID' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -684,7 +684,11 @@ export class ScientificExecutionDAG {
         });
 
         state.chelationResult = {
-          isSufficient: hardnessRes.status === 'PASS' ? true : (hardnessRes.status === 'NOT_APPLICABLE' ? null : ((hardnessRes.totalSequestrationMg || 0) > 0 ? true : false)),
+          isSufficient: hardnessRes.status === 'PASS'
+            ? true
+            : (hardnessRes.status === 'NOT_APPLICABLE' || hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA')
+              ? null
+              : ((hardnessRes.totalSequestrationMg || 0) > 0 ? true : false),
           status: hardnessRes.status === 'PASS' ? 'SCREENING' : hardnessRes.status,
           chelatorActivePct: hasUnknownChelatorActiveMatter ? null : Number(chelatorActivePct.toFixed(2)),
           chelatorActiveMatterVerified: !hasUnknownChelatorActiveMatter,
@@ -695,9 +699,7 @@ export class ScientificExecutionDAG {
 
         if (hardnessRes.status === 'NOT_APPLICABLE') {
           state.chelationStatus = 'NOT_APPLICABLE';
-        } else if (hardnessRes.status === 'PASS' || ((hardnessRes.totalSequestrationMg || 0) > 0)) {
-          state.chelationStatus = 'SCREENING';
-        } else if (hasUnknownChelatorActiveMatter) {
+        } else if (hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA' || hasUnknownChelatorActiveMatter) {
           state.chelationStatus = 'INSUFFICIENT_DATA';
         } else {
           state.chelationStatus = 'SCREENING';
