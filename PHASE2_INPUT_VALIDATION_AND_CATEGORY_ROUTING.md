@@ -178,3 +178,29 @@ A further cross-category review found that the profile registry declared allowed
 New tests cover category policy surfactant restrictions, required evidence battery membership and measured-only cling evidence.
 
 **Phase 2 remains IN PROGRESS until the latest CI passes and any additional input/routing defects are resolved.**
+
+
+## Latest Phase 2 follow-up — sub-profile integrity and regression corrections
+
+### Specialized product sub-profiles are now explicit and traceable
+- Added optional `productSubProfileId` to the canonical formula input contract. Generic formula display names are not treated as authoritative chemistry selectors.
+- Compatibility and the quality gate consume the explicit sub-profile ID. Category-level HLB/chelation/cleaning applicability remains governed by the canonical category registry until sub-profile-specific engine applicability is separately evidenced.
+- A sub-profile ID that belongs to a different canonical category is rejected. Compatibility returns `INSUFFICIENT_DATA` rather than silently applying the wrong policy.
+- Product sub-profile identity is included in formula fingerprints, so switching between mineral-acid and organic-acid toilet-cleaner profiles invalidates cached results.
+- Toilet-cleaner subclass resolution now checks explicit organic-acid wording before generic “bowl” wording; “bowl” alone no longer proves mineral-acid chemistry.
+
+### Compatibility classification and category policy reconciled
+- Anionic surfactant classification no longer treats every ingredient containing “sulfate” as an anionic surfactant. Sodium sulfate and similar inorganic sulfate salts are not surfactants; recognized surfactant identities and explicit anionic roles remain classified.
+- Hand wash no longer routes through the hardness/chelation engine. Its scientific product profile is now aligned with the hardness policy that states hand-wash cleansing does not require heavy-builder hardness control.
+- Empty ingredient arrays in the dynamic chelator recommendation represent an explicitly unchelated baseline (zero existing capacity); malformed or unresolved non-empty formula data remains `INSUFFICIENT_DATA`.
+
+### Regression failures observed and remediated
+- First full TypeScript run: two chelator reference assertions failed because an empty formula was treated as unavailable instead of zero existing chelation capacity; fixed in the dynamic recommendation path.
+- Same run: one all-category routing assertion exposed a contradiction between the Hand Wash scientific profile and its hardness policy; the profile now marks chelation/hardness as not applicable.
+- A later run still used the earlier hand-wash routing code; the current head contains the policy reconciliation and must be verified by the latest CI.
+
+### Current verification state
+- Latest audit-branch head: `a926e9af3e3c2f950aed2ccb3ad5c5f3def3b961` at the time this section was authored; subsequent commits may advance it.
+- CI run #773 was queued after the hand-wash profile correction. Its final result is not yet recorded here.
+- No Phase 2 completion claim is made until the full TypeScript regression suite, production frontend build, evidence gates, and required Android checks complete successfully against the latest branch head.
+- PR #94 remains draft and unmerged.
