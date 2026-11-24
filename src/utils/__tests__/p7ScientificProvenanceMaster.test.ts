@@ -85,6 +85,20 @@ export function runPhase7ProvenanceTestSuite(): { passed: number; failed: number
   const fpVersionChange = computeFormulaFingerprint('F-101', '1.0.1', sampleIngredients, 'LAUNDRY_LIQUID');
   assert('Traceability', 'Version change alters fingerprint', fp1 !== fpVersionChange, fp1 !== fpVersionChange, true);
 
+  const missingPctFingerprint = computeFormulaFingerprint('F-101', '1.0.0', [
+    { name: 'SLES 70%', percentage: undefined as any, activeMatterPct: 70 } as any
+  ], 'LAUNDRY_LIQUID');
+  const zeroPctFingerprint = computeFormulaFingerprint('F-101', '1.0.0', [
+    { name: 'SLES 70%', percentage: 0, activeMatterPct: 70 } as any
+  ], 'LAUNDRY_LIQUID');
+  assert(
+    'Input Integrity',
+    'Missing ingredient percentage has a different fingerprint from explicit zero',
+    missingPctFingerprint !== zeroPctFingerprint,
+    missingPctFingerprint !== zeroPctFingerprint,
+    true
+  );
+
   // 3. Stale-Result Prevention
   const staleCheck1 = checkResultTraceability(fp1, fp1);
   assert('StalePrevention', 'Matching fingerprint is NOT stale', staleCheck1.isStale === false, staleCheck1.isStale, false);
