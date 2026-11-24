@@ -2301,7 +2301,7 @@ export default function FormulaExpert({
             name: ing.name,
             percentage: readFormulaPercentage(ing),
             activeMatterPct: readFormulaActiveMatter(ing) ?? Number.NaN,
-            costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+            costPerKg: readFormulaCost(ing),
             role: ing.role
           }))}
           powderReport={isPowderCategory(deepAnalysisState.formulaSnapshot.productCategory) ? powderReport : null}
