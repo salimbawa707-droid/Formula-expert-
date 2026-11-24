@@ -28,10 +28,7 @@ import {
   calculateActiveMatter,
   calculateRawSurfactants
 } from './activeMatterEngine';
-import {
-  calculateWaterHardnessTolerance,
-  getProductHardnessPolicy
-} from './chelatorEngine';
+import { calculateWaterHardnessTolerance } from './chelatorEngine';
 import { ViscosityEngine, calculateDetailedViscosity } from './viscosityEngine';
 import { calculateDensity, calculateTotalSolids } from './densityEngine';
 import { calculateLiquidNVR } from './liquidNvrEngine';
@@ -752,8 +749,6 @@ export async function executeStagedScientificAnalysis(
   const totalSolidsPct = calculateTotalSolids(immutableSnapshot.ingredients);
 
   let nvrResult: any = null;
-  let powderReport: any = null;
-
   if (!isPowder) {
     nvrResult = calculateLiquidNVR(immutableSnapshot.ingredients, immutableSnapshot.batchSizeKg);
   }
@@ -1193,7 +1188,7 @@ export async function executeStagedScientificAnalysis(
     timestamp: Date.now(),
     formulaSnapshot: immutableSnapshot,
     orchestratorResult,
-    powderReport,
+    powderReport: orchestratorResult.powderReport ?? null,
     scientificResults,
     decisionReport,
     stagedExecutionTrace: Array.from(stageRecords.values()),
