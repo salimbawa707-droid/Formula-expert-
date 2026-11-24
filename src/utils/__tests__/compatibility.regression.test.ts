@@ -62,6 +62,22 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   assertNear('Cationic Only', 'Cationic-only score is 100', resCationicOnly.compatibilityScore, 100);
   assertEqual('Cationic Only', 'Cationic-only zero alerts', resCationicOnly.alerts.length, 0);
 
+  // 3A. Canonical category surfactant permissions
+  const laundryCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 7.0, 'LAUNDRY_LIQUID');
+  assertEqual('Category Surfactant Policy', 'Laundry liquid rejects cationic-only surfactant systems', laundryCationic.compatible, false);
+  assertEqual('Category Surfactant Policy', 'Laundry liquid emits cationic policy violation', laundryCationic.alerts.some(a => a.id === 'category-policy-cationic-laundry_liquid'), true);
+
+  const toiletAnionic = calculateFormulationCompatibility(formulaAnionicOnly as any, 2.0, 'TOILET_CLEANER');
+  assertEqual('Category Surfactant Policy', 'Toilet cleaner rejects anionic surfactant systems', toiletAnionic.compatible, false);
+  assertEqual('Category Surfactant Policy', 'Toilet cleaner emits anionic policy violation', toiletAnionic.alerts.some(a => a.id === 'category-policy-anionic-toilet_cleaner'), true);
+
+  const autoDishAnionic = calculateFormulationCompatibility(formulaAnionicOnly as any, 10.0, 'DISHWASH_AUTOMATIC');
+  assertEqual('Category Surfactant Policy', 'Automatic dishwash rejects anionic surfactant systems', autoDishAnionic.compatible, false);
+  assertEqual('Category Surfactant Policy', 'Automatic dishwash emits low-foam profile violation', autoDishAnionic.alerts.some(a => a.id === 'category-policy-anionic-dishwash_automatic'), true);
+
+  const softenerCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 4.0, 'FABRIC_SOFTENER');
+  assertEqual('Category Surfactant Policy', 'Fabric softener permits cationic surfactants by profile', softenerCationic.alerts.some(a => a.id === 'category-policy-cationic-fabric_softener'), false);
+
   // 4. Anionic + Cationic Interaction Hazard
   const formulaIncompatible = [
     { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, category: 'Anionic Surfactant' },
