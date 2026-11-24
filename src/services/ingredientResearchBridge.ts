@@ -63,7 +63,7 @@ export class IngredientResearchBridge {
     // Evidence must support this exact property and value. A trusted source elsewhere
     // in the ingredient profile cannot certify an unrelated AI-extracted number.
     return research.sourcesRetrieved.some(source => {
-      if (this.isBlockedSourceDomain(source.url) || !source.url) return false;
+      if (this.isBlockedSourceDomain(source.url) || !source.url || !/^https:\/\//i.test(source.url)) return false;
       if (!['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(source.sourceType)) return false;
       const p = source.extractedParameters || {};
       if (typeof p.activeMatter !== 'number' || p.activeMatter !== activeMatter) return false;
