@@ -5,6 +5,7 @@ import { calculateActiveSurfactants } from './activeMatterEngine';
 import { getAuditedIngredientCategory } from './calculators';
 import { getCategoryPHLimits } from './scientificRouter';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
+import { tryGetScientificProductProfile } from '../domain/scientificProductProfiles';
 import { PHCalculationOptions } from '../domain/ph/types';
 
 // ============================================================================
@@ -103,6 +104,10 @@ export function calculateFormulationCompatibility(
   const canonicalCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY' = categoryOrId
     ? normalizeProductCategory(categoryOrId)
     : 'UNKNOWN_PRODUCT_CATEGORY';
+  const categoryProfile = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY'
+    ? tryGetScientificProductProfile(canonicalCategory)
+    : undefined;
+  const calculationPolicy = categoryProfile?.calculationPolicy;
 
   // 1. Resolve pH value
   let phVal = Number.NaN;
@@ -380,21 +385,6 @@ export function calculateFormulationCompatibility(
       recommendation: 'Verify phase stability or replace cationic component with amphoteric or nonionic co-surfactants.',
       affectedIngredients: [...anionicIngs, ...cationicIngs],
       condition: `Anionic active (${anionicPct.toFixed(1)}%) + Cationic active (${cationicPct.toFixed(1)}%)`
-    });
-  }
-
-  // Fabric Softener Specific Anionic Contamination Check
-  if (canonicalCategory === 'FABRIC_SOFTENER' && hasAnionic && anionicPct > 0.1) {
-    penaltySum += 40;
-    alerts.push({
-      id: 'softener-anionic-contamination',
-      title: 'Fabric Softener Anionic Contamination Failure',
-      mechanism: 'IONIC',
-      severity: 'Critical',
-      message: 'Fabric softeners rely on cationic esterquats for fiber substantivity. Presence of anionic surfactant (>0.1%) causes catastrophic esterquat charge neutralization, emulsion breakdown, and total loss of fabric softening efficacy.',
-      recommendation: 'Remove anionic surfactants completely from cationic fabric softener formulation.',
-      affectedIngredients: anionicIngs,
-      condition: `Fabric Softener containing ${anionicPct.toFixed(1)}% anionic surfactant`
     });
   }
 
@@ -724,18 +714,35 @@ export function calculateFormulationCompatibility(
     });
   }
 
-  // Automatic Dishwasher High-Foaming Surfactant Machine Hazard
-  if (canonicalCategory === 'DISHWASH_AUTOMATIC' && hasAnionic && anionicPct > 0.5) {
+  // Enforce the canonical product profile's surfactant permissions for every category.
+  if (calculationPolicy?.allowAnionicSurfactants === false && hasAnionic && anionicPct > 0) {
+    penaltySum += 40;
+    const isAutomaticDishwash = canonicalCategory === 'DISHWASH_AUTOMATIC';
+    alerts.push({
+      id: `category-policy-anionic-${canonicalCategory.toLowerCase()}`,
+      title: `Anionic surfactant prohibited for ${categoryProfile?.label || canonicalCategory}`,
+      mechanism: isAutomaticDishwash ? 'PHASE_STABILITY' : 'IONIC',
+      severity: 'Critical',
+      message: isAutomaticDishwash
+        ? `Automatic dishwash requires low/zero-foam chemistry; anionic surfactants (${anionicIngs.join(', ')}) violate the category profile and create foam-overflow risk.`
+        : `The canonical ${categoryProfile?.label || canonicalCategory} profile disallows anionic surfactants. Detected: ${anionicIngs.join(', ')} (${anionicPct.toFixed(2)}% formula).`,
+      recommendation: 'Remove the prohibited anionic surfactant or select a product category whose profile permits it.',
+      affectedIngredients: anionicIngs,
+      condition: `Anionic surfactant total = ${anionicPct.toFixed(2)}%`
+    });
+  }
+
+  if (calculationPolicy?.allowCationicSurfactants === false && hasCationic && cationicPct > 0) {
     penaltySum += 40;
     alerts.push({
-      id: 'autodish-foam-overflow-hazard',
-      title: 'Automatic Dishwasher Machine Foam Overflow Hazard',
-      mechanism: 'PHASE_STABILITY',
+      id: `category-policy-cationic-${canonicalCategory.toLowerCase()}`,
+      title: `Cationic surfactant prohibited for ${categoryProfile?.label || canonicalCategory}`,
+      mechanism: 'IONIC',
       severity: 'Critical',
-      message: `Automatic dishwashers require zero-foam / low-foam detergency. Anionic surfactants (SLES, LABSA, SLS) create intense foaming, causing dishwasher pump cavitation and floor flooding.`,
-      recommendation: 'Eliminate anionic surfactants. Use low-foaming EO/PO block copolymer nonionic surfactants.',
-      affectedIngredients: anionicIngs,
-      condition: `Auto Dishwasher detergent containing ${anionicPct.toFixed(1)}% anionic surfactant`
+      message: `The canonical ${categoryProfile?.label || canonicalCategory} profile disallows cationic surfactants. Detected: ${cationicIngs.join(', ')} (${cationicPct.toFixed(2)}% formula).`,
+      recommendation: 'Remove the prohibited cationic surfactant or select a product category whose profile permits it.',
+      affectedIngredients: cationicIngs,
+      condition: `Cationic surfactant total = ${cationicPct.toFixed(2)}%`
     });
   }
 
