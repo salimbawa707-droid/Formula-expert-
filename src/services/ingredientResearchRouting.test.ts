@@ -89,7 +89,7 @@ async function main(): Promise<void> {
           activeMatter: 72, activeMatterUnit: '% w/w', activeMatterBasis: 'AS_SUPPLIED',
           activeMatterMethod: 'Two-hour gravimetric oven assay', activeMatterConditions: '105 C to constant mass',
           grade: 'Test Surfactant standard grade'
-        }, rawContent: 'TDS'
+        }, rawContent: 'Test Surfactant standard grade active matter 72 % w/w AS_SUPPLIED Two-hour gravimetric oven assay 105 C to constant mass'
       }],
       propertiesExtracted: { activeMatter: 72 }, comparisonReport: [], requiresUserApproval: false
     };
