@@ -90,7 +90,10 @@ export function runP5PropertyPipelinesTestSuite() {
       { name: 'Sodium Tripolyphosphate (STPP)', percentage: 5.0, activeMatterPct: 100, role: 'Builder', costPerKg: 110 }
     ],
     batchSizeKg: 100,
-    waterHardnessPpm: 150
+    waterHardnessPpm: 150,
+    powderLabInputs: {
+      measuredBulkDensityGPerL: 450
+    }
   };
 
   // Run DAG execution
@@ -271,6 +274,14 @@ export function runP5PropertyPipelinesTestSuite() {
     powderEngineTraceInLiquid?.status === 'NOT_APPLICABLE' && powderEngineTraceInPowder?.status === 'COMPLETED',
     { liquid: powderEngineTraceInLiquid?.status, powder: powderEngineTraceInPowder?.status },
     { liquid: 'NOT_APPLICABLE', powder: 'COMPLETED' }
+  );
+
+  assert(
+    'Phase 2: Powder Evidence Routing',
+    'Powder lab measurements reach the single authoritative DAG powder evaluation',
+    powderRun.state.powderReport?.density?.measuredBulkDensityGPerL === 450,
+    powderRun.state.powderReport?.density?.measuredBulkDensityGPerL,
+    450
   );
 
   // J. Liquid rheology is not executed for powder
