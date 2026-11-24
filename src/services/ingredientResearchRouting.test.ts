@@ -56,7 +56,30 @@ async function main(): Promise<void> {
     const unknown = await IngredientResearchBridge.resolveForFormula('Unlisted Specialty Surfactant ZX-947', { apiKey: 'test-key' });
     assert(unknown.source === 'WEB_RESEARCH', 'unlisted ingredient must enter the research path');
     assert(researchCalls === 1, 'unlisted ingredient must trigger exactly one research call');
-    assert(unknown.ingredient?.activeMatterPct === 72, 'source-backed active matter should be carried into the research profile');
+    assert(unknown.ingredient?.activeMatterPct === undefined, 'a trusted source elsewhere in the profile must not certify an active-matter value without property-level assay metadata');
+    assert(unknown.requiresUserApproval, 'unverified active matter must require review');
+
+    const evidenceBase: MultiSourceResearchResult = {
+      researchId: 'property-evidence-test', query: 'test', ingredientName: 'Test Surfactant',
+      resolvedName: 'Test Surfactant', confidence: 'HIGH_CONFIDENCE_MATCH', status: 'SUCCESS',
+      sourcesRetrieved: [{
+        sourceId: 'manufacturer', url: 'https://manufacturer.example/tds', domain: 'manufacturer.example',
+        title: 'TDS', publisher: 'Manufacturer', sourceType: 'MANUFACTURER_TDS',
+        retrievedAt: new Date().toISOString(),
+        extractedParameters: {
+          activeMatter: 72, activeMatterUnit: '% w/w', activeMatterBasis: 'AS_SUPPLIED',
+          activeMatterMethod: 'Two-hour gravimetric oven assay', activeMatterConditions: '105 C to constant mass'
+        }, rawContent: 'TDS'
+      }],
+      propertiesExtracted: { activeMatter: 72 }, comparisonReport: [], requiresUserApproval: false
+    };
+    assert(IngredientResearchBridge.hasCalculationGradeEvidence(evidenceBase), 'exact property value with manufacturer TDS metrology must pass');
+    assert(!IngredientResearchBridge.hasCalculationGradeEvidence({ ...evidenceBase, propertiesExtracted: { activeMatter: 70 } }), 'different extracted value must fail property-level evidence');
+    assert(!IngredientResearchBridge.hasCalculationGradeEvidence(evidenceBase, 'LABSA 90%'), 'requested commercial grade must match source grade');
+    assert(!IngredientResearchBridge.hasCalculationGradeEvidence({
+      ...evidenceBase,
+      sourcesRetrieved: [{ ...evidenceBase.sourcesRetrieved[0], sourceType: 'TECHNICAL_REFERENCE' }]
+    }), 'non-manufacturer technical reference cannot certify calculation-grade active matter');
     assert(unknown.ingredient?.identityType === undefined, 'unknown chemical identity must not be guessed as UVCB');
   } finally {
     IngredientResearchService.researchMultiSource = original;
