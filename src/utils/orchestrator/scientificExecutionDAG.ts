@@ -658,7 +658,11 @@ export class ScientificExecutionDAG {
           ? 'SCREENING_PASS'
           : hardnessRes.status === 'NOT_APPLICABLE'
             ? 'NOT_APPLICABLE'
-            : ((hardnessRes.totalSequestrationMg || 0) > 0 ? 'SCREENING_PASS' : 'INSUFFICIENT');
+            : hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA'
+              ? 'INSUFFICIENT'
+              : hardnessRes.status === 'FAIL'
+                ? 'SCREENING_FAIL'
+                : 'SCREENING_REVIEW';
 
         let chelatorActivePct = 0;
         let hasUnknownChelatorActiveMatter = false;
@@ -688,7 +692,7 @@ export class ScientificExecutionDAG {
             ? true
             : (hardnessRes.status === 'NOT_APPLICABLE' || hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA')
               ? null
-              : ((hardnessRes.totalSequestrationMg || 0) > 0 ? true : false),
+              : false,
           status: hardnessRes.status === 'PASS' ? 'SCREENING' : hardnessRes.status,
           chelatorActivePct: hasUnknownChelatorActiveMatter ? null : Number(chelatorActivePct.toFixed(2)),
           chelatorActiveMatterVerified: !hasUnknownChelatorActiveMatter,
