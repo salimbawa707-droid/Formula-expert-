@@ -225,3 +225,233 @@ These are source-level observations for later scientific phases, not fixes made 
 - [ ] Final Phase 1 report and audit-branch CI.
 
 **Checkpoint status remains IN PROGRESS.** No source code was changed, no PR was opened, and no merge was attempted.
+
+## 9. Reconciled canonical 55-module inventory
+
+The previously referenced CSV was found at its actual path:
+`evidence_vault/datasets/engine-audit-final-2026-11-03.csv`.
+
+Current branch verification:
+- `engines_reconciled.list`: 55 entries.
+- Audit CSV: 55 data rows.
+- Both sets contain the same 55 paths.
+- All 55 paths exist in the current source tree.
+- No duplicate entries were found in the list during the static reconciliation.
+- The CSV includes runtime wiring evidence and a scientific maturity/limitation label for each module. Its evidence is dated 2026-11-03, so treat it as inherited wiring evidence, not a fresh scientific validation.
+
+The 55 retained module paths are:
+
+1. `src/domain/ph/stoichiometricNeutralizationEngine.ts`
+2. `src/domain/regulatory/regulatoryComplianceEngine.ts`
+3. `src/domain/regulatory/regulatoryTemporalEngine.ts`
+4. `src/utils/activeMatterEngine.ts`
+5. `src/utils/analysisWorkflowEngine.ts`
+6. `src/utils/chelatorEngine.ts`
+7. `src/utils/cleaningPerformanceEngine.ts`
+8. `src/utils/climateEngine.ts`
+9. `src/utils/closedLoopRAndD/experimentResultIngestionEngine.ts`
+10. `src/utils/closedLoopRAndD/feedbackDecisionEngine.ts`
+11. `src/utils/closedLoopRAndD/measurementEvaluationEngine.ts`
+12. `src/utils/closedLoopRAndD/predictionVsMeasurementEngine.ts`
+13. `src/utils/closedLoopRAndD/reformulationFeedbackEngine.ts`
+14. `src/utils/closedLoopRAndD/scientificDeviationEngine.ts`
+15. `src/utils/compatibilityEngine.ts`
+16. `src/utils/costingEngine.ts`
+17. `src/utils/densityEngine.ts`
+18. `src/utils/dilutionEngine.ts`
+19. `src/utils/empiricalCalibrationEngine.ts`
+20. `src/utils/empiricalValidationEvaluationEngine.ts`
+21. `src/utils/expertReasoningEngine.ts`
+22. `src/utils/gradeEngine.ts`
+23. `src/utils/hlbEngine.ts`
+24. `src/utils/ingredientIntelligenceEngine.ts`
+25. `src/utils/inventoryEngine.ts`
+26. `src/utils/labAutomation/deckLayoutEngine.ts`
+27. `src/utils/labAutomation/liquidHandlingConstraintEngine.ts`
+28. `src/utils/labEvidenceEngine.ts`
+29. `src/utils/labHealthEngine.ts`
+30. `src/utils/lims/limsAuditTrailEngine.ts`
+31. `src/utils/lims/limsEngine.ts`
+32. `src/utils/lims/limsEvidencePromotionEngine.ts`
+33. `src/utils/lims/limsSampleLifecycleEngine.ts`
+34. `src/utils/liquidNvrEngine.ts`
+35. `src/utils/manufacturingEngine.ts`
+36. `src/utils/manufacturing/processModelingEngine.ts`
+37. `src/utils/optimization/formulationConstraintEngine.ts`
+38. `src/utils/pHEngine.ts`
+39. `src/utils/provenanceEngine.ts`
+40. `src/utils/regulatoryEngine.ts`
+41. `src/utils/scientificDecisionEngine.ts`
+42. `src/utils/scientificGovernanceEngine.ts`
+43. `src/utils/scientificLearningEngine.ts`
+44. `src/utils/scientificQualityGateEngine.ts`
+45. `src/utils/specificationEngine/releaseGateEngine.ts`
+46. `src/utils/spectroscopy/baselineCorrectionEngine.ts`
+47. `src/utils/spectroscopy/spectralConformEngine.ts`
+48. `src/utils/spectroscopy/spectralMatcherEngine.ts`
+49. `src/utils/spectroscopy/spectralNoiseReductionEngine.ts`
+50. `src/utils/spectroscopy/spectralNormalizationEngine.ts`
+51. `src/utils/spectroscopy/spectralPeakDetectionEngine.ts`
+52. `src/utils/spectroscopy/spectralPreprocessingEngine.ts`
+53. `src/utils/substitutionEngine.ts`
+54. `src/utils/templateRevalidationEngine.ts`
+55. `src/utils/viscosityEngine.ts`
+
+**Counting distinction:** the 55 retained wiring modules are not 55 validated physical-science predictors. The inventory includes workflow/orchestration, data governance, lab evidence, LIMS, inventory, regulatory and software-control modules. The narrower `evidence_vault/datasets/scientific_engine_inventory.csv` is an 8-record scientific model/evidence registry (including explicitly unavailable or unregistered model classes), not a replacement for the 55-module wiring inventory.
+
+## 10. Current source-tree counts and inventory guard repair
+
+Using the same path filters declared in `evidence_vault/scripts/verify_engine_inventory.mjs`, the current source tree gives:
+
+| Count definition | Current source tree |
+|---|---:|
+| Non-test TS/TSX/JS/JSX files under `src/` | 292 |
+| Test/spec files under `src/` | 145 |
+| Engine-named source files excluding UI components | 60 |
+| Engine-named files including UI components | 63 |
+| Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 92 |
+| Reconciled retained wiring modules | 55 |
+
+The verifier script previously hard-coded 59 / 62 / 65 / 94, which no longer matched the checked-in list and current tree. It has now been updated on this audit branch to expect 55 / 60 / 63 / 92 and to check that the 55-path manifest and 55-row CSV contain the same paths. The CSV line parser was corrected after review.
+
+**Execution status:** these counts and manifest parity were independently computed from the GitHub tree and file contents. The updated Node script itself has not yet been executed in a checked-out repository or CI. It must be run in the final combined CI before merge; do not claim the script has passed yet.
+
+## 11. Production entry points and actual caller paths
+
+Current code search and source inspection confirm these principal paths:
+
+| Entry point / consumer | Observed route | Notes |
+|---|---|---|
+| `AIFormulator.runDeepScientificAnalysis` | UI -> direct powder evaluator (powder only) -> `FormulaScientificOrchestrator.evaluate` -> decision engine | The UI currently also has fallback recalculations for pH, cleaning, hardness/chelation and compatibility when orchestrator outputs are missing/empty. |
+| `AIFormulator` staged Check My Formula path | UI -> `executeStagedScientificAnalysis` -> 11 visible stages -> final `FormulaScientificOrchestrator.evaluate` recomputation | Stages invoke individual engines and the final orchestrator evaluates the same formula again; this is a second calculation layer, not merely a display-only progress wrapper. |
+| `SmartFormulaAnalyzerPro` | UI -> `FormulaScientificOrchestrator.evaluate` | Uses the authoritative orchestrator path. |
+| `FormulationLibrary` | Library revalidation/listing -> `FormulaScientificOrchestrator.evaluate` and quality gate | Formula evaluation is performed during library checks. |
+| `EmpiricalValidationHub` | Selected formula -> `FormulaScientificOrchestrator.evaluate` | Uses versioned formula evaluation before evidence comparison. |
+| `ScientificDecisionEngine` | Scenario mutation -> `FormulaScientificOrchestrator.evaluate` | Scenario results inherit orchestrator behavior. |
+| `multiObjectiveOptimizer` | Candidate -> `FormulaScientificOrchestrator.evaluate` -> constraints/Pareto processing | The optimizer consumes the canonical evaluation output. |
+| Powder dashboard | `evaluatePowderFormulation` result display | The powder master evaluator is also invoked inside the main DAG's `POWDER_ENGINE` node. |
+
+### pH call graph
+
+- `src/utils/pHEngine.ts::calculatePHAdvanced` delegates to `PHEngineV2`.
+- `src/utils/pHEngineAdapter.ts::calculatePHAdvanced` delegates through the pH wrapper and maps formulation inputs.
+- The main DAG imports the pH wrapper; other production modules import the wrapper or adapter.
+- Powder pH in `powderEngine/powderPHHardWater.ts` calls the domain PHEngineV2 directly with powder slurry-specific handling.
+- Thus there is one shared V2 equilibrium implementation for the main liquid path, but multiple adapters/callers and a separate powder slurry path still require unit/basis and provenance reconciliation.
+
+## 12. Category applicability map — declared profile vs actual DAG
+
+The repository has 13 canonical product profiles plus 6 specialized subclass profiles. The 13 canonical categories and physical forms are:
+
+| Canonical category | Physical form | Profile engine count | Distinguishing routing policy |
+|---|---|---:|---|
+| LAUNDRY_LIQUID | LIQUID | 14 | Laundry detergency, HLB, viscosity salt curve, hardness/chelation |
+| LAUNDRY_POWDER | POWDER | 12 | Powder engine, builder/alkalinity, slurry pH; no liquid viscosity or HLB |
+| DISHWASH_MANUAL | LIQUID | 14 | High foam, skin safety, mildness |
+| DISHWASH_AUTOMATIC | LIQUID | 12 | Low-foam/deaeration policy; anionic surfactants disallowed |
+| FLOOR_CLEANER | LIQUID | 14 | Streak/residue and surface-cleaning profile |
+| MULTIPURPOSE_CLEANER | LIQUID | 14 | General hard-surface cleaning profile |
+| TOILET_CLEANER | LIQUID | 11 | Acid/descaling and cling-specific profile |
+| BATHROOM_CLEANER | LIQUID | 14 | Descaling/surface safety profile |
+| GLASS_CLEANER | LIQUID | 12 | Low-active, streak-free profile |
+| FABRIC_SOFTENER | LIQUID | 11 | Cationic chemistry; cleaning performance is not in its profile engine list |
+| HAND_WASH | LIQUID | 14 | Skin mildness and physiological pH |
+| KITCHEN_DEGREASER | LIQUID | 14 | Alkaline saponification and caustic hazard |
+| CAR_SHAMPOO | LIQUID | 14 | Paint lubricity and rinse/spotting profile |
+
+### Verified integration gap
+
+`scientificRouter.ts::routeScientificExecution` builds the profile's `applicableEngines` and `engineRoutingMap`. However, `scientificExecutionDAG.ts` does not import or call `routeScientificExecution` or `getScientificProductProfile`. Its `CATEGORY_ROUTING` node only normalizes the category and resolves physical form from `productTaxonomy`.
+
+The DAG then runs most nodes unconditionally. Only physical-form conditions for `POWDER_ENGINE`, `NVR`, and liquid viscosity/density are applied. Examples of profile-vs-DAG divergence to verify and correct in the dedicated routing/integration phase:
+- HLB is excluded from the laundry-powder profile, but the DAG's HLB node is not category-gated.
+- Chelation is excluded from the toilet-cleaner profile, but the DAG water-chelation node is not profile-gated.
+- Cleaning performance is excluded from the fabric-softener profile, but the DAG cleaning node is not profile-gated.
+- Other profile-only rules (for example low-foam, skin safety, cling, streak/residue and surfactant restrictions) need proof that they are enforced by the actual calculation/gate path, not just represented in a profile registry.
+
+This is a material architecture finding, not a proof that every affected formula currently receives an incorrect numeric result. Phase 2 / Phase 10 must test and reconcile it with category-by-category execution traces.
+
+## 13. Workflow-stage to DAG mapping
+
+The 11 user-visible workflow stages are a higher-level progress/evidence layer, not 11 more independent scientific engines. Current intended mapping is:
+
+| Visible workflow stage | Main DAG work / output |
+|---|---|
+| SNAPSHOT_VALIDATION | Orchestrator fast-fail validation before DAG execution |
+| MASS_BALANCE | NORMALIZATION, formula fingerprint and mass-balance state |
+| SURFACTANT_SCIENCE | ACTIVE_MATTER and HLB |
+| PH_NEUTRALIZATION | NEUTRALIZATION and PH_EQUILIBRIUM |
+| WATER_CHELATION | WATER_CHELATION |
+| RHEOLOGY_DENSITY | VISCOSITY, DENSITY, NVR; powder physical-property calculations inside POWDER_ENGINE |
+| CLEANING_PERFORMANCE | CLEANING_CPI |
+| COMPATIBILITY_STABILITY | COMPATIBILITY, STABILITY_SCREENING and related regulatory screening |
+| PROCESS_COSTING | MANUFACTURING and COSTING |
+| FORENSIC_CONSISTENCY | SPECIFICATION, LAB_EVIDENCE, QUALITY_GATE and GRADE |
+| PUBLISH_RESULTS | RECOMMENDATIONS and final result presentation |
+
+The architecture's 24th item, `FINALIZATION`, is emitted by `FormulaScientificOrchestrator` after the DAG as a `stageDiagnostics` entry. It is **not** a registered DAG node. Therefore the accurate count is **23 registered DAG nodes + 1 orchestrator finalization stage = 24 pipeline steps**. The earlier “24 DAG nodes” wording in comments/docs is imprecise; do not add a dummy DAG node to satisfy it.
+
+## 14. High-priority duplicate / bypass paths discovered
+
+These are Phase 1 wiring findings to be fixed and regression-tested in the relevant later phases:
+
+1. **AIFormulator duplicate powder evaluation:** `runDeepScientificAnalysis` calls `evaluatePowderFormulation` directly, then calls `FormulaScientificOrchestrator.evaluate`, whose DAG also invokes `evaluatePowderFormulation`. Two powder reports can therefore be generated for the same snapshot; the UI must use one authoritative result.
+2. **AIFormulator pH fallback bypass:** if the orchestrator pH is null, the UI independently calls `calculatePHAdvanced` and writes the fallback pH back into `orchResult.pHResult`. The fallback maps missing purity to 100% and defaults batch size to 100 kg. This can change a fail-closed orchestrator result into a displayed numeric pH.
+3. **AIFormulator cleaning fallback:** if cleaning output is missing/zero, the UI directly calls `calculateCleaningPerformance` using defaults (pH 8.0, hardness 150 ppm, wash volume 10 L, dose 20 g, batch 100 kg) and may normalize an unbalanced formula. These defaults can create a screening score without explicit user inputs.
+4. **AIFormulator hardness fallback:** when the orchestrator result is absent/not evaluated, the UI directly calls `calculateWaterHardnessTolerance` using 10 L / 20 g / 100 kg fallback values.
+5. **AIFormulator compatibility fallback:** the UI independently calls `calculateFormulationCompatibility` when the orchestrator result is judged missing/invalid.
+6. **Staged workflow double evaluation:** `executeStagedScientificAnalysis` runs stage-level engine calculations and then performs a final `FormulaScientificOrchestrator.evaluate` recomputation. This may be intentional for progress and forensic comparison, but the contract must explicitly identify which outputs are authoritative and prevent intermediate values from overwriting final values.
+
+These are direct conflicts with the “single source of truth / no duplicate UI calculations” architecture claim and should be treated as priority integration work, not silently accepted as normal UI behavior.
+
+## 15. Representative regression coverage mapped to engines
+
+The source tree contains 145 test/spec files. The following direct or integration test modules were confirmed in the current source tree:
+
+| Engine family | Representative test files |
+|---|---|
+| pH / equilibrium / category caller | `pHEngine.regression.test.ts`, `pHEngineV2.regression.test.ts`, `phEngineCallerCategory.regression.test.ts`, `p0_remediation_integrity.test.ts`, `powderSlurryBasis.regression.test.ts` |
+| Active matter / provenance | `activeMatterEngine.regression.test.ts`, `activeMatterInputGuard.test.ts`, `activeMatterIntegrity.test.ts`, `p0_remediation_integrity.test.ts` |
+| Chelation / hardness | `chelatorBinding.test.ts`, `p1Phase2Chelation.regression.test.ts`, `p3WaterHardnessChelation.test.ts`, `powderChelation.test.ts` |
+| HLB | `hlbEngine.regression.test.ts` |
+| Viscosity | `viscosityEngine.regression.test.ts`, `viscosityModelImprovement.test.ts` |
+| Density / NVR / costing | `densityEngine.regression.test.ts`, `liquidNvrEngine.regression.test.ts`, `costingEngine.regression.test.ts`, `marginChain.regression.test.ts` |
+| Cleaning / compatibility | `cleaningPerformance.regression.test.ts`, `p4CleaningPerformanceMaster.test.ts`, `compatibility.regression.test.ts`, `p6CompatibilityMaster.test.ts` |
+| Powder pipeline | `powderEngine.regression.test.ts`, `powderMoisture.test.ts`, `powderSlurryBasis.regression.test.ts`, `legacyPowderPHReachability.regression.test.ts` |
+| Routing / integration | `scientificRouter.regression.test.ts`, `categoryPropagation.regression.test.ts`, `p5PropertyPipelinesMaster.regression.test.ts`, `crossEngine.integration.test.ts`, `formulaWorkflow.integration.test.ts` |
+| Staged workflow / orchestrator | `formulaAnalysisWorkflow.regression.test.ts`, `formulaScientificOrchestrator.regression.test.ts`, `masterFinalizer.integration.test.ts` |
+| Regulatory / manufacturing / evidence | `manufacturingAssay.test.ts`, `p1Phase13Manufacturing.regression.test.ts`, `p1Phase6LabEvidenceValidation.regression.test.ts`, `limsEvidenceEngine.regression.test.ts`, `specificationEngine.regression.test.ts` |
+
+This is a representative mapping, not a claim that every one of the 55 retained modules has a dedicated unit test. Coverage quality, mathematical reference cases, boundary tests, mutation resistance and scientific correctness are assessed in later phases.
+
+## 16. Phase 1 completion and handoff
+
+**Phase 1 inventory and dependency-mapping deliverable: COMPLETE.** This means the source inventory, 55-module manifest, existing evidence map, canonical category profiles, DAG registrations, workflow stages, main production entry points, representative test map, and material wiring discrepancies are documented.
+
+### Completed in this phase
+- [x] Current source-tree and test/spec counts reconciled.
+- [x] 55-module manifest reconciled with its CSV; all 55 paths exist.
+- [x] Actual exports/import dependencies extracted for core chemistry, pH, powder, orchestration, chelation, surfactant, rheology, costing, regulatory, LIMS, evidence, closed-loop and specification subsystems.
+- [x] 13 canonical product profiles and 6 specialized subclass profiles identified.
+- [x] 23 registered DAG nodes reconciled with the post-DAG FINALIZATION stage (24 total pipeline steps).
+- [x] 11 visible workflow stages mapped to the DAG pipeline.
+- [x] Main production callers and duplicate/bypass paths documented.
+- [x] Representative test coverage map recorded.
+- [x] Stale engine inventory guard counts corrected and CSV/list parity validation added.
+
+### Verification still pending
+- The updated `verify_engine_inventory.mjs` has not yet been run in CI or a checked-out repository. It is explicitly pending final combined verification.
+- The 55-row wiring CSV's caller evidence is inherited from 2026-11-03; only principal current entry points and key graph edges were rechecked during this phase.
+- No Phase 1 scientific correctness certification is claimed.
+- No production source engine was modified.
+- No PR was opened and no merge was attempted.
+
+### Findings handed to later phases
+- **P0 / Phase 2 input integrity:** UI fallback calculations can reintroduce defaults and override authoritative insufficient-data states.
+- **P0 / Phase 2–3 pH:** direct UI pH fallback and powder-vs-liquid pH basis separation.
+- **P0 / Phase 5 water/chelation:** UI defaults and category policy enforcement.
+- **P1 / Phase 4–7:** profile applicability must be enforced by the actual DAG and every category's execution trace.
+- **P1 / Phase 10 integration:** remove duplicate powder/cleaning/hardness/compatibility calculation paths; define one authoritative output contract.
+- **All phases:** test scientific validity independently of code wiring and software CI.
+
+Phase 1 is complete as an inventory/mapping phase, but its pending CI check remains a required gate in the final all-phase re-audit.
