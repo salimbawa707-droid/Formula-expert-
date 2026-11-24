@@ -693,6 +693,50 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     !evidenceValidation.isValid && evidenceValidation.verificationStatus === 'NOT_VERIFIED'
   );
 
+  // Regression: no name-based assay, CAS, or impurity fabrication.
+  const unverifiedSles = RegulatoryIngredientEngine.processIngredient({ name: 'SLES 28%', percentage: 30 });
+  assert(
+    'Scientific firewall: SLES trade name does not infer active matter, CAS identity, or dioxane assay',
+    unverifiedSles.activeMatterPct === undefined &&
+      unverifiedSles.casNumber === undefined &&
+      unverifiedSles.impuritiesPpm.dioxane_1_4 === undefined &&
+      unverifiedSles.missingDataPoints.some(x => x.includes('Active-matter assay')) &&
+      unverifiedSles.missingDataPoints.some(x => x.includes('1,4-dioxane'))
+  );
+  assert(
+    'Scientific firewall: formula dioxane calculation returns unavailable when ethoxylated raw material assay is missing',
+    RegulatoryIngredientEngine.calculateFormulaDioxanePpm([unverifiedSles]) === null
+  );
+
+  const nyMissingDioxaneAssay = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_STATE_NY',
+    calculatedPH: 8
+  });
+  assert(
+    'Scientific firewall: New York dioxane assessment requires explicit ethoxylated raw-material assay',
+    nyMissingDioxaneAssay.overallStatus === 'REVIEW_REQUIRED' &&
+      nyMissingDioxaneAssay.reviewRequired.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE_ASSAY_MISSING')
+  );
+
+  const federalDioxaneScope = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 20 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_FEDERAL',
+    calculatedPH: 8
+  });
+  assert(
+    'Jurisdiction firewall: New York state dioxane limit is not incorrectly enforced as a US federal rule',
+    !federalDioxaneScope.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 
