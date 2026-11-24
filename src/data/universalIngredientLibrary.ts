@@ -5351,8 +5351,10 @@ export function resolveUniversalIngredientIdentity(query: string): IngredientIde
   // using it only for the search box.
   const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item => {
     const exactIdentity = identityValues(item).some(value => normalizeIngredientIdentity(value) === normalized);
+    const aliasText = ` ${getIngredientAliasKeywords(item).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
+    const queryPhrase = ` ${raw.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
     const aliasIdentity = normalized.length >= 3 && !genericQueries.has(normalized) &&
-      normalizeIngredientIdentity(getIngredientAliasKeywords(item)).includes(normalized);
+      aliasText.includes(queryPhrase);
     return exactIdentity || aliasIdentity;
   });
   if (canonicalMatches.length === 1) {
@@ -5429,7 +5431,7 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
   if (cas === '1310-58-3' || name.includes('potassium hydroxide') || id.includes('koh')) {
     aliases += ' koh caustic potash potassium hydroxide';
   }
-  if (cas === '102-71-6' || name.includes('triethanolamine') || id.includes('tea')) {
+  if (cas === '102-71-6' || name.includes('triethanolamine') || id === 'tea' || id.startsWith('tea-')) {
     aliases += ' tea triethanolamine';
   }
   if (cas === '141-43-5' || name.includes('monoethanolamine') || id.includes('mea')) {
