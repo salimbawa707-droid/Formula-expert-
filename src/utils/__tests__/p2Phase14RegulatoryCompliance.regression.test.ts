@@ -672,6 +672,20 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     sdsResult.sections.some(s => s.sectionNumber === 11 && s.status === 'DATA_NOT_AVAILABLE')
   );
 
+  assert(
+    'SDS evidence firewall: no SDS section is marked COMPLETE when no section-specific document content was supplied',
+    sdsResult.sections.length === 16 && sdsResult.sections.every(s => s.status !== 'COMPLETE') &&
+      sdsResult.sections.some(s => s.sectionNumber === 1 && s.status === 'DATA_NOT_AVAILABLE') &&
+      sdsResult.sections.some(s => s.sectionNumber === 16 && s.status === 'DATA_NOT_AVAILABLE')
+  );
+
+  const labelWithNominalQuantity = LabelComplianceEngine.evaluateLabelRequirements('INDIA', [], 'NONE', 1000);
+  assert(
+    'Label evidence firewall: formula metadata and a target quantity cannot mark real label artwork as PASS',
+    labelWithNominalQuantity.overallLabelStatus === 'REVIEW_REQUIRED' &&
+      labelWithNominalQuantity.checkList.every(c => c.status !== 'PASS')
+  );
+
   const fakeEvidence: RegulatoryEvidence = {
     evidenceId: 'EVID_FAKE_123',
     source: 'Fake Source',
