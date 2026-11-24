@@ -5338,6 +5338,12 @@ export function resolveUniversalIngredientIdentity(query: string): IngredientIde
     const standardWater = UNIVERSAL_INGREDIENTS.find(item => item.id === 'dm-water');
     if (standardWater) return { ingredient: standardWater, matchType: 'ALIAS', gradeCompatible: true };
   }
+  // "MEA" is overloaded in trade usage: this app reserves the bare acronym
+  // for monoethanolamine. Cocamide MEA must be entered as "CMEA" explicitly.
+  if (normalized === 'mea') {
+    const monoethanolamine = UNIVERSAL_INGREDIENTS.find(item => item.id === 'mea-99');
+    if (monoethanolamine) return { ingredient: monoethanolamine, matchType: 'ALIAS', gradeCompatible: false };
+  }
 
   const identityValues = (item: UniversalIngredient): string[] => [
     item.id, item.name, item.productName, item.inciName, item.casNumber,
@@ -5433,6 +5439,9 @@ function getIngredientAliasKeywords(item: UniversalIngredient): string {
   }
   if (cas === '102-71-6' || name.includes('triethanolamine') || id === 'tea' || id.startsWith('tea-')) {
     aliases += ' tea triethanolamine';
+  }
+  if (cas === '68140-00-1' || name.includes('cocamide mea') || id === 'cmea' || id.startsWith('cmea-')) {
+    aliases += ' cmea cocamide mea';
   }
   if (cas === '141-43-5' || name.includes('monoethanolamine') || id === 'mea' || id.startsWith('mea-')) {
     aliases += ' mea monoethanolamine';
