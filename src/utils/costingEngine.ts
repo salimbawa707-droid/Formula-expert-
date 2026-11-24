@@ -205,7 +205,7 @@ export function calculateFormulaCost(
   return {
     ingredientCosts,
     totalBatchWeightKg: Number.isFinite(actualKnownWeightKg) ? Number(actualKnownWeightKg.toFixed(3)) : Number.NaN,
-    totalBatchCost: Number(totalBatchCost.toFixed(2)),
+    totalBatchCost: hasValidBatchSize ? Number(totalBatchCost.toFixed(2)) : Number.NaN,
     costPerKg: isComplete ? Number((totalBatchCost / validBatchSize).toFixed(2)) : Number.NaN,
     isComplete,
     pricingStatus,
