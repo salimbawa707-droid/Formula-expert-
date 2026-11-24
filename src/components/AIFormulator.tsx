@@ -29,9 +29,6 @@ import {
   calculateMixedCMC,
   getIngredientCmcData
 } from "../utils/calculators";
-import { calculatePHAdvanced, getSolverReadyIngredients } from "../utils/pHEngineAdapter";
-import { calculateCleaningPerformance } from "../utils/cleaningPerformanceEngine";
-import { calculateWaterHardnessTolerance } from "../utils/chelatorEngine";
 import { FormulaScientificOrchestrator } from "../utils/orchestrator/formulaScientificOrchestrator";
 import { ScientificDecisionEngine, ScientificDecisionReport } from "../utils/scientificDecisionEngine";
 import { ScientificDecisionPanel } from "./aiformulator/ScientificDecisionPanel";
@@ -43,7 +40,7 @@ import InciLabelModal from "./InciLabelModal";
 import { PowderEngineDashboard } from "./PowderEngineDashboard";
 import { SpecificationDashboard } from "./SpecificationDashboard";
 import { isPowderCategory } from "../utils/formulationEngineRouter";
-import { evaluatePowderFormulation, PowderLabMeasurementInputs } from "../utils/powderEngine";
+import { PowderLabMeasurementInputs } from "../utils/powderEngine";
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient, resolveUniversalIngredientIdentity } from "../data/universalIngredientLibrary";
 import { ActiveFormulaState, FormulationIngredient } from "../types";
 import { PRODUCT_CATEGORIES } from "./aiformulator/constants";
@@ -147,240 +144,101 @@ export function runDeepScientificAnalysis(snapshot: {
   activeFormulaVersion?: string;
 }): DeepAnalysisState {
   const fingerprint = computeFormulaFingerprint(snapshot);
-  const isPowderForm = isPowderCategory(snapshot.productCategory);
-
-  const powderRep = isPowderForm
-    ? evaluatePowderFormulation({
-        ingredients: snapshot.ingredients,
-        productCategory: snapshot.productCategory,
-        batchSizeKg: snapshot.batchSizeKg,
-        waterHardnessPpm: snapshot.waterHardnessPpm ?? undefined,
-        labMeasurements: snapshot.powderLabInputs
-      })
-    : null;
-
   const orchResult = FormulaScientificOrchestrator.evaluate({
     formulaName: snapshot.formulaName,
     formulaVersion: snapshot.activeFormulaVersion || '1.0.0',
     productCategory: snapshot.productCategory,
-    ingredients: snapshot.ingredients.map((ing, idx) => ({
-      ...ing,
-      ingredientId: ing.id || `ing-${idx}`,
-      percentage: Number(ing.percentage ?? (ing as any).percent ?? 0),
-      costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
-    })),
+    ingredients: snapshot.ingredients.map((ing, idx) => {
+      const rawPercentage = ing.percentage ?? (ing as any).percent;
+      return {
+        ...ing,
+        ingredientId: ing.id || `ing-${idx}`,
+        // Preserve missing/invalid values so the authoritative validation gate can reject them.
+        percentage: rawPercentage === undefined || rawPercentage === null || (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
+          ? Number.NaN
+          : Number(rawPercentage),
+        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg))
+          ? Number(ing.costPerKg)
+          : null
+      };
+    }),
     batchSizeKg: snapshot.batchSizeKg,
-    ...(snapshot.waterHardnessPpm !== null ? { waterHardnessPpm: snapshot.waterHardnessPpm } : {}),
-    costContext: {
-      targetCostPerKg: 45.0
-    }
+    ...(snapshot.waterHardnessPpm !== null ? { waterHardnessPpm: snapshot.waterHardnessPpm } : {})
   });
 
   const decisionReport = ScientificDecisionEngine.evaluateDecisionIntelligence(orchResult);
-
   const o = orchResult || {};
-  const v = o.verdictMatrix || {};
-  const c = o.cleaningResult || {};
-  const p = o.pHResult || {};
-  const a = o.activeMatterResult || {};
-  const h = o.hardnessResult || {};
-  const ch = o.chelationResult || {};
-  const visc = o.viscosityResult || {};
-  const den = o.densityResult || {};
-  const comp = o.compatibilityResult || {};
-  const stab = o.stabilityResult || {};
-  const qg = o.qualityGateResult || {};
-  const prov = o.provenanceReport || {};
+  const verdict = o.verdictMatrix || {};
+  const cleaning = o.cleaningResult || {
+    cpi: null,
+    cleaningScore: null,
+    provenance: 'INSUFFICIENT_DATA',
+    scoreType: 'INSUFFICIENT_DATA',
+    isCleaningApplicable: false
+  };
+  const ph = o.pHResult || { ph: null, status: 'INSUFFICIENT_DATA', confidence: 'NONE', bufferCapacity: null, ionicStrength: null };
+  const activeMatter = o.activeMatterResult || { totalSurfactantActivePct: null, totalActiveMatterPct: null, surfactantBreakdown: null, status: 'INSUFFICIENT_DATA' };
+  const hardness = o.hardnessResult || { status: 'NOT_EVALUATED', totalSequestrationMg: null, hardnessLoadMg: null };
+  const chelation = o.chelationResult || { status: 'NOT_EVALUATED', isSufficient: null, chelatorActivePct: null, chelatorNames: [] };
+  const viscosity = o.viscosityResult || {};
+  const density = o.densityResult || {};
+  const compatibility = o.compatibilityResult || {
+    compatible: false,
+    compatibilityScore: null,
+    status: 'NOT_EVALUATED',
+    compatibilityStatusSemantic: 'UNKNOWN',
+    alerts: [],
+    warnings: []
+  };
+  const stability = o.stabilityResult || {};
+  const qualityGate = o.qualityGateResult || {};
+  const provenance = o.provenanceReport || {};
   const expert = o.expertReport || {};
 
-  let resolvedEquilibriumPH: number | null = p?.ph ?? null;
-  let resolvedPHConfidence = p?.confidence ?? 'UNKNOWN';
-  let resolvedPHStatus = p?.status ?? 'INSUFFICIENT_DATA';
-  let resolvedPHBufferCapacity = p?.bufferCapacity ?? null;
-  let resolvedPHIonicStrength = p?.ionicStrength ?? null;
-  let resolvedPHDetails = p?.details ?? null;
-
-  if (resolvedEquilibriumPH === null && snapshot.ingredients && snapshot.ingredients.length > 0) {
-    try {
-      const mapped = snapshot.ingredients.map(ing => ({
-        name: ing.name,
-        rawPercent: Number(ing.percentage ?? (ing as any).percent ?? (ing as any).rawPercent ?? 0),
-        activePercent: Number(ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).purity ?? 100)
-      }));
-      const solverReady = getSolverReadyIngredients(mapped);
-      if (solverReady.length > 0) {
-        const adv = calculatePHAdvanced(solverReady, snapshot.batchSizeKg || 100, {
-          productCategory: snapshot.productCategory
-        });
-        if (typeof adv.pH === 'number' && Number.isFinite(adv.pH) && adv.pH >= 0 && adv.pH <= 14) {
-          resolvedEquilibriumPH = Number(adv.pH.toFixed(2));
-          resolvedPHConfidence = adv.solverConverged ? 'High Confidence (Speciation Equilibrium)' : 'Screening Approximation';
-          resolvedPHStatus = adv.status || 'CONVERGED';
-          resolvedPHBufferCapacity = adv.bufferCapacity ?? null;
-          resolvedPHIonicStrength = adv.ionicStrength ?? null;
-          resolvedPHDetails = adv.details ?? null;
-        }
-      }
-    } catch {
-      // Keep null if uncomputable
-    }
-  }
-
-  if (orchResult?.pHResult && orchResult.pHResult.ph === null && resolvedEquilibriumPH !== null) {
-    orchResult.pHResult.ph = resolvedEquilibriumPH;
-    orchResult.pHResult.status = resolvedPHStatus as any;
-    orchResult.pHResult.confidence = resolvedPHConfidence;
-    if (resolvedPHBufferCapacity !== null) {
-      orchResult.pHResult.bufferCapacity = resolvedPHBufferCapacity;
-    }
-    if (resolvedPHIonicStrength !== null) {
-      orchResult.pHResult.ionicStrength = resolvedPHIonicStrength;
-    }
-  }
-
-  let resolvedCleaning = c;
-  const isSoftener = snapshot.productCategory === 'FABRIC_SOFTENER';
-  if (!isSoftener && (!resolvedCleaning || resolvedCleaning.cleaningScore === null || resolvedCleaning.cleaningScore === 0 || resolvedCleaning.cpi === null || resolvedCleaning.cpi === 0)) {
-    try {
-      const effPH = resolvedEquilibriumPH ?? p?.ph ?? 8.0;
-      let evalIngs = (snapshot.ingredients || []).map(ing => ({
-        name: ing.name,
-        percentage: Number(ing.percentage ?? (ing as any).percent ?? 0),
-        activeMatterPct: (ing as any).activeMatterPct ?? (ing as any).activePercent ?? getDefaultActiveMatter(ing),
-        category: ing.category || (ing as any).role
-      }));
-      const totalPct = evalIngs.reduce((sum, ing) => sum + (Number(ing.percentage) || 0), 0);
-      if (evalIngs.length > 0 && Math.abs(totalPct - 100) > 0.05) {
-        const waterIdx = evalIngs.findIndex(i => (i.name || '').toLowerCase().includes('water') || (i.name || '').toLowerCase().includes('aqua'));
-        if (waterIdx >= 0) {
-          const nonWater = evalIngs.reduce((sum, ing, idx) => idx === waterIdx ? sum : sum + (Number(ing.percentage) || 0), 0);
-          const balWater = Math.max(0, 100 - nonWater);
-          evalIngs = evalIngs.map((ing, idx) => idx === waterIdx ? { ...ing, percentage: Number(balWater.toFixed(3)) } : ing);
-        } else if (totalPct > 0) {
-          evalIngs = evalIngs.map(ing => ({ ...ing, percentage: Number(((Number(ing.percentage) || 0) * (100 / totalPct)).toFixed(3)) }));
-        }
-      }
-      const recalcedCleaning = calculateCleaningPerformance(
-        evalIngs,
-        effPH,
-        snapshot.productCategory,
-        undefined,
-        {
-          waterHardnessPpm: snapshot.waterHardnessPpm ?? 150,
-          washVolumeL: 10,
-          washDoseGrams: 20,
-          batchSizeKg: snapshot.batchSizeKg || 100
-        }
-      );
-      if (recalcedCleaning && (recalcedCleaning.cleaningScore !== null || recalcedCleaning.cpi !== null)) {
-        resolvedCleaning = recalcedCleaning;
-      }
-    } catch {
-      // Keep existing c
-    }
-  }
-
-  let resolvedHardness = h;
-  let resolvedChelation = ch;
-  if (!resolvedHardness || resolvedHardness.totalSequestrationMg === undefined || resolvedHardness.status === 'NOT_EVALUATED') {
-    try {
-      const tol = calculateWaterHardnessTolerance(
-        snapshot.ingredients || [],
-        snapshot.waterHardnessPpm,
-        (snapshot as any).machineProfile?.waterVolumeL ?? 10,
-        (snapshot as any).washDoseGrams ?? 20,
-        snapshot.batchSizeKg || 100,
-        snapshot.productCategory
-      );
-      if (tol && typeof tol.totalSequestrationMg === 'number') {
-        resolvedHardness = tol;
-        const names: string[] = [];
-        (snapshot.ingredients || []).forEach(ing => {
-          const n = (ing.name || '').toLowerCase();
-          const r = ((ing as any).role || ing.category || '').toLowerCase();
-          if (r.includes('builder') || r.includes('chelat') || n.includes('citrate') || n.includes('edta') || n.includes('glda') || n.includes('stpp') || n.includes('mgda') || n.includes('phosphate') || n.includes('phosphonate') || n.includes('zeolite')) {
-            names.push(ing.name);
-          }
-        });
-        resolvedChelation = {
-          ...resolvedChelation,
-          chelatorNames: names.length > 0 ? Array.from(new Set(names)) : (resolvedChelation?.chelatorNames || []),
-          chelatorActivePct: tol.totalSequestrationMg > 0 ? Number(((tol.totalSequestrationMg / 150 / 20) * 100).toFixed(2)) : (resolvedChelation?.chelatorActivePct || 0)
-        };
-      }
-    } catch {
-      // Keep existing h and ch
-    }
-  }
-
-  let resolvedCompatibility = comp;
-  const compScore = resolvedCompatibility?.compatibilityScore;
-  const isCompScoreInvalid = compScore === undefined || compScore === null || Number.isNaN(compScore);
-  const isCompWarningOnly = !resolvedCompatibility?.compatible && (resolvedCompatibility?.alerts || []).length === 0;
-  const hasPhUnavailableWarn = (resolvedCompatibility?.warnings || []).some((w: string) => typeof w === 'string' && w.includes('pH is unavailable'));
-
-  if (!resolvedCompatibility || isCompScoreInvalid || isCompWarningOnly || (hasPhUnavailableWarn && resolvedEquilibriumPH !== null)) {
-    try {
-      const effPH = resolvedEquilibriumPH ?? p?.ph ?? undefined;
-      const compRes = calculateFormulationCompatibility(
-        snapshot.ingredients || [],
-        effPH,
-        snapshot.productCategory
-      );
-      if (compRes) {
-        resolvedCompatibility = compRes;
-      }
-    } catch {
-      // Keep existing comp
-    }
-  }
-
-  const sciResults = {
-    qualityGateResult: qg || {},
-    provenanceReport: prov || {},
-    pH: resolvedEquilibriumPH,
-    phResult: {
-      ...(p || {}),
-      ph: resolvedEquilibriumPH,
-      status: resolvedPHStatus,
-      confidence: resolvedPHConfidence,
-      bufferCapacity: resolvedPHBufferCapacity ?? p?.bufferCapacity ?? null,
-      ionicStrength: resolvedPHIonicStrength ?? p?.ionicStrength ?? null,
-      details: resolvedPHDetails || p?.details
-    },
-    phConfidence: resolvedPHConfidence,
-    viscosity: visc?.description ?? "N/A",
-    waterHardness: resolvedHardness || h || { status: 'NOT_EVALUATED', description: 'Water hardness not evaluated' },
-    hlb: (o?.hlbResult && o.hlbResult.status === 'VALID' && o.hlbResult.blendedHLB !== null) ? o.hlbResult.blendedHLB : 0,
-    hlbResult: o?.hlbResult || { status: 'INSUFFICIENT_DATA', blendedHLB: null },
+  const scientificResults = {
+    qualityGateResult: qualityGate,
+    provenanceReport: provenance,
+    pH: ph.ph ?? null,
+    phResult: ph,
+    phConfidence: ph.confidence ?? 'NONE',
+    viscosity: viscosity.description ?? 'N/A',
+    waterHardness: hardness,
+    hlb: o.hlbResult?.status === 'VALID' ? o.hlbResult.blendedHLB : null,
+    hlbResult: o.hlbResult || { status: 'INSUFFICIENT_DATA', blendedHLB: null },
     cmc: calculateMixedCMC(snapshot.ingredients),
-    activeMatter: a?.totalSurfactantActivePct ?? 0,
-    density: den || {},
+    activeMatter: activeMatter.totalSurfactantActivePct ?? null,
+    density,
     nvrResult: {
-      nvrPercentage: den?.nvrPercentage ?? 0,
-      isComplete: den?.isNvrComplete ?? false,
-      dataCompleteness: den?.dataCompleteness ?? 0,
-      unknownIngredients: den?.unknownIngredients || []
+      nvrPercentage: density?.nvrPercentage ?? null,
+      isComplete: density?.isNvrComplete ?? false,
+      dataCompleteness: density?.dataCompleteness ?? null,
+      unknownIngredients: density?.unknownIngredients || []
     },
-    totalSolids: den?.totalSolidsPct ?? 0,
-    surfactantBreakdown: a?.surfactantBreakdown ?? {},
-    chelatorActivePct: resolvedChelation?.chelatorActivePct ?? ch?.chelatorActivePct ?? 0,
-    chelatorNames: resolvedChelation?.chelatorNames ?? ch?.chelatorNames ?? [],
-    cleaning: resolvedCleaning || c || { cleaningScore: 0, cleaningPower: 'Standard', isMeasured: false, domainScores: {} },
-    foam: resolvedCleaning?.foamProfile || c?.foamProfile || "Moderate / Balanced Foam (Qualitative Foam Assessment)",
-    categorySuitability: resolvedCleaning?.categorySuitability || c?.categorySuitability || "High (Optimal Formulation Profile)",
-    compatibility: resolvedCompatibility || comp || { compatible: true, compatibilityScore: 100, warnings: [] },
-    health: o?.labHealthResult || { finalScore: null, rating: 'ASSESSMENT_INCOMPLETE', alerts: [], pHStatus: 'UNAVAILABLE', isAssessmentComplete: false },
-    preservativeWarning: stab?.preservativeWarning ?? null,
-    aiGrade: orchResult?.aiGrade || null,
-    verdictStatus: v?.verdictStatus ?? 'UNKNOWN',
-    screeningStatus: v?.screeningStatus ?? 'UNKNOWN',
-    specVerdict: v?.specVerdict ?? 'PENDING',
-    labEvidenceVerdict: v?.labEvidenceVerdict ?? 'PENDING',
-    releaseGateDecision: v?.releaseGateDecision ?? 'PENDING',
-    verdictReasons: v?.verdictReasons ?? [],
-    attentionExplanation: v?.attentionExplanation ?? '',
-    expertReport: expert || {}
+    totalSolids: density?.totalSolidsPct ?? null,
+    surfactantBreakdown: activeMatter.surfactantBreakdown ?? null,
+    chelatorActivePct: chelation.chelatorActivePct ?? null,
+    chelatorNames: chelation.chelatorNames ?? [],
+    cleaning,
+    foam: cleaning?.foamProfile ?? 'UNKNOWN',
+    categorySuitability: cleaning?.categorySuitability ?? 'UNKNOWN',
+    compatibility,
+    health: o.labHealthResult || {
+      finalScore: null,
+      rating: 'ASSESSMENT_INCOMPLETE',
+      alerts: [],
+      pHStatus: 'UNAVAILABLE',
+      isAssessmentComplete: false
+    },
+    preservativeWarning: stability?.preservativeWarning ?? null,
+    aiGrade: o.aiGrade || null,
+    verdictStatus: verdict.verdictStatus ?? 'UNKNOWN',
+    screeningStatus: verdict.screeningStatus ?? 'UNKNOWN',
+    specVerdict: verdict.specVerdict ?? 'PENDING',
+    labEvidenceVerdict: verdict.labEvidenceVerdict ?? 'PENDING',
+    releaseGateDecision: verdict.releaseGateDecision ?? 'PENDING',
+    verdictReasons: verdict.verdictReasons ?? [],
+    attentionExplanation: verdict.attentionExplanation ?? '',
+    expertReport: expert
   };
 
   return {
@@ -388,8 +246,8 @@ export function runDeepScientificAnalysis(snapshot: {
     timestamp: Date.now(),
     formulaSnapshot: snapshot,
     orchestratorResult: orchResult,
-    powderReport: powderRep,
-    scientificResults: sciResults,
+    powderReport: orchResult.powderReport ?? null,
+    scientificResults,
     decisionReport
   };
 }
