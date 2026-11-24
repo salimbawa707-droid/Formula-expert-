@@ -893,7 +893,7 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   ], 12);
   assert(
     'GHS firewall: extreme pH is a screening trigger and cannot independently issue H314, GHS05 or DANGER',
-    extremePhScreen.signalWord === 'NONE' &&
+    extremePhScreen.signalWord === 'UNDETERMINED' &&
       extremePhScreen.hazardClassifications.length === 0 &&
       extremePhScreen.hazardStatements.length === 0 &&
       extremePhScreen.hazardPictograms.length === 0 &&
@@ -905,7 +905,7 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   ], 7);
   assert(
     'GHS firewall: 15% active surfactant heuristic cannot independently issue WARNING or H319',
-    surfactantOnlyScreen.signalWord === 'NONE' &&
+    surfactantOnlyScreen.signalWord === 'UNDETERMINED' &&
       surfactantOnlyScreen.hazardClassifications.length === 0 &&
       surfactantOnlyScreen.hazardStatements.length === 0 &&
       surfactantOnlyScreen.missingDataPoints.some(x => x.includes('not a GHS hazard classification threshold'))
