@@ -73,7 +73,6 @@ export class IngredientResearchBridge {
       id: record?.id || `researched-${this.normalize(name)}`,
       name: research.resolvedName || record?.canonicalName || name,
       canonicalIngredientId: record?.id,
-      identityType: 'COMMERCIAL_UVCB',
       casStatus: 'UNKNOWN',
       notes: research.notes || 'Properties populated from source-backed ingredient research. Verify against the supplier TDS/COA before production use.'
     };
