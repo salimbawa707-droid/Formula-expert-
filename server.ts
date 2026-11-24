@@ -451,11 +451,13 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
       }
     };
 
-    // Attempt 1: Gemini with Google Search tool (12s timeout)
+    let researchModelUsed = 'gemini-3.8-flash';
+
+    // Primary live research model with Google Search grounding.
     try {
       const response = await callWithTimeout(
         ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: researchModelUsed,
           contents: [{ role: 'user', parts: [{ text: researchPrompt }] }],
           config: {
             systemInstruction,
@@ -464,7 +466,7 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
           }
         }),
         45000,
-        'Google Search Tool'
+        'Gemini 3.8 Flash Google Search'
       );
       responseText = response.text || '';
       groundingChunks = (response.candidates?.[0] as any)?.groundingMetadata?.groundingChunks || [];
@@ -472,21 +474,59 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
       const errorText = String(searchErr?.message || searchErr || 'Unknown Google Search grounding error');
       const status = Number(searchErr?.status || searchErr?.statusCode || 0);
       const quotaOrBilling = status === 429 ||
-        /RESOURCE_EXHAUSTED|quota|billing|free.?tier|grounding.*not available|rate.?limit/i.test(errorText);
+        /RESOURCE_EXHAUSTED|quota|billing|free.?tier|grounding.*not available|rate.?limit|PERMISSION_DENIED|not enabled/i.test(errorText);
       const timedOut = /timed out|timeout/i.test(errorText);
-      console.error('[Research] Google Search grounding failed:', errorText);
-      return res.status(quotaOrBilling ? 429 : (timedOut ? 504 : 502)).json({
-        success: false,
-        status: quotaOrBilling ? 'SEARCH_GROUNDING_QUOTA_OR_BILLING' : (timedOut ? 'SEARCH_GROUNDING_TIMEOUT' : 'SEARCH_GROUNDING_FAILED'),
-        code: quotaOrBilling ? 'GOOGLE_SEARCH_GROUNDING_UNAVAILABLE' : (timedOut ? 'GOOGLE_SEARCH_GROUNDING_TIMEOUT' : 'GOOGLE_SEARCH_GROUNDING_ERROR'),
-        requiresUserApproval: true,
-        error: quotaOrBilling
-          ? 'Gemini Google Search research is unavailable for this API project because its search-grounding quota or billing access is not enabled. Enable billing/search grounding for the Gemini API project, then retry.'
-          : (timedOut
-              ? 'Google Search grounding did not respond within 45 seconds. Retry the research request.'
-              : 'Google Search grounding failed. Check the Gemini API key, project permissions, model access, and server logs.'),
-        details: 'Direct Gemini text generation is deliberately not accepted as internet research. No source-free or guessed chemical properties were saved.'
-      });
+      console.error('[Research] Gemini 3.8 Google Search grounding failed:', errorText);
+
+      // Gemini 2.5 Flash still lists free Search-grounding quota for eligible
+      // existing API projects. Newer projects may no longer have 2.5 model
+      // access, so this is a bounded, evidence-only compatibility fallback.
+      // It never falls back to ungrounded text generation.
+      if (quotaOrBilling) {
+        try {
+          const fallbackResponse = await callWithTimeout(
+            ai.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: [{ role: 'user', parts: [{ text: researchPrompt }] }],
+              config: {
+                systemInstruction,
+                temperature: 0.1,
+                tools: [{ googleSearch: {} }]
+              }
+            }),
+            45000,
+            'Gemini 2.5 Flash Google Search fallback'
+          );
+          const fallbackChunks = (fallbackResponse.candidates?.[0] as any)?.groundingMetadata?.groundingChunks || [];
+          if (!Array.isArray(fallbackChunks) || fallbackChunks.length === 0) {
+            throw new Error('Gemini 2.5 Flash returned no Google Search grounding references.');
+          }
+          researchModelUsed = 'gemini-2.5-flash';
+          responseText = fallbackResponse.text || '';
+          groundingChunks = fallbackChunks;
+        } catch (fallbackErr: any) {
+          console.error('[Research] Gemini 2.5 Search fallback failed:', fallbackErr?.message || fallbackErr);
+          return res.status(429).json({
+            success: false,
+            status: 'SEARCH_GROUNDING_QUOTA_OR_BILLING',
+            code: 'GOOGLE_SEARCH_GROUNDING_UNAVAILABLE',
+            requiresUserApproval: true,
+            error: 'Gemini internet research is blocked for this API project. Enable billing/Search grounding for Gemini 3.8 Flash, or confirm that this existing project still has Gemini 2.5 Flash Search access.',
+            details: 'Both attempts required real Google Search grounding. No direct-only Gemini answer, fabricated citation, or guessed chemical property was accepted.'
+          });
+        }
+      } else {
+        return res.status(timedOut ? 504 : 502).json({
+          success: false,
+          status: timedOut ? 'SEARCH_GROUNDING_TIMEOUT' : 'SEARCH_GROUNDING_FAILED',
+          code: timedOut ? 'GOOGLE_SEARCH_GROUNDING_TIMEOUT' : 'GOOGLE_SEARCH_GROUNDING_ERROR',
+          requiresUserApproval: true,
+          error: timedOut
+            ? 'Google Search grounding did not respond within 45 seconds. Retry the research request.'
+            : 'Google Search grounding failed. Check the Gemini API key, project permissions, model access, and server logs.',
+          details: 'Direct Gemini text generation is deliberately not accepted as internet research. No source-free or guessed chemical properties were saved.'
+        });
+      }
     }
 
     let parsed: any = {};
@@ -517,6 +557,8 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
         error: 'No grounded source evidence was retrieved. No estimated/default chemical properties were generated or saved.'
       });
     }
+
+    parsed.researchModelUsed = researchModelUsed;
 
     // Ensure fallback fields and proper slug
     const slug = (parsed.canonicalName || cleanName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'researched-chem';
