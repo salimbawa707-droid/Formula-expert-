@@ -1,7 +1,7 @@
 import { db, ResearchedIngredientRecord } from '../db/database';
 import { FormulationIngredient } from '../types';
 import { IngredientResearchService, MultiSourceResearchResult } from './ingredientResearchService';
-import { UNIVERSAL_INGREDIENTS, searchUniversalIngredients } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
 
 /**
  * Runtime bridge between the local ingredient library, Gemini-grounded research,
@@ -17,22 +17,29 @@ export class IngredientResearchBridge {
     'industryjournal.org'
   ]);
 
-  private static localIngredient(name: string) {
+  private static async localIngredient(name: string) {
     const clean = name.trim();
     if (!clean) return null;
-    const normalized = clean.toLowerCase();
-    const direct = UNIVERSAL_INGREDIENTS.find((ingredient) => [
-      ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName, ingredient.casNumber
-    ].filter(Boolean).some((candidate) => this.normalize(String(candidate)) === this.normalize(clean))) || null;
-    if (direct) return direct;
+    const normalized = this.normalize(clean);
+    const matchesExactly = (ingredient: any) => [
+      ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName,
+      ingredient.casNumber, ...(Array.isArray(ingredient.keywords) ? ingredient.keywords : [])
+    ].filter(Boolean).some((candidate: unknown) => this.normalize(String(candidate)) === normalized);
 
-    const matches = searchUniversalIngredients(clean);
-    if (matches.length > 0) {
-      const top = matches[0];
-      const words = top.name.toLowerCase().split(/[\s,()%-]+/);
-      if (words.includes(normalized) || top.id.toLowerCase().split('-')[0] === normalized) {
-        return top;
-      }
+    // Exact identity/alias match only. Fuzzy search must never suppress research
+    // for a genuinely unlisted raw material.
+    const masterMatch = UNIVERSAL_INGREDIENTS.find(matchesExactly);
+    if (masterMatch) return masterMatch;
+
+    // User-approved researched/custom ingredients persisted locally must also
+    // be found before deciding whether Gemini is needed.
+    try {
+      const setting = await db.userSettings.get('dynamic_ingredients');
+      const dynamic = Array.isArray(setting?.value) ? setting.value : [];
+      const dynamicMatch = dynamic.find(matchesExactly);
+      if (dynamicMatch) return dynamicMatch;
+    } catch {
+      // If IndexedDB is unavailable, continue to the unlisted research path.
     }
     return null;
   }
@@ -121,7 +128,7 @@ export class IngredientResearchBridge {
     const name = ingredientName.trim();
     if (!name) return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'Ingredient name is empty.' };
 
-    const local = this.localIngredient(name);
+    const local = await this.localIngredient(name);
     if (local) {
       const localAny = local as any;
       const localActive = localAny.activeMatterDefault ?? local.activeMatter;
