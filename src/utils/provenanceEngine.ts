@@ -100,9 +100,13 @@ export function computeFormulaFingerprint(
   formulaId: string = 'UNKNOWN_FORMULA_ID',
   formulaVersion: string = 'UNKNOWN_VERSION',
   ingredients: FormulationIngredient[] = [],
-  productCategory: string = 'UNKNOWN_PRODUCT_CATEGORY'
+  productCategory: string = 'UNKNOWN_PRODUCT_CATEGORY',
+  productSubProfileId?: string
 ): string {
   const normCat = normalizeProductCategory(productCategory);
+  const normSubProfile = typeof productSubProfileId === 'string' && productSubProfileId.trim()
+    ? productSubProfileId.trim().toUpperCase()
+    : 'UNSPECIFIED';
 
   const hasUnknownActiveMatter = ingredients.some((ingredient) => {
     const amValue = ingredient.activeMatterPct ?? (ingredient as any).activePercent ?? (ingredient as any).activeMatterPurity;
@@ -149,7 +153,7 @@ export function computeFormulaFingerprint(
 
   const integrityFlag = [hasUnknownActiveMatter ? 'INVALID_AM' : 'VALID_AM', hasInvalidPercentages ? 'INVALID_PCT' : null].filter(Boolean).join('|');
 
-  return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|ING[${sortedIngs}]|INTEGRITY[${integrityFlag}]`;
+  return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|SUBPROFILE[${normSubProfile}]|ING[${sortedIngs}]|INTEGRITY[${integrityFlag}]`;
 }
 
 /**
@@ -168,7 +172,7 @@ export function checkResultTraceability(
   if (recordedFingerprint !== currentFingerprint) {
     return {
       isStale: true,
-      staleReason: 'Recipe, ingredient percentages, or formula version changed since evaluation.'
+      staleReason: 'Recipe, ingredient percentages, product category/sub-profile, or formula version changed since evaluation.'
     };
   }
   return { isStale: false };
@@ -181,6 +185,7 @@ export function generateMasterScientificProvenanceReport(params: {
   formulaId?: string;
   formulaVersion?: string;
   productCategory?: string;
+  productSubProfileId?: string;
   ingredients: FormulationIngredient[];
   recordedFingerprint?: string;
   speciationResult?: { pH: number | null; isMeasured?: boolean; confidence?: string };
@@ -198,7 +203,7 @@ export function generateMasterScientificProvenanceReport(params: {
   const rawCat = params.productCategory || 'UNKNOWN_PRODUCT_CATEGORY';
   const canonicalCategory = normalizeProductCategory(rawCat);
   const categoryLabel = getProductCategoryLabel(canonicalCategory);
-  const currentFingerprint = computeFormulaFingerprint(formulaId, formulaVersion, params.ingredients, rawCat);
+  const currentFingerprint = computeFormulaFingerprint(formulaId, formulaVersion, params.ingredients, rawCat, params.productSubProfileId);
   const evaluatedAt = new Date().toISOString();
 
   const traceabilityCheck = checkResultTraceability(params.recordedFingerprint || currentFingerprint, currentFingerprint);
