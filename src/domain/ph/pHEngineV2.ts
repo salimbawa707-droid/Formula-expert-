@@ -57,7 +57,7 @@ export class PHEngineV2 {
             inputErrors.push(`Ingredient ${ingredient.name} has a missing or invalid percentage (0–100%).`);
           }
         }
-        const rawAssay = ingredient.activePercent ?? ingredient.purity;
+        const rawAssay = ingredient.activePercent ?? (ingredient as any).activeMatterPct ?? (ingredient as any).activeMatterPurity ?? ingredient.purity;
         if (rawAssay !== undefined && rawAssay !== null) {
           const assay = Number(rawAssay);
           if (!Number.isFinite(assay) || assay < 0 || assay > 100) {
