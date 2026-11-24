@@ -802,23 +802,23 @@ export function getCategoryRequiredLabBattery(category: ProductCategoryId | 'UNK
     case 'TOILET_CLEANER':
       return ['pH', 'viscosity', 'descalingRate', 'clingRheology'];
     case 'BATHROOM_CLEANER':
-      return ['pH', 'viscosity', 'soapScumRemoval', 'surfaceCompatibility'];
+      return ['pH', 'viscosity', 'soapScumRemoval', 'surfaceCompatibility', 'clingRheology'];
     case 'GLASS_CLEANER':
       return ['pH', 'streakRating', 'residueStreaking', 'opticalTransmission'];
     case 'HAND_WASH':
       return ['pH', 'viscosity', 'activeSurfactants', 'mildness'];
     case 'DISHWASH_AUTOMATIC':
-      return ['pH', 'zeroFoamCompliance', 'foodSoilRemoval', 'rinseResidue'];
+      return ['pH', 'zeroFoamCompliance', 'foodSoilRemoval', 'rinseResidue', 'residueStreaking'];
     case 'DISHWASH_MANUAL':
       return ['pH', 'viscosity', 'activeSurfactants', 'greaseCutting', 'mildness', 'foamStability'];
     case 'FLOOR_CLEANER':
       return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'residueStreaking', 'glossRetention'];
     case 'MULTIPURPOSE_CLEANER':
-      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'surfaceCompatibility', 'greaseEmulsification'];
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'surfaceCompatibility', 'greaseEmulsification', 'residueStreaking'];
     case 'KITCHEN_DEGREASER':
       return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'bakedGreaseRemoval', 'saponificationRate'];
     case 'CAR_SHAMPOO':
-      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'paintworkLubricity', 'rinseSpotting', 'foamStability'];
+      return ['pH', 'viscosity', 'activeSurfactants', 'cleaningScore', 'paintworkLubricity', 'rinseSpotting', 'foamStability', 'residueStreaking'];
     default:
       return [];
   }
