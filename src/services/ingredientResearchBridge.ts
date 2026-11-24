@@ -74,10 +74,9 @@ export class IngredientResearchBridge {
       if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
       if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
       if (!method || method.length < 4 || conditions.length < 4) return false;
-      if (requestedGrade) {
-        const sourceGrade = this.normalize(String(p.grade || ''));
-        if (!sourceGrade || sourceGrade !== this.normalize(requestedGrade)) return false;
-      }
+      const sourceGrade = this.normalize(String(p.grade || ''));
+      if (!sourceGrade) return false;
+      if (requestedGrade && sourceGrade !== this.normalize(requestedGrade)) return false;
       return true;
     });
   }
