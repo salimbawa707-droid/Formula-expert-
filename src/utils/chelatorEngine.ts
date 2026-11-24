@@ -888,7 +888,9 @@ export function calculateFormulationChelationCapacity(
       : undefined;
 
     const rawRole = ((ing as any)?.role || (ing as any)?.category || '').toLowerCase();
-    const isDeclaredChelator = /chelat|builder|sequestr/i.test(rawRole) || /chelat|sequestr/i.test(rawName);
+    const isDeclaredChelator =
+      /chelat|builder|sequestr/i.test(rawRole) ||
+      /chelat|sequestr|citrate|glda|mgda|edta|dtpa|stpp|tripolyphosphate|phosphonate|hedp|zeolite|polyacrylate|polycarboxylate/i.test(rawName);
     const isUnknownChelator = isDeclaredChelator && !matchedSpecies && bindingCapacityMgPerG === 0;
 
     if (isUnknownChelator) {
