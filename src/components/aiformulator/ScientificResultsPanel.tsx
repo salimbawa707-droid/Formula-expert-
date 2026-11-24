@@ -459,7 +459,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
                 {productCategory.toLowerCase().includes("powder")
-                  ? `${(scientificResults?.totalSolids ?? 0).toFixed(1)}%`
+                  ? `${solidsValue !== null ? solidsValue.toFixed(1) + '%' : 'N/A'}`
                   : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
                   ? "INSUFFICIENT_DATA"
                   : `${(scientificResults?.totalSolids ?? 0).toFixed(1)}%`}
@@ -468,16 +468,18 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 {productCategory.toLowerCase().includes("powder")
                   ? "Total Dry Solids"
                   : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
-                  ? `Known NVR coverage: ${(scientificResults?.nvrResult?.dataCompleteness ?? 0).toFixed(0)}%`
+                  ? `Known NVR coverage: ${typeof scientificResults?.nvrResult?.dataCompleteness === 'number' ? scientificResults.nvrResult.dataCompleteness.toFixed(0) + '%' : 'N/A'}`
                   : "Non-Volatile Residue"}
               </span>
             </div>
             <p className="text-[11px] text-slate-300 font-medium leading-tight">
-              {productCategory.toLowerCase().includes("powder")
-                ? `Dry powder matter: ${(scientificResults?.totalSolids ?? 0).toFixed(1)}% • Hydrate moisture: ${(100 - (scientificResults?.totalSolids ?? 0)).toFixed(1)}%.`
+              {solidsValue === null
+                ? 'Total solids / NVR is NOT EVALUATED because required ingredient property data is incomplete.'
+                : productCategory.toLowerCase().includes("powder")
+                ? 'Powder solids value is available. Moisture is reported separately only when measured.'
                 : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
-                ? `NVR: INSUFFICIENT_DATA • Known NVR coverage: ${(scientificResults?.nvrResult?.dataCompleteness ?? 0).toFixed(0)}%. Insufficient NVR data for ${(scientificResults?.nvrResult?.unknownIngredients || []).join(', ')}.`
-                : `Volatile solvent fraction: ${(100 - (scientificResults?.totalSolids ?? 0)).toFixed(1)}% • Non-volatile residue: ${(scientificResults?.totalSolids ?? 0).toFixed(1)}% (Calculated).`}
+                ? 'NVR is INSUFFICIENT_DATA; unknown ingredient volatility must be characterized.'
+                : 'Non-volatile residue is calculated from characterized ingredient fractions.'}
             </p>
             {!productCategory.toLowerCase().includes("powder") && (
               <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
