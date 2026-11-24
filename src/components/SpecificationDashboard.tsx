@@ -1219,10 +1219,10 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
             <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
               <span className="text-[10px] font-mono uppercase text-slate-400">Formula Cost / kg</span>
               <div className="text-sm font-bold text-white">
-                Formula A: ₹{comparisonReport.costDelta.costPerKgA.toFixed(2)} / kg
+                Formula A: {Number.isFinite(comparisonReport.costDelta.costPerKgA) ? `₹${comparisonReport.costDelta.costPerKgA.toFixed(2)} / kg` : 'N/A'}
               </div>
               <div className="text-sm font-bold text-emerald-300">
-                Formula B: ₹{comparisonReport.costDelta.costPerKgB.toFixed(2)} / kg (Delta: ₹{comparisonReport.costDelta.deltaCostPerKg.toFixed(2)})
+                Formula B: {Number.isFinite(comparisonReport.costDelta.costPerKgB) ? `₹${comparisonReport.costDelta.costPerKgB.toFixed(2)} / kg` : 'N/A'} (Delta: {Number.isFinite(comparisonReport.costDelta.deltaCostPerKg) ? `₹${comparisonReport.costDelta.deltaCostPerKg.toFixed(2)}` : 'N/A'})
               </div>
             </div>
 
@@ -1282,15 +1282,15 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
                     <div className="p-2 rounded bg-slate-950 border border-slate-800/80">
                       <span className="text-[10px] text-slate-400 block font-mono">Mass Balance</span>
-                      <span className="font-mono font-bold text-white">{ver.totalPercentage.toFixed(2)}%</span>
+                      <span className="font-mono font-bold text-white">{Number.isFinite(ver.totalPercentage) ? `${ver.totalPercentage.toFixed(2)}%` : 'N/A'}</span>
                     </div>
                     <div className="p-2 rounded bg-slate-950 border border-slate-800/80">
                       <span className="text-[10px] text-slate-400 block font-mono">Active Matter</span>
-                      <span className="font-mono font-bold text-cyan-300">{ver.activeMatterPct.toFixed(2)}%</span>
+                      <span className="font-mono font-bold text-cyan-300">{Number.isFinite(ver.activeMatterPct) ? `${ver.activeMatterPct.toFixed(2)}%` : 'N/A'}</span>
                     </div>
                     <div className="p-2 rounded bg-slate-950 border border-slate-800/80">
                       <span className="text-[10px] text-slate-400 block font-mono">Cost / kg</span>
-                      <span className="font-mono font-bold text-emerald-300">₹{ver.costPerKg.toFixed(2)} / kg</span>
+                      <span className="font-mono font-bold text-emerald-300">{Number.isFinite(ver.costPerKg) ? `₹${ver.costPerKg.toFixed(2)} / kg` : 'N/A'}</span>
                     </div>
                     <div className="p-2 rounded bg-slate-950 border border-slate-800/80">
                       <span className="text-[10px] text-slate-400 block font-mono">Spec Verdict</span>
@@ -1326,7 +1326,7 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
               <span className="text-[10px] font-mono text-slate-400 block">Total Assigned Mass</span>
-              <span className="font-mono font-bold text-white text-sm">{currentSnapshot.totalPercentage.toFixed(2)}%</span>
+              <span className="font-mono font-bold text-white text-sm">{Number.isFinite(currentSnapshot.totalPercentage) ? `${currentSnapshot.totalPercentage.toFixed(2)}%` : 'N/A'}</span>
             </div>
             <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
               <span className="text-[10px] font-mono text-slate-400 block">Active Surfactant</span>
@@ -1334,11 +1334,11 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
             </div>
             <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
               <span className="text-[10px] font-mono text-slate-400 block">Finished Cost / kg</span>
-              <span className="font-mono font-bold text-emerald-300 text-sm">₹{currentSnapshot.costPerKg.toFixed(2)}</span>
+              <span className="font-mono font-bold text-emerald-300 text-sm">{Number.isFinite(currentSnapshot.costPerKg) ? `₹${currentSnapshot.costPerKg.toFixed(2)}` : 'N/A'}</span>
             </div>
             <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
               <span className="text-[10px] font-mono text-slate-400 block">Batch Size</span>
-              <span className="font-mono font-bold text-white text-sm">{batchSizeKg} kg</span>
+              <span className="font-mono font-bold text-white text-sm">{Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? `${batchSizeKg} kg` : 'N/A'}</span>
             </div>
           </div>
 
@@ -1352,7 +1352,7 @@ export const SpecificationDashboard: React.FC<SpecificationDashboardProps> = ({
                     <th className="py-2 px-3">Ingredient</th>
                     <th className="py-2 px-3">Role</th>
                     <th className="py-2 px-3 text-right">Recipe %</th>
-                    <th className="py-2 px-3 text-right">Batch Mass ({batchSizeKg} kg)</th>
+                    <th className="py-2 px-3 text-right">Batch Mass ({Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? `${batchSizeKg} kg` : 'N/A'})</th>
                     <th className="py-2 px-3 text-right">Active %</th>
                   </tr>
                 </thead>
