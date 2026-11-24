@@ -239,7 +239,7 @@ export function runScientificPhaseCTests(): { results: TestResult[]; summary: { 
 
   const toleranceRes = calculateWaterHardnessTolerance([
     { name: 'GLDA (47%)', percentage: 2.0 }
-  ], 150, 10, 20);
+  ], 150, 10, 20, 100);
   assert('16. Chelation Stoichiometry', 'T16: Hardness Tolerance Sufficiency evaluated', ['sufficient', 'borderline', 'insufficient'].includes(toleranceRes.sufficiency), true, true);
 
   // =========================================================================
