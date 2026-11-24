@@ -1,4 +1,4 @@
-import { calculateFormulaCost } from '../costingEngine';
+import { calculateFormulaCost, calculateCommercialMarginChain } from '../costingEngine';
 import { calculateBatchCost } from '../calculators';
 import { FormulationIngredient } from '../../types';
 
@@ -302,6 +302,22 @@ export function runCostingEngineTestSuite() {
   ], 0);
   assertEqual('Test 16', 'Explicit invalid batch size is not replaced with 100 kg', invalidBatchSize.status, 'BATCH SIZE REQUIRED');
   assertEqual('Test 16', 'Invalid batch size prevents finished cost output', Number.isNaN(invalidBatchSize.costPerKg), true);
+  const missingBatchSize = calculateFormulaCost(multiPricedFormula);
+  assertEqual('Test 17', 'Omitted batch size is not replaced with 100 kg', missingBatchSize.status, 'BATCH SIZE REQUIRED');
+  assertEqual('Test 17', 'Omitted batch size leaves cost/kg unavailable', Number.isNaN(missingBatchSize.costPerKg), true);
+
+  const missingMarginInputs = calculateCommercialMarginChain(multiPricedFormula, undefined, 12, 15);
+  assertEqual('Test 18', 'Margin chain requires explicit batch size', missingMarginInputs.status, 'PRICING_INCOMPLETE');
+  assertEqual('Test 18', 'Margin chain reports batch size as missing', missingMarginInputs.missingInputs.includes('BATCH_SIZE_REQUIRED'), true);
+  assertEqual('Test 18', 'Incomplete margin chain does not emit zero as a cost result', Number.isNaN(missingMarginInputs.rawMaterialCostPerKg), true);
+
+  const missingOverhead = calculateCommercialMarginChain(multiPricedFormula, 100, undefined, 15);
+  assertEqual('Test 19', 'Margin chain requires explicit overhead assumption', missingOverhead.missingInputs.includes('OVERHEAD_PERCENT_REQUIRED'), true);
+  assertEqual('Test 19', 'Missing overhead prevents ex-factory price', Number.isNaN(missingOverhead.finalExFactoryCost), true);
+
+  const missingPackaging = calculateCommercialMarginChain(multiPricedFormula, 100, 12, undefined);
+  assertEqual('Test 20', 'Margin chain requires explicit packaging cost', missingPackaging.missingInputs.includes('PACKAGING_COST_REQUIRED'), true);
+  assertEqual('Test 20', 'Missing packaging prevents suggested MRP', Number.isNaN(missingPackaging.suggestedMRP), true);
 
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
