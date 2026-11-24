@@ -320,8 +320,7 @@ export function runP1Phase2ChelationTestSuite() {
     undefined,
     undefined,
     Number.NaN,
-    'LAUNDRY_LIQUID',
-    true
+    'LAUNDRY_LIQUID'
   );
   assert(
     missingScenario.status === 'NOT_EVALUATED' &&
@@ -338,8 +337,7 @@ export function runP1Phase2ChelationTestSuite() {
     10,
     20,
     100,
-    'LAUNDRY_LIQUID',
-    true
+    'LAUNDRY_LIQUID'
   );
   assert(
     explicitScenario.status === 'PASS' &&
@@ -348,6 +346,22 @@ export function runP1Phase2ChelationTestSuite() {
       explicitScenario.washDoseGrams === 20,
     'Input Integrity',
     'Strict mode calculates only when all wash-scenario inputs are explicit and valid'
+  );
+
+  const missingBatchOnly = calculateWaterHardnessTolerance(
+    highCapacityFormula,
+    100,
+    10,
+    20,
+    undefined,
+    'LAUNDRY_LIQUID'
+  );
+  assert(
+    missingBatchOnly.status === 'NOT_EVALUATED' &&
+      Number.isNaN(missingBatchOnly.batchSizeKg) &&
+      Number.isNaN(missingBatchOnly.maxSupportedPpm),
+    'Input Integrity',
+    'Missing batch size is rejected by default without opting into strict mode'
   );
   assertNear('Sufficiency Logic', 'Zero Deficit for High Capacity Formula', tolHigh.capacityDeficitMg, 0);
   assertNear('Sufficiency Logic', 'Zero Additional GLDA Required', tolHigh.additionalGLDA47RequiredPct, 0);
