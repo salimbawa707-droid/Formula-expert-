@@ -5343,12 +5343,18 @@ export function resolveUniversalIngredientIdentity(query: string): IngredientIde
     item.id, item.name, item.productName, item.inciName, item.casNumber,
     ...(Array.isArray(item.keywords) ? item.keywords : [])
   ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  const genericQueries = new Set(['salt', 'acid', 'base', 'water', 'chemical', 'powder', 'liquid']);
 
-  // Exact catalog identity. Shared CAS/INCI values intentionally resolve to a
-  // known family but still require commercial-grade selection.
-  const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item =>
-    identityValues(item).some(value => normalizeIngredientIdentity(value) === normalized)
-  );
+  // The catalog already maintains a curated alias vocabulary for common
+  // industry abbreviations and trade names (LABSA, SLES, AOS, CAPB, STPP,
+  // GLDA, EDTA, NaOH, etc.). Include it in identity resolution rather than
+  // using it only for the search box.
+  const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item => {
+    const exactIdentity = identityValues(item).some(value => normalizeIngredientIdentity(value) === normalized);
+    const aliasIdentity = normalized.length >= 3 && !genericQueries.has(normalized) &&
+      normalizeIngredientIdentity(getIngredientAliasKeywords(item)).includes(normalized);
+    return exactIdentity || aliasIdentity;
+  });
   if (canonicalMatches.length === 1) {
     return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: true };
   }
@@ -5370,7 +5376,6 @@ export function resolveUniversalIngredientIdentity(query: string): IngredientIde
   // spelling/grade suffix differences across the FULL catalog. It only searches
   // identity fields (never descriptions/functions), requires a meaningful query,
   // and never silently chooses a grade when multiple records share the identity.
-  const genericQueries = new Set(['salt', 'acid', 'base', 'water', 'chemical', 'powder', 'liquid']);
   if (normalized.length >= 6 && !genericQueries.has(normalized)) {
     const partialMatches = UNIVERSAL_INGREDIENTS.filter(item =>
       identityValues(item).some(value => {
