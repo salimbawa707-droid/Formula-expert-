@@ -1,4 +1,5 @@
 import { IngredientResearchBridge } from './ingredientResearchBridge';
+import { db } from '../db/database';
 import { IngredientResearchService, MultiSourceResearchResult } from './ingredientResearchService';
 
 function assert(condition: unknown, message: string): void {
@@ -31,6 +32,36 @@ async function main(): Promise<void> {
   const directLegacy = await IngredientResearchService.researchIngredient('LABSA 90% (Acid Slurry)', 'test-key');
   assert(directLegacy.requiresUserApproval === false, 'legacy API must return local known ingredient without approval gate');
   assert(directLegacy.parameters.activeMatter === 90, 'legacy API must return local active matter rather than empty research data');
+
+  const originalSettingsGet = db.userSettings.get.bind(db.userSettings);
+  try {
+    const dynamicIngredient = {
+      id: 'dynamic-verified-surfactant',
+      name: 'Verified Dynamic Surfactant ZX-77',
+      activeDefault: 72,
+      activeMatterPct: 72,
+      activeMatterInputSource: 'SOURCE_BACKED' as const,
+      activeMatterEvidenceId: 'supplier-tds-assay-77',
+      activeMatterEvidenceUrl: 'https://manufacturer.example/tds-77',
+      activeMatterEvidenceSourceType: 'MANUFACTURER_TDS' as const,
+      provenance: {
+        sourceType: 'OFFICIAL_MANUFACTURER',
+        source: 'Manufacturer',
+        sourceUrl: 'https://manufacturer.example/tds-77',
+        verificationStatus: 'VERIFIED'
+      }
+    };
+    db.userSettings.get = (async (key: string) =>
+      key === 'dynamic_ingredients' ? ({ key, value: [dynamicIngredient] } as any) : undefined
+    ) as typeof db.userSettings.get;
+    const dynamic = await IngredientResearchBridge.resolveForFormula('Verified Dynamic Surfactant ZX-77');
+    assert(dynamic.source === 'LOCAL_LIBRARY', 'persisted dynamic ingredient should resolve locally');
+    assert(dynamic.ingredient?.activeMatterInputSource === 'SOURCE_BACKED', 'dynamic ingredient lookup must preserve source-backed classification');
+    assert(dynamic.ingredient?.activeMatterEvidenceId === 'supplier-tds-assay-77', 'dynamic ingredient lookup must preserve assay evidence identity');
+    assert(dynamic.ingredient?.provenance?.verificationStatus === 'VERIFIED', 'dynamic ingredient lookup must preserve verified provenance');
+  } finally {
+    db.userSettings.get = originalSettingsGet as typeof db.userSettings.get;
+  }
 
   const original = IngredientResearchService.researchMultiSource;
   let researchCalls = 0;
