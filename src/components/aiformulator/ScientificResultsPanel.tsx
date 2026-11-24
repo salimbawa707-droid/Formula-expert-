@@ -666,56 +666,39 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">8. Hard Water Tolerance</span>
               <span className={`text-[10px] font-extrabold font-mono px-2.5 py-0.5 rounded-full border ${
-                scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable
-                  ? "bg-slate-800 text-slate-400 border-slate-700"
-                  : (scientificResults.waterHardness.status === "PASS" || (scientificResults.waterHardness.totalSequestrationMg || 0) > 0 || (scientificResults.waterHardness.maxSupportedPpm || 0) > 0)
+                hardnessIsNotApplicable || !hardnessIsEvaluated
+                  ? "bg-slate-800 text-slate-300 border-slate-700"
+                  : scientificResults.waterHardness.status === "PASS"
                     ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40"
-                    : scientificResults.waterHardness.status === "WARNING"
-                      ? "bg-amber-950/80 text-amber-300 border-amber-500/40"
-                      : "bg-slate-800 text-slate-400 border-slate-700"
+                    : "bg-amber-950/80 text-amber-300 border-amber-500/40"
               }`}>
-                {scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable
+                {hardnessIsNotApplicable
                   ? "NOT APPLICABLE"
-                  : (scientificResults.waterHardness.status === "PASS" || (scientificResults.waterHardness.totalSequestrationMg || 0) > 0 || (scientificResults.waterHardness.maxSupportedPpm || 0) > 0)
-                    ? (waterHardnessPpm ? scientificResults.waterHardness.status : "INTRINSIC CAPACITY")
-                    : (waterHardnessPpm ? scientificResults.waterHardness.status : "UNCHELATED")}
+                  : !hardnessIsEvaluated
+                    ? "NOT EVALUATED"
+                    : scientificResults.waterHardness.status}
               </span>
             </div>
-            {scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable ? (
-              <>
-                <span className="text-xs text-slate-500 block pt-1 italic font-semibold">
-                  N/A — Not required for this category
-                </span>
-                <p className="text-[11px] text-slate-500 leading-tight">
-                  {scientificResults.waterHardness.description || "Category does not rely on wash-liquor water hardness sequestration."}
-                </p>
-              </>
-            ) : (scientificResults.waterHardness.maxSupportedPpm || 0) > 0 || (scientificResults.waterHardness.totalSequestrationMg || 0) > 0 ? (
-              <>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-mono font-extrabold text-white">
-                    {scientificResults.waterHardness.maxSupportedPpm ?? Math.round((scientificResults.waterHardness.totalSequestrationMg || 0) / (scientificResults.waterHardness.washVolumeL || 10))}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    ppm CaCO₃ max {waterHardnessPpm ? `(w/ margin for ${waterHardnessPpm} ppm target)` : "(Intrinsic builder capacity)"}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Sequestration: {Math.round(scientificResults.waterHardness.totalSequestrationMg || 0)} mg CaCO₃ per {scientificResults.waterHardness.washDoseGrams || 20}g dose in {scientificResults.waterHardness.washVolumeL || 10}L wash. {scientificResults.waterHardness.description || "Active builder package provides hard water tolerance."}
-                </p>
-              </>
+            {hardnessIsNotApplicable ? (
+              <p className="text-[11px] text-slate-500 leading-tight">
+                N/A — This product category does not require a wash-water hardness calculation.
+              </p>
+            ) : !hardnessIsEvaluated ? (
+              <p className="text-[11px] text-amber-300 leading-tight">
+                Hard-water protection is NOT EVALUATED. Supply measured hardness, wash volume, detergent dose and batch size before relying on a capacity result.
+              </p>
             ) : (
               <>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-mono font-extrabold text-slate-400">
-                    0
+                  <span className="text-2xl font-mono font-extrabold text-white">
+                    {scientificResults.waterHardness.maxSupportedPpm}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">
-                    ppm CaCO₃ max (Unchelated)
+                    ppm CaCO₃ maximum supported
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
-                  No active chelating builders detected in formula. Detergency relies on surfactant calcium tolerance.
+                  Sequestration: {Math.round(scientificResults.waterHardness.totalSequestrationMg)} mg CaCO₃ per {scientificResults.waterHardness.washDoseGrams}g dose in {scientificResults.waterHardness.washVolumeL}L wash.
                 </p>
               </>
             )}
