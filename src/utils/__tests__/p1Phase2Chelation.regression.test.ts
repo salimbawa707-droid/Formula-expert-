@@ -288,6 +288,43 @@ export function runP1Phase2ChelationTestSuite() {
   ];
   const tolHigh = calculateWaterHardnessTolerance(highCapacityFormula, 100, 10, 20);
   assert(tolHigh.sufficiency === 'sufficient', 'Sufficiency Logic', 'High Capacity Formula is SUFFICIENT');
+
+  // Strict DAG mode must not invent 150 ppm, wash volume, dose, or batch size.
+  const missingScenario = calculateWaterHardnessTolerance(
+    highCapacityFormula,
+    undefined,
+    undefined,
+    undefined,
+    Number.NaN,
+    'LAUNDRY_LIQUID',
+    true
+  );
+  assert(
+    missingScenario.status === 'NOT_EVALUATED' &&
+      missingScenario.provenance === 'UNKNOWN' &&
+      Number.isNaN(missingScenario.hardnessLoadMg) &&
+      Number.isNaN(missingScenario.maxSupportedPpm),
+    'Input Integrity',
+    'Strict mode returns NOT_EVALUATED without fabricating hardness or dose metrics'
+  );
+
+  const explicitScenario = calculateWaterHardnessTolerance(
+    highCapacityFormula,
+    100,
+    10,
+    20,
+    100,
+    'LAUNDRY_LIQUID',
+    true
+  );
+  assert(
+    explicitScenario.status === 'PASS' &&
+      explicitScenario.hardnessLoadMg === 1000 &&
+      explicitScenario.washVolumeL === 10 &&
+      explicitScenario.washDoseGrams === 20,
+    'Input Integrity',
+    'Strict mode calculates only when all wash-scenario inputs are explicit and valid'
+  );
   assertNear('Sufficiency Logic', 'Zero Deficit for High Capacity Formula', tolHigh.capacityDeficitMg, 0);
   assertNear('Sufficiency Logic', 'Zero Additional GLDA Required', tolHigh.additionalGLDA47RequiredPct, 0);
   assertNear('Sufficiency Logic', 'Zero Additional Citrate Required', tolHigh.additionalCitrateRequiredPct, 0);
