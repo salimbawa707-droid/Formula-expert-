@@ -737,6 +737,21 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     !federalDioxaneScope.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
   );
 
+  const negativeClaimsWithoutEvidence = ClaimComplianceEngine.evaluateClaims(
+    ['Phosphate-Free', 'Bleach-Free', 'Microplastic-Free'],
+    [
+      RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 80, casNumber: '7732-18-5', activePercentage: 0 }),
+      RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 20, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 0 } })
+    ],
+    'INDIA'
+  );
+  assert(
+    'Claim firewall: absence of named phosphate/bleach ingredients or polymers does not substantiate negative claims without linked evidence',
+    negativeClaimsWithoutEvidence.evaluations.length === 3 &&
+      negativeClaimsWithoutEvidence.evaluations.every(e => e.status === 'CLAIM_NOT_SUBSTANTIATED' && !e.hasRequiredEvidence) &&
+      negativeClaimsWithoutEvidence.overallStatus === 'REVIEW_REQUIRED'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
 
