@@ -634,7 +634,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.grade || '').toLowerCase())
       );
       const exactPropertyEvidence = propertySource !== undefined && sourceRecord.extractedParameters?.[property] === val;
-      const verified = !isConflict && exactPropertyEvidence && primaryManufacturerSource && activeMatterMetrologyComplete && validateUrl(sourceUrl);
+      const verified = !isConflict && exactPropertyEvidence && primaryManufacturerSource && activeMatterMetrologyComplete && /^https:\/\//i.test(sourceUrl) && validateUrl(sourceUrl);
       const status: ParameterVerificationStatus = isConflict
         ? 'EVIDENCE_CONFLICT'
         : verified ? 'VERIFIED' : (val !== null && val !== undefined && exactPropertyEvidence ? 'SOURCE_BACKED' : 'UNKNOWN');
