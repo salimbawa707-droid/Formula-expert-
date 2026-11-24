@@ -37,6 +37,16 @@ export interface FormulationIngredient {
   activeMatterEvidenceId?: string;
   /** URL or repository-relative source location; presence is gated, content is reviewed separately. */
   activeMatterEvidenceUrl?: string;
+  /** Primary source class that supports the exact active-matter assay value. */
+  activeMatterEvidenceSourceType?: 'MANUFACTURER_TDS' | 'MANUFACTURER_SPECIFICATION';
+  /** Property-level verification record created only after source excerpt and assay metadata checks. */
+  provenance?: {
+    sourceType?: string;
+    source?: string;
+    sourceUrl?: string;
+    verificationStatus?: string;
+    verifiedAt?: string;
+  };
   costPerKg?: number | null;
   hlb?: number;
   hlbValue?: number;

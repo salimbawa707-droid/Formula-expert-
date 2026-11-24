@@ -1,3 +1,7 @@
+import fs from 'fs';
+import path from 'path';
+import { dateState } from '../../components/DocsLibrary';
+
 /**
  * ============================================================================
  * P0 REMEDIATION #10 REGRESSION TEST SUITE — LIMS PERSISTENCE UI TRUTHFULNESS
@@ -30,6 +34,51 @@ export function runP0RemediationLimsPersistenceUiTruthfulnessTestSuite(): {
   const assert = (name: string, condition: boolean, details?: string) => {
     results.push({ name, passed: condition, details: details ? String(details) : undefined });
   };
+
+  // Document register static integrity guards.
+  const docsLibrarySource = fs.readFileSync(path.join(process.cwd(), 'src', 'components', 'DocsLibrary.tsx'), 'utf8');
+  assert(
+    'DOCS 1: Secure document IDs retain a cryptographic fallback when randomUUID is unavailable',
+    docsLibrarySource.includes('cryptoApi.getRandomValues') && docsLibrarySource.includes('cryptoApi.randomUUID')
+  );
+  assert(
+    'DOCS 2: Attachment validation checks size, extension, MIME compatibility and binary signatures',
+    docsLibrarySource.includes('MAX_ATTACHMENT_BYTES') &&
+      docsLibrarySource.includes('File extension and declared MIME type do not match') &&
+      docsLibrarySource.includes('valid PDF signature') &&
+      docsLibrarySource.includes('valid PNG signature') &&
+      docsLibrarySource.includes('valid JPEG signature')
+  );
+  assert(
+    'DOCS 3: Text attachments require fatal UTF-8 decoding and reject binary NUL bytes',
+    docsLibrarySource.includes("new TextDecoder('utf-8', { fatal: true })") &&
+      docsLibrarySource.includes("text.includes('\\u0000')")
+  );
+  assert(
+    'DOCS 4: Object URLs are revoked only after delayed browser download handoff',
+    docsLibrarySource.includes('anchor.click()') &&
+      docsLibrarySource.includes('anchor.remove()') &&
+      docsLibrarySource.includes('window.setTimeout(() => URL.revokeObjectURL(url), 1000)')
+  );
+  assert(
+    'DOCS 5: Expiry dates use a digit-only ISO date regex and reject impossible calendar dates',
+    docsLibrarySource.includes("if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDate)) return 'INVALID';") &&
+      docsLibrarySource.includes("validity === 'INVALID'") &&
+      docsLibrarySource.includes("T00:00:00.000Z") &&
+      docsLibrarySource.includes("utcDate.toISOString().slice(0, 10) !== expiryDate")
+  );
+  assert('DOCS 5A: Valid future ISO calendar date is accepted', dateState('2099-12-31') === 'CURRENT');
+  assert('DOCS 5B: Impossible calendar date is rejected', dateState('2026-02-30') === 'INVALID');
+  assert('DOCS 5C: Non-padded ISO date is rejected', dateState('2026-2-03') === 'INVALID');
+  assert('DOCS 5D: Leap-day date is parsed as a real date', dateState('2024-02-29') === 'EXPIRED');
+  assert('DOCS 5E: Missing expiry remains NO_EXPIRY', dateState(undefined) === 'NO_EXPIRY');
+
+  assert(
+    'DOCS 6: Local document mutation failures are surfaced to the user',
+    docsLibrarySource.includes('Could not delete the document record.') &&
+      docsLibrarySource.includes('Could not update the document review state.') &&
+      docsLibrarySource.includes('Could not reopen the document review.')
+  );
 
   // Helper mock records
   const validSpectrum: any = {

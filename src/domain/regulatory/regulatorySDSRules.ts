@@ -70,8 +70,10 @@ export class SDSComplianceEngine {
       sections.push({
         sectionNumber: sec.number,
         sectionName: sec.name,
-        status: 'COMPLETE',
-        missingDataPoints: []
+        status: 'DATA_NOT_AVAILABLE',
+        missingDataPoints: [
+          `Section ${sec.number}: no section-specific, reviewed SDS content was supplied to this completeness check; do not mark the section complete from formula inputs alone.`
+        ]
       });
     }
 

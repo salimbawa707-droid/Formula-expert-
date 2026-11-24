@@ -404,9 +404,46 @@ export class ActiveMatterEngine {
       };
     }
 
-    // Explicit override provided
+    // Explicit values are classified by their declared evidence origin. A SOURCE_BACKED
+    // value is authoritative only when the bridge supplied a verified primary-source
+    // record, source ID, HTTPS URL and exact source class. A bare flag cannot bypass this.
     if (explicitActive !== undefined && explicitActive !== null) {
       const validation = validateActiveMatterInput(explicitActive);
+      const inputSource = ing.activeMatterInputSource || 'USER_ENTERED';
+      if (inputSource === 'SOURCE_BACKED') {
+        const evidenceUrl = String(ing.activeMatterEvidenceUrl || '');
+        const sourceType = ing.activeMatterEvidenceSourceType;
+        const evidenceValid =
+          typeof ing.activeMatterEvidenceId === 'string' && ing.activeMatterEvidenceId.trim().length > 0 &&
+          /^https:\/\/[^\s]+$/i.test(evidenceUrl) &&
+          (sourceType === 'MANUFACTURER_TDS' || sourceType === 'MANUFACTURER_SPECIFICATION') &&
+          ing.provenance?.verificationStatus === 'VERIFIED' &&
+          ing.provenance?.sourceUrl === evidenceUrl;
+        return {
+          activeMatterPct: validation.status === 'VALID' && evidenceValid ? validation.value : null,
+          dataSource: validation.status === 'VALID' && evidenceValid ? 'authoritative' : 'missing',
+          category: resolvedCategory,
+          isSurfactant,
+          surfactantType,
+          isWater: false,
+          isSolvent,
+          canonicalMatch,
+          conflict: conflictRes
+        };
+      }
+      if (inputSource === 'CATALOG_DEFAULT') {
+        return {
+          activeMatterPct: validation.status === 'VALID' ? validation.value : null,
+          dataSource: validation.status === 'VALID' ? (canonicalMatch ? 'canonical_library_default' : 'reference_default') : 'missing',
+          category: resolvedCategory,
+          isSurfactant,
+          surfactantType,
+          isWater: false,
+          isSolvent,
+          canonicalMatch,
+          conflict: conflictRes
+        };
+      }
       return {
         activeMatterPct: validation.value,
         dataSource: validation.status === 'VALID' ? 'explicit_override' : 'missing',

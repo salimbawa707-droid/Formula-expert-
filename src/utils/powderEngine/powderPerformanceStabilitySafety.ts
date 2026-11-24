@@ -234,11 +234,11 @@ export function calculatePowderStability(classifiedIngredients: ClassifiedIngred
  * - Screening provides conservative handling guidelines and PPE advisories.
  */
 export function calculatePowderSafety(classifiedIngredients: ClassifiedIngredient[]): PowderSafetyReport {
-  const hazards: string[] = [];
+  const screeningAdvisories: string[] = [];
   const ppe: string[] = [
     'Safety glasses or chemical splash goggles',
     'Dust respirator / particle face mask (FFP2/N95)',
-    'Nitrile or chemical-resistant gloves'
+    'Chemical-resistant gloves selected using supplier SDS compatibility data'
   ];
 
   let highAlkaline = false;
@@ -250,47 +250,48 @@ export function calculatePowderSafety(classifiedIngredients: ClassifiedIngredien
 
     if (name.includes('soda ash') || name.includes('sodium carbonate')) {
       if (pct >= 20) {
-        hazards.push('Eye Irritation Category 2 / Serious Eye Damage (H319 / H318)');
+        screeningAdvisories.push('High sodium carbonate loading: assess dust exposure and eye-irritation risk using supplier SDS and applicable mixture rules.');
         highAlkaline = true;
       }
     }
     if (name.includes('metasilicate') || name.includes('hydroxide') || name.includes('caustic')) {
-      hazards.push('Skin Corrosion / Eye Damage Category 1B (H314 / H318)');
+      screeningAdvisories.push(`Ingredient name '${ing.name}' indicates potential high-alkalinity/corrosivity concern; verify exact identity, grade and supplier SDS. No GHS category is inferred.`);
       highAlkaline = true;
     }
     if (ing.functionalClass === 'Anionic Surfactant' && pct > 15) {
-      hazards.push('Skin Irritation Category 2 (H315)');
+      screeningAdvisories.push('High anionic surfactant loading: assess skin/eye irritation using supplier SDS and mixture concentration rules; no concentration-only GHS category is inferred.');
       highSurfactant = true;
     }
     if (ing.functionalClass === 'Enzyme') {
-      hazards.push('Respiratory Sensitizer (H334) — avoid airborne enzyme dust inhalation');
+      screeningAdvisories.push('Enzyme-containing powder: obtain supplier respiratory-sensitization classification and control airborne dust during handling.');
     }
   });
 
-  const signalWord: PowderSafetyReport['signalWord'] = highAlkaline ? 'DANGER' : highSurfactant ? 'WARNING' : 'NONE';
-  const screeningSignalWord: PowderSafetyReport['screeningSignalWord'] = highAlkaline ? 'DANGER' : highSurfactant ? 'WARNING' : 'NONE';
+  const screeningSignalWord: PowderSafetyReport['screeningSignalWord'] =
+    highAlkaline ? 'DANGER' : highSurfactant ? 'WARNING' : screeningAdvisories.length ? 'CAUTION' : 'NONE';
 
-  const hazardStatements = hazards.length > 0 ? hazards : ['Low acute hazard profile under normal manufacturing handling.'];
-  const precautionaryStatements = [
-    'P260: Do not breathe dust.',
-    'P280: Wear protective gloves, eye protection, and dust face mask during manufacturing.',
-    'P305+P351+P338: IF IN EYES: Rinse cautiously with water for several minutes.'
-  ];
+  if (screeningAdvisories.length === 0) {
+    screeningAdvisories.push('No name/percentage-based screening trigger was detected; this does not establish low hazard or a non-hazardous formal GHS classification.');
+  }
 
   return {
     formalGHSStatus: 'INSUFFICIENT_DATA (Requires Supplier SDS Dossiers)',
-    formalGHSClassification: 'INSUFFICIENT_DATA — Official GHS mixture classification (UN GHS Rev. 9 / CLP) requires supplier SDS toxicological endpoints and regulatory dossier validation.',
+    formalGHSClassification: 'UNDETERMINED — Official GHS mixture classification requires supplier SDS hazard categories, mixture concentration limits, and applicable bridging/test evidence.',
     hasInsufficientFormalGHSData: true,
     screeningSignalWord,
-    screeningHazardAdvisories: hazardStatements,
+    screeningHazardAdvisories: screeningAdvisories,
     recommendedPPE: ppe,
-    handlingPrecautions: precautionaryStatements,
-    regulatoryDisclaimer: 'Formulation Safety Screening: For official regulatory SDS authoring and transport compliance, compile supplier SDS toxicological dossiers.',
-    ghsHazardClasses: hazards,
-    signalWord,
-    hazardStatements,
-    precautionaryStatements,
-    hasInsufficientSafetyData: false,
+    handlingPrecautions: [
+      'Avoid generating or inhaling powder dust; use suitable local exhaust ventilation.',
+      'Wear eye protection and gloves selected for the actual raw-material hazards and task.',
+      'Keep eyewash and emergency washing facilities accessible; follow supplier SDS first-aid and spill instructions.'
+    ],
+    regulatoryDisclaimer: 'Occupational screening only. This report is not a formal GHS mixture classification, SDS, transport classification or legal determination.',
+    ghsHazardClasses: [],
+    signalWord: 'UNDETERMINED',
+    hazardStatements: [],
+    precautionaryStatements: [],
+    hasInsufficientSafetyData: true,
     source: 'SCREENING'
   };
 }

@@ -736,13 +736,13 @@ export function getChelatorBindingCapacity(
     matchedSpecies = AUTHORITATIVE_CHELATOR_DATABASE.find(s => 
       n.includes(s.id) || 
       n.includes(s.name.toLowerCase()) ||
-      (s.id === 'glda-47' && (n.includes('glda-47') || n.includes('glda 47') || n.includes('gl-47') || n.includes('glda'))) ||
+      (s.id === 'glda-47' && (n.includes('glda-47') || n.includes('glda 47') || n.includes('gl-47'))) ||
       (s.id === 'mgda-38' && (n.includes('mgda 38') || n.includes('mgda') || n.includes('trilon'))) ||
       (s.id === 'citrate-dihydrate' && (n.includes('citrate dihydrate') || n.includes('sodium citrate dihydrate') || n.includes('trisodium citrate dihydrate'))) ||
       (s.id === 'citrate-anhydrous' && (n.includes('citrate anhydrous') || n.includes('sodium citrate anhydrous') || n.includes('trisodium citrate anhydrous'))) ||
       (s.id === 'gluconate' && (n.includes('gluconate') || n.includes('gluconic'))) ||
       (s.id === 'edta-powder' && n.includes('edta') && (n.includes('powder') || n.includes('solid') || n.includes('99') || n.includes('crystalline'))) ||
-      (s.id === 'edta-liquid' && n.includes('edta') && (n.includes('liquid') || n.includes('aqueous') || n.includes('39') || n.includes('40') || (!n.includes('powder') && !n.includes('99')))) ||
+      (s.id === 'edta-liquid' && n.includes('edta') && (n.includes('liquid') || n.includes('aqueous') || n.includes('39') || n.includes('40'))) ||
       (s.id === 'stpp' && (n.includes('stpp') || n.includes('tripolyphosphate') || n.includes('pentasodium triphosphate'))) ||
       (s.id === 'zeolite-4a' && n.includes('zeolite')) ||
       (s.id === 'hedp' && (n.includes('hedp') || n.includes('etidronate'))) ||

@@ -1,7 +1,7 @@
 import { db, ResearchedIngredientRecord } from '../db/database';
 import { FormulationIngredient } from '../types';
 import { IngredientResearchService, MultiSourceResearchResult } from './ingredientResearchService';
-import { UNIVERSAL_INGREDIENTS, searchUniversalIngredients } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
 
 /**
  * Runtime bridge between the local ingredient library, Gemini-grounded research,
@@ -17,22 +17,31 @@ export class IngredientResearchBridge {
     'industryjournal.org'
   ]);
 
-  private static localIngredient(name: string) {
+  private static async localIngredient(name: string) {
     const clean = name.trim();
     if (!clean) return null;
-    const normalized = clean.toLowerCase();
-    const direct = UNIVERSAL_INGREDIENTS.find((ingredient) => [
-      ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName, ingredient.casNumber
-    ].filter(Boolean).some((candidate) => this.normalize(String(candidate)) === this.normalize(clean))) || null;
-    if (direct) return direct;
+    const normalized = this.normalize(clean);
+    const matchesExactly = (ingredient: any) => [
+      ingredient.id, ingredient.name, ingredient.productName, ingredient.inciName,
+      ingredient.casNumber, ...(Array.isArray(ingredient.keywords) ? ingredient.keywords : [])
+    ].filter(Boolean).some((candidate: unknown) => this.normalize(String(candidate)) === normalized);
 
-    const matches = searchUniversalIngredients(clean);
-    if (matches.length > 0) {
-      const top = matches[0];
-      const words = top.name.toLowerCase().split(/[\s,()%-]+/);
-      if (words.includes(normalized) || top.id.toLowerCase().split('-')[0] === normalized) {
-        return top;
-      }
+    // Exact identity/alias match only. Fuzzy search must never suppress research
+    // for a genuinely unlisted raw material.
+    const masterMatches = UNIVERSAL_INGREDIENTS.filter(matchesExactly);
+    if (masterMatches.length === 1) return masterMatches[0];
+    if (masterMatches.length > 1) return { __ambiguousMatch: true } as any;
+
+    // User-approved researched/custom ingredients persisted locally must also
+    // be found before deciding whether Gemini is needed.
+    try {
+      const setting = await db.userSettings.get('dynamic_ingredients');
+      const dynamic = Array.isArray(setting?.value) ? setting.value : [];
+      const dynamicMatches = dynamic.filter(matchesExactly);
+      if (dynamicMatches.length === 1) return dynamicMatches[0];
+      if (dynamicMatches.length > 1) return { __ambiguousMatch: true } as any;
+    } catch {
+      // If IndexedDB is unavailable, continue to the unlisted research path.
     }
     return null;
   }
@@ -47,31 +56,61 @@ export class IngredientResearchBridge {
     }
   }
 
-  private static hasCalculationGradeEvidence(research: MultiSourceResearchResult): boolean {
+  public static hasCalculationGradeEvidence(research: MultiSourceResearchResult, requestedGrade?: string): boolean {
     const activeMatter = research.propertiesExtracted?.activeMatter;
     if (typeof activeMatter !== 'number' || !Number.isFinite(activeMatter) || activeMatter < 0 || activeMatter > 100) return false;
-    const usableSources = research.sourcesRetrieved.filter(source => !this.isBlockedSourceDomain(source.url));
-    if (usableSources.length === 0) return false;
-    return usableSources.some(source =>
-      source.sourceType === 'MANUFACTURER_TDS' ||
-      source.sourceType === 'MANUFACTURER_SDS' ||
-      source.sourceType === 'MANUFACTURER_SPECIFICATION' ||
-      source.sourceType === 'REGULATORY_DOCUMENT'
-    );
+
+    // Evidence must support this exact property and value. A trusted source elsewhere
+    // in the ingredient profile cannot certify an unrelated AI-extracted number.
+    return research.sourcesRetrieved.some(source => {
+      if (this.isBlockedSourceDomain(source.url) || !source.url || !/^https:\/\//i.test(source.url)) return false;
+      if (!['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(source.sourceType)) return false;
+      const p = source.extractedParameters || {};
+      if (typeof p.activeMatter !== 'number' || p.activeMatter !== activeMatter) return false;
+      const unit = String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '');
+      const basis = String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+      const method = String(p.activeMatterMethod || '').trim();
+      const conditions = String(p.activeMatterConditions || '').trim();
+      const grade = String(p.grade || '').trim();
+      const sourceText = String(source.rawContent || '').toLowerCase();
+      const describesActiveMatter = /active\s+(matter|content)|surfactant\s+active/i.test(sourceText);
+      const containsSourceFact = (fact: string) => sourceText.includes(fact.toLowerCase());
+      if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
+      if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
+      if (!method || method.length < 4 || conditions.length < 4) return false;
+      const sourceGrade = this.normalize(grade);
+      if (!sourceGrade) return false;
+      if (requestedGrade && sourceGrade !== this.normalize(requestedGrade)) return false;
+      // The extracted fields must also be present in the captured source excerpt,
+      // not merely asserted by the model's structured JSON response.
+      if (!describesActiveMatter || !containsSourceFact(String(p.activeMatter)) ||
+          !containsSourceFact(String(p.activeMatterUnit)) ||
+          !containsSourceFact(String(p.activeMatterBasis)) ||
+          !containsSourceFact(method) ||
+          !containsSourceFact(conditions) ||
+          !containsSourceFact(grade)) return false;
+      return true;
+    });
   }
 
-  private static toFormulaIngredient(name: string, research: MultiSourceResearchResult, record?: ResearchedIngredientRecord): FormulationIngredient {
-    const p = research.propertiesExtracted || record?.parameters || {};
+  private static toFormulaIngredient(name: string, research: MultiSourceResearchResult, record?: ResearchedIngredientRecord, requestedGrade?: string): FormulationIngredient {
+    const p = { ...(research.propertiesExtracted || record?.parameters || {}) };
+    if (!this.hasCalculationGradeEvidence(research, requestedGrade)) delete p.activeMatter;
     const ingredient: FormulationIngredient = {
       id: record?.id || `researched-${this.normalize(name)}`,
       name: research.resolvedName || record?.canonicalName || name,
       canonicalIngredientId: record?.id,
-      identityType: 'COMMERCIAL_UVCB',
       casStatus: 'UNKNOWN',
       notes: research.notes || 'Properties populated from source-backed ingredient research. Verify against the supplier TDS/COA before production use.'
     };
 
     const activeMatter = this.numberOrUndefined(p.activeMatter);
+    const activeMatterEvidenceSource = activeMatter !== undefined
+      ? research.sourcesRetrieved.find(source =>
+          source.extractedParameters?.activeMatter === activeMatter &&
+          this.hasCalculationGradeEvidence({ ...research, sourcesRetrieved: [source] }, requestedGrade)
+        )
+      : undefined;
     const density = this.numberOrUndefined(p.density);
     const hlb = this.numberOrUndefined(p.hlb);
     const ph = this.numberOrUndefined(p.pH ?? p.ph);
@@ -81,6 +120,19 @@ export class IngredientResearchBridge {
       ingredient.activePercent = activeMatter;
       ingredient.activeMatterPct = activeMatter;
       ingredient.activeMatterPurity = activeMatter;
+      ingredient.activeMatterInputSource = 'SOURCE_BACKED';
+      ingredient.activeMatterEvidenceId = activeMatterEvidenceSource?.sourceId;
+      ingredient.activeMatterEvidenceUrl = activeMatterEvidenceSource?.url || undefined;
+      ingredient.activeMatterEvidenceSourceType = activeMatterEvidenceSource?.sourceType as FormulationIngredient['activeMatterEvidenceSourceType'];
+      if (activeMatterEvidenceSource) {
+        ingredient.provenance = {
+          sourceType: 'OFFICIAL_MANUFACTURER',
+          source: activeMatterEvidenceSource.publisher,
+          sourceUrl: activeMatterEvidenceSource.url || undefined,
+          verificationStatus: 'VERIFIED',
+          verifiedAt: new Date().toISOString().slice(0, 10)
+        };
+      }
     }
     if (density !== undefined) ingredient.density = density;
     if (hlb !== undefined) {
@@ -121,10 +173,13 @@ export class IngredientResearchBridge {
     const name = ingredientName.trim();
     if (!name) return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'Ingredient name is empty.' };
 
-    const local = this.localIngredient(name);
+    const local = await this.localIngredient(name);
+    if ((local as any)?.__ambiguousMatch) {
+      return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'This name matches multiple local database ingredients/grades. Select the exact ingredient or commercial grade; Gemini research was skipped.' };
+    }
     if (local) {
       const localAny = local as any;
-      const localActive = localAny.activeMatterDefault ?? local.activeMatter;
+      const localActive = localAny.activeMatterDefault ?? localAny.activeDefault ?? local.activeMatter ?? localAny.activeMatterPct;
       return {
         ingredient: {
           id: local.id,
@@ -132,9 +187,14 @@ export class IngredientResearchBridge {
           category: local.category,
           activePercent: localActive,
           activeMatterPct: localActive,
+          activeMatterInputSource: localAny.activeMatterInputSource ?? (typeof localActive === 'number' ? 'CATALOG_DEFAULT' : 'UNKNOWN'),
+          activeMatterEvidenceId: localAny.activeMatterEvidenceId,
+          activeMatterEvidenceUrl: localAny.activeMatterEvidenceUrl,
+          activeMatterEvidenceSourceType: localAny.activeMatterEvidenceSourceType,
+          provenance: localAny.provenance,
           hlb: local.hlb ?? undefined,
           hlbValue: local.hlb ?? undefined,
-          density: localAny.physicalProperties?.density,
+          density: localAny.physicalProperties?.density ?? localAny.densityGPerMl ?? localAny.density,
           inciName: local.inciName,
           casNumber: local.casNumber,
           identityType: local.identityType as FormulationIngredient['identityType'],
@@ -173,8 +233,8 @@ export class IngredientResearchBridge {
               publisher: source.publisher || 'Persisted source',
               sourceType: source.sourceType,
               retrievedAt: source.retrievedAt || cached.researchedAt,
-              extractedParameters: cached.parameters,
-              rawContent: ''
+              extractedParameters: source.extractedParameters || cached.parameters,
+              rawContent: source.rawContent || ''
             }))
           : cached.sourceIds.map((sourceId, index) => ({
               sourceId,
@@ -192,10 +252,10 @@ export class IngredientResearchBridge {
         requiresUserApproval: cached.requiresUserApproval,
         notes: 'Loaded from the local researched-ingredient cache.'
       };
-      const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch);
+      const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch, options?.grade);
       const requiresUserApproval = cached.requiresUserApproval || !calculationEvidence;
       return {
-        ingredient: this.toFormulaIngredient(name, cachedResearch, cached),
+        ingredient: this.toFormulaIngredient(name, cachedResearch, cached, options?.grade),
         source: 'RESEARCH_CACHE',
         research: cachedResearch,
         requiresUserApproval,
@@ -214,7 +274,7 @@ export class IngredientResearchBridge {
     }, options.apiKey);
     const hasUsableSources = research.sourcesRetrieved.some(source => !this.isBlockedSourceDomain(source.url));
     const hasProperties = Object.keys(research.propertiesExtracted || {}).length > 0;
-    const calculationEvidence = this.hasCalculationGradeEvidence(research);
+    const calculationEvidence = this.hasCalculationGradeEvidence(research, options?.grade);
 
     if (!hasUsableSources || !hasProperties || research.status === 'RESEARCH_UNAVAILABLE') {
       return { ingredient: null, source: 'UNRESOLVED', research, requiresUserApproval: true, warning: 'No sufficiently supported web evidence was found. Formula properties were not invented.' };
@@ -235,7 +295,9 @@ export class IngredientResearchBridge {
         title: source.title,
         publisher: source.publisher,
         sourceType: source.sourceType,
-        retrievedAt: source.retrievedAt
+        retrievedAt: source.retrievedAt,
+        extractedParameters: source.extractedParameters,
+        rawContent: source.rawContent
       })),
       sourceIds: research.sourcesRetrieved.map(source => source.sourceId),
       sourceUrls: research.sourcesRetrieved.map(source => source.url).filter((url): url is string => Boolean(url)),
@@ -250,7 +312,7 @@ export class IngredientResearchBridge {
       // Ignored in environments where IndexedDB is unavailable (e.g. Node test runners)
     }
     return {
-      ingredient: this.toFormulaIngredient(name, research, record),
+      ingredient: this.toFormulaIngredient(name, research, record, options?.grade),
       source: 'WEB_RESEARCH',
       research,
       requiresUserApproval: record.requiresUserApproval,

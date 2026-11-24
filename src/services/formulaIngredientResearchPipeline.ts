@@ -72,7 +72,7 @@ export async function prepareFormulaForCalculation(
     resolvedIngredients.push(merged);
   }
 
-  const calculationReady = unresolved.length === 0;
+  let calculationReady = unresolved.length === 0;
   const preparedFormula: ActiveFormulaState = {
     ...formula,
     ingredients: resolvedIngredients
@@ -86,7 +86,18 @@ export async function prepareFormulaForCalculation(
     : undefined;
 
   if (activeMatterReport?.activeMatterStatus === 'INSUFFICIENT_DATA') {
+    calculationReady = false;
+    const missingAssayIngredients = activeMatterReport.contributions
+      .filter(contribution => contribution.activeMatterPct === null || contribution.dataSource === 'missing')
+      .map(contribution => contribution.name);
+    for (const name of missingAssayIngredients) {
+      if (!unresolved.includes(name)) unresolved.push(name);
+    }
+    if (missingAssayIngredients.length === 0) {
+      unresolved.push('Active Matter / batch size evidence');
+    }
     warnings.push(...activeMatterReport.warnings);
+    warnings.push('Formula calculation is blocked: authoritative active-matter inputs and a valid batch basis are required.');
   }
 
   return {

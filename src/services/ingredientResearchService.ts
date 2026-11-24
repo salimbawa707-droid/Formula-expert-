@@ -1,4 +1,4 @@
-import { UNIVERSAL_INGREDIENTS, UniversalIngredient, searchUniversalIngredients } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
 import { db } from '../db/database';
 import { GoogleGenAI, Type } from '@google/genai';
 import { calculateActiveMatter, calculateActiveSurfactants, calculateRawSurfactants } from '../utils/activeMatterEngine';
@@ -76,6 +76,7 @@ export interface ParameterProvenance {
   status: ParameterVerificationStatus;
   evidenceLevel?: ResearchEvidenceLevel;
   sourceType?: string;
+  sourceId?: string;
   source: string;
   sourceUrl: string;
   sourceDocumentUrl?: string | null;
@@ -226,52 +227,25 @@ export class IngredientResearchService {
     resolvedName: string;
     confidence: 'EXACT_MATCH' | 'HIGH_CONFIDENCE_MATCH' | 'POSSIBLE_MATCH' | 'UNRESOLVED';
   } {
-    const q = (nameOrAlias || '').trim().toLowerCase();
-    if (!q) {
-      return { ingredient: null, resolvedName: '', confidence: 'UNRESOLVED' };
+    const q = (nameOrAlias || '').trim();
+    const normalized = q.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!normalized) return { ingredient: null, resolvedName: '', confidence: 'UNRESOLVED' };
+
+    // Only exact canonical identity/name/INCI/CAS/declared-keyword matches
+    // count as present. Similarity matches must not suppress Gemini research.
+    const exactMatches = UNIVERSAL_INGREDIENTS.filter((i) => [
+      i.id, i.name, i.productName, i.inciName, i.casNumber, ...(i.keywords || [])
+    ].filter(Boolean).some((candidate) =>
+      String(candidate).trim().toLowerCase().replace(/[^a-z0-9]/g, '') === normalized
+    ));
+
+    if (exactMatches.length === 1) {
+      return { ingredient: exactMatches[0], resolvedName: exactMatches[0].name, confidence: 'EXACT_MATCH' };
     }
-
-    // 1. Exact canonical name/id check
-    let match = UNIVERSAL_INGREDIENTS.find(i => i.id === q || i.name.toLowerCase() === q || i.productName?.toLowerCase() === q);
-    if (match) {
-      return { ingredient: match, resolvedName: match.name, confidence: 'EXACT_MATCH' };
+    if (exactMatches.length > 1) {
+      return { ingredient: null, resolvedName: q, confidence: 'POSSIBLE_MATCH' };
     }
-
-    // 2. High-confidence matching via alternate spellings/aliases
-    const normalizedQuery = q.replace(/[^a-z0-9]/g, '');
-    match = UNIVERSAL_INGREDIENTS.find(i => {
-      const normalName = i.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const normalProd = (i.productName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const hasAlias = i.inciName?.toLowerCase() === q || i.casNumber === q;
-      return normalName === normalizedQuery || normalProd === normalizedQuery || hasAlias;
-    });
-
-    if (match) {
-      return { ingredient: match, resolvedName: match.name, confidence: 'HIGH_CONFIDENCE_MATCH' };
-    }
-
-    // 2b. High-confidence matching via searchUniversalIngredients
-    const searchMatches = searchUniversalIngredients(nameOrAlias);
-    if (searchMatches.length === 1) {
-      return { ingredient: searchMatches[0], resolvedName: searchMatches[0].name, confidence: 'HIGH_CONFIDENCE_MATCH' };
-    } else if (searchMatches.length > 1) {
-      const exactOrClose = searchMatches.find(i => i.id === q || i.name.toLowerCase().includes(q) || q.includes(i.name.toLowerCase()));
-      if (exactOrClose) {
-        return { ingredient: exactOrClose, resolvedName: exactOrClose.name, confidence: 'HIGH_CONFIDENCE_MATCH' };
-      }
-    }
-
-    // 3. Substring / possible match check
-    match = UNIVERSAL_INGREDIENTS.find(i => {
-      const normalName = i.name.toLowerCase();
-      return normalName.includes(q) || q.includes(normalName);
-    });
-
-    if (match) {
-      return { ingredient: match, resolvedName: match.name, confidence: 'POSSIBLE_MATCH' };
-    }
-
-    return { ingredient: null, resolvedName: nameOrAlias, confidence: 'UNRESOLVED' };
+    return { ingredient: null, resolvedName: q, confidence: 'UNRESOLVED' };
   }
 
   /**
@@ -281,15 +255,47 @@ export class IngredientResearchService {
    */
   public static async researchMultiSource(request: ResearchRequest, apiKey?: string): Promise<MultiSourceResearchResult> {
     const { ingredientName, grade } = request;
-    const cacheKey = `${ingredientName.toLowerCase()}|${(grade || '').toLowerCase()}`;
+    const cacheKey = ingredientName.toLowerCase() + '|' + (grade || '').toLowerCase();
 
-    if (this.searchCache[cacheKey]) {
-      return this.searchCache[cacheKey];
+    // Database-first routing is enforced here as well as in the formula bridge.
+    // Exact local matches return immediately and can never invoke Gemini.
+    const resolution = this.resolveIdentity(ingredientName);
+    if (resolution.confidence === 'POSSIBLE_MATCH') {
+      return {
+        researchId: 'ambiguous-local-match', query: ingredientName, ingredientName,
+        resolvedName: ingredientName, confidence: 'POSSIBLE_MATCH',
+        status: 'INSUFFICIENT_EVIDENCE', sourcesRetrieved: [], propertiesExtracted: {},
+        comparisonReport: [], requiresUserApproval: true,
+        notes: 'Multiple exact local database matches exist (for example, different grades). Gemini was skipped; select the exact local ingredient/grade.'
+      };
+    }
+    if (resolution.ingredient) {
+      const local: any = resolution.ingredient;
+      const propertiesExtracted: Record<string, any> = {};
+      const active = local.activeMatterDefault ?? local.activeDefault ?? local.activeMatter ?? local.activeMatterPct;
+      if (typeof active === 'number') propertiesExtracted.activeMatter = active;
+      if (typeof local.phMin === 'number') propertiesExtracted.pH = local.phMin;
+      if (typeof local.ionicNature === 'string') propertiesExtracted.ionicNature = local.ionicNature;
+      const density = local.density ?? local.densityGPerMl;
+      if (typeof density === 'number') propertiesExtracted.density = density;
+      if (typeof local.hlb === 'number') propertiesExtracted.hlb = local.hlb;
+      return {
+        researchId: 'local-' + local.id,
+        query: ingredientName,
+        ingredientName,
+        resolvedName: local.name,
+        confidence: 'EXACT_MATCH',
+        status: 'SUCCESS',
+        sourcesRetrieved: [],
+        propertiesExtracted,
+        comparisonReport: [],
+        requiresUserApproval: false,
+        notes: 'Exact local database match. Gemini/web research was intentionally skipped.'
+      };
     }
 
-    const resolution = this.resolveIdentity(ingredientName);
-    const resolvedName = resolution.ingredient ? resolution.ingredient.name : ingredientName;
-
+    if (this.searchCache[cacheKey]) return this.searchCache[cacheKey];
+    const resolvedName = ingredientName;
     // Generate queries via Query Planner
     const queries = this.planQueries(ingredientName, grade);
 
@@ -328,7 +334,16 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       "rawContent": "string_factual_content_snippet",
       "extractedParameters": {
         "activeMatter": number_or_null,
+        "activeMatterUnit": "string_or_null",
+        "activeMatterBasis": "string_or_null",
+        "activeMatterMethod": "string_or_null",
+        "activeMatterConditions": "string_or_null",
+        "grade": "exact commercial grade or null",
         "pH": number_or_null,
+        "pHUnit": "string_or_null",
+        "pHBasis": "string_or_null",
+        "pHMethod": "string_or_null",
+        "pHConditions": "string_or_null",
         "ionicNature": "string_or_null"
       }
     }
@@ -361,7 +376,16 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
                         type: Type.OBJECT,
                         properties: {
                           activeMatter: { type: Type.NUMBER },
+                          activeMatterUnit: { type: Type.STRING },
+                          activeMatterBasis: { type: Type.STRING },
+                          activeMatterMethod: { type: Type.STRING },
+                          activeMatterConditions: { type: Type.STRING },
+                          grade: { type: Type.STRING },
                           pH: { type: Type.NUMBER },
+                          pHUnit: { type: Type.STRING },
+                          pHBasis: { type: Type.STRING },
+                          pHMethod: { type: Type.STRING },
+                          pHConditions: { type: Type.STRING },
                           ionicNature: { type: Type.STRING }
                         }
                       }
@@ -407,8 +431,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         sourcesRetrieved: [],
         propertiesExtracted: {},
         comparisonReport: [],
-        requiresUserApproval: false,
-        notes: 'No reliable external sources could be retrieved for this ingredient.'
+        requiresUserApproval: true,
+        notes: 'No reliable external sources could be retrieved for this ingredient. Keep unresolved and do not use estimated properties.'
       };
       return failedResult;
     }
@@ -441,7 +465,46 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         return;
       }
 
-      // Check unique value diversity
+      // Numeric properties are comparable only when every contributing source states
+      // the same grade, unit, measurement basis, method and test conditions.
+      const propertySources = uniqueSources.filter(source =>
+        source.extractedParameters?.[prop] !== undefined && source.extractedParameters?.[prop] !== null
+      );
+      const numericProperty = values.every(value => typeof value === 'number' && Number.isFinite(value));
+      if (numericProperty) {
+        const metadataKeys = [`${prop}Unit`, `${prop}Basis`, `${prop}Method`, `${prop}Conditions`];
+        const metadataComplete = propertySources.length === values.length && propertySources.every(source => {
+          const sourceText = String(source.rawContent || '').toLowerCase();
+          const sourceGrade = String(source.extractedParameters?.grade || '').trim();
+          const metadataPresent = metadataKeys.every(key =>
+            typeof source.extractedParameters?.[key] === 'string' &&
+            source.extractedParameters[key].trim().length > 0 &&
+            sourceText.includes(source.extractedParameters[key].trim().toLowerCase())
+          );
+          const valuePresent = sourceText.includes(String(source.extractedParameters?.[prop]).toLowerCase());
+          return metadataPresent &&
+            Boolean(sourceGrade) &&
+            sourceText.includes(sourceGrade.toLowerCase()) &&
+            valuePresent &&
+            (!grade || sourceGrade.toLowerCase() === grade.trim().toLowerCase());
+        });
+        const signatures = propertySources.map(source => metadataKeys
+          .map(key => String(source.extractedParameters[key]).trim().toLowerCase().replace(/\s+/g, ' '))
+          .concat([String(source.extractedParameters.grade || '').trim().toLowerCase()])
+          .join('|'));
+        const metadataEquivalent = signatures.length > 0 && signatures.every(signature => signature === signatures[0]);
+        if (!metadataComplete || !metadataEquivalent) {
+          comparisonReport.push({
+            property: prop,
+            comparisonStatus: 'INSUFFICIENT_DATA',
+            values,
+            notes: 'Numeric observations are not calculation-grade comparable: source-level grade, units, measurement basis, method and test conditions must all be explicit and equivalent.'
+          });
+          return;
+        }
+      }
+
+      // Check exact value diversity; no percentage tolerance is applied.
       const uniqueVals = Array.from(new Set(values.map(v => typeof v === 'string' ? v.toLowerCase() : v)));
       if (uniqueVals.length === 1) {
         comparisonReport.push({
@@ -452,41 +515,16 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         });
         propertiesExtracted[prop] = values[0];
       } else {
-        // Numeric range or categorical conflict detection
-        const numericValues = values.map(Number).filter(v => !isNaN(v));
-        if (numericValues.length > 1) {
-          const min = Math.min(...numericValues);
-          const max = Math.max(...numericValues);
-          const diff = max - min;
-          const tolerance = 0.05 * min; // 5% threshold
-
-          if (diff > tolerance) {
-            comparisonReport.push({
-              property: prop,
-              comparisonStatus: 'CONFLICT',
-              values,
-              notes: `Significant variation discovered among sources (range: ${min} - ${max}). Preserving both as conflicting evidence.`
-            });
-            // Preserve as range
-            propertiesExtracted[prop] = `${min} - ${max}`;
-          } else {
-            comparisonReport.push({
-              property: prop,
-              comparisonStatus: 'MINOR_VARIATION',
-              values,
-              notes: 'Minor variance within acceptable 5% physical tolerance limits. Safe to average.'
-            });
-            propertiesExtracted[prop] = Math.round((numericValues.reduce((a, b) => a + b, 0) / numericValues.length) * 10) / 10;
-          }
-        } else {
-          // Categorical conflict
-          comparisonReport.push({
-            property: prop,
-            comparisonStatus: 'CONFLICT',
-            values,
-            notes: 'Conflicting qualitative classifications found across sources.'
-          });
-        }
+        // No percentage tolerance or averaging is scientifically defensible without
+        // demonstrated equivalence of commercial grade, units, basis, method and conditions.
+        // Preserve the conflicting observations for review, but never emit a numeric
+        // range as a calculation-ready ingredient property.
+        comparisonReport.push({
+          property: prop,
+          comparisonStatus: 'CONFLICT',
+          values,
+          notes: 'Sources disagree. No tolerance band, midpoint, or numeric range is promoted. Verify identical grade, units, measurement basis, method and test conditions before selecting a value.'
+        });
       }
     });
 
@@ -503,7 +541,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       sourcesRetrieved: uniqueSources,
       propertiesExtracted,
       comparisonReport,
-      requiresUserApproval: isConflicting || uniqueSources.length > 1,
+      requiresUserApproval: isConflicting || comparisonReport.some(c => c.comparisonStatus === 'MINOR_VARIATION' || (c.comparisonStatus === 'INSUFFICIENT_DATA' && c.values.length > 0)),
       notes: isConflicting
         ? 'Cross-source comparison discovered significant scientific conflicts. Manual engineering audit is required.'
         : 'Multi-source web research completed with strong corroborative agreement.'
@@ -517,7 +555,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
   /**
    * Synchronous / backward compatible research entry point wrapping the multi-source pipeline (P1-8).
    */
-  public static async researchIngredient(nameOrAlias: string, apiKey?: string): Promise<ResearchResult> {
+  public static async researchIngredient(nameOrAlias: string, apiKey?: string, grade?: string): Promise<ResearchResult> {
     const resolution = this.resolveIdentity(nameOrAlias);
     const ingredient = resolution.ingredient;
 
@@ -525,8 +563,29 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const ingredientId = ingredient ? ingredient.id : `custom-${cleanSlug}`;
     const canonicalName = ingredient ? ingredient.name : nameOrAlias;
 
+    if (ingredient) {
+      const local: any = ingredient;
+      const parameters: Record<string, any> = {};
+      const active = local.activeMatterDefault ?? local.activeDefault ?? local.activeMatter ?? local.activeMatterPct;
+      if (typeof active === 'number') parameters.activeMatter = active;
+      if (typeof local.phMin === 'number') parameters.pH = local.phMin;
+      if (typeof local.ionicNature === 'string') parameters.ionicNature = local.ionicNature;
+      const density = local.density ?? local.densityGPerMl;
+      if (typeof density === 'number') parameters.density = density;
+      if (typeof local.hlb === 'number') parameters.hlb = local.hlb;
+      return {
+        ingredientId: local.id,
+        canonicalName: local.name,
+        resolvedName: local.name,
+        confidence: 'EXACT_MATCH',
+        parameters,
+        provenance: {},
+        requiresUserApproval: false
+      };
+    }
+
     // Run multi-source pipeline
-    const msResult = await this.researchMultiSource({ ingredientName: canonicalName }, apiKey);
+    const msResult = await this.researchMultiSource({ ingredientName: canonicalName, grade }, apiKey);
 
     if (msResult.sourcesRetrieved.length === 0) {
       return {
@@ -536,11 +595,14 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         confidence: resolution.confidence,
         parameters: {},
         provenance: {},
-        requiresUserApproval: false
+        requiresUserApproval: true
       };
     }
 
     const firstSource = msResult.sourcesRetrieved[0];
+    const isConflict = msResult.status === 'CONFLICTING_EVIDENCE';
+    const findPropertySource = (property: string, value: any) =>
+      msResult.sourcesRetrieved.find(source => source.extractedParameters?.[property] === value);
     const activeVal = msResult.propertiesExtracted.activeMatter ?? null;
     const phVal = msResult.propertiesExtracted.pH ?? null;
     const phRangeVal = firstSource.extractedParameters.pHRange ?? null;
@@ -549,27 +611,35 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const shelfVal = firstSource.extractedParameters.shelfLife ?? null;
     const appVal = firstSource.extractedParameters.application ?? null;
 
-    const source = firstSource.publisher || (firstSource.domain ? firstSource.domain : "Independent Technical Datasheet");
-    const sourceUrl = firstSource.url || (firstSource.domain ? `https://${firstSource.domain}` : "");
-    const isConflict = msResult.status === 'CONFLICTING_EVIDENCE';
-    const isManufacturerSource = firstSource.sourceType === 'MANUFACTURER_TDS' || firstSource.sourceType === 'MANUFACTURER_SDS' || firstSource.sourceType === 'REGULATORY_DOCUMENT' || firstSource.sourceType === 'MANUFACTURER_SPECIFICATION';
-
     const pProv = (property: string, val: any, notes?: string): ParameterProvenance => {
-      let status: ParameterVerificationStatus = 'UNKNOWN';
-      let evidenceLevel: ResearchEvidenceLevel = 'UNKNOWN';
-
-      if (isConflict) {
-        status = 'EVIDENCE_CONFLICT';
-        evidenceLevel = 'UNKNOWN';
-      } else if (val !== null && val !== undefined) {
-        if (isManufacturerSource) {
-          status = 'VERIFIED';
-          evidenceLevel = 'VERIFIED_SOURCE';
-        } else {
-          status = 'SOURCE_BACKED';
-          evidenceLevel = 'SOURCE_BACKED';
-        }
-      }
+      const propertySource = val === null || val === undefined ? undefined : findPropertySource(property, val);
+      const sourceRecord = propertySource || firstSource;
+      const source = sourceRecord.publisher || sourceRecord.domain || "Independent Technical Datasheet";
+      const sourceUrl = sourceRecord.url || (sourceRecord.domain ? `https://${sourceRecord.domain}` : "");
+      const primaryManufacturerSource = ['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(sourceRecord.sourceType);
+      const p = sourceRecord.extractedParameters || {};
+      const activeMatterMetrologyComplete = property !== 'activeMatter' || (
+        typeof val === 'number' && Number.isFinite(val) && val >= 0 && val <= 100 &&
+        ['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '')) &&
+        ['AS_SUPPLIED', 'AS_RECEIVED'].includes(String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_')) &&
+        typeof p.activeMatterMethod === 'string' && p.activeMatterMethod.trim().length >= 4 &&
+        typeof p.activeMatterConditions === 'string' && p.activeMatterConditions.trim().length >= 4 &&
+        Boolean(String(p.grade || '').trim()) &&
+        (!grade || String(p.grade || '').trim().toLowerCase() === grade.trim().toLowerCase()) &&
+        /active\s+(matter|content)|surfactant\s+active/i.test(String(sourceRecord.rawContent || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(val).toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterUnit || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterBasis || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterMethod || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterConditions || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.grade || '').toLowerCase())
+      );
+      const exactPropertyEvidence = propertySource !== undefined && sourceRecord.extractedParameters?.[property] === val;
+      const verified = !isConflict && exactPropertyEvidence && primaryManufacturerSource && activeMatterMetrologyComplete && /^https:\/\//i.test(sourceUrl) && validateUrl(sourceUrl);
+      const status: ParameterVerificationStatus = isConflict
+        ? 'EVIDENCE_CONFLICT'
+        : verified ? 'VERIFIED' : (val !== null && val !== undefined && exactPropertyEvidence ? 'SOURCE_BACKED' : 'UNKNOWN');
+      const evidenceLevel: ResearchEvidenceLevel = verified ? 'VERIFIED_SOURCE' : (status === 'SOURCE_BACKED' ? 'SOURCE_BACKED' : 'UNKNOWN');
 
       return {
         property,
@@ -577,13 +647,15 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         extractedValue: val,
         status,
         evidenceLevel,
+        sourceType: sourceRecord.sourceType,
+        sourceId: sourceRecord.sourceId,
         source,
-        sourceUrl: validateUrl(sourceUrl) ? sourceUrl : (firstSource.domain ? `https://${firstSource.domain}` : ""),
+        sourceUrl: validateUrl(sourceUrl) ? sourceUrl : "",
         sourceDocumentUrl: validateUrl(sourceUrl) ? sourceUrl : null,
-        notes,
+        notes: verified ? notes : (property === 'activeMatter' ? 'Not calculation-grade: exact property source, manufacturer primary source, as-supplied mass basis, unit, assay method, conditions and requested grade must all be evidenced.' : notes),
         verifiedAt: new Date().toISOString().split('T')[0],
         verificationDate: new Date().toISOString().split('T')[0],
-        confidenceScore: isConflict ? 0.3 : (isManufacturerSource ? 0.95 : 0.8)
+        confidenceScore: verified ? 0.95 : (status === 'SOURCE_BACKED' ? 0.7 : 0.3)
       };
     };
 
@@ -591,40 +663,40 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const parameters: Record<string, any> = {};
 
     if (activeVal !== null) {
-      provenance.activeMatter = pProv('activeMatter', activeVal, 'Assay determined by solids oven-drying');
-      const parsedActive = typeof activeVal === "number" ? activeVal : parseFloat(activeVal);
-      if (!isNaN(parsedActive)) parameters.activeMatter = parsedActive;
+      provenance.activeMatter = pProv('activeMatter', activeVal, 'Manufacturer-reported active matter assay with explicit method and basis');
+      if (provenance.activeMatter.status === 'VERIFIED') parameters.activeMatter = activeVal;
     }
     if (phVal !== null) {
-      provenance.pH = pProv('pH', phVal, 'pH of 10% aqueous solution');
-      const parsedPH = typeof phVal === "number" ? phVal : parseFloat(phVal);
-      if (!isNaN(parsedPH)) parameters.pH = parsedPH;
+      provenance.pH = pProv('pH', phVal, 'pH measurement with source-reported conditions');
+      if (provenance.pH.status === 'VERIFIED') parameters.pH = phVal;
     }
     if (phRangeVal !== null) {
-      provenance.pHRange = pProv('pHRange', phRangeVal, 'Operating GHS specification');
-      parameters.pHRange = phRangeVal;
+      provenance.pHRange = pProv('pHRange', phRangeVal, 'Operating specification');
+      if (provenance.pHRange.status === 'VERIFIED') parameters.pHRange = phRangeVal;
     }
     if (ionicVal !== null) {
-      provenance.ionicNature = pProv('ionicNature', ionicVal, 'Non-reactive ethoxylated structure');
-      parameters.ionicNature = ionicVal;
+      provenance.ionicNature = pProv('ionicNature', ionicVal, 'Source-reported ionic nature');
+      if (provenance.ionicNature.status === 'VERIFIED') parameters.ionicNature = ionicVal;
     }
     if (stateVal !== null) {
-      provenance.physicalState = pProv('physicalState', stateVal, 'Macroscopic appearance');
-      parameters.physicalState = stateVal;
+      provenance.physicalState = pProv('physicalState', stateVal, 'Source-reported physical state');
+      if (provenance.physicalState.status === 'VERIFIED') parameters.physicalState = stateVal;
     }
     if (shelfVal !== null) {
-      provenance.shelfLife = pProv('shelfLife', shelfVal, 'Storage stability window');
-      parameters.shelfLife = shelfVal;
+      provenance.shelfLife = pProv('shelfLife', shelfVal, 'Source-reported shelf life');
+      if (provenance.shelfLife.status === 'VERIFIED') parameters.shelfLife = shelfVal;
     }
     if (appVal !== null) {
-      provenance.application = pProv('application', appVal, 'Primary functional utility');
-      parameters.application = appVal;
+      provenance.application = pProv('application', appVal, 'Source-reported application');
+      if (provenance.application.status === 'VERIFIED') parameters.application = appVal;
     }
 
-    provenance.hlb = { property: 'hlb', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
-    provenance.cmc = { property: 'cmc', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
-    provenance.density = { property: 'density', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
-    provenance.nvr = { property: 'nvr', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
+    const fallbackSource = firstSource.publisher || firstSource.domain || 'Unverified research source';
+    const fallbackSourceUrl = firstSource.url || '';
+    provenance.hlb = { property: 'hlb', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
+    provenance.cmc = { property: 'cmc', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
+    provenance.density = { property: 'density', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
+    provenance.nvr = { property: 'nvr', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
 
     return {
       ingredientId,
@@ -648,10 +720,13 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
 
     if (ingIndex === -1) {
       const name = canonicalName || resolvedName || ingredientId;
-      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : (previousRecord?.activeDefault ?? null);
-      const detectedDensity = typeof parameters.density === "number" ? parameters.density : (previousRecord?.density ?? null);
-      const detectedPhMin = typeof parameters.pH === "number" ? parameters.pH : (previousRecord?.phMin ?? null);
-      const detectedPhMax = parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || null) : (previousRecord?.phMax ?? null);
+      const activeVerified = typeof parameters.activeMatter === 'number' && provenance.activeMatter?.status === 'VERIFIED' && provenance.activeMatter.value === parameters.activeMatter;
+      const densityVerified = typeof parameters.density === 'number' && provenance.density?.status === 'VERIFIED' && provenance.density.value === parameters.density;
+      const pHVerified = typeof parameters.pH === 'number' && provenance.pH?.status === 'VERIFIED' && provenance.pH.value === parameters.pH;
+      const detectedActive = activeVerified ? parameters.activeMatter : null;
+      const detectedDensity = densityVerified ? parameters.density : null;
+      const detectedPhMin = pHVerified ? parameters.pH : null;
+      const detectedPhMax = pHVerified && parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || null) : null;
 
       updatedIng = {
         id: ingredientId,
@@ -677,21 +752,25 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
 
     // Apply only verified scientific properties
-    if (parameters.activeMatter !== undefined) {
+    if (parameters.activeMatter !== undefined && provenance.activeMatter?.status === 'VERIFIED' && provenance.activeMatter.value === parameters.activeMatter) {
       updatedIng.activeDefault = parameters.activeMatter;
       (updatedIng as any).activeMatterPct = parameters.activeMatter;
+      (updatedIng as any).activeMatterInputSource = 'SOURCE_BACKED';
+      (updatedIng as any).activeMatterEvidenceId = provenance.activeMatter.sourceId;
+      (updatedIng as any).activeMatterEvidenceUrl = provenance.activeMatter.sourceUrl;
+      (updatedIng as any).activeMatterEvidenceSourceType = provenance.activeMatter.sourceType as 'MANUFACTURER_TDS' | 'MANUFACTURER_SPECIFICATION';
       if (updatedIng.unknownProperties) {
         updatedIng.unknownProperties = updatedIng.unknownProperties.filter((p: string) => p !== 'activeMatter');
       }
     }
-    if (parameters.pH !== undefined) {
+    if (parameters.pH !== undefined && provenance.pH?.status === 'VERIFIED' && provenance.pH.value === parameters.pH) {
       (updatedIng as any).phMin = parameters.pH;
       (updatedIng as any).phMax = parameters.pHRange ? (parseFloat(parameters.pHRange.split('-')[1]) || null) : null;
     }
-    if (parameters.density !== undefined && typeof parameters.density === 'number') {
+    if (parameters.density !== undefined && typeof parameters.density === 'number' && provenance.density?.status === 'VERIFIED' && provenance.density.value === parameters.density) {
       (updatedIng as any).density = parameters.density;
     }
-    if (parameters.ionicNature !== undefined) {
+    if (parameters.ionicNature !== undefined && provenance.ionicNature?.status === 'VERIFIED' && provenance.ionicNature.value === parameters.ionicNature) {
       (updatedIng as any).ionicNature = parameters.ionicNature;
     }
 
@@ -768,6 +847,10 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           return {
             ...ing,
             activeMatterPct: updatedIng.activeDefault,
+            activeMatterInputSource: (updatedIng as any).activeMatterInputSource || 'UNKNOWN',
+            activeMatterEvidenceId: (updatedIng as any).activeMatterEvidenceId,
+            activeMatterEvidenceUrl: (updatedIng as any).activeMatterEvidenceUrl,
+            activeMatterEvidenceSourceType: (updatedIng as any).activeMatterEvidenceSourceType,
             provenance: (updatedIng as any).provenance
           };
         }

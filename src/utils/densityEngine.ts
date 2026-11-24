@@ -64,7 +64,7 @@ export function getStandardComponentDensity(name: string): number | null {
   if (n.includes('fragrance') || n.includes('perfume') || n.includes('essential oil')) return 0.950;
   if (n.includes('preservative') || n.includes('kathon') || n.includes('phenoxyethanol')) return 1.050;
   if (n.includes('xanthan') || n.includes('carbomer') || n.includes('hpmc') || n.includes('cmc')) return 1.150;
-  return 1.020;
+  return null;
 }
 
 export function calculateDensity(
@@ -138,6 +138,10 @@ export function calculateDensity(
 
     if (explicitDensity === undefined) hasReferenceDensity = true;
     const compDensity = explicitDensity ?? stdDensity;
+    if (compDensity === null) {
+      unknownDensityIngredients.push(name);
+      continue;
+    }
     const compMassG = (rawPct / 100) * totalBatchMassGrams;
     const compVolCm3 = compMassG / compDensity;
     totalMass += compMassG;
@@ -148,6 +152,9 @@ export function calculateDensity(
       componentDensityGPerCm3: compDensity,
       volumeCm3: compVolCm3
     });
+  }
+  if (unknownDensityIngredients.length > 0) {
+    return unavailable(`Component density is unavailable for: ${unknownDensityIngredients.join(', ')}.`, unknownDensityIngredients);
   }
   if (!Number.isFinite(totalMass) || !Number.isFinite(totalVolume) || totalMass <= 0 || totalVolume <= 0) {
     return unavailable('No valid positive-mass ingredient contributions were available for density calculation.');

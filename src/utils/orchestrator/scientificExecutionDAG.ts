@@ -452,8 +452,18 @@ export class ScientificExecutionDAG {
             });
             phModelValidity = advPH.modelValidity ?? 'UNKNOWN';
             const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
-            computedPH = pHWithinModelDomain ? advPH.pH : null;
-            phConverged = advPH.solverConverged && pHWithinModelDomain;
+            const neutralizationState = state.neutralizationState;
+            const hasSecondaryAcidBaseChemistry = Boolean(
+              (neutralizationState?.secondaryAcidsPresent?.length ?? 0) > 0 ||
+              (neutralizationState?.secondaryBasesPresent?.length ?? 0) > 0
+            );
+            const hasPHActiveChemistry =
+              neutralizationState?.status !== 'NO_REACTION' || hasSecondaryAcidBaseChemistry;
+            computedPH = pHWithinModelDomain && hasPHActiveChemistry ? advPH.pH : null;
+            phConverged = advPH.solverConverged && pHWithinModelDomain && hasPHActiveChemistry;
+            if (!hasPHActiveChemistry) {
+              phWarnings.push('No identified acid/base or secondary buffer chemistry is present; solvent-water equilibrium is not accepted as a formulation pH result.');
+            }
             phBufferCapacity = advPH.bufferCapacity;
             phIonicStrength = advPH.ionicStrength;
             phWarnings = advPH.warnings || [];
@@ -857,42 +867,24 @@ export class ScientificExecutionDAG {
 
         state.adjustedEffectiveCleaningInput = effectiveSurfactantAdjustment;
 
-        const categoryPolicy = getProductHardnessPolicy(
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
-        );
-        const effectiveHardnessPpm = (typeof state.waterHardnessPpm === 'number' && Number.isFinite(state.waterHardnessPpm) && state.waterHardnessPpm >= 0)
+        const effectiveHardnessPpm = typeof state.waterHardnessPpm === 'number' && Number.isFinite(state.waterHardnessPpm) && state.waterHardnessPpm >= 0
           ? state.waterHardnessPpm
-          : 150;
-        const effectiveWashVol = (typeof state.hardnessResult?.washVolumeL === 'number' && Number.isFinite(state.hardnessResult.washVolumeL) && state.hardnessResult.washVolumeL > 0)
+          : undefined;
+        const effectiveWashVol = typeof state.hardnessResult?.washVolumeL === 'number' && Number.isFinite(state.hardnessResult.washVolumeL) && state.hardnessResult.washVolumeL > 0
           ? state.hardnessResult.washVolumeL
-          : (categoryPolicy.defaultWashVolumeL || 10);
-        const effectiveWashDose = (typeof state.hardnessResult?.washDoseGrams === 'number' && Number.isFinite(state.hardnessResult.washDoseGrams) && state.hardnessResult.washDoseGrams > 0)
+          : undefined;
+        const effectiveWashDose = typeof state.hardnessResult?.washDoseGrams === 'number' && Number.isFinite(state.hardnessResult.washDoseGrams) && state.hardnessResult.washDoseGrams > 0
           ? state.hardnessResult.washDoseGrams
-          : (categoryPolicy.defaultDoseGrams || 20);
-        const effectiveBatchKg = (typeof state.batchSizeKg === 'number' && Number.isFinite(state.batchSizeKg) && state.batchSizeKg > 0)
+          : undefined;
+        const effectiveBatchKg = typeof state.batchSizeKg === 'number' && Number.isFinite(state.batchSizeKg) && state.batchSizeKg > 0
           ? state.batchSizeKg
-          : 100;
-        const effectivePH = (typeof state.finalEquilibriumPH === 'number' && Number.isFinite(state.finalEquilibriumPH) && state.finalEquilibriumPH >= 0 && state.finalEquilibriumPH <= 14)
+          : undefined;
+        const effectivePH = typeof state.finalEquilibriumPH === 'number' && Number.isFinite(state.finalEquilibriumPH) && state.finalEquilibriumPH >= 0 && state.finalEquilibriumPH <= 14
           ? state.finalEquilibriumPH
-          : (typeof state.pHIntermediate === 'number' && Number.isFinite(state.pHIntermediate) && state.pHIntermediate >= 0 && state.pHIntermediate <= 14
-            ? state.pHIntermediate
-            : 8.0);
-
-        let evalIngs = state.resolvedIngredients;
-        const totalPct = evalIngs.reduce((sum, ing) => sum + (Number(ing.percentage) || 0), 0);
-        if (evalIngs.length > 0 && Math.abs(totalPct - 100) > 0.05) {
-          const waterIdx = evalIngs.findIndex(i => (i.name || '').toLowerCase().includes('water') || (i.name || '').toLowerCase().includes('aqua'));
-          if (waterIdx >= 0) {
-            const nonWater = evalIngs.reduce((sum, ing, idx) => idx === waterIdx ? sum : sum + (Number(ing.percentage) || 0), 0);
-            const balWater = Math.max(0, 100 - nonWater);
-            evalIngs = evalIngs.map((ing, idx) => idx === waterIdx ? { ...ing, percentage: Number(balWater.toFixed(3)) } : ing);
-          } else if (totalPct > 0) {
-            evalIngs = evalIngs.map(ing => ({ ...ing, percentage: Number(((Number(ing.percentage) || 0) * (100 / totalPct)).toFixed(3)) }));
-          }
-        }
+          : undefined;
 
         const perfRes = calculateCleaningPerformance(
-          evalIngs,
+          state.resolvedIngredients,
           effectivePH,
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
           undefined,
@@ -901,6 +893,7 @@ export class ScientificExecutionDAG {
             washVolumeL: effectiveWashVol,
             washDoseGrams: effectiveWashDose,
             batchSizeKg: effectiveBatchKg,
+            failIfHardnessMissing: true,
             compatibilityStatus: state.compatibilityStatus,
             hasCriticalCompatibilityAlert: state.compatibilityStatus === 'BLOCKED' ||
               (state.compatibilityResult?.alerts || []).some((alert: any) => alert.severity === 'CRITICAL')

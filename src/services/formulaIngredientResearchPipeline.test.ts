@@ -78,6 +78,25 @@ async function main(): Promise<void> {
     IngredientResearchBridge.resolveForFormula = originalResolver;
   }
 
+  const originalMissingResolver = IngredientResearchBridge.resolveForFormula;
+  try {
+    IngredientResearchBridge.resolveForFormula = (async (name: string) => ({
+      ingredient: { id: 'unverified-1', name, category: 'Specialty Additive' },
+      source: 'LOCAL_LIBRARY',
+      requiresUserApproval: false
+    })) as typeof IngredientResearchBridge.resolveForFormula;
+    const noAssayResult = await prepareFormulaForCalculation({
+      name: 'Missing assay must block',
+      batchSizeKg: 100,
+      ingredients: [{ name: 'Unlisted Proprietary Chemical QZ-998', percent: 100 }]
+    });
+    assert(noAssayResult.calculationReady === false, 'missing active-matter assay must block calculation even when ingredient identity resolves');
+    assert(noAssayResult.unresolved.includes('Unlisted Proprietary Chemical QZ-998'), 'ingredient without active-matter assay must be named as unresolved');
+    assert(noAssayResult.activeMatterReport?.activeMatterStatus === 'INSUFFICIENT_DATA', 'missing assay must remain visible in the active-matter report');
+  } finally {
+    IngredientResearchBridge.resolveForFormula = originalMissingResolver;
+  }
+
   console.log('formulaIngredientResearchPipeline.test: PASS');
 }
 

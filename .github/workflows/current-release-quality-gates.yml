@@ -78,6 +78,12 @@ jobs:
       - name: Generate current formula report for regression checks
         run: bun run scripts/audit_39_current_status.ts
 
+      - name: Install isolated IndexedDB test polyfill
+        run: npm install --no-save --package-lock=false --ignore-scripts fake-indexeddb@6.2.4
+
+      - name: Run Dexie v1 and v2 to v3 IndexedDB migration regressions
+        run: bun run test:db-migration
+
       - name: Run all registered TypeScript regressions
         run: bun run test:all
 
@@ -85,7 +91,10 @@ jobs:
     if: (github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true) || github.event_name == 'pull_request'
     name: Capacitor Android debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    env:
+      # Android Emulator 37+ requires explicit opt-in when QEMU TCG is used.
+      ANDROID_I_WANT_MY_TCG: "yes"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -138,6 +147,42 @@ jobs:
       - name: Build genuine debug APK
         run: bash ./gradlew --no-daemon assembleDebug
         working-directory: android
+
+      - name: Enable KVM for Android emulator when available
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            if [[ -r /dev/kvm && -w /dev/kvm ]]; then
+              echo "KVM is available to the runner; emulator will use hardware acceleration."
+            else
+              echo "KVM exists but is not accessible; the emulator will use the TCG fallback."
+            fi
+          else
+            echo "No /dev/kvm device; the emulator will use the TCG fallback."
+          fi
+
+      - name: Run Android WebView document persistence and download instrumentation test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          disable-linux-hw-accel: auto
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          script: cd android && bash ./gradlew --no-daemon connectedDebugAndroidTest
+
+      - name: Upload Android instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formula-expert-android-instrumentation-reports
+          path: android/app/build/reports/androidTests/connected/
+          if-no-files-found: ignore
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

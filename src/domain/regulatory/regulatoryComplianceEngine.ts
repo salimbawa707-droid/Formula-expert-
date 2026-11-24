@@ -63,11 +63,25 @@ export class RegulatoryComplianceEngine {
 
     const calculatedPH = input.calculatedPH;
 
+    // Missing assay/measurement inputs must remain visible and block certification.
+    const compositionTotalPct = evaluatedIngredients.reduce((sum, ing) => sum + ing.asSuppliedPct, 0);
+    const compositionPercentagesValid = evaluatedIngredients.every(ing =>
+      Number.isFinite(ing.asSuppliedPct) && ing.asSuppliedPct >= 0 && ing.asSuppliedPct <= 100
+    );
+    const compositionMissingData = !compositionPercentagesValid || Math.abs(compositionTotalPct - 100) > 0.01
+      ? [`Formula composition totals ${Number.isFinite(compositionTotalPct) ? compositionTotalPct.toFixed(3) : 'an invalid value'}%; provide valid ingredient percentages totaling 100.000% ±0.010% before regulatory concentration calculations.`]
+      : [];
+    const ingredientMissingData = [
+      ...evaluatedIngredients.flatMap(ing => ing.missingDataPoints.map(detail => `${ing.rawName}: ${detail}`)),
+      ...compositionMissingData
+    ];
+
     // 3. Mixture GHS Hazard Classification
     const ghsClassification = MixtureGHSValidationEngine.evaluateGHSClassification(
       evaluatedIngredients,
       calculatedPH
     );
+    const ghsMissingData = ghsClassification.missingDataPoints;
 
     // 4. Statutory Rule Evaluation against Registry
     const applicableRules = isKnownJurisdiction
@@ -89,15 +103,15 @@ export class RegulatoryComplianceEngine {
     const restrictedDetected: string[] = [];
     const unknownDetected: string[] = [];
 
-    const BANNED_KEYWORDS = [
-      { keyword: 'nonylphenol', name: 'Nonylphenol Ethoxylates (NPE)', regulation: 'EU REACH Annex XVII / US EPA Action Plan' },
-      { keyword: 'npe-9', name: 'Nonylphenol Ethoxylate (NPE-9)', regulation: 'EU REACH Annex XVII' },
-      { keyword: 'formalin', name: 'Formalin (Formaldehyde Solution)', regulation: 'EU CLP / US OSHA Carcinogen Standard' },
-      { keyword: 'formaldehyde', name: 'Formaldehyde', regulation: 'EU REACH Banned in Consumer Products' },
-      { keyword: 'borax', name: 'Sodium Tetraborate (Borax)', regulation: 'EU REACH Candidate List' },
-      { keyword: 'boric acid', name: 'Boric Acid', regulation: 'EU REACH Candidate List' },
-      { keyword: 'triclosan', name: 'Triclosan', regulation: 'US FDA / EU Biocidal Products Reg' },
-      { keyword: 'dichromate', name: 'Potassium Dichromate', regulation: 'Global Banned Substance' }
+    const CHEMICAL_SCREENING_KEYWORDS = [
+      { keyword: 'nonylphenol', name: 'Nonylphenol Ethoxylates (NPE)' },
+      { keyword: 'npe-9', name: 'Nonylphenol Ethoxylate (NPE-9)' },
+      { keyword: 'formalin', name: 'Formalin / Formaldehyde Solution' },
+      { keyword: 'formaldehyde', name: 'Formaldehyde' },
+      { keyword: 'borax', name: 'Sodium Tetraborate (Borax)' },
+      { keyword: 'boric acid', name: 'Boric Acid' },
+      { keyword: 'triclosan', name: 'Triclosan' },
+      { keyword: 'dichromate', name: 'Dichromate compounds' }
     ];
 
     for (const ing of evaluatedIngredients) {
@@ -105,26 +119,25 @@ export class RegulatoryComplianceEngine {
         unknownDetected.push(ing.rawName);
       }
 
-      for (const banned of BANNED_KEYWORDS) {
-        if (ing.normalizedName.includes(banned.keyword)) {
-          bannedDetected.push(ing.rawName);
-          failedRules.push({
-            ruleId: 'REG_BANNED_SUBSTANCE',
-            regulationIdentifier: banned.regulation,
-            regulationName: `Banned Substance Detected: ${banned.name}`,
-            jurisdiction: jurisdictionId,
-            requirementType: 'PROHIBITED',
-            mandatoryOrVoluntary: 'MANDATORY',
-            severity: 'CRITICAL',
-            status: 'FAIL',
-            affectedIngredients: [ing.rawName],
-            measuredValue: `${ing.asSuppliedPct.toFixed(2)}%`,
-            message: `Ingredient '${ing.rawName}' matches banned chemical profile '${banned.name}'.`,
-            remediation: `Eliminate ${ing.rawName} completely and substitute with eco-certified alternatives.`,
-            evidenceId: 'EVID_GLOBAL_BANNED_SUBSTANCE',
-            verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
-          });
-        }
+      // Name-only keyword matches are screening flags, not universal legal bans.
+      // Statutory failures must come from an exact jurisdiction-scoped rule.
+      const screeningHit = CHEMICAL_SCREENING_KEYWORDS.find(item => ing.normalizedName.includes(item.keyword));
+      if (screeningHit) {
+        reviewRequiredRules.push({
+          ruleId: 'RULE_NAME_BASED_CHEMICAL_SCREENING',
+          regulationIdentifier: 'CHEMICAL_SCREENING_ONLY',
+          regulationName: 'Name-based chemical concern screening (not a legal determination)',
+          jurisdiction: jurisdictionId,
+          requirementType: 'HUMAN_REVIEW_REQUIRED',
+          mandatoryOrVoluntary: 'MANDATORY',
+          severity: 'HIGH',
+          status: 'REVIEW_REQUIRED',
+          affectedIngredients: [ing.rawName],
+          message: `Ingredient name matches screening term '${screeningHit.name}'. This keyword hit does not establish a banned or restricted legal status.`,
+          remediation: 'Verify exact CAS/EC identity, concentration, product use and current jurisdiction-specific official legislation before making a legal determination.',
+          evidenceId: 'EVID_CHEMICAL_SCREENING_ONLY',
+          verificationStatus: 'NOT_VERIFIED'
+        });
       }
 
       // Custom banned check
@@ -224,11 +237,30 @@ export class RegulatoryComplianceEngine {
       }
     }
 
-    // 5. Evaluate New York 1,4-Dioxane Specific Impurity Limit (1 ppm max)
+    // 5. Evaluate New York 1,4-Dioxane limit only in New York jurisdiction.
+    // Missing raw-material assays are UNKNOWN, never silently treated as zero.
     const formulaDioxanePpm = RegulatoryIngredientEngine.calculateFormulaDioxanePpm(evaluatedIngredients);
-    if (jurisdictionId === 'US_STATE_NY' || jurisdictionId === 'US_FEDERAL') {
+    if (jurisdictionId === 'US_STATE_NY') {
       const maxDioxanePpm = 1.0;
-      if (formulaDioxanePpm > maxDioxanePpm) {
+      if (formulaDioxanePpm === null) {
+        const message = '1,4-dioxane concentration cannot be calculated: one or more ethoxylated raw materials lack an explicit supplier assay.';
+        missingEvidence.push(message);
+        reviewRequiredRules.push({
+          ruleId: 'RULE_US_NY_STATE_14_DIOXANE_ASSAY_MISSING',
+          regulationIdentifier: 'NY ECL § 37-0117',
+          regulationName: 'New York 1,4-Dioxane Concentration Limit',
+          jurisdiction: 'US_STATE_NY',
+          requirementType: 'TESTING_REQUIRED',
+          mandatoryOrVoluntary: 'MANDATORY',
+          severity: 'HIGH',
+          status: 'UNKNOWN_DATA',
+          affectedIngredients: evaluatedIngredients.filter(i => i.missingDataPoints.some(d => d.includes('1,4-dioxane'))).map(i => i.rawName),
+          message,
+          remediation: 'Obtain lot-specific 1,4-dioxane COA or accredited test result for every ethoxylated raw material.',
+          evidenceId: 'EVID_US_NY_ECL_37_0117',
+          verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+        });
+      } else if (formulaDioxanePpm > maxDioxanePpm) {
         failedRules.push({
           ruleId: 'RULE_US_NY_STATE_14_DIOXANE',
           regulationIdentifier: 'NY ECL § 37-0117',
@@ -238,7 +270,7 @@ export class RegulatoryComplianceEngine {
           mandatoryOrVoluntary: 'MANDATORY',
           severity: 'CRITICAL',
           status: 'FAIL',
-          affectedIngredients: evaluatedIngredients.filter(i => i.impuritiesPpm.dioxane_1_4 > 0).map(i => i.rawName),
+          affectedIngredients: evaluatedIngredients.filter(i => (i.impuritiesPpm.dioxane_1_4 ?? 0) > 0).map(i => i.rawName),
           measuredValue: `${formulaDioxanePpm.toFixed(2)} ppm`,
           thresholdValue: `${maxDioxanePpm.toFixed(1)} ppm`,
           message: `Calculated formula 1,4-Dioxane impurity level is ${formulaDioxanePpm.toFixed(2)} ppm, exceeding statutory NY state maximum limit of ${maxDioxanePpm.toFixed(1)} ppm.`,
@@ -246,7 +278,45 @@ export class RegulatoryComplianceEngine {
           evidenceId: 'EVID_US_NY_ECL_37_0117',
           verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
         });
+      } else {
+        passedRules.push({
+          ruleId: 'RULE_US_NY_STATE_14_DIOXANE',
+          regulationIdentifier: 'NY ECL § 37-0117',
+          regulationName: 'New York 1,4-Dioxane Concentration Limit',
+          jurisdiction: jurisdictionId,
+          requirementType: 'CONCENTRATION_LIMIT',
+          mandatoryOrVoluntary: 'MANDATORY',
+          severity: 'CRITICAL',
+          status: 'PASS',
+          affectedIngredients: evaluatedIngredients.filter(i => (i.impuritiesPpm.dioxane_1_4 ?? 0) > 0).map(i => i.rawName),
+          measuredValue: `${formulaDioxanePpm.toFixed(3)} ppm`,
+          thresholdValue: `${maxDioxanePpm.toFixed(1)} ppm`,
+          message: `Calculated formula 1,4-dioxane impurity level is within the New York maximum limit of ${maxDioxanePpm.toFixed(1)} ppm.`,
+          evidenceId: 'EVID_US_NY_ECL_37_0117',
+          verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+        });
       }
+    }
+
+    // Missing ingredient and GHS inputs are explicit review blockers.
+    const allMissingInputDetails = [...ingredientMissingData, ...ghsMissingData];
+    if (allMissingInputDetails.length > 0) {
+      missingEvidence.push(...allMissingInputDetails);
+      reviewRequiredRules.push({
+        ruleId: 'REG_FORMULATION_INPUTS_INCOMPLETE',
+        regulationIdentifier: 'FORMULATION_INPUT_DATA',
+        regulationName: 'Regulatory Ingredient and GHS Input Completeness',
+        jurisdiction: jurisdictionId,
+        requirementType: 'HUMAN_REVIEW_REQUIRED',
+        mandatoryOrVoluntary: 'MANDATORY',
+        severity: 'HIGH',
+        status: 'UNKNOWN_DATA',
+        affectedIngredients: evaluatedIngredients.filter(i => i.missingDataPoints.length > 0).map(i => i.rawName),
+        message: allMissingInputDetails.join(' '),
+        remediation: 'Supply verified chemical identity, supplier active-matter assays, and measured formulation pH before regulatory certification.',
+        evidenceId: 'EVID_FORMULATION_INPUT_COMPLETENESS',
+        verificationStatus: 'NOT_VERIFIED'
+      });
     }
 
     // 6. Claim Compliance Evaluation
@@ -290,6 +360,9 @@ export class RegulatoryComplianceEngine {
       warnings.push(productScope.reason);
     } else if (evaluatedIngredients.length === 0) {
       overallStatus = 'INSUFFICIENT_DATA';
+    } else if (claimReport.overallStatus === 'FAIL') {
+      overallStatus = 'NON_COMPLIANT';
+      warnings.push('One or more intended marketing claims are contradicted by the supplied formula composition.');
     } else if (failedRules.some(r => r.severity === 'CRITICAL' || r.severity === 'HIGH')) {
       overallStatus = 'NON_COMPLIANT';
     } else if (failedRules.length > 0) {
@@ -306,7 +379,13 @@ export class RegulatoryComplianceEngine {
     } else if (unverifiedCount > 0 || outdatedCount > 0 || verifiedPrimaryCount === 0) {
       overallStatus = 'REVIEW_REQUIRED';
       warnings.push('One or more applicable regulatory rules lack current verified primary-source support; compliance cannot be certified.');
-    } else if (reviewRequiredRules.length > 0 || claimReport.overallStatus === 'REVIEW_REQUIRED') {
+    } else if (
+      reviewRequiredRules.length > 0 ||
+      claimReport.overallStatus === 'REVIEW_REQUIRED' ||
+      labelReport.overallLabelStatus !== 'PASS' ||
+      sdsReport.overallSDSStatus !== 'PASS' ||
+      packagingReport.overallPackagingStatus !== 'PASS'
+    ) {
       overallStatus = 'REVIEW_REQUIRED';
     }
 
@@ -360,7 +439,7 @@ export class RegulatoryComplianceEngine {
     rule: RegulatoryRule,
     ingredients: EvaluatedChemicalIngredient[],
     input: RegulatoryEvaluationInput,
-    _calculatedPH: number,
+    _calculatedPH: number | undefined,
     productScope: ReturnType<typeof RegulatoryProductScopeEngine.resolveProductScope>,
     evaluationDate: string
   ): RuleEvaluationResult {
@@ -462,29 +541,114 @@ export class RegulatoryComplianceEngine {
       }
     }
 
-    // 4. Check Concentration Threshold Rules (e.g. STPP, VOC, NPE)
-    if (rule.concentrationThresholds && rule.ingredientScope) {
-      let matchingSumPct = 0;
+    // New York dioxane is calculated from lot-specific impurity assays in the
+    // evaluate() coordinator. Never treat the SLES ingredient percentage as dioxane.
+    if (rule.ruleId === 'RULE_US_NY_STATE_14_DIOXANE') {
+      return {
+        ruleId: rule.ruleId,
+        regulationIdentifier: rule.regulationIdentifier,
+        regulationName: rule.regulationName,
+        jurisdiction: rule.jurisdiction,
+        requirementType: rule.requirementType,
+        mandatoryOrVoluntary: rule.mandatoryOrVoluntary,
+        severity: rule.severity,
+        status: 'NOT_APPLICABLE',
+        affectedIngredients: [],
+        message: 'Evaluated by the dedicated finished-formula impurity assay pathway.',
+        evidenceId: rule.evidenceId,
+        verificationStatus: rule.verificationStatus
+      };
+    }
+
+    // 4. Check concentration thresholds only when the declared unit and basis
+    // can be calculated from supplied formula data. Never compare unlike units.
+    if (rule.concentrationThresholds && (rule.ingredientScope || rule.chemicalIdentifiers)) {
+      const threshold = rule.concentrationThresholds;
+      const formulaTotalPct = ingredients.reduce((sum, ing) => sum + ing.asSuppliedPct, 0);
+      const validMassBalance = ingredients.length > 0 &&
+        ingredients.every(ing => Number.isFinite(ing.asSuppliedPct) && ing.asSuppliedPct >= 0 && ing.asSuppliedPct <= 100) &&
+        Math.abs(formulaTotalPct - 100) <= 0.01;
+      const supportedUnitBasis =
+        threshold.unit === 'WEIGHT_PCT' &&
+        ['ACTIVE_MATTER', 'AS_SUPPLIED', 'FORMULA_TOTAL', 'FINISHED_PRODUCT'].includes(threshold.basis);
+
+      if (!validMassBalance || !supportedUnitBasis) {
+        return {
+          ruleId: rule.ruleId,
+          regulationIdentifier: rule.regulationIdentifier,
+          regulationName: rule.regulationName,
+          jurisdiction: rule.jurisdiction,
+          requirementType: rule.requirementType,
+          mandatoryOrVoluntary: rule.mandatoryOrVoluntary,
+          severity: rule.severity,
+          status: 'UNKNOWN_DATA',
+          affectedIngredients: [],
+          message: !validMassBalance
+            ? 'A valid 100% formula mass balance is required before concentration thresholds can be evaluated.'
+            : `Threshold unit/basis (${threshold.unit} / ${threshold.basis}) requires inputs or a conversion model not available in this evaluation.`,
+          remediation: 'Provide a complete mass-balanced formula and the required density, impurity, dose or other basis-specific measurements; do not infer a result from weight percentage.',
+          evidenceId: rule.evidenceId,
+          verificationStatus: rule.verificationStatus
+        };
+      }
+
+      const identifier = rule.chemicalIdentifiers;
       const affectedIngs: string[] = [];
+      let matchingValue = 0;
+      const multiplier = 1;
 
       for (const ing of ingredients) {
-        const matchesScope = rule.ingredientScope.some(
-          scope => ing.normalizedName.includes(scope.toLowerCase())
+        const matchesNameScope = (rule.ingredientScope || []).some(scope =>
+          ing.normalizedName.includes(scope.toLowerCase())
         );
-
-        if (matchesScope) {
+        const matchesIdentifier =
+          (!!ing.casNumber && !!identifier?.casNumbers?.includes(ing.casNumber)) ||
+          (!!ing.ecNumber && !!identifier?.ecNumbers?.includes(ing.ecNumber)) ||
+          (!!ing.inciName && !!identifier?.inciNames?.some(name => name.toLowerCase() === ing.inciName?.toLowerCase()));
+        if (matchesNameScope || matchesIdentifier) {
           affectedIngs.push(ing.rawName);
-          if (rule.concentrationThresholds.basis === 'ACTIVE_MATTER') {
-            matchingSumPct += ing.activeMatterPct;
+          if (threshold.basis === 'ACTIVE_MATTER') {
+            if (ing.activeMatterPct === undefined) {
+              return {
+                ruleId: rule.ruleId,
+                regulationIdentifier: rule.regulationIdentifier,
+                regulationName: rule.regulationName,
+                jurisdiction: rule.jurisdiction,
+                requirementType: rule.requirementType,
+                mandatoryOrVoluntary: rule.mandatoryOrVoluntary,
+                severity: rule.severity,
+                status: 'UNKNOWN_DATA',
+                affectedIngredients: affectedIngs,
+                message: `Active-matter assay is missing for '${ing.rawName}'; cannot evaluate this concentration threshold.`,
+                remediation: 'Provide lot-specific supplier COA or validated assay.',
+                evidenceId: rule.evidenceId,
+                verificationStatus: rule.verificationStatus
+              };
+            }
+            matchingValue += ing.activeMatterPct * multiplier;
           } else {
-            matchingSumPct += ing.asSuppliedPct;
+            matchingValue += ing.asSuppliedPct * multiplier;
           }
         }
       }
 
-      if (affectedIngs.length > 0 && rule.concentrationThresholds.maxPercentage !== undefined) {
-        const maxLimit = input.maxPhosphatePctOverride ?? rule.concentrationThresholds.maxPercentage;
-        if (matchingSumPct > maxLimit) {
+      if (affectedIngs.length > 0) {
+        const isPhosphateRule = rule.ruleId.toUpperCase().includes('PHOSPHATE');
+        const isVocRule = rule.ruleId.toUpperCase().includes('VOC');
+        const maxLimit = isPhosphateRule
+          ? (input.maxPhosphatePctOverride ?? threshold.maxPercentage)
+          : isVocRule
+            ? (input.maxVocPctOverride ?? threshold.maxPercentage)
+            : threshold.maxPercentage;
+        const maxExceeded = maxLimit !== undefined &&
+          (threshold.inclusive ? matchingValue > maxLimit : matchingValue >= maxLimit);
+        const minViolated = threshold.minPercentage !== undefined &&
+          (threshold.inclusive ? matchingValue < threshold.minPercentage : matchingValue <= threshold.minPercentage);
+
+        if (maxExceeded || minViolated) {
+          const limitText = maxExceeded
+            ? `maximum ${maxLimit} ${threshold.unit}`
+            : `minimum ${threshold.minPercentage} ${threshold.unit}`;
           return {
             ruleId: rule.ruleId,
             regulationIdentifier: rule.regulationIdentifier,
@@ -495,9 +659,9 @@ export class RegulatoryComplianceEngine {
             severity: rule.severity,
             status: 'FAIL',
             affectedIngredients: affectedIngs,
-            measuredValue: `${matchingSumPct.toFixed(2)}%`,
-            thresholdValue: `${maxLimit.toFixed(2)}%`,
-            message: `Concentration ${matchingSumPct.toFixed(2)}% exceeds statutory threshold of ${maxLimit.toFixed(2)}% under ${rule.regulationName}.`,
+            measuredValue: `${matchingValue.toFixed(3)} ${threshold.unit}`,
+            thresholdValue: limitText,
+            message: `Measured concentration ${matchingValue.toFixed(3)} ${threshold.unit} violates the ${limitText} threshold under ${rule.regulationName}.`,
             remediation: rule.remediationGuidance,
             evidenceId: rule.evidenceId,
             verificationStatus: rule.verificationStatus

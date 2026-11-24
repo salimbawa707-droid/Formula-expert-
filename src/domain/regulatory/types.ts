@@ -260,9 +260,9 @@ export interface SDSComplianceReport {
 
 export interface PackagingComplianceReport {
   overallPackagingStatus: 'PASS' | 'FAIL' | 'REVIEW_REQUIRED';
-  childResistantClosureRequired: boolean;
+  childResistantClosureRequired: boolean | null;
   childResistantClosureVerified: boolean;
-  tactileWarningRequired: boolean;
+  tactileWarningRequired: boolean | null;
   tactileWarningVerified: boolean;
   recyclabilityInfoAvailable: boolean;
   legalMetrologyUnitFormatted: boolean;

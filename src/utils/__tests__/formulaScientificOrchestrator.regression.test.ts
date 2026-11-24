@@ -417,16 +417,18 @@ export function runFormulaScientificOrchestratorTestSuite() {
 
   assert(
     'Group H: Regulatory Compliance',
-    'Detects banned Nonylphenol Ethoxylates and sets regulatory compliance to false',
-    evalBanned.regulatoryResult.compliant === false && evalBanned.regulatoryResult.bannedIngredientsDetected.length > 0,
+    'Name-only NPE keyword hit blocks a clean compliance result without asserting a universal legal ban',
+    evalBanned.regulatoryResult.compliant === false &&
+      evalBanned.regulatoryResult.status === 'RESTRICTED' &&
+      evalBanned.regulatoryResult.bannedIngredientsDetected.length === 0,
     evalBanned.regulatoryResult.compliant,
     false
   );
 
   assert(
     'Group H: Regulatory Compliance',
-    'Detects severe toxicological/environmental finding with regulatory reference',
-    evalBanned.regulatoryResult.findings.some(f => f.code === 'REG_BANNED_SUBSTANCE'),
+    'Name-only chemical screening is surfaced as a review finding, not a fabricated banned-substance finding',
+    evalBanned.regulatoryResult.findings.some(f => f.code === 'REG_CHEMICAL_SCREENING'),
     true,
     true
   );

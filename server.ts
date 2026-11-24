@@ -2,6 +2,7 @@ import express from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { resolveUniversalIngredientIdentity } from './src/data/universalIngredientLibrary.ts';
 import path from 'path';
 import {
   authenticateUserMiddleware,
@@ -358,6 +359,22 @@ app.post(
     const cleanName = nameOrAlias.trim();
     const cleanGrade = (typeof grade === 'string') ? grade.trim() : '';
 
+    // Server-side database-first guard: never invoke Gemini for a canonical
+    // ingredient or an explicitly declared alias already in the master library.
+    const localResolution = resolveUniversalIngredientIdentity(cleanName);
+    if (localResolution?.ingredient) {
+      return res.json({
+        success: true,
+        localMatch: true,
+        requiresUserApproval: false,
+        gradeCompatible: localResolution.gradeCompatible,
+        ingredient: localResolution.ingredient,
+        message: localResolution.gradeCompatible
+          ? 'Ingredient already exists in the local database. Gemini research was skipped.'
+          : 'Ingredient identity exists locally, but commercial grade needs review. Gemini research was skipped.'
+      });
+    }
+
     const systemInstruction = `You are a Senior Detergent R&D Chemist, Industrial Formulator, and Chemical Specification Specialist.
 Your mission is to perform rigorous research on chemical raw materials, commercial surfactants, builders, chelators, and additives used in cleaning, cosmetics, and industrial detergents.
 Find authentic Technical Data Sheets (TDS), Safety Data Sheets (SDS), manufacturer specifications (e.g., BASF, Stepan, Clariant, Galaxy Surfactants, Solvay, Evonik, Croda, Nouryon, Dow), or official chemical registries (PubChem, ECHA, CosIng).
@@ -491,112 +508,17 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
       }
     }
 
-    // Attempt 3: Heuristic Rule-Based Detergent Chemistry Engine Fallback
-    if (!parsed || !parsed.canonicalName || !parsed.parameters || parsed.parameters.activeMatter === undefined) {
-      const lower = cleanName.toLowerCase();
-      let activeMatter = 100;
-      let ionicNature = 'Neutral';
-      let category = 'Specialty Chemical / Additive';
-      let canonicalName = cleanName;
-      let casNumber = '';
-      let inciName = cleanName;
-      let hlb: number | null = null;
-      let pH = 7.0;
-      let density = 1.0;
-
-      // Extract explicit percentage from name (e.g. "Galaxy LES 70", "LABSA 90%", "Texapon 28")
-      const pctMatch = cleanName.match(/(\d{1,3})\s*%/);
-      const numMatch = cleanName.match(/\b(28|30|35|40|45|50|60|70|80|90|96|99|100)\b/);
-      if (pctMatch) {
-        activeMatter = Math.min(100, Math.max(1, parseInt(pctMatch[1], 10)));
-      } else if (numMatch) {
-        activeMatter = Math.min(100, Math.max(1, parseInt(numMatch[1], 10)));
-      }
-
-      if (lower.includes('les') || lower.includes('sles') || lower.includes('laureth sulfate')) {
-        canonicalName = 'Sodium Laureth Sulfate';
-        inciName = 'Sodium Laureth Sulfate';
-        casNumber = '68891-38-3';
-        category = 'Anionic Surfactant';
-        ionicNature = 'Anionic';
-        if (!pctMatch && !numMatch) activeMatter = 70;
-        pH = 7.5;
-        density = 1.05;
-        hlb = 11.0;
-      } else if (lower.includes('labsa') || lower.includes('sulfonic acid')) {
-        canonicalName = 'Linear Alkylbenzene Sulfonic Acid';
-        inciName = 'Dodecylbenzene Sulfonic Acid';
-        casNumber = '27176-87-0';
-        category = 'Anionic Surfactant';
-        ionicNature = 'Anionic';
-        if (!pctMatch && !numMatch) activeMatter = 90;
-        pH = 2.0;
-        density = 1.06;
-      } else if (lower.includes('capb') || lower.includes('betaine')) {
-        canonicalName = 'Cocamidopropyl Betaine';
-        inciName = 'Cocamidopropyl Betaine';
-        casNumber = '61789-40-0';
-        category = 'Amphoteric Surfactant';
-        ionicNature = 'Amphoteric';
-        if (!pctMatch && !numMatch) activeMatter = 30;
-        pH = 5.5;
-        density = 1.04;
-      } else if (lower.includes('gluco') || lower.includes('apg')) {
-        canonicalName = 'Alkyl Polyglucoside';
-        inciName = 'Coco-Glucoside';
-        casNumber = '110615-47-9';
-        category = 'Nonionic Surfactant';
-        ionicNature = 'Nonionic';
-        if (!pctMatch && !numMatch) activeMatter = 50;
-        pH = 11.5;
-        hlb = 13.0;
-        density = 1.1;
-      } else if (lower.includes('lae') || lower.includes('ethoxylate')) {
-        canonicalName = 'Alcohol Ethoxylate (7-9 EO)';
-        category = 'Nonionic Surfactant';
-        ionicNature = 'Nonionic';
-        if (!pctMatch && !numMatch) activeMatter = 90;
-        pH = 6.5;
-        hlb = 12.5;
-        density = 0.98;
-      }
-
-      parsed = {
-        ingredientId: `custom-${cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-        canonicalName,
-        resolvedName: cleanName,
-        tradeName: cleanName,
-        confidence: 'HIGH_CONFIDENCE_MATCH',
-        parameters: {
-          activeMatter,
-          density,
-          pH,
-          pHRange: `${Math.max(1, pH - 1)} - ${Math.min(14, pH + 1)}`,
-          hlb,
-          ionicNature,
-          application: 'Detergent formulation active component',
-          nvr: activeMatter,
-          casNumber,
-          inciName,
-          category
-        },
-        sources: [
-          {
-            sourceId: 'src-detergent-science-ref',
-            title: 'Industrial Detergent Raw Material Chemistry Compendium',
-            publisher: 'Industrial Surfactant Registry',
-            url: 'https://echa.europa.eu',
-            domain: 'echa.europa.eu',
-            sourceType: 'TECHNICAL_REFERENCE'
-          }
-        ],
-        provenance: {
-          activeMatter: { value: activeMatter, source: 'Manufacturer TDS Specification', sourceUrl: 'https://echa.europa.eu', status: 'VERIFIED' },
-          pH: { value: pH, source: 'Product Specification', sourceUrl: 'https://echa.europa.eu', status: 'VERIFIED' }
-        },
-        requiresUserApproval: false,
-        summary: `Researched chemical ${cleanName} resolved as ${canonicalName} (${activeMatter}% active matter, ${ionicNature} ${category}).`
-      };
+    // No heuristic fallback is allowed here. Unknown ingredients must be
+    // supported by actual Google Search grounding; AI-only guesses are not
+    // chemical specifications and must never be promoted into the database.
+    if (!responseText || !parsed || !parsed.canonicalName || !parsed.parameters ||
+      !Array.isArray(groundingChunks) || groundingChunks.length === 0) {
+      return res.status(422).json({
+        success: false,
+        status: 'INSUFFICIENT_EVIDENCE',
+        requiresUserApproval: true,
+        error: 'No grounded source evidence was retrieved. No estimated/default chemical properties were generated or saved.'
+      });
     }
 
     // Ensure fallback fields and proper slug
@@ -606,6 +528,56 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
     parsed.canonicalName = parsed.canonicalName || cleanName;
     parsed.confidence = parsed.confidence || 'HIGH_CONFIDENCE_MATCH';
     parsed.parameters = parsed.parameters || {};
+
+    const groundedSources = groundingChunks.map((chunk: any, idx: number) => {
+      const uri = typeof chunk.web?.uri === 'string' ? chunk.web.uri : '';
+      let domain = '';
+      try {
+        const parsedUrl = new URL(uri);
+        if (parsedUrl.protocol !== 'https:') return null;
+        domain = parsedUrl.hostname.toLowerCase().replace(/^www\./, '');
+      } catch {
+        return null;
+      }
+      return {
+        sourceId: 'google-grounding-' + (idx + 1),
+        title: typeof chunk.web?.title === 'string' ? chunk.web.title : 'Google Search grounded page',
+        publisher: domain,
+        url: uri,
+        domain,
+        sourceType: 'TECHNICAL_REFERENCE'
+      };
+    }).filter(Boolean);
+
+    if (groundedSources.length === 0) {
+      return res.status(422).json({
+        success: false,
+        status: 'INSUFFICIENT_EVIDENCE',
+        requiresUserApproval: true,
+        error: 'Search returned no valid HTTPS source references. No ingredient profile was saved.'
+      });
+    }
+
+    // Model-extracted values remain candidate data until a human checks the
+    // original manufacturer TDS/COA. Never trust the model's self-declared
+    // VERIFIED flag or requiresUserApproval=false.
+    parsed.sources = groundedSources;
+    parsed.requiresUserApproval = true;
+    parsed.status = 'NEEDS_VERIFICATION';
+    parsed.provenance = {
+      activeMatter: {
+        value: parsed.parameters.activeMatter ?? null,
+        source: 'Gemini extraction; original document requires human verification',
+        sourceUrl: '',
+        status: 'AI_SUMMARY'
+      },
+      pH: {
+        value: parsed.parameters.pH ?? null,
+        source: 'Gemini extraction; original document requires human verification',
+        sourceUrl: '',
+        status: 'AI_SUMMARY'
+      }
+    };
 
     // Incorporate grounding metadata if present
     if (Array.isArray(groundingChunks) && groundingChunks.length > 0 && (!parsed.sources || parsed.sources.length === 0)) {
@@ -655,6 +627,11 @@ app.post(
     }
 
     const { ingredientId, canonicalName, resolvedName, parameters, provenance } = researchResult;
+    if (researchResult.requiresUserApproval !== false) {
+      return res.status(409).json({
+        error: 'Research candidate is not verified. Human review of the original manufacturer TDS/COA is required before saving it to the ingredient database.'
+      });
+    }
     if (parameters !== undefined && (!parameters || typeof parameters !== 'object' || Array.isArray(parameters))) {
       return res.status(400).json({ error: 'researchResult.parameters must be an object.' });
     }

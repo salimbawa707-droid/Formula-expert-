@@ -44,6 +44,9 @@ import {
   CANONICAL_REGULATORY_SCOPES
 } from '../../domain/regulatory';
 import { evaluateRegulatoryCompliance } from '../regulatoryEngine';
+import { MixtureGHSValidationEngine } from '../../domain/regulatory/regulatoryValidation';
+import { PackagingComplianceEngine } from '../../domain/regulatory/regulatoryPackagingRules';
+
 
 export interface TestResult {
   name: string;
@@ -594,6 +597,49 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     decisionBanned.overallStatus === 'NON_COMPLIANT' && decisionBanned.failedRules.some(r => r.ruleId === 'RULE_EU_REACH_NPE_BAN')
   );
 
+  const globalNpeScreen = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 95, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'Nonylphenol Ethoxylate (NPE-9)', percentage: 5, casNumber: '9016-45-9', activePercentage: 100 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'GLOBAL_UN_GHS',
+    calculatedPH: 8
+  });
+  assert(
+    'Jurisdiction firewall: name-only NPE keyword screening does not invent a universal statutory ban',
+    !globalNpeScreen.failedRules.some(r => r.ruleId === 'REG_BANNED_SUBSTANCE') &&
+      globalNpeScreen.reviewRequired.some(r => r.ruleId === 'RULE_NAME_BASED_CHEMICAL_SCREENING')
+  );
+
+  const identifierMatchedNpe = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 99.5, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'Proprietary nonionic blend', percentage: 0.5, casNumber: '9016-45-9', activePercentage: 100 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'EU',
+    maxPhosphatePctOverride: 1.0
+  });
+  assert(
+    'Regulatory threshold firewall: CAS identifier matching catches NPE and phosphate override cannot relax an NPE limit',
+    identifierMatchedNpe.failedRules.some(r => r.ruleId === 'RULE_EU_REACH_NPE_BAN')
+  );
+
+  const euDoseBasisUnknown = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 90, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'Sodium Tripolyphosphate (STPP)', percentage: 10, casNumber: '7758-29-4', activePercentage: 100 }
+    ],
+    productCategory: 'LAUNDRY_POWDER',
+    jurisdiction: 'EU'
+  });
+  assert(
+    'Regulatory threshold firewall: gram-per-dose rules are UNKNOWN_DATA without an actual dose input, never compared as weight percent',
+    euDoseBasisUnknown.reviewRequired.some(r => r.ruleId === 'RULE_EU_DETERGENT_PHOSPHATE_BAN' && r.status === 'UNKNOWN_DATA') &&
+      !euDoseBasisUnknown.passedRules.some(r => r.ruleId === 'RULE_EU_DETERGENT_PHOSPHATE_BAN')
+  );
+
   const testInputIndiaSTPP: RegulatoryEvaluationInput = {
     ingredients: [
       { name: 'Sodium Tripolyphosphate (STPP)', percentage: 10.0 },
@@ -645,9 +691,10 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   };
   const decisionCorrosive = RegulatoryComplianceEngine.evaluate(testInputCorrosivePH);
   assert(
-    'Legacy GHS Classification: pH 13.5 triggers GHS05 Corrosion, DANGER signal word',
-    decisionCorrosive.packagingStatus.childResistantClosureRequired &&
-      decisionCorrosive.labelStatus.checkList.some(c => c.itemId === 'LBL_GHS_HAZARD' && c.status === 'PASS')
+    'GHS classification firewall: pH 13.5 triggers review but does not auto-classify corrosion or child-resistant packaging',
+    decisionCorrosive.packagingStatus.childResistantClosureRequired === null &&
+      decisionCorrosive.labelStatus.checkList.some(c => c.itemId === 'LBL_GHS_HAZARD' && c.status === 'REVIEW_REQUIRED') &&
+      decisionCorrosive.reviewRequired.some(r => r.message.includes('acid/alkali reserve'))
   );
 
   const claimResultUnsubstantiated = ClaimComplianceEngine.evaluateClaims(
@@ -672,6 +719,39 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     sdsResult.sections.some(s => s.sectionNumber === 11 && s.status === 'DATA_NOT_AVAILABLE')
   );
 
+  assert(
+    'SDS evidence firewall: no SDS section is marked COMPLETE when no section-specific document content was supplied',
+    sdsResult.sections.length === 16 && sdsResult.sections.every(s => s.status !== 'COMPLETE') &&
+      sdsResult.sections.some(s => s.sectionNumber === 1 && s.status === 'DATA_NOT_AVAILABLE') &&
+      sdsResult.sections.some(s => s.sectionNumber === 16 && s.status === 'DATA_NOT_AVAILABLE')
+  );
+
+  const documentationIncompleteDecision = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 80, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 20, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 0 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'EU',
+    calculatedPH: 8,
+    packageSizeGramsOrMl: 1000,
+    intendedClaims: []
+  });
+  assert(
+    'Regulatory decision firewall: incomplete label, SDS and package evidence cannot yield COMPLIANT',
+    documentationIncompleteDecision.overallStatus !== 'COMPLIANT' &&
+      documentationIncompleteDecision.labelStatus.overallLabelStatus === 'REVIEW_REQUIRED' &&
+      documentationIncompleteDecision.sdsStatus.overallSDSStatus === 'REVIEW_REQUIRED' &&
+      documentationIncompleteDecision.packagingStatus.overallPackagingStatus === 'REVIEW_REQUIRED'
+  );
+
+  const labelWithNominalQuantity = LabelComplianceEngine.evaluateLabelRequirements('INDIA', [], 'NONE', 1000);
+  assert(
+    'Label evidence firewall: formula metadata and a target quantity cannot mark real label artwork as PASS',
+    labelWithNominalQuantity.overallLabelStatus === 'REVIEW_REQUIRED' &&
+      labelWithNominalQuantity.checkList.every(c => c.status !== 'PASS')
+  );
+
   const fakeEvidence: RegulatoryEvidence = {
     evidenceId: 'EVID_FAKE_123',
     source: 'Fake Source',
@@ -691,6 +771,199 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   assert(
     'Legacy Evidence Gate: Placeholder/fake URLs (example.com) are rejected as NOT_VERIFIED evidence',
     !evidenceValidation.isValid && evidenceValidation.verificationStatus === 'NOT_VERIFIED'
+  );
+
+  // Regression: no name-based assay, CAS, or impurity fabrication.
+  const invalidPercentageIngredient = RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 120, activePercentage: 28 });
+  assert(
+    'Scientific firewall: invalid as-supplied percentage blocks active-matter calculation',
+    invalidPercentageIngredient.activeMatterPct === undefined &&
+      invalidPercentageIngredient.missingDataPoints.some(x => x.includes('As-supplied percentage'))
+  );
+  assert(
+    'Scientific firewall: dioxane formula calculation rejects incomplete mass balance',
+    RegulatoryIngredientEngine.calculateFormulaDioxanePpm([
+      RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 70 }),
+      RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 20, activePercentage: 28, impuritiesPpm: { dioxane_1_4: 0 } })
+    ]) === null
+  );
+
+  const invalidIdentifierIngredient = RegulatoryIngredientEngine.processIngredient({
+    name: 'SLES',
+    percentage: 30,
+    activePercentage: 28,
+    casNumber: '1234-56-7',
+    ecNumber: '123-45-6',
+    impuritiesPpm: { dioxane_1_4: -1 }
+  });
+  assert(
+    'Scientific firewall: malformed CAS checksum and EC syntax are not accepted as chemical identity',
+    invalidIdentifierIngredient.casNumber === undefined &&
+      invalidIdentifierIngredient.ecNumber === undefined &&
+      invalidIdentifierIngredient.isUnknownIdentity &&
+      invalidIdentifierIngredient.missingDataPoints.some(x => x.includes('CAS number')) &&
+      invalidIdentifierIngredient.missingDataPoints.some(x => x.includes('EC number'))
+  );
+  assert(
+    'Scientific firewall: negative impurity assay is rejected rather than treated as measured data',
+    invalidIdentifierIngredient.impuritiesPpm.dioxane_1_4 === undefined &&
+      invalidIdentifierIngredient.missingDataPoints.some(x => x.includes('finite non-negative ppm'))
+  );
+  const invalidActiveAssay = RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 30, activePercentage: 120 });
+  assert(
+    'Scientific firewall: invalid active-matter assay blocks calculation',
+    invalidActiveAssay.activeMatterPct === undefined &&
+      invalidActiveAssay.missingDataPoints.some(x => x.includes('Active-matter assay'))
+  );
+
+  const unverifiedSles = RegulatoryIngredientEngine.processIngredient({ name: 'SLES 28%', percentage: 30 });
+  assert(
+    'Scientific firewall: SLES trade name does not infer active matter, CAS identity, or dioxane assay',
+    unverifiedSles.activeMatterPct === undefined &&
+      unverifiedSles.casNumber === undefined &&
+      unverifiedSles.impuritiesPpm.dioxane_1_4 === undefined &&
+      unverifiedSles.missingDataPoints.some(x => x.includes('Active-matter assay')) &&
+      unverifiedSles.missingDataPoints.some(x => x.includes('1,4-dioxane'))
+  );
+  assert(
+    'Scientific firewall: formula dioxane calculation returns unavailable when ethoxylated raw material assay is missing',
+    RegulatoryIngredientEngine.calculateFormulaDioxanePpm([unverifiedSles]) === null
+  );
+
+  const nyMissingDioxaneAssay = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_STATE_NY',
+    calculatedPH: 8
+  });
+  assert(
+    'Scientific firewall: New York dioxane assessment requires explicit ethoxylated raw-material assay',
+    nyMissingDioxaneAssay.overallStatus !== 'COMPLIANT' &&
+      nyMissingDioxaneAssay.reviewRequired.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE_ASSAY_MISSING')
+  );
+
+  const nyLowDioxaneAssay = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 2 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_STATE_NY',
+    calculatedPH: 8
+  });
+  assert(
+    'Dioxane unit firewall: 30% SLES with 2 ppm raw-material dioxane yields 0.6 ppm formula level and passes the 1 ppm limit',
+    nyLowDioxaneAssay.passedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE' && r.measuredValue === '0.600 ppm') &&
+      !nyLowDioxaneAssay.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
+  );
+
+  const nyHighDioxaneAssay = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 10 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_STATE_NY',
+    calculatedPH: 8
+  });
+  assert(
+    'Dioxane unit firewall: 30% SLES with 10 ppm raw-material dioxane yields 3 ppm formula level and fails the 1 ppm limit',
+    nyHighDioxaneAssay.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE' && r.measuredValue === '3.00 ppm')
+  );
+
+  const federalDioxaneScope = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 20 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_FEDERAL',
+    calculatedPH: 8
+  });
+  assert(
+    'Jurisdiction firewall: New York state dioxane limit is not incorrectly enforced as a US federal rule',
+    !federalDioxaneScope.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
+  );
+
+  const legacyExtremePh = evaluateRegulatoryCompliance(
+    [
+      { name: 'Sodium Hydroxide (Caustic Soda)', percentage: 10 } as any,
+      { name: 'Water', percentage: 90 } as any
+    ],
+    'KITCHEN_DEGREASER',
+    { jurisdiction: 'GLOBAL_UN_GHS' },
+    13.5
+  );
+  assert(
+    'Legacy bridge firewall: pH-only regulatory bridge output remains UNDETERMINED and does not recreate DANGER',
+    legacyExtremePh.ghsClassification.signalWord === 'UNDETERMINED'
+  );
+
+  const extremePhScreen = MixtureGHSValidationEngine.evaluateGHSClassification([
+    RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 100, activePercentage: 0 })
+  ], 12);
+  assert(
+    'GHS firewall: extreme pH is a screening trigger and cannot independently issue H314, GHS05 or DANGER',
+    extremePhScreen.signalWord === 'UNDETERMINED' &&
+      extremePhScreen.hazardClassifications.length === 0 &&
+      extremePhScreen.hazardStatements.length === 0 &&
+      extremePhScreen.hazardPictograms.length === 0 &&
+      extremePhScreen.missingDataPoints.some(x => x.includes('acid/alkali reserve'))
+  );
+
+  const surfactantOnlyScreen = MixtureGHSValidationEngine.evaluateGHSClassification([
+    RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 100, activePercentage: 28, casNumber: '68585-34-2' })
+  ], 7);
+  assert(
+    'GHS firewall: 15% active surfactant heuristic cannot independently issue WARNING or H319',
+    surfactantOnlyScreen.signalWord === 'UNDETERMINED' &&
+      surfactantOnlyScreen.hazardClassifications.length === 0 &&
+      surfactantOnlyScreen.hazardStatements.length === 0 &&
+      surfactantOnlyScreen.missingDataPoints.some(x => x.includes('not a GHS hazard classification threshold'))
+  );
+
+  const euUfiUndetermined = LabelComplianceEngine.evaluateLabelRequirements('EU', [], 'NONE', 1000);
+  assert(
+    'EU label firewall: missing UFI is REVIEW_REQUIRED when mixture classification is incomplete, not silently omitted',
+    euUfiUndetermined.checkList.some(item => item.itemId === 'LBL_EU_UFI_CODE' && item.status === 'REVIEW_REQUIRED') &&
+      euUfiUndetermined.overallLabelStatus === 'REVIEW_REQUIRED'
+  );
+
+  const packagingUndetermined = PackagingComplianceEngine.evaluatePackaging('EU', 'NONE', 12);
+  assert(
+    'Packaging firewall: extreme pH without verified mixture classification leaves CRC and EU tactile warning undetermined',
+    packagingUndetermined.childResistantClosureRequired === null &&
+      packagingUndetermined.tactileWarningRequired === null &&
+      packagingUndetermined.overallPackagingStatus === 'REVIEW_REQUIRED'
+  );
+
+  const negativeClaimsWithoutEvidence = ClaimComplianceEngine.evaluateClaims(
+    ['Phosphate-Free', 'Bleach-Free', 'Microplastic-Free'],
+    [
+      RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 80, casNumber: '7732-18-5', activePercentage: 0 }),
+      RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 20, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 0 } })
+    ],
+    'INDIA'
+  );
+  assert(
+    'Claim firewall: absence of named phosphate/bleach ingredients or polymers does not substantiate negative claims without linked evidence',
+    negativeClaimsWithoutEvidence.evaluations.length === 3 &&
+      negativeClaimsWithoutEvidence.evaluations.every(e => e.status === 'CLAIM_NOT_SUBSTANTIATED' && !e.hasRequiredEvidence) &&
+      negativeClaimsWithoutEvidence.overallStatus === 'REVIEW_REQUIRED'
+  );
+
+  const contradictedPhosphateClaim = ClaimComplianceEngine.evaluateClaims(
+    ['Phosphate-Free'],
+    [RegulatoryIngredientEngine.processIngredient({ name: 'STPP', percentage: 10 })],
+    'INDIA'
+  );
+  assert(
+    'Claim firewall: a formula containing STPP makes a Phosphate-Free claim a hard FAIL',
+    contradictedPhosphateClaim.overallStatus === 'FAIL' &&
+      contradictedPhosphateClaim.evaluations.some(e => e.status === 'PROHIBITED_CLAIM')
   );
 
   const passedCount = results.filter(r => r.passed).length;
