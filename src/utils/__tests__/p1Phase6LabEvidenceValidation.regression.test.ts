@@ -523,6 +523,38 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     'clingRheology required'
   );
 
+  const measuredClingRecord: DetailedLabEvidenceRecord = {
+    measurementId: 'm-toilet-cling-01',
+    formulaId: 'f-toilet-cling',
+    formulaVersion: '1.0',
+    categoryId: 'TOILET_CLEANER',
+    parameterKey: 'clingRheology',
+    value: 45,
+    unit: 's',
+    testMethod: 'Vertical panel cling test',
+    testDate: '2026-11-24',
+    provenance: 'MEASURED',
+    sampleId: 'sample-toilet-01',
+    batchId: 'batch-toilet-01',
+    operator: 'Lab Operator A'
+  };
+  const toiletMeasuredOnlyValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-toilet-cling',
+    formulaVersion: '1.0',
+    productCategory: 'TOILET_CLEANER',
+    isComputationallyValid: true,
+    predictedMetrics: { pH: 2.0, viscosityCps: 500 },
+    labEvidenceRecords: [measuredClingRecord]
+  });
+  assert(
+    '33. Measured-only cling test can satisfy evidence completion without a fake prediction',
+    toiletMeasuredOnlyValidation.completedTests.includes('clingRheology') &&
+      !toiletMeasuredOnlyValidation.missingTests.includes('clingRheology') &&
+      !toiletMeasuredOnlyValidation.comparisons.some(c => c.parameterKey === 'clingRheology'),
+    { completed: toiletMeasuredOnlyValidation.completedTests, missing: toiletMeasuredOnlyValidation.missingTests },
+    'clingRheology completed as measured-only; no predicted-vs-measured comparison'
+  );
+
   // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------
