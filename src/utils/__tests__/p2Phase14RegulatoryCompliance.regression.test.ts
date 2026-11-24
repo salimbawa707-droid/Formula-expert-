@@ -841,6 +841,35 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
       nyMissingDioxaneAssay.reviewRequired.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE_ASSAY_MISSING')
   );
 
+  const nyLowDioxaneAssay = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 2 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_STATE_NY',
+    calculatedPH: 8
+  });
+  assert(
+    'Dioxane unit firewall: 30% SLES with 2 ppm raw-material dioxane yields 0.6 ppm formula level and passes the 1 ppm limit',
+    nyLowDioxaneAssay.passedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE' && r.measuredValue === '0.600 ppm') &&
+      !nyLowDioxaneAssay.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
+  );
+
+  const nyHighDioxaneAssay = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 30, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 10 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'US_STATE_NY',
+    calculatedPH: 8
+  });
+  assert(
+    'Dioxane unit firewall: 30% SLES with 10 ppm raw-material dioxane yields 3 ppm formula level and fails the 1 ppm limit',
+    nyHighDioxaneAssay.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE' && r.measuredValue === '3.00 ppm')
+  );
+
   const federalDioxaneScope = RegulatoryComplianceEngine.evaluate({
     ingredients: [
       { name: 'Water', percentage: 70, casNumber: '7732-18-5', activePercentage: 0 },
