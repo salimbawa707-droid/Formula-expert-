@@ -103,15 +103,15 @@ export class RegulatoryComplianceEngine {
     const restrictedDetected: string[] = [];
     const unknownDetected: string[] = [];
 
-    const BANNED_KEYWORDS = [
-      { keyword: 'nonylphenol', name: 'Nonylphenol Ethoxylates (NPE)', regulation: 'EU REACH Annex XVII / US EPA Action Plan' },
-      { keyword: 'npe-9', name: 'Nonylphenol Ethoxylate (NPE-9)', regulation: 'EU REACH Annex XVII' },
-      { keyword: 'formalin', name: 'Formalin (Formaldehyde Solution)', regulation: 'EU CLP / US OSHA Carcinogen Standard' },
-      { keyword: 'formaldehyde', name: 'Formaldehyde', regulation: 'EU REACH Banned in Consumer Products' },
-      { keyword: 'borax', name: 'Sodium Tetraborate (Borax)', regulation: 'EU REACH Candidate List' },
-      { keyword: 'boric acid', name: 'Boric Acid', regulation: 'EU REACH Candidate List' },
-      { keyword: 'triclosan', name: 'Triclosan', regulation: 'US FDA / EU Biocidal Products Reg' },
-      { keyword: 'dichromate', name: 'Potassium Dichromate', regulation: 'Global Banned Substance' }
+    const CHEMICAL_SCREENING_KEYWORDS = [
+      { keyword: 'nonylphenol', name: 'Nonylphenol Ethoxylates (NPE)' },
+      { keyword: 'npe-9', name: 'Nonylphenol Ethoxylate (NPE-9)' },
+      { keyword: 'formalin', name: 'Formalin / Formaldehyde Solution' },
+      { keyword: 'formaldehyde', name: 'Formaldehyde' },
+      { keyword: 'borax', name: 'Sodium Tetraborate (Borax)' },
+      { keyword: 'boric acid', name: 'Boric Acid' },
+      { keyword: 'triclosan', name: 'Triclosan' },
+      { keyword: 'dichromate', name: 'Dichromate compounds' }
     ];
 
     for (const ing of evaluatedIngredients) {
@@ -119,26 +119,25 @@ export class RegulatoryComplianceEngine {
         unknownDetected.push(ing.rawName);
       }
 
-      for (const banned of BANNED_KEYWORDS) {
-        if (ing.normalizedName.includes(banned.keyword)) {
-          bannedDetected.push(ing.rawName);
-          failedRules.push({
-            ruleId: 'REG_BANNED_SUBSTANCE',
-            regulationIdentifier: banned.regulation,
-            regulationName: `Banned Substance Detected: ${banned.name}`,
-            jurisdiction: jurisdictionId,
-            requirementType: 'PROHIBITED',
-            mandatoryOrVoluntary: 'MANDATORY',
-            severity: 'CRITICAL',
-            status: 'FAIL',
-            affectedIngredients: [ing.rawName],
-            measuredValue: `${ing.asSuppliedPct.toFixed(2)}%`,
-            message: `Ingredient '${ing.rawName}' matches banned chemical profile '${banned.name}'.`,
-            remediation: `Eliminate ${ing.rawName} completely and substitute with eco-certified alternatives.`,
-            evidenceId: 'EVID_GLOBAL_BANNED_SUBSTANCE',
-            verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
-          });
-        }
+      // Name-only keyword matches are screening flags, not universal legal bans.
+      // Statutory failures must come from an exact jurisdiction-scoped rule.
+      const screeningHit = CHEMICAL_SCREENING_KEYWORDS.find(item => ing.normalizedName.includes(item.keyword));
+      if (screeningHit) {
+        reviewRequiredRules.push({
+          ruleId: 'RULE_NAME_BASED_CHEMICAL_SCREENING',
+          regulationIdentifier: 'CHEMICAL_SCREENING_ONLY',
+          regulationName: 'Name-based chemical concern screening (not a legal determination)',
+          jurisdiction: jurisdictionId,
+          requirementType: 'HUMAN_REVIEW_REQUIRED',
+          mandatoryOrVoluntary: 'MANDATORY',
+          severity: 'HIGH',
+          status: 'REVIEW_REQUIRED',
+          affectedIngredients: [ing.rawName],
+          message: `Ingredient name matches screening term '${screeningHit.name}'. This keyword hit does not establish a banned or restricted legal status.`,
+          remediation: 'Verify exact CAS/EC identity, concentration, product use and current jurisdiction-specific official legislation before making a legal determination.',
+          evidenceId: 'EVID_CHEMICAL_SCREENING_ONLY',
+          verificationStatus: 'NOT_VERIFIED'
+        });
       }
 
       // Custom banned check
