@@ -55,6 +55,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
     scientificResults?.waterHardness?.status !== 'INSUFFICIENT_DATA' &&
     Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg) &&
     Number.isFinite(scientificResults?.waterHardness?.maxSupportedPpm);
+  const chelationCapacityAvailable = !hardnessIsNotApplicable && Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg);
   const compatibilityNotEvaluated = scientificResults?.compatibility?.status === 'NOT_EVALUATED' ||
     scientificResults?.compatibility?.compatibilityStatusSemantic === 'UNKNOWN';
   const compatibilityScore = typeof scientificResults?.compatibility?.compatibilityScore === 'number' &&
@@ -618,9 +619,9 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                     ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" 
                     : "bg-blue-950/80 text-blue-300 border-blue-500/40")
               }`}>
-                {!isMetricApplicable(productCategory, "cleaningScore") 
-                  ? "NOT APPLICABLE" 
-                  : (scientificResults.cleaning.isMeasured ? "LAB MEASURED" : "PREDICTED MODEL")}
+                {!isMetricApplicable(productCategory, "cleaningScore")
+                  ? "NOT APPLICABLE"
+                  : cleaningScore === null ? "NOT EVALUATED" : (scientificResults.cleaning.isMeasured ? "LAB MEASURED" : "PREDICTED MODEL")}
               </span>
             </div>
             {isMetricApplicable(productCategory, "cleaningScore") ? (
@@ -709,28 +710,28 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">9. Builder / Chelation</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg)
+                chelationCapacityAvailable
                   ? "bg-teal-950/80 text-teal-300 border-teal-500/40"
                   : "bg-slate-800 text-slate-400 border-slate-700"
               }`}>
-                {Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg) ? "CALCULATED CAPACITY" : "NOT EVALUATED"}
+                {chelationCapacityAvailable ? "CALCULATED CAPACITY" : "NOT EVALUATED"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg)
+                {chelationCapacityAvailable
                   ? Math.round(scientificResults.waterHardness.totalSequestrationMg)
                   : 'N/A'}
               </span>
               <span className="text-xs text-slate-400 font-semibold">
-                mg CaCO₃ {Number.isFinite(scientificResults?.waterHardness?.washDoseGrams) ? 'per ' + scientificResults.waterHardness.washDoseGrams + 'g dose' : ''}
+                mg CaCO₃ {chelationCapacityAvailable && Number.isFinite(scientificResults?.waterHardness?.washDoseGrams) ? 'per ' + scientificResults.waterHardness.washDoseGrams + 'g dose' : ''}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg)
+              {chelationCapacityAvailable
                 ? 'Identified agents: ' + ((scientificResults?.chelatorNames || []).join(', ') || 'Not identified')
                 : 'Chelation capacity is unavailable until ingredient grade, assay and formula percentages are validated.'}
-            </p>            </p>
+            </p>
           </div>
         </div>
       </div>
@@ -795,7 +796,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               {scientificResults?.categorySuitability || productCategory}
             </span>
             <p className="text-[11px] text-slate-400 leading-tight">
-              Tested against manufacturing standards for {productCategory}.
+              Mapped to the canonical {productCategory} profile; this is not a laboratory validation.
             </p>
           </div>
         </div>
