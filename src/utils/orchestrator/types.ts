@@ -113,6 +113,8 @@ export interface CanonicalFormulaInput {
   formulaName?: string;
   formulaVersion?: string;
   productCategory?: string | ProductCategoryId;
+  /** Explicit specialized scientific profile ID; never inferred from a generic display name. */
+  productSubProfileId?: string;
   physicalForm?: PhysicalForm;
   ingredients: CanonicalIngredientInput[];
   batchSize?: number;
