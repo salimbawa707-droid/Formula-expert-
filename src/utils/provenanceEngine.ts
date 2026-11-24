@@ -113,12 +113,25 @@ export function computeFormulaFingerprint(
       amValue > 100
     );
   });
+  const hasInvalidPercentages = ingredients.some((ingredient) => {
+    const rawPct = ingredient.percentage ?? (ingredient as any).percent ?? (ingredient as any).percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    return !Number.isFinite(pct) || pct < 0 || pct > 100;
+  });
 
   const sortedIngs = [...ingredients]
     .filter(i => i && (i.name || i.id))
     .map(i => {
       const nameKey = (i.id || i.name || '').toLowerCase().trim();
-      const pct = Number(i.percentage) || 0;
+      const rawPct = i.percentage ?? (i as any).percent ?? (i as any).percentageInFormula;
+      const numericPct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      const pctKey = Number.isFinite(numericPct) && numericPct >= 0 && numericPct <= 100
+        ? numericPct.toFixed(4)
+        : (rawPct === undefined || rawPct === null || rawPct === '' ? 'MISSING_PCT' : 'INVALID_PCT');
 
       const amValue = i.activeMatterPct ?? (i as any).activePercent ?? (i as any).activeMatterPurity;
       const activeMatterForIntegrity =
@@ -129,12 +142,12 @@ export function computeFormulaFingerprint(
           ? amValue.toFixed(2)
           : 'UNKNOWN';
 
-      return `${nameKey}:${pct.toFixed(4)}:AM[${activeMatterForIntegrity}]`;
+      return `${nameKey}:${pctKey}:AM[${activeMatterForIntegrity}]`;
     })
     .sort()
     .join(';');
 
-  const integrityFlag = hasUnknownActiveMatter ? 'INVALID_AM' : 'VALID_AM';
+  const integrityFlag = [hasUnknownActiveMatter ? 'INVALID_AM' : 'VALID_AM', hasInvalidPercentages ? 'INVALID_PCT' : null].filter(Boolean).join('|');
 
   return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|ING[${sortedIngs}]|INTEGRITY[${integrityFlag}]`;
 }
