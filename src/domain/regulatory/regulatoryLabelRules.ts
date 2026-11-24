@@ -14,7 +14,7 @@ export class LabelComplianceEngine {
   public static evaluateLabelRequirements(
     jurisdiction: RegulatoryJurisdictionId,
     _ingredients: EvaluatedChemicalIngredient[],
-    signalWord: 'DANGER' | 'WARNING' | 'NONE',
+    signalWord: 'DANGER' | 'WARNING' | 'NONE' | 'UNDETERMINED',
     packageSizeGramsOrMl?: number
   ): LabelComplianceReport {
     const checklist: LabelCheckItem[] = [];
@@ -73,7 +73,7 @@ export class LabelComplianceEngine {
     }
 
     // 4. GHS Hazard Labeling
-    if (signalWord !== 'NONE') {
+    if (signalWord === 'DANGER' || signalWord === 'WARNING') {
       checklist.push({
         itemId: 'LBL_GHS_HAZARD',
         section: 'GHS_HAZARDS',
@@ -95,7 +95,7 @@ export class LabelComplianceEngine {
 
     // 5. EU UFI Unique Formula Identifier
     if (jurisdiction === 'EU') {
-      if (signalWord !== 'NONE') {
+      if (signalWord === 'DANGER' || signalWord === 'WARNING') {
         checklist.push({
           itemId: 'LBL_EU_UFI_CODE',
           section: 'GHS_HAZARDS',
