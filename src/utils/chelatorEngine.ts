@@ -1102,10 +1102,57 @@ export function calculateWaterHardnessTolerance(
   washVolumeL?: number | null,
   washDoseGrams?: number | null,
   batchSizeKg: number = 100,
-  productCategoryOrProfileId?: string
+  productCategoryOrProfileId?: string,
+  requireExplicitScenarioInputs: boolean = false
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const policy = getProductHardnessPolicy(productCategoryOrProfileId);
+
+  // Category-level NOT_APPLICABLE must be resolved before scenario completeness checks.
+  if (requireExplicitScenarioInputs && policy.requiresHardnessControl && (
+    !(typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0) ||
+    !(typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0) ||
+    !(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0) ||
+    !(typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0)
+  )) {
+    const missing: string[] = [];
+    if (!(typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0)) missing.push('waterHardnessPpm');
+    if (!(typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0)) missing.push('washVolumeL');
+    if (!(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0)) missing.push('washDoseGrams');
+    if (!(typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0)) missing.push('batchSizeKg');
+    const unavailable = Number.NaN;
+    return {
+      status: 'NOT_EVALUATED',
+      maxSupportedPpm: unavailable,
+      maxSupportedStoichiometricPpm: unavailable,
+      rating: 'NOT EVALUATED — explicit wash scenario required',
+      description: `Hardness protection was not calculated. Missing or invalid inputs: ${missing.join(', ')}.`,
+      totalSequestrationMg: unavailable,
+      chelationCapacityMg: unavailable,
+      builderCapacityMg: unavailable,
+      requiredSequestrationMg: unavailable,
+      hardnessLoadMg: unavailable,
+      capacityDeficitMg: unavailable,
+      capacitySurplusMg: unavailable,
+      hardnessProtectionRatio: unavailable,
+      additionalGLDA47RequiredPct: unavailable,
+      additionalCitrateRequiredPct: unavailable,
+      additionalMGDA38RequiredPct: unavailable,
+      batchSequestrationGrams: unavailable,
+      washDoseGrams: unavailable,
+      washVolumeL: unavailable,
+      batchSizeKg: unavailable,
+      safetyMarginPct: unavailable,
+      sufficiency: 'baseline',
+      isApplicable: true,
+      category: productCategoryOrProfileId,
+      provenance: 'UNKNOWN',
+      limitations: [`Explicit scenario inputs required: ${missing.join(', ')}.`],
+      valueOf: () => 'NOT EVALUATED',
+      toString: () => 'NOT EVALUATED'
+    };
+  }
+
   const vol = typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : (policy.defaultWashVolumeL || 10);
   const dose = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : (policy.defaultDoseGrams || 20);
   const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
