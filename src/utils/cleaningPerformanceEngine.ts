@@ -289,7 +289,7 @@ export function calculateCleaningPerformance(
   // Only LAUNDRY_LIQUID currently applies the wash-water hardness factor in its KPI model.
   // Do not demand irrelevant hardness inputs for glass, toilet, softener, or other categories.
   const requiresHardnessScenario = category === 'LAUNDRY_LIQUID';
-  const hardnessUnavailable = requiresHardnessScenario && (options as any)?.failIfHardnessMissing === true && (!hasExplicitHardness || !hasExplicitWashScenario);
+  const hardnessUnavailable = requiresHardnessScenario && (options as any)?.failIfHardnessMissing !== false && (!hasExplicitHardness || !hasExplicitWashScenario);
 
   if (!Number.isFinite(phVal) || activeMatterUnavailable || hardnessUnavailable || invalidIngredientPercentage || formulaMassUnbalanced) {
     const reason = !Number.isFinite(phVal)
@@ -337,10 +337,10 @@ export function calculateCleaningPerformance(
   }
 
   // Phase 3 Water Hardness Synchronization
-  const hardnessTargetPpm = hasExplicitHardness ? options!.waterHardnessPpm! : 150;
-  const washVol = (typeof options?.washVolumeL === 'number' && Number.isFinite(options.washVolumeL) && options.washVolumeL > 0) ? options.washVolumeL : 10;
-  const washDose = (typeof options?.washDoseGrams === 'number' && Number.isFinite(options.washDoseGrams) && options.washDoseGrams > 0) ? options.washDoseGrams : 50;
-  const batchKg = (typeof options?.batchSizeKg === 'number' && Number.isFinite(options.batchSizeKg) && options.batchSizeKg > 0) ? options.batchSizeKg : 100;
+  const hardnessTargetPpm = hasExplicitHardness ? options!.waterHardnessPpm! : Number.NaN;
+  const washVol = (typeof options?.washVolumeL === 'number' && Number.isFinite(options.washVolumeL) && options.washVolumeL > 0) ? options.washVolumeL : Number.NaN;
+  const washDose = (typeof options?.washDoseGrams === 'number' && Number.isFinite(options.washDoseGrams) && options.washDoseGrams > 0) ? options.washDoseGrams : Number.NaN;
+  const batchKg = (typeof options?.batchSizeKg === 'number' && Number.isFinite(options.batchSizeKg) && options.batchSizeKg > 0) ? options.batchSizeKg : Number.NaN;
   const hardnessResult = requiresHardnessScenario
     ? calculateWaterHardnessTolerance(
         safeIngs,
