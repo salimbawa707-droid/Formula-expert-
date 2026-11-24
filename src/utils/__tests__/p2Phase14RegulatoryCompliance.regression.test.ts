@@ -888,6 +888,20 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     !federalDioxaneScope.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
   );
 
+  const legacyExtremePh = evaluateRegulatoryCompliance(
+    [
+      { name: 'Sodium Hydroxide (Caustic Soda)', percentage: 10 } as any,
+      { name: 'Water', percentage: 90 } as any
+    ],
+    'KITCHEN_DEGREASER',
+    { jurisdiction: 'GLOBAL_UN_GHS' },
+    13.5
+  );
+  assert(
+    'Legacy bridge firewall: pH-only regulatory bridge output remains UNDETERMINED and does not recreate DANGER',
+    legacyExtremePh.ghsClassification.signalWord === 'UNDETERMINED'
+  );
+
   const extremePhScreen = MixtureGHSValidationEngine.evaluateGHSClassification([
     RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 100, activePercentage: 0 })
   ], 12);
