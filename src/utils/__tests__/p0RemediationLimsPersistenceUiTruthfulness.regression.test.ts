@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 /**
  * ============================================================================
  * P0 REMEDIATION #10 REGRESSION TEST SUITE — LIMS PERSISTENCE UI TRUTHFULNESS
@@ -30,6 +33,43 @@ export function runP0RemediationLimsPersistenceUiTruthfulnessTestSuite(): {
   const assert = (name: string, condition: boolean, details?: string) => {
     results.push({ name, passed: condition, details: details ? String(details) : undefined });
   };
+
+  // Document register static integrity guards.
+  const docsLibrarySource = fs.readFileSync(path.join(process.cwd(), 'src', 'components', 'DocsLibrary.tsx'), 'utf8');
+  assert(
+    'DOCS 1: Secure document IDs retain a cryptographic fallback when randomUUID is unavailable',
+    docsLibrarySource.includes('cryptoApi.getRandomValues') && docsLibrarySource.includes('cryptoApi.randomUUID')
+  );
+  assert(
+    'DOCS 2: Attachment validation checks size, extension, MIME compatibility and binary signatures',
+    docsLibrarySource.includes('MAX_ATTACHMENT_BYTES') &&
+      docsLibrarySource.includes('File extension and declared MIME type do not match') &&
+      docsLibrarySource.includes('valid PDF signature') &&
+      docsLibrarySource.includes('valid PNG signature') &&
+      docsLibrarySource.includes('valid JPEG signature')
+  );
+  assert(
+    'DOCS 3: Text attachments require fatal UTF-8 decoding and reject binary NUL bytes',
+    docsLibrarySource.includes("new TextDecoder('utf-8', { fatal: true })") &&
+      docsLibrarySource.includes("text.includes('\\\\u0000')")
+  );
+  assert(
+    'DOCS 4: Object URLs are revoked only after delayed browser download handoff',
+    docsLibrarySource.includes('anchor.click()') &&
+      docsLibrarySource.includes('anchor.remove()') &&
+      docsLibrarySource.includes('window.setTimeout(() => URL.revokeObjectURL(url), 1000)')
+  );
+  assert(
+    'DOCS 5: Invalid legacy expiry dates are not misreported as no-expiry documents',
+    docsLibrarySource.includes("return 'INVALID'") &&
+      docsLibrarySource.includes("validity === 'INVALID'")
+  );
+  assert(
+    'DOCS 6: Local document mutation failures are surfaced to the user',
+    docsLibrarySource.includes('Could not delete the document record.') &&
+      docsLibrarySource.includes('Could not update the document review state.') &&
+      docsLibrarySource.includes('Could not reopen the document review.')
+  );
 
   // Helper mock records
   const validSpectrum: any = {
