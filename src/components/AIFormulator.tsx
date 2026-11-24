@@ -163,7 +163,8 @@ export function runDeepScientificAnalysis(snapshot: {
       };
     }),
     batchSizeKg: snapshot.batchSizeKg,
-    ...(snapshot.waterHardnessPpm !== null ? { waterHardnessPpm: snapshot.waterHardnessPpm } : {})
+    ...(snapshot.waterHardnessPpm !== null ? { waterHardnessPpm: snapshot.waterHardnessPpm } : {}),
+    powderLabInputs: snapshot.powderLabInputs
   });
 
   const decisionReport = ScientificDecisionEngine.evaluateDecisionIntelligence(orchResult);
