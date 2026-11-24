@@ -719,7 +719,7 @@ export function calculateFormulationCompatibility(
     penaltySum += 40;
     const isAutomaticDishwash = canonicalCategory === 'DISHWASH_AUTOMATIC';
     alerts.push({
-      id: `category-policy-anionic-${canonicalCategory.toLowerCase()}`,
+      id: canonicalCategory === 'DISHWASH_AUTOMATIC' ? 'autodish-foam-overflow-hazard' : canonicalCategory === 'FABRIC_SOFTENER' ? 'softener-anionic-contamination' : `category-policy-anionic-${canonicalCategory.toLowerCase()}`,
       title: `Anionic surfactant prohibited for ${categoryProfile?.label || canonicalCategory}`,
       mechanism: isAutomaticDishwash ? 'PHASE_STABILITY' : 'IONIC',
       severity: 'Critical',
