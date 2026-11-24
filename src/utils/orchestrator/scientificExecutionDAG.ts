@@ -574,7 +574,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE')
+          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE', state.formulaName)
         ) {
           state.hlbResult = {
             blendedHLB: null,
@@ -601,7 +601,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE')
+          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE', state.formulaName)
         ) {
           state.hardnessResult = {
             status: 'NOT_APPLICABLE',
@@ -723,7 +723,7 @@ export class ScientificExecutionDAG {
           : ((typeof state.pHIntermediate === 'number' && Number.isFinite(state.pHIntermediate) && state.pHIntermediate >= 0 && state.pHIntermediate <= 14)
             ? state.pHIntermediate
             : undefined);
-        const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory);
+        const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory, state.formulaName);
         state.compatibilityResult = compRes;
         state.compatibilityScore = Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : Number.NaN;
         state.compatible = compRes.compatible === true;
@@ -898,7 +898,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE')
+          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE', state.formulaName)
         ) {
           state.cleaningResult = {
             cpi: null,
