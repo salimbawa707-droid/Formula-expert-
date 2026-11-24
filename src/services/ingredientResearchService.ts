@@ -530,7 +530,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       sourcesRetrieved: uniqueSources,
       propertiesExtracted,
       comparisonReport,
-      requiresUserApproval: isConflicting || comparisonReport.some(c => c.comparisonStatus === 'MINOR_VARIATION') || uniqueSources.length > 1,
+      requiresUserApproval: isConflicting || comparisonReport.some(c => c.comparisonStatus === 'MINOR_VARIATION' || (c.comparisonStatus === 'INSUFFICIENT_DATA' && c.values.length > 0)),
       notes: isConflicting
         ? 'Cross-source comparison discovered significant scientific conflicts. Manual engineering audit is required.'
         : 'Multi-source web research completed with strong corroborative agreement.'
@@ -612,7 +612,14 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         ['AS_SUPPLIED', 'AS_RECEIVED'].includes(String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_')) &&
         typeof p.activeMatterMethod === 'string' && p.activeMatterMethod.trim().length >= 4 &&
         typeof p.activeMatterConditions === 'string' && p.activeMatterConditions.trim().length >= 4 &&
-        (!grade || String(p.grade || '').trim().toLowerCase() === grade.trim().toLowerCase())
+        Boolean(String(p.grade || '').trim()) &&
+        (!grade || String(p.grade || '').trim().toLowerCase() === grade.trim().toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(val).toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterUnit || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterBasis || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterMethod || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterConditions || '').toLowerCase()) &&
+        String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.grade || '').toLowerCase())
       );
       const exactPropertyEvidence = propertySource !== undefined && sourceRecord.extractedParameters?.[property] === val;
       const verified = !isConflict && exactPropertyEvidence && primaryManufacturerSource && activeMatterMetrologyComplete && validateUrl(sourceUrl);
