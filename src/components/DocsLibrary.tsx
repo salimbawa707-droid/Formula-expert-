@@ -77,7 +77,7 @@ async function validateAttachment(file: File): Promise<{ error?: string; mimeTyp
 
 function dateState(expiryDate?: string): 'CURRENT' | 'EXPIRING' | 'EXPIRED' | 'NO_EXPIRY' | 'INVALID' {
   if (!expiryDate) return 'NO_EXPIRY';
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDate)) return 'INVALID';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) return 'INVALID';
   const utcDate = new Date(`${expiryDate}T00:00:00.000Z`);
   if (!Number.isFinite(utcDate.getTime()) || utcDate.toISOString().slice(0, 10) !== expiryDate) return 'INVALID';
   const expiry = new Date(`${expiryDate}T23:59:59`);
