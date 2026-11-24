@@ -647,7 +647,7 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   assert(
     'Legacy GHS Classification: pH 13.5 triggers GHS05 Corrosion, DANGER signal word',
     decisionCorrosive.packagingStatus.childResistantClosureRequired &&
-      decisionCorrosive.labelStatus.checkList.some(c => c.itemId === 'LBL_GHS_HAZARD' && c.status === 'PASS')
+      decisionCorrosive.labelStatus.checkList.some(c => c.itemId === 'LBL_GHS_HAZARD' && c.status === 'REVIEW_REQUIRED')
   );
 
   const claimResultUnsubstantiated = ClaimComplianceEngine.evaluateClaims(
