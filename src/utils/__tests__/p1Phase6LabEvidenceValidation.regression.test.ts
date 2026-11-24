@@ -484,11 +484,15 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
 
   const requiredCategoryEvidence = [
     ['TOILET_CLEANER', 'clingRheology'],
+    ['BATHROOM_CLEANER', 'clingRheology'],
     ['DISHWASH_MANUAL', 'mildness'],
     ['DISHWASH_MANUAL', 'foamStability'],
     ['DISHWASH_AUTOMATIC', 'zeroFoamCompliance'],
+    ['DISHWASH_AUTOMATIC', 'residueStreaking'],
     ['FLOOR_CLEANER', 'residueStreaking'],
     ['FLOOR_CLEANER', 'glossRetention'],
+    ['MULTIPURPOSE_CLEANER', 'residueStreaking'],
+    ['CAR_SHAMPOO', 'residueStreaking'],
     ['GLASS_CLEANER', 'residueStreaking'],
     ['HAND_WASH', 'mildness'],
     ['KITCHEN_DEGREASER', 'bakedGreaseRemoval'],
