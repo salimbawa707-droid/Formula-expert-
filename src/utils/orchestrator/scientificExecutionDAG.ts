@@ -769,14 +769,19 @@ export class ScientificExecutionDAG {
           return;
         }
 
+        const viscosityTemperature = state.rawInput.temperatureC ?? state.rawInput.temperature;
+        if (viscosityTemperature === undefined || viscosityTemperature === null) {
+          state.assumptions.push('Viscosity temperature defaults to 25 °C as an explicitly labeled reference scenario.');
+        }
+        const effectiveViscosityTemperature = viscosityTemperature ?? 25;
         const viscReport = ViscosityEngine.evaluateViscosity(state.resolvedIngredients, {
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
           targetPH: state.finalEquilibriumPH ?? null,
-          temperatureC: state.rawInput.temperatureC ?? state.rawInput.temperature ?? 25,
+          temperatureC: effectiveViscosityTemperature,
           activeMatterReport: state.activeMatterReport // Consume authoritative active matter result
         });
 
-        const detailedVisc = calculateDetailedViscosity(state.resolvedIngredients, { temperatureC: 25 });
+        const detailedVisc = calculateDetailedViscosity(state.resolvedIngredients, { temperatureC: effectiveViscosityTemperature });
 
         state.viscosityResult = {
           predictedViscosityCp: viscReport.viscosityCp,
@@ -785,7 +790,7 @@ export class ScientificExecutionDAG {
           flowMechanism: detailedVisc.mechanism,
           description: viscReport.isFluid ? `${viscReport.viscosityCp} cPs (${viscReport.rating})` : 'N/A (Solid / Powder)',
           assumedShearRate: '~20 s^-1 (Standard Brookfield RVT @ 20 RPM)',
-          temperatureC: state.rawInput.temperatureC ?? state.rawInput.temperature ?? 25,
+          temperatureC: effectiveViscosityTemperature,
           modelMaturity: 'EMPIRICAL_MODEL',
           viscosityReport: viscReport
         };
@@ -1430,7 +1435,9 @@ export class ScientificExecutionDAG {
 
       resolvedIngredients: [],
       unknownParameters: [],
-      assumptions: [],
+      assumptions: batchSizeDefaulted
+        ? ['Batch size was not supplied; 100 kg is used only as an explicit calculation scenario, not as a measured or confirmed production batch.']
+        : [],
 
       neutralizationState: null,
       pHIntermediate: null,
