@@ -80,27 +80,10 @@ export function calculateLiquidNVR(
         fraction = Number(ing.activeMatterPct) / 100;
       } else if (ing.activePercent !== undefined && !isNaN(Number(ing.activePercent))) {
         fraction = Number(ing.activePercent) / 100;
-      } else {
-        const n = (ing.name || '').toLowerCase();
-        if (n.includes('water') || n.includes('aqua')) {
-          fraction = 0.0;
-        } else if (n.includes('sles') || n.includes('laureth sulfate')) {
-          fraction = 0.70;
-        } else if (n.includes('labsa') || n.includes('acid slurry') || n.includes('sulfonic')) {
-          fraction = 0.90;
-        } else if (n.includes('capb') || n.includes('betaine')) {
-          fraction = 0.30;
-        } else if (n.includes('salt') || n.includes('sodium chloride') || n.includes('sulfate') || n.includes('carbonate') || n.includes('citrate') || n.includes('stpp') || n.includes('soda ash') || n.includes('builder')) {
-          fraction = 1.0;
-        } else if (n.includes('fragrance') || n.includes('perfume') || n.includes('preservative')) {
-          fraction = 1.0;
-        } else {
-          fraction = 0.85;
-        }
       }
     }
 
-    if (Number.isFinite(fraction) && fraction >= 0 && fraction <= 1) {
+    if (fraction !== undefined && Number.isFinite(fraction) && fraction >= 0 && fraction <= 1) {
       knownNvrSum += percentage * fraction;
       knownMassSum += percentage;
     } else {
