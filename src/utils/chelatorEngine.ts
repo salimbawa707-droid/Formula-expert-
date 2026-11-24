@@ -872,17 +872,9 @@ export function calculateFormulationChelationCapacity(
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const validation = validateActiveMatterInput(explicitActive);
-    let capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
-    if (capacityResult.status === 'INSUFFICIENT_DATA' && (/citrate/i.test(rawName) || /sodium citrate/i.test(rawName))) {
-      const dihydrate = AUTHORITATIVE_CHELATOR_DATABASE.find(s => s.id === 'citrate-dihydrate');
-      if (dihydrate) {
-        capacityResult = {
-          capacityMgCaCO3PerGram: dihydrate.effectiveCommercialCapacityMgPerG,
-          status: 'VALID',
-          evidenceId: dihydrate.evidenceId
-        };
-      }
-    }
+    // Do not silently resolve an ambiguous citrate hydration grade as dihydrate.
+    // getChelatorBindingCapacity is the single authority for grade identity and evidence.
+    const capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
     const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
     const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
