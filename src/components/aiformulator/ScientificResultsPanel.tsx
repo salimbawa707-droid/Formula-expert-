@@ -781,7 +781,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                (scientificResults?.compatibility?.warnings || []).find((w: string) => !w.includes('pH is unavailable')) ||
                scientificResults?.compatibility?.warnings?.[0] ||
                (compatibilityNotEvaluated ? 'Compatibility was not evaluated because required input data is unavailable.' : 'No compatibility warning was returned.')}
-            </p>            </p>
+            </p>
           </div>
 
           {/* 12. Product-Category Suitability */}
