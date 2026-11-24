@@ -48,6 +48,10 @@ async function main(): Promise<void> {
     assert(known.source === 'LOCAL_LIBRARY', 'known master-database ingredient must resolve locally');
     assert(known.requiresUserApproval === false, 'known local ingredient should not require research approval');
     assert(researchCalls === 0, 'Gemini research must not be called for a known database ingredient');
+    const ambiguousCas = await IngredientResearchBridge.resolveForFormula('27176-87-0', { apiKey: 'test-key' });
+    assert(ambiguousCas.source === 'UNRESOLVED', 'shared CAS across local commercial grades must request grade selection');
+    assert(ambiguousCas.warning?.includes('multiple local database'), 'ambiguous local CAS must explain grade selection');
+    assert(researchCalls === 0, 'ambiguous local CAS must not trigger Gemini research');
 
     const unknown = await IngredientResearchBridge.resolveForFormula('Unlisted Specialty Surfactant ZX-947', { apiKey: 'test-key' });
     assert(unknown.source === 'WEB_RESEARCH', 'unlisted ingredient must enter the research path');
