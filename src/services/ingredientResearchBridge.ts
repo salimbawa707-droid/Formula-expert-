@@ -104,6 +104,12 @@ export class IngredientResearchBridge {
     };
 
     const activeMatter = this.numberOrUndefined(p.activeMatter);
+    const activeMatterEvidenceSource = activeMatter !== undefined
+      ? research.sourcesRetrieved.find(source =>
+          source.extractedParameters?.activeMatter === activeMatter &&
+          this.hasCalculationGradeEvidence({ ...research, sourcesRetrieved: [source] }, requestedGrade)
+        )
+      : undefined;
     const density = this.numberOrUndefined(p.density);
     const hlb = this.numberOrUndefined(p.hlb);
     const ph = this.numberOrUndefined(p.pH ?? p.ph);
@@ -113,6 +119,9 @@ export class IngredientResearchBridge {
       ingredient.activePercent = activeMatter;
       ingredient.activeMatterPct = activeMatter;
       ingredient.activeMatterPurity = activeMatter;
+      ingredient.activeMatterInputSource = 'SOURCE_BACKED';
+      ingredient.activeMatterEvidenceId = activeMatterEvidenceSource?.sourceId;
+      ingredient.activeMatterEvidenceUrl = activeMatterEvidenceSource?.url || undefined;
     }
     if (density !== undefined) ingredient.density = density;
     if (hlb !== undefined) {
@@ -167,6 +176,7 @@ export class IngredientResearchBridge {
           category: local.category,
           activePercent: localActive,
           activeMatterPct: localActive,
+          activeMatterInputSource: typeof localActive === 'number' ? 'CATALOG_DEFAULT' : 'UNKNOWN',
           hlb: local.hlb ?? undefined,
           hlbValue: local.hlb ?? undefined,
           density: localAny.physicalProperties?.density ?? localAny.densityGPerMl ?? localAny.density,
