@@ -84,7 +84,8 @@ export function analyzeClimateAndHardWater(
   const hasCompleteWashScenario =
     hardnessPpm !== null &&
     typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 &&
-    typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
+    typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 &&
+    typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   const hardnessRes = hasCompleteWashScenario && safeIngs.length > 0
     ? calculateWaterHardnessTolerance(
@@ -92,7 +93,7 @@ export function analyzeClimateAndHardWater(
         hardnessPpm as number,
         washVolumeL,
         washDoseGrams,
-        typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100,
+        batchSizeKg as number,
         typeof productCategory === 'string' ? productCategory : undefined
       )
     : null;
@@ -108,7 +109,7 @@ export function analyzeClimateAndHardWater(
       ? (hardnessRes.status === 'PASS'
           ? 'Calculated chelation capacity meets the stated wash scenario; this is a stoichiometric screen, not empirical validation.'
           : 'Calculated chelation capacity does not meet the stated wash scenario; do not infer a corrective dose without grade- and matrix-specific validation.')
-      : 'NOT_EVALUATED: exact hardness, wash volume and wash dose are required.',
+      : 'NOT_EVALUATED: exact hardness, wash volume, wash dose and batch size are required.',
     climateInfo,
     hardnessInfo: {
       name: hardnessLabel,
