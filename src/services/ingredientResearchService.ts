@@ -495,7 +495,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       }
     });
 
-    const isConflicting = comparisonReport.some(c => c.comparisonStatus === 'CONFLICT' || c.comparisonStatus === 'MINOR_VARIATION');
+    const isConflicting = comparisonReport.some(c => c.comparisonStatus === 'CONFLICT');
     const finalStatus = isConflicting ? 'CONFLICTING_EVIDENCE' : 'SUCCESS';
 
     const multiResult: MultiSourceResearchResult = {
@@ -508,7 +508,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       sourcesRetrieved: uniqueSources,
       propertiesExtracted,
       comparisonReport,
-      requiresUserApproval: isConflicting || uniqueSources.length > 1,
+      requiresUserApproval: isConflicting || comparisonReport.some(c => c.comparisonStatus === 'MINOR_VARIATION') || uniqueSources.length > 1,
       notes: isConflicting
         ? 'Cross-source comparison discovered significant scientific conflicts. Manual engineering audit is required.'
         : 'Multi-source web research completed with strong corroborative agreement.'
