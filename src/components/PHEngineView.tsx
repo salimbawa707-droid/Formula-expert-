@@ -113,7 +113,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     const mappedName = findMatchingPHEngineIngredient(rawName);
     const resolvedActive = ActiveMatterEngine.resolveIngredientActive(ing);
     
-    let activePercent = 100;
+    let activePercent = Number.NaN;
     if (ing.activeMatterPct !== undefined && ing.activeMatterPct !== null) {
       activePercent = Number(ing.activeMatterPct);
     } else if (ing.activePercent !== undefined && ing.activePercent !== null) {
@@ -121,7 +121,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     } else if (ing.activeMatterPurity !== undefined && ing.activeMatterPurity !== null) {
       activePercent = Number(ing.activeMatterPurity);
     } else {
-      activePercent = resolvedActive.activeMatterPct ?? 0;
+      activePercent = resolvedActive.activeMatterPct ?? Number.NaN;
     }
 
     if (ActiveMatterEngine.isWaterIngredient(rawName, ing.category || '', ing.role || '')) {
@@ -131,7 +131,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     return {
       id: ing.id || `active-${Date.now()}-${idx}`,
       name: mappedName,
-      rawPercent: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
+      rawPercent: (() => { const raw = ing.percentage ?? ing.percent ?? ing.percentageInFormula; return raw === undefined || raw === null || raw === '' ? Number.NaN : Number(raw); })(),
       activePercent,
       category: ing.category || resolvedActive.category,
       function: ing.role || ing.function,
@@ -390,7 +390,10 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
     }
   }, [ingredients, batchSize, liveSync, activeFormula]);
 
-  const totalPercent = ingredients.reduce((sum, i) => sum + (i.rawPercent ?? 0), 0);
+  const rawPercentages = ingredients.map(i => i.rawPercent);
+  const totalPercent = rawPercentages.length > 0 && rawPercentages.every(pct => Number.isFinite(pct) && pct >= 0 && pct <= 100)
+    ? rawPercentages.reduce((sum, pct) => sum + pct, 0)
+    : Number.NaN;
 
   // Corrective Reagents Configuration
   const [selectedAlkaliReagent, setSelectedAlkaliReagent] = useState<string>("NaOH Flakes (99% / 100%)");
@@ -575,13 +578,13 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
 
         <div className="space-y-3">
           {ingredients.map((ing) => {
-            const purity = (ing.activePercent !== undefined ? ing.activePercent / 100 : (INGREDIENT_DATABASE[ing.name] as any)?.purity ?? 0);
-            const activePct = (purity * 100).toFixed(0);
-            const rawPctVal = ing.rawPercent ?? 0;
+            const purity = Number.isFinite(ing.activePercent) ? ing.activePercent / 100 : Number.NaN;
+            const activePct = Number.isFinite(purity) ? (purity * 100).toFixed(0) : 'N/A';
+            const rawPctVal = Number.isFinite(ing.rawPercent) ? ing.rawPercent : Number.NaN;
             const ingId = ing.id ?? '';
-            const weightKgNum = (rawPctVal * batchSize) / 100;
-            const weightKgStr = weightKgNum.toFixed(6);
-            const weightGramsStr = (weightKgNum * 1000).toFixed(3);
+            const weightKgNum = Number.isFinite(rawPctVal) && Number.isFinite(batchSize) && batchSize > 0 ? (rawPctVal * batchSize) / 100 : Number.NaN;
+            const weightKgStr = Number.isFinite(weightKgNum) ? weightKgNum.toFixed(6) : 'N/A';
+            const weightGramsStr = Number.isFinite(weightKgNum) ? (weightKgNum * 1000).toFixed(3) : 'N/A';
 
             return (
               <div key={ingId} className="bg-[#131d35] p-3.5 sm:p-4 rounded-xl border border-slate-700/70 space-y-3 hover:border-amber-500/50 transition">
