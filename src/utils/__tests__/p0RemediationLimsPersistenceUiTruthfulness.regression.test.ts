@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { dateState } from '../../components/DocsLibrary';
 
 /**
  * ============================================================================
@@ -66,6 +67,12 @@ export function runP0RemediationLimsPersistenceUiTruthfulnessTestSuite(): {
       docsLibrarySource.includes("T00:00:00.000Z") &&
       docsLibrarySource.includes("utcDate.toISOString().slice(0, 10) !== expiryDate")
   );
+  assert('DOCS 5A: Valid future ISO calendar date is accepted', dateState('2099-12-31') === 'CURRENT');
+  assert('DOCS 5B: Impossible calendar date is rejected', dateState('2026-02-30') === 'INVALID');
+  assert('DOCS 5C: Non-padded ISO date is rejected', dateState('2026-2-03') === 'INVALID');
+  assert('DOCS 5D: Leap-day date is parsed as a real date', dateState('2024-02-29') === 'EXPIRED');
+  assert('DOCS 5E: Missing expiry remains NO_EXPIRY', dateState(undefined) === 'NO_EXPIRY');
+
   assert(
     'DOCS 6: Local document mutation failures are surfaced to the user',
     docsLibrarySource.includes('Could not delete the document record.') &&
