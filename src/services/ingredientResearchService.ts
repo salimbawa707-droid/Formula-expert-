@@ -543,7 +543,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
   /**
    * Synchronous / backward compatible research entry point wrapping the multi-source pipeline (P1-8).
    */
-  public static async researchIngredient(nameOrAlias: string, apiKey?: string): Promise<ResearchResult> {
+  public static async researchIngredient(nameOrAlias: string, apiKey?: string, grade?: string): Promise<ResearchResult> {
     const resolution = this.resolveIdentity(nameOrAlias);
     const ingredient = resolution.ingredient;
 
@@ -573,7 +573,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
 
     // Run multi-source pipeline
-    const msResult = await this.researchMultiSource({ ingredientName: canonicalName }, apiKey);
+    const msResult = await this.researchMultiSource({ ingredientName: canonicalName, grade }, apiKey);
 
     if (msResult.sourcesRetrieved.length === 0) {
       return {
@@ -588,6 +588,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
 
     const firstSource = msResult.sourcesRetrieved[0];
+    const isConflict = msResult.status === 'CONFLICTING_EVIDENCE';
     const findPropertySource = (property: string, value: any) =>
       msResult.sourcesRetrieved.find(source => source.extractedParameters?.[property] === value);
     const activeVal = msResult.propertiesExtracted.activeMatter ?? null;
@@ -695,10 +696,13 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
 
     if (ingIndex === -1) {
       const name = canonicalName || resolvedName || ingredientId;
-      const detectedActive = typeof parameters.activeMatter === "number" ? parameters.activeMatter : (previousRecord?.activeDefault ?? null);
-      const detectedDensity = typeof parameters.density === "number" ? parameters.density : (previousRecord?.density ?? null);
-      const detectedPhMin = typeof parameters.pH === "number" ? parameters.pH : (previousRecord?.phMin ?? null);
-      const detectedPhMax = parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || null) : (previousRecord?.phMax ?? null);
+      const activeVerified = typeof parameters.activeMatter === 'number' && provenance.activeMatter?.status === 'VERIFIED' && provenance.activeMatter.value === parameters.activeMatter;
+      const densityVerified = typeof parameters.density === 'number' && provenance.density?.status === 'VERIFIED' && provenance.density.value === parameters.density;
+      const pHVerified = typeof parameters.pH === 'number' && provenance.pH?.status === 'VERIFIED' && provenance.pH.value === parameters.pH;
+      const detectedActive = activeVerified ? parameters.activeMatter : null;
+      const detectedDensity = densityVerified ? parameters.density : null;
+      const detectedPhMin = pHVerified ? parameters.pH : null;
+      const detectedPhMax = pHVerified && parameters.pHRange ? (parseFloat(parameters.pHRange.split("-")[1]) || null) : null;
 
       updatedIng = {
         id: ingredientId,
@@ -738,7 +742,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     if (parameters.density !== undefined && typeof parameters.density === 'number' && provenance.density?.status === 'VERIFIED' && provenance.density.value === parameters.density) {
       (updatedIng as any).density = parameters.density;
     }
-    if (parameters.ionicNature !== undefined) {
+    if (parameters.ionicNature !== undefined && provenance.ionicNature?.status === 'VERIFIED' && provenance.ionicNature.value === parameters.ionicNature) {
       (updatedIng as any).ionicNature = parameters.ionicNature;
     }
 
