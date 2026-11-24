@@ -63,11 +63,15 @@ export class RegulatoryComplianceEngine {
 
     const calculatedPH = input.calculatedPH;
 
+    // Missing assay/measurement inputs must remain visible and block certification.
+    const ingredientMissingData = evaluatedIngredients.flatMap(ing => ing.missingDataPoints.map(detail => `${ing.rawName}: ${detail}`));
+
     // 3. Mixture GHS Hazard Classification
     const ghsClassification = MixtureGHSValidationEngine.evaluateGHSClassification(
       evaluatedIngredients,
       calculatedPH
     );
+    const ghsMissingData = ghsClassification.missingDataPoints;
 
     // 4. Statutory Rule Evaluation against Registry
     const applicableRules = isKnownJurisdiction
@@ -224,11 +228,30 @@ export class RegulatoryComplianceEngine {
       }
     }
 
-    // 5. Evaluate New York 1,4-Dioxane Specific Impurity Limit (1 ppm max)
+    // 5. Evaluate New York 1,4-Dioxane limit only in New York jurisdiction.
+    // Missing raw-material assays are UNKNOWN, never silently treated as zero.
     const formulaDioxanePpm = RegulatoryIngredientEngine.calculateFormulaDioxanePpm(evaluatedIngredients);
-    if (jurisdictionId === 'US_STATE_NY' || jurisdictionId === 'US_FEDERAL') {
+    if (jurisdictionId === 'US_STATE_NY') {
       const maxDioxanePpm = 1.0;
-      if (formulaDioxanePpm > maxDioxanePpm) {
+      if (formulaDioxanePpm === null) {
+        const message = '1,4-dioxane concentration cannot be calculated: one or more ethoxylated raw materials lack an explicit supplier assay.';
+        missingEvidence.push(message);
+        reviewRequiredRules.push({
+          ruleId: 'RULE_US_NY_STATE_14_DIOXANE_ASSAY_MISSING',
+          regulationIdentifier: 'NY ECL § 37-0117',
+          regulationName: 'New York 1,4-Dioxane Concentration Limit',
+          jurisdiction: 'US_STATE_NY',
+          requirementType: 'TESTING_REQUIRED',
+          mandatoryOrVoluntary: 'MANDATORY',
+          severity: 'HIGH',
+          status: 'UNKNOWN_DATA',
+          affectedIngredients: evaluatedIngredients.filter(i => i.missingDataPoints.some(d => d.includes('1,4-dioxane'))).map(i => i.rawName),
+          message,
+          remediation: 'Obtain lot-specific 1,4-dioxane COA or accredited test result for every ethoxylated raw material.',
+          evidenceId: 'EVID_US_NY_ECL_37_0117',
+          verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+        });
+      } else if (formulaDioxanePpm > maxDioxanePpm) {
         failedRules.push({
           ruleId: 'RULE_US_NY_STATE_14_DIOXANE',
           regulationIdentifier: 'NY ECL § 37-0117',
@@ -238,7 +261,7 @@ export class RegulatoryComplianceEngine {
           mandatoryOrVoluntary: 'MANDATORY',
           severity: 'CRITICAL',
           status: 'FAIL',
-          affectedIngredients: evaluatedIngredients.filter(i => i.impuritiesPpm.dioxane_1_4 > 0).map(i => i.rawName),
+          affectedIngredients: evaluatedIngredients.filter(i => (i.impuritiesPpm.dioxane_1_4 ?? 0) > 0).map(i => i.rawName),
           measuredValue: `${formulaDioxanePpm.toFixed(2)} ppm`,
           thresholdValue: `${maxDioxanePpm.toFixed(1)} ppm`,
           message: `Calculated formula 1,4-Dioxane impurity level is ${formulaDioxanePpm.toFixed(2)} ppm, exceeding statutory NY state maximum limit of ${maxDioxanePpm.toFixed(1)} ppm.`,
@@ -247,6 +270,27 @@ export class RegulatoryComplianceEngine {
           verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
         });
       }
+    }
+
+    // Missing ingredient and GHS inputs are explicit review blockers.
+    const allMissingInputDetails = [...ingredientMissingData, ...ghsMissingData];
+    if (allMissingInputDetails.length > 0) {
+      missingEvidence.push(...allMissingInputDetails);
+      reviewRequiredRules.push({
+        ruleId: 'REG_FORMULATION_INPUTS_INCOMPLETE',
+        regulationIdentifier: 'FORMULATION_INPUT_DATA',
+        regulationName: 'Regulatory Ingredient and GHS Input Completeness',
+        jurisdiction: jurisdictionId,
+        requirementType: 'HUMAN_REVIEW_REQUIRED',
+        mandatoryOrVoluntary: 'MANDATORY',
+        severity: 'HIGH',
+        status: 'UNKNOWN_DATA',
+        affectedIngredients: evaluatedIngredients.filter(i => i.missingDataPoints.length > 0).map(i => i.rawName),
+        message: allMissingInputDetails.join(' '),
+        remediation: 'Supply verified chemical identity, supplier active-matter assays, and measured formulation pH before regulatory certification.',
+        evidenceId: 'EVID_FORMULATION_INPUT_COMPLETENESS',
+        verificationStatus: 'NOT_VERIFIED'
+      });
     }
 
     // 6. Claim Compliance Evaluation
@@ -360,7 +404,7 @@ export class RegulatoryComplianceEngine {
     rule: RegulatoryRule,
     ingredients: EvaluatedChemicalIngredient[],
     input: RegulatoryEvaluationInput,
-    _calculatedPH: number,
+    _calculatedPH: number | undefined,
     productScope: ReturnType<typeof RegulatoryProductScopeEngine.resolveProductScope>,
     evaluationDate: string
   ): RuleEvaluationResult {
@@ -475,6 +519,23 @@ export class RegulatoryComplianceEngine {
         if (matchesScope) {
           affectedIngs.push(ing.rawName);
           if (rule.concentrationThresholds.basis === 'ACTIVE_MATTER') {
+            if (ing.activeMatterPct === undefined) {
+              return {
+                ruleId: rule.ruleId,
+                regulationIdentifier: rule.regulationIdentifier,
+                regulationName: rule.regulationName,
+                jurisdiction: rule.jurisdiction,
+                requirementType: rule.requirementType,
+                mandatoryOrVoluntary: rule.mandatoryOrVoluntary,
+                severity: rule.severity,
+                status: 'UNKNOWN_DATA',
+                affectedIngredients: affectedIngs,
+                message: `Active-matter assay is missing for '${ing.rawName}'; cannot evaluate this concentration threshold.`,
+                remediation: 'Provide lot-specific supplier COA or validated assay.',
+                evidenceId: rule.evidenceId,
+                verificationStatus: rule.verificationStatus
+              };
+            }
             matchingSumPct += ing.activeMatterPct;
           } else {
             matchingSumPct += ing.asSuppliedPct;
