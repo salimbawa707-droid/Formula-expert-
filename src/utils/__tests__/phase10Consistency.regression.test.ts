@@ -234,8 +234,52 @@ export function runPhase10ConsistencyTestSuite(): {
   assert(
     'Defect 1: AIFormulator Source Check',
     'AIFormulator consumes canonical hlbResult from orchestrator output',
-    aiFormulatorSource.includes('hlbResult: o?.hlbResult'),
     aiFormulatorSource.includes('hlbResult: o.hlbResult'),
+    aiFormulatorSource.includes('hlbResult: o.hlbResult'),
+    true
+  );
+
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent pH fallback calculator',
+    !aiFormulatorSource.includes('calculatePHAdvanced') && !aiFormulatorSource.includes('getSolverReadyIngredients'),
+    aiFormulatorSource.includes('calculatePHAdvanced'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent cleaning fallback calculator',
+    !aiFormulatorSource.includes('calculateCleaningPerformance'),
+    aiFormulatorSource.includes('calculateCleaningPerformance'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent hardness/chelation fallback calculator',
+    !aiFormulatorSource.includes('calculateWaterHardnessTolerance'),
+    aiFormulatorSource.includes('calculateWaterHardnessTolerance'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent compatibility fallback calculator',
+    !aiFormulatorSource.includes('calculateFormulationCompatibility'),
+    aiFormulatorSource.includes('calculateFormulationCompatibility'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator does not evaluate powder formulation a second time',
+    !aiFormulatorSource.includes('evaluatePowderFormulation') &&
+      aiFormulatorSource.includes('powderReport: orchResult.powderReport'),
+    aiFormulatorSource.includes('evaluatePowderFormulation'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'Powder lab measurements are passed through the canonical orchestrator input',
+    aiFormulatorSource.includes('powderLabInputs: snapshot.powderLabInputs'),
+    aiFormulatorSource.includes('powderLabInputs: snapshot.powderLabInputs'),
     true
   );
 
