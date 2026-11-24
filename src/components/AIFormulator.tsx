@@ -1289,11 +1289,11 @@ export default function FormulaExpert({
         name: ing.name,
         category: ing.category || ing.role || 'Component',
         role: ing.role || ing.category || 'Component',
-        percent: Number(ing.percentage ?? ing.percent ?? 0),
-        percentage: Number(ing.percentage ?? ing.percent ?? 0),
-        activePercent: Number(ing.activeMatterPct ?? ing.activePercent ?? null),
-        activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? null),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+        percent: Number.isFinite(readFormulaPercentage(ing)) ? readFormulaPercentage(ing) : null,
+        percentage: Number.isFinite(readFormulaPercentage(ing)) ? readFormulaPercentage(ing) : null,
+        activePercent: readFormulaActiveMatter(ing) ?? null,
+        activeMatterPct: readFormulaActiveMatter(ing) ?? null,
+        costPerKg: readFormulaCost(ing),
         function: ing.role || ing.category || 'Component'
       }))
     };
@@ -1529,7 +1529,7 @@ export default function FormulaExpert({
               type="number"
               min="1"
               value={Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : ""}
-              onChange={(e) => setBatchSizeKg(e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))
+              onChange={(e) => setBatchSizeKg(e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))}
               className="w-full bg-[#0e1629] border border-slate-600 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-white font-mono font-bold focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none"
             />
           </div>
@@ -1633,13 +1633,13 @@ export default function FormulaExpert({
               </thead>
               <tbody className="divide-y divide-slate-800 bg-[#0e1629]/50">
                 {ingredients.map((ing, idx) => {
-                  const rawPct = Number(ing.percentage) || 0;
-                  const calculatedWeight = ((rawPct / 100) * batchSizeKg).toFixed(3);
+                  const rawPct = readFormulaPercentage(ing);
+                  const calculatedWeight = Number.isFinite(rawPct) && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? ((rawPct / 100) * batchSizeKg).toFixed(3) : 'N/A';
                   const ingId = ing.id || `ing-${idx}`;
                   const roleStr = ing.role || getAuditedIngredientCategory(ing.name || "");
                   const hasCost = typeof ing.costPerKg === 'number' && !isNaN(ing.costPerKg) && ing.costPerKg >= 0;
                   const costNum = hasCost ? Number(ing.costPerKg) : null;
-                  const itemCost = hasCost ? ((rawPct / 100) * batchSizeKg * (costNum as number)).toFixed(2) : null;
+                  const itemCost = hasCost && Number.isFinite(rawPct) && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? ((rawPct / 100) * batchSizeKg * (costNum as number)).toFixed(2) : null;
 
                   return (
                     <tr key={ingId} className="hover:bg-[#11192e]/40 transition-colors">
@@ -1749,7 +1749,7 @@ export default function FormulaExpert({
                             min="0"
                             max="100"
                             step="any"
-                            value={Number.isFinite(Number(ing.percentage)) ? ing.percentage : ""}
+                            value={Number.isFinite(ing.percentage) ? ing.percentage : ""}
                             onChange={(e) => handleUpdateIngredient(ingId, "percentage", e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))}
                             className="w-20 bg-[#131d35] border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm font-mono text-right text-cyan-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none font-bold"
                           />
@@ -1765,7 +1765,7 @@ export default function FormulaExpert({
                             min="0"
                             max="100"
                             step="any"
-                            value={Number.isFinite(Number(ing.activeMatterPct)) ? ing.activeMatterPct : ""}
+                            value={Number.isFinite(ing.activeMatterPct) ? ing.activeMatterPct : ""}
                             onChange={(e) => handleUpdateIngredient(ingId, "activeMatterPct", e.target.value.trim() === "" ? undefined : Number(e.target.value))}
                             className="w-16 bg-[#131d35] border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm font-mono text-right text-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none font-semibold"
                           />
@@ -1824,13 +1824,13 @@ export default function FormulaExpert({
           {/* Mobile Card Stack View (< 640px) */}
           <div className="block sm:hidden space-y-2.5">
             {ingredients.map((ing, idx) => {
-              const rawPct = Number(ing.percentage) || 0;
-              const calculatedWeight = ((rawPct / 100) * batchSizeKg).toFixed(3);
+              const rawPct = readFormulaPercentage(ing);
+              const calculatedWeight = Number.isFinite(rawPct) && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? ((rawPct / 100) * batchSizeKg).toFixed(3) : 'N/A';
               const ingId = ing.id || `ing-${idx}`;
               const roleStr = ing.role || getAuditedIngredientCategory(ing.name || "");
               const hasCost = typeof ing.costPerKg === 'number' && !isNaN(ing.costPerKg) && ing.costPerKg >= 0;
               const costNum = hasCost ? Number(ing.costPerKg) : null;
-              const itemCost = hasCost ? ((rawPct / 100) * batchSizeKg * (costNum as number)).toFixed(2) : null;
+              const itemCost = hasCost && Number.isFinite(rawPct) && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? ((rawPct / 100) * batchSizeKg * (costNum as number)).toFixed(2) : null;
 
               return (
                 <div key={ingId} className="bg-[#131d35] border border-slate-700/80 rounded-xl p-3 space-y-2.5 shadow-sm">
@@ -1950,7 +1950,7 @@ export default function FormulaExpert({
                         min="0"
                         max="100"
                         step="any"
-                        value={Number.isFinite(Number(ing.percentage)) ? ing.percentage : ""}
+                        value={Number.isFinite(ing.percentage) ? ing.percentage : ""}
                         onChange={(e) => handleUpdateIngredient(ingId, "percentage", e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))}
                         className="w-full bg-[#0e1629] border border-slate-700 rounded px-1.5 py-1 font-mono font-bold text-cyan-300 text-xs mt-0.5"
                       />
@@ -1962,7 +1962,7 @@ export default function FormulaExpert({
                         min="0"
                         max="100"
                         step="any"
-                        value={Number.isFinite(Number(ing.activeMatterPct)) ? ing.activeMatterPct : ""}
+                        value={Number.isFinite(ing.activeMatterPct) ? ing.activeMatterPct : ""}
                         onChange={(e) => handleUpdateIngredient(ingId, "activeMatterPct", e.target.value.trim() === "" ? undefined : Number(e.target.value))}
                         className="w-full bg-[#0e1629] border border-slate-700 rounded px-1.5 py-1 font-mono text-slate-300 text-xs mt-0.5"
                       />
@@ -2307,7 +2307,7 @@ export default function FormulaExpert({
           liquidResults={!isPowderCategory(deepAnalysisState.formulaSnapshot.productCategory) ? {
             pH: scientificResults.pH,
             activeSurfactants: calculateActiveSurfactants(deepAnalysisState.formulaSnapshot.ingredients),
-            totalPercentage: deepAnalysisState.formulaSnapshot.ingredients.reduce((s, i) => s + (Number(i.percentage) || 0), 0),
+            totalPercentage: getFormulaMassBalance(deepAnalysisState.formulaSnapshot.ingredients),
             viscosity: scientificResults.viscosity,
             viscosityCp: scientificResults.viscosityCp,
             density: scientificResults.density?.densityGPerCm3,
@@ -2333,7 +2333,7 @@ export default function FormulaExpert({
             setIngredients(newIngs.map((i, idx) => ({
               ...i,
               id: i.id || `opt-${idx}`,
-              percentage: Number(i.percentage) || 0,
+              percentage: readFormulaPercentage(i),
               costPerKg: i.costPerKg !== undefined && i.costPerKg !== null && !isNaN(Number(i.costPerKg)) ? Number(i.costPerKg) : undefined
             })));
             if (candName) {
