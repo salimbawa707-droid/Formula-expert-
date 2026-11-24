@@ -73,7 +73,7 @@ export class IngredientResearchBridge {
       const conditions = String(p.activeMatterConditions || '').trim();
       const grade = String(p.grade || '').trim();
       const sourceText = String(source.rawContent || '').toLowerCase();
-      const describesActiveMatter = /active\\s+(matter|content)|surfactant\\s+active/i.test(sourceText);
+      const describesActiveMatter = /active\s+(matter|content)|surfactant\s+active/i.test(sourceText);
       const containsSourceFact = (fact: string) => sourceText.includes(fact.toLowerCase());
       if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
       if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
