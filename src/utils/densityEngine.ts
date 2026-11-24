@@ -198,13 +198,21 @@ export function calculateDensity(
 }
 
 export function calculateTotalSolids(ingredients: FormulationIngredient[]): number {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  return Number(safeIngs.reduce((acc, ing) => {
+  if (!Array.isArray(ingredients) || ingredients.length === 0) return Number.NaN;
+  let totalSolids = 0;
+  let totalMassPct = 0;
+  for (const ing of ingredients) {
     const name = (ing?.name || '').toLowerCase();
     const role = (ing?.role || (ing as any)?.category || '').toLowerCase();
-    const isVolatile = name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol') || role.includes('solvent');
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const solidFraction = isVolatile && (name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol')) ? 0 : 1;
-    return acc + (pct * solidFraction);
-  }, 0).toFixed(2));
+    const rawPct = (ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? (ing as any)?.rawPercent;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) return Number.NaN;
+    totalMassPct += pct;
+    const isWaterOrVolatileSolvent = name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol');
+    const isVolatileSolventRole = role.includes('solvent') && !name.includes('propylene glycol') && !name.includes('glycerin');
+    const solidFraction = isWaterOrVolatileSolvent || isVolatileSolventRole ? 0 : 1;
+    totalSolids += pct * solidFraction;
+  }
+  if (!Number.isFinite(totalMassPct) || Math.abs(totalMassPct - 100) > 0.05) return Number.NaN;
+  return Number(totalSolids.toFixed(2));
 }
