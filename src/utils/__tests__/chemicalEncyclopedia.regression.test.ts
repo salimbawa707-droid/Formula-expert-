@@ -266,6 +266,11 @@ export function runChemicalEncyclopediaTestSuite() {
     'Test 20D: Common detergent raw-material abbreviations resolve to known catalog identities',
     `Unresolved: ${unresolvedIndustryAliases.join(', ') || 'none'}`
   );
+  const teaResolution = resolveUniversalIngredientIdentity('TEA');
+  assert(
+    teaResolution?.ingredient.id === 'tea-99',
+    'Test 20E: TEA abbreviation resolves to triethanolamine, not protease records sharing a substring'
+  );
 
   // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
