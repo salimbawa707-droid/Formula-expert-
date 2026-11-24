@@ -74,14 +74,13 @@ export default function FormulationLibrary({
           productCategory: f.category,
           ingredients: (f.ingredients || []).map((ing: any) => ({
             name: ing.name,
-            percentage: Number(ing.percentage ?? ing.percent ?? 0),
-            activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? null),
+            percentage: (() => { const raw = ing.percentage ?? ing.percent ?? ing.percentageInFormula; return raw === undefined || raw === null || raw === '' ? Number.NaN : Number(raw); })(),
+            ...(ing.activeMatterPct !== undefined || ing.activePercent !== undefined ? { activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent) } : {}),
             role: ing.role || ing.category || 'Component'
           })),
-          batchSizeKg: f.batchSizeKg || 0,
-          costContext: {
-            targetCostPerKg: 50
-          }
+          batchSizeKg: Number.isFinite(f.batchSizeKg ?? f.batchSize) && (f.batchSizeKg ?? f.batchSize)! > 0 ? (f.batchSizeKg ?? f.batchSize)! : Number.NaN,
+          productSubProfileId: f.productSubProfileId,
+          ...(typeof f.targetCost === 'number' && Number.isFinite(f.targetCost) && f.targetCost >= 0 ? { costContext: { targetCostPerKg: f.targetCost } } : {})
         });
         map.set(f.id, evalResult.qualityGateResult);
       } catch (e) {
@@ -309,7 +308,7 @@ export default function FormulationLibrary({
             {/* Ingredients Table */}
             <div>
               <h3 className="font-extrabold text-xs text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Scale className="w-4 h-4 text-purple-400" /> Mass Balance ({currentFormula.batchSizeKg} kg Batch)
+                <Scale className="w-4 h-4 text-purple-400" /> Mass Balance ({Number.isFinite(currentFormula.batchSizeKg) && currentFormula.batchSizeKg > 0 ? currentFormula.batchSizeKg : 'N/A'} kg Batch)
               </h3>
               <div className="overflow-x-auto rounded-xl border border-slate-800 bg-[#0b1020]">
                 <table className="w-full text-left text-xs sm:text-sm">
@@ -327,10 +326,10 @@ export default function FormulationLibrary({
                         <td className="py-2.5 px-3.5 font-bold text-white">{ing.name}</td>
                         <td className="py-2.5 px-3.5 text-slate-400 text-xs font-medium">{ing.category || (ing as any).function || "Additive"}</td>
                         <td className="py-2.5 px-3.5 text-right font-mono font-bold text-slate-200">
-                          {(Number(ing.percent ?? ing.percentage ?? 0) || 0).toFixed(2)}%
+                          {Number.isFinite(Number(ing.percent ?? ing.percentage)) ? Number(ing.percent ?? ing.percentage).toFixed(2) + '%' : 'N/A'}
                         </td>
                         <td className="py-2.5 px-3.5 text-right font-mono text-purple-300 font-extrabold">
-                          {(((Number(ing.percent ?? ing.percentage ?? 0) || 0) / 100) * (currentFormula.batchSizeKg || 0)).toFixed(2)} kg
+                          {Number.isFinite(Number(ing.percent ?? ing.percentage)) && Number.isFinite(currentFormula.batchSizeKg) && currentFormula.batchSizeKg > 0 ? (((Number(ing.percent ?? ing.percentage) / 100) * currentFormula.batchSizeKg).toFixed(2) + ' kg') : 'N/A'}
                         </td>
                       </tr>
                     ))}
