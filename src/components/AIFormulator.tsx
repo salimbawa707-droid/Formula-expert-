@@ -812,7 +812,7 @@ export default function FormulaExpert({
           activeMatterEvidenceUrl: undefined,
           canonicalIngredientId: selected.id,
           identityType: selected.identityType,
-          costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+          costPerKg: readFormulaCost(ing),
           hlb: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
           hlbValue: selected.hlb !== null && selected.hlb !== undefined ? selected.hlb : undefined,
           casNumber: selected.casNumber,
@@ -1333,6 +1333,7 @@ export default function FormulaExpert({
         category: category,
         batchSizeKg,
         batchSize: batchSizeKg,
+        productSubProfileId: activeFormula?.productSubProfileId,
         targetPH: scientificResults.pH,
         description: newFormulaItem.description,
         ingredients: ingredients.map((ing, idx) => ({
@@ -2417,8 +2418,8 @@ export default function FormulaExpert({
           const newIng: FormulationIngredient = {
             id: `ing-${Date.now()}`,
             name: scanned.name,
-            percentage: scanned.percentage,
-            activeMatterPct: scanned.activeMatterPct ?? null,
+            percentage: Number.isFinite(scanned.percentage) ? scanned.percentage : Number.NaN,
+            activeMatterPct: scanned.activeMatterPct ?? undefined,
             role: scanned.role || "Component",
             costPerKg: scanned.costPerKg ?? null
           };
