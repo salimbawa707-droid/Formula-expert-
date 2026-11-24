@@ -208,8 +208,8 @@ export class IngredientResearchBridge {
               publisher: source.publisher || 'Persisted source',
               sourceType: source.sourceType,
               retrievedAt: source.retrievedAt || cached.researchedAt,
-              extractedParameters: cached.parameters,
-              rawContent: ''
+              extractedParameters: source.extractedParameters || cached.parameters,
+              rawContent: source.rawContent || ''
             }))
           : cached.sourceIds.map((sourceId, index) => ({
               sourceId,
