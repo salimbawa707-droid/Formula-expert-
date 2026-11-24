@@ -76,6 +76,7 @@ export interface ParameterProvenance {
   status: ParameterVerificationStatus;
   evidenceLevel?: ResearchEvidenceLevel;
   sourceType?: string;
+  sourceId?: string;
   source: string;
   sourceUrl: string;
   sourceDocumentUrl?: string | null;
@@ -636,6 +637,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         status,
         evidenceLevel,
         sourceType: sourceRecord.sourceType,
+        sourceId: sourceRecord.sourceId,
         source,
         sourceUrl: validateUrl(sourceUrl) ? sourceUrl : "",
         sourceDocumentUrl: validateUrl(sourceUrl) ? sourceUrl : null,
@@ -740,6 +742,9 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     if (parameters.activeMatter !== undefined && provenance.activeMatter?.status === 'VERIFIED' && provenance.activeMatter.value === parameters.activeMatter) {
       updatedIng.activeDefault = parameters.activeMatter;
       (updatedIng as any).activeMatterPct = parameters.activeMatter;
+      (updatedIng as any).activeMatterInputSource = 'SOURCE_BACKED';
+      (updatedIng as any).activeMatterEvidenceId = provenance.activeMatter.sourceId;
+      (updatedIng as any).activeMatterEvidenceUrl = provenance.activeMatter.sourceUrl;
       if (updatedIng.unknownProperties) {
         updatedIng.unknownProperties = updatedIng.unknownProperties.filter((p: string) => p !== 'activeMatter');
       }
@@ -828,6 +833,9 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           return {
             ...ing,
             activeMatterPct: updatedIng.activeDefault,
+            activeMatterInputSource: (updatedIng as any).activeMatterInputSource || 'UNKNOWN',
+            activeMatterEvidenceId: (updatedIng as any).activeMatterEvidenceId,
+            activeMatterEvidenceUrl: (updatedIng as any).activeMatterEvidenceUrl,
             provenance: (updatedIng as any).provenance
           };
         }
