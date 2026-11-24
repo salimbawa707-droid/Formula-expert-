@@ -62,7 +62,8 @@ export function runP0RemediationLimsPersistenceUiTruthfulnessTestSuite(): {
   assert(
     'DOCS 5: Invalid legacy expiry dates are not misreported as no-expiry documents',
     docsLibrarySource.includes("return 'INVALID'") &&
-      docsLibrarySource.includes("validity === 'INVALID'")
+      docsLibrarySource.includes("validity === 'INVALID'") &&
+      docsLibrarySource.includes("T00:00:00.000Z")
   );
   assert(
     'DOCS 6: Local document mutation failures are surfaced to the user',
