@@ -849,13 +849,15 @@ export interface FormulationChelationCapacityResult {
  * - Per-dose capacity (mg CaCO3) vs Entire batch capacity (grams CaCO3)
  */
 export function calculateFormulationChelationCapacity(
-  ingredients: FormulationIngredient[], 
-  washDoseGrams: number = 20, 
-  batchSizeKg: number = 100
+  ingredients: FormulationIngredient[],
+  washDoseGrams?: number,
+  batchSizeKg?: number
 ): FormulationChelationCapacityResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
-  const dose = typeof washDoseGrams === 'number' && !isNaN(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : 20;
-  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  const doseIsValid = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
+  const batchIsValid = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
+  const dose = doseIsValid ? washDoseGrams : Number.NaN;
+  const batchKg = batchIsValid ? batchSizeKg : Number.NaN;
 
   let totalSequestrationMg = 0;
   let batchSequestrationGrams = 0;
@@ -951,17 +953,18 @@ export function calculateFormulationChelationCapacity(
     };
   });
 
-  return { 
-    totalSequestrationMg: invalidIngredientCount > 0 ? Number.NaN : totalSequestrationMg,
-    batchSequestrationGrams: invalidIngredientCount > 0 ? Number.NaN : batchSequestrationGrams,
-    chelationCapacityMg: invalidIngredientCount > 0 ? Number.NaN : chelationCapacityMg,
-    builderCapacityMg: invalidIngredientCount > 0 ? Number.NaN : builderCapacityMg,
+  const hasInvalidScenario = !doseIsValid || ings.length === 0;
+  return {
+    totalSequestrationMg: invalidIngredientCount > 0 || hasInvalidScenario ? Number.NaN : totalSequestrationMg,
+    batchSequestrationGrams: invalidIngredientCount > 0 || hasInvalidScenario || !batchIsValid ? Number.NaN : batchSequestrationGrams,
+    chelationCapacityMg: invalidIngredientCount > 0 || hasInvalidScenario ? Number.NaN : chelationCapacityMg,
+    builderCapacityMg: invalidIngredientCount > 0 || hasInvalidScenario ? Number.NaN : builderCapacityMg,
     details,
     chelatorCount,
     unknownChelatorCount,
     hasUnknownChelators: unknownChelatorCount > 0,
     invalidIngredientCount,
-    status: unknownChelatorCount > 0 || invalidIngredientCount > 0 ? 'INSUFFICIENT_DATA' : 'COMPLETE'
+    status: unknownChelatorCount > 0 || invalidIngredientCount > 0 || hasInvalidScenario ? 'INSUFFICIENT_DATA' : 'COMPLETE'
   };
 }
 
