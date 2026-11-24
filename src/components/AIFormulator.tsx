@@ -95,8 +95,12 @@ export function computeFormulaFingerprint(inputs: {
   const sortedIngs = (inputs.ingredients || [])
     .map((ing) => {
       const name = (ing.name || '').trim().toLowerCase();
-      const pct = (Number(ing.percentage) || 0).toFixed(4);
-      const act = (Number(ing.activeMatterPct) || 0).toFixed(2);
+      const rawPct = ing.percentage ?? (ing as any).percent;
+      const numericPct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+      const pct = Number.isFinite(numericPct) && numericPct >= 0 && numericPct <= 100 ? numericPct.toFixed(4) : (rawPct === undefined || rawPct === null || rawPct === '' ? 'MISSING_PCT' : 'INVALID_PCT');
+      const rawActive = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity;
+      const numericActive = rawActive === undefined || rawActive === null ? Number.NaN : Number(rawActive);
+      const act = Number.isFinite(numericActive) && numericActive >= 0 && numericActive <= 100 ? numericActive.toFixed(2) : 'UNKNOWN_AM';
       const cost = ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg).toFixed(2) : 'null';
       return `${name}:${pct}:${act}:${cost}`;
     })
