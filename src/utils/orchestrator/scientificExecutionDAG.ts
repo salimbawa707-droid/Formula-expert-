@@ -638,8 +638,8 @@ export class ScientificExecutionDAG {
         const hardnessPolicy = getProductHardnessPolicy(
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
         );
-        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? (state.rawInput as any).waterVolumeL;
-        const rawDose = state.rawInput.dose ?? (state.rawInput as any).washDoseGrams ?? state.rawInput.doseGrams;
+        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.washVolumeL ?? state.rawInput.waterVolumeL;
+        const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams ?? state.rawInput.doseGrams;
         const washVolumeL = rawWashVolume === undefined || rawWashVolume === null ? undefined : Number(rawWashVolume);
         const washDoseGrams = rawDose === undefined || rawDose === null ? undefined : Number(rawDose);
         const rawBatchSize = state.rawInput.batchSizeKg ?? state.rawInput.batchSize;
