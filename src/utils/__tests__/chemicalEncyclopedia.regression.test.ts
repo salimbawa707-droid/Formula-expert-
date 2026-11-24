@@ -257,6 +257,16 @@ export function runChemicalEncyclopediaTestSuite() {
     'Test 20C: Shared base chemical names resolve to a known identity while requiring grade review'
   );
 
+  // 20D. The curated industry abbreviation aliases are used by identity resolution,
+  // not just by the encyclopedia search box.
+  const industryAliases = ['LABSA', 'SLES', 'AOS', 'SLS', 'NaOH', 'KOH', 'CAPB', 'TEA', 'MEA', 'STPP', 'GLDA', 'EDTA'];
+  const unresolvedIndustryAliases = industryAliases.filter(query => !resolveUniversalIngredientIdentity(query));
+  assert(
+    unresolvedIndustryAliases.length === 0,
+    'Test 20D: Common detergent raw-material abbreviations resolve to known catalog identities',
+    `Unresolved: ${unresolvedIndustryAliases.join(', ') || 'none'}`
+  );
+
   // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
   searchUniversalIngredients('SLES', 'Anionic Surfactant');
