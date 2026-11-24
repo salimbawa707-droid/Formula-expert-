@@ -73,6 +73,7 @@ export class IngredientResearchBridge {
       const conditions = String(p.activeMatterConditions || '').trim();
       const grade = String(p.grade || '').trim();
       const sourceText = String(source.rawContent || '').toLowerCase();
+      const describesActiveMatter = /active\\s+(matter|content)|surfactant\\s+active/i.test(sourceText);
       const containsSourceFact = (fact: string) => sourceText.includes(fact.toLowerCase());
       if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
       if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
@@ -82,7 +83,7 @@ export class IngredientResearchBridge {
       if (requestedGrade && sourceGrade !== this.normalize(requestedGrade)) return false;
       // The extracted fields must also be present in the captured source excerpt,
       // not merely asserted by the model's structured JSON response.
-      if (!containsSourceFact(String(p.activeMatter)) ||
+      if (!describesActiveMatter || !containsSourceFact(String(p.activeMatter)) ||
           !containsSourceFact(String(p.activeMatterUnit)) ||
           !containsSourceFact(String(p.activeMatterBasis)) ||
           !containsSourceFact(method) ||
