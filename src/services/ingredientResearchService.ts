@@ -333,7 +333,16 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       "rawContent": "string_factual_content_snippet",
       "extractedParameters": {
         "activeMatter": number_or_null,
+        "activeMatterUnit": "string_or_null",
+        "activeMatterBasis": "string_or_null",
+        "activeMatterMethod": "string_or_null",
+        "activeMatterConditions": "string_or_null",
+        "grade": "exact commercial grade or null",
         "pH": number_or_null,
+        "pHUnit": "string_or_null",
+        "pHBasis": "string_or_null",
+        "pHMethod": "string_or_null",
+        "pHConditions": "string_or_null",
         "ionicNature": "string_or_null"
       }
     }
@@ -366,7 +375,16 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
                         type: Type.OBJECT,
                         properties: {
                           activeMatter: { type: Type.NUMBER },
+                          activeMatterUnit: { type: Type.STRING },
+                          activeMatterBasis: { type: Type.STRING },
+                          activeMatterMethod: { type: Type.STRING },
+                          activeMatterConditions: { type: Type.STRING },
+                          grade: { type: Type.STRING },
                           pH: { type: Type.NUMBER },
+                          pHUnit: { type: Type.STRING },
+                          pHBasis: { type: Type.STRING },
+                          pHMethod: { type: Type.STRING },
+                          pHConditions: { type: Type.STRING },
                           ionicNature: { type: Type.STRING }
                         }
                       }
@@ -455,7 +473,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       if (numericProperty) {
         const metadataKeys = [`${prop}Unit`, `${prop}Basis`, `${prop}Method`, `${prop}Conditions`];
         const metadataComplete = propertySources.length === values.length && propertySources.every(source =>
-          metadataKeys.every(key => typeof source.extractedParameters?.[key] === 'string' && source.extractedParameters[key].trim().length > 0)
+          metadataKeys.every(key => typeof source.extractedParameters?.[key] === 'string' && source.extractedParameters[key].trim().length > 0) &&
+          (!grade || String(source.extractedParameters?.grade || '').trim().toLowerCase() === grade.trim().toLowerCase())
         );
         const signatures = propertySources.map(source => metadataKeys
           .map(key => String(source.extractedParameters[key]).trim().toLowerCase().replace(/\\s+/g, ' '))
@@ -569,6 +588,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
 
     const firstSource = msResult.sourcesRetrieved[0];
+    const findPropertySource = (property: string, value: any) =>
+      msResult.sourcesRetrieved.find(source => source.extractedParameters?.[property] === value);
     const activeVal = msResult.propertiesExtracted.activeMatter ?? null;
     const phVal = msResult.propertiesExtracted.pH ?? null;
     const phRangeVal = firstSource.extractedParameters.pHRange ?? null;
@@ -577,27 +598,26 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const shelfVal = firstSource.extractedParameters.shelfLife ?? null;
     const appVal = firstSource.extractedParameters.application ?? null;
 
-    const source = firstSource.publisher || (firstSource.domain ? firstSource.domain : "Independent Technical Datasheet");
-    const sourceUrl = firstSource.url || (firstSource.domain ? `https://${firstSource.domain}` : "");
-    const isConflict = msResult.status === 'CONFLICTING_EVIDENCE';
-    const isManufacturerSource = firstSource.sourceType === 'MANUFACTURER_TDS' || firstSource.sourceType === 'MANUFACTURER_SDS' || firstSource.sourceType === 'REGULATORY_DOCUMENT' || firstSource.sourceType === 'MANUFACTURER_SPECIFICATION';
-
     const pProv = (property: string, val: any, notes?: string): ParameterProvenance => {
-      let status: ParameterVerificationStatus = 'UNKNOWN';
-      let evidenceLevel: ResearchEvidenceLevel = 'UNKNOWN';
-
-      if (isConflict) {
-        status = 'EVIDENCE_CONFLICT';
-        evidenceLevel = 'UNKNOWN';
-      } else if (val !== null && val !== undefined) {
-        if (isManufacturerSource) {
-          status = 'VERIFIED';
-          evidenceLevel = 'VERIFIED_SOURCE';
-        } else {
-          status = 'SOURCE_BACKED';
-          evidenceLevel = 'SOURCE_BACKED';
-        }
-      }
+      const propertySource = val === null || val === undefined ? undefined : findPropertySource(property, val);
+      const sourceRecord = propertySource || firstSource;
+      const source = sourceRecord.publisher || sourceRecord.domain || "Independent Technical Datasheet";
+      const sourceUrl = sourceRecord.url || (sourceRecord.domain ? `https://${sourceRecord.domain}` : "");
+      const primaryManufacturerSource = ['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(sourceRecord.sourceType);
+      const p = sourceRecord.extractedParameters || {};
+      const activeMatterMetrologyComplete = property !== 'activeMatter' || (
+        ['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\\s+/g, '')) &&
+        ['AS_SUPPLIED', 'AS_RECEIVED'].includes(String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\\s-]+/g, '_')) &&
+        typeof p.activeMatterMethod === 'string' && p.activeMatterMethod.trim().length >= 4 &&
+        typeof p.activeMatterConditions === 'string' && p.activeMatterConditions.trim().length >= 4 &&
+        (!grade || String(p.grade || '').trim().toLowerCase() === grade.trim().toLowerCase())
+      );
+      const exactPropertyEvidence = propertySource !== undefined && sourceRecord.extractedParameters?.[property] === val;
+      const verified = !isConflict && exactPropertyEvidence && primaryManufacturerSource && activeMatterMetrologyComplete && validateUrl(sourceUrl);
+      const status: ParameterVerificationStatus = isConflict
+        ? 'EVIDENCE_CONFLICT'
+        : verified ? 'VERIFIED' : (val !== null && val !== undefined && exactPropertyEvidence ? 'SOURCE_BACKED' : 'UNKNOWN');
+      const evidenceLevel: ResearchEvidenceLevel = verified ? 'VERIFIED_SOURCE' : (status === 'SOURCE_BACKED' ? 'SOURCE_BACKED' : 'UNKNOWN');
 
       return {
         property,
@@ -605,13 +625,14 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         extractedValue: val,
         status,
         evidenceLevel,
+        sourceType: sourceRecord.sourceType,
         source,
-        sourceUrl: validateUrl(sourceUrl) ? sourceUrl : (firstSource.domain ? `https://${firstSource.domain}` : ""),
+        sourceUrl: validateUrl(sourceUrl) ? sourceUrl : "",
         sourceDocumentUrl: validateUrl(sourceUrl) ? sourceUrl : null,
-        notes,
+        notes: verified ? notes : (property === 'activeMatter' ? 'Not calculation-grade: exact property source, manufacturer primary source, as-supplied mass basis, unit, assay method, conditions and requested grade must all be evidenced.' : notes),
         verifiedAt: new Date().toISOString().split('T')[0],
         verificationDate: new Date().toISOString().split('T')[0],
-        confidenceScore: isConflict ? 0.3 : (isManufacturerSource ? 0.95 : 0.8)
+        confidenceScore: verified ? 0.95 : (status === 'SOURCE_BACKED' ? 0.7 : 0.3)
       };
     };
 
@@ -619,34 +640,32 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const parameters: Record<string, any> = {};
 
     if (activeVal !== null) {
-      provenance.activeMatter = pProv('activeMatter', activeVal, 'Assay determined by solids oven-drying');
-      const parsedActive = typeof activeVal === "number" ? activeVal : parseFloat(activeVal);
-      if (!isNaN(parsedActive)) parameters.activeMatter = parsedActive;
+      provenance.activeMatter = pProv('activeMatter', activeVal, 'Manufacturer-reported active matter assay with explicit method and basis');
+      if (provenance.activeMatter.status === 'VERIFIED') parameters.activeMatter = activeVal;
     }
     if (phVal !== null) {
-      provenance.pH = pProv('pH', phVal, 'pH of 10% aqueous solution');
-      const parsedPH = typeof phVal === "number" ? phVal : parseFloat(phVal);
-      if (!isNaN(parsedPH)) parameters.pH = parsedPH;
+      provenance.pH = pProv('pH', phVal, 'pH measurement with source-reported conditions');
+      if (provenance.pH.status === 'VERIFIED') parameters.pH = phVal;
     }
     if (phRangeVal !== null) {
-      provenance.pHRange = pProv('pHRange', phRangeVal, 'Operating GHS specification');
-      parameters.pHRange = phRangeVal;
+      provenance.pHRange = pProv('pHRange', phRangeVal, 'Operating specification');
+      if (provenance.pHRange.status === 'VERIFIED') parameters.pHRange = phRangeVal;
     }
     if (ionicVal !== null) {
-      provenance.ionicNature = pProv('ionicNature', ionicVal, 'Non-reactive ethoxylated structure');
-      parameters.ionicNature = ionicVal;
+      provenance.ionicNature = pProv('ionicNature', ionicVal, 'Source-reported ionic nature');
+      if (provenance.ionicNature.status === 'VERIFIED') parameters.ionicNature = ionicVal;
     }
     if (stateVal !== null) {
-      provenance.physicalState = pProv('physicalState', stateVal, 'Macroscopic appearance');
-      parameters.physicalState = stateVal;
+      provenance.physicalState = pProv('physicalState', stateVal, 'Source-reported physical state');
+      if (provenance.physicalState.status === 'VERIFIED') parameters.physicalState = stateVal;
     }
     if (shelfVal !== null) {
-      provenance.shelfLife = pProv('shelfLife', shelfVal, 'Storage stability window');
-      parameters.shelfLife = shelfVal;
+      provenance.shelfLife = pProv('shelfLife', shelfVal, 'Source-reported shelf life');
+      if (provenance.shelfLife.status === 'VERIFIED') parameters.shelfLife = shelfVal;
     }
     if (appVal !== null) {
-      provenance.application = pProv('application', appVal, 'Primary functional utility');
-      parameters.application = appVal;
+      provenance.application = pProv('application', appVal, 'Source-reported application');
+      if (provenance.application.status === 'VERIFIED') parameters.application = appVal;
     }
 
     provenance.hlb = { property: 'hlb', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
@@ -705,18 +724,18 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     }
 
     // Apply only verified scientific properties
-    if (parameters.activeMatter !== undefined) {
+    if (parameters.activeMatter !== undefined && provenance.activeMatter?.status === 'VERIFIED' && provenance.activeMatter.value === parameters.activeMatter) {
       updatedIng.activeDefault = parameters.activeMatter;
       (updatedIng as any).activeMatterPct = parameters.activeMatter;
       if (updatedIng.unknownProperties) {
         updatedIng.unknownProperties = updatedIng.unknownProperties.filter((p: string) => p !== 'activeMatter');
       }
     }
-    if (parameters.pH !== undefined) {
+    if (parameters.pH !== undefined && provenance.pH?.status === 'VERIFIED' && provenance.pH.value === parameters.pH) {
       (updatedIng as any).phMin = parameters.pH;
       (updatedIng as any).phMax = parameters.pHRange ? (parseFloat(parameters.pHRange.split('-')[1]) || null) : null;
     }
-    if (parameters.density !== undefined && typeof parameters.density === 'number') {
+    if (parameters.density !== undefined && typeof parameters.density === 'number' && provenance.density?.status === 'VERIFIED' && provenance.density.value === parameters.density) {
       (updatedIng as any).density = parameters.density;
     }
     if (parameters.ionicNature !== undefined) {
