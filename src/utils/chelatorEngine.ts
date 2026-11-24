@@ -1021,7 +1021,22 @@ export function calculateDynamicChelatorRequirement(
   const hardnessLoadMg = calculateWaterHardnessLoad(targetHardnessPpm, vol);
   const requiredSequestrationMg = hardnessLoadMg * (1 + margin / 100);
 
-  const { totalSequestrationMg } = calculateFormulationChelationCapacity(ingredients, dose);
+  const existingCapacity = Array.isArray(ingredients) && ingredients.length === 0
+    ? 0
+    : calculateFormulationChelationCapacity(ingredients, dose).totalSequestrationMg;
+  if (!Number.isFinite(existingCapacity)) {
+    return {
+      waterHardnessPpm: targetHardnessPpm, washVolumeL: vol, washDoseGrams: dose,
+      hardnessLoadMg, safetyMarginPct: margin, requiredSequestrationMg,
+      existingSequestrationMg: Number.NaN, capacityDeficitMg: Number.NaN,
+      capacitySurplusMg: Number.NaN, additionalGLDA47RequiredPct: Number.NaN,
+      additionalCitrateRequiredPct: Number.NaN, additionalMGDA38RequiredPct: Number.NaN,
+      recommendedAction: 'INSUFFICIENT_DATA: ingredient percentages or chelator identity are invalid; no chelator recommendation is calculated.',
+      calculationBasis: 'NOT_EVALUATED: existing formulation chelation capacity is unavailable.',
+      isSufficient: false, status: 'INSUFFICIENT_DATA'
+    };
+  }
+  const totalSequestrationMg = existingCapacity;
   const capacityDeficitMg = Math.max(0, requiredSequestrationMg - totalSequestrationMg);
   const capacitySurplusMg = Math.max(0, totalSequestrationMg - requiredSequestrationMg);
 
