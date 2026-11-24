@@ -206,6 +206,30 @@ export function runP1Phase2ChelationTestSuite() {
   const case6Cap = calculateFormulationChelationCapacity(case6Formula, 20);
   assertNear('Reference Cases', 'Case 6: 2% GLDA 99% Powder Capacity', case6Cap.totalSequestrationMg, 112.88, 0.1);
 
+  const missingPercentageCapacity = calculateFormulationChelationCapacity(
+    [{ id: 'missing-pct', name: 'GLDA 47% Liquid' } as any],
+    20
+  );
+  assert(
+    missingPercentageCapacity.status === 'INSUFFICIENT_DATA' &&
+      missingPercentageCapacity.invalidIngredientCount === 1 &&
+      Number.isNaN(missingPercentageCapacity.totalSequestrationMg),
+    'Input Integrity',
+    'Missing ingredient percentage blocks numeric chelation capacity'
+  );
+
+  const outOfRangePercentageCapacity = calculateFormulationChelationCapacity(
+    [{ id: 'invalid-pct', name: 'GLDA 47% Liquid', percentage: 101 } as any],
+    20
+  );
+  assert(
+    outOfRangePercentageCapacity.status === 'INSUFFICIENT_DATA' &&
+      outOfRangePercentageCapacity.invalidIngredientCount === 1 &&
+      Number.isNaN(outOfRangePercentageCapacity.totalSequestrationMg),
+    'Input Integrity',
+    'Above-100% ingredient percentage blocks numeric chelation capacity'
+  );
+
   // Case 7: Sodium Citrate Dihydrate (3.0% in 20g dose)
   // Raw mass = 0.60 g -> bound CaCO3 = 0.60 * 150 = 90.0 mg
   const case7Formula: FormulationIngredient[] = [{ id: '1', name: 'Sodium Citrate Dihydrate', percentage: 3.0 }];
