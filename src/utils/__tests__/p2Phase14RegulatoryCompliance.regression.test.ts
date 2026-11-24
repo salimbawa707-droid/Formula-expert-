@@ -756,6 +756,34 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     ]) === null
   );
 
+  const invalidIdentifierIngredient = RegulatoryIngredientEngine.processIngredient({
+    name: 'SLES',
+    percentage: 30,
+    activePercentage: 28,
+    casNumber: '1234-56-7',
+    ecNumber: '123-45-6',
+    impuritiesPpm: { dioxane_1_4: -1 }
+  });
+  assert(
+    'Scientific firewall: malformed CAS checksum and EC syntax are not accepted as chemical identity',
+    invalidIdentifierIngredient.casNumber === undefined &&
+      invalidIdentifierIngredient.ecNumber === undefined &&
+      invalidIdentifierIngredient.isUnknownIdentity &&
+      invalidIdentifierIngredient.missingDataPoints.some(x => x.includes('CAS number')) &&
+      invalidIdentifierIngredient.missingDataPoints.some(x => x.includes('EC number'))
+  );
+  assert(
+    'Scientific firewall: negative impurity assay is rejected rather than treated as measured data',
+    invalidIdentifierIngredient.impuritiesPpm.dioxane_1_4 === undefined &&
+      invalidIdentifierIngredient.missingDataPoints.some(x => x.includes('finite non-negative ppm'))
+  );
+  const invalidActiveAssay = RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 30, activePercentage: 120 });
+  assert(
+    'Scientific firewall: invalid active-matter assay blocks calculation',
+    invalidActiveAssay.activeMatterPct === undefined &&
+      invalidActiveAssay.missingDataPoints.some(x => x.includes('Active-matter assay'))
+  );
+
   const unverifiedSles = RegulatoryIngredientEngine.processIngredient({ name: 'SLES 28%', percentage: 30 });
   assert(
     'Scientific firewall: SLES trade name does not infer active matter, CAS identity, or dioxane assay',
