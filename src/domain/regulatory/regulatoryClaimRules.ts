@@ -137,6 +137,7 @@ export class ClaimComplianceEngine {
             reason: 'Formula contains active bleach component; claim "Bleach-Free" is false and prohibited.'
           });
           hasSubstantiationIssue = true;
+          hasProhibitedClaim = true;
           continue;
         }
       }
