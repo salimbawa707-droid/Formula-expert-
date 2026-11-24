@@ -278,6 +278,23 @@ export class RegulatoryComplianceEngine {
           evidenceId: 'EVID_US_NY_ECL_37_0117',
           verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
         });
+      } else {
+        passedRules.push({
+          ruleId: 'RULE_US_NY_STATE_14_DIOXANE',
+          regulationIdentifier: 'NY ECL § 37-0117',
+          regulationName: 'New York 1,4-Dioxane Concentration Limit',
+          jurisdiction: jurisdictionId,
+          requirementType: 'CONCENTRATION_LIMIT',
+          mandatoryOrVoluntary: 'MANDATORY',
+          severity: 'CRITICAL',
+          status: 'PASS',
+          affectedIngredients: evaluatedIngredients.filter(i => (i.impuritiesPpm.dioxane_1_4 ?? 0) > 0).map(i => i.rawName),
+          measuredValue: `${formulaDioxanePpm.toFixed(3)} ppm`,
+          thresholdValue: `${maxDioxanePpm.toFixed(1)} ppm`,
+          message: `Calculated formula 1,4-dioxane impurity level is within the New York maximum limit of ${maxDioxanePpm.toFixed(1)} ppm.`,
+          evidenceId: 'EVID_US_NY_ECL_37_0117',
+          verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+        });
       }
     }
 
@@ -524,6 +541,25 @@ export class RegulatoryComplianceEngine {
       }
     }
 
+    // New York dioxane is calculated from lot-specific impurity assays in the
+    // evaluate() coordinator. Never treat the SLES ingredient percentage as dioxane.
+    if (rule.ruleId === 'RULE_US_NY_STATE_14_DIOXANE') {
+      return {
+        ruleId: rule.ruleId,
+        regulationIdentifier: rule.regulationIdentifier,
+        regulationName: rule.regulationName,
+        jurisdiction: rule.jurisdiction,
+        requirementType: rule.requirementType,
+        mandatoryOrVoluntary: rule.mandatoryOrVoluntary,
+        severity: rule.severity,
+        status: 'NOT_APPLICABLE',
+        affectedIngredients: [],
+        message: 'Evaluated by the dedicated finished-formula impurity assay pathway.',
+        evidenceId: rule.evidenceId,
+        verificationStatus: rule.verificationStatus
+      };
+    }
+
     // 4. Check concentration thresholds only when the declared unit and basis
     // can be calculated from supplied formula data. Never compare unlike units.
     if (rule.concentrationThresholds && (rule.ingredientScope || rule.chemicalIdentifiers)) {
@@ -533,10 +569,8 @@ export class RegulatoryComplianceEngine {
         ingredients.every(ing => Number.isFinite(ing.asSuppliedPct) && ing.asSuppliedPct >= 0 && ing.asSuppliedPct <= 100) &&
         Math.abs(formulaTotalPct - 100) <= 0.01;
       const supportedUnitBasis =
-        (threshold.unit === 'WEIGHT_PCT' &&
-          ['ACTIVE_MATTER', 'AS_SUPPLIED', 'FORMULA_TOTAL', 'FINISHED_PRODUCT'].includes(threshold.basis)) ||
-        (threshold.unit === 'PPM' &&
-          ['ACTIVE_MATTER', 'AS_SUPPLIED', 'FORMULA_TOTAL', 'FINISHED_PRODUCT'].includes(threshold.basis));
+        threshold.unit === 'WEIGHT_PCT' &&
+        ['ACTIVE_MATTER', 'AS_SUPPLIED', 'FORMULA_TOTAL', 'FINISHED_PRODUCT'].includes(threshold.basis);
 
       if (!validMassBalance || !supportedUnitBasis) {
         return {
@@ -561,7 +595,7 @@ export class RegulatoryComplianceEngine {
       const identifier = rule.chemicalIdentifiers;
       const affectedIngs: string[] = [];
       let matchingValue = 0;
-      const multiplier = threshold.unit === 'PPM' ? 10000 : 1;
+      const multiplier = 1;
 
       for (const ing of ingredients) {
         const matchesNameScope = (rule.ingredientScope || []).some(scope =>
