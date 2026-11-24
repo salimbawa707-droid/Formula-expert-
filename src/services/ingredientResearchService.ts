@@ -226,52 +226,22 @@ export class IngredientResearchService {
     resolvedName: string;
     confidence: 'EXACT_MATCH' | 'HIGH_CONFIDENCE_MATCH' | 'POSSIBLE_MATCH' | 'UNRESOLVED';
   } {
-    const q = (nameOrAlias || '').trim().toLowerCase();
-    if (!q) {
-      return { ingredient: null, resolvedName: '', confidence: 'UNRESOLVED' };
+    const q = (nameOrAlias || '').trim();
+    const normalized = q.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!normalized) return { ingredient: null, resolvedName: '', confidence: 'UNRESOLVED' };
+
+    // Only exact canonical identity/name/INCI/CAS/declared-keyword matches
+    // count as present. Similarity matches must not suppress Gemini research.
+    const exactMatches = UNIVERSAL_INGREDIENTS.filter((i) => [
+      i.id, i.name, i.productName, i.inciName, i.casNumber, ...(i.keywords || [])
+    ].filter(Boolean).some((candidate) =>
+      String(candidate).trim().toLowerCase().replace(/[^a-z0-9]/g, '') === normalized
+    ));
+
+    if (exactMatches.length === 1) {
+      return { ingredient: exactMatches[0], resolvedName: exactMatches[0].name, confidence: 'EXACT_MATCH' };
     }
-
-    // 1. Exact canonical name/id check
-    let match = UNIVERSAL_INGREDIENTS.find(i => i.id === q || i.name.toLowerCase() === q || i.productName?.toLowerCase() === q);
-    if (match) {
-      return { ingredient: match, resolvedName: match.name, confidence: 'EXACT_MATCH' };
-    }
-
-    // 2. High-confidence matching via alternate spellings/aliases
-    const normalizedQuery = q.replace(/[^a-z0-9]/g, '');
-    match = UNIVERSAL_INGREDIENTS.find(i => {
-      const normalName = i.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const normalProd = (i.productName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const hasAlias = i.inciName?.toLowerCase() === q || i.casNumber === q;
-      return normalName === normalizedQuery || normalProd === normalizedQuery || hasAlias;
-    });
-
-    if (match) {
-      return { ingredient: match, resolvedName: match.name, confidence: 'HIGH_CONFIDENCE_MATCH' };
-    }
-
-    // 2b. High-confidence matching via searchUniversalIngredients
-    const searchMatches = searchUniversalIngredients(nameOrAlias);
-    if (searchMatches.length === 1) {
-      return { ingredient: searchMatches[0], resolvedName: searchMatches[0].name, confidence: 'HIGH_CONFIDENCE_MATCH' };
-    } else if (searchMatches.length > 1) {
-      const exactOrClose = searchMatches.find(i => i.id === q || i.name.toLowerCase().includes(q) || q.includes(i.name.toLowerCase()));
-      if (exactOrClose) {
-        return { ingredient: exactOrClose, resolvedName: exactOrClose.name, confidence: 'HIGH_CONFIDENCE_MATCH' };
-      }
-    }
-
-    // 3. Substring / possible match check
-    match = UNIVERSAL_INGREDIENTS.find(i => {
-      const normalName = i.name.toLowerCase();
-      return normalName.includes(q) || q.includes(normalName);
-    });
-
-    if (match) {
-      return { ingredient: match, resolvedName: match.name, confidence: 'POSSIBLE_MATCH' };
-    }
-
-    return { ingredient: null, resolvedName: nameOrAlias, confidence: 'UNRESOLVED' };
+    return { ingredient: null, resolvedName: q, confidence: 'UNRESOLVED' };
   }
 
   /**
@@ -281,15 +251,38 @@ export class IngredientResearchService {
    */
   public static async researchMultiSource(request: ResearchRequest, apiKey?: string): Promise<MultiSourceResearchResult> {
     const { ingredientName, grade } = request;
-    const cacheKey = `${ingredientName.toLowerCase()}|${(grade || '').toLowerCase()}`;
+    const cacheKey = ingredientName.toLowerCase() + '|' + (grade || '').toLowerCase();
 
-    if (this.searchCache[cacheKey]) {
-      return this.searchCache[cacheKey];
+    // Database-first routing is enforced here as well as in the formula bridge.
+    // Exact local matches return immediately and can never invoke Gemini.
+    const resolution = this.resolveIdentity(ingredientName);
+    if (resolution.ingredient) {
+      const local: any = resolution.ingredient;
+      const propertiesExtracted: Record<string, any> = {};
+      const active = local.activeMatterDefault ?? local.activeDefault ?? local.activeMatter ?? local.activeMatterPct;
+      if (typeof active === 'number') propertiesExtracted.activeMatter = active;
+      if (typeof local.phMin === 'number') propertiesExtracted.pH = local.phMin;
+      if (typeof local.ionicNature === 'string') propertiesExtracted.ionicNature = local.ionicNature;
+      const density = local.density ?? local.densityGPerMl;
+      if (typeof density === 'number') propertiesExtracted.density = density;
+      if (typeof local.hlb === 'number') propertiesExtracted.hlb = local.hlb;
+      return {
+        researchId: 'local-' + local.id,
+        query: ingredientName,
+        ingredientName,
+        resolvedName: local.name,
+        confidence: 'EXACT_MATCH',
+        status: 'SUCCESS',
+        sourcesRetrieved: [],
+        propertiesExtracted,
+        comparisonReport: [],
+        requiresUserApproval: false,
+        notes: 'Exact local database match. Gemini/web research was intentionally skipped.'
+      };
     }
 
-    const resolution = this.resolveIdentity(ingredientName);
-    const resolvedName = resolution.ingredient ? resolution.ingredient.name : ingredientName;
-
+    if (this.searchCache[cacheKey]) return this.searchCache[cacheKey];
+    const resolvedName = ingredientName;
     // Generate queries via Query Planner
     const queries = this.planQueries(ingredientName, grade);
 
@@ -407,8 +400,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         sourcesRetrieved: [],
         propertiesExtracted: {},
         comparisonReport: [],
-        requiresUserApproval: false,
-        notes: 'No reliable external sources could be retrieved for this ingredient.'
+        requiresUserApproval: true,
+        notes: 'No reliable external sources could be retrieved for this ingredient. Keep unresolved and do not use estimated properties.'
       };
       return failedResult;
     }
@@ -474,9 +467,9 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
               property: prop,
               comparisonStatus: 'MINOR_VARIATION',
               values,
-              notes: 'Minor variance within acceptable 5% physical tolerance limits. Safe to average.'
+              notes: 'Source values differ. Do not average without matching grade, units, method, test conditions, and measurement basis.'
             });
-            propertiesExtracted[prop] = Math.round((numericValues.reduce((a, b) => a + b, 0) / numericValues.length) * 10) / 10;
+            propertiesExtracted[prop] = String(min) + ' - ' + String(max);
           }
         } else {
           // Categorical conflict
@@ -490,7 +483,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       }
     });
 
-    const isConflicting = comparisonReport.some(c => c.comparisonStatus === 'CONFLICT');
+    const isConflicting = comparisonReport.some(c => c.comparisonStatus === 'CONFLICT' || c.comparisonStatus === 'MINOR_VARIATION');
     const finalStatus = isConflicting ? 'CONFLICTING_EVIDENCE' : 'SUCCESS';
 
     const multiResult: MultiSourceResearchResult = {
