@@ -128,6 +128,10 @@ export function runP5PropertyPipelinesTestSuite() {
     ...liquidFormulaInput,
     washDoseGrams: 0
   });
+  const noSurfactantRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    ingredients: [{ name: 'Water', percentage: 100, activeMatterPct: 0 }]
+  });
   assert(
     'Phase 2: Category Routing',
     'HLB is NOT_APPLICABLE for laundry powder profile',
@@ -159,6 +163,22 @@ export function runP5PropertyPipelinesTestSuite() {
       Number.isNaN(missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg),
     { status: missingHardnessScenarioRun.state.hardnessResult?.status, load: missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg },
     'NOT_EVALUATED with NaN load'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing hardness scenario is not mislabeled as sufficient chelation',
+    missingHardnessScenarioRun.state.chelationStatus === 'INSUFFICIENT_DATA' &&
+      missingHardnessScenarioRun.state.chelationResult?.isSufficient === null,
+    { status: missingHardnessScenarioRun.state.chelationStatus, sufficient: missingHardnessScenarioRun.state.chelationResult?.isSufficient },
+    'INSUFFICIENT_DATA / null'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'No surfactant in an applicable category is INSUFFICIENT_DATA, not NOT_APPLICABLE',
+    noSurfactantRun.state.hlbStatus === 'INSUFFICIENT_DATA' &&
+      noSurfactantRun.trace.find(t => t.nodeId === 'HLB')?.status === 'COMPLETED',
+    { state: noSurfactantRun.state.hlbStatus, trace: noSurfactantRun.trace.find(t => t.nodeId === 'HLB')?.status },
+    'INSUFFICIENT_DATA / COMPLETED'
   );
   assert(
     'Phase 2: Input Integrity',
