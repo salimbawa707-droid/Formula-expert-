@@ -85,6 +85,10 @@ export function runPhase7ProvenanceTestSuite(): { passed: number; failed: number
   const fpVersionChange = computeFormulaFingerprint('F-101', '1.0.1', sampleIngredients, 'LAUNDRY_LIQUID');
   assert('Traceability', 'Version change alters fingerprint', fp1 !== fpVersionChange, fp1 !== fpVersionChange, true);
 
+  const fpOrganicToilet = computeFormulaFingerprint('F-101', '1.0.0', sampleIngredients, 'TOILET_CLEANER', 'TOILET_CLEANER_ORGANIC_ACID');
+  const fpMineralToilet = computeFormulaFingerprint('F-101', '1.0.0', sampleIngredients, 'TOILET_CLEANER', 'TOILET_CLEANER_MINERAL_ACID');
+  assert('Traceability', 'Specialized product sub-profile change alters fingerprint', fpOrganicToilet !== fpMineralToilet, fpOrganicToilet !== fpMineralToilet, true);
+
   const missingPctFingerprint = computeFormulaFingerprint('F-101', '1.0.0', [
     { name: 'SLES 70%', percentage: undefined as any, activeMatterPct: 70 } as any
   ], 'LAUNDRY_LIQUID');
