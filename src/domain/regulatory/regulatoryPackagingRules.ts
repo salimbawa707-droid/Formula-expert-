@@ -16,7 +16,7 @@ export class PackagingComplianceEngine {
     calculatedPH?: number
   ): PackagingComplianceReport {
     const findings: string[] = [];
-    const isExtremePh = calculatedPH !== undefined && (calculatedPH <= 2.0 || calculatedPH >= 11.5);
+    const isExtremePh = calculatedPH !== undefined && Number.isFinite(calculatedPH) && (calculatedPH <= 2.0 || calculatedPH >= 11.5);
 
     // 1. Child-Resistant Closure (CRC) Requirement
     const childResistantClosureRequired = signalWord === 'DANGER' || isExtremePh;
@@ -31,14 +31,14 @@ export class PackagingComplianceEngine {
     }
 
     return {
-      overallPackagingStatus: childResistantClosureRequired ? 'REVIEW_REQUIRED' : 'PASS',
+      overallPackagingStatus: 'REVIEW_REQUIRED',
       childResistantClosureRequired,
       childResistantClosureVerified: false, // Requires physical package audit
       tactileWarningRequired,
       tactileWarningVerified: false,
-      recyclabilityInfoAvailable: true,
-      legalMetrologyUnitFormatted: true,
-      findings
+      recyclabilityInfoAvailable: false,
+      legalMetrologyUnitFormatted: false,
+      findings: [...findings, 'Physical packaging evidence was not supplied; closure, tactile warning, recyclability and legal-metrology declarations require package-level verification.']
     };
   }
 }
