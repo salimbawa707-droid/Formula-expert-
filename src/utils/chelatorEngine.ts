@@ -837,6 +837,7 @@ export interface FormulationChelationCapacityResult {
   chelatorCount: number;
   unknownChelatorCount: number;
   hasUnknownChelators: boolean;
+  invalidIngredientCount: number;
   status: 'COMPLETE' | 'INSUFFICIENT_DATA';
 }
 
@@ -862,13 +863,19 @@ export function calculateFormulationChelationCapacity(
   let builderCapacityMg = 0;
   let chelatorCount = 0;
   let unknownChelatorCount = 0;
+  let invalidIngredientCount = 0;
 
   const details: FormulationChelationIngredientDetail[] = ings.map(ing => {
     const rawName = ing?.name || 'Unknown';
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const validPct = isNaN(pct) || pct < 0 ? 0 : pct;
-    const massGrams = (validPct / 100) * dose;
-    const batchMassGrams = (validPct / 100) * batchKg * 1000;
+    const rawPct = (ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    const validPct = Number.isFinite(pct) && pct >= 0 && pct <= 100 ? pct : Number.NaN;
+    const hasValidPct = Number.isFinite(validPct);
+    if (!hasValidPct) invalidIngredientCount++;
+    const massGrams = hasValidPct ? (validPct / 100) * dose : Number.NaN;
+    const batchMassGrams = hasValidPct ? (validPct / 100) * batchKg * 1000 : Number.NaN;
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const validation = validateActiveMatterInput(explicitActive);
@@ -877,8 +884,8 @@ export function calculateFormulationChelationCapacity(
     const capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
     const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
-    const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
-    const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
+    const boundCaCO3Mg = hasValidPct ? massGrams * bindingCapacityMgPerG : Number.NaN;
+    const batchBoundCaCO3Grams = hasValidPct ? (batchMassGrams * bindingCapacityMgPerG) / 1000 : Number.NaN;
 
     // Reuse the exact species resolved by the grade-validated capacity lookup.
     // A second broad name matcher previously misclassified GLDA-99 powder as
@@ -908,8 +915,10 @@ export function calculateFormulationChelationCapacity(
       }
     }
 
-    totalSequestrationMg += boundCaCO3Mg;
-    batchSequestrationGrams += batchBoundCaCO3Grams;
+    if (hasValidPct) {
+      totalSequestrationMg += boundCaCO3Mg;
+      batchSequestrationGrams += batchBoundCaCO3Grams;
+    }
 
     const activePct = typeof explicitActive === 'number' ? explicitActive : (matchedSpecies?.activeDefault ?? null);
     const activeMassGrams = (activePct !== null) ? (validPct / 100) * dose * (activePct / 100) : 0;
@@ -943,15 +952,16 @@ export function calculateFormulationChelationCapacity(
   });
 
   return { 
-    totalSequestrationMg, 
-    batchSequestrationGrams, 
-    chelationCapacityMg,
-    builderCapacityMg,
+    totalSequestrationMg: invalidIngredientCount > 0 ? Number.NaN : totalSequestrationMg,
+    batchSequestrationGrams: invalidIngredientCount > 0 ? Number.NaN : batchSequestrationGrams,
+    chelationCapacityMg: invalidIngredientCount > 0 ? Number.NaN : chelationCapacityMg,
+    builderCapacityMg: invalidIngredientCount > 0 ? Number.NaN : builderCapacityMg,
     details,
     chelatorCount,
     unknownChelatorCount,
     hasUnknownChelators: unknownChelatorCount > 0,
-    status: unknownChelatorCount > 0 ? 'INSUFFICIENT_DATA' : 'COMPLETE'
+    invalidIngredientCount,
+    status: unknownChelatorCount > 0 || invalidIngredientCount > 0 ? 'INSUFFICIENT_DATA' : 'COMPLETE'
   };
 }
 
