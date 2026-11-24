@@ -6,6 +6,13 @@ function assert(condition: unknown, message: string): void {
 }
 
 async function main(): Promise<void> {
+  const directKnown = await IngredientResearchService.researchMultiSource({ ingredientName: 'LABSA 90% (Acid Slurry)' }, 'test-key');
+  assert(directKnown.notes?.includes('intentionally skipped'), 'direct service call must short-circuit known local ingredient');
+  assert(directKnown.sourcesRetrieved.length === 0, 'known local ingredient must not perform web retrieval');
+  const directLegacy = await IngredientResearchService.researchIngredient('LABSA 90% (Acid Slurry)', 'test-key');
+  assert(directLegacy.requiresUserApproval === false, 'legacy API must return local known ingredient without approval gate');
+  assert(directLegacy.parameters.activeMatter === 90, 'legacy API must return local active matter rather than empty research data');
+
   const original = IngredientResearchService.researchMultiSource;
   let researchCalls = 0;
 
