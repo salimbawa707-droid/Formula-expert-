@@ -23,6 +23,67 @@ const ACCEPTED_MIME_TYPES = new Set([
 ]);
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
+function createDocumentId(): string {
+  const cryptoApi = globalThis.crypto;
+  if (typeof cryptoApi?.randomUUID === 'function') return `doc_${cryptoApi.randomUUID()}`;
+  if (typeof cryptoApi?.getRandomValues !== 'function') {
+    throw new Error('Secure random ID generation is unavailable in this browser. Update Android System WebView or use a supported browser.');
+  }
+  const bytes = cryptoApi.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  return `doc_${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+async function validateAttachment(file: File): Promise<{ error?: string; mimeType?: string }> {
+  if (!file.size) return { error: 'Empty files cannot be registered.' };
+  if (file.size > MAX_ATTACHMENT_BYTES) return { error: 'Attachment exceeds the 20 MB local storage limit.' };
+
+  const extension = file.name.split('.').pop()?.toLowerCase() || '';
+  const expectedMime: Record<string, string> = {
+    pdf: 'application/pdf',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    txt: 'text/plain',
+    csv: 'text/csv',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  };
+  const expected = expectedMime[extension];
+  if (!expected) return { error: 'Unsupported file extension. Use PDF, PNG, JPEG, TXT, CSV or DOCX.' };
+  const declared = file.type.trim().toLowerCase();
+  const compatibleTextMime = extension === 'csv' && declared === 'text/plain';
+  if (declared && declared !== expected && declared !== 'application/octet-stream' && !compatibleTextMime) {
+    return { error: 'File extension and declared MIME type do not match.' };
+  }
+
+  const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const starts = (...signature: number[]) => signature.every((byte, index) => header[index] === byte);
+  if (extension === 'pdf' && !new TextDecoder().decode(header.slice(0, 5)).startsWith('%PDF-')) {
+    return { error: 'The selected file does not contain a valid PDF signature.' };
+  }
+  if (extension === 'png' && !starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) {
+    return { error: 'The selected file does not contain a valid PNG signature.' };
+  }
+  if ((extension === 'jpg' || extension === 'jpeg') && !starts(0xff, 0xd8, 0xff)) {
+    return { error: 'The selected file does not contain a valid JPEG signature.' };
+  }
+  if (extension === 'docx' && (!starts(0x50, 0x4b, 0x03, 0x04) || declared !== expected)) {
+    return { error: 'DOCX files must have the official DOCX MIME type and a valid ZIP container signature.' };
+  }
+  if (extension === 'txt' || extension === 'csv') {
+    try {
+      const text = await file.text();
+      if (text.includes('\\u0000')) return { error: 'The selected text file contains binary data.' };
+      new TextEncoder().encode(text); // Ensure the text is representable as UTF-8.
+    } catch {
+      return { error: 'The selected text file is not valid readable text.' };
+    }
+  }
+  return { mimeType: declared && declared !== 'application/octet-stream' ? declared : expected };
+}
+
 function dateState(expiryDate?: string): 'CURRENT' | 'EXPIRING' | 'EXPIRED' | 'NO_EXPIRY' {
   if (!expiryDate) return 'NO_EXPIRY';
   const expiry = new Date(`${expiryDate}T23:59:59`);
@@ -111,12 +172,8 @@ export default function DocsLibrary() {
         setError('Source URL must be a valid HTTPS or HTTP URL.'); return;
       }
     }
-    if (attachment && !ACCEPTED_MIME_TYPES.has(attachment.type)) {
-      setError('Unsupported file type. Use PDF, PNG, JPEG, TXT, CSV or DOCX.'); return;
-    }
-    if (attachment && attachment.size > MAX_ATTACHMENT_BYTES) {
-      setError('Attachment exceeds the 20 MB local storage limit.'); return;
-    }
+    const attachmentValidation = attachment ? await validateAttachment(attachment) : {};
+    if (attachmentValidation.error) { setError(attachmentValidation.error); return; }
     if (reviewStatus === 'REVIEWED_BY_USER' && !reviewedBy.trim()) {
       setError('Enter the reviewer name for a user-reviewed record.'); return;
     }
@@ -128,7 +185,7 @@ export default function DocsLibrary() {
     try {
       const now = new Date().toISOString();
       const record: RndDocumentRecord = {
-        id: `doc_${crypto.randomUUID()}`,
+        id: createDocumentId(),
         title: title.trim(),
         documentType,
         issuer: issuer.trim() || undefined,
@@ -144,7 +201,7 @@ export default function DocsLibrary() {
         reviewedAt: reviewStatus === 'REVIEWED_BY_USER' ? now : undefined,
         reviewNotes: reviewNotes.trim() || undefined,
         fileName: attachment?.name,
-        mimeType: attachment?.type,
+        mimeType: attachment ? attachmentValidation.mimeType : undefined,
         fileSizeBytes: attachment?.size,
         attachment: attachment || undefined,
         createdAt: now,
@@ -167,36 +224,54 @@ export default function DocsLibrary() {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = doc.fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    anchor.remove();
+    // Android WebView may start the download asynchronously; revoke only after
+    // the click has been handed to the browser download pipeline.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const deleteDocument = async (id: string) => {
     if (!window.confirm('Delete this local document record and its stored attachment?')) return;
-    await db.documents.delete(id);
-    await loadDocuments();
+    try {
+      await db.documents.delete(id);
+      await loadDocuments();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete the document record.');
+    }
   };
 
   const reviewDocument = async (doc: RndDocumentRecord) => {
     const reviewer = window.prompt('Name of the person who reviewed this document:');
     if (!reviewer?.trim()) return;
-    await db.documents.update(doc.id, {
-      reviewStatus: 'REVIEWED_BY_USER',
-      reviewedBy: reviewer.trim(),
-      reviewedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    await loadDocuments();
+    try {
+      const now = new Date().toISOString();
+      await db.documents.update(doc.id, {
+        reviewStatus: 'REVIEWED_BY_USER',
+        reviewedBy: reviewer.trim(),
+        reviewedAt: now,
+        updatedAt: now
+      });
+      await loadDocuments();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update the document review state.');
+    }
   };
 
   const unreviewDocument = async (doc: RndDocumentRecord) => {
-    await db.documents.update(doc.id, {
-      reviewStatus: 'UNREVIEWED',
-      reviewedBy: undefined,
-      reviewedAt: undefined,
-      updatedAt: new Date().toISOString()
-    });
-    await loadDocuments();
+    try {
+      await db.documents.update(doc.id, {
+        reviewStatus: 'UNREVIEWED',
+        reviewedBy: undefined,
+        reviewedAt: undefined,
+        updatedAt: new Date().toISOString()
+      });
+      await loadDocuments();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not reopen the document review.');
+    }
   };
 
   const expiredCount = documents.filter(d => dateState(d.expiryDate) === 'EXPIRED').length;
@@ -222,6 +297,8 @@ export default function DocsLibrary() {
       <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm text-amber-100">
         <div className="flex items-start gap-2"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Local-only register:</strong> files and metadata are stored on this device in browser IndexedDB. They are not cloud-synced or backed up automatically. “Reviewed by user” records a human review action; it does not certify authenticity, legal compliance, product safety or a marketing claim.</div></div>
       </div>
+
+      {error && !showForm && <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-950/30 p-3 text-sm text-rose-200">{error}</div>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-700 bg-[#0e1629] p-4"><div className="text-xs text-slate-400">Total records</div><div className="mt-1 text-2xl font-bold text-white">{documents.length}</div></div>
