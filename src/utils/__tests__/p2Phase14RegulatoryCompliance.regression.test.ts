@@ -679,6 +679,25 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
       sdsResult.sections.some(s => s.sectionNumber === 16 && s.status === 'DATA_NOT_AVAILABLE')
   );
 
+  const documentationIncompleteDecision = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 80, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'SLES', percentage: 20, casNumber: '68585-34-2', activePercentage: 28, impuritiesPpm: { dioxane_1_4: 0 } }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'EU',
+    calculatedPH: 8,
+    packageSizeGramsOrMl: 1000,
+    intendedClaims: []
+  });
+  assert(
+    'Regulatory decision firewall: incomplete label, SDS and package evidence cannot yield COMPLIANT',
+    documentationIncompleteDecision.overallStatus !== 'COMPLIANT' &&
+      documentationIncompleteDecision.labelStatus.overallLabelStatus === 'REVIEW_REQUIRED' &&
+      documentationIncompleteDecision.sdsStatus.overallSDSStatus === 'REVIEW_REQUIRED' &&
+      documentationIncompleteDecision.packagingStatus.overallPackagingStatus === 'REVIEW_REQUIRED'
+  );
+
   const labelWithNominalQuantity = LabelComplianceEngine.evaluateLabelRequirements('INDIA', [], 'NONE', 1000);
   assert(
     'Label evidence firewall: formula metadata and a target quantity cannot mark real label artwork as PASS',
@@ -764,6 +783,17 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     negativeClaimsWithoutEvidence.evaluations.length === 3 &&
       negativeClaimsWithoutEvidence.evaluations.every(e => e.status === 'CLAIM_NOT_SUBSTANTIATED' && !e.hasRequiredEvidence) &&
       negativeClaimsWithoutEvidence.overallStatus === 'REVIEW_REQUIRED'
+  );
+
+  const contradictedPhosphateClaim = ClaimComplianceEngine.evaluateClaims(
+    ['Phosphate-Free'],
+    [RegulatoryIngredientEngine.processIngredient({ name: 'STPP', percentage: 10 })],
+    'INDIA'
+  );
+  assert(
+    'Claim firewall: a formula containing STPP makes a Phosphate-Free claim a hard FAIL',
+    contradictedPhosphateClaim.overallStatus === 'FAIL' &&
+      contradictedPhosphateClaim.evaluations.some(e => e.status === 'PROHIBITED_CLAIM')
   );
 
   const passedCount = results.filter(r => r.passed).length;
