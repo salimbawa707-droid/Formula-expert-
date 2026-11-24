@@ -1,7 +1,7 @@
 import { EvaluatedChemicalIngredient } from './regulatoryIngredientRules';
 
 export interface GHSClassificationResult {
-  signalWord: 'DANGER' | 'WARNING' | 'NONE';
+  signalWord: 'DANGER' | 'WARNING' | 'NONE' | 'UNDETERMINED';
   hazardClassifications: string[];
   hazardStatements: string[];
   precautionaryStatements: string[];
@@ -43,7 +43,7 @@ export class MixtureGHSValidationEngine {
     missingDataPoints.push('Complete GHS mixture classification is unavailable: ingredient-specific hazard categories, concentration limits and validated mixture evidence were not supplied. No signal word or pictogram is inferred.');
 
     return {
-      signalWord: 'NONE',
+      signalWord: 'UNDETERMINED',
       hazardClassifications: [],
       hazardStatements: [],
       precautionaryStatements: [],
