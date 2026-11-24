@@ -68,7 +68,7 @@ export class IngredientResearchBridge {
       const p = source.extractedParameters || {};
       if (typeof p.activeMatter !== 'number' || p.activeMatter !== activeMatter) return false;
       const unit = String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '');
-      const basis = String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\\s-]+/g, '_');
+      const basis = String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
       const method = String(p.activeMatterMethod || '').trim();
       if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
       if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
@@ -81,8 +81,9 @@ export class IngredientResearchBridge {
     });
   }
 
-  private static toFormulaIngredient(name: string, research: MultiSourceResearchResult, record?: ResearchedIngredientRecord): FormulationIngredient {
-    const p = research.propertiesExtracted || record?.parameters || {};
+  private static toFormulaIngredient(name: string, research: MultiSourceResearchResult, record?: ResearchedIngredientRecord, requestedGrade?: string): FormulationIngredient {
+    const p = { ...(research.propertiesExtracted || record?.parameters || {}) };
+    if (!this.hasCalculationGradeEvidence(research, requestedGrade)) delete p.activeMatter;
     const ingredient: FormulationIngredient = {
       id: record?.id || `researched-${this.normalize(name)}`,
       name: research.resolvedName || record?.canonicalName || name,
@@ -218,7 +219,7 @@ export class IngredientResearchBridge {
       const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch, options?.grade);
       const requiresUserApproval = cached.requiresUserApproval || !calculationEvidence;
       return {
-        ingredient: this.toFormulaIngredient(name, cachedResearch, cached),
+        ingredient: this.toFormulaIngredient(name, cachedResearch, cached, options?.grade),
         source: 'RESEARCH_CACHE',
         research: cachedResearch,
         requiresUserApproval,
@@ -273,7 +274,7 @@ export class IngredientResearchBridge {
       // Ignored in environments where IndexedDB is unavailable (e.g. Node test runners)
     }
     return {
-      ingredient: this.toFormulaIngredient(name, research, record),
+      ingredient: this.toFormulaIngredient(name, research, record, options?.grade),
       source: 'WEB_RESEARCH',
       research,
       requiresUserApproval: record.requiresUserApproval,
