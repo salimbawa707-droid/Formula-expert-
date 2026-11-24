@@ -47,6 +47,7 @@ import { findSubstitutionsForFormula } from '../substitutionEngine';
 import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../specificationEngine';
 import { validateActiveMatterInput } from '../activeMatterInputGuard';
 import { validatePHInput } from '../phInputGuard';
+import { isEngineApplicable } from '../scientificRouter';
 
 // =============================================================================
 // 1. STRONGLY TYPED INTERMEDIATE SCIENTIFIC STATE MODEL
@@ -574,6 +575,20 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER'],
       execute: (state) => {
+        if (
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
+          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE')
+        ) {
+          state.hlbResult = {
+            blendedHLB: null,
+            hasSurfactants: false,
+            status: 'NOT_APPLICABLE',
+            reason: `HLB analysis is not part of the ${state.canonicalCategory} scientific profile.`
+          };
+          state.hlbValue = null;
+          state.hlbStatus = 'NOT_APPLICABLE';
+          return;
+        }
         state.hlbResult = HLBEngine.calculateBlendedHLB(state.resolvedIngredients);
         state.hlbValue = state.hlbResult.hasSurfactants ? state.hlbResult.blendedHLB : null;
         state.hlbStatus = state.hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE';
@@ -587,6 +602,39 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
+        if (
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
+          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE')
+        ) {
+          state.hardnessResult = {
+            status: 'NOT_APPLICABLE',
+            totalSequestrationMg: 0,
+            chelationCapacityMg: 0,
+            builderCapacityMg: 0,
+            maxSupportedPpm: Number.NaN,
+            washVolumeL: Number.NaN,
+            washDoseGrams: Number.NaN,
+            batchSizeKg: state.batchSizeKg,
+            isApplicable: false,
+            category: state.canonicalCategory,
+            provenance: 'AUTHORITATIVE',
+            sufficiency: 'not_applicable'
+          };
+          state.chelationResult = {
+            isSufficient: null,
+            status: 'NOT_APPLICABLE',
+            chelatorActivePct: null,
+            chelatorActiveMatterVerified: false,
+            chelatorNames: [],
+            bindingCapacityCaCO3GPer100g: null,
+            hardnessProtectionRatio: null
+          };
+          state.rawCapacity = Number.NaN;
+          state.protectionAssessment = 'NOT_APPLICABLE';
+          state.chelationStatus = 'NOT_APPLICABLE';
+          return;
+        }
+
         const hardnessPolicy = getProductHardnessPolicy(
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
         );
@@ -842,9 +890,28 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER', 'WATER_CHELATION', 'COMPATIBILITY'],
       execute: (state) => {
+        if (
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
+          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE')
+        ) {
+          state.cleaningResult = {
+            cpi: null,
+            provenance: 'NOT_APPLICABLE',
+            scoreType: 'NOT_APPLICABLE',
+            isCleaningApplicable: false,
+            productCategory: state.canonicalCategory,
+            missingInputs: [],
+            limitations: [`Cleaning performance is not part of the ${state.canonicalCategory} scientific profile.`]
+          };
+          state.cpi = null;
+          state.adjustedEffectiveCleaningInput = null;
+          state.cleaningStatus = 'NOT_APPLICABLE';
+          return;
+        }
+
         // Enforce dependencies: chelation and compatibility must complete and pass down states
         const hardnessSufficient =
-          state.chelationStatus === 'NOT_APPLICABLE' && state.waterHardnessPpm === 0
+          state.chelationStatus === 'NOT_APPLICABLE'
             ? true
             : state.chelationResult?.isSufficient === true;
 
@@ -1525,7 +1592,12 @@ export class ScientificExecutionDAG {
       nodeTrace.startTime = Date.now();
       try {
         nodeDef.execute(state);
-        nodeTrace.status = 'COMPLETED';
+        const semanticStatus =
+          nodeId === 'HLB' ? state.hlbStatus :
+          nodeId === 'WATER_CHELATION' ? state.chelationStatus :
+          nodeId === 'CLEANING_CPI' ? state.cleaningStatus :
+          undefined;
+        nodeTrace.status = semanticStatus === 'NOT_APPLICABLE' ? 'NOT_APPLICABLE' : 'COMPLETED';
         completedNodes.add(nodeId);
       } catch (err: any) {
         console.error(`DAG NODE [${nodeId}] FAILED:`, err);
