@@ -477,7 +477,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
           (!grade || String(source.extractedParameters?.grade || '').trim().toLowerCase() === grade.trim().toLowerCase())
         );
         const signatures = propertySources.map(source => metadataKeys
-          .map(key => String(source.extractedParameters[key]).trim().toLowerCase().replace(/\\s+/g, ' '))
+          .map(key => String(source.extractedParameters[key]).trim().toLowerCase().replace(/\s+/g, ' '))
           .concat([String(source.extractedParameters.grade || '').trim().toLowerCase()])
           .join('|'));
         const metadataEquivalent = signatures.length > 0 && signatures.every(signature => signature === signatures[0]);
@@ -607,8 +607,8 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       const primaryManufacturerSource = ['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(sourceRecord.sourceType);
       const p = sourceRecord.extractedParameters || {};
       const activeMatterMetrologyComplete = property !== 'activeMatter' || (
-        ['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\\s+/g, '')) &&
-        ['AS_SUPPLIED', 'AS_RECEIVED'].includes(String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\\s-]+/g, '_')) &&
+        ['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '')) &&
+        ['AS_SUPPLIED', 'AS_RECEIVED'].includes(String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_')) &&
         typeof p.activeMatterMethod === 'string' && p.activeMatterMethod.trim().length >= 4 &&
         typeof p.activeMatterConditions === 'string' && p.activeMatterConditions.trim().length >= 4 &&
         (!grade || String(p.grade || '').trim().toLowerCase() === grade.trim().toLowerCase())
