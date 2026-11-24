@@ -493,7 +493,7 @@ export function evaluateScientificQualityGate(
   }
 
   const specTemplate = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' 
-    ? getSpecificationTemplateForCategory(input.productSubProfileId || input.specificationProfileId || input.subCategory || canonicalCategory, formulaName)
+    ? getSpecificationTemplateForCategory(input.specificationProfileId || input.subCategory || canonicalCategory, formulaName)
     : null;
   const specActiveParam = specTemplate?.parameters?.find(p => p.parameterKey === 'activeMatter');
   const categoryMinActivePct = specActiveParam?.min !== undefined 
@@ -514,7 +514,7 @@ export function evaluateScientificQualityGate(
   }
 
   // C. Hard Water & Chelation Output (Product-Aware)
-  const productHardnessPolicy = getProductHardnessPolicy(input.specificationProfileId || input.subCategory || canonicalCategory);
+  const productHardnessPolicy = getProductHardnessPolicy(input.productSubProfileId || input.specificationProfileId || input.subCategory || canonicalCategory);
   const hardnessTolerance = hardnessScenarioComplete
     ? calculateWaterHardnessTolerance(
         rawIngs,
@@ -522,7 +522,7 @@ export function evaluateScientificQualityGate(
         input.washVolumeL,
         input.washDoseGrams,
         input.batchSizeKg,
-        input.specificationProfileId || input.subCategory || canonicalCategory
+        input.productSubProfileId || input.specificationProfileId || input.subCategory || canonicalCategory
       )
     : null;
 
