@@ -23,10 +23,12 @@ export class RegulatoryIngredientEngine {
     const normalizedName = rawName.toLowerCase();
     const missingDataPoints: string[] = [];
     const asSuppliedPct = Number(ing.percentage);
+    const validAsSuppliedPct = Number.isFinite(asSuppliedPct) && asSuppliedPct >= 0 && asSuppliedPct <= 100;
+    if (!validAsSuppliedPct) missingDataPoints.push(`As-supplied percentage for '${rawName}' must be a finite value from 0 to 100.`);
     const isSurfactant = SURFACTANT_TERMS.some(term => normalizedName.includes(term));
     let activeMatterPct: number | undefined;
 
-    if (ing.activePercentage !== undefined && Number.isFinite(ing.activePercentage) && ing.activePercentage >= 0 && ing.activePercentage <= 100) {
+    if (validAsSuppliedPct && ing.activePercentage !== undefined && Number.isFinite(ing.activePercentage) && ing.activePercentage >= 0 && ing.activePercentage <= 100) {
       activeMatterPct = asSuppliedPct * ing.activePercentage / 100;
     } else if (isSurfactant) {
       missingDataPoints.push(`Active-matter assay missing or invalid for '${rawName}'; provide supplier COA or measured assay.`);
@@ -61,6 +63,9 @@ export class RegulatoryIngredientEngine {
   /** null means at least one ethoxylated ingredient has no explicit assay. */
   public static calculateFormulaDioxanePpm(ingredients: EvaluatedChemicalIngredient[]): number | null {
     const ethoxylated = ingredients.filter(ing => ETHOXYLATED_TERMS.some(term => ing.normalizedName.includes(term)));
+    if (ingredients.some(ing => !Number.isFinite(ing.asSuppliedPct) || ing.asSuppliedPct < 0 || ing.asSuppliedPct > 100)) return null;
+    const formulaTotalPct = ingredients.reduce((sum, ing) => sum + ing.asSuppliedPct, 0);
+    if (Math.abs(formulaTotalPct - 100) > 0.01) return null;
     if (ethoxylated.some(ing => ing.impuritiesPpm.dioxane_1_4 === undefined)) return null;
     const total = ethoxylated.reduce((sum, ing) => sum + ing.asSuppliedPct / 100 * (ing.impuritiesPpm.dioxane_1_4 as number), 0);
     return Number(total.toFixed(3));
