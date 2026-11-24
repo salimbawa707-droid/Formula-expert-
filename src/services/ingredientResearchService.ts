@@ -530,6 +530,27 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
     const ingredientId = ingredient ? ingredient.id : `custom-${cleanSlug}`;
     const canonicalName = ingredient ? ingredient.name : nameOrAlias;
 
+    if (ingredient) {
+      const local: any = ingredient;
+      const parameters: Record<string, any> = {};
+      const active = local.activeMatterDefault ?? local.activeDefault ?? local.activeMatter ?? local.activeMatterPct;
+      if (typeof active === 'number') parameters.activeMatter = active;
+      if (typeof local.phMin === 'number') parameters.pH = local.phMin;
+      if (typeof local.ionicNature === 'string') parameters.ionicNature = local.ionicNature;
+      const density = local.density ?? local.densityGPerMl;
+      if (typeof density === 'number') parameters.density = density;
+      if (typeof local.hlb === 'number') parameters.hlb = local.hlb;
+      return {
+        ingredientId: local.id,
+        canonicalName: local.name,
+        resolvedName: local.name,
+        confidence: 'EXACT_MATCH',
+        parameters,
+        provenance: {},
+        requiresUserApproval: false
+      };
+    }
+
     // Run multi-source pipeline
     const msResult = await this.researchMultiSource({ ingredientName: canonicalName }, apiKey);
 
