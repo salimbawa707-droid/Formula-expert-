@@ -88,7 +88,7 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   const softenerCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 4.0, 'FABRIC_SOFTENER');
   assertEqual('Category Surfactant Policy', 'Fabric softener permits cationic surfactants by profile', softenerCationic.alerts.some(a => a.id === 'category-policy-cationic-fabric_softener'), false);
   const organicToiletAnionic = calculateFormulationCompatibility(
-    formulaAnionicOnly as any, 2.0, 'TOILET_CLEANER', 'Eco Organic Acid Toilet Bowl Cleaner'
+    formulaAnionicOnly as any, 2.0, 'TOILET_CLEANER', 'TOILET_CLEANER_ORGANIC_ACID'
   );
   assertEqual(
     'Sub-profile Surfactant Policy',
@@ -97,7 +97,7 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
     false
   );
   const mineralToiletAnionic = calculateFormulationCompatibility(
-    formulaAnionicOnly as any, 0.5, 'TOILET_CLEANER', 'Mineral Acid Heavy Descaling Toilet Cleaner'
+    formulaAnionicOnly as any, 0.5, 'TOILET_CLEANER', 'TOILET_CLEANER_MINERAL_ACID'
   );
   assertEqual(
     'Sub-profile Surfactant Policy',
@@ -106,7 +106,7 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
     true
   );
   const acidFreeBathroomAnionic = calculateFormulationCompatibility(
-    formulaAnionicOnly as any, 9.5, 'BATHROOM_CLEANER', 'Acid-Free Disinfectant Bathroom Spray'
+    formulaAnionicOnly as any, 9.5, 'BATHROOM_CLEANER', 'BATHROOM_CLEANER_ACID_FREE_DISINFECTANT'
   );
   assertEqual(
     'Sub-profile Surfactant Policy',
