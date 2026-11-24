@@ -1,4 +1,4 @@
-import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
+import { UNIVERSAL_INGREDIENTS, UniversalIngredient, resolveUniversalIngredientIdentity } from '../data/universalIngredientLibrary';
 import { db } from '../db/database';
 import { GoogleGenAI, Type } from '@google/genai';
 import { calculateActiveMatter, calculateActiveSurfactants, calculateRawSurfactants } from '../utils/activeMatterEngine';
@@ -231,8 +231,18 @@ export class IngredientResearchService {
     const normalized = q.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (!normalized) return { ingredient: null, resolvedName: '', confidence: 'UNRESOLVED' };
 
-    // Only exact canonical identity/name/INCI/CAS/declared-keyword matches
-    // count as present. Similarity matches must not suppress Gemini research.
+    // Reuse the same canonical resolver as the Formula UI and bridge. Known
+    // aliases must never be misrouted to Gemini; ambiguous grades stay blocked.
+    const catalogResolution = resolveUniversalIngredientIdentity(q);
+    if (catalogResolution) {
+      return {
+        ingredient: catalogResolution.gradeCompatible ? catalogResolution.ingredient : null,
+        resolvedName: catalogResolution.ingredient.name,
+        confidence: catalogResolution.gradeCompatible ? 'EXACT_MATCH' : 'POSSIBLE_MATCH'
+      };
+    }
+
+    // Only unresolved names proceed to external Gemini research.
     const exactMatches = UNIVERSAL_INGREDIENTS.filter((i) => [
       i.id, i.name, i.productName, i.inciName, i.casNumber, ...(i.keywords || [])
     ].filter(Boolean).some((candidate) =>
