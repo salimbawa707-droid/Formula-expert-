@@ -1,4 +1,5 @@
 import { validateActiveMatterInput } from '../activeMatterInputGuard';
+import { ActiveMatterEngine } from '../activeMatterEngine';
 
 export function runActiveMatterInputGuardTestSuite(): {
   total: number;
@@ -19,6 +20,40 @@ export function runActiveMatterInputGuardTestSuite(): {
       details.push(`[FAIL] ${name}: ${message || 'Assertion failed'}`);
     }
   }
+
+  const sourceBacked = ActiveMatterEngine.resolveIngredientActive({
+    name: 'Unlisted Test Surfactant',
+    category: 'Anionic Surfactant',
+    activeMatterPct: 72,
+    activeMatterInputSource: 'SOURCE_BACKED',
+    activeMatterEvidenceId: 'manufacturer-tds-72',
+    activeMatterEvidenceUrl: 'https://manufacturer.example/tds',
+    activeMatterEvidenceSourceType: 'MANUFACTURER_TDS',
+    provenance: {
+      sourceType: 'OFFICIAL_MANUFACTURER',
+      source: 'Manufacturer',
+      sourceUrl: 'https://manufacturer.example/tds',
+      verificationStatus: 'VERIFIED'
+    }
+  });
+  assert('Verified property-level manufacturer assay is authoritative', sourceBacked.dataSource === 'authoritative' && sourceBacked.activeMatterPct === 72);
+
+  const forgedSourceBacked = ActiveMatterEngine.resolveIngredientActive({
+    name: 'Unlisted Test Surfactant',
+    category: 'Anionic Surfactant',
+    activeMatterPct: 72,
+    activeMatterInputSource: 'SOURCE_BACKED',
+    activeMatterEvidenceId: 'missing-proof'
+  });
+  assert('SOURCE_BACKED flag without evidence metadata is rejected', forgedSourceBacked.dataSource === 'missing' && forgedSourceBacked.activeMatterPct === null);
+
+  const catalogDefault = ActiveMatterEngine.resolveIngredientActive({
+    name: 'LABSA 90% (Acid Slurry)',
+    category: 'Anionic Surfactant',
+    activeMatterPct: 90,
+    activeMatterInputSource: 'CATALOG_DEFAULT'
+  });
+  assert('Catalog active matter remains a non-authoritative default', catalogDefault.dataSource === 'canonical_library_default');
 
   // Valid values
   assert('Validate 50% is VALID', validateActiveMatterInput(50).status === 'VALID' && validateActiveMatterInput(50).value === 50);
