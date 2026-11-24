@@ -43,6 +43,24 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
     : null;
   const safetyRating = scientificResults?.health?.rating || 'NOT EVALUATED';
   const safetyMessage = scientificResults?.health?.alerts?.[0]?.message || 'No safety assessment is available. Review ingredient SDS records and complete the required hazard evaluation.';
+  const solidsValue = typeof scientificResults?.totalSolids === 'number' && Number.isFinite(scientificResults.totalSolids)
+    ? scientificResults.totalSolids
+    : null;
+  const cleaningScore = [scientificResults?.cleaning?.cleaningScore, scientificResults?.cleaning?.cpi]
+    .find((value: any) => typeof value === 'number' && Number.isFinite(value)) ?? null;
+  const hardnessIsNotApplicable = scientificResults?.waterHardness?.status === 'NOT_APPLICABLE' ||
+    scientificResults?.waterHardness?.isApplicable === false;
+  const hardnessIsEvaluated = !hardnessIsNotApplicable &&
+    scientificResults?.waterHardness?.status !== 'NOT_EVALUATED' &&
+    scientificResults?.waterHardness?.status !== 'INSUFFICIENT_DATA' &&
+    Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg) &&
+    Number.isFinite(scientificResults?.waterHardness?.maxSupportedPpm);
+  const compatibilityNotEvaluated = scientificResults?.compatibility?.status === 'NOT_EVALUATED' ||
+    scientificResults?.compatibility?.compatibilityStatusSemantic === 'UNKNOWN';
+  const compatibilityScore = typeof scientificResults?.compatibility?.compatibilityScore === 'number' &&
+    Number.isFinite(scientificResults.compatibility.compatibilityScore)
+    ? scientificResults.compatibility.compatibilityScore
+    : null;
   // ... rest of the code
 
   const handleDownloadDossier = () => {
