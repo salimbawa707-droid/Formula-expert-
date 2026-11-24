@@ -463,33 +463,30 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
             tools: [{ googleSearch: {} }]
           }
         }),
-        12000,
+        45000,
         'Google Search Tool'
       );
       responseText = response.text || '';
       groundingChunks = (response.candidates?.[0] as any)?.groundingMetadata?.groundingChunks || [];
     } catch (searchErr: any) {
-      const reason = searchErr?.status || (searchErr?.message && searchErr.message.includes('429') ? 'Quota limit exceeded (429)' : searchErr?.message) || 'Timeout';
-      console.warn(`[Research] Search-grounded reasoning skipped (${reason}), proceeding to direct Gemini reasoning.`);
-      // Attempt 2: Gemini direct generation without search tool (8s timeout)
-      try {
-        const directResponse = await callWithTimeout(
-          ai.models.generateContent({
-            model: 'gemini-3.8-flash',
-            contents: [{ role: 'user', parts: [{ text: researchPrompt }] }],
-            config: {
-              systemInstruction,
-              temperature: 0.1
-            }
-          }),
-          8000,
-          'Direct Gemini'
-        );
-        responseText = directResponse.text || '';
-      } catch (directErr: any) {
-        const directReason = directErr?.status || (directErr?.message && directErr.message.includes('429') ? 'Quota limit exceeded (429)' : directErr?.message) || 'Timeout';
-        console.warn(`[Research] Direct Gemini reasoning skipped (${directReason}), executing rule-based chemical engine fallback.`);
-      }
+      const errorText = String(searchErr?.message || searchErr || 'Unknown Google Search grounding error');
+      const status = Number(searchErr?.status || searchErr?.statusCode || 0);
+      const quotaOrBilling = status === 429 ||
+        /RESOURCE_EXHAUSTED|quota|billing|free.?tier|grounding.*not available|rate.?limit/i.test(errorText);
+      const timedOut = /timed out|timeout/i.test(errorText);
+      console.error('[Research] Google Search grounding failed:', errorText);
+      return res.status(quotaOrBilling ? 429 : (timedOut ? 504 : 502)).json({
+        success: false,
+        status: quotaOrBilling ? 'SEARCH_GROUNDING_QUOTA_OR_BILLING' : (timedOut ? 'SEARCH_GROUNDING_TIMEOUT' : 'SEARCH_GROUNDING_FAILED'),
+        code: quotaOrBilling ? 'GOOGLE_SEARCH_GROUNDING_UNAVAILABLE' : (timedOut ? 'GOOGLE_SEARCH_GROUNDING_TIMEOUT' : 'GOOGLE_SEARCH_GROUNDING_ERROR'),
+        requiresUserApproval: true,
+        error: quotaOrBilling
+          ? 'Gemini Google Search research is unavailable for this API project because its search-grounding quota or billing access is not enabled. Enable billing/search grounding for the Gemini API project, then retry.'
+          : (timedOut
+              ? 'Google Search grounding did not respond within 45 seconds. Retry the research request.'
+              : 'Google Search grounding failed. Check the Gemini API key, project permissions, model access, and server logs.'),
+        details: 'Direct Gemini text generation is deliberately not accepted as internet research. No source-free or guessed chemical properties were saved.'
+      });
     }
 
     let parsed: any = {};
