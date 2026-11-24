@@ -185,6 +185,19 @@ export function runLegacyPowderPHReachabilityTestSuite(): {
     { pH: inertPowder.calculatedAqueousPH, source: inertPowder.source },
     'undefined / INSUFFICIENT_DATA'
   );
+
+  const invalidPowderTarget = calculatePowderPH(powderIngredients as any, 'Laundry Powder', {
+    customPHTargetMin: 11,
+    customPHTargetMax: 5
+  });
+  assert(
+    'Phase 2 Input Integrity',
+    'Test 4: Inverted custom powder pH target is rejected',
+    invalidPowderTarget.isWithinTarget === false &&
+      invalidPowderTarget.statusMessage.includes('INVALID_INPUT'),
+    { withinTarget: invalidPowderTarget.isWithinTarget, message: invalidPowderTarget.statusMessage },
+    'false / INVALID_INPUT'
+  );
   assert(
     'P0 Fix 4: Heuristic Isolation',
     'Test 4: PHEngineV2 empty/water baseline gives rigorous neutral pH 7.00',
