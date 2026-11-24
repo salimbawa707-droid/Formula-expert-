@@ -114,6 +114,21 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
     acidFreeBathroomAnionic.alerts.some(a => a.id === 'category-policy-anionic-bathroom_cleaner'),
     true
   );
+  const mismatchedSubProfile = calculateFormulationCompatibility(
+    formulaAnionicOnly as any, 7.0, 'LAUNDRY_LIQUID', 'TOILET_CLEANER_MINERAL_ACID'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'A toilet-cleaner sub-profile cannot be applied to laundry liquid',
+    mismatchedSubProfile.evidenceStatus,
+    'INSUFFICIENT_DATA'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'Mismatched sub-profile cannot return a compatibility pass',
+    mismatchedSubProfile.compatible,
+    false
+  );
 
   // 4. Anionic + Cationic Interaction Hazard
   const formulaIncompatible = [
