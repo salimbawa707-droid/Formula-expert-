@@ -100,6 +100,54 @@ export function runP5PropertyPipelinesTestSuite() {
   const powderRun = dag.executeDAG(powderFormulaInput);
   const powderResult = FormulaScientificOrchestrator.evaluate(powderFormulaInput);
 
+  // Phase 2 category-applicability regression cases.
+  const softenerRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    productCategory: 'FABRIC_SOFTENER'
+  });
+  const toiletRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    productCategory: 'TOILET_CLEANER'
+  });
+  const missingHardnessScenarioRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    waterHardnessPpm: undefined,
+    washVolumeL: undefined,
+    washDoseGrams: undefined
+  });
+  assert(
+    'Phase 2: Category Routing',
+    'HLB is NOT_APPLICABLE for laundry powder profile',
+    powderRun.state.hlbStatus === 'NOT_APPLICABLE' &&
+      powderRun.trace.find(t => t.nodeId === 'HLB')?.status === 'NOT_APPLICABLE',
+    { state: powderRun.state.hlbStatus, trace: powderRun.trace.find(t => t.nodeId === 'HLB')?.status },
+    'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Category Routing',
+    'Chelation is NOT_APPLICABLE for toilet cleaner profile',
+    toiletRun.state.chelationStatus === 'NOT_APPLICABLE' &&
+      toiletRun.trace.find(t => t.nodeId === 'WATER_CHELATION')?.status === 'NOT_APPLICABLE',
+    { state: toiletRun.state.chelationStatus, trace: toiletRun.trace.find(t => t.nodeId === 'WATER_CHELATION')?.status },
+    'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Category Routing',
+    'Cleaning performance is NOT_APPLICABLE for fabric softener profile',
+    softenerRun.state.cleaningStatus === 'NOT_APPLICABLE' &&
+      softenerRun.trace.find(t => t.nodeId === 'CLEANING_CPI')?.status === 'NOT_APPLICABLE',
+    { state: softenerRun.state.cleaningStatus, trace: softenerRun.trace.find(t => t.nodeId === 'CLEANING_CPI')?.status },
+    'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing hardness, wash volume and dose remain NOT_EVALUATED in DAG',
+    missingHardnessScenarioRun.state.hardnessResult?.status === 'NOT_EVALUATED' &&
+      Number.isNaN(missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg),
+    { status: missingHardnessScenarioRun.state.hardnessResult?.status, load: missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg },
+    'NOT_EVALUATED with NaN load'
+  );
+
   // A. Neutralization executes before final pH
   const neutIdx = liquidRun.trace.findIndex(t => t.nodeId === 'NEUTRALIZATION');
   const phIdx = liquidRun.trace.findIndex(t => t.nodeId === 'PH_EQUILIBRIUM');
