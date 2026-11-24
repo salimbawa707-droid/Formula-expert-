@@ -294,7 +294,7 @@ export function roundCurrency(val: number): number {
   return Math.round((val + Number.EPSILON) * 100) / 100;
 }
 
-export function calculateBatchCost(ingredients: FormulationIngredient[], batchSizeKg: number = 100): number {
+export function calculateBatchCost(ingredients: FormulationIngredient[], batchSizeKg?: number): number {
   const report = calcFormulaCostAuthoritative(ingredients, batchSizeKg);
   // A subtotal is not a finished-batch cost. Call calculateFormulaCost directly
   // when a caller needs a partial-cost breakdown and its explicit warnings.
