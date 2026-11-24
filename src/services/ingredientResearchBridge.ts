@@ -28,16 +28,18 @@ export class IngredientResearchBridge {
 
     // Exact identity/alias match only. Fuzzy search must never suppress research
     // for a genuinely unlisted raw material.
-    const masterMatch = UNIVERSAL_INGREDIENTS.find(matchesExactly);
-    if (masterMatch) return masterMatch;
+    const masterMatches = UNIVERSAL_INGREDIENTS.filter(matchesExactly);
+    if (masterMatches.length === 1) return masterMatches[0];
+    if (masterMatches.length > 1) return { __ambiguousMatch: true } as any;
 
     // User-approved researched/custom ingredients persisted locally must also
     // be found before deciding whether Gemini is needed.
     try {
       const setting = await db.userSettings.get('dynamic_ingredients');
       const dynamic = Array.isArray(setting?.value) ? setting.value : [];
-      const dynamicMatch = dynamic.find(matchesExactly);
-      if (dynamicMatch) return dynamicMatch;
+      const dynamicMatches = dynamic.filter(matchesExactly);
+      if (dynamicMatches.length === 1) return dynamicMatches[0];
+      if (dynamicMatches.length > 1) return { __ambiguousMatch: true } as any;
     } catch {
       // If IndexedDB is unavailable, continue to the unlisted research path.
     }
@@ -128,9 +130,12 @@ export class IngredientResearchBridge {
     if (!name) return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'Ingredient name is empty.' };
 
     const local = await this.localIngredient(name);
+    if ((local as any)?.__ambiguousMatch) {
+      return { ingredient: null, source: 'UNRESOLVED', requiresUserApproval: true, warning: 'This name matches multiple local database ingredients/grades. Select the exact ingredient or commercial grade; Gemini research was skipped.' };
+    }
     if (local) {
       const localAny = local as any;
-      const localActive = localAny.activeMatterDefault ?? local.activeMatter;
+      const localActive = localAny.activeMatterDefault ?? localAny.activeDefault ?? local.activeMatter ?? localAny.activeMatterPct;
       return {
         ingredient: {
           id: local.id,
@@ -140,7 +145,7 @@ export class IngredientResearchBridge {
           activeMatterPct: localActive,
           hlb: local.hlb ?? undefined,
           hlbValue: local.hlb ?? undefined,
-          density: localAny.physicalProperties?.density,
+          density: localAny.physicalProperties?.density ?? localAny.densityGPerMl ?? localAny.density,
           inciName: local.inciName,
           casNumber: local.casNumber,
           identityType: local.identityType as FormulationIngredient['identityType'],
