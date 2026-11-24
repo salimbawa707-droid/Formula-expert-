@@ -142,6 +142,25 @@ jobs:
         run: bash ./gradlew --no-daemon assembleDebug
         working-directory: android
 
+      - name: Run Android WebView document persistence and download instrumentation test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          script: cd android && ./gradlew --no-daemon connectedDebugAndroidTest
+
+      - name: Upload Android instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formula-expert-android-instrumentation-reports
+          path: android/app/build/reports/androidTests/connected/
+          if-no-files-found: ignore
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
