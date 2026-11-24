@@ -5302,33 +5302,81 @@ const INGREDIENT_IDENTITY_ALIASES: Record<string, { id: string; gradeCompatible:
   'sodium hydroxide caustic soda lye 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   'caustic soda 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
   'sodium hydroxide 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
-  'naoh 100%': { id: 'naoh-flakes-99', gradeCompatible: false }
+  'naoh 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
+  // Common water names used in formula templates and manual entry.
+  // Resolve to the catalog water identity, but require grade/source confirmation.
+  'water': { id: 'dm-water', gradeCompatible: false },
+  'aqua': { id: 'dm-water', gradeCompatible: false },
+  'h2o': { id: 'dm-water', gradeCompatible: false },
+  'di water': { id: 'dm-water', gradeCompatible: false },
+  'd i water': { id: 'dm-water', gradeCompatible: false },
+  'deionized water': { id: 'dm-water', gradeCompatible: false },
+  'deionised water': { id: 'dm-water', gradeCompatible: false },
+  'demineralized water': { id: 'dm-water', gradeCompatible: false },
+  'demineralised water': { id: 'dm-water', gradeCompatible: false },
+  'distilled water': { id: 'dm-water', gradeCompatible: false },
+  'purified water': { id: 'dm-water', gradeCompatible: false },
+  'reverse osmosis water': { id: 'dm-water', gradeCompatible: false },
+  'ro water': { id: 'dm-water', gradeCompatible: false },
+  'water aqua': { id: 'dm-water', gradeCompatible: false },
+  'demineralized water aqua': { id: 'dm-water', gradeCompatible: false },
+  'demineralised water aqua': { id: 'dm-water', gradeCompatible: false }
 };
 
 export function resolveUniversalIngredientIdentity(query: string): IngredientIdentityResolution | null {
   const raw = String(query || '').trim();
   if (!raw) return null;
   const normalized = normalizeIngredientIdentity(raw);
+  if (!normalized) return null;
+
+  const identityValues = (item: UniversalIngredient): string[] => [
+    item.id, item.name, item.productName, item.inciName, item.casNumber,
+    ...(Array.isArray(item.keywords) ? item.keywords : [])
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  // Exact catalog identity. Shared CAS/INCI values intentionally resolve to a
+  // known family but still require commercial-grade selection.
   const canonicalMatches = UNIVERSAL_INGREDIENTS.filter(item =>
-    [item.id, item.name, item.productName, item.inciName, item.casNumber, ...(item.keywords || [])]
-      .filter(Boolean)
-      .some(value => normalizeIngredientIdentity(String(value)) === normalized)
+    identityValues(item).some(value => normalizeIngredientIdentity(value) === normalized)
   );
   if (canonicalMatches.length === 1) {
     return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: true };
   }
   if (canonicalMatches.length > 1) {
-    // A shared CAS/alias identifies a known chemical family, not a unique
-    // commercial grade. Keep it local and require grade selection; never call Gemini.
     return { ingredient: canonicalMatches[0], matchType: 'CANONICAL', gradeCompatible: false };
   }
 
   const alias = INGREDIENT_IDENTITY_ALIASES[raw.toLowerCase()];
   const normalizedAlias = alias || Object.entries(INGREDIENT_IDENTITY_ALIASES)
     .find(([key]) => normalizeIngredientIdentity(key) === normalized)?.[1];
-  if (!normalizedAlias) return null;
-  const ingredient = UNIVERSAL_INGREDIENTS.find(item => item.id === normalizedAlias.id);
-  return ingredient ? { ingredient, matchType: 'ALIAS', gradeCompatible: normalizedAlias.gradeCompatible } : null;
+  if (normalizedAlias) {
+    const ingredient = UNIVERSAL_INGREDIENTS.find(item => item.id === normalizedAlias.id);
+    if (ingredient) {
+      return { ingredient, matchType: 'ALIAS', gradeCompatible: normalizedAlias.gradeCompatible };
+    }
+  }
+
+  // Controlled partial-name resolution handles common formula shorthand and
+  // spelling/grade suffix differences across the FULL catalog. It only searches
+  // identity fields (never descriptions/functions), requires a meaningful query,
+  // and never silently chooses a grade when multiple records share the identity.
+  const genericQueries = new Set(['salt', 'acid', 'base', 'water', 'chemical', 'powder', 'liquid']);
+  if (normalized.length >= 6 && !genericQueries.has(normalized)) {
+    const partialMatches = UNIVERSAL_INGREDIENTS.filter(item =>
+      identityValues(item).some(value => {
+        const candidate = normalizeIngredientIdentity(value);
+        return candidate.length >= normalized.length && candidate.includes(normalized);
+      })
+    );
+    if (partialMatches.length === 1) {
+      return { ingredient: partialMatches[0], matchType: 'ALIAS', gradeCompatible: false };
+    }
+    if (partialMatches.length > 1) {
+      return { ingredient: partialMatches[0], matchType: 'ALIAS', gradeCompatible: false };
+    }
+  }
+
+  return null;
 }
 
 export function getAllCategories(): string[] {
