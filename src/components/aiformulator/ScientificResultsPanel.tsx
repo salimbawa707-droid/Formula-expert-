@@ -709,24 +709,28 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">9. Builder / Chelation</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                (scientificResults?.waterHardness?.totalSequestrationMg || 0) > 0
+                Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg)
                   ? "bg-teal-950/80 text-teal-300 border-teal-500/40"
                   : "bg-slate-800 text-slate-400 border-slate-700"
               }`}>
-                {(scientificResults?.waterHardness?.totalSequestrationMg || 0) > 0 ? "Active Sequestration" : "Unchelated"}
+                {Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg) ? "CALCULATED CAPACITY" : "NOT EVALUATED"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {Math.round(scientificResults?.waterHardness?.totalSequestrationMg || 0)}
+                {Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg)
+                  ? Math.round(scientificResults.waterHardness.totalSequestrationMg)
+                  : 'N/A'}
               </span>
-              <span className="text-xs text-slate-400 font-semibold">mg CaCO₃ / {scientificResults?.waterHardness?.washDoseGrams || 20}g dose</span>
+              <span className="text-xs text-slate-400 font-semibold">
+                mg CaCO₃ {Number.isFinite(scientificResults?.waterHardness?.washDoseGrams) ? 'per ' + scientificResults.waterHardness.washDoseGrams + 'g dose' : ''}
+              </span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {(scientificResults?.chelatorNames || []).length > 0 || (scientificResults?.waterHardness?.totalSequestrationMg || 0) > 0
-                ? `Active agents: ${(scientificResults?.chelatorNames || []).length > 0 ? (scientificResults.chelatorNames || []).slice(0, 3).join(", ") : 'Chelating builders'}. Chelation: ${Math.round(scientificResults?.waterHardness?.chelationCapacityMg || 0)} mg | Builder: ${Math.round(scientificResults?.waterHardness?.builderCapacityMg || 0)} mg.`
-                : "No active chelating builders detected; detergency relies on surfactant calcium tolerance."}
-            </p>
+              {Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg)
+                ? 'Identified agents: ' + ((scientificResults?.chelatorNames || []).join(', ') || 'Not identified')
+                : 'Chelation capacity is unavailable until ingredient grade, assay and formula percentages are validated.'}
+            </p>            </p>
           </div>
         </div>
       </div>
@@ -742,14 +746,14 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">10. Foam Profile</span>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border-blue-500/40">
-                Ross-Miles
+                NOT MEASURED
               </span>
             </div>
             <span className="text-sm font-extrabold text-white block mt-1">
               {scientificResults.foam}
             </span>
             <p className="text-[11px] text-slate-400 leading-tight">
-              Stability evaluated from anionic-amphoteric synergistic packing.
+              Qualitative foam profile only; a standardized Ross-Miles test is required for measured foam stability.
             </p>
           </div>
 
@@ -758,16 +762,16 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">11. Compatibility</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                scientificResults?.compatibility?.compatible ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-rose-950/80 text-rose-300 border-rose-500/40"
+                compatibilityNotEvaluated
+                  ? "bg-slate-800 text-slate-300 border-slate-700"
+                  : scientificResults?.compatibility?.compatible ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-rose-950/80 text-rose-300 border-rose-500/40"
               }`}>
-                {scientificResults?.compatibility?.compatible ? "PASSED" : "HAZARD"}
+                {compatibilityNotEvaluated ? "NOT EVALUATED" : scientificResults?.compatibility?.compatible ? "PASSED" : "HAZARD"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {Number.isFinite(scientificResults?.compatibility?.compatibilityScore)
-                  ? scientificResults.compatibility.compatibilityScore
-                  : (scientificResults?.compatibility?.compatible ? 100 : 0)}
+                {compatibilityScore ?? 'N/A'}
               </span>
               <span className="text-xs text-slate-400 font-semibold">/ 100 Rating</span>
             </div>
@@ -775,8 +779,8 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               {scientificResults?.compatibility?.alerts?.[0]?.message ||
                (scientificResults?.compatibility?.warnings || []).find((w: string) => !w.includes('pH is unavailable')) ||
                scientificResults?.compatibility?.warnings?.[0] ||
-               "No anionic/cationic precipitation or degradation hazards."}
-            </p>
+               (compatibilityNotEvaluated ? 'Compatibility was not evaluated because required input data is unavailable.' : 'No compatibility warning was returned.')}
+            </p>            </p>
           </div>
 
           {/* 12. Product-Category Suitability */}
@@ -784,7 +788,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">12. Category Suitability</span>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border-emerald-500/40">
-                Verified
+                Category Profile
               </span>
             </div>
             <span className="text-xs font-bold text-white block truncate mt-1">
