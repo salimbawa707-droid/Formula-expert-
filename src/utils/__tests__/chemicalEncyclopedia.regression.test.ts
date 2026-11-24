@@ -2,6 +2,7 @@ import {
   UNIVERSAL_INGREDIENTS,
   getAllCategories,
   searchUniversalIngredients,
+  resolveUniversalIngredientIdentity,
   UniversalIngredient
 } from '../../data/universalIngredientLibrary';
 import { calculateActiveMatter } from '../calculators';
@@ -189,12 +190,47 @@ export function runChemicalEncyclopediaTestSuite() {
     `Batch Cost: $${batchCost}`
   );
 
-  // 14. Immutability of Master Dataset
+  // 16. Formula-entry aliases resolve to canonical identities without unsafe fuzzy matching
+  const identityCases: Array<[string, string]> = [
+    ['Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', 'labsa-90'],
+    ['Sodium Laureth Sulfate (SLES 70%)', 'sles-70'],
+    ['Cocamidopropyl Betaine (CAPB 30%)', 'capb-30-uni'],
+    ['Sodium Citrate (Dihydrate)', 'sodium-citrate-uni'],
+    ['Optical Brightener (CBS-X)', 'cbs-x'],
+    ['Sodium Chloride (Salt)', 'sodium-chloride-uni']
+  ];
+  const identityCasesPassed = identityCases.every(([query, expectedId]) =>
+    resolveUniversalIngredientIdentity(query)?.ingredient.id === expectedId
+  );
+  assert(
+    identityCasesPassed,
+    'Test 17: Common formula-entered commercial names resolve to their canonical catalog identities',
+    identityCases.map(([query, expectedId]) => query + ' -> ' + expectedId).join('; ')
+  );
+
+  const caustic100Resolution = resolveUniversalIngredientIdentity('Sodium Hydroxide (Caustic Soda Lye 100%)');
+  assert(
+    caustic100Resolution?.ingredient.id === 'naoh-flakes-99' && caustic100Resolution.gradeCompatible === false,
+    'Test 18: 100% caustic soda is recognized as NaOH identity but flagged for commercial-grade mismatch against 99% flakes',
+    `Resolved: ${caustic100Resolution?.ingredient.name || 'NONE'}; gradeCompatible: ${caustic100Resolution?.gradeCompatible}`
+  );
+
+  assert(
+    resolveUniversalIngredientIdentity('Unobtainium Super Cleaner 999%') === null,
+    'Test 19: Unknown chemical names are not falsely matched by fuzzy substring logic'
+  );
+
+  assert(
+    resolveUniversalIngredientIdentity('Salt') === null,
+    'Test 20: Ambiguous generic salt is not silently identified as sodium chloride'
+  );
+
+  // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
   searchUniversalIngredients('SLES', 'Anionic Surfactant');
   assert(
     UNIVERSAL_INGREDIENTS.length === beforeLen,
-    'Test 16: Search and filter operations do not mutate or truncate UNIVERSAL_INGREDIENTS',
+    'Test 21: Search and filter operations do not mutate or truncate UNIVERSAL_INGREDIENTS',
     `Length: ${UNIVERSAL_INGREDIENTS.length}`
   );
 
