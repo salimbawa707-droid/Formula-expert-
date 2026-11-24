@@ -306,6 +306,7 @@ export function runCostingEngineTestSuite() {
   assertEqual('Test 17', 'Omitted batch size is not replaced with 100 kg', missingBatchSize.status, 'BATCH SIZE REQUIRED');
   assertEqual('Test 17', 'Omitted batch size leaves cost/kg unavailable', Number.isNaN(missingBatchSize.costPerKg), true);
   assertEqual('Test 17', 'Omitted batch size leaves total batch cost unavailable', Number.isNaN(missingBatchSize.totalBatchCost), true);
+  assertEqual('Test 17', 'Legacy batch-cost wrapper does not assume 100 kg', Number.isNaN(calculateBatchCost(multiPricedFormula)), true);
 
   const missingMarginInputs = calculateCommercialMarginChain(multiPricedFormula, undefined, 12, 15);
   assertEqual('Test 18', 'Margin chain requires explicit batch size', missingMarginInputs.status, 'PRICING_INCOMPLETE');
