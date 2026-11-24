@@ -98,14 +98,15 @@ export interface FormulationCompatibilityResult {
 export function calculateFormulationCompatibility(
   ingredients: FormulationIngredient[],
   estimatedPH?: number | string,
-  categoryOrId?: string
+  categoryOrId?: string,
+  subProfileOrFormulaName?: string
 ): FormulationCompatibilityResult {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   const canonicalCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY' = categoryOrId
     ? normalizeProductCategory(categoryOrId)
     : 'UNKNOWN_PRODUCT_CATEGORY';
   const categoryProfile = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY'
-    ? tryGetScientificProductProfile(canonicalCategory)
+    ? tryGetScientificProductProfile(canonicalCategory, subProfileOrFormulaName)
     : undefined;
   const calculationPolicy = categoryProfile?.calculationPolicy;
 
