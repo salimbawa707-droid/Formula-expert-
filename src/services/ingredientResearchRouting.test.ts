@@ -6,6 +6,16 @@ function assert(condition: unknown, message: string): void {
 }
 
 async function main(): Promise<void> {
+  const metrologyRegression = await IngredientResearchService.researchMultiSource(
+    { ingredientName: 'Aristo-9' },
+    'TEST_MODE'
+  );
+  assert(metrologyRegression.propertiesExtracted.pH === undefined, 'numeric pH observations without matched unit/basis/method/conditions must not enter calculation properties');
+  assert(metrologyRegression.propertiesExtracted.activeMatter === undefined, 'active matter without explicit assay metrology must not enter calculation properties');
+  assert(
+    metrologyRegression.comparisonReport.some(item => item.property === 'pH' && item.comparisonStatus === 'INSUFFICIENT_DATA'),
+    'numeric cross-source variation must be marked insufficient rather than tolerated within an arbitrary percentage'
+  );
   const directKnown = await IngredientResearchService.researchMultiSource({ ingredientName: 'LABSA 90% (Acid Slurry)' }, 'test-key');
   assert(directKnown.notes?.includes('intentionally skipped'), 'direct service call must short-circuit known local ingredient');
   assert(directKnown.sourcesRetrieved.length === 0, 'known local ingredient must not perform web retrieval');
