@@ -113,6 +113,16 @@ export function runP5PropertyPipelinesTestSuite() {
     ...liquidFormulaInput,
     productCategory: 'TOILET_CLEANER'
   });
+  const organicToiletSubProfileRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    formulaName: 'Eco Organic Acid Toilet Bowl Cleaner',
+    productCategory: 'TOILET_CLEANER'
+  });
+  const mineralToiletSubProfileRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    formulaName: 'Mineral Acid Heavy Descaling Toilet Cleaner',
+    productCategory: 'TOILET_CLEANER'
+  });
   const missingHardnessScenarioRun = dag.executeDAG({
     ...liquidFormulaInput,
     waterHardnessPpm: undefined,
@@ -139,6 +149,20 @@ export function runP5PropertyPipelinesTestSuite() {
       powderRun.trace.find(t => t.nodeId === 'HLB')?.status === 'NOT_APPLICABLE',
     { state: powderRun.state.hlbStatus, trace: powderRun.trace.find(t => t.nodeId === 'HLB')?.status },
     'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Sub-profile Routing',
+    'Organic-acid toilet bowl formula uses its own profile and permits anionic surfactants',
+    !organicToiletSubProfileRun.state.compatibilityResult?.alerts.some((a: any) => a.id === 'category-policy-anionic-toilet_cleaner'),
+    organicToiletSubProfileRun.state.compatibilityResult?.alerts.map((a: any) => a.id),
+    'No canonical toilet-anionic prohibition'
+  );
+  assert(
+    'Phase 2: Sub-profile Routing',
+    'Mineral-acid toilet formula enforces its anionic restriction',
+    mineralToiletSubProfileRun.state.compatibilityResult?.alerts.some((a: any) => a.id === 'category-policy-anionic-toilet_cleaner'),
+    mineralToiletSubProfileRun.state.compatibilityResult?.alerts.map((a: any) => a.id),
+    'Mineral-acid anionic prohibition present'
   );
   assert(
     'Phase 2: Category Routing',
