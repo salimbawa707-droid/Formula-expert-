@@ -628,34 +628,24 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-mono font-extrabold text-emerald-400">
                     {(() => {
-                      const score = scientificResults.cleaning?.cleaningScore ?? scientificResults.cleaning?.cpi;
-                      if (typeof score === 'number' && Number.isFinite(score) && score > 0) return score;
-                      const active = scientificResults.activeMatter || 0;
-                      if (active > 0) return Math.min(95, Math.max(30, Math.round(active * 3.8 + 20)));
-                      return 0;
+                      return cleaningScore !== null ? cleaningScore : 'N/A';
                     })()}
                   </span>
                   <span className="text-xs text-token-secondary font-bold">/ 100 Index</span>
                   <span className="text-[10px] text-token-primary font-bold ml-auto">
                     {(() => {
                       const power = scientificResults.cleaning?.cleaningPower ?? scientificResults.cleaning?.qualitativePower;
-                      if (power && power !== 'Unavailable') return power;
-                      const score = scientificResults.cleaning?.cleaningScore ?? scientificResults.cleaning?.cpi ?? (scientificResults.activeMatter > 0 ? Math.round(scientificResults.activeMatter * 3.8 + 20) : 0);
-                      return score >= 80 ? 'Heavy Duty / Superior' : score >= 60 ? 'High Detergency' : score >= 40 ? 'Moderate Detergency' : 'Standard';
+                      return power && power !== 'Unavailable' ? power : 'NOT EVALUATED';
                     })()}
                   </span>
                 </div>
                 <p className="text-[11px] text-token-primary font-medium leading-tight">
                   Degreasing: {(() => {
                     const d = scientificResults.cleaning?.degreasingScore ?? scientificResults.cleaning?.domainScores?.degreasing;
-                    if (typeof d === 'number' && Number.isFinite(d) && d > 0) return d;
-                    const active = scientificResults.activeMatter || 0;
-                    return active > 0 ? Math.min(95, Math.max(25, Math.round(active * 4.2))) : 0;
+                    return typeof d === 'number' && Number.isFinite(d) ? d : 'N/A';
                   })()}% | Particulate Soil: {(() => {
                     const p = scientificResults.cleaning?.particulateSoilRemoval ?? scientificResults.cleaning?.domainScores?.particulate;
-                    if (typeof p === 'number' && Number.isFinite(p) && p > 0) return p;
-                    const active = scientificResults.activeMatter || 0;
-                    return active > 0 ? Math.min(95, Math.max(25, Math.round(active * 3.5 + 15))) : 0;
+                    return typeof p === 'number' && Number.isFinite(p) ? p : 'N/A';
                   })()}%. Model estimate (R&D screening).
                 </p>
               </>
