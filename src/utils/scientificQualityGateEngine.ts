@@ -407,7 +407,7 @@ export function evaluateScientificQualityGate(
   if (rawIngs.length > 0 && canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY') {
     try {
       const mappedPH = mapFormulationIngredientsToPHEngineInput(rawIngs);
-      const phRes = calculatePHAdvanced(mappedPH, 100, { productCategory: canonicalCategory });
+      const phRes = calculatePHAdvanced(mappedPH, input.batchSizeKg ?? 100, { productCategory: canonicalCategory });
       phModelValidity = phRes.modelValidity ?? 'UNKNOWN';
       const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
       computedPH = pHWithinModelDomain ? phRes.pH : null;
@@ -501,7 +501,7 @@ export function evaluateScientificQualityGate(
     : (categoryDef ? categoryDef.activeMatterMinPct : 0);
   const meetsCategoryMinActive = totalSurfactantActivePct >= categoryMinActivePct;
 
-  if (rawIngs.length > 0 && categoryDef && !meetsCategoryMinActive && canonicalCategory !== 'FABRIC_SOFTENER') {
+  if (rawIngs.length > 0 && categoryDef && Number.isFinite(totalSurfactantActivePct) && !meetsCategoryMinActive && canonicalCategory !== 'FABRIC_SOFTENER') {
     majorWarnings.push({
       id: 'gate-low-active-matter',
       code: 'WARN_LOW_ACTIVE_MATTER',

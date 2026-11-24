@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-11-06T19:13:41.029Z",
+  "timestamp": "2026-11-24T20:27:46.862Z",
   "summary": {
     "discoveredCount": 139,
     "registeredCount": 139,
     "executedCount": 139,
     "skippedCount": 0,
-    "failedModulesCount": 17,
-    "totalAssertionsExecuted": 4805,
-    "totalAssertionsPassed": 4761,
-    "totalAssertionsFailed": 44,
-    "isCleanPass": false,
+    "failedModulesCount": 0,
+    "totalAssertionsExecuted": 4999,
+    "totalAssertionsPassed": 4999,
+    "totalAssertionsFailed": 0,
+    "isCleanPass": true,
     "testIntegrityFailures": 0,
     "p2Phase13Failures": 0,
     "failureDetails": [],
@@ -60,9 +60,9 @@
       "file": "activeMatterInputGuard.test.ts",
       "moduleName": "runActiveMatterInputGuardTestSuite",
       "executed": true,
-      "passedAssertions": 12,
+      "passedAssertions": 15,
       "failedAssertions": 0,
-      "totalAssertions": 12,
+      "totalAssertions": 15,
       "skipped": false
     },
     {
@@ -96,18 +96,18 @@
       "file": "pHEngine.regression.test.ts",
       "moduleName": "runRegressionTestSuite",
       "executed": true,
-      "passedAssertions": 67,
+      "passedAssertions": 71,
       "failedAssertions": 0,
-      "totalAssertions": 67,
+      "totalAssertions": 71,
       "skipped": false
     },
     {
       "file": "pHEngineV2.regression.test.ts",
       "moduleName": "runPHEngineV2TestSuite",
       "executed": true,
-      "passedAssertions": 67,
+      "passedAssertions": 77,
       "failedAssertions": 0,
-      "totalAssertions": 67,
+      "totalAssertions": 77,
       "skipped": false
     },
     {
@@ -123,27 +123,27 @@
       "file": "activeMatterEngine.regression.test.ts",
       "moduleName": "runActiveMatterRegressionTestSuite",
       "executed": true,
-      "passedAssertions": 40,
+      "passedAssertions": 42,
       "failedAssertions": 0,
-      "totalAssertions": 40,
+      "totalAssertions": 42,
       "skipped": false
     },
     {
       "file": "viscosityEngine.regression.test.ts",
       "moduleName": "runViscosityEngineTestSuite",
       "executed": true,
-      "passedAssertions": 14,
+      "passedAssertions": 16,
       "failedAssertions": 0,
-      "totalAssertions": 14,
+      "totalAssertions": 16,
       "skipped": false
     },
     {
       "file": "densityEngine.regression.test.ts",
       "moduleName": "runDensityEngineRegressionTestSuite",
       "executed": true,
-      "passedAssertions": 5,
-      "failedAssertions": 2,
-      "totalAssertions": 7,
+      "passedAssertions": 9,
+      "failedAssertions": 0,
+      "totalAssertions": 9,
       "skipped": false
     },
     {
@@ -159,9 +159,9 @@
       "file": "powderEngine.regression.test.ts",
       "moduleName": "runPowderEngineTestSuite",
       "executed": true,
-      "passedAssertions": 112,
+      "passedAssertions": 115,
       "failedAssertions": 0,
-      "totalAssertions": 112,
+      "totalAssertions": 115,
       "skipped": false
     },
     {
@@ -213,9 +213,9 @@
       "file": "legacyPowderPHReachability.regression.test.ts",
       "moduleName": "runLegacyPowderPHReachabilityTestSuite",
       "executed": true,
-      "passedAssertions": 10,
+      "passedAssertions": 13,
       "failedAssertions": 0,
-      "totalAssertions": 10,
+      "totalAssertions": 13,
       "skipped": false
     },
     {
@@ -240,9 +240,9 @@
       "file": "costingEngine.regression.test.ts",
       "moduleName": "runCostingEngineTestSuite",
       "executed": true,
-      "passedAssertions": 77,
+      "passedAssertions": 88,
       "failedAssertions": 0,
-      "totalAssertions": 77,
+      "totalAssertions": 88,
       "skipped": false
     },
     {
@@ -258,18 +258,18 @@
       "file": "cleaningPerformance.regression.test.ts",
       "moduleName": "runCleaningPerformanceTestSuite",
       "executed": true,
-      "passedAssertions": 20,
+      "passedAssertions": 22,
       "failedAssertions": 0,
-      "totalAssertions": 20,
+      "totalAssertions": 22,
       "skipped": false
     },
     {
       "file": "compatibility.regression.test.ts",
       "moduleName": "runCompatibilityTestSuite",
       "executed": true,
-      "passedAssertions": 62,
+      "passedAssertions": 75,
       "failedAssertions": 0,
-      "totalAssertions": 62,
+      "totalAssertions": 75,
       "skipped": false
     },
     {
@@ -312,9 +312,9 @@
       "file": "formulaDataContract.regression.test.ts",
       "moduleName": "runFormulaDataContractTestSuite",
       "executed": true,
-      "passedAssertions": 68,
-      "failedAssertions": 4,
-      "totalAssertions": 72,
+      "passedAssertions": 74,
+      "failedAssertions": 0,
+      "totalAssertions": 74,
       "skipped": false
     },
     {
@@ -348,8 +348,8 @@
       "file": "p1Phase1Master.regression.test.ts",
       "moduleName": "runP1Phase1MasterTestSuite",
       "executed": true,
-      "passedAssertions": 103,
-      "failedAssertions": 2,
+      "passedAssertions": 105,
+      "failedAssertions": 0,
       "totalAssertions": 105,
       "skipped": false
     },
@@ -357,17 +357,17 @@
       "file": "p1Phase2Chelation.regression.test.ts",
       "moduleName": "runP1Phase2ChelationTestSuite",
       "executed": true,
-      "passedAssertions": 62,
-      "failedAssertions": 1,
-      "totalAssertions": 63,
+      "passedAssertions": 72,
+      "failedAssertions": 0,
+      "totalAssertions": 72,
       "skipped": false
     },
     {
       "file": "p1Phase3Master.regression.test.ts",
       "moduleName": "runP1Phase3MasterTestSuite",
       "executed": true,
-      "passedAssertions": 36,
-      "failedAssertions": 1,
+      "passedAssertions": 37,
+      "failedAssertions": 0,
       "totalAssertions": 37,
       "skipped": false
     },
@@ -375,8 +375,8 @@
       "file": "openReferenceBenchmark.regression.test.ts",
       "moduleName": "runOpenReferenceBenchmarkTestSuite",
       "executed": true,
-      "passedAssertions": 395,
-      "failedAssertions": 1,
+      "passedAssertions": 396,
+      "failedAssertions": 0,
       "totalAssertions": 396,
       "skipped": false
     },
@@ -384,8 +384,8 @@
       "file": "eng002InputProvenance.test.ts",
       "moduleName": "runEng002InputProvenanceTestSuite",
       "executed": true,
-      "passedAssertions": 26,
-      "failedAssertions": 5,
+      "passedAssertions": 31,
+      "failedAssertions": 0,
       "totalAssertions": 31,
       "skipped": false
     },
@@ -420,9 +420,9 @@
       "file": "p1Phase6LabEvidenceValidation.regression.test.ts",
       "moduleName": "runP1Phase6LabEvidenceValidationTestSuite",
       "executed": true,
-      "passedAssertions": 45,
+      "passedAssertions": 48,
       "failedAssertions": 0,
-      "totalAssertions": 45,
+      "totalAssertions": 48,
       "skipped": false
     },
     {
@@ -474,8 +474,8 @@
       "file": "p3WaterHardnessChelation.test.ts",
       "moduleName": "runP3WaterHardnessTestSuite",
       "executed": true,
-      "passedAssertions": 67,
-      "failedAssertions": 4,
+      "passedAssertions": 71,
+      "failedAssertions": 0,
       "totalAssertions": 71,
       "skipped": false
     },
@@ -501,9 +501,9 @@
       "file": "p7ScientificProvenanceMaster.test.ts",
       "moduleName": "runPhase7ProvenanceTestSuite",
       "executed": true,
-      "passedAssertions": 31,
+      "passedAssertions": 33,
       "failedAssertions": 0,
-      "totalAssertions": 31,
+      "totalAssertions": 33,
       "skipped": false
     },
     {
@@ -537,9 +537,9 @@
       "file": "chemicalEncyclopedia.regression.test.ts",
       "moduleName": "runChemicalEncyclopediaTestSuite",
       "executed": true,
-      "passedAssertions": 16,
+      "passedAssertions": 27,
       "failedAssertions": 0,
-      "totalAssertions": 16,
+      "totalAssertions": 27,
       "skipped": false
     },
     {
@@ -573,8 +573,8 @@
       "file": "liquidNvrEngine.regression.test.ts",
       "moduleName": "runLiquidNvrRegressionTestSuite",
       "executed": true,
-      "passedAssertions": 11,
-      "failedAssertions": 10,
+      "passedAssertions": 21,
+      "failedAssertions": 0,
       "totalAssertions": 21,
       "skipped": false
     },
@@ -843,9 +843,9 @@
       "file": "p0RemediationLimsPersistenceUiTruthfulness.regression.test.ts",
       "moduleName": "runP0RemediationLimsPersistenceUiTruthfulnessTestSuite",
       "executed": true,
-      "passedAssertions": 30,
+      "passedAssertions": 41,
       "failedAssertions": 0,
-      "totalAssertions": 30,
+      "totalAssertions": 41,
       "skipped": false
     },
     {
@@ -888,8 +888,8 @@
       "file": "liquidLaundryAnalysisRemediation.regression.test.ts",
       "moduleName": "runLiquidLaundryRemediationTestSuite",
       "executed": true,
-      "passedAssertions": 17,
-      "failedAssertions": 2,
+      "passedAssertions": 19,
+      "failedAssertions": 0,
       "totalAssertions": 19,
       "skipped": false
     },
@@ -897,8 +897,8 @@
       "file": "ingredientIntelligenceSearchRemediation.regression.test.ts",
       "moduleName": "runIngredientIntelligenceSearchRemediationTestSuite",
       "executed": true,
-      "passedAssertions": 27,
-      "failedAssertions": 3,
+      "passedAssertions": 30,
+      "failedAssertions": 0,
       "totalAssertions": 30,
       "skipped": false
     },
@@ -906,8 +906,8 @@
       "file": "p0MasterScientificUnknownDataIntegrity.regression.test.ts",
       "moduleName": "runMasterScientificUnknownDataIntegrityTestSuite",
       "executed": true,
-      "passedAssertions": 28,
-      "failedAssertions": 4,
+      "passedAssertions": 32,
+      "failedAssertions": 0,
       "totalAssertions": 32,
       "skipped": false
     },
@@ -933,8 +933,8 @@
       "file": "scientificPhaseC.regression.test.ts",
       "moduleName": "runScientificPhaseCTests",
       "executed": true,
-      "passedAssertions": 35,
-      "failedAssertions": 1,
+      "passedAssertions": 36,
+      "failedAssertions": 0,
       "totalAssertions": 36,
       "skipped": false
     },
@@ -978,8 +978,8 @@
       "file": "p04UnknownIngredientDataIntegrity.regression.test.ts",
       "moduleName": "runP04UnknownIngredientDataIntegrityTestSuite",
       "executed": true,
-      "passedAssertions": 19,
-      "failedAssertions": 1,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
       "totalAssertions": 20,
       "skipped": false
     },
@@ -1050,9 +1050,9 @@
       "file": "p2Phase14RegulatoryCompliance.regression.test.ts",
       "moduleName": "runP2Phase14RegulatoryComplianceTestSuite",
       "executed": true,
-      "passedAssertions": 37,
+      "passedAssertions": 61,
       "failedAssertions": 0,
-      "totalAssertions": 37,
+      "totalAssertions": 61,
       "skipped": false
     },
     {
@@ -1113,17 +1113,17 @@
       "file": "p5PropertyPipelinesMaster.regression.test.ts",
       "moduleName": "runP5PropertyPipelinesTestSuite",
       "executed": true,
-      "passedAssertions": 23,
-      "failedAssertions": 1,
-      "totalAssertions": 24,
+      "passedAssertions": 78,
+      "failedAssertions": 0,
+      "totalAssertions": 78,
       "skipped": false
     },
     {
       "file": "p7ScientificAccuracyMaster.regression.test.ts",
       "moduleName": "runP7ScientificAccuracyMasterTestSuite",
       "executed": true,
-      "passedAssertions": 19,
-      "failedAssertions": 1,
+      "passedAssertions": 20,
+      "failedAssertions": 0,
       "totalAssertions": 20,
       "skipped": false
     },
@@ -1140,9 +1140,9 @@
       "file": "phase10Consistency.regression.test.ts",
       "moduleName": "runPhase10ConsistencyTestSuite",
       "executed": true,
-      "passedAssertions": 28,
+      "passedAssertions": 41,
       "failedAssertions": 0,
-      "totalAssertions": 28,
+      "totalAssertions": 41,
       "skipped": false
     },
     {
@@ -1167,9 +1167,9 @@
       "file": "formulaAnalysisWorkflow.regression.test.ts",
       "moduleName": "runFormulaAnalysisWorkflowTestSuite",
       "executed": true,
-      "passedAssertions": 50,
+      "passedAssertions": 53,
       "failedAssertions": 0,
-      "totalAssertions": 50,
+      "totalAssertions": 53,
       "skipped": false
     },
     {
@@ -1185,9 +1185,9 @@
       "file": "serviceWorker.test.ts",
       "moduleName": "runServiceWorkerTestSuite",
       "executed": true,
-      "passedAssertions": 10,
+      "passedAssertions": 13,
       "failedAssertions": 0,
-      "totalAssertions": 10,
+      "totalAssertions": 13,
       "skipped": false
     },
     {
@@ -1212,9 +1212,9 @@
       "file": "authAndRouteMatrix.regression.test.ts",
       "moduleName": "runAuthAndRouteMatrixTestSuite",
       "executed": true,
-      "passedAssertions": 14,
+      "passedAssertions": 18,
       "failedAssertions": 0,
-      "totalAssertions": 14,
+      "totalAssertions": 18,
       "skipped": false
     },
     {
@@ -1248,8 +1248,8 @@
       "file": "p0_master_remediation.regression.test.ts",
       "moduleName": "runP0MasterRemediationTestSuite",
       "executed": true,
-      "passedAssertions": 20,
-      "failedAssertions": 1,
+      "passedAssertions": 21,
+      "failedAssertions": 0,
       "totalAssertions": 21,
       "skipped": false
     },

@@ -18,8 +18,10 @@ import {
   Workflow
 } from 'lucide-react';
 import { auth, db } from '../services/firebaseClient';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { collection, getDocs } from 'firebase/firestore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { apiFetch } from '../services/apiBase';
 
 interface UserProfile {
   id: string;
@@ -67,45 +69,84 @@ export const AdminDashboard: React.FC = () => {
   const [formulas, setFormulas] = useState<SavedFormula[]>([]);
   const [trials, setTrials] = useState<LabTrial[]>([]);
   
+  const [currentUser, setCurrentUser] = useState<User | null>(() => auth.currentUser);
+  const [serverAdminVerified, setServerAdminVerified] = useState<boolean>(false);
   const [systemHealth, setSystemHealth] = useState<{
     serverOk: boolean;
     geminiConfigured: boolean;
+    geminiModel: string;
     serviceName: string;
+    authorizedAdmin: string | null;
+    phase5Status: string;
+    truthfulAiPolicy: string;
     timestamp: string;
   }>({
-    serverOk: true,
-    geminiConfigured: true,
+    serverOk: false,
+    geminiConfigured: false,
+    geminiModel: 'gemini-4-hydrogen',
     serviceName: 'Formula Expert Forensic R&D Backend',
+    authorizedAdmin: null,
+    phase5Status: 'LOCKED (Awaiting Physical Lab Sign-Off)',
+    truthfulAiPolicy: 'Strictly Enforced (No Fake Data)',
     timestamp: new Date().toISOString()
   });
 
-  const currentUser = auth.currentUser;
-  const { profile, updateProfile, signInWithGoogle } = useSettingsStore();
-  const isSuperAdmin = (currentUser?.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
-                       (profile.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
-                       (!currentUser); // Default to owner access for Salim Bawa in preview environment
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      setCurrentUser(fbUser);
+      if (!fbUser) {
+        setServerAdminVerified(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const { profile, signInWithGoogle } = useSettingsStore();
+  const isSuperAdmin = Boolean(
+    currentUser &&
+    currentUser.emailVerified &&
+    currentUser.email?.toLowerCase() === 'salimbawa707@gmail.com'
+  );
 
   const fetchData = async () => {
-    if (!isSuperAdmin) {
+    if (!isSuperAdmin || !currentUser) {
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      // 1. Fetch Backend API Health
+      // 1. Verify Admin Session with Backend /api/admin/overview (falls back to /api/health if offline)
       try {
-        const hRes = await fetch('/api/health');
-        if (hRes.ok) {
-          const hData = await hRes.json();
+        const adminRes = await apiFetch('/api/admin/overview');
+        if (adminRes.ok) {
+          const overviewData = await adminRes.json();
+          setServerAdminVerified(true);
           setSystemHealth({
-            serverOk: hData.status === 'ok',
-            geminiConfigured: Boolean(hData.geminiConfigured),
-            serviceName: hData.service || 'Formula Expert Backend',
-            timestamp: hData.timestamp || new Date().toISOString()
+            serverOk: overviewData.status === 'ok',
+            geminiConfigured: Boolean(overviewData.geminiConfigured),
+            geminiModel: overviewData.geminiModel || 'gemini-4-hydrogen',
+            serviceName: overviewData.service || 'Formula Expert Forensic R&D Backend',
+            authorizedAdmin: overviewData.authorizedAdmin || currentUser.email || null,
+            phase5Status: overviewData.governance?.phase5 || 'LOCKED (Awaiting Physical Lab Sign-Off)',
+            truthfulAiPolicy: overviewData.governance?.truthfulAiPolicy || 'Strictly Enforced (No Fake Data)',
+            timestamp: overviewData.timestamp || new Date().toISOString()
           });
+        } else {
+          setServerAdminVerified(false);
+          const hRes = await fetch('/api/health');
+          if (hRes.ok) {
+            const hData = await hRes.json();
+            setSystemHealth(prev => ({
+              ...prev,
+              serverOk: hData.status === 'ok',
+              geminiConfigured: Boolean(hData.geminiConfigured),
+              serviceName: hData.service || prev.serviceName,
+              timestamp: hData.timestamp || new Date().toISOString()
+            }));
+          }
         }
       } catch {
-        // Fallback health state if offline
+        setServerAdminVerified(false);
       }
 
       // 2. Fetch Users from Firestore if authenticated as Admin
@@ -147,11 +188,11 @@ export const AdminDashboard: React.FC = () => {
           const localFormulas = await localDb.formulas.toArray();
           const localNotes = await localDb.labNotes.toArray();
           
-          if (usersList.length === 0) {
+          if (usersList.length === 0 && currentUser) {
             usersList.push({
-              id: profile.id || 'salimbawa707_owner',
-              email: profile.email || 'salimbawa707@gmail.com',
-              displayName: profile.name || 'Salim Bawa (Owner)',
+              id: currentUser.uid,
+              email: currentUser.email || '',
+              displayName: currentUser.displayName || 'Verified Owner',
               createdAt: new Date().toISOString(),
               lastLoginAt: new Date().toISOString()
             });
@@ -160,7 +201,7 @@ export const AdminDashboard: React.FC = () => {
           localFormulas.forEach(f => {
             formulasList.push({
               id: f.id,
-              userId: profile.id || 'salimbawa707_owner',
+              userId: currentUser?.uid || 'local_workspace',
               name: f.name,
               productType: f.productType || f.category,
               grade: 'Standard',
@@ -177,7 +218,7 @@ export const AdminDashboard: React.FC = () => {
           localNotes.forEach(n => {
             trialsList.push({
               id: n.id,
-              userId: profile.id || 'salimbawa707_owner',
+              userId: currentUser?.uid || 'local_workspace',
               title: n.title,
               formulaId: n.formulaId,
               observations: n.text,
@@ -234,23 +275,9 @@ export const AdminDashboard: React.FC = () => {
             The Admin Console is reserved for the app owner (<strong className="text-blue-400">salimbawa707@gmail.com</strong>).
           </p>
           <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs font-mono text-slate-300 mb-6">
-            Current Profile: {currentUser?.email || profile.email || 'Guest User'}
+            Current Session: {currentUser?.email ? `${currentUser.email} (${currentUser.emailVerified ? 'Verified' : 'Unverified'})` : (profile.email || 'Guest User (Not Signed In)')}
           </div>
           <div className="space-y-3">
-            <button
-              onClick={async () => {
-                await updateProfile({
-                  id: 'salimbawa707_owner',
-                  email: 'salimbawa707@gmail.com',
-                  name: 'Salim Bawa',
-                  role: 'Super Admin & Lead Chemist'
-                });
-              }}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              Activate Owner Access (Salim Bawa)
-            </button>
             <button
               onClick={async () => {
                 try {
@@ -259,9 +286,10 @@ export const AdminDashboard: React.FC = () => {
                   alert(e?.message || 'Google Sign-In failed');
                 }
               }}
-              className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition"
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
             >
-              Sign In with Google Account
+              <ShieldCheck className="w-4 h-4" />
+              Sign In with Verified Owner Google Account
             </button>
           </div>
         </div>
@@ -282,7 +310,7 @@ export const AdminDashboard: React.FC = () => {
                 Super Admin Console
               </span>
               <span className="text-xs text-slate-400">
-                Authorized Account: <strong className="text-slate-200">{currentUser?.email || 'salimbawa707@gmail.com'}</strong>
+                Authorized Account: <strong className="text-slate-200">{systemHealth.authorizedAdmin || currentUser?.email || 'Verified Admin'}</strong>
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
@@ -370,49 +398,49 @@ export const AdminDashboard: React.FC = () => {
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Dev Server & Express</span>
-                  <Activity className="w-5 h-5 text-emerald-400" />
+                  <Activity className={`w-5 h-5 ${systemHealth.serverOk ? 'text-emerald-400' : 'text-amber-400'}`} />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">Active</span>
+                  <span className="text-2xl font-bold text-white">{systemHealth.serverOk ? 'Active' : 'Unreachable'}</span>
                   <span className="text-xs text-emerald-400 font-medium">Port 3000</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">Express + Vite Middleware</p>
+                <p className="text-xs text-slate-400 mt-1">{systemHealth.serviceName}</p>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Gemini 3.8 Flash AI</span>
+                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Gemini AI Engine</span>
                   <Cpu className="w-5 h-5 text-blue-400" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">{systemHealth.geminiConfigured ? 'Ready' : 'Unconfigured'}</span>
-                  <span className="text-xs text-blue-400 font-medium">@google/genai</span>
+                  <span className="text-2xl font-bold text-white">{systemHealth.geminiConfigured ? 'Configured' : 'Unconfigured'}</span>
+                  <span className="text-xs text-blue-400 font-medium font-mono">{systemHealth.geminiModel}</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">Chemistry Proxy Endpoint Live</p>
+                <p className="text-xs text-slate-400 mt-1">Server-Side Proxy via @google/genai</p>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Firestore DB</span>
+                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Backend RBAC Check</span>
                   <Database className="w-5 h-5 text-purple-400" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">Connected</span>
-                  <span className="text-xs text-purple-400 font-medium">ai-studio-formulaexpert</span>
+                  <span className="text-2xl font-bold text-white">{serverAdminVerified ? 'Verified' : 'Local Only'}</span>
+                  <span className="text-xs text-purple-400 font-medium">/api/admin/overview</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">User Isolation & Rules Active</p>
+                <p className="text-xs text-slate-400 mt-1">Firebase ID Token & Admin Claim Enforced</p>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Calculation Engines</span>
+                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Validation Suite</span>
                   <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">139 / 139</span>
-                  <span className="text-xs text-emerald-400 font-medium">4,805 Assertions</span>
+                  <span className="text-2xl font-bold text-white">{formulas.length} Recipes</span>
+                  <span className="text-xs text-emerald-400 font-medium">{trials.length} Lab Notes</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">100% Math & Chemistry Accuracy</p>
+                <p className="text-xs text-slate-400 mt-1">Open Validation Suite tab for live runner</p>
               </div>
             </div>
 
@@ -424,19 +452,19 @@ export const AdminDashboard: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <span className="text-sm text-slate-300">Registered Super Admin</span>
-                    <span className="text-sm font-mono text-blue-400">salimbawa707@gmail.com</span>
+                    <span className="text-sm text-slate-300">Authenticated Admin</span>
+                    <span className="text-sm font-mono text-blue-400">{currentUser?.email || 'Not Signed In'}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <span className="text-sm text-slate-300">Total User Profiles Active</span>
+                    <span className="text-sm text-slate-300">Loaded User Profiles</span>
                     <span className="text-sm font-bold text-white">{users.length}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <span className="text-sm text-slate-300">Total Formulas Saved Across Accounts</span>
+                    <span className="text-sm text-slate-300">Saved Formulas</span>
                     <span className="text-sm font-bold text-white">{formulas.length}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <span className="text-sm text-slate-300">Total Lab Notebook Entries</span>
+                    <span className="text-sm text-slate-300">Lab Notebook Entries</span>
                     <span className="text-sm font-bold text-white">{trials.length}</span>
                   </div>
                 </div>
@@ -448,20 +476,20 @@ export const AdminDashboard: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
-                    <span className="text-sm text-slate-300">Phase 4b AI Evidence Status</span>
-                    <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full">
-                      OPEN (AI Source Verified 144/144)
+                    <span className="text-sm text-slate-300">Backend Admin Verification</span>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${serverAdminVerified ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>
+                      {serverAdminVerified ? 'VERIFIED SERVER SESSION' : 'UNVERIFIED / OFFLINE'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
                     <span className="text-sm text-slate-300">Phase 5 Lab Calibration</span>
-                    <span className="text-xs font-semibold px-2.5 py-1 bg-slate-700 text-slate-400 rounded-full flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> LOCKED (Awaiting Physical Lab Sign-Off)
+                    <span className="text-xs font-semibold px-2.5 py-1 bg-slate-700 text-slate-300 rounded-full flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> {systemHealth.phase5Status}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl border border-slate-800">
                     <span className="text-sm text-slate-300">Truthful AI Policy</span>
-                    <span className="text-xs font-semibold text-emerald-400">Strictly Enforced (No Fake Data)</span>
+                    <span className="text-xs font-semibold text-emerald-400">{systemHealth.truthfulAiPolicy}</span>
                   </div>
                 </div>
               </div>
@@ -492,7 +520,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="p-8 text-center text-slate-400 bg-slate-800/30 rounded-xl border border-slate-800">
                 <Users className="w-10 h-10 text-slate-500 mx-auto mb-2 opacity-50" />
                 <p>No user accounts matched your search criteria or Firestore is awaiting new user logins.</p>
-                <p className="text-xs text-slate-500 mt-1">Super Admin account salimbawa707@gmail.com is active.</p>
+                <p className="text-xs text-slate-500 mt-1">Signed-in Admin: {currentUser?.email || 'Verified Session Required'}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -636,24 +664,26 @@ export const AdminDashboard: React.FC = () => {
             </h2>
 
             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 leading-relaxed">
-              <strong>Super Admin Policy:</strong> Formula Expert operates on strict scientific truthfulness. Phase 4b source transcription for Pušić (2006) dataset is 100% verified. Phase 5 will open upon certified physical lab sign-off.
+              <strong>Super Admin Policy:</strong> Formula Expert enforces strict scientific truthfulness: missing laboratory parameters remain explicit or fail closed rather than defaulting silently, and empirical calibration remains locked pending certified physical lab sign-off.
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">Pušić Dataset Integrity</span>
-                <span className="text-lg font-bold text-emerald-400">144 / 144 Matched</span>
-                <p className="text-[11px] text-slate-400 mt-1">AI-assisted visual comparison verified</p>
+                <span className="text-xs text-slate-400 block mb-1">Empirical Calibration Gate</span>
+                <span className="text-lg font-bold text-amber-300">{systemHealth.phase5Status}</span>
+                <p className="text-[11px] text-slate-400 mt-1">No synthetic lab measurements are accepted as wet-lab sign-off</p>
               </div>
               <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">Static Security Audit</span>
-                <span className="text-lg font-bold text-emerald-400">6 / 6 Routes Pass</span>
-                <p className="text-[11px] text-slate-400 mt-1">Auth middleware & limits active</p>
+                <span className="text-xs text-slate-400 block mb-1">Backend Admin Verification</span>
+                <span className={`text-lg font-bold ${serverAdminVerified ? 'text-emerald-400' : 'text-amber-300'}`}>
+                  {serverAdminVerified ? '200 OK (/api/admin/overview)' : 'Not Verified'}
+                </span>
+                <p className="text-[11px] text-slate-400 mt-1">Requires verified Firebase ID token and server admin claim</p>
               </div>
               <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">Master Calculation Suite</span>
-                <span className="text-lg font-bold text-emerald-400">4,805 / 4,805 Assertions</span>
-                <p className="text-[11px] text-slate-400 mt-1">100% Passed across 139 modules</p>
+                <span className="text-xs text-slate-400 block mb-1">Active AI Model Policy</span>
+                <span className="text-lg font-bold text-blue-300 font-mono">{systemHealth.geminiModel}</span>
+                <p className="text-[11px] text-slate-400 mt-1">{systemHealth.geminiConfigured ? 'API Key Configured (Server Proxy)' : 'Deterministic Fallback Only'}</p>
               </div>
             </div>
           </div>

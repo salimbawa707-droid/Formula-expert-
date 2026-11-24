@@ -620,8 +620,11 @@ export async function verifyAuthToken(
       return { valid: false, error: 'Cryptographic verification failed: Missing uid in decoded token.' };
     }
 
-    // Role comes strictly from server-assigned custom claims on the token or designated owner email
-    const isOwnerAdmin = typeof decodedToken.email === 'string' && decodedToken.email.toLowerCase() === 'salimbawa707@gmail.com';
+    // Role comes strictly from server-assigned custom claims on the token or verified owner email
+    const isOwnerAdmin =
+      decodedToken.email_verified === true &&
+      typeof decodedToken.email === 'string' &&
+      decodedToken.email.toLowerCase() === 'salimbawa707@gmail.com';
     const role: 'user' | 'admin' = (decodedToken.admin === true || decodedToken.role === 'admin' || isOwnerAdmin)
       ? 'admin'
       : 'user';
@@ -1019,10 +1022,10 @@ export function isApiKeyConfigured(apiKey?: string): boolean {
 }
 
 /**
- * Resolves the AI model identifier from custom/env config or verified default gemini-3.8-flash.
+ * Resolves the AI model identifier from custom/env config or verified default gemini-4-hydrogen.
  */
 export function resolveGeminiModel(customModel?: string): string {
-  const DEFAULT_MODEL = 'gemini-3.8-flash';
+  const DEFAULT_MODEL = 'gemini-4-hydrogen';
   const candidate = customModel || process.env.GEMINI_MODEL;
   if (!candidate || typeof candidate !== 'string' || !candidate.trim()) {
     return DEFAULT_MODEL;

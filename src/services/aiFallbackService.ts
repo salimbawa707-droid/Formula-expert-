@@ -148,7 +148,7 @@ export class AiFallbackService {
         name: "Omni Unified Gateway (Active)",
         configured: isGatewayActive,
         gateway: "Omni Endpoint",
-        models: ["Omni Combo Auto-Router", "gemini-omni-1.1-flash", "gemini-3.8-flash"]
+        models: ["Omni Combo Auto-Router", "gemini-4-hydrogen", "gemini-3.1-flash-lite"]
       },
       {
         id: "omni-combo-gpt",
@@ -183,7 +183,7 @@ export class AiFallbackService {
         name: "Gemini Model (via Omni Combo)",
         configured: isGatewayActive,
         gateway: "Omni Combo Direct Route",
-        models: ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"]
+        models: ["gemini-4-hydrogen", "gemini-3.1-flash-lite"]
       },
       {
         id: "deterministic",
@@ -239,33 +239,33 @@ export class AiFallbackService {
 
     if (omniClient) {
       // ----------------------------------------------------------------------
-      // TIER 1: OMNI COMBO PRIMARY ROUTE (gemini-3.8-flash)
+      // TIER 1: PRIMARY GEMINI ROUTE (gemini-4-hydrogen; omit sampling params)
       // ----------------------------------------------------------------------
       totalAttempts++;
       try {
-        const config: any = { temperature: temp };
+        const config: any = {};
         if (systemPrompt) config.systemInstruction = systemPrompt;
         if (options.responseMimeType) config.responseMimeType = options.responseMimeType;
         if (options.responseSchema) config.responseSchema = options.responseSchema;
 
         const response = await omniClient.models.generateContent({
-          model: "gemini-3.8-flash",
+          model: "gemini-4-hydrogen",
           contents: options.contents,
           config,
         });
 
         const rawText = response.text || "";
         if (rawText.trim()) {
-          return formatSuccess(rawText, "Omni Combo (gemini-3.8-flash Primary)", "omni_combo_primary");
+          return formatSuccess(rawText, "gemini-4-hydrogen", "omni_combo_primary");
         }
       } catch (err: any) {
         const msg = err?.message || String(err);
-        console.warn(`[Omni Gateway] ${task} -> Primary Combo Route failed: ${msg}`);
-        collectedErrors.push(`Omni Combo Primary: ${msg}`);
+        console.warn(`[Omni Gateway] ${task} -> Primary Gemini Route failed: ${msg}`);
+        collectedErrors.push(`Primary Gemini (gemini-4-hydrogen): ${msg}`);
       }
 
       // ----------------------------------------------------------------------
-      // TIER 2: OMNI INTERACTIONS API ROUTE (gemini-omni-1.1-flash)
+      // TIER 2: INTERACTIONS API ROUTE (gemini-4-hydrogen)
       // ----------------------------------------------------------------------
       totalAttempts++;
       try {
@@ -275,13 +275,10 @@ export class AiFallbackService {
         }
 
         const interactionParams: any = {
-          model: "gemini-omni-1.1-flash",
+          model: "gemini-4-hydrogen",
           input: omniInput,
         };
         if (systemPrompt) interactionParams.system_instruction = systemPrompt;
-        if (temp !== undefined) {
-          interactionParams.generation_config = { temperature: temp };
-        }
 
         const interaction = await (omniClient.interactions as any).create(interactionParams);
         let outputText = "";
@@ -304,7 +301,7 @@ export class AiFallbackService {
         }
 
         if (outputText.trim()) {
-          return formatSuccess(outputText, "Omni Combo (gemini-omni-1.1-flash Interactions Route)", "omni_interactions");
+          return formatSuccess(outputText, "gemini-4-hydrogen (Interactions Route)", "omni_interactions");
         }
       } catch (omniErr: any) {
         const msg = omniErr?.message || String(omniErr);
@@ -313,7 +310,7 @@ export class AiFallbackService {
       }
 
       // ----------------------------------------------------------------------
-      // TIER 3: OMNI COMBO FAST FAILOVER ROUTE (gemini-3.1-flash-lite)
+      // TIER 3: FAST FAILOVER ROUTE (gemini-3.1-flash-lite)
       // ----------------------------------------------------------------------
       totalAttempts++;
       try {
@@ -330,38 +327,12 @@ export class AiFallbackService {
 
         const rawText = response.text || "";
         if (rawText.trim()) {
-          return formatSuccess(rawText, "Omni Combo (gemini-3.1-flash-lite Fast Failover)", "omni_combo_secondary");
+          return formatSuccess(rawText, "gemini-3.1-flash-lite", "omni_combo_secondary");
         }
       } catch (err: any) {
         const msg = err?.message || String(err);
         console.warn(`[Omni Gateway] ${task} -> Secondary Combo Route failed: ${msg}`);
-        collectedErrors.push(`Omni Combo Secondary: ${msg}`);
-      }
-
-      // ----------------------------------------------------------------------
-      // TIER 4: OMNI COMBO REDUNDANCY ALIAS ROUTE (gemini-flash-latest)
-      // ----------------------------------------------------------------------
-      totalAttempts++;
-      try {
-        const config: any = { temperature: temp };
-        if (systemPrompt) config.systemInstruction = systemPrompt;
-        if (options.responseMimeType) config.responseMimeType = options.responseMimeType;
-        if (options.responseSchema) config.responseSchema = options.responseSchema;
-
-        const response = await omniClient.models.generateContent({
-          model: "gemini-flash-latest",
-          contents: options.contents,
-          config,
-        });
-
-        const rawText = response.text || "";
-        if (rawText.trim()) {
-          return formatSuccess(rawText, "Omni Combo (gemini-flash-latest Redundancy Alias)", "omni_combo_alias");
-        }
-      } catch (err: any) {
-        const msg = err?.message || String(err);
-        console.warn(`[Omni Gateway] ${task} -> Alias Combo Route failed: ${msg}`);
-        collectedErrors.push(`Omni Combo Alias: ${msg}`);
+        collectedErrors.push(`Secondary Gemini (gemini-3.1-flash-lite): ${msg}`);
       }
     } else {
       collectedErrors.push("Omni Gateway: Client offline or key uninitialized");

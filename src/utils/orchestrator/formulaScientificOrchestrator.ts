@@ -311,7 +311,21 @@ export class FormulaScientificOrchestrator {
     }
 
     const isPowder = state.physicalForm === 'POWDER';
-    const isCostOutOfSpec = state.costResult?.costPerKg > (input.costContext?.targetCostPerKg || 999999);
+    const categoryDef = getProductCategory(state.canonicalCategory);
+    const specParams = state.qualityGateResult?.specificationResult?.parameters || [];
+    const densitySpec = specParams.find((p: any) => p.parameterKey === 'density');
+    const phMinBound = categoryDef?.phMin ?? 0;
+    const phMaxBound = categoryDef?.phMax ?? 14;
+    const activeMinBound = categoryDef?.activeMatterMinPct ?? 0;
+    const densityMinBound = typeof densitySpec?.min === 'number' ? densitySpec.min : 0.85;
+    const densityMaxBound = typeof densitySpec?.max === 'number' ? densitySpec.max : 1.50;
+
+    const costPerKgVal = state.costResult?.costPerKg;
+    const hasKnownCost = typeof costPerKgVal === 'number' && Number.isFinite(costPerKgVal);
+    const targetCostVal = input.costContext?.targetCostPerKg;
+    const hasTargetCost = typeof targetCostVal === 'number' && Number.isFinite(targetCostVal);
+    const isCostOutOfSpec = hasKnownCost && hasTargetCost && costPerKgVal > targetCostVal;
+
     const screeningStatus = (!state.compatible || state.qualityGateResult?.scientificValidity === 'INVALID')
       ? 'SCREENING: ADJUSTMENT RECOMMENDED'
       : 'SCREENING: WITHIN CALCULATED TARGETS';
@@ -330,74 +344,108 @@ export class FormulaScientificOrchestrator {
       ? 'NEEDS ADJUSTMENT'
       : 'SCREENING PASS';
 
-    const hardWaterStatusText = state.waterHardnessPpm === 0
+    const hasSuppliedHardness = state.waterHardnessPpm !== null && state.waterHardnessPpm !== undefined && Number.isFinite(state.waterHardnessPpm);
+    const hardWaterStatusText = state.hardnessResult?.status === 'NOT_APPLICABLE'
+      ? 'Hard-water protection: Not applicable for this category.'
+      : (!hasSuppliedHardness || state.hardnessResult?.status === 'NOT_EVALUATED')
+      ? 'Hard-water protection: Not evaluated (no water hardness scenario supplied).'
+      : state.waterHardnessPpm === 0
       ? 'Hard-water protection: Not evaluated at 0 ppm baseline.'
       : state.hardnessResult?.status === 'INSUFFICIENT'
       ? 'Hard-water protection: Needs Revision.'
       : 'Hard-water protection: Pass.';
 
+    const hasFinitePH = state.finalEquilibriumPH !== null && Number.isFinite(state.finalEquilibriumPH);
+    const hasFiniteSurfactantActive = typeof state.totalSurfactantActivePct === 'number' && Number.isFinite(state.totalSurfactantActivePct);
+    const hasFiniteActiveMatter = typeof state.totalActiveMatterPct === 'number' && Number.isFinite(state.totalActiveMatterPct);
+    const hasFiniteDensity = typeof state.densityGPerCm3 === 'number' && Number.isFinite(state.densityGPerCm3) && state.densityGPerCm3 > 0;
+    const hasFiniteNvr = typeof state.nvrPercentage === 'number' && Number.isFinite(state.nvrPercentage);
+    const nvrCompletenessNum = typeof state.nvrResult?.dataCompleteness === 'number' && Number.isFinite(state.nvrResult.dataCompleteness)
+      ? state.nvrResult.dataCompleteness
+      : 0;
+
     const verdictReasons: Array<{ label: string; ok: boolean; message: string; provenance?: string }> = [
       {
         label: 'Formulation Balance',
         ok: state.blockingIssues.length === 0,
-        message: `Pass for evaluated parameters. ${hardWaterStatusText}`,
+        message: `${state.isBalanced ? 'Pass for evaluated mass balance.' : 'Mass balance outside tolerance.'} ${hardWaterStatusText}`,
         provenance: 'CALCULATED'
       },
       {
         label: 'Calculated Equilibrium pH',
-        ok: state.finalEquilibriumPH !== null && state.finalEquilibriumPH >= 7.5 && state.finalEquilibriumPH <= 9.5,
-        message: state.finalEquilibriumPH !== null 
-          ? `${state.finalEquilibriumPH.toFixed(2)} — SCREENING (${state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'Empirical Potentiometry' : 'Physical potentiometric lab validation required; Measured pH: NOT TESTED'})`
-          : 'N/A — Empty or invalid formula',
-        provenance: state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'MEASURED' : 'SCREENING'
+        ok: hasFinitePH && (state.finalEquilibriumPH as number) >= phMinBound && (state.finalEquilibriumPH as number) <= phMaxBound,
+        message: hasFinitePH
+          ? `${(state.finalEquilibriumPH as number).toFixed(2)} — SCREENING (${state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'Empirical Potentiometry' : 'Physical potentiometric lab validation required; Measured pH: NOT TESTED'})`
+          : 'UNAVAILABLE — Empty, unrecognized, or missing acid-base assay inputs',
+        provenance: state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'MEASURED' : (hasFinitePH ? 'SCREENING' : 'INSUFFICIENT_DATA')
       },
       {
         label: 'Active Surfactant Matter',
-        ok: state.totalSurfactantActivePct >= 10.0 && state.totalSurfactantActivePct <= 25.0,
-        message: `${state.totalSurfactantActivePct.toFixed(2)}% (Within specification range; target value 16% not reached)`,
-        provenance: 'CALCULATED'
+        ok: hasFiniteSurfactantActive && (state.canonicalCategory === 'FABRIC_SOFTENER' || state.totalSurfactantActivePct >= activeMinBound),
+        message: !hasFiniteSurfactantActive
+          ? 'UNAVAILABLE — Surfactant active assay missing or incomplete'
+          : state.totalSurfactantActivePct >= activeMinBound
+          ? `${state.totalSurfactantActivePct.toFixed(2)}% (Meets ${state.categoryLabel} minimum ${activeMinBound.toFixed(1)}%)`
+          : `${state.totalSurfactantActivePct.toFixed(2)}% (Below ${state.categoryLabel} minimum ${activeMinBound.toFixed(1)}%)`,
+        provenance: hasFiniteSurfactantActive ? 'CALCULATED' : 'INSUFFICIENT_DATA'
       },
       {
-        label: 'Liquid Density @ 20°C',
-        ok: state.densityGPerCm3 >= 1.01 && state.densityGPerCm3 <= 1.08,
-        message: `${state.densityGPerCm3.toFixed(3)} g/cm³ — SCREENING (product-appropriate lab density method: NOT TESTED)`,
-        provenance: 'SCREENING'
+        label: isPowder ? 'Bulk Form Density' : 'Liquid Density @ 20°C',
+        ok: isPowder ? true : (hasFiniteDensity && state.densityGPerCm3 >= densityMinBound && state.densityGPerCm3 <= densityMaxBound),
+        message: isPowder
+          ? 'Not Applicable (Dry Powder / Solid — bulk/tapped cylinder test applies)'
+          : !hasFiniteDensity
+          ? 'UNAVAILABLE — Incomplete ingredient density data'
+          : `${state.densityGPerCm3.toFixed(3)} g/cm³ — SCREENING (product-appropriate lab density method: NOT TESTED)`,
+        provenance: isPowder ? 'NOT_APPLICABLE' : (hasFiniteDensity ? 'SCREENING' : 'INSUFFICIENT_DATA')
       },
       {
         label: 'Non-Volatile Residue (NVR)',
-        ok: !isPowder ? (state.nvrResult?.isComplete ?? false) : true,
+        ok: !isPowder ? Boolean(state.nvrResult?.isComplete && hasFiniteNvr) : hasFiniteActiveMatter,
         message: isPowder
-          ? `${state.totalActiveMatterPct.toFixed(1)}% — CALCULATED`
-          : !(state.nvrResult?.isComplete ?? false)
-          ? `NVR: INSUFFICIENT_DATA (Known NVR coverage: ${state.nvrResult?.dataCompleteness.toFixed(0)}%)`
+          ? (hasFiniteActiveMatter ? `${state.totalActiveMatterPct.toFixed(1)}% — CALCULATED` : 'UNAVAILABLE — Incomplete ingredient active-matter inputs')
+          : !(state.nvrResult?.isComplete && hasFiniteNvr)
+          ? `NVR: INSUFFICIENT_DATA (Known NVR coverage: ${nvrCompletenessNum.toFixed(0)}%)`
           : `${state.nvrPercentage.toFixed(1)}% — CALCULATED (Oven Evaporation @ 105°C: NOT TESTED)`,
-        provenance: isPowder ? 'CALCULATED' : (!(state.nvrResult?.isComplete ?? false) ? 'INSUFFICIENT_DATA' : 'CALCULATED')
+        provenance: isPowder
+          ? (hasFiniteActiveMatter ? 'CALCULATED' : 'INSUFFICIENT_DATA')
+          : (!(state.nvrResult?.isComplete && hasFiniteNvr) ? 'INSUFFICIENT_DATA' : 'CALCULATED')
       },
       {
         label: 'Hard-Water Challenge',
         ok: state.hardnessResult?.status !== 'INSUFFICIENT',
-        message: state.waterHardnessPpm === 0
+        message: state.hardnessResult?.status === 'NOT_APPLICABLE'
+          ? 'Hard-water challenge: NOT APPLICABLE for this product category'
+          : (!hasSuppliedHardness || state.hardnessResult?.status === 'NOT_EVALUATED')
+          ? 'Hard-water challenge: NOT EVALUATED (Water hardness and wash scenario not supplied)'
+          : state.waterHardnessPpm === 0
           ? 'Hard-water challenge: NOT EVALUATED (Baseline hardness: 0 ppm)'
           : state.hardnessResult?.status === 'INSUFFICIENT'
           ? `Hard-water protection: Needs Revision (deficit for ${state.waterHardnessPpm} ppm load)`
-          : `Hard-water protection: Pass (supports up to ${state.hardnessResult?.maxSupportedPpm} ppm)`,
-        provenance: state.waterHardnessPpm === 0 ? 'NOT_EVALUATED' : 'CALCULATED'
+          : `Hard-water protection: Pass (supports up to ${state.hardnessResult?.maxSupportedPpm ?? 'N/A'} ppm)`,
+        provenance: state.hardnessResult?.status === 'NOT_APPLICABLE'
+          ? 'NOT_APPLICABLE'
+          : (!hasSuppliedHardness || state.waterHardnessPpm === 0 || state.hardnessResult?.status === 'NOT_EVALUATED')
+          ? 'NOT_EVALUATED'
+          : 'CALCULATED'
       },
       {
         label: 'Raw Material Cost',
-        ok: !isCostOutOfSpec,
-        message: input.costContext?.targetCostPerKg === undefined
-          ? `Raw-material cost: ₹${state.costResult?.costPerKg.toFixed(2)}/kg (Target cost not specified).`
+        ok: hasKnownCost && !isCostOutOfSpec,
+        message: !hasKnownCost
+          ? 'Raw-material cost: UNAVAILABLE (Incomplete ingredient pricing inputs).'
+          : !hasTargetCost
+          ? `Raw-material cost: ₹${costPerKgVal.toFixed(2)}/kg (Target cost not specified).`
           : isCostOutOfSpec
-          ? `Raw-material cost ₹${state.costResult?.costPerKg.toFixed(2)}/kg exceeds maximum specification ₹${input.costContext.targetCostPerKg.toFixed(2)}/kg.`
-          : `₹${state.costResult?.costPerKg.toFixed(2)}/kg satisfies cost specification (Max: ₹${input.costContext.targetCostPerKg.toFixed(2)}/kg).`,
-        provenance: 'CALCULATED'
+          ? `Raw-material cost ₹${costPerKgVal.toFixed(2)}/kg exceeds maximum specification ₹${targetCostVal.toFixed(2)}/kg.`
+          : `₹${costPerKgVal.toFixed(2)}/kg satisfies cost specification (Max: ₹${targetCostVal.toFixed(2)}/kg).`,
+        provenance: hasKnownCost ? 'CALCULATED' : 'INSUFFICIENT_DATA'
       }
     ];
 
     const attentionItems: string[] = [];
-    if (isCostOutOfSpec && input.costContext?.targetCostPerKg !== undefined) {
-      attentionItems.push(`Raw-material cost ₹${state.costResult?.costPerKg.toFixed(2)}/kg exceeds maximum specification ₹${input.costContext.targetCostPerKg.toFixed(2)}/kg.`);
+    if (isCostOutOfSpec && hasKnownCost && hasTargetCost) {
+      attentionItems.push(`Raw-material cost ₹${costPerKgVal.toFixed(2)}/kg exceeds maximum specification ₹${targetCostVal.toFixed(2)}/kg.`);
     }
     if (!state.labEvidenceResult?.isLabValidated) {
       attentionItems.push('Physical laboratory testing (pH, density, viscosity, NVR) has not been performed. Commercial release gate is BLOCKED.');
@@ -487,10 +535,11 @@ export class FormulaScientificOrchestrator {
     }
 
     let categorySuitability = "High (Optimal Formulation Profile)";
-    const categoryDef = getProductCategory(state.canonicalCategory);
     if (categoryDef) {
       const minActive = categoryDef.activeMatterMinPct;
-      if (state.totalSurfactantActivePct < minActive) {
+      if (!hasFiniteSurfactantActive) {
+        categorySuitability = `Unavailable: Active surfactant loading cannot be verified for ${state.categoryLabel} without ingredient assays.`;
+      } else if (state.totalSurfactantActivePct < minActive) {
         categorySuitability = `Moderate: Active surfactant loading (${state.totalSurfactantActivePct.toFixed(1)}%) is below standard benchmark of ${minActive.toFixed(1)}% for ${state.categoryLabel}.`;
       }
     }
@@ -507,11 +556,22 @@ export class FormulaScientificOrchestrator {
       notes: 'Legacy troubleshooter engine is deprecated and isolated from production runtime.'
     };
 
+    const safeFixed = (v: unknown, decimals: number): number | null =>
+      typeof v === 'number' && Number.isFinite(v) ? Number(v.toFixed(decimals)) : null;
+
+    const finiteSurfactantTotal =
+      Number.isFinite(state.anionicPct) &&
+      Number.isFinite(state.nonionicPct) &&
+      Number.isFinite(state.amphotericPct) &&
+      Number.isFinite(state.cationicPct)
+        ? Number((state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct).toFixed(2))
+        : null;
+
     return {
-      totalActiveMatterPct: Number(state.totalActiveMatterPct.toFixed(2)),
-      activeMatterStatus: (state.unknownParameters.includes('ACTIVE_MATTER_UNVERIFIED') || state.activeMatterStatus === 'INSUFFICIENT_DATA' || state.unknownParameters.length > 0) ? 'INSUFFICIENT_DATA' : (state.activeMatterStatus ?? 'VALID'),
+      totalActiveMatterPct: safeFixed(state.totalActiveMatterPct, 2) as any,
+      activeMatterStatus: (state.unknownParameters.includes('ACTIVE_MATTER_UNVERIFIED') || state.activeMatterStatus === 'INSUFFICIENT_DATA' || !hasFiniteActiveMatter) ? 'INSUFFICIENT_DATA' : (state.activeMatterStatus ?? 'VALID'),
       finalEquilibriumPH: state.finalEquilibriumPH,
-      phStatus: state.phStatus ?? (state.finalEquilibriumPH !== null ? 'VALID' : 'INSUFFICIENT_DATA'),
+      phStatus: state.phStatus ?? (hasFinitePH ? 'VALID' : 'INSUFFICIENT_DATA'),
       formulaIdentity: {
         id: state.formulaId,
         name: state.formulaName,
@@ -525,11 +585,11 @@ export class FormulaScientificOrchestrator {
       scientificValidity: state.qualityGateResult?.scientificValidity ?? 'VALID',
       massBalance,
       pHResult: {
-        ph: state.finalEquilibriumPH !== null ? Number(state.finalEquilibriumPH.toFixed(2)) : null,
+        ph: hasFinitePH ? Number((state.finalEquilibriumPH as number).toFixed(2)) : null,
         isMeasured: state.labEvidenceResult?.verifiedMeasurementsCount > 0,
         provenance: state.labEvidenceResult?.verifiedMeasurementsCount > 0 ? 'MEASURED' : 'PREDICTED',
-        bufferCapacity: state.phBufferCapacity !== null ? Number(state.phBufferCapacity.toFixed(4)) : null,
-        ionicStrength: state.phIonicStrength !== null ? Number(state.phIonicStrength.toFixed(4)) : null,
+        bufferCapacity: safeFixed(state.phBufferCapacity, 4),
+        ionicStrength: safeFixed(state.phIonicStrength, 4),
         confidence: state.phStatus === 'VALID' ? 'High Confidence (Speciation Equilibrium)' : 'Moderate Confidence',
         solverConverged: state.phConverged,
         warnings: state.phWarnings,
@@ -542,16 +602,16 @@ export class FormulaScientificOrchestrator {
         }
       },
       activeMatterResult: {
-        totalSurfactantActivePct: Number(state.totalSurfactantActivePct.toFixed(2)),
-        totalActiveMatterPct: Number(state.totalActiveMatterPct.toFixed(2)),
-        meetsCategoryMin: state.totalSurfactantActivePct >= (categoryDef ? categoryDef.activeMatterMinPct : 0),
+        totalSurfactantActivePct: safeFixed(state.totalSurfactantActivePct, 2) as any,
+        totalActiveMatterPct: safeFixed(state.totalActiveMatterPct, 2) as any,
+        meetsCategoryMin: hasFiniteSurfactantActive ? (state.totalSurfactantActivePct >= (categoryDef ? categoryDef.activeMatterMinPct : 0)) : (null as any),
         categoryMinPct: categoryDef ? categoryDef.activeMatterMinPct : 0,
         surfactantBreakdown: {
-          anionic: Number(state.anionicPct.toFixed(2)),
-          nonionic: Number(state.nonionicPct.toFixed(2)),
-          amphoteric: Number(state.amphotericPct.toFixed(2)),
-          cationic: Number(state.cationicPct.toFixed(2)),
-          total: Number((state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct).toFixed(2))
+          anionic: safeFixed(state.anionicPct, 2) as any,
+          nonionic: safeFixed(state.nonionicPct, 2) as any,
+          amphoteric: safeFixed(state.amphotericPct, 2) as any,
+          cationic: safeFixed(state.cationicPct, 2) as any,
+          total: finiteSurfactantTotal as any
         }
       },
       hlbResult: {
@@ -757,11 +817,15 @@ function buildScientificExecutionTrace(
       NORMALIZATION: 'AGGREGATOR',
       IDENTITY_RESOLUTION: 'AGGREGATOR',
       CATEGORY_ROUTING: 'AGGREGATOR',
+      NEUTRALIZATION: 'DIRECT_ENGINE',
       STOICHIOMETRIC_NEUTRALIZATION: 'DIRECT_ENGINE',
       PH_ADAPTER: 'ADAPTER',
+      PH_EQUILIBRIUM: 'DIRECT_ENGINE',
       PH_ENGINE_V2: 'DIRECT_ENGINE',
       ACTIVE_MATTER: 'DIRECT_ENGINE',
+      HLB: 'DIRECT_ENGINE',
       HLB_ENGINE: 'DIRECT_ENGINE',
+      WATER_CHELATION: 'DIRECT_ENGINE',
       CHELATOR_HARDNESS: 'DIRECT_ENGINE',
       VISCOSITY: 'DIRECT_ENGINE',
       CLEANING_CPI: 'DIRECT_ENGINE',
@@ -867,6 +931,7 @@ function getNodeTraceDetails(
       evidenceStatus = 'AUTHORITATIVE_CALCULATED';
       break;
 
+    case 'NEUTRALIZATION':
     case 'STOICHIOMETRIC_NEUTRALIZATION':
       inputsConsumed = { resolvedIngredientsCount: state.resolvedIngredients?.length || 0 };
       intermediateStatesConsumed = ['resolvedIngredients'];
@@ -881,6 +946,7 @@ function getNodeTraceDetails(
       evidenceStatus = 'AUTHORITATIVE_CALCULATED';
       break;
 
+    case 'PH_EQUILIBRIUM':
     case 'PH_ENGINE_V2':
       inputsConsumed = { targetPH: input.targetPH, ionicStrength: state.phIonicStrength };
       intermediateStatesConsumed = ['resolvedIngredients', 'pHIntermediate'];
@@ -893,21 +959,23 @@ function getNodeTraceDetails(
       inputsConsumed = { ingredientsCount: state.resolvedIngredients?.length || 0 };
       intermediateStatesConsumed = ['resolvedIngredients'];
       outputsProduced = { totalSurfactantActivePct: state.totalSurfactantActivePct, totalActiveMatterPct: state.totalActiveMatterPct, anionicPct: state.anionicPct, nonionicPct: state.nonionicPct };
-      evidenceStatus = 'AUTHORITATIVE_CALCULATED';
+      evidenceStatus = state.activeMatterStatus === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' : 'AUTHORITATIVE_CALCULATED';
       break;
 
+    case 'HLB':
     case 'HLB_ENGINE':
       inputsConsumed = { nonionicSurfactantsCount: state.resolvedIngredients?.filter((i: any) => i.role === 'Nonionic Surfactant' || i.category === 'Nonionic Surfactant').length || 0 };
       intermediateStatesConsumed = ['resolvedIngredients'];
       outputsProduced = { blendedHLB: state.hlbResult?.blendedHLB, hlbStatus: state.hlbStatus };
-      evidenceStatus = 'AUTHORITATIVE_CALCULATED';
+      evidenceStatus = state.hlbStatus === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT_DATA' : 'AUTHORITATIVE_CALCULATED';
       break;
 
+    case 'WATER_CHELATION':
     case 'CHELATOR_HARDNESS':
       inputsConsumed = { waterHardnessPpm: state.waterHardnessPpm };
       intermediateStatesConsumed = ['resolvedIngredients', 'waterHardnessPpm'];
       outputsProduced = { hardnessStatus: state.hardnessResult?.status, maxSupportedPpm: state.hardnessResult?.maxSupportedPpm, isChelationSufficient: state.chelationResult?.isSufficient };
-      evidenceStatus = 'AUTHORITATIVE_CALCULATED';
+      evidenceStatus = state.hardnessResult?.status === 'NOT_EVALUATED' ? 'INSUFFICIENT_DATA' : 'AUTHORITATIVE_CALCULATED';
       break;
 
     case 'VISCOSITY':
@@ -963,10 +1031,10 @@ function getNodeTraceDetails(
       break;
 
     case 'COSTING':
-      inputsConsumed = { targetCostPerKg: input.costContext?.targetCostPerKg || 45 };
+      inputsConsumed = { targetCostPerKg: input.costContext?.targetCostPerKg ?? null };
       intermediateStatesConsumed = ['resolvedIngredients', 'batchSizeKg'];
       outputsProduced = { costPerKg: state.costResult?.costPerKg, totalBatchCost: state.costResult?.totalBatchCost };
-      evidenceStatus = 'AUTHORITATIVE_CALCULATED';
+      evidenceStatus = state.costResult?.isComplete ? 'AUTHORITATIVE_CALCULATED' : 'INSUFFICIENT_DATA';
       break;
 
     case 'REGULATORY':

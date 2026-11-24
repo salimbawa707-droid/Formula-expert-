@@ -56,8 +56,9 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
   const [labsaPurity, setLabsaPurity] = useState<90 | 96>(90);
   const [alkaliType, setAlkaliType] = useState<any>("NaOH Flakes (99%)");
 
+  const parsedLabsaQty = typeof labsaQty === 'number' ? labsaQty : parseFloat(String(labsaQty));
   const neutResult = calculateNeutralization({
-    labsaQty: typeof labsaQty === 'number' ? labsaQty : (parseFloat(String(labsaQty)) || 0),
+    labsaQty: Number.isFinite(parsedLabsaQty) && parsedLabsaQty >= 0 ? parsedLabsaQty : 0,
     labsaPurity,
     alkaliType
   } as any);

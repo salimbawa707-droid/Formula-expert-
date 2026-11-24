@@ -69,6 +69,7 @@ export interface NormalizedIngredient {
   waterFraction: number;
   waterMassKg: number;
   isRecognized: boolean;
+  assayUnknown?: boolean;
   notes?: string[];
   acidBaseProfile?: any;
 }
@@ -86,6 +87,7 @@ export interface NormalizedComposition {
   ingredients: NormalizedIngredient[];
   recognizedMassFraction: number;
   unrecognizedCount: number;
+  unknownAssayIngredients?: string[];
   isPowder: boolean;
   slurryDilutionFactor?: number;
 }

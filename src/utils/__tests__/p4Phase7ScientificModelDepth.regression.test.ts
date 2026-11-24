@@ -128,7 +128,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   const phHighI = PHEngineV2.calculatePH(
     mapFormulationIngredientsToPHEngineInput([
       { name: 'Sodium Chloride', percentage: 18.0 },
-      { name: 'Sodium Hydroxide', percentage: 0.5 }
+      { name: 'Sodium Hydroxide', percentage: 0.5, activeMatterPct: 100 }
     ]),
     100
   );

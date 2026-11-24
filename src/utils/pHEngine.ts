@@ -376,32 +376,51 @@ export class PHEngine {
     baseMw = 39.9971
   ): NeutralizationResult {
     const isObj = typeof acidInput === 'object' && acidInput !== null;
-    const rawAcidKg = typeof acidInput === 'number'
+    const rawAcidVal = typeof acidInput === 'number'
       ? acidInput
-      : (acidInput?.labsaQty ?? acidInput?.acidKg ?? acidInput?.amount ?? 1);
-    const aPur = typeof acidPurity === 'number'
-      ? acidPurity
-      : (isObj ? (acidInput?.labsaPurity ?? acidInput?.acidPurity ?? 90) : 90);
-    const alkaliType = isObj && acidInput?.alkaliType ? acidInput.alkaliType : 'NaOH Flakes (99%)';
+      : (acidInput?.labsaQty ?? acidInput?.acidKg ?? acidInput?.amount);
+    if (typeof rawAcidVal !== 'number' || !Number.isFinite(rawAcidVal) || rawAcidVal < 0) {
+      throw new Error('Acid quantity (kg) is required and must be a finite non-negative number.');
+    }
+    const rawAcidKg = rawAcidVal;
 
-    let bPur = typeof basePurity === 'number' ? basePurity : 99;
+    const aPurCandidate = typeof acidPurity === 'number'
+      ? acidPurity
+      : (isObj ? (acidInput?.labsaPurity ?? acidInput?.acidPurity) : undefined);
+    if (typeof aPurCandidate !== 'number' || !Number.isFinite(aPurCandidate) || aPurCandidate <= 0 || aPurCandidate > 100) {
+      throw new Error('Acid commercial assay (%) is required (e.g., LABSA 90% or 96%) before neutralization can be calculated.');
+    }
+    const aPur = aPurCandidate;
+
+    const alkaliType = isObj && typeof acidInput?.alkaliType === 'string' ? acidInput.alkaliType.trim() : '';
+    if (!alkaliType && typeof basePurity !== 'number') {
+      throw new Error('Alkali type or explicit base assay (%) is required before neutralization can be calculated.');
+    }
+
+    let bPur: number;
     // An explicit assay is authoritative; do not overwrite it from the display label.
-    if (typeof basePurity !== 'number') {
-      if (alkaliType.includes('48%') || alkaliType.includes('Lye (48%)')) {
-        bPur = 48;
-      } else if (alkaliType.includes('50%') || alkaliType.includes('Lye (50%)')) {
-        bPur = 50;
-      } else if (alkaliType.includes('KOH')) {
-        if (alkaliType.includes('85%')) {
-          bPur = 85;
-        } else if (alkaliType.includes('90%')) {
-          bPur = 90;
-        } else if (alkaliType.includes('100%')) {
-          bPur = 100;
-        } else {
-          throw new Error('KOH commercial assay is required (85%, 90%, or 100%) before neutralization can be calculated.');
-        }
+    if (typeof basePurity === 'number' && Number.isFinite(basePurity) && basePurity > 0 && basePurity <= 100) {
+      bPur = basePurity;
+    } else if (alkaliType.includes('99%')) {
+      bPur = 99;
+    } else if (alkaliType.includes('48%') || alkaliType.includes('Lye (48%)')) {
+      bPur = 48;
+    } else if (alkaliType.includes('50%') || alkaliType.includes('Lye (50%)')) {
+      bPur = 50;
+    } else if (alkaliType.includes('KOH')) {
+      if (alkaliType.includes('85%')) {
+        bPur = 85;
+      } else if (alkaliType.includes('90%')) {
+        bPur = 90;
+      } else if (alkaliType.includes('100%')) {
+        bPur = 100;
+      } else {
+        throw new Error('KOH commercial assay is required (85%, 90%, or 100%) before neutralization can be calculated.');
       }
+    } else if (alkaliType.includes('100%')) {
+      bPur = 100;
+    } else {
+      throw new Error(`Alkali commercial assay is required for "${alkaliType}" before neutralization can be calculated.`);
     }
 
     const acidName = `LABSA ${aPur}%`;

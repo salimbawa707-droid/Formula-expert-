@@ -485,9 +485,11 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const isOwner = (profile.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
-                  (currentUser?.email?.toLowerCase() === 'salimbawa707@gmail.com') ||
-                  (!currentUser); // Default to owner access for Salim Bawa in preview environment
+  const isOwner = Boolean(
+    currentUser &&
+    currentUser.emailVerified &&
+    currentUser.email?.toLowerCase() === 'salimbawa707@gmail.com'
+  );
 
   const [activeTab, setActiveTab] = useState<TabType>('formula_expert');
 
@@ -858,11 +860,13 @@ export default function App() {
                 ? 'bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-500/30'
                 : 'bg-gradient-to-r from-blue-950/80 to-indigo-950/80 hover:from-blue-900/90 hover:to-indigo-900/90 border-blue-500/40 text-blue-300 hover:text-white'
             }`}
-            title="Open Formula Expert Admin & R&D Control Panel"
+            title={isOwner ? 'Open Formula Expert Admin & R&D Control Panel' : 'Open Admin Panel (Verified Owner Sign-In Required)'}
           >
             <ShieldCheck size={14} className={activeTab === 'admin_dashboard' ? 'text-white' : 'text-blue-400'} />
             <span className="inline">Admin Panel</span>
-            <span className="hidden sm:inline-block text-[9px] bg-blue-500/30 text-blue-200 border border-blue-400/40 px-1 py-0.2 rounded font-mono">OWNER</span>
+            {isOwner && (
+              <span className="hidden sm:inline-block text-[9px] bg-blue-500/30 text-blue-200 border border-blue-400/40 px-1 py-0.2 rounded font-mono">OWNER</span>
+            )}
           </button>
 
           {/* PWA Install Button & User Account Menu */}
@@ -1079,7 +1083,7 @@ export default function App() {
           <div className="hidden sm:flex flex-col text-left ml-2">
             <span className="leading-tight whitespace-nowrap">Ask Chemistry AI</span>
             <span className="text-[9px] font-mono font-medium text-cyan-200 truncate max-w-[140px]">
-              {activeFormula ? `Attached: ${activeFormula.name.slice(0, 14)}` : 'Gemini 3.8 Flash'}
+              {activeFormula ? `Attached: ${activeFormula.name.slice(0, 14)}` : 'Gemini 4 Hydrogen'}
             </span>
           </div>
         </button>

@@ -1,5 +1,5 @@
 import { mapFormulationIngredientsToPHEngineInput, mapFormulationIngredientToPHEngineInput } from '../pHEngineAdapter';
-import { calculatePHAdvanced } from '../pHEngine';
+import { calculatePHAdvanced, calculateNeutralization } from '../pHEngine';
 import { calculateBlendedHLB } from '../calculators';
 import { FormulationIngredient } from '../../types';
 
@@ -423,6 +423,34 @@ const k5Surfactants = [
 ];
 const k5BlendedHLB = calculateBlendedHLB(k5Surfactants);
 assert('Field Contract', 'K5: Blended HLB handles both hlbValue and hlb alias', k5BlendedHLB === 9.65, k5BlendedHLB, 9.65);
+
+// Neutralization fail-closed assay & quantity guards
+let threwMissingAcidQty = false;
+try {
+  calculateNeutralization({ labsaPurity: 96, alkaliType: 'NaOH Flakes (99%)' } as any);
+} catch {
+  threwMissingAcidQty = true;
+}
+assert('Neutralization Guard', 'N1: Missing acid quantity throws rather than defaulting to 1 kg', threwMissingAcidQty, threwMissingAcidQty, true);
+
+let threwMissingAcidAssay = false;
+try {
+  calculateNeutralization({ labsaQty: 10, alkaliType: 'NaOH Flakes (99%)' } as any);
+} catch {
+  threwMissingAcidAssay = true;
+}
+assert('Neutralization Guard', 'N2: Missing acid commercial assay throws rather than defaulting to 90%', threwMissingAcidAssay, threwMissingAcidAssay, true);
+
+let threwUngradedNaOH = false;
+try {
+  calculateNeutralization({ labsaQty: 10, labsaPurity: 96, alkaliType: 'NaOH' } as any);
+} catch {
+  threwUngradedNaOH = true;
+}
+assert('Neutralization Guard', 'N3: Ungraded alkali ("NaOH") without explicit assay throws rather than defaulting to 99%', threwUngradedNaOH, threwUngradedNaOH, true);
+
+const explicitNaOH50 = calculateNeutralization({ labsaQty: 10, labsaPurity: 96, alkaliType: 'Caustic Soda Lye (50%)' });
+assert('Neutralization Guard', 'N4: Graded LABSA 96% + NaOH 50% calculates exact finite stoichiometric base', Number.isFinite(explicitNaOH50.requiredBaseKg) && explicitNaOH50.requiredBaseKg > 2, explicitNaOH50.requiredBaseKg, '>2 kg');
 
 
 // ==========================================

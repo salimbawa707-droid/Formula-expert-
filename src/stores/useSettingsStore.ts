@@ -122,22 +122,22 @@ interface SettingsStore {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  id: 'salimbawa707_owner',
-  name: 'Salim Bawa',
-  email: 'salimbawa707@gmail.com',
-  company: 'Formula Expert Forensic R&D Lab',
-  role: 'Super Admin & Lead Chemist',
-  plan: 'team',
-  isAuthenticated: true,
+  id: 'guest_local_user',
+  name: 'Guest Chemist',
+  email: '',
+  company: 'Detergent R&D Lab',
+  role: 'Formulation Chemist',
+  plan: 'free',
+  isAuthenticated: false,
   trialEndsAt: null,
-  trialActivated: true,
+  trialActivated: false,
   subscriptionExpiresAt: null,
   teamWorkspace: null,
 };
 
 const DEFAULT_AI_SETTINGS: AISettings = {
   provider: 'gemini',
-  selectedModel: 'gemini-2.5-flash',
+  selectedModel: 'gemini-4-hydrogen',
 };
 
 const DEFAULT_PREFERENCES: AppPreferences = {
@@ -172,27 +172,16 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const prefRec = await db.userSettings.get('app_preferences');
 
       let currentProfile: UserProfile = profRec?.value ? { ...DEFAULT_PROFILE, ...profRec.value } : DEFAULT_PROFILE;
-      
-      // Auto-migrate legacy default profile to project owner Salim Bawa
-      if (!currentProfile.email || currentProfile.email === 'formulator@rnd-lab.com' || currentProfile.id === 'guest_local_user') {
-        currentProfile = {
-          ...currentProfile,
-          id: 'salimbawa707_owner',
-          name: 'Salim Bawa',
-          email: 'salimbawa707@gmail.com',
-          company: 'Formula Expert Forensic R&D Lab',
-          role: 'Super Admin & Lead Chemist',
-          plan: 'team',
-          isAuthenticated: true,
-        };
+
+      currentProfile = clearPersistedAuthentication(currentProfile);
+      if (currentProfile.id === 'salimbawa707_owner' && !firebaseAuth.currentUser && !hasPersistedSupabaseSession()) {
+        currentProfile = { ...DEFAULT_PROFILE };
         await db.userSettings.put({
           key: 'user_profile',
           value: currentProfile,
           updatedAt: new Date().toISOString(),
         });
       }
-
-      currentProfile = clearPersistedAuthentication(currentProfile);
 
       // Check real Supabase session if configured
       if (isSupabaseConfigured() && hasPersistedSupabaseSession()) {

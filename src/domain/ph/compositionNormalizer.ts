@@ -60,44 +60,75 @@ export function normalizeFormulationComposition(
   let rawMaterialWaterKg = 0;
   let totalRecognizedMassKg = 0;
   let unrecognizedCount = 0;
+  const unknownAssayIngredients: string[] = [];
+
+  // Variable-assay commercial solutions/slurries/flakes that cannot silently default to 100% active
+  const VARIABLE_ASSAY_SPECIES = new Set([
+    'labsa',
+    'naoh',
+    'koh',
+    'hydrochloric_acid',
+    'sulfuric_acid',
+    'phosphoric_acid',
+    'nitric_acid',
+    'ammonia',
+    'lactic_acid',
+    'gluconic_acid',
+    'dtpa_na5',
+    'edta_na4',
+    'edta_na2',
+    'glda_na4',
+    'mgda_na3',
+    'hedp',
+    'atmp'
+  ]);
 
   const normalizedIngredients: NormalizedIngredient[] = [];
 
   for (const { ing, massKg } of rawIngsWithMass) {
     const rawName = ing.name || '';
     const species = classifyChemicalSpecies(rawName);
+    const pctInNameMatch = rawName.match(/\b(100(?:\.0+)?|\d{1,2}(?:\.\d+)?)\s*%/);
+    const hasPureQualifierInName = /\b(pure|reference|reagent|glacial)\b/i.test(rawName);
 
-    // Active concentration fraction
+    const rawActivePctField =
+      ing.activePercent ??
+      (ing as any).activeMatterPct ??
+      (ing as any).activeMatterPurity;
+    const hasActivePctField =
+      rawActivePctField !== undefined &&
+      rawActivePctField !== null &&
+      !(typeof rawActivePctField === 'string' && rawActivePctField.trim() === '') &&
+      Number.isFinite(Number(rawActivePctField));
+    const hasPurityField =
+      ing.purity !== undefined &&
+      ing.purity !== null &&
+      !(typeof ing.purity === 'string' && String(ing.purity).trim() === '') &&
+      Number.isFinite(Number(ing.purity));
+
+    let assayUnknown = false;
     let activeFraction = 1.0;
-    if (ing.activePercent !== undefined && ing.activePercent !== null && !isNaN(ing.activePercent)) {
-      activeFraction = ing.activePercent > 1 ? ing.activePercent / 100 : ing.activePercent;
-    } else if (ing.purity !== undefined && ing.purity !== null && !isNaN(ing.purity)) {
-      activeFraction = ing.purity > 1 ? ing.purity / 100 : ing.purity;
-    } else if (rawName.toLowerCase().includes('50%')) {
-      activeFraction = 0.50;
-    } else if (rawName.toLowerCase().includes('85%')) {
-      activeFraction = 0.85;
-    } else if (rawName.toLowerCase().includes('47%')) {
-      activeFraction = 0.47;
-    } else if (rawName.toLowerCase().includes('40%')) {
-      activeFraction = 0.40;
-    } else if (rawName.toLowerCase().includes('37%')) {
-      activeFraction = 0.37;
-    } else if (rawName.toLowerCase().includes('96%')) {
-      activeFraction = 0.96;
-    } else if (rawName.toLowerCase().includes('90%')) {
-      activeFraction = 0.90;
-    } else if (rawName.toLowerCase().includes('70%')) {
-      activeFraction = 0.70;
-    } else if (rawName.toLowerCase().includes('28%')) {
-      activeFraction = 0.28;
-    } else if (rawName.toLowerCase().includes('30%')) {
-      activeFraction = 0.30;
+
+    if (hasActivePctField) {
+      activeFraction = Number(rawActivePctField) / 100;
+    } else if (hasPurityField) {
+      const pVal = Number(ing.purity);
+      activeFraction = pVal > 1 ? pVal / 100 : pVal;
+    } else if (pctInNameMatch) {
+      activeFraction = Number(pctInNameMatch[1]) / 100;
+    } else if (hasPureQualifierInName) {
+      activeFraction = 1.0;
+    } else if (species && VARIABLE_ASSAY_SPECIES.has(species.speciesId) && massKg > 0) {
+      assayUnknown = true;
+      activeFraction = Number.NaN;
+      unknownAssayIngredients.push(rawName || species.displayName);
     }
 
-    activeFraction = Math.max(0, Math.min(1.0, activeFraction));
+    if (!assayUnknown) {
+      activeFraction = Math.max(0, Math.min(1.0, activeFraction));
+    }
 
-    const activeMassKg = massKg * activeFraction;
+    const activeMassKg = assayUnknown ? Number.NaN : massKg * activeFraction;
     let waterFraction = 0;
     let waterMassKg = 0;
 
@@ -105,6 +136,9 @@ export function normalizeFormulationComposition(
       explicitWaterKg += massKg;
       waterFraction = 1.0;
       waterMassKg = massKg;
+    } else if (assayUnknown) {
+      waterFraction = Number.NaN;
+      waterMassKg = Number.NaN;
     } else {
       waterFraction = 1.0 - activeFraction;
       waterMassKg = massKg * waterFraction;
@@ -112,7 +146,9 @@ export function normalizeFormulationComposition(
     }
 
     let moles = 0;
-    if (species && species.mw > 0) {
+    if (assayUnknown) {
+      moles = Number.NaN;
+    } else if (species && species.mw > 0) {
       moles = (activeMassKg * 1000) / species.mw;
     }
 
@@ -136,6 +172,7 @@ export function normalizeFormulationComposition(
       waterFraction,
       waterMassKg,
       isRecognized: Boolean(species),
+      assayUnknown,
       acidBaseProfile
     });
   }
@@ -178,7 +215,7 @@ export function normalizeFormulationComposition(
 
   // Compute final molarity (mol/L) for each ingredient in the aqueous formulation phase
   for (const item of normalizedIngredients) {
-    item.molarity = item.moles / Math.max(0.0001, totalVolumeL);
+    item.molarity = item.assayUnknown ? Number.NaN : (item.moles / Math.max(0.0001, totalVolumeL));
   }
 
   const recognizedMassFraction = totalRecognizedMassKg / effectiveBatchMassKg;
@@ -196,6 +233,7 @@ export function normalizeFormulationComposition(
     ingredients: normalizedIngredients,
     recognizedMassFraction,
     unrecognizedCount,
+    unknownAssayIngredients,
     isPowder,
     slurryDilutionFactor
   };

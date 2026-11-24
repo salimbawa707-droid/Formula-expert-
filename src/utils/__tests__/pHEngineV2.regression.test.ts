@@ -250,7 +250,7 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
   const t14Res = PHEngineV2.calculatePH(
     mapFormulationIngredientsToPHEngineInput([
       { name: 'Sodium Chloride', percentage: 15.0 },
-      { name: 'Sodium Hydroxide', percentage: 1.0 }
+      { name: 'Sodium Hydroxide', percentage: 1.0, activeMatterPct: 100 }
     ]),
     100
   );
@@ -332,7 +332,10 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
   // TEST 19: F3-01 High Ionic Strength & Polybasic Acid Convergence (Citric Acid 20%)
   // =========================================================================
   const t19Comp = normalizeFormulationComposition(
-    mapFormulationIngredientsToPHEngineInput([{ name: 'Citric Acid', percentage: 20.0 }, { name: 'Sodium Hydroxide', percentage: 5.0 }]),
+    mapFormulationIngredientsToPHEngineInput([
+      { name: 'Citric Acid', percentage: 20.0 },
+      { name: 'Sodium Hydroxide', percentage: 5.0, activeMatterPct: 100 }
+    ]),
     100
   );
   const t19Res = NumericalEquilibriumSolver.solve(t19Comp, 25.0);
@@ -914,6 +917,40 @@ export function runPHEngineV2TestSuite(): { passed: number; failed: number; tota
     reg28Res.commercialReagentKg === null,
     `status: ${reg28Res.status}, isDosingAvailable: ${reg28Res.isDosingAvailable}, activeGrams: ${reg28Res.activeReagentGramsNeeded}`,
     'status === UNAVAILABLE, isDosingAvailable === false, all numeric doses null'
+  );
+
+  // =========================================================================
+  // PHASE 3 AUDIT: ASSAY FIREWALL & COMMERCIAL PERCENTAGE PARSING
+  // =========================================================================
+  const bareVariableAssays = ['Sodium Hydroxide', 'LABSA', 'Hydrochloric Acid', 'Potassium Hydroxide', 'Sulfuric Acid'];
+  for (const name of bareVariableAssays) {
+    const res = PHEngineV2.calculatePH(
+      mapFormulationIngredientsToPHEngineInput([{ name, percentage: 1.0 }]),
+      100
+    );
+    assert(
+      'Phase 3 Assay Firewall',
+      `Ungraded ${name} without explicit assay fails closed (INSUFFICIENT_DATA, pH: null)`,
+      res.status === 'INSUFFICIENT_DATA' && res.pH === null && res.converged === false,
+      { status: res.status, pH: res.pH, converged: res.converged },
+      'INSUFFICIENT_DATA / null / false'
+    );
+  }
+
+  const parsedGrades = normalizeFormulationComposition([
+    { name: 'Caustic Soda Flakes 99%', rawPercent: 1.0 },
+    { name: 'Caustic Soda Lye 48%', rawPercent: 2.0 },
+    { name: 'Hydrochloric Acid 33% (HCl Technical)', rawPercent: 3.0 },
+    { name: 'Potassium Hydroxide 45% Liquid', rawPercent: 1.0 },
+    { name: 'Sulfuric Acid 98%', rawPercent: 1.0 }
+  ], 100);
+  const parsedFractions = parsedGrades.ingredients.map(i => Number(i.activeFraction.toFixed(2)));
+  assert(
+    'Phase 3 Assay Firewall',
+    'Commercial percentage grades (99%, 48%, 33%, 45%, 98%) parse accurately in compositionNormalizer',
+    JSON.stringify(parsedFractions) === JSON.stringify([0.99, 0.48, 0.33, 0.45, 0.98]),
+    parsedFractions,
+    [0.99, 0.48, 0.33, 0.45, 0.98]
   );
 
   const passed = results.filter(r => r.passed).length;

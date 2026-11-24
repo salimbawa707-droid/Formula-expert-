@@ -390,7 +390,7 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
   // --------------------------------------------------------------------------
   // TEST GROUP 9: Model Resolution & Trust Proxy Setting
   // --------------------------------------------------------------------------
-  assert('Model 1: Defaults to documented default gemini-3.8-flash', resolveGeminiModel(undefined) === 'gemini-3.8-flash', resolveGeminiModel(undefined), 'gemini-3.8-flash');
+  assert('Model 1: Defaults to documented default gemini-4-hydrogen', resolveGeminiModel(undefined) === 'gemini-4-hydrogen', resolveGeminiModel(undefined), 'gemini-4-hydrogen');
   assert('Model 2: Accepts custom configured model string', resolveGeminiModel('gemini-3.1-flash-lite') === 'gemini-3.1-flash-lite', resolveGeminiModel('gemini-3.1-flash-lite'), 'gemini-3.1-flash-lite');
   assert('Proxy 1: Defaults to 1 for reverse proxy environments', resolveTrustProxy(undefined) === 1, resolveTrustProxy(undefined), 1);
   assert('Proxy 2: Parses string "true" as 1', resolveTrustProxy('true') === 1, resolveTrustProxy('true'), 1);

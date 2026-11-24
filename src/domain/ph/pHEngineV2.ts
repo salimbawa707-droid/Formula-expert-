@@ -133,6 +133,7 @@ export class PHEngineV2 {
     // compositions containing unrecognized mass that could alter the pH.
     const hasPHActiveSpecies = composition.ingredients.some(item =>
       item.resolvedSpecies !== null &&
+      !item.assayUnknown &&
       item.moles > 0 &&
       item.resolvedSpecies.pHEffect !== 'neutral'
     );
@@ -140,17 +141,33 @@ export class PHEngineV2 {
       composition.ingredients.every(item => item.resolvedSpecies?.isSolventWater === true) &&
       composition.unrecognizedCount === 0;
     const hasUnrecognizedIngredients = composition.unrecognizedCount > 0;
+    const unknownAssayNames = composition.unknownAssayIngredients ?? [];
+    const hasUnknownAssayIngredients = unknownAssayNames.length > 0;
     // Pure water is a supported special case through water autoionization (Kw).
     // Other neutral/inert mixtures are not assigned pH 7 merely because the
-    // acid/base model has no recognized contributor.
-    const hasAdequatePHChemistry = (hasPHActiveSpecies || isPureWaterComposition) && !hasUnrecognizedIngredients;
+    // acid/base model has no recognized contributor. Commercial reagents with
+    // unstated active assays also withhold equilibrium pH instead of assuming 100%.
+    const hasAdequatePHChemistry =
+      (hasPHActiveSpecies || isPureWaterComposition) &&
+      !hasUnrecognizedIngredients &&
+      !hasUnknownAssayIngredients;
 
-    // 2. Numerical equilibrium solver
-    const solverRes = NumericalEquilibriumSolver.solve(composition, temperatureC, {
-      tolerance: options.tolerance ?? 1e-8,
-      maxIterations: options.maxIterations ?? 60,
-      initialGuess: (typeof options.targetPH === 'number' && Number.isFinite(options.targetPH)) ? options.targetPH : undefined
-    });
+    // 2. Numerical equilibrium solver (skip if required chemical assay inputs are missing)
+    const solverRes = hasUnknownAssayIngredients
+      ? {
+          pH: Number.NaN,
+          status: 'INSUFFICIENT_DATA' as const,
+          converged: false,
+          iterations: 0,
+          residual: Number.NaN,
+          stepSize: 0,
+          method: 'Safeguarded Newton-Raphson with Bracketed Bisection Fallback'
+        }
+      : NumericalEquilibriumSolver.solve(composition, temperatureC, {
+          tolerance: options.tolerance ?? 1e-8,
+          maxIterations: options.maxIterations ?? 60,
+          initialGuess: (typeof options.targetPH === 'number' && Number.isFinite(options.targetPH)) ? options.targetPH : undefined
+        });
 
     const isConverged = hasAdequatePHChemistry &&
       solverRes.converged === true &&
@@ -180,7 +197,7 @@ export class PHEngineV2 {
     }
 
     // 6. Excess stoichiometric acid/base equivalents (theoretical titratable capacity in eq)
-    // Stoichiometric capacity is independent of solver convergence.
+    // Stoichiometric capacity is independent of solver convergence, but guards against NaN moles when assays are unknown.
     let totalAcidEquivalents = 0;
     let totalBaseEquivalents = 0;
     let totalStrongAcidEquivalents = 0;
@@ -188,7 +205,7 @@ export class PHEngineV2 {
     const recognizedContributors: string[] = [];
 
     for (const item of composition.ingredients) {
-      if (item.resolvedSpecies && item.moles > 0) {
+      if (item.resolvedSpecies && !item.assayUnknown && Number.isFinite(item.moles) && item.moles > 0) {
         recognizedContributors.push(item.resolvedSpecies.speciesId);
         const eq = item.resolvedSpecies.eqPerMole ?? 1;
         const family = item.resolvedSpecies.family;
@@ -238,7 +255,8 @@ export class PHEngineV2 {
             modelValidity: 'OUT_OF_RANGE' as const,
             assumptions: [],
             warnings: [
-              ...(!hasPHActiveSpecies ? ['PH_ACTIVE_SPECIES_UNAVAILABLE: No recognized acid/base/buffer contributor is present; neutral pH is not inferred.'] : []),
+              ...(hasUnknownAssayIngredients ? [`PH_ASSAY_UNAVAILABLE: Commercial active assay is missing or ambiguous for ${unknownAssayNames.join(', ')}; pH is withheld rather than assuming 100% purity.`] : []),
+              ...(!hasPHActiveSpecies && !hasUnknownAssayIngredients ? ['PH_ACTIVE_SPECIES_UNAVAILABLE: No recognized acid/base/buffer contributor is present; neutral pH is not inferred.'] : []),
               ...(hasUnrecognizedIngredients ? ['PH_UNRECOGNIZED_INGREDIENTS_PRESENT: Unrecognized formulation mass may alter pH; the equilibrium result is withheld.'] : []),
               ...(hasAdequatePHChemistry && !solverRes.converged ? ['PH_SOLVER_NOT_CONVERGED: Confidence and equilibrium-dependent diagnostics are unavailable.'] : [])
             ]

@@ -42,6 +42,7 @@ import { calculateLabHealthScore } from '../labHealthEngine';
 import { analyzeClimateAndHardWater } from '../climateEngine';
 import { findSubstitutionsForFormula } from '../substitutionEngine';
 import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../specificationEngine';
+import { modelManufacturingProcess } from '../manufacturing/processModelingEngine';
 import { validateActiveMatterInput } from '../activeMatterInputGuard';
 import { validatePHInput } from '../phInputGuard';
 import { isEngineApplicable } from '../../domain/scientificProductProfiles';
@@ -1081,20 +1082,44 @@ export class ScientificExecutionDAG {
       disposition: 'CONDITIONAL_NODE',
       dependencies: ['IDENTITY_RESOLUTION', 'CATEGORY_ROUTING', 'DENSITY'],
       execute: (state) => {
-        const isPowder = state.physicalForm === 'POWDER';
         const mScaleFactor = state.batchSizeKg / 10.0;
-        const defaultLiquidSteps = [
-          { stepNumber: 1, stepName: 'Water Charging', instruction: 'Charge calculated deionized water into main mixing vessel.', plannedTempC: 25, plannedDurationMin: 15, plannedMixRpm: 100, provenance: 'ENGINEERING_DEFAULT', completed: false },
-          { stepNumber: 2, stepName: 'Surfactant Addition', instruction: 'Slowly add surfactant raw materials under moderate agitation.', plannedTempC: 25, plannedDurationMin: 30, plannedMixRpm: 250, provenance: 'ENGINEERING_DEFAULT', completed: false },
-          { stepNumber: 3, stepName: 'Builder & Additives', instruction: 'Incorporate builders, chelators, and functional additives.', plannedTempC: 30, plannedDurationMin: 20, plannedMixRpm: 250, provenance: 'ENGINEERING_DEFAULT', completed: false },
-          { stepNumber: 4, stepName: 'Final Adjustment & QC', instruction: 'Adjust pH, viscosity, and fragrance. Sample for in-process QC.', plannedTempC: 25, plannedDurationMin: 15, plannedMixRpm: 150, provenance: 'ENGINEERING_DEFAULT', completed: false }
-        ];
-        const defaultPowderSteps = [
-          { stepNumber: 1, stepName: 'Solid Carrier Charging', instruction: 'Charge sodium sulfate or carbonate carrier into dry ribbon blender.', plannedTempC: 25, plannedDurationMin: 10, plannedMixRpm: 40, provenance: 'ENGINEERING_DEFAULT', completed: false },
-          { stepNumber: 2, stepName: 'Active Surfactant Spraying', instruction: 'Spray liquid active matter (e.g. LABSA, Nonionics) onto solid bed with high-shear chopper active.', plannedTempC: 35, plannedDurationMin: 20, plannedMixRpm: 60, provenance: 'ENGINEERING_DEFAULT', completed: false },
-          { stepNumber: 3, stepName: 'Post-Addition & Bleaching', instruction: 'Incorporate post-additives (enzymes, bleach activators, perfume granules) under low shear.', plannedTempC: 25, plannedDurationMin: 10, plannedMixRpm: 30, provenance: 'ENGINEERING_DEFAULT', completed: false },
-          { stepNumber: 4, stepName: 'Discharge & Packing', instruction: 'Discharge uniform dry powder for packing. Test moisture and bulk density.', plannedTempC: 25, plannedDurationMin: 10, plannedMixRpm: 20, provenance: 'ENGINEERING_DEFAULT', completed: false }
-        ];
+        if (state.physicalForm === 'UNKNOWN') {
+          state.manufacturingResult = {
+            referenceBatchSizeKg: 10.0,
+            plannedBatchSizeKg: state.batchSizeKg,
+            scaleFactor: mScaleFactor,
+            plannedVolumeLiters: undefined,
+            processLossKg: Number((state.batchSizeKg * 0.01).toFixed(3)),
+            processLossPercent: 1.0,
+            processSteps: [],
+            shearRequirement: undefined
+          };
+          state.manufacturingStatus = 'INSUFFICIENT_DATA';
+          return;
+        }
+
+        const modeledProc = modelManufacturingProcess(
+          state.resolvedIngredients,
+          state.canonicalCategory,
+          state.batchSizeKg
+        );
+        const mappedSteps = modeledProc.processSteps.map((step) => ({
+          stepNumber: step.stepNumber,
+          stepName: step.phaseName,
+          phaseName: step.phaseName,
+          instruction: `${step.additionMethod.replace(/_/g, ' ')}: ${step.targetIngredients.length > 0 ? step.targetIngredients.join(', ') : 'Process batch phase'} (${step.targetTemperatureC.min}-${step.targetTemperatureC.max}°C, ${step.mixingDurationMinutes} min)`,
+          targetIngredients: step.targetIngredients,
+          additionMethod: step.additionMethod,
+          targetTemperatureC: step.targetTemperatureC,
+          recommendedAgitation: step.recommendedAgitation,
+          plannedTempC: step.targetTemperatureC.max,
+          plannedDurationMin: step.mixingDurationMinutes,
+          criticalQualityControls: step.criticalQualityControls,
+          safetyPrecautions: step.safetyPrecautions || [],
+          provenance: modeledProc.status,
+          completed: false
+        }));
+        const hasHighShear = modeledProc.processSteps.some(s => s.recommendedAgitation === 'HIGH_SHEAR_HOMOGENIZER');
 
         state.manufacturingResult = {
           referenceBatchSizeKg: 10.0,
@@ -1103,9 +1128,14 @@ export class ScientificExecutionDAG {
           plannedVolumeLiters: state.densityGPerCm3 > 0 ? Number((state.batchSizeKg / state.densityGPerCm3).toFixed(3)) : undefined,
           processLossKg: Number((state.batchSizeKg * 0.01).toFixed(3)),
           processLossPercent: 1.0,
-          processSteps: state.physicalForm === 'UNKNOWN' ? [] : (isPowder ? defaultPowderSteps : defaultLiquidSteps)
+          processSteps: mappedSteps,
+          modeledProcess: modeledProc,
+          thermalWarnings: modeledProc.thermalWarnings,
+          shearWarnings: modeledProc.shearWarnings,
+          provenanceNote: modeledProc.provenanceNote,
+          shearRequirement: hasHighShear ? 'HIGH_SHEAR' : 'MEDIUM_SHEAR'
         };
-        state.manufacturingStatus = state.physicalForm === 'UNKNOWN' ? 'INSUFFICIENT_DATA' : 'ESTIMATED';
+        state.manufacturingStatus = 'ESTIMATED';
       }
     });
 

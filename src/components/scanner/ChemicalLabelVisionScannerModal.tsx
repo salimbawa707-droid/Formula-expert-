@@ -554,7 +554,7 @@ export const ChemicalLabelVisionScannerModal: React.FC<ChemicalLabelVisionScanne
         <div className="px-5 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between">
           <div className="text-xs text-slate-400 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-teal-400"></span>
-            <span>Multimodal Vision model gemini-3.8-flash active on secure proxy</span>
+            <span>Multimodal Vision model gemini-4-hydrogen active on secure proxy</span>
           </div>
           <button
             onClick={onClose}

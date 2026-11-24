@@ -8,8 +8,10 @@ import {
   authenticateUserMiddleware,
   requireAdminMiddleware,
   CANONICAL_PACKAGE_NAME,
+  isApiKeyConfigured,
   payloadSizeValidator,
   rateLimitMiddleware,
+  resolveGeminiModel,
   securityHeadersMiddleware,
   verifyGooglePlayPurchase,
 } from './src/services/serverSecurity.ts';
@@ -54,12 +56,35 @@ const ai = new Proxy({} as GoogleGenAI, {
   }
 });
 
+async function callWithTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: any;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function buildGeminiConfig(model: string, config: Record<string, any>): Record<string, any> {
+  const sanitized = { ...config };
+  if (model.startsWith('gemini-4')) {
+    delete sanitized.temperature;
+    delete sanitized.topP;
+    delete sanitized.topK;
+    delete sanitized.candidateCount;
+  }
+  return sanitized;
+}
+
 // API Health Check
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    geminiConfigured: isApiKeyConfigured(process.env.GEMINI_API_KEY),
     service: 'Formula Expert Forensic R&D Backend'
   });
 });
@@ -129,20 +154,32 @@ Support questions in English, Hindi, and Hinglish. Always maintain safety precau
       parts: [{ text: `${message}${contextSnippet}` }]
     });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents,
-      config: {
-        systemInstruction,
-        temperature: 0.2,
-      }
-    });
+    if (!isApiKeyConfigured(process.env.GEMINI_API_KEY)) {
+      return res.status(503).json({
+        error: 'Gemini API key is not configured on the server.',
+        details: 'Configure a valid GEMINI_API_KEY in the server environment to enable AI chat.'
+      });
+    }
+
+    const activeModel = resolveGeminiModel();
+    const response = await callWithTimeout(
+      ai.models.generateContent({
+        model: activeModel,
+        contents,
+        config: buildGeminiConfig(activeModel, {
+          systemInstruction,
+          temperature: 0.2,
+        })
+      }),
+      45_000,
+      'Gemini AI chat'
+    );
 
     const reply = response.text || 'Chemical reasoning engine generated empty response.';
 
     return res.json({
       reply,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: activeModel,
       tier: 'gemini-server-side',
       timestamp: Date.now()
     });
@@ -187,23 +224,40 @@ app.post(
           ? item.costPerKg : null
       }));
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: [{
-          role: 'user',
-          parts: [{
-            text: `Review this detergent formulation and return ONLY valid JSON in the schema {"recommendations":[{"type":"string","recommendation":"string","trigger":"string","suggestedIngredient":"string"}]}. Return 1-5 conservative suggestions, or an empty array if evidence is insufficient. Do not invent prices, measured performance, certification eligibility, safety approval, or guaranteed environmental claims. Mark suggestions as hypotheses that require compatibility review and lab testing. Do not recommend unsafe mixing steps.\n\nFormula: ${safeFormulaName}\nProduct type: ${safeProductType}\nGrade: ${safeGrade}\nIngredients: ${JSON.stringify(ingredientSummary)}`
-          }]
-        }],
-        config: { temperature: 0.2 }
-      });
+      if (!isApiKeyConfigured(process.env.GEMINI_API_KEY)) {
+        return res.status(503).json({
+          success: false,
+          error: 'Gemini API key is not configured on the server.'
+        });
+      }
+
+      const activeModel = resolveGeminiModel();
+      const response = await callWithTimeout(
+        ai.models.generateContent({
+          model: activeModel,
+          contents: [{
+            role: 'user',
+            parts: [{
+              text: `Review this detergent formulation and return ONLY valid JSON in the schema {"recommendations":[{"type":"string","recommendation":"string","trigger":"string","suggestedIngredient":"string"}]}. Return 1-5 conservative suggestions, or an empty array if evidence is insufficient. Do not invent prices, measured performance, certification eligibility, safety approval, or guaranteed environmental claims. Mark suggestions as hypotheses that require compatibility review and lab testing. Do not recommend unsafe mixing steps.\n\nFormula: ${safeFormulaName}\nProduct type: ${safeProductType}\nGrade: ${safeGrade}\nIngredients: ${JSON.stringify(ingredientSummary)}`
+            }]
+          }],
+          config: buildGeminiConfig(activeModel, { temperature: 0.2 })
+        }),
+        45_000,
+        'Gemini formula recommendation'
+      );
 
       const raw = response.text || '';
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return res.status(502).json({ success: false, error: 'The recommendation service returned an invalid response.' });
       }
-      const parsed = JSON.parse(jsonMatch[0]);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch {
+        return res.status(502).json({ success: false, error: 'The recommendation service returned invalid JSON.' });
+      }
       if (!Array.isArray(parsed.recommendations) || parsed.recommendations.length > 5) {
         return res.status(502).json({ success: false, error: 'The recommendation service returned an invalid response.' });
       }
@@ -281,48 +335,72 @@ Extract all relevant formulation specifications with 100% industrial accuracy in
 
 Output ONLY valid raw JSON with no Markdown code block ticks, no extra conversational preamble or closing notes.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: cleanBase64,
-              }
-            },
-            {
-              text: visionPrompt
-            }
-          ]
-        }
-      ],
-      config: {
-        temperature: 0.1,
-      }
-    });
+    if (!isApiKeyConfigured(process.env.GEMINI_API_KEY)) {
+      return res.status(503).json({
+        success: false,
+        error: 'Gemini API key is not configured on the server.'
+      });
+    }
 
-    const rawText = response.text || '{}';
-    // Clean potential markdown ticks
+    const activeModel = resolveGeminiModel();
+    const response = await callWithTimeout(
+      ai.models.generateContent({
+        model: activeModel,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: cleanBase64,
+                }
+              },
+              {
+                text: visionPrompt
+              }
+            ]
+          }
+        ],
+        config: buildGeminiConfig(activeModel, {
+          temperature: 0.1,
+        })
+      }),
+      45_000,
+      'Gemini label vision analysis'
+    );
+
+    const rawText = response.text || '';
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    let parsedData: any = {};
-    if (jsonMatch) {
-      try {
-        parsedData = JSON.parse(jsonMatch[0]);
-      } catch (e) {
-        console.warn('Failed to parse regex-extracted JSON, falling back to full text parse:', e);
+    let parsedData: any = null;
+    try {
+      if (jsonMatch) {
+        try {
+          parsedData = JSON.parse(jsonMatch[0]);
+        } catch {
+          parsedData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+        }
+      } else {
         parsedData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
       }
-    } else {
-      parsedData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    } catch {
+      return res.status(502).json({
+        success: false,
+        error: 'Vision model returned an unparseable response.'
+      });
+    }
+
+    if (!parsedData || typeof parsedData !== 'object' || Array.isArray(parsedData)) {
+      return res.status(502).json({
+        success: false,
+        error: 'Vision model response did not match the expected JSON object schema.'
+      });
     }
 
     return res.json({
       success: true,
       data: parsedData,
-      modelUsed: 'gemini-3.8-flash',
+      modelUsed: activeModel,
       fileName: typeof fileName === 'string' ? path.basename(fileName).replace(/[\r\n]/g, '').slice(0, 200) : 'label_scan.jpg',
       extractedAt: new Date().toISOString()
     });
@@ -356,8 +434,11 @@ app.post(
       return res.status(400).json({ error: 'Ingredient name, grade, or jurisdiction exceeds the allowed length.' });
     }
 
-    const cleanName = nameOrAlias.trim();
-    const cleanGrade = (typeof grade === 'string') ? grade.trim() : '';
+    const cleanName = nameOrAlias.replace(/[\r\n\t]+/g, ' ').trim();
+    const cleanGrade = (typeof grade === 'string') ? grade.replace(/[\r\n\t]+/g, ' ').trim() : '';
+    const cleanJurisdiction = (typeof jurisdiction === 'string' && jurisdiction.trim())
+      ? jurisdiction.replace(/[\r\n\t]+/g, ' ').trim()
+      : 'Global';
 
     // Server-side database-first guard: never invoke Gemini for a canonical
     // ingredient or an explicitly declared alias already in the master library.
@@ -375,7 +456,7 @@ app.post(
       });
     }
 
-    if (!process.env.GEMINI_API_KEY?.trim()) {
+    if (!isApiKeyConfigured(process.env.GEMINI_API_KEY)) {
       return res.status(503).json({
         success: false,
         status: 'GEMINI_NOT_CONFIGURED',
@@ -392,7 +473,7 @@ Find authentic Technical Data Sheets (TDS), Safety Data Sheets (SDS), manufactur
 Extract precise formulation parameters without hallucinations or guesses. If a parameter is not stated or unknown, report it as null.`;
 
     const researchPrompt = `Conduct exhaustive technical research on raw material: "${cleanName}"${cleanGrade ? ` (Grade: "${cleanGrade}")` : ''}.
-Jurisdiction focus: ${jurisdiction || 'Global'}.
+Jurisdiction focus: ${cleanJurisdiction}.
 
 Extract these industrial formulation specifications:
 1. Canonical chemical name & Trade/commercial name
@@ -449,20 +530,8 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
 
     let responseText = '';
     let groundingChunks: any[] = [];
-
-    const callWithTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
-      let timer: any;
-      const timeoutPromise = new Promise<T>((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
-      });
-      try {
-        return await Promise.race([promise, timeoutPromise]);
-      } finally {
-        clearTimeout(timer);
-      }
-    };
-
-    let researchModelUsed = 'gemini-3.8-flash';
+    let researchModelUsed = resolveGeminiModel(process.env.GEMINI_RESEARCH_MODEL);
+    const fallbackResearchModel = 'gemini-3.1-flash-lite';
 
     // Primary live research model with Google Search grounding.
     try {
@@ -470,14 +539,14 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
         ai.models.generateContent({
           model: researchModelUsed,
           contents: [{ role: 'user', parts: [{ text: researchPrompt }] }],
-          config: {
+          config: buildGeminiConfig(researchModelUsed, {
             systemInstruction,
             temperature: 0.1,
             tools: [{ googleSearch: {} }]
-          }
+          })
         }),
         45000,
-        'Gemini 3.8 Flash Google Search'
+        `${researchModelUsed} Google Search`
       );
       responseText = response.text || '';
       groundingChunks = (response.candidates?.[0] as any)?.groundingMetadata?.groundingChunks || [];
@@ -487,43 +556,41 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
       const quotaOrBilling = status === 429 ||
         /RESOURCE_EXHAUSTED|quota|billing|free.?tier|grounding.*not available|rate.?limit|PERMISSION_DENIED|not enabled/i.test(errorText);
       const timedOut = /timed out|timeout/i.test(errorText);
-      console.error('[Research] Gemini 3.8 Google Search grounding failed:', errorText);
+      console.error(`[Research] ${researchModelUsed} Google Search grounding failed:`, errorText);
 
-      // Gemini 2.5 Flash still lists free Search-grounding quota for eligible
-      // existing API projects. Newer projects may no longer have 2.5 model
-      // access, so this is a bounded, evidence-only compatibility fallback.
-      // It never falls back to ungrounded text generation.
-      if (quotaOrBilling) {
+      // Bounded, evidence-only fallback to gemini-3.1-flash-lite with Search grounding.
+      // Never falls back to ungrounded text generation.
+      if (quotaOrBilling && researchModelUsed !== fallbackResearchModel) {
         try {
           const fallbackResponse = await callWithTimeout(
             ai.models.generateContent({
-              model: 'gemini-2.5-flash',
+              model: fallbackResearchModel,
               contents: [{ role: 'user', parts: [{ text: researchPrompt }] }],
-              config: {
+              config: buildGeminiConfig(fallbackResearchModel, {
                 systemInstruction,
                 temperature: 0.1,
                 tools: [{ googleSearch: {} }]
-              }
+              })
             }),
             45000,
-            'Gemini 2.5 Flash Google Search fallback'
+            `${fallbackResearchModel} Google Search fallback`
           );
           const fallbackChunks = (fallbackResponse.candidates?.[0] as any)?.groundingMetadata?.groundingChunks || [];
           if (!Array.isArray(fallbackChunks) || fallbackChunks.length === 0) {
-            throw new Error('Gemini 2.5 Flash returned no Google Search grounding references.');
+            throw new Error(`${fallbackResearchModel} returned no Google Search grounding references.`);
           }
-          researchModelUsed = 'gemini-2.5-flash';
+          researchModelUsed = fallbackResearchModel;
           responseText = fallbackResponse.text || '';
           groundingChunks = fallbackChunks;
         } catch (fallbackErr: any) {
-          console.error('[Research] Gemini 2.5 Search fallback failed:', fallbackErr?.message || fallbackErr);
+          console.error(`[Research] ${fallbackResearchModel} Search fallback failed:`, fallbackErr?.message || fallbackErr);
           return res.status(429).json({
             success: false,
             status: 'SEARCH_GROUNDING_QUOTA_OR_BILLING',
             code: 'GOOGLE_SEARCH_GROUNDING_UNAVAILABLE',
             requiresUserApproval: true,
-            error: 'Gemini internet research is blocked for this API project. Enable billing/Search grounding for Gemini 3.8 Flash, or confirm that this existing project still has Gemini 2.5 Flash Search access.',
-            details: 'Both attempts required real Google Search grounding. No direct-only Gemini answer, fabricated citation, or guessed chemical property was accepted.'
+            error: 'Gemini internet research is blocked for this API project due to Search grounding quota/permissions.',
+            details: 'Both search-grounded attempts required real Google Search grounding. No direct-only Gemini answer, fabricated citation, or guessed chemical property was accepted.'
           });
         }
       } else {
@@ -547,7 +614,9 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
         try {
           parsed = JSON.parse(jsonMatch[0]);
         } catch {
-          parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+          try {
+            parsed = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+          } catch {}
         }
       } else {
         try {
@@ -559,7 +628,8 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
     // No heuristic fallback is allowed here. Unknown ingredients must be
     // supported by actual Google Search grounding; AI-only guesses are not
     // chemical specifications and must never be promoted into the database.
-    if (!responseText || !parsed || !parsed.canonicalName || !parsed.parameters ||
+    if (!responseText || !parsed || !parsed.canonicalName ||
+      !parsed.parameters || typeof parsed.parameters !== 'object' || Array.isArray(parsed.parameters) ||
       !Array.isArray(groundingChunks) || groundingChunks.length === 0) {
       return res.status(422).json({
         success: false,
@@ -629,24 +699,6 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
       }
     };
 
-    // Incorporate grounding metadata if present
-    if (Array.isArray(groundingChunks) && groundingChunks.length > 0 && (!parsed.sources || parsed.sources.length === 0)) {
-      parsed.sources = groundingChunks.map((chunk: any, idx: number) => {
-        let host = 'Web Search';
-        try {
-          if (chunk.web?.uri) host = new URL(chunk.web.uri).hostname;
-        } catch {}
-        return {
-          sourceId: `web-grounding-${idx + 1}`,
-          title: chunk.web?.title || 'Web Search Grounded Source',
-          publisher: host,
-          url: chunk.web?.uri || null,
-          domain: host,
-          sourceType: 'TECHNICAL_REFERENCE'
-        };
-      });
-    }
-
     return res.json(parsed);
   } catch (err: any) {
     console.error('[API /api/ai/research-ingredient] Error:', err);
@@ -693,24 +745,27 @@ app.post(
     const densityInput = parameters?.density;
     const phInput = parameters?.pH;
     const hlbInput = parameters?.hlb;
-    if (activeInput !== undefined && (typeof activeInput !== 'number' || !Number.isFinite(activeInput) || activeInput < 0 || activeInput > 100)) {
+    if (activeInput !== undefined && activeInput !== null && (typeof activeInput !== 'number' || !Number.isFinite(activeInput) || activeInput < 0 || activeInput > 100)) {
       return res.status(400).json({ error: 'activeMatter must be a number between 0 and 100.' });
     }
-    if (densityInput !== undefined && (typeof densityInput !== 'number' || !Number.isFinite(densityInput) || densityInput <= 0 || densityInput > 30)) {
+    if (densityInput !== undefined && densityInput !== null && (typeof densityInput !== 'number' || !Number.isFinite(densityInput) || densityInput <= 0 || densityInput > 30)) {
       return res.status(400).json({ error: 'density must be a finite number greater than 0 and at most 30.' });
     }
-    if (phInput !== undefined && (typeof phInput !== 'number' || !Number.isFinite(phInput) || phInput < 0 || phInput > 14)) {
+    if (phInput !== undefined && phInput !== null && (typeof phInput !== 'number' || !Number.isFinite(phInput) || phInput < 0 || phInput > 14)) {
       return res.status(400).json({ error: 'pH must be a number between 0 and 14.' });
     }
-    if (hlbInput !== undefined && (typeof hlbInput !== 'number' || !Number.isFinite(hlbInput) || hlbInput < 0 || hlbInput > 40)) {
+    if (hlbInput !== undefined && hlbInput !== null && (typeof hlbInput !== 'number' || !Number.isFinite(hlbInput) || hlbInput < 0 || hlbInput > 40)) {
       return res.status(400).json({ error: 'HLB must be a number between 0 and 40.' });
     }
 
-    const detectedActive = typeof activeInput === 'number' ? activeInput : 0;
-    const detectedDensity = typeof densityInput === 'number' ? densityInput : 1.0;
-    const detectedPhMin = typeof phInput === 'number' ? phInput : 7.0;
+    // Preserve missing measurements as null rather than substituting 0%, 1.0 g/mL, or pH 7.0.
+    const detectedActive = typeof activeInput === 'number' ? activeInput : null;
+    const detectedDensity = typeof densityInput === 'number' ? densityInput : null;
+    const detectedPhMin = typeof phInput === 'number' ? phInput : null;
     const phRangeEnd = typeof parameters?.pHRange === 'string' ? Number(parameters.pHRange.split('-')[1]) : NaN;
-    const detectedPhMax = Number.isFinite(phRangeEnd) && phRangeEnd >= detectedPhMin && phRangeEnd <= 14 ? phRangeEnd : detectedPhMin;
+    const detectedPhMax = detectedPhMin !== null
+      ? (Number.isFinite(phRangeEnd) && phRangeEnd >= detectedPhMin && phRangeEnd <= 14 ? phRangeEnd : detectedPhMin)
+      : null;
     const detectedHlb = typeof hlbInput === 'number' ? hlbInput : null;
 
     const updatedIngredient = {
@@ -731,7 +786,7 @@ app.post(
       hlbValue: detectedHlb,
       phMin: detectedPhMin,
       phMax: detectedPhMax,
-      description: `Researched technical raw material: ${name} (Active: ${detectedActive}%)`,
+      description: `Researched technical raw material: ${name} (Active: ${detectedActive !== null ? `${detectedActive}%` : 'Unverified'})`,
       isCustom: true,
       provenance: {
         sourceType: 'AI_RESEARCH_PENDING_REVIEW',
@@ -854,17 +909,17 @@ app.get(
   authenticateUserMiddleware,
   requireAdminMiddleware,
   rateLimitMiddleware({ maxRequests: 30, windowMs: 60_000, endpointName: 'Admin overview' }),
-  (_req: Request, res: Response) => {
+  (req: Request, res: Response) => {
+    const adminUser = (req as any).user;
     res.json({
       status: 'ok',
       service: 'Formula Expert Forensic R&D Backend',
-      authorizedAdmin: (_req as any).user?.email || 'salimbawa707@gmail.com',
-      geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+      authorizedAdmin: adminUser?.email || adminUser?.uid || null,
+      geminiConfigured: isApiKeyConfigured(process.env.GEMINI_API_KEY),
+      geminiModel: resolveGeminiModel(),
       governance: {
-        phase4b: 'OPEN (AI Source Verified 144/144)',
         phase5: 'LOCKED (Awaiting Certified Physical Lab Sign-Off)',
-        testAssertionsPassed: 4805,
-        testModulesPassed: 139
+        truthfulAiPolicy: 'STRICT_NO_FABRICATED_DATA'
       },
       timestamp: new Date().toISOString()
     });

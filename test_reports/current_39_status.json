@@ -1,7 +1,7 @@
 {
   "metadata": {
     "reportType": "CURRENT_FORMULAS_STATUS_AUDIT",
-    "generationTimestamp": "2026-10-31T15:19:20.191Z",
+    "generationTimestamp": "2026-11-24T20:27:55.340Z",
     "formulaSource": "src/data/formulas.ts",
     "taxonomySource": "src/domain/productTaxonomy.ts",
     "scientificEngines": [
@@ -30,8 +30,8 @@
       "CAR_SHAMPOO"
     ],
     "statusDistribution": {
-      "VALID": 34,
-      "LAB_VALIDATION_REQUIRED": 5
+      "INSUFFICIENT_DATA": 31,
+      "INCOMPATIBLE": 8
     }
   },
   "formulas": [
@@ -43,17 +43,23 @@
       "canonicalCategory": "LAUNDRY_LIQUID",
       "profileId": "SPEC_LAUNDRY_LIQUID",
       "massSum": 100,
-      "ph": 8.23,
+      "ph": null,
       "phTarget": "7.5-9.5",
-      "phPass": true,
-      "activePct": 22.08,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "10-25",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 7.5-9.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 10-25%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 2,
@@ -63,17 +69,23 @@
       "canonicalCategory": "LAUNDRY_LIQUID",
       "profileId": "SPEC_LAUNDRY_LIQUID",
       "massSum": 100,
-      "ph": 7.92,
+      "ph": null,
       "phTarget": "7.5-9.5",
-      "phPass": true,
-      "activePct": 13.24,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "10-25",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 7.5-9.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 10-25%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 3,
@@ -83,17 +95,23 @@
       "canonicalCategory": "LAUNDRY_LIQUID",
       "profileId": "SPEC_LAUNDRY_LIQUID",
       "massSum": 100,
-      "ph": 8.86,
+      "ph": null,
       "phTarget": "7.5-9.5",
-      "phPass": true,
-      "activePct": 24.1,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "10-25",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 7.5-9.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 10-25%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 4,
@@ -103,17 +121,23 @@
       "canonicalCategory": "LAUNDRY_POWDER",
       "profileId": "SPEC_LAUNDRY_POWDER",
       "massSum": 100,
-      "ph": 11.48,
+      "ph": null,
       "phTarget": "9.5-11.5",
-      "phPass": true,
-      "activePct": 10.56,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "10-22",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 9.5-11.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 10-22%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 5,
@@ -123,17 +147,23 @@
       "canonicalCategory": "LAUNDRY_POWDER",
       "profileId": "SPEC_LAUNDRY_POWDER",
       "massSum": 100,
-      "ph": 11.18,
+      "ph": null,
       "phTarget": "9.5-11.5",
-      "phPass": true,
-      "activePct": 11.52,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "10-22",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 9.5-11.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 10-22%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 6,
@@ -143,17 +173,23 @@
       "canonicalCategory": "LAUNDRY_POWDER",
       "profileId": "SPEC_LAUNDRY_POWDER",
       "massSum": 100,
-      "ph": 11.04,
+      "ph": null,
       "phTarget": "9.5-11.5",
-      "phPass": true,
-      "activePct": 12.45,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "10-22",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 9.5-11.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 10-22%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 7,
@@ -163,17 +199,23 @@
       "canonicalCategory": "DISHWASH_MANUAL",
       "profileId": "SPEC_DISHWASH_MANUAL",
       "massSum": 100,
-      "ph": 7.45,
+      "ph": null,
       "phTarget": "6-8",
-      "phPass": true,
-      "activePct": 22.16,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "12-28",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6-8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 12-28%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 8,
@@ -183,17 +225,23 @@
       "canonicalCategory": "DISHWASH_MANUAL",
       "profileId": "SPEC_DISHWASH_MANUAL",
       "massSum": 100,
-      "ph": 6.8,
+      "ph": null,
       "phTarget": "6-8",
-      "phPass": true,
-      "activePct": 16.3,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "12-28",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6-8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 12-28%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 9,
@@ -203,17 +251,23 @@
       "canonicalCategory": "DISHWASH_MANUAL",
       "profileId": "SPEC_DISHWASH_MANUAL",
       "massSum": 100,
-      "ph": 6.54,
+      "ph": null,
       "phTarget": "6-8",
-      "phPass": true,
-      "activePct": 14,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "12-28",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6-8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 12-28%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 10,
@@ -223,17 +277,23 @@
       "canonicalCategory": "DISHWASH_AUTOMATIC",
       "profileId": "SPEC_DISHWASH_AUTOMATIC",
       "massSum": 100,
-      "ph": 9.22,
+      "ph": null,
       "phTarget": "8.5-11.5",
-      "phPass": true,
-      "activePct": 5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "2-10",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 8.5-11.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 2-10%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 11,
@@ -243,17 +303,23 @@
       "canonicalCategory": "DISHWASH_AUTOMATIC",
       "profileId": "SPEC_DISHWASH_AUTOMATIC",
       "massSum": 100,
-      "ph": 10.22,
+      "ph": null,
       "phTarget": "8.5-11.5",
-      "phPass": true,
-      "activePct": 5.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "2-10",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 8.5-11.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 2-10%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 12,
@@ -263,19 +329,23 @@
       "canonicalCategory": "DISHWASH_AUTOMATIC",
       "profileId": "DISHWASH_AUTO_RINSE_AID",
       "massSum": 100,
-      "ph": 3.26,
+      "ph": null,
       "phTarget": "2-4",
-      "phPass": true,
-      "activePct": 12,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-20",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "LAB_VALIDATION_REQUIRED",
-      "blockingIssues": [],
-      "majorWarnings": [
-        "Low Predicted Cleaning Performance Index"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
       ],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; LAB_VALIDATION_REQUIRED"
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 2-4) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-20%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 13,
@@ -285,17 +355,24 @@
       "canonicalCategory": "FLOOR_CLEANER",
       "profileId": "SPEC_FLOOR_CLEANER",
       "massSum": 100,
-      "ph": 7,
+      "ph": null,
       "phTarget": "6.5-9.5",
-      "phPass": true,
-      "activePct": 5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "3-8",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Cationic surfactant prohibited for Floor Cleaner"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6.5-9.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 3-8%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 14,
@@ -305,17 +382,23 @@
       "canonicalCategory": "FLOOR_CLEANER",
       "profileId": "SPEC_FLOOR_CLEANER",
       "massSum": 100,
-      "ph": 8.28,
+      "ph": null,
       "phTarget": "6.5-9.5",
-      "phPass": true,
-      "activePct": 4.2,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "3-8",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6.5-9.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 3-8%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 15,
@@ -325,17 +408,23 @@
       "canonicalCategory": "FLOOR_CLEANER",
       "profileId": "SPEC_FLOOR_CLEANER",
       "massSum": 100,
-      "ph": 6.98,
+      "ph": null,
       "phTarget": "6.5-9.5",
-      "phPass": true,
-      "activePct": 5.3,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "3-8",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6.5-9.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 3-8%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 16,
@@ -345,19 +434,23 @@
       "canonicalCategory": "MULTIPURPOSE_CLEANER",
       "profileId": "SPEC_MULTIPURPOSE_CLEANER",
       "massSum": 100,
-      "ph": 9.64,
+      "ph": null,
       "phTarget": "7-10",
-      "phPass": true,
-      "activePct": 5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "4-10",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "LAB_VALIDATION_REQUIRED",
-      "blockingIssues": [],
-      "majorWarnings": [
-        "Low Predicted Cleaning Performance Index"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
       ],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; LAB_VALIDATION_REQUIRED"
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 7-10) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 4-10%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 17,
@@ -367,19 +460,23 @@
       "canonicalCategory": "MULTIPURPOSE_CLEANER",
       "profileId": "SPEC_MULTIPURPOSE_CLEANER",
       "massSum": 100,
-      "ph": 9.03,
+      "ph": null,
       "phTarget": "7-10",
-      "phPass": true,
-      "activePct": 4.7,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "4-10",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "LAB_VALIDATION_REQUIRED",
-      "blockingIssues": [],
-      "majorWarnings": [
-        "Low Predicted Cleaning Performance Index"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
       ],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; LAB_VALIDATION_REQUIRED"
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 7-10) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 4-10%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 18,
@@ -389,19 +486,23 @@
       "canonicalCategory": "MULTIPURPOSE_CLEANER",
       "profileId": "SPEC_MULTIPURPOSE_CLEANER",
       "massSum": 100,
-      "ph": 8.4,
+      "ph": null,
       "phTarget": "7-10",
-      "phPass": true,
-      "activePct": 5.7,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "4-10",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "LAB_VALIDATION_REQUIRED",
-      "blockingIssues": [],
-      "majorWarnings": [
-        "Low Predicted Cleaning Performance Index"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
       ],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; LAB_VALIDATION_REQUIRED"
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 7-10) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 4-10%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 19,
@@ -411,17 +512,23 @@
       "canonicalCategory": "TOILET_CLEANER",
       "profileId": "TOILET_CLEANER_MINERAL_ACID",
       "massSum": 100,
-      "ph": 0.5,
+      "ph": null,
       "phTarget": "0-1.5",
-      "phPass": true,
-      "activePct": 2.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "1-4",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Microbial Spoilage Risk (Unpreserved Aqueous System)"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 0-1.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 1-4%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 20,
@@ -431,17 +538,22 @@
       "canonicalCategory": "TOILET_CLEANER",
       "profileId": "TOILET_CLEANER_ORGANIC_ACID",
       "massSum": 100,
-      "ph": 2.64,
+      "ph": null,
       "phTarget": "1.5-3",
-      "phPass": true,
-      "activePct": 3.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "2-6",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 1.5-3) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 2-6%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 21,
@@ -449,19 +561,27 @@
       "name": "Economy Viscous Acid Toilet Bowl Cleaner",
       "category": "Toilet Cleaner",
       "canonicalCategory": "TOILET_CLEANER",
-      "profileId": "TOILET_CLEANER_MINERAL_ACID",
+      "profileId": "SPEC_TOILET_CLEANER",
       "massSum": 100,
-      "ph": 0.39,
-      "phTarget": "0-1.5",
-      "phPass": true,
-      "activePct": 1.45,
-      "activeTarget": "1-4",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "ph": null,
+      "phTarget": "1-2.5",
+      "phPass": false,
+      "activePct": null,
+      "activeTarget": "2-6",
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Microbial Spoilage Risk (Unpreserved Aqueous System)",
+        "Total Acid-Stable Surfactant Out of Specification"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Active Surfactant Below Category Minimum"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 1-2.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 2-6%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 22,
@@ -471,17 +591,23 @@
       "canonicalCategory": "BATHROOM_CLEANER",
       "profileId": "SPEC_BATHROOM_CLEANER",
       "massSum": 100,
-      "ph": 2.99,
+      "ph": null,
       "phTarget": "2-4",
-      "phPass": true,
-      "activePct": 3.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "3-8",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 2-4) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 3-8%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 23,
@@ -491,17 +617,24 @@
       "canonicalCategory": "BATHROOM_CLEANER",
       "profileId": "SPEC_BATHROOM_CLEANER",
       "massSum": 100,
-      "ph": 2.14,
+      "ph": null,
       "phTarget": "2-4",
-      "phPass": true,
-      "activePct": 3.6,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "3-8",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Microbial Spoilage Risk (Unpreserved Aqueous System)"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 2-4) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 3-8%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 24,
@@ -511,19 +644,24 @@
       "canonicalCategory": "BATHROOM_CLEANER",
       "profileId": "BATHROOM_CLEANER_ACID_FREE_DISINFECTANT",
       "massSum": 100,
-      "ph": 9.85,
+      "ph": null,
       "phTarget": "8-11",
-      "phPass": true,
-      "activePct": 3.6,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "2-6",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "LAB_VALIDATION_REQUIRED",
-      "blockingIssues": [],
-      "majorWarnings": [
-        "Low Predicted Cleaning Performance Index"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Cationic surfactant prohibited for Bathroom Cleaner"
       ],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; LAB_VALIDATION_REQUIRED"
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 8-11) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 2-6%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 25,
@@ -533,17 +671,22 @@
       "canonicalCategory": "GLASS_CLEANER",
       "profileId": "SPEC_GLASS_CLEANER",
       "massSum": 100,
-      "ph": 10.18,
+      "ph": null,
       "phTarget": "8.5-10.5",
-      "phPass": true,
-      "activePct": 0.9,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "0.5-2.5",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 8.5-10.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 0.5-2.5%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 26,
@@ -553,17 +696,22 @@
       "canonicalCategory": "GLASS_CLEANER",
       "profileId": "SPEC_GLASS_CLEANER",
       "massSum": 100,
-      "ph": 9.08,
+      "ph": null,
       "phTarget": "8.5-10.5",
-      "phPass": true,
-      "activePct": 0.8,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "0.5-2.5",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 8.5-10.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 0.5-2.5%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 27,
@@ -573,17 +721,22 @@
       "canonicalCategory": "GLASS_CLEANER",
       "profileId": "SPEC_GLASS_CLEANER",
       "massSum": 100,
-      "ph": 10.18,
+      "ph": null,
       "phTarget": "8.5-10.5",
-      "phPass": true,
-      "activePct": 0.84,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "0.5-2.5",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 8.5-10.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 0.5-2.5%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 28,
@@ -593,17 +746,22 @@
       "canonicalCategory": "FABRIC_SOFTENER",
       "profileId": "SPEC_FABRIC_SOFTENER",
       "massSum": 100,
-      "ph": 2.56,
+      "ph": null,
       "phTarget": "2.5-4.5",
-      "phPass": true,
-      "activePct": 7.2,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "4-15",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 2.5-4.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 4-15%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 29,
@@ -613,17 +771,22 @@
       "canonicalCategory": "FABRIC_SOFTENER",
       "profileId": "SPEC_FABRIC_SOFTENER",
       "massSum": 100,
-      "ph": 2.51,
+      "ph": null,
       "phTarget": "2.5-4.5",
-      "phPass": true,
-      "activePct": 9.9,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "4-15",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 2.5-4.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 4-15%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 30,
@@ -633,17 +796,22 @@
       "canonicalCategory": "FABRIC_SOFTENER",
       "profileId": "SPEC_FABRIC_SOFTENER",
       "massSum": 100,
-      "ph": 2.56,
+      "ph": null,
       "phTarget": "2.5-4.5",
-      "phPass": true,
-      "activePct": 4.95,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "4-15",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 2.5-4.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 4-15%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 31,
@@ -653,17 +821,22 @@
       "canonicalCategory": "HAND_WASH",
       "profileId": "SPEC_HAND_WASH",
       "massSum": 100,
-      "ph": 5.49,
+      "ph": null,
       "phTarget": "5-6.8",
-      "phPass": true,
-      "activePct": 10.2,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-16",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 5-6.8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-16%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 32,
@@ -673,17 +846,22 @@
       "canonicalCategory": "HAND_WASH",
       "profileId": "SPEC_HAND_WASH",
       "massSum": 100,
-      "ph": 5.57,
+      "ph": null,
       "phTarget": "5-6.8",
-      "phPass": true,
-      "activePct": 14.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-16",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 5-6.8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-16%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 33,
@@ -693,17 +871,22 @@
       "canonicalCategory": "HAND_WASH",
       "profileId": "SPEC_HAND_WASH",
       "massSum": 100,
-      "ph": 6.35,
+      "ph": null,
       "phTarget": "5-6.8",
-      "phPass": true,
-      "activePct": 8.7,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-16",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 5-6.8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-16%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 34,
@@ -713,17 +896,24 @@
       "canonicalCategory": "KITCHEN_DEGREASER",
       "profileId": "SPEC_KITCHEN_DEGREASER",
       "massSum": 100,
-      "ph": 13.79,
+      "ph": null,
       "phTarget": "11-13.8",
-      "phPass": true,
-      "activePct": 10,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-18",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Microbial Spoilage Risk (Unpreserved Aqueous System)"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 11-13.8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-18%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 35,
@@ -733,17 +923,24 @@
       "canonicalCategory": "KITCHEN_DEGREASER",
       "profileId": "SPEC_KITCHEN_DEGREASER",
       "massSum": 100,
-      "ph": 13.5,
+      "ph": null,
       "phTarget": "11-13.8",
-      "phPass": true,
-      "activePct": 9.8,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-18",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Microbial Spoilage Risk (Unpreserved Aqueous System)"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 11-13.8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-18%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 36,
@@ -753,17 +950,24 @@
       "canonicalCategory": "KITCHEN_DEGREASER",
       "profileId": "SPEC_KITCHEN_DEGREASER",
       "massSum": 100,
-      "ph": 13.08,
+      "ph": null,
       "phTarget": "11-13.8",
-      "phPass": true,
-      "activePct": 10.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-18",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INCOMPATIBLE",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable",
+        "Microbial Spoilage Risk (Unpreserved Aqueous System)"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 11-13.8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-18%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 37,
@@ -773,17 +977,23 @@
       "canonicalCategory": "CAR_SHAMPOO",
       "profileId": "CAR_SHAMPOO_TOUCHLESS_ALKALINE",
       "massSum": 100,
-      "ph": 10.25,
+      "ph": null,
       "phTarget": "9.5-11.5",
-      "phPass": true,
-      "activePct": 13.5,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-18",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 9.5-11.5) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-18%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 38,
@@ -793,17 +1003,23 @@
       "canonicalCategory": "CAR_SHAMPOO",
       "profileId": "SPEC_CAR_SHAMPOO",
       "massSum": 100,
-      "ph": 7,
+      "ph": null,
       "phTarget": "6.5-8",
-      "phPass": true,
-      "activePct": 12.4,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-18",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6.5-8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-18%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     },
     {
       "index": 39,
@@ -813,17 +1029,23 @@
       "canonicalCategory": "CAR_SHAMPOO",
       "profileId": "SPEC_CAR_SHAMPOO",
       "massSum": 100,
-      "ph": 7.9,
+      "ph": null,
       "phTarget": "6.5-8",
-      "phPass": true,
-      "activePct": 9.88,
+      "phPass": false,
+      "activePct": null,
       "activeTarget": "8-18",
-      "activePass": true,
-      "compatible": true,
-      "qgStatus": "VALID",
-      "blockingIssues": [],
-      "majorWarnings": [],
-      "issuesSummary": "CALCULATED_CHECKS_PASS; NOT_LAB_VALIDATED"
+      "activePass": false,
+      "compatible": false,
+      "qgStatus": "INSUFFICIENT_DATA",
+      "blockingIssues": [
+        "Equilibrium pH Unavailable"
+      ],
+      "majorWarnings": [
+        "Category Targets Are Unverified Engineering Defaults",
+        "Active Matter Inputs Are Not Fully Source-Verified",
+        "Water Hardness Is an Assumed Screening Scenario"
+      ],
+      "issuesSummary": "pH=INSUFFICIENT_DATA (tgt 6.5-8) | Active=INSUFFICIENT_DATA_OR_UNVERIFIED (tgt 8-18%) | Incompat=[pH unavailable; compatibility calculation not evaluated.]; NOT_LAB_VALIDATED"
     }
   ]
 }

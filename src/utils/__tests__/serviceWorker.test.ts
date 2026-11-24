@@ -11,6 +11,9 @@
  * 5. Safe handling of offline and cache-miss states without infinite loops.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+
 export interface TestResult {
   group: string;
   name: string;
@@ -114,6 +117,52 @@ export function runServiceWorkerTestSuite(): { total: number; passed: number; fa
   // Case D: Offline HTML navigation (should return index.html app shell)
   const navResult = evaluateFallback(null, true, mockAppShell);
   assert('SW 3d: Offline document navigation falls back cleanly to index.html app shell', navResult === mockAppShell, true, true);
+
+  // Test 4: Precache assets & manifest icons exist on disk in public/
+  const rootDir = process.cwd();
+  const swPath = path.join(rootDir, 'public', 'sw.js');
+  const manifestPath = path.join(rootDir, 'public', 'manifest.json');
+  const mainTsxPath = path.join(rootDir, 'src', 'main.tsx');
+  if (fs.existsSync(swPath) && fs.existsSync(manifestPath)) {
+    const swSrc = fs.readFileSync(swPath, 'utf8');
+    const manifestJson = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const precacheMatch = swSrc.match(/PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]/);
+    const precacheItems = precacheMatch
+      ? Array.from(precacheMatch[1].matchAll(/'([^']+)'/g)).map(m => m[1])
+      : [];
+    const missingPrecache = precacheItems.filter((assetPath) => {
+      if (assetPath === '/' || assetPath === '/index.html') {
+        return !fs.existsSync(path.join(rootDir, 'index.html'));
+      }
+      return !fs.existsSync(path.join(rootDir, 'public', assetPath.replace(/^\//, '')));
+    });
+    assert(
+      'SW 4: Every asset in PRECACHE_ASSETS exists on disk so cache.addAll() never 404s',
+      precacheItems.length >= 6 && missingPrecache.length === 0,
+      missingPrecache,
+      []
+    );
+
+    const icons: Array<{ src: string }> = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
+    const missingManifestIcons = icons
+      .map(i => i.src)
+      .filter(src => !fs.existsSync(path.join(rootDir, 'public', src.replace(/^\//, ''))));
+    assert(
+      'SW 5: Web App Manifest declares 192 & 512 any/maskable icons that all exist on disk',
+      icons.length >= 4 && missingManifestIcons.length === 0,
+      { count: icons.length, missingManifestIcons },
+      'all manifest icons present'
+    );
+  }
+  if (fs.existsSync(mainTsxPath)) {
+    const mainSrc = fs.readFileSync(mainTsxPath, 'utf8');
+    assert(
+      'SW 6: Service worker registration uses Vite import.meta.env.PROD guard',
+      mainSrc.includes('import.meta.env.PROD') && !mainSrc.includes("process.env.NODE_ENV === 'production'"),
+      true,
+      true
+    );
+  }
 
   return { total: totalTests, passed: passedTests, failed: totalTests - passedTests };
 }

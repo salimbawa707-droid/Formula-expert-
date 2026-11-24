@@ -846,55 +846,61 @@ export function resolveScientificAcidBaseProfile(
   // B. Match against authoritative registry
   let matchedKey: string | null = null;
 
-  // Check if name or grade explicitly contains a specific grade or concentration keyword
-  const hasSpecificGradeInName =
-    nLower.includes('90%') || nLower.includes('90') ||
-    nLower.includes('96%') || nLower.includes('96') ||
-    nLower.includes('98%') || nLower.includes('98') ||
-    nLower.includes('85%') || nLower.includes('85') ||
-    nLower.includes('48%') || nLower.includes('48') ||
-    nLower.includes('50%') || nLower.includes('50') ||
-    nLower.includes('99%') || nLower.includes('99') ||
-    nLower.includes('100%') || nLower.includes('100') ||
-    nLower.includes('pure') || nLower.includes('reference') ||
-    nLower.includes('flake') || nLower.includes('lye') ||
-    nLower.includes('anhydrous') || nLower.includes('dense');
+  // Check if name or grade explicitly contains a specific concentration percentage or pure-chemical qualifier
+  const namePctMatch = nLower.match(/\b(100(?:\.0+)?|\d{1,2}(?:\.\d+)?)\s*%/);
+  const parsedNamePct = namePctMatch ? Number(namePctMatch[1]) : null;
+  const hasPureReferenceQualifier = /\b(pure|reference|anhydrous|dense|glacial)\b/.test(nLower);
+  const hasSpecificGradeInName = parsedNamePct !== null || hasPureReferenceQualifier;
+
+  let customTemplateProfile: ScientificAcidBaseProfile | null = null;
 
   if (nLower.includes('labsa') || nLower.includes('sulfonic acid') || nLower.includes('acid slurry')) {
-    if (nLower.includes('96') || nLower.includes('high purity')) {
+    if (nLower.includes('96%') || /\b96\b/.test(nLower) || nLower.includes('high purity')) {
       matchedKey = 'commercial_labsa_96';
-    } else if (nLower.includes('100') || nLower.includes('pure') || nLower.includes('reference')) {
+    } else if (nLower.includes('100%') || /\b100\b/.test(nLower) || nLower.includes('pure') || nLower.includes('reference')) {
       matchedKey = 'pure_labsa_reference';
     } else {
       matchedKey = 'commercial_labsa_90';
     }
-  } else if (nLower.includes('naoh') || nLower.includes('caustic') || nLower.includes('sodium hydroxide') || nLower.includes('lye')) {
+  } else if (nLower.includes('naoh') || nLower.includes('caustic soda') || nLower.includes('sodium hydroxide') || /\blye\b/.test(nLower) || nLower.includes('caustic')) {
     if (nLower.includes('48')) {
       matchedKey = 'commercial_caustic_lye_48';
     } else if (nLower.includes('50')) {
       matchedKey = 'commercial_caustic_lye_50';
-    } else if (nLower.includes('99') || nLower.includes('flake')) {
+    } else if (nLower.includes('99')) {
       matchedKey = 'commercial_naoh_flakes_99';
-    } else if (nLower.includes('100') || nLower.includes('reference')) {
+    } else if (nLower.includes('100%') || /\b100\b/.test(nLower) || nLower.includes('reference') || /\bpure\b/.test(nLower)) {
       matchedKey = 'pure_naoh_reference';
     } else {
       matchedKey = 'commercial_naoh_flakes_99';
     }
-  } else if (nLower.includes('sulfuric acid') || nLower.includes('h2so4')) {
+  } else if (nLower.includes('sulfuric acid') || nLower.includes('sulphuric acid') || /\bh2so4\b/.test(nLower)) {
     matchedKey = 'sulfuric_acid_98';
-  } else if (nLower.includes('hydrochloric acid') || nLower.includes('hcl')) {
-    matchedKey = 'pure_hcl_reference';
-  } else if (nLower.includes('potassium hydroxide') || nLower.includes('koh')) {
+  } else if (nLower.includes('hydrochloric acid') || /\bhcl\b/.test(nLower)) {
+    if (nLower.includes('100%') || /\b100\b/.test(nLower) || /\b(pure|reference)\b/.test(nLower)) {
+      matchedKey = 'pure_hcl_reference';
+    } else {
+      const refCopy: ScientificAcidBaseProfile = JSON.parse(JSON.stringify(AUTHORITATIVE_ACID_BASE_REGISTRY.pure_hcl_reference));
+      refCopy.identity.ingredientId = 'commercial_hcl_solution';
+      refCopy.identity.chemicalIdentity = 'Hydrochloric Acid Commercial Aqueous Solution';
+      refCopy.identity.commonName = name;
+      refCopy.identity.isPureReferenceChemical = false;
+      refCopy.identity.physicalForm = 'SOLUTION';
+      customTemplateProfile = refCopy;
+    }
+  } else if (nLower.includes('potassium hydroxide') || /\bkoh\b/.test(nLower) || nLower.includes('caustic potash')) {
     matchedKey = 'potassium_hydroxide_85';
   } else if (nLower.includes('citric acid')) {
     matchedKey = 'citric_acid_anhydrous';
-  } else if (nLower.includes('soda ash') || nLower.includes('sodium carbonate')) {
+  } else if (nLower.includes('soda ash') || (nLower.includes('sodium carbonate') && !nLower.includes('bicarbonate'))) {
     matchedKey = 'soda_ash_dense';
-  } else if (nLower.includes('triethanolamine') || nLower.includes('tea')) {
+  } else if (nLower.includes('triethanolamine') || (/\btea\b/.test(nLower) && !/tree|green|black|white|extract|oil|fragrance|leaf|botanical|herbal|essential/.test(nLower))) {
     matchedKey = 'triethanolamine_99';
   }
 
-  const baseProfile: ScientificAcidBaseProfile = matchedKey && AUTHORITATIVE_ACID_BASE_REGISTRY[matchedKey]
+  const baseProfile: ScientificAcidBaseProfile = customTemplateProfile
+    ? customTemplateProfile
+    : matchedKey && AUTHORITATIVE_ACID_BASE_REGISTRY[matchedKey]
     ? JSON.parse(JSON.stringify(AUTHORITATIVE_ACID_BASE_REGISTRY[matchedKey]))
     : {
         identity: {
@@ -955,8 +961,20 @@ export function resolveScientificAcidBaseProfile(
       baseProfile.equivalentBasis.reactiveEquivalentsPerKg = Number(((activeKgPerKg * 1000 / mw) * donorEq).toFixed(5));
       baseProfile.equivalentBasis.basisType = 'COMMERCIAL_ASSAY';
     }
-  } else if (matchedKey && hasSpecificGradeInName) {
+  } else if ((matchedKey || customTemplateProfile) && hasSpecificGradeInName) {
     // Verified match from commercial grade in name
+    if (parsedNamePct !== null && baseProfile.assay.valuePct !== parsedNamePct) {
+      const clampedPct = Math.max(0, Math.min(100, parsedNamePct));
+      baseProfile.assay.valuePct = clampedPct;
+      baseProfile.assay.lowerBoundPct = clampedPct;
+      baseProfile.assay.upperBoundPct = clampedPct;
+      if (baseProfile.equivalentBasis.molecularWeight && baseProfile.equivalentBasis.molecularWeight > 0) {
+        const mw = baseProfile.equivalentBasis.molecularWeight;
+        const donorEq = baseProfile.classification.protonDonorCount ?? baseProfile.classification.protonAcceptorCount ?? 1;
+        baseProfile.equivalentBasis.reactiveEquivalentsPerKg = Number((((clampedPct / 100) * 1000 / mw) * donorEq).toFixed(5));
+        baseProfile.equivalentBasis.basisType = 'COMMERCIAL_ASSAY';
+      }
+    }
     baseProfile.assay.status = 'NAME_PARSED_ESTIMATE';
     baseProfile.assay.sourceType = 'NAME_PARSED_ESTIMATE';
     baseProfile.assay.evidenceLevel = 5;

@@ -17,6 +17,8 @@
  * 3. Fail-closed billing verification without trusting client-side claims or anonymous_client.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   verifyAuthToken,
   authenticateUserMiddleware,
@@ -161,6 +163,50 @@ export async function runAuthAndRouteMatrixTestSuite(): Promise<RouteMatrixTestS
   assert(
     'PlayVerification 2: Status is strictly UNVERIFIED and verification is marked BLOCKED',
     purchaseAttempt.status === 'UNVERIFIED' && Boolean(purchaseAttempt.error?.includes('BLOCKED')),
+    true,
+    true
+  );
+
+  // --------------------------------------------------------------------------
+  // TEST GROUP 6: Client Admin RBAC & Null Preservation Structural Contracts
+  // --------------------------------------------------------------------------
+  const rootDir = process.cwd();
+  const settingsStoreSrc = fs.readFileSync(path.join(rootDir, 'src/stores/useSettingsStore.ts'), 'utf8');
+  const adminDashSrc = fs.readFileSync(path.join(rootDir, 'src/components/AdminDashboard.tsx'), 'utf8');
+  const appTsxSrc = fs.readFileSync(path.join(rootDir, 'src/App.tsx'), 'utf8');
+  const serverTsSrc = fs.readFileSync(path.join(rootDir, 'server.ts'), 'utf8');
+
+  const defaultProfileBlock = settingsStoreSrc.match(/const DEFAULT_PROFILE:\s*UserProfile\s*=\s*\{[\s\S]*?\};/)?.[0] || '';
+  assert(
+    'ClientRBAC 1: DEFAULT_PROFILE is unprivileged guest (isAuthenticated: false, no owner email/role)',
+    defaultProfileBlock.includes('isAuthenticated: false') &&
+      !defaultProfileBlock.includes('salimbawa707@gmail.com') &&
+      !defaultProfileBlock.includes('Super Admin'),
+    defaultProfileBlock,
+    'unprivileged guest default'
+  );
+
+  assert(
+    'ClientRBAC 2: Settings store never auto-migrates guests to salimbawa707_owner',
+    !settingsStoreSrc.includes("Auto-migrate legacy default profile to project owner"),
+    true,
+    true
+  );
+
+  assert(
+    'ClientRBAC 3: App.tsx & AdminDashboard.tsx never grant owner access via (!currentUser) or Activate Owner button',
+    !appTsxSrc.includes('(!currentUser)') &&
+      !adminDashSrc.includes('(!currentUser)') &&
+      !adminDashSrc.includes('Activate Owner Access'),
+    true,
+    true
+  );
+
+  assert(
+    'NullPreservation 1: /api/ai/apply-verified-ingredient preserves null instead of defaulting missing activeMatter/density/pH',
+    !serverTsSrc.includes('parameters.activeMatter ?? 0') &&
+      !serverTsSrc.includes('parameters.density ?? 1.0') &&
+      !serverTsSrc.includes('parameters.pH ?? 7.0'),
     true,
     true
   );

@@ -1090,7 +1090,8 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`Formula Name: ${formulaName || "Custom Sandbox"} | Product: ${productType} | Grade: ${grade}`, 14, 35);
       
       doc.setFontSize(8);
-      doc.text(`Generated: ${new Date().toLocaleString()} | Lab Operator: salimbawa707@gmail.com`, 14, 41);
+      const operatorLabel = profile?.email || profile?.name || 'Guest Chemist';
+      doc.text(`Generated: ${new Date().toLocaleString()} | Lab Operator: ${operatorLabel}`, 14, 41);
 
       doc.setTextColor(50, 50, 50);
       doc.setFontSize(14);

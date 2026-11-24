@@ -2055,7 +2055,7 @@ export default function FormulaExpert({
                 </span>
               ) : (
                 <span className="text-[11px] font-extrabold text-amber-300 bg-amber-950/80 border border-amber-500/50 px-3 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Total: {totals.totalRaw}% (Imbalance: {(100 - totals.totalRaw).toFixed(2)}%)
+                  <AlertTriangle className="w-3.5 h-3.5" /> Total: {Number.isFinite(totals.totalRaw) ? totals.totalRaw : '—'}% (Imbalance: {Number.isFinite(totals.totalRaw) ? (100 - totals.totalRaw).toFixed(2) : '—'}%)
                 </span>
               )}
             </div>

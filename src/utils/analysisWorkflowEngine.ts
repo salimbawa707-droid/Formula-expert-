@@ -1023,12 +1023,14 @@ export async function executeStagedScientificAnalysis(
   const isCostConsistent = (liveCostVal === null && recomputedCostVal === null) ||
     (liveCostVal !== null && recomputedCostVal !== null && Math.abs(liveCostVal - recomputedCostVal) < 0.01);
 
+  const formatPct = (val: number) => (Number.isFinite(val) ? `${val.toFixed(2)}%` : 'Unavailable');
+
   const discrepancies: string[] = [];
   if (!isMassBalanceConsistent) {
-    discrepancies.push(`Mass balance discrepancy: live total is ${liveMassBalancePct.toFixed(2)}%, orchestrator recomputed is ${recomputedMassBalancePct.toFixed(2)}%.`);
+    discrepancies.push(`Mass balance discrepancy: live total is ${formatPct(liveMassBalancePct)}, orchestrator recomputed is ${formatPct(recomputedMassBalancePct)}.`);
   }
   if (!isActiveSurfactantConsistent) {
-    discrepancies.push(`Active surfactant discrepancy: live total is ${liveActiveSurfactantPct.toFixed(2)}%, orchestrator recomputed is ${recomputedActiveSurfactantPct.toFixed(2)}%.`);
+    discrepancies.push(`Active surfactant discrepancy: live total is ${formatPct(liveActiveSurfactantPct)}, orchestrator recomputed is ${formatPct(recomputedActiveSurfactantPct)}.`);
   }
   if (!isCostConsistent) {
     discrepancies.push(`Cost discrepancy: live cost is ${liveCostVal !== null ? `₹${liveCostVal.toFixed(2)}/kg` : 'Unpriced'}, orchestrator recomputed is ${recomputedCostVal !== null ? `₹${recomputedCostVal.toFixed(2)}/kg` : 'Unpriced'}.`);
@@ -1045,21 +1047,25 @@ export async function executeStagedScientificAnalysis(
       dimension: 'Stoichiometric Mass Balance',
       engineOrFunction: 'pHEngineAdapter / MassBalanceSSOT',
       formulaFingerprint: analyzedFingerprint,
-      status: 'CALCULATED',
-      valueDisplay: `${recomputedMassBalancePct.toFixed(2)}% (${isBalanced ? 'Balanced' : 'Imbalanced'})`,
-      confidenceLevel: '100% (Stoichiometric)',
+      status: Number.isFinite(recomputedMassBalancePct) ? 'CALCULATED' : 'INSUFFICIENT_DATA',
+      valueDisplay: Number.isFinite(recomputedMassBalancePct)
+        ? `${recomputedMassBalancePct.toFixed(2)}% (${isBalanced ? 'Balanced' : 'Imbalanced'})`
+        : 'UNAVAILABLE',
+      confidenceLevel: Number.isFinite(recomputedMassBalancePct) ? '100% (Stoichiometric)' : 'UNKNOWN',
       consistencyStatus: isMassBalanceConsistent ? 'CONSISTENT' : 'DISCREPANCY_DETECTED',
-      details: `Live: ${liveMassBalancePct.toFixed(2)}% vs Orchestrator: ${recomputedMassBalancePct.toFixed(2)}%`
+      details: `Live: ${formatPct(liveMassBalancePct)} vs Orchestrator: ${formatPct(recomputedMassBalancePct)}`
     },
     {
       dimension: 'Active Surfactant Loading',
       engineOrFunction: 'ActiveMatterEngine',
       formulaFingerprint: analyzedFingerprint,
-      status: 'CALCULATED',
-      valueDisplay: `${recomputedActiveSurfactantPct.toFixed(2)}% Active Surfactants`,
-      confidenceLevel: '95% (Ingredient Assay Purity)',
+      status: Number.isFinite(recomputedActiveSurfactantPct) ? 'CALCULATED' : 'INSUFFICIENT_DATA',
+      valueDisplay: Number.isFinite(recomputedActiveSurfactantPct)
+        ? `${recomputedActiveSurfactantPct.toFixed(2)}% Active Surfactants`
+        : 'UNAVAILABLE',
+      confidenceLevel: Number.isFinite(recomputedActiveSurfactantPct) ? '95% (Ingredient Assay Purity)' : 'UNKNOWN',
       consistencyStatus: isActiveSurfactantConsistent ? 'CONSISTENT' : 'DISCREPANCY_DETECTED',
-      details: `Live: ${liveActiveSurfactantPct.toFixed(2)}% vs Orchestrator: ${recomputedActiveSurfactantPct.toFixed(2)}%`
+      details: `Live: ${formatPct(liveActiveSurfactantPct)} vs Orchestrator: ${formatPct(recomputedActiveSurfactantPct)}`
     },
     {
       dimension: 'Equilibrium pH',

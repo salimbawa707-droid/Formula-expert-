@@ -18,7 +18,7 @@ createRoot(rootElement).render(
 );
 
 // Register Service Worker for PWA (Home screen install & offline performance)
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.error('ServiceWorker registration error:', err);

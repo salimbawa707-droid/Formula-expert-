@@ -75,7 +75,7 @@ export const GeminiChemistryChatModal: React.FC<GeminiChemistryChatModalProps> =
         role: 'assistant',
         content: `**नमस्ते & Welcome to the Gemini Cleaning Chemistry Expert!** 🧪
 
-Main Google Gemini 3.8 Flash ke high-accuracy chemical intelligence model par based hoon, jisme **Detergent & Cleaning Product Formulation Chemistry** ki specialized r&d training shamil hai:
+Main Google Gemini 4 Hydrogen ke chemical intelligence model par based hoon, jisme **Detergent & Cleaning Product Formulation Chemistry** ki specialized r&d training shamil hai:
 
 - **Surfactant Science:** LABSA, SLES, CAPB, Glucosides (APG), AOS, Amine Oxides, Quats & HLB balancing.
 - **Stoichiometry & pH:** LABSA neutralization with Caustic Soda (NaOH)/TEA, buffering, pKa calculations.
@@ -85,7 +85,7 @@ Main Google Gemini 3.8 Flash ke high-accuracy chemical intelligence model par ba
 
 Aap mujhse English, हिन्दी, ya Hinglish me pooch sakte hain. **Check Formula** se related koi bhi problem ho to yahan direct consult karein!`,
         timestamp: Date.now(),
-        modelUsed: 'gemini-3.8-flash'
+        modelUsed: 'gemini-4-hydrogen'
       }
     ];
   });
@@ -208,7 +208,7 @@ Aap mujhse English, हिन्दी, ya Hinglish me pooch sakte hain. **Check
         role: 'assistant',
         content: data.reply || 'No response returned from chemistry engine.',
         timestamp: Date.now(),
-        modelUsed: data.modelUsed || 'gemini-3.8-flash',
+        modelUsed: data.modelUsed || 'gemini-4-hydrogen',
         tier: data.tier,
         hasFormulaContext: Boolean(contextPayload)
       };

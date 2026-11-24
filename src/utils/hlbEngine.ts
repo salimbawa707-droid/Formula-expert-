@@ -361,7 +361,9 @@ export class HLBEngine {
         : Number(rawPct);
       if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
         limitations.push(`INVALID_OR_MISSING_INGREDIENT_PERCENTAGE: ${ing?.name || 'Unknown'}`);
-        surfactantsWithMissingHLB++;
+        if (this.resolveIngredientHLB(ing).isSurfactant) {
+          surfactantsWithMissingHLB++;
+        }
         continue;
       }
       if (pct === 0) continue;
@@ -489,9 +491,11 @@ export class HLBEngine {
       methodMetadata: overallMethodMeta,
       emulsionRegion: region,
       interpretation,
-      scientificNotes: hasSurfactants
+      scientificNotes: hasSurfactants && Number.isFinite(finalBlendedHLB)
         ? `Blended HLB ${finalBlendedHLB.toFixed(2)} (${overallMethodMeta} scale) calculated from ${contributions.length} surfactant(s) based on active-matter mass fractions.`
-        : 'No surfactant components with valid HLB detected in formulation.',
+        : (hasSurfactants
+          ? 'Blended HLB could not be computed due to missing or invalid surfactant HLB or active-matter inputs.'
+          : 'No surfactant components with valid HLB detected in formulation.'),
       contributions,
       limitations
     };

@@ -361,7 +361,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
 }`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-4-hydrogen',
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
