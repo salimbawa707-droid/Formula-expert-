@@ -214,7 +214,7 @@ export function runP1Phase2ChelationTestSuite() {
 
   // Generic citrate has no hydration/grade identity and must not inherit the dihydrate benchmark.
   const genericCitrate = calculateFormulationChelationCapacity(
-    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0 }],
+    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0, role: 'Chelator' }],
     20
   );
   assert(
@@ -226,7 +226,7 @@ export function runP1Phase2ChelationTestSuite() {
   );
 
   const genericCitrateCapacity = calculateFormulationChelationCapacity(
-    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0 }],
+    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0, role: 'Chelator' }],
     20
   );
   assert(
