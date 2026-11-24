@@ -647,8 +647,8 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                         step="0.1"
                         min="0"
                         max="100"
-                        value={ing.activePercent !== undefined ? ing.activePercent : (ActiveMatterEngine.getDefaultActiveMatter(ing.name) || 0)}
-                        onChange={e => updateIngredient(ingId, 'activePercent', Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                        value={Number.isFinite(ing.activePercent) ? ing.activePercent : (ActiveMatterEngine.getDefaultActiveMatter(ing.name) ?? '')}
+                        onChange={e => updateIngredient(ingId, 'activePercent', e.target.value.trim() === '' ? Number.NaN : Number(e.target.value))}
                         className="w-full pl-3 pr-7 py-1.5 border border-slate-700 bg-[#0e1629] rounded-lg text-xs font-mono font-bold text-slate-200 text-center focus:ring-2 focus:ring-amber-500 outline-none"
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">%</span>
@@ -669,10 +669,11 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
                         type="number"
                         step="0.000001"
                         min="0"
-                        value={weightKgStr}
+                        value={Number.isFinite(weightKgNum) ? weightKgStr : ''}
                         onChange={e => {
-                          const w = parseFloat(e.target.value) || 0;
-                          const newPct = batchSize > 0 ? (w / batchSize) * 100 : 0;
+                          const rawWeight = e.target.value.trim();
+                          const w = rawWeight === '' ? Number.NaN : Number(rawWeight);
+                          const newPct = Number.isFinite(w) && batchSize > 0 ? (w / batchSize) * 100 : Number.NaN;
                           updateIngredient(ingId, 'rawPercent', newPct);
                         }}
                         className="w-full px-3 py-1 border border-slate-700 rounded-lg text-xs font-mono font-bold text-white bg-[#0e1629] text-center focus:ring-2 focus:ring-amber-500 outline-none"
@@ -700,7 +701,7 @@ export default function PHEngineView({ activeFormula }: PHEngineViewProps) {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <span className={`text-xs font-extrabold ${Math.abs(totalPercent - 100) < 0.1 ? 'text-emerald-300 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/40' : 'text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-500/40'}`}>
-              Total: {totalPercent.toFixed(2)}% {Math.abs(totalPercent - 100) >= 0.1 && '(Water balance implicit)'}
+              Total: {Number.isFinite(totalPercent) ? `${totalPercent.toFixed(2)}%` : 'N/A — ingredient percentages incomplete'} {Number.isFinite(totalPercent) && Math.abs(totalPercent - 100) >= 0.1 && '(Water balance not inferred)'}
             </span>
 
             <button
