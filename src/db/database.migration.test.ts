@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { DetergentDatabase } from './database';
 
