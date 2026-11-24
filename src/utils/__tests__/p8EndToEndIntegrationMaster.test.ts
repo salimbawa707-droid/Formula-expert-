@@ -76,11 +76,11 @@ export function runPhase8EndToEndIntegrationTestSuite(): { passed: number; faile
   // 3. Dependency Synchronization (CPI -> Active Matter & Hardness)
   const lowActiveRecipe: FormulationIngredient[] = [
     { id: 'water', name: 'Water', percentage: 98.0, category: 'Solvent' },
-    { id: 'surf', name: 'SLES 70%', percentage: 2.0, category: 'Anionic Surfactant' }
+    { id: 'surf', name: 'SLES 70%', percentage: 2.0, activeMatterPct: 70, category: 'Anionic Surfactant' }
   ];
   const highActiveRecipe: FormulationIngredient[] = [
     { id: 'water', name: 'Water', percentage: 70.0, category: 'Solvent' },
-    { id: 'surf', name: 'SLES 70%', percentage: 30.0, category: 'Anionic Surfactant' }
+    { id: 'surf', name: 'SLES 70%', percentage: 30.0, activeMatterPct: 70, category: 'Anionic Surfactant' }
   ];
 
   const lowActiveScore = calculateCleaningPerformance(lowActiveRecipe, 8.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }).cpi;
