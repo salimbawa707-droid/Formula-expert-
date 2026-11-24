@@ -231,6 +231,7 @@ export type CommercialMarginStatus = 'COMPLETE' | 'PRICING_INCOMPLETE';
 
 export interface CommercialMarginChain {
   status: CommercialMarginStatus;
+  assumptions: string[];
   missingInputs: string[];
   isComplete: boolean;
   rawMaterialCostPerKg: number;
@@ -267,6 +268,12 @@ export function calculateCommercialMarginChain(
   if (!costReport.isComplete || missingInputs.length > 0) {
     return {
       status: 'PRICING_INCOMPLETE',
+      assumptions: [
+        'Distributor markup is a fixed 15% scenario, not a verified trade agreement.',
+        'Wholesale markup is a fixed 20% scenario, not a verified trade agreement.',
+        'Retail markup is a fixed 25% scenario, not a verified trade agreement.',
+        'Suggested MRP applies an 18% tax uplift; verify the actual HSN/GST treatment before quoting.'
+      ],
       isComplete: false,
       missingInputs,
       rawMaterialCostPerKg: Number.NaN,
@@ -298,6 +305,14 @@ export function calculateCommercialMarginChain(
 
   return {
     status: 'COMPLETE',
+    assumptions: [
+      `Manufacturing overhead uses the explicit caller-supplied rate of ${validOverheadPct}%.`,
+      `Packaging uses the explicit caller-supplied cost of ${validPackagingCost} per sale unit.`,
+      'Distributor markup is a fixed 15% scenario, not a verified trade agreement.',
+      'Wholesale markup is a fixed 20% scenario, not a verified trade agreement.',
+      'Retail markup is a fixed 25% scenario, not a verified trade agreement.',
+      'Suggested MRP applies an 18% tax uplift; verify the actual HSN/GST treatment before quoting.'
+    ],
     isComplete: true,
     missingInputs: [],
     rawMaterialCostPerKg,
