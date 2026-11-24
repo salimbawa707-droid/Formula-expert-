@@ -225,6 +225,38 @@ export function runChemicalEncyclopediaTestSuite() {
     'Test 20: Ambiguous generic salt is not silently identified as sodium chloride'
   );
 
+  // 20A. Water and its common names are known catalog identities, not unlisted chemicals.
+  const waterQueries = [
+    'Water', 'Aqua', 'H2O', 'DI Water', 'Deionized Water',
+    'Deionised Water', 'Demineralized Water', 'Distilled Water',
+    'Purified Water', 'RO Water'
+  ];
+  const waterAliasesPassed = waterQueries.every(query =>
+    resolveUniversalIngredientIdentity(query)?.ingredient.id === 'dm-water'
+  );
+  assert(
+    waterAliasesPassed,
+    'Test 20A: Common water names resolve to the catalog water identity',
+    waterQueries.join(', ')
+  );
+
+  // 20B. Every canonical database record must resolve by its own display name.
+  const unresolvedCatalogNames = UNIVERSAL_INGREDIENTS
+    .filter(item => !resolveUniversalIngredientIdentity(item.name))
+    .map(item => item.id);
+  assert(
+    unresolvedCatalogNames.length === 0,
+    'Test 20B: Every ingredient in the complete master database resolves by its display name',
+    `Unresolved records: ${unresolvedCatalogNames.length}`
+  );
+
+  // 20C. Common base-identity shorthand should be recognized without choosing a grade.
+  const sodiumCarbonateResolution = resolveUniversalIngredientIdentity('Sodium Carbonate');
+  assert(
+    Boolean(sodiumCarbonateResolution?.ingredient) && sodiumCarbonateResolution?.gradeCompatible === false,
+    'Test 20C: Shared base chemical names resolve to a known identity while requiring grade review'
+  );
+
   // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
   searchUniversalIngredients('SLES', 'Anionic Surfactant');
