@@ -334,6 +334,9 @@ export class RegulatoryComplianceEngine {
       warnings.push(productScope.reason);
     } else if (evaluatedIngredients.length === 0) {
       overallStatus = 'INSUFFICIENT_DATA';
+    } else if (claimReport.overallStatus === 'FAIL') {
+      overallStatus = 'NON_COMPLIANT';
+      warnings.push('One or more intended marketing claims are contradicted by the supplied formula composition.');
     } else if (failedRules.some(r => r.severity === 'CRITICAL' || r.severity === 'HIGH')) {
       overallStatus = 'NON_COMPLIANT';
     } else if (failedRules.length > 0) {
@@ -350,7 +353,13 @@ export class RegulatoryComplianceEngine {
     } else if (unverifiedCount > 0 || outdatedCount > 0 || verifiedPrimaryCount === 0) {
       overallStatus = 'REVIEW_REQUIRED';
       warnings.push('One or more applicable regulatory rules lack current verified primary-source support; compliance cannot be certified.');
-    } else if (reviewRequiredRules.length > 0 || claimReport.overallStatus === 'REVIEW_REQUIRED') {
+    } else if (
+      reviewRequiredRules.length > 0 ||
+      claimReport.overallStatus === 'REVIEW_REQUIRED' ||
+      labelReport.overallLabelStatus !== 'PASS' ||
+      sdsReport.overallSDSStatus !== 'PASS' ||
+      packagingReport.overallPackagingStatus !== 'PASS'
+    ) {
       overallStatus = 'REVIEW_REQUIRED';
     }
 
