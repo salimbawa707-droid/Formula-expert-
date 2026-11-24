@@ -56,17 +56,29 @@ export class IngredientResearchBridge {
     }
   }
 
-  private static hasCalculationGradeEvidence(research: MultiSourceResearchResult): boolean {
+  public static hasCalculationGradeEvidence(research: MultiSourceResearchResult, requestedGrade?: string): boolean {
     const activeMatter = research.propertiesExtracted?.activeMatter;
     if (typeof activeMatter !== 'number' || !Number.isFinite(activeMatter) || activeMatter < 0 || activeMatter > 100) return false;
-    const usableSources = research.sourcesRetrieved.filter(source => !this.isBlockedSourceDomain(source.url));
-    if (usableSources.length === 0) return false;
-    return usableSources.some(source =>
-      source.sourceType === 'MANUFACTURER_TDS' ||
-      source.sourceType === 'MANUFACTURER_SDS' ||
-      source.sourceType === 'MANUFACTURER_SPECIFICATION' ||
-      source.sourceType === 'REGULATORY_DOCUMENT'
-    );
+
+    // Evidence must support this exact property and value. A trusted source elsewhere
+    // in the ingredient profile cannot certify an unrelated AI-extracted number.
+    return research.sourcesRetrieved.some(source => {
+      if (this.isBlockedSourceDomain(source.url) || !source.url) return false;
+      if (!['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION'].includes(source.sourceType)) return false;
+      const p = source.extractedParameters || {};
+      if (typeof p.activeMatter !== 'number' || p.activeMatter !== activeMatter) return false;
+      const unit = String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '');
+      const basis = String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\\s-]+/g, '_');
+      const method = String(p.activeMatterMethod || '').trim();
+      if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
+      if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
+      if (!method || method.length < 4) return false;
+      if (requestedGrade) {
+        const sourceGrade = this.normalize(String(p.grade || ''));
+        if (!sourceGrade || sourceGrade !== this.normalize(requestedGrade)) return false;
+      }
+      return true;
+    });
   }
 
   private static toFormulaIngredient(name: string, research: MultiSourceResearchResult, record?: ResearchedIngredientRecord): FormulationIngredient {
@@ -203,7 +215,7 @@ export class IngredientResearchBridge {
         requiresUserApproval: cached.requiresUserApproval,
         notes: 'Loaded from the local researched-ingredient cache.'
       };
-      const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch);
+      const calculationEvidence = this.hasCalculationGradeEvidence(cachedResearch, options?.grade);
       const requiresUserApproval = cached.requiresUserApproval || !calculationEvidence;
       return {
         ingredient: this.toFormulaIngredient(name, cachedResearch, cached),
@@ -225,7 +237,7 @@ export class IngredientResearchBridge {
     }, options.apiKey);
     const hasUsableSources = research.sourcesRetrieved.some(source => !this.isBlockedSourceDomain(source.url));
     const hasProperties = Object.keys(research.propertiesExtracted || {}).length > 0;
-    const calculationEvidence = this.hasCalculationGradeEvidence(research);
+    const calculationEvidence = this.hasCalculationGradeEvidence(research, options?.grade);
 
     if (!hasUsableSources || !hasProperties || research.status === 'RESEARCH_UNAVAILABLE') {
       return { ingredient: null, source: 'UNRESOLVED', research, requiresUserApproval: true, warning: 'No sufficiently supported web evidence was found. Formula properties were not invented.' };
