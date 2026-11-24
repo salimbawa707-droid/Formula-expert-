@@ -74,6 +74,16 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   const autoDishAnionic = calculateFormulationCompatibility(formulaAnionicOnly as any, 10.0, 'DISHWASH_AUTOMATIC');
   assertEqual('Category Surfactant Policy', 'Automatic dishwash rejects anionic surfactant systems', autoDishAnionic.compatible, false);
   assertEqual('Category Surfactant Policy', 'Automatic dishwash emits low-foam profile violation', autoDishAnionic.alerts.some(a => a.id === 'autodish-foam-overflow-hazard'), true);
+  const automaticDishwashSodiumSulfate = calculateFormulationCompatibility([
+    { name: 'Sodium Sulfate', percentage: 10, activeMatterPct: 100, category: 'Filler' },
+    { name: 'Water', percentage: 90, activeMatterPct: 0, category: 'Solvent' }
+  ] as any, 10.0, 'DISHWASH_AUTOMATIC');
+  assertEqual(
+    'Category Surfactant Policy',
+    'Sodium sulfate filler is not misclassified as an anionic surfactant',
+    automaticDishwashSodiumSulfate.alerts.some(a => a.id === 'autodish-foam-overflow-hazard'),
+    false
+  );
 
   const softenerCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 4.0, 'FABRIC_SOFTENER');
   assertEqual('Category Surfactant Policy', 'Fabric softener permits cationic surfactants by profile', softenerCationic.alerts.some(a => a.id === 'category-policy-cationic-fabric_softener'), false);
