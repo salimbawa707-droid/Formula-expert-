@@ -910,6 +910,13 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
       surfactantOnlyScreen.missingDataPoints.some(x => x.includes('not a GHS hazard classification threshold'))
   );
 
+  const euUfiUndetermined = LabelComplianceEngine.evaluateLabelRequirements('EU', [], 'NONE', 1000);
+  assert(
+    'EU label firewall: missing UFI is REVIEW_REQUIRED when mixture classification is incomplete, not silently omitted',
+    euUfiUndetermined.checkList.some(item => item.itemId === 'LBL_EU_UFI_CODE' && item.status === 'REVIEW_REQUIRED') &&
+      euUfiUndetermined.overallLabelStatus === 'REVIEW_REQUIRED'
+  );
+
   const packagingUndetermined = PackagingComplianceEngine.evaluatePackaging('EU', 'NONE', 12);
   assert(
     'Packaging firewall: extreme pH without verified mixture classification leaves CRC and EU tactile warning undetermined',
