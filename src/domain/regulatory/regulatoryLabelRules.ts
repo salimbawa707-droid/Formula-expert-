@@ -102,9 +102,18 @@ export class LabelComplianceEngine {
           title: 'EU Unique Formula Identifier (UFI Code)',
           status: 'MISSING',
           requirementText: 'Hazardous consumer mixture in EU must display a 16-character UFI code generated via ECHA.',
-          message: 'UFI code is missing. Must be generated and printed on label.'
+          message: 'A hazardous mixture signal is present, but no UFI value was supplied for final label verification.'
         });
         missingMandatoryFields.push('EU UFI Code');
+      } else {
+        checklist.push({
+          itemId: 'LBL_EU_UFI_CODE',
+          section: 'GHS_HAZARDS',
+          title: 'EU Unique Formula Identifier (UFI Code)',
+          status: 'REVIEW_REQUIRED',
+          requirementText: 'UFI applicability depends on a complete CLP mixture hazard classification and product/use scope.',
+          message: 'UFI applicability is undetermined because this engine has not completed a verified CLP mixture classification. Do not assume UFI is not required.'
+        });
       }
     }
 
