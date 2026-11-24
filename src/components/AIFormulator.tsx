@@ -44,7 +44,7 @@ import { PowderEngineDashboard } from "./PowderEngineDashboard";
 import { SpecificationDashboard } from "./SpecificationDashboard";
 import { isPowderCategory } from "../utils/formulationEngineRouter";
 import { evaluatePowderFormulation, PowderLabMeasurementInputs } from "../utils/powderEngine";
-import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from "../data/universalIngredientLibrary";
+import { UNIVERSAL_INGREDIENTS, UniversalIngredient, resolveUniversalIngredientIdentity } from "../data/universalIngredientLibrary";
 import { ActiveFormulaState, FormulationIngredient } from "../types";
 import { PRODUCT_CATEGORIES } from "./aiformulator/constants";
 import {
@@ -891,9 +891,7 @@ export default function FormulaExpert({
             : val
         };
         if (field === "name") {
-          const matched = UNIVERSAL_INGREDIENTS.find(
-            (u) => u.name.toLowerCase() === String(val).toLowerCase() || u.id.toLowerCase() === String(val).toLowerCase()
-          );
+          const matched = resolveUniversalIngredientIdentity(String(val))?.ingredient;
           if (matched) {
             const isUnknownActive = matched.id === 'aristo-9' || matched.unknownProperties?.includes('activeMatter');
             updated.name = matched.name;
@@ -1688,15 +1686,13 @@ export default function FormulaExpert({
                         {(() => {
                           const clean = (ing.name || '').trim();
                           if (!clean || clean.length < 2) return null;
-                          const isMatched = Boolean(
-                            ing.canonicalIngredientId ||
-                            UNIVERSAL_INGREDIENTS.some(u => 
-                              u.name.toLowerCase() === clean.toLowerCase() || 
-                              u.id.toLowerCase() === clean.toLowerCase() ||
-                              u.name.toLowerCase().includes(clean.toLowerCase()) ||
-                              clean.toLowerCase().includes(u.name.toLowerCase().split('(')[0].trim())
-                            )
-                          );
+                          const canonicalById = ing.canonicalIngredientId
+                            ? UNIVERSAL_INGREDIENTS.find(u => u.id === ing.canonicalIngredientId)
+                            : undefined;
+                          const identityResolution = canonicalById
+                            ? { ingredient: canonicalById, matchType: 'CANONICAL' as const, gradeCompatible: true }
+                            : resolveUniversalIngredientIdentity(clean);
+                          const isMatched = Boolean(identityResolution);
                           const isVerifiedByResearch = ing.provenance?.verificationStatus === 'VERIFIED' || ing.notes?.includes('Gemini AI');
 
                           if (isVerifiedByResearch) {
@@ -1888,10 +1884,13 @@ export default function FormulaExpert({
                     {(() => {
                       const clean = (ing.name || '').trim();
                       if (!clean || clean.length < 2) return null;
-                      const isMatched = Boolean(
-                        ing.canonicalIngredientId ||
-                        UNIVERSAL_INGREDIENTS.some(u => u.name.toLowerCase() === clean.toLowerCase() || u.id.toLowerCase() === clean.toLowerCase())
-                      );
+                      const canonicalById = ing.canonicalIngredientId
+                        ? UNIVERSAL_INGREDIENTS.find(u => u.id === ing.canonicalIngredientId)
+                        : undefined;
+                      const identityResolution = canonicalById
+                        ? { ingredient: canonicalById, matchType: 'CANONICAL' as const, gradeCompatible: true }
+                        : resolveUniversalIngredientIdentity(clean);
+                      const isMatched = Boolean(identityResolution);
                       const isVerifiedByResearch = ing.provenance?.verificationStatus === 'VERIFIED' || ing.notes?.includes('Gemini AI');
 
                       if (isVerifiedByResearch) {
