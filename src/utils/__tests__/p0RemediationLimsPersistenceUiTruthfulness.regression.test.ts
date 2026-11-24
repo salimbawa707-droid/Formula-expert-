@@ -51,7 +51,7 @@ export function runP0RemediationLimsPersistenceUiTruthfulnessTestSuite(): {
   assert(
     'DOCS 3: Text attachments require fatal UTF-8 decoding and reject binary NUL bytes',
     docsLibrarySource.includes("new TextDecoder('utf-8', { fatal: true })") &&
-      docsLibrarySource.includes("text.includes('\\\\u0000')")
+      docsLibrarySource.includes("text.includes('\\u0000')")
   );
   assert(
     'DOCS 4: Object URLs are revoked only after delayed browser download handoff',
