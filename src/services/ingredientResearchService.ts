@@ -690,10 +690,12 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       if (provenance.application.status === 'VERIFIED') parameters.application = appVal;
     }
 
-    provenance.hlb = { property: 'hlb', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
-    provenance.cmc = { property: 'cmc', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
-    provenance.density = { property: 'density', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
-    provenance.nvr = { property: 'nvr', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source, sourceUrl };
+    const fallbackSource = firstSource.publisher || firstSource.domain || 'Unverified research source';
+    const fallbackSourceUrl = firstSource.url || '';
+    provenance.hlb = { property: 'hlb', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
+    provenance.cmc = { property: 'cmc', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
+    provenance.density = { property: 'density', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
+    provenance.nvr = { property: 'nvr', value: null, extractedValue: null, status: 'UNKNOWN', evidenceLevel: 'UNKNOWN', source: fallbackSource, sourceUrl: fallbackSourceUrl };
 
     return {
       ingredientId,
