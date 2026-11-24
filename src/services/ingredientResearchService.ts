@@ -241,6 +241,9 @@ export class IngredientResearchService {
     if (exactMatches.length === 1) {
       return { ingredient: exactMatches[0], resolvedName: exactMatches[0].name, confidence: 'EXACT_MATCH' };
     }
+    if (exactMatches.length > 1) {
+      return { ingredient: null, resolvedName: q, confidence: 'POSSIBLE_MATCH' };
+    }
     return { ingredient: null, resolvedName: q, confidence: 'UNRESOLVED' };
   }
 
@@ -256,6 +259,15 @@ export class IngredientResearchService {
     // Database-first routing is enforced here as well as in the formula bridge.
     // Exact local matches return immediately and can never invoke Gemini.
     const resolution = this.resolveIdentity(ingredientName);
+    if (resolution.confidence === 'POSSIBLE_MATCH') {
+      return {
+        researchId: 'ambiguous-local-match', query: ingredientName, ingredientName,
+        resolvedName: ingredientName, confidence: 'POSSIBLE_MATCH',
+        status: 'INSUFFICIENT_EVIDENCE', sourcesRetrieved: [], propertiesExtracted: {},
+        comparisonReport: [], requiresUserApproval: true,
+        notes: 'Multiple exact local database matches exist (for example, different grades). Gemini was skipped; select the exact local ingredient/grade.'
+      };
+    }
     if (resolution.ingredient) {
       const local: any = resolution.ingredient;
       const propertiesExtracted: Record<string, any> = {};
