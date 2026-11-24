@@ -98,8 +98,29 @@ export class PHEngineV2 {
         excessStrongBaseEquivalents: 0,
         excessStrongAcid: 0,
         excessStrongBase: 0,
+        excessAcidMoles: 0,
+        excessBaseMoles: 0,
+        bufferCapacity: null,
+        totalBufferCapacity: null,
+        solverConverged: false,
+        solverIterations: 0,
         netEquivalents: 0,
-        netMoles: 0
+        netMoles: 0,
+        details: {
+          totalAcidEquivalents: 0,
+          totalBaseEquivalents: 0,
+          totalStrongAcidEquivalents: 0,
+          totalStrongBaseEquivalents: 0,
+          netEquivalents: 0,
+          totalAcidMoles: 0,
+          totalBaseMoles: 0,
+          netMoles: 0,
+          recognizedContributors: [],
+          modelType: activityModel,
+          speciation: [],
+          ionicStrength: null,
+          chargeResidual: null
+        }
       };
     }
 
