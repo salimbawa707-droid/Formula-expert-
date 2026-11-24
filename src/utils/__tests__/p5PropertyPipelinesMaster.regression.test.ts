@@ -116,12 +116,14 @@ export function runP5PropertyPipelinesTestSuite() {
   const organicToiletSubProfileRun = dag.executeDAG({
     ...liquidFormulaInput,
     formulaName: 'Eco Organic Acid Toilet Bowl Cleaner',
-    productCategory: 'TOILET_CLEANER'
+    productCategory: 'TOILET_CLEANER',
+    productSubProfileId: 'TOILET_CLEANER_ORGANIC_ACID'
   });
   const mineralToiletSubProfileRun = dag.executeDAG({
     ...liquidFormulaInput,
     formulaName: 'Mineral Acid Heavy Descaling Toilet Cleaner',
-    productCategory: 'TOILET_CLEANER'
+    productCategory: 'TOILET_CLEANER',
+    productSubProfileId: 'TOILET_CLEANER_MINERAL_ACID'
   });
   const missingHardnessScenarioRun = dag.executeDAG({
     ...liquidFormulaInput,
