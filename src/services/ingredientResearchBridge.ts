@@ -70,9 +70,10 @@ export class IngredientResearchBridge {
       const unit = String(p.activeMatterUnit || '').trim().toLowerCase().replace(/\s+/g, '');
       const basis = String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
       const method = String(p.activeMatterMethod || '').trim();
+      const conditions = String(p.activeMatterConditions || '').trim();
       if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
       if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
-      if (!method || method.length < 4) return false;
+      if (!method || method.length < 4 || conditions.length < 4) return false;
       if (requestedGrade) {
         const sourceGrade = this.normalize(String(p.grade || ''));
         if (!sourceGrade || sourceGrade !== this.normalize(requestedGrade)) return false;
