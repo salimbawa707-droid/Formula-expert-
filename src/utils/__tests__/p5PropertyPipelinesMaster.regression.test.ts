@@ -35,6 +35,7 @@ import { FormulaScientificOrchestrator } from '../orchestrator/formulaScientific
 import { ScientificExecutionDAG } from '../orchestrator/scientificExecutionDAG';
 import { CanonicalFormulaInput } from '../orchestrator/types';
 import { computeFormulaFingerprint } from '../provenanceEngine';
+import { isEngineApplicable } from '../../domain/scientificProductProfiles';
 
 interface TestResult {
   group: string;
@@ -174,6 +175,49 @@ export function runP5PropertyPipelinesTestSuite() {
     missingBatchScenarioRun.state.assumptions,
     'Explicit 100 kg scenario assumption'
   );
+
+  const canonicalCategories = [
+    'LAUNDRY_LIQUID',
+    'LAUNDRY_POWDER',
+    'DISHWASH_MANUAL',
+    'DISHWASH_AUTOMATIC',
+    'FLOOR_CLEANER',
+    'MULTIPURPOSE_CLEANER',
+    'TOILET_CLEANER',
+    'BATHROOM_CLEANER',
+    'GLASS_CLEANER',
+    'FABRIC_SOFTENER',
+    'HAND_WASH',
+    'KITCHEN_DEGREASER',
+    'CAR_SHAMPOO'
+  ];
+  for (const category of canonicalCategories) {
+    const categoryRun = dag.executeDAG({ ...liquidFormulaInput, productCategory: category });
+    const hlbNotApplicable = categoryRun.trace.find(t => t.nodeId === 'HLB')?.status === 'NOT_APPLICABLE';
+    const chelationNotApplicable = categoryRun.trace.find(t => t.nodeId === 'WATER_CHELATION')?.status === 'NOT_APPLICABLE';
+    const cleaningNotApplicable = categoryRun.trace.find(t => t.nodeId === 'CLEANING_CPI')?.status === 'NOT_APPLICABLE';
+    assert(
+      'Phase 2: All-Category Routing',
+      `${category}: HLB applicability matches canonical product profile`,
+      hlbNotApplicable === !isEngineApplicable(category, 'HLB_ENGINE'),
+      { notApplicable: hlbNotApplicable, profileApplicable: isEngineApplicable(category, 'HLB_ENGINE') },
+      'DAG applicability equals profile registry'
+    );
+    assert(
+      'Phase 2: All-Category Routing',
+      `${category}: chelation applicability matches canonical product profile`,
+      chelationNotApplicable === !isEngineApplicable(category, 'CHELATOR_ENGINE'),
+      { notApplicable: chelationNotApplicable, profileApplicable: isEngineApplicable(category, 'CHELATOR_ENGINE') },
+      'DAG applicability equals profile registry'
+    );
+    assert(
+      'Phase 2: All-Category Routing',
+      `${category}: cleaning applicability matches canonical product profile`,
+      cleaningNotApplicable === !isEngineApplicable(category, 'CLEANING_PERFORMANCE_ENGINE'),
+      { notApplicable: cleaningNotApplicable, profileApplicable: isEngineApplicable(category, 'CLEANING_PERFORMANCE_ENGINE') },
+      'DAG applicability equals profile registry'
+    );
+  }
 
   // A. Neutralization executes before final pH
   const neutIdx = liquidRun.trace.findIndex(t => t.nodeId === 'NEUTRALIZATION');
