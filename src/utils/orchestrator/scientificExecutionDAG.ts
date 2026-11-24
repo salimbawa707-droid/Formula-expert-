@@ -1045,6 +1045,7 @@ export class ScientificExecutionDAG {
           overheadPct,
           packagingCostPerUnit
         );
+        state.assumptions.push(...(marginChain.assumptions || []));
 
         state.costResult = {
           ...formulaCost,
