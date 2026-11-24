@@ -62,7 +62,7 @@ export interface FormulaCostReport {
  */
 export function calculateFormulaCost(
   ingredients: FormulationIngredient[] = [],
-  batchSizeKg: number = 100
+  batchSizeKg?: number
 ): FormulaCostReport {
   const safeList = Array.isArray(ingredients) ? ingredients : [];
   const hasValidBatchSize = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
@@ -251,35 +251,45 @@ function roundCurrency(val: number): number {
 
 export function calculateCommercialMarginChain(
   ingredients: FormulationIngredient[],
-  batchSizeKg: number = 100,
-  overheadPct: number = 12,
-  packagingCost: number = 15
+  batchSizeKg?: number,
+  overheadPct?: number,
+  packagingCost?: number
 ): CommercialMarginChain {
   const costReport = calculateFormulaCost(ingredients, batchSizeKg);
+  const missingInputs = [...costReport.missingIngredientIds];
+  const hasValidBatch = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
+  const hasValidOverhead = typeof overheadPct === 'number' && Number.isFinite(overheadPct) && overheadPct >= 0;
+  const hasValidPackaging = typeof packagingCost === 'number' && Number.isFinite(packagingCost) && packagingCost >= 0;
+  if (!hasValidBatch) missingInputs.push('BATCH_SIZE_REQUIRED');
+  if (!hasValidOverhead) missingInputs.push('OVERHEAD_PERCENT_REQUIRED');
+  if (!hasValidPackaging) missingInputs.push('PACKAGING_COST_REQUIRED');
 
-  if (!costReport.isComplete) {
+  if (!costReport.isComplete || missingInputs.length > 0) {
     return {
       status: 'PRICING_INCOMPLETE',
       isComplete: false,
-      missingInputs: costReport.missingIngredientIds,
-      rawMaterialCostPerKg: 0,
-      batchRawMaterialCost: 0,
-      manufacturingOverhead: 0,
-      manufacturingCost: 0,
-      packagingCost: packagingCost,
-      finalExFactoryCost: 0,
-      suggestedDistributor: 0,
-      suggestedWholesale: 0,
-      suggestedRetail: 0,
-      suggestedMRP: 0
+      missingInputs,
+      rawMaterialCostPerKg: Number.NaN,
+      batchRawMaterialCost: Number.NaN,
+      manufacturingOverhead: Number.NaN,
+      manufacturingCost: Number.NaN,
+      packagingCost: hasValidPackaging ? packagingCost : Number.NaN,
+      finalExFactoryCost: Number.NaN,
+      suggestedDistributor: Number.NaN,
+      suggestedWholesale: Number.NaN,
+      suggestedRetail: Number.NaN,
+      suggestedMRP: Number.NaN
     };
   }
 
+  const validBatchSize = batchSizeKg as number;
+  const validOverheadPct = overheadPct as number;
+  const validPackagingCost = packagingCost as number;
   const rawMaterialCostPerKg = costReport.costPerKg;
-  const batchRawMaterialCost = roundCurrency(rawMaterialCostPerKg * batchSizeKg);
-  const manufacturingOverhead = roundCurrency(rawMaterialCostPerKg * (overheadPct / 100));
+  const batchRawMaterialCost = roundCurrency(rawMaterialCostPerKg * validBatchSize);
+  const manufacturingOverhead = roundCurrency(rawMaterialCostPerKg * (validOverheadPct / 100));
   const manufacturingCost = roundCurrency(rawMaterialCostPerKg + manufacturingOverhead);
-  const finalExFactoryCost = roundCurrency(manufacturingCost + packagingCost);
+  const finalExFactoryCost = roundCurrency(manufacturingCost + validPackagingCost);
 
   const suggestedDistributor = roundCurrency(finalExFactoryCost * 1.15);
   const suggestedWholesale = roundCurrency(finalExFactoryCost * 1.20);
@@ -294,7 +304,7 @@ export function calculateCommercialMarginChain(
     batchRawMaterialCost,
     manufacturingOverhead,
     manufacturingCost,
-    packagingCost,
+    packagingCost: validPackagingCost,
     finalExFactoryCost,
     suggestedDistributor,
     suggestedWholesale,
