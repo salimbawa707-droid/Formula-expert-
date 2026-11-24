@@ -574,7 +574,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE', state.formulaName)
+          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE', state.rawInput.productSubProfileId)
         ) {
           state.hlbResult = {
             blendedHLB: null,
@@ -601,7 +601,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE', state.formulaName)
+          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE', state.rawInput.productSubProfileId)
         ) {
           state.hardnessResult = {
             status: 'NOT_APPLICABLE',
@@ -723,7 +723,7 @@ export class ScientificExecutionDAG {
           : ((typeof state.pHIntermediate === 'number' && Number.isFinite(state.pHIntermediate) && state.pHIntermediate >= 0 && state.pHIntermediate <= 14)
             ? state.pHIntermediate
             : undefined);
-        const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory, state.formulaName);
+        const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory, state.rawInput.productSubProfileId);
         state.compatibilityResult = compRes;
         state.compatibilityScore = Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : Number.NaN;
         state.compatible = compRes.compatible === true;
@@ -898,7 +898,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE', state.formulaName)
+          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE', state.rawInput.productSubProfileId)
         ) {
           state.cleaningResult = {
             cpi: null,
@@ -1114,7 +1114,7 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'VISCOSITY', 'DENSITY', 'NVR', 'POWDER_ENGINE'],
       execute: (state) => {
-        const specTemplate = getSpecificationTemplateForCategory(state.canonicalCategory, state.formulaName);
+        const specTemplate = getSpecificationTemplateForCategory(state.canonicalCategory, state.rawInput.productSubProfileId);
         const specReport = evaluateSpecifications({
           formulaId: state.formulaId,
           formulaName: state.formulaName,
