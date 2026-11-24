@@ -23,6 +23,7 @@ import {
   UNIVERSAL_INGREDIENTS,
   searchUniversalIngredients,
   getAllCategories,
+  resolveUniversalIngredientIdentity,
   UniversalIngredient
 } from '../data/universalIngredientLibrary';
 import { resolveChemicalIdentity } from '../utils/cheminformatics/chemicalIdentityService';
@@ -73,6 +74,13 @@ export default function ChemicalEncyclopedia(_props?: any) {
   };
 
   const handleTriggerResearch = async () => {
+    const local = resolveUniversalIngredientIdentity(researchQuery.trim());
+    if (local?.ingredient) {
+      setErrorMessage(local.gradeCompatible
+        ? 'Ingredient already exists in the database. Gemini research was skipped.'
+        : 'Ingredient identity exists locally; select or verify the commercial grade. Gemini research was skipped.');
+      return;
+    }
     setIsResearching(true);
     setErrorMessage('');
     setSuccessMessage('');
@@ -101,6 +109,10 @@ export default function ChemicalEncyclopedia(_props?: any) {
         throw new Error('Research failed / Offline search mode triggered.');
       }
       const data = await response.json();
+      if (data.localMatch) {
+        setErrorMessage(data.message || 'Ingredient already exists locally. Gemini was skipped.');
+        return;
+      }
       setResearchResult(data);
     } catch (err: any) {
       setErrorMessage(err.message || 'Offline Mode: Research preserved as UNKNOWN.');
@@ -111,6 +123,10 @@ export default function ChemicalEncyclopedia(_props?: any) {
 
   const handleApplyVerifiedData = async () => {
     if (!researchResult) return;
+    if (researchResult.requiresUserApproval !== false) {
+      setErrorMessage('Research candidate is not verified. Review the original manufacturer TDS/COA before database approval.');
+      return;
+    }
     try {
       const response = await apiFetch('/api/ai/apply-verified-ingredient', {
         method: 'POST',
