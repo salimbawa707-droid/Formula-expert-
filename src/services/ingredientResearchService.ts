@@ -457,41 +457,16 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         });
         propertiesExtracted[prop] = values[0];
       } else {
-        // Numeric range or categorical conflict detection
-        const numericValues = values.map(Number).filter(v => !isNaN(v));
-        if (numericValues.length > 1) {
-          const min = Math.min(...numericValues);
-          const max = Math.max(...numericValues);
-          const diff = max - min;
-          const tolerance = 0.05 * min; // 5% threshold
-
-          if (diff > tolerance) {
-            comparisonReport.push({
-              property: prop,
-              comparisonStatus: 'CONFLICT',
-              values,
-              notes: `Significant variation discovered among sources (range: ${min} - ${max}). Preserving both as conflicting evidence.`
-            });
-            // Preserve as range
-            propertiesExtracted[prop] = `${min} - ${max}`;
-          } else {
-            comparisonReport.push({
-              property: prop,
-              comparisonStatus: 'MINOR_VARIATION',
-              values,
-              notes: 'Source values differ. Do not average without matching grade, units, method, test conditions, and measurement basis.'
-            });
-            propertiesExtracted[prop] = String(min) + ' - ' + String(max);
-          }
-        } else {
-          // Categorical conflict
-          comparisonReport.push({
-            property: prop,
-            comparisonStatus: 'CONFLICT',
-            values,
-            notes: 'Conflicting qualitative classifications found across sources.'
-          });
-        }
+        // No percentage tolerance or averaging is scientifically defensible without
+        // demonstrated equivalence of commercial grade, units, basis, method and conditions.
+        // Preserve the conflicting observations for review, but never emit a numeric
+        // range as a calculation-ready ingredient property.
+        comparisonReport.push({
+          property: prop,
+          comparisonStatus: 'CONFLICT',
+          values,
+          notes: 'Sources disagree. No tolerance band, midpoint, or numeric range is promoted. Verify identical grade, units, measurement basis, method and test conditions before selecting a value.'
+        });
       }
     });
 
