@@ -59,7 +59,7 @@ export interface RegulatoryEvaluationReport {
     warnings: string[];
   };
   ghsClassification: {
-    signalWord: 'DANGER' | 'WARNING' | 'NONE';
+    signalWord: 'DANGER' | 'WARNING' | 'NONE' | 'UNDETERMINED';
     hazardStatements: string[];
     precautionaryStatements: string[];
     hazardPictograms: string[];
@@ -174,7 +174,7 @@ export function evaluateRegulatoryCompliance(
       warnings: []
     },
     ghsClassification: {
-      signalWord: safePH !== null && (safePH <= 2.0 || safePH >= 11.5) ? 'DANGER' : (safePH !== null && (safePH <= 4.0 || safePH >= 10.0) ? 'WARNING' : 'NONE'),
+      signalWord: 'UNDETERMINED',
       hazardStatements: [],
       precautionaryStatements: [],
       hazardPictograms: []
