@@ -18,16 +18,16 @@ export class PackagingComplianceEngine {
     const findings: string[] = [];
     const isExtremePh = calculatedPH !== undefined && Number.isFinite(calculatedPH) && (calculatedPH <= 2.0 || calculatedPH >= 11.5);
 
-    // 1. Child-Resistant Closure (CRC) Requirement
-    const childResistantClosureRequired = signalWord === 'DANGER' || isExtremePh;
-    if (childResistantClosureRequired) {
-      findings.push('Child-Resistant Closure (CRC) is MANDATORY due to severe corrosive GHS hazard classification (pH extreme or DANGER signal word).');
+    // pH and an unverified signal word are not enough to decide legal package requirements.
+    // These booleans are nullable so UNKNOWN is not confused with NOT REQUIRED.
+    const childResistantClosureRequired: boolean | null = null;
+    const tactileWarningRequired: boolean | null = jurisdiction === 'EU' ? null : false;
+    findings.push('Child-resistant closure requirement is NOT DETERMINED: verified mixture hazard category and applicable jurisdictional packaging rule are required.');
+    if (jurisdiction === 'EU') {
+      findings.push('EU tactile-warning requirement is NOT DETERMINED: verified CLP hazard category and consumer-package applicability are required.');
     }
-
-    // 2. Tactile Warning of Danger (TWD) Requirement (EU CLP)
-    const tactileWarningRequired = jurisdiction === 'EU' && (signalWord === 'DANGER' || isExtremePh);
-    if (tactileWarningRequired) {
-      findings.push('Tactile Warning of Danger (TWD raised equilateral triangle ISO 11683) is MANDATORY on EU consumer packaging.');
+    if (isExtremePh) {
+      findings.push('Extreme pH is a hazard-screening trigger, not a standalone legal determination of corrosivity or child-resistant packaging requirements.');
     }
 
     return {
