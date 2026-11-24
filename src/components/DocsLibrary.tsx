@@ -67,7 +67,7 @@ async function validateAttachment(file: File): Promise<{ error?: string; mimeTyp
   if (extension === 'txt' || extension === 'csv') {
     try {
       const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
-      if (text.includes('\\u0000')) return { error: 'The selected text file contains binary data.' };
+      if (text.includes('\u0000')) return { error: 'The selected text file contains binary data.' };
     } catch {
       return { error: 'The selected text file is not valid readable text.' };
     }
