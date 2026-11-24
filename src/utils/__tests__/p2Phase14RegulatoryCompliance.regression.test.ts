@@ -44,6 +44,9 @@ import {
   CANONICAL_REGULATORY_SCOPES
 } from '../../domain/regulatory';
 import { evaluateRegulatoryCompliance } from '../regulatoryEngine';
+import { MixtureGHSValidationEngine } from '../../domain/regulatory/regulatoryValidation';
+import { PackagingComplianceEngine } from '../../domain/regulatory/regulatoryPackagingRules';
+
 
 export interface TestResult {
   name: string;
@@ -882,6 +885,37 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   assert(
     'Jurisdiction firewall: New York state dioxane limit is not incorrectly enforced as a US federal rule',
     !federalDioxaneScope.failedRules.some(r => r.ruleId === 'RULE_US_NY_STATE_14_DIOXANE')
+  );
+
+  const extremePhScreen = MixtureGHSValidationEngine.evaluateGHSClassification([
+    RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 100, activePercentage: 0 })
+  ], 12);
+  assert(
+    'GHS firewall: extreme pH is a screening trigger and cannot independently issue H314, GHS05 or DANGER',
+    extremePhScreen.signalWord === 'NONE' &&
+      extremePhScreen.hazardClassifications.length === 0 &&
+      extremePhScreen.hazardStatements.length === 0 &&
+      extremePhScreen.hazardPictograms.length === 0 &&
+      extremePhScreen.missingDataPoints.some(x => x.includes('acid/alkali reserve'))
+  );
+
+  const surfactantOnlyScreen = MixtureGHSValidationEngine.evaluateGHSClassification([
+    RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 100, activePercentage: 28, casNumber: '68585-34-2' })
+  ], 7);
+  assert(
+    'GHS firewall: 15% active surfactant heuristic cannot independently issue WARNING or H319',
+    surfactantOnlyScreen.signalWord === 'NONE' &&
+      surfactantOnlyScreen.hazardClassifications.length === 0 &&
+      surfactantOnlyScreen.hazardStatements.length === 0 &&
+      surfactantOnlyScreen.missingDataPoints.some(x => x.includes('not a GHS hazard classification threshold'))
+  );
+
+  const packagingUndetermined = PackagingComplianceEngine.evaluatePackaging('EU', 'NONE', 12);
+  assert(
+    'Packaging firewall: extreme pH without verified mixture classification leaves CRC and EU tactile warning undetermined',
+    packagingUndetermined.childResistantClosureRequired === null &&
+      packagingUndetermined.tactileWarningRequired === null &&
+      packagingUndetermined.overallPackagingStatus === 'REVIEW_REQUIRED'
   );
 
   const negativeClaimsWithoutEvidence = ClaimComplianceEngine.evaluateClaims(
