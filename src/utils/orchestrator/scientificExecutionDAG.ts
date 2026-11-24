@@ -1114,7 +1114,7 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'VISCOSITY', 'DENSITY', 'NVR', 'POWDER_ENGINE'],
       execute: (state) => {
-        const specTemplate = getSpecificationTemplateForCategory(state.canonicalCategory, state.rawInput.productSubProfileId);
+        const specTemplate = getSpecificationTemplateForCategory(state.canonicalCategory, state.formulaName);
         const specReport = evaluateSpecifications({
           formulaId: state.formulaId,
           formulaName: state.formulaName,
