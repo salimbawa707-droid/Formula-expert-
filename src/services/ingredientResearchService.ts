@@ -626,6 +626,7 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
         typeof p.activeMatterConditions === 'string' && p.activeMatterConditions.trim().length >= 4 &&
         Boolean(String(p.grade || '').trim()) &&
         (!grade || String(p.grade || '').trim().toLowerCase() === grade.trim().toLowerCase()) &&
+        /active\\s+(matter|content)|surfactant\\s+active/i.test(String(sourceRecord.rawContent || '').toLowerCase()) &&
         String(sourceRecord.rawContent || '').toLowerCase().includes(String(val).toLowerCase()) &&
         String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterUnit || '').toLowerCase()) &&
         String(sourceRecord.rawContent || '').toLowerCase().includes(String(p.activeMatterBasis || '').toLowerCase()) &&
