@@ -524,19 +524,56 @@ export class RegulatoryComplianceEngine {
       }
     }
 
-    // 4. Check Concentration Threshold Rules (e.g. STPP, VOC, NPE)
-    if (rule.concentrationThresholds && rule.ingredientScope) {
-      let matchingSumPct = 0;
+    // 4. Check concentration thresholds only when the declared unit and basis
+    // can be calculated from supplied formula data. Never compare unlike units.
+    if (rule.concentrationThresholds && (rule.ingredientScope || rule.chemicalIdentifiers)) {
+      const threshold = rule.concentrationThresholds;
+      const formulaTotalPct = ingredients.reduce((sum, ing) => sum + ing.asSuppliedPct, 0);
+      const validMassBalance = ingredients.length > 0 &&
+        ingredients.every(ing => Number.isFinite(ing.asSuppliedPct) && ing.asSuppliedPct >= 0 && ing.asSuppliedPct <= 100) &&
+        Math.abs(formulaTotalPct - 100) <= 0.01;
+      const supportedUnitBasis =
+        (threshold.unit === 'WEIGHT_PCT' &&
+          ['ACTIVE_MATTER', 'AS_SUPPLIED', 'FORMULA_TOTAL', 'FINISHED_PRODUCT'].includes(threshold.basis)) ||
+        (threshold.unit === 'PPM' &&
+          ['ACTIVE_MATTER', 'AS_SUPPLIED', 'FORMULA_TOTAL', 'FINISHED_PRODUCT'].includes(threshold.basis));
+
+      if (!validMassBalance || !supportedUnitBasis) {
+        return {
+          ruleId: rule.ruleId,
+          regulationIdentifier: rule.regulationIdentifier,
+          regulationName: rule.regulationName,
+          jurisdiction: rule.jurisdiction,
+          requirementType: rule.requirementType,
+          mandatoryOrVoluntary: rule.mandatoryOrVoluntary,
+          severity: rule.severity,
+          status: 'UNKNOWN_DATA',
+          affectedIngredients: [],
+          message: !validMassBalance
+            ? 'A valid 100% formula mass balance is required before concentration thresholds can be evaluated.'
+            : `Threshold unit/basis (${threshold.unit} / ${threshold.basis}) requires inputs or a conversion model not available in this evaluation.`,
+          remediation: 'Provide a complete mass-balanced formula and the required density, impurity, dose or other basis-specific measurements; do not infer a result from weight percentage.',
+          evidenceId: rule.evidenceId,
+          verificationStatus: rule.verificationStatus
+        };
+      }
+
+      const identifier = rule.chemicalIdentifiers;
       const affectedIngs: string[] = [];
+      let matchingValue = 0;
+      const multiplier = threshold.unit === 'PPM' ? 10000 : 1;
 
       for (const ing of ingredients) {
-        const matchesScope = rule.ingredientScope.some(
-          scope => ing.normalizedName.includes(scope.toLowerCase())
+        const matchesNameScope = (rule.ingredientScope || []).some(scope =>
+          ing.normalizedName.includes(scope.toLowerCase())
         );
-
-        if (matchesScope) {
+        const matchesIdentifier =
+          (!!ing.casNumber && !!identifier?.casNumbers?.includes(ing.casNumber)) ||
+          (!!ing.ecNumber && !!identifier?.ecNumbers?.includes(ing.ecNumber)) ||
+          (!!ing.inciName && !!identifier?.inciNames?.some(name => name.toLowerCase() === ing.inciName?.toLowerCase()));
+        if (matchesNameScope || matchesIdentifier) {
           affectedIngs.push(ing.rawName);
-          if (rule.concentrationThresholds.basis === 'ACTIVE_MATTER') {
+          if (threshold.basis === 'ACTIVE_MATTER') {
             if (ing.activeMatterPct === undefined) {
               return {
                 ruleId: rule.ruleId,
@@ -554,16 +591,30 @@ export class RegulatoryComplianceEngine {
                 verificationStatus: rule.verificationStatus
               };
             }
-            matchingSumPct += ing.activeMatterPct;
+            matchingValue += ing.activeMatterPct * multiplier;
           } else {
-            matchingSumPct += ing.asSuppliedPct;
+            matchingValue += ing.asSuppliedPct * multiplier;
           }
         }
       }
 
-      if (affectedIngs.length > 0 && rule.concentrationThresholds.maxPercentage !== undefined) {
-        const maxLimit = input.maxPhosphatePctOverride ?? rule.concentrationThresholds.maxPercentage;
-        if (matchingSumPct > maxLimit) {
+      if (affectedIngs.length > 0) {
+        const isPhosphateRule = rule.ruleId.toUpperCase().includes('PHOSPHATE');
+        const isVocRule = rule.ruleId.toUpperCase().includes('VOC');
+        const maxLimit = isPhosphateRule
+          ? (input.maxPhosphatePctOverride ?? threshold.maxPercentage)
+          : isVocRule
+            ? (input.maxVocPctOverride ?? threshold.maxPercentage)
+            : threshold.maxPercentage;
+        const maxExceeded = maxLimit !== undefined &&
+          (threshold.inclusive ? matchingValue > maxLimit : matchingValue >= maxLimit);
+        const minViolated = threshold.minPercentage !== undefined &&
+          (threshold.inclusive ? matchingValue < threshold.minPercentage : matchingValue <= threshold.minPercentage);
+
+        if (maxExceeded || minViolated) {
+          const limitText = maxExceeded
+            ? `maximum ${maxLimit} ${threshold.unit}`
+            : `minimum ${threshold.minPercentage} ${threshold.unit}`;
           return {
             ruleId: rule.ruleId,
             regulationIdentifier: rule.regulationIdentifier,
@@ -574,9 +625,9 @@ export class RegulatoryComplianceEngine {
             severity: rule.severity,
             status: 'FAIL',
             affectedIngredients: affectedIngs,
-            measuredValue: `${matchingSumPct.toFixed(2)}%`,
-            thresholdValue: `${maxLimit.toFixed(2)}%`,
-            message: `Concentration ${matchingSumPct.toFixed(2)}% exceeds statutory threshold of ${maxLimit.toFixed(2)}% under ${rule.regulationName}.`,
+            measuredValue: `${matchingValue.toFixed(3)} ${threshold.unit}`,
+            thresholdValue: limitText,
+            message: `Measured concentration ${matchingValue.toFixed(3)} ${threshold.unit} violates the ${limitText} threshold under ${rule.regulationName}.`,
             remediation: rule.remediationGuidance,
             evidenceId: rule.evidenceId,
             verificationStatus: rule.verificationStatus
