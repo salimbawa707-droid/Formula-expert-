@@ -271,6 +271,11 @@ export function runChemicalEncyclopediaTestSuite() {
     teaResolution?.ingredient.id === 'tea-99',
     'Test 20E: TEA abbreviation resolves to triethanolamine, not protease records sharing a substring'
   );
+  const meaResolution = resolveUniversalIngredientIdentity('MEA');
+  assert(
+    meaResolution?.ingredient.id === 'mea-99',
+    'Test 20F: MEA abbreviation resolves to monoethanolamine, not Cocamide MEA records'
+  );
 
   // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
