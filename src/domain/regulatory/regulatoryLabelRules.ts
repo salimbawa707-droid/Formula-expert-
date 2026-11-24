@@ -25,9 +25,9 @@ export class LabelComplianceEngine {
       itemId: 'LBL_PROD_IDENTITY',
       section: 'PRODUCT_IDENTITY',
       title: 'Canonical Product Title & Functional Category',
-      status: 'PASS',
+      status: 'REVIEW_REQUIRED',
       requirementText: 'Primary label display panel must state the true nature and function of the cleaning product.',
-      message: 'Product functional title specified.'
+      message: 'Formula category is not a rendered label artifact; verify the actual pack artwork and legal product description.'
     });
 
     // 2. Net Quantity
@@ -36,9 +36,9 @@ export class LabelComplianceEngine {
         itemId: 'LBL_NET_QTY',
         section: 'NET_QUANTITY',
         title: 'Net Mass / Volume Declaration',
-        status: 'PASS',
+        status: 'REVIEW_REQUIRED',
         requirementText: 'Net contents declared in metric units (g, kg, mL, L).',
-        message: `Net quantity declared as ${packageSizeGramsOrMl} g/mL.`
+        message: `Target net quantity ${packageSizeGramsOrMl} g/mL supplied; verify that the approved value appears correctly on final artwork and meets metrology requirements.`
       });
     } else {
       checklist.push({
@@ -78,18 +78,18 @@ export class LabelComplianceEngine {
         itemId: 'LBL_GHS_HAZARD',
         section: 'GHS_HAZARDS',
         title: 'GHS Hazard Signal Word & Pictograms',
-        status: 'PASS',
-        requirementText: `Formulation classified as hazardous (${signalWord}); GHS warning pictograms and hazard statements required.`,
-        message: `GHS hazard classification active (${signalWord}).`
+        status: 'REVIEW_REQUIRED',
+        requirementText: `Screening indicates a potential hazardous classification (${signalWord}); applicable pictograms and statements must be confirmed from a complete mixture classification.`,
+        message: 'A signal word alone is not a completed GHS label review; verify mixture classification and final artwork.'
       });
     } else {
       checklist.push({
         itemId: 'LBL_GHS_HAZARD',
         section: 'GHS_HAZARDS',
         title: 'GHS Hazard Signal Word & Pictograms',
-        status: 'NOT_APPLICABLE',
-        requirementText: 'Non-hazardous formulation; mandatory GHS warning pictograms not required.',
-        message: 'No mandatory GHS hazard pictograms required.'
+        status: 'REVIEW_REQUIRED',
+        requirementText: 'GHS hazard classification must be completed before deciding whether hazard pictograms are not applicable.',
+        message: 'No signal word was produced by the limited screening engine; this is not proof that the mixture is non-hazardous.'
       });
     }
 
@@ -108,7 +108,8 @@ export class LabelComplianceEngine {
       }
     }
 
-    const overallLabelStatus = missingMandatoryFields.length > 0 ? 'FAIL' : 'PASS';
+    const hasUnverifiedLabelItems = checklist.some(item => item.status === 'REVIEW_REQUIRED');
+    const overallLabelStatus = missingMandatoryFields.length > 0 ? 'FAIL' : hasUnverifiedLabelItems ? 'REVIEW_REQUIRED' : 'PASS';
 
     return {
       overallLabelStatus,
