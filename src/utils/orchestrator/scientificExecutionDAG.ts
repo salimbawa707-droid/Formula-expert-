@@ -47,7 +47,7 @@ import { findSubstitutionsForFormula } from '../substitutionEngine';
 import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../specificationEngine';
 import { validateActiveMatterInput } from '../activeMatterInputGuard';
 import { validatePHInput } from '../phInputGuard';
-import { isEngineApplicable } from '../scientificRouter';
+import { isEngineApplicable } from '../../domain/scientificProductProfiles';
 
 // =============================================================================
 // 1. STRONGLY TYPED INTERMEDIATE SCIENTIFIC STATE MODEL
