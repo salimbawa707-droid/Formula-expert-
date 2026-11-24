@@ -122,6 +122,20 @@ export function evaluateRegulatoryCompliance(
     });
   }
 
+  // Surface non-failing review gates to legacy consumers without relabeling
+  // name-based screening as a statutory ban.
+  for (const review of domainDecision.reviewRequired) {
+    const isNameScreen = review.ruleId === 'RULE_NAME_BASED_CHEMICAL_SCREENING';
+    findings.push({
+      code: isNameScreen ? 'REG_CHEMICAL_SCREENING' : `REVIEW_${review.ruleId}`,
+      title: review.regulationName,
+      severity: review.severity === 'CRITICAL' || review.severity === 'HIGH' ? 'MAJOR' : 'MINOR',
+      message: review.message,
+      regulationReference: review.regulationIdentifier,
+      remediation: review.remediation || 'Provide missing evidence and complete human regulatory review.'
+    });
+  }
+
   let mappedStatus: RegulatoryEvaluationReport['status'] = 'COMPLIANT';
   if (domainDecision.overallStatus === 'NON_COMPLIANT') {
     mappedStatus = 'NON_COMPLIANT';
