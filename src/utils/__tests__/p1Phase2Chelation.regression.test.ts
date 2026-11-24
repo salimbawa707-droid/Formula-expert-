@@ -200,6 +200,23 @@ export function runP1Phase2ChelationTestSuite() {
   const case5Cap = calculateFormulationChelationCapacity(case5Formula, 20);
   assertNear('Reference Cases', 'Case 5: 2% GLDA 47% Capacity', case5Cap.totalSequestrationMg, 54.8);
 
+  const missingDoseCapacity = calculateFormulationChelationCapacity(case5Formula);
+  assert(
+    missingDoseCapacity.status === 'INSUFFICIENT_DATA' &&
+      Number.isNaN(missingDoseCapacity.totalSequestrationMg),
+    'Input Integrity',
+    'Missing dose is not replaced by a 20 g default'
+  );
+
+  const missingBatchCapacity = calculateFormulationChelationCapacity(case5Formula, 20);
+  assert(
+    missingBatchCapacity.status === 'COMPLETE' &&
+      Number.isFinite(missingBatchCapacity.totalSequestrationMg) &&
+      Number.isNaN(missingBatchCapacity.batchSequestrationGrams),
+    'Input Integrity',
+    'Per-dose capacity remains calculable while batch-scaled grams stay unavailable without batch size'
+  );
+
   // Case 6: GLDA 99% Powder (2.0% in 20g dose)
   // Raw mass = 0.40 g -> bound CaCO3 = 0.40 * 282.2 = 112.88 mg
   const case6Formula: FormulationIngredient[] = [{ id: '1', name: 'GLDA 99% Powder', percentage: 2.0, activeMatterPct: 99 }];
