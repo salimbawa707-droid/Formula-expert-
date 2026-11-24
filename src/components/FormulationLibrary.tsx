@@ -75,7 +75,7 @@ export default function FormulationLibrary({
           ingredients: (f.ingredients || []).map((ing: any) => ({
             name: ing.name,
             percentage: (() => { const raw = ing.percentage ?? ing.percent ?? ing.percentageInFormula; return raw === undefined || raw === null || raw === '' ? Number.NaN : Number(raw); })(),
-            ...(ing.activeMatterPct !== undefined || ing.activePercent !== undefined ? { activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent) } : {}),
+            ...((ing.activeMatterPct ?? ing.activePercent) !== undefined && (ing.activeMatterPct ?? ing.activePercent) !== null && (ing.activeMatterPct ?? ing.activePercent) !== '' ? { activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent) } : {}),
             role: ing.role || ing.category || 'Component'
           })),
           batchSizeKg: Number.isFinite(f.batchSizeKg ?? f.batchSize) && (f.batchSizeKg ?? f.batchSize)! > 0 ? (f.batchSizeKg ?? f.batchSize)! : Number.NaN,
@@ -326,10 +326,10 @@ export default function FormulationLibrary({
                         <td className="py-2.5 px-3.5 font-bold text-white">{ing.name}</td>
                         <td className="py-2.5 px-3.5 text-slate-400 text-xs font-medium">{ing.category || (ing as any).function || "Additive"}</td>
                         <td className="py-2.5 px-3.5 text-right font-mono font-bold text-slate-200">
-                          {Number.isFinite(Number(ing.percent ?? ing.percentage)) ? Number(ing.percent ?? ing.percentage).toFixed(2) + '%' : 'N/A'}
+                          {(ing.percent ?? ing.percentage) !== undefined && (ing.percent ?? ing.percentage) !== null && (ing.percent ?? ing.percentage) !== '' && Number.isFinite(Number(ing.percent ?? ing.percentage)) ? Number(ing.percent ?? ing.percentage).toFixed(2) + '%' : 'N/A'}
                         </td>
                         <td className="py-2.5 px-3.5 text-right font-mono text-purple-300 font-extrabold">
-                          {Number.isFinite(Number(ing.percent ?? ing.percentage)) && Number.isFinite(currentFormula.batchSizeKg) && currentFormula.batchSizeKg > 0 ? (((Number(ing.percent ?? ing.percentage) / 100) * currentFormula.batchSizeKg).toFixed(2) + ' kg') : 'N/A'}
+                          {(ing.percent ?? ing.percentage) !== undefined && (ing.percent ?? ing.percentage) !== null && (ing.percent ?? ing.percentage) !== '' && Number.isFinite(Number(ing.percent ?? ing.percentage)) && Number.isFinite(currentFormula.batchSizeKg) && currentFormula.batchSizeKg > 0 ? (((Number(ing.percent ?? ing.percentage) / 100) * currentFormula.batchSizeKg).toFixed(2) + ' kg') : 'N/A'}
                         </td>
                       </tr>
                     ))}
