@@ -71,12 +71,23 @@ export class IngredientResearchBridge {
       const basis = String(p.activeMatterBasis || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
       const method = String(p.activeMatterMethod || '').trim();
       const conditions = String(p.activeMatterConditions || '').trim();
+      const grade = String(p.grade || '').trim();
+      const sourceText = String(source.rawContent || '').toLowerCase();
+      const containsSourceFact = (fact: string) => sourceText.includes(fact.toLowerCase());
       if (!['%w/w', 'percentw/w', 'wt%', 'mass%'].includes(unit)) return false;
       if (!['AS_SUPPLIED', 'AS_RECEIVED'].includes(basis)) return false;
       if (!method || method.length < 4 || conditions.length < 4) return false;
-      const sourceGrade = this.normalize(String(p.grade || ''));
+      const sourceGrade = this.normalize(grade);
       if (!sourceGrade) return false;
       if (requestedGrade && sourceGrade !== this.normalize(requestedGrade)) return false;
+      // The extracted fields must also be present in the captured source excerpt,
+      // not merely asserted by the model's structured JSON response.
+      if (!containsSourceFact(String(p.activeMatter)) ||
+          !containsSourceFact(String(p.activeMatterUnit)) ||
+          !containsSourceFact(String(p.activeMatterBasis)) ||
+          !containsSourceFact(method) ||
+          !containsSourceFact(conditions) ||
+          !containsSourceFact(grade)) return false;
       return true;
     });
   }
