@@ -1,5 +1,5 @@
 import { FormulationIngredient } from '../types';
-import { calculateActiveSurfactants, calculateActiveMatter, getDefaultActiveMatter } from './activeMatterEngine';
+import { calculateActiveSurfactants, calculateActiveMatter } from './activeMatterEngine';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
 import { globalGovernanceRegistry } from './scientificGovernanceEngine';
 import { calculateWaterHardnessTolerance } from './chelatorEngine';
@@ -58,6 +58,8 @@ export interface PerformanceEvaluationOptions {
   batchSizeKg?: number;
   compatibilityStatus?: string;
   hasCriticalCompatibilityAlert?: boolean;
+  /** When true, missing explicit wash scenario inputs block CPI instead of using defaults. */
+  failIfHardnessMissing?: boolean;
 }
 
 export interface CategoryKPI {
@@ -188,7 +190,7 @@ export function calculateCleaningPerformance(
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const resolvedActive = explicitActive === undefined || explicitActive === null
-      ? getDefaultActiveMatter(ing)
+      ? null
       : Number(explicitActive);
     const activeIsValid = typeof resolvedActive === 'number' &&
       Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100;
