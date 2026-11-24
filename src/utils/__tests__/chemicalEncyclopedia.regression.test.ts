@@ -190,7 +190,7 @@ export function runChemicalEncyclopediaTestSuite() {
     `Batch Cost: $${batchCost}`
   );
 
-  // 14. Formula-entry aliases resolve to canonical identities without unsafe fuzzy matching
+  // 16. Formula-entry aliases resolve to canonical identities without unsafe fuzzy matching
   const identityCases: Array<[string, string]> = [
     ['Linear Alkylbenzene Sulfonic Acid (LABSA 90%)', 'labsa-90'],
     ['Sodium Laureth Sulfate (SLES 70%)', 'sles-70'],
@@ -220,12 +220,17 @@ export function runChemicalEncyclopediaTestSuite() {
     'Test 19: Unknown chemical names are not falsely matched by fuzzy substring logic'
   );
 
-  // 14. Immutability of Master Dataset
+  assert(
+    resolveUniversalIngredientIdentity('Salt') === null,
+    'Test 20: Ambiguous generic salt is not silently identified as sodium chloride'
+  );
+
+  // 21. Immutability of Master Dataset
   const beforeLen = UNIVERSAL_INGREDIENTS.length;
   searchUniversalIngredients('SLES', 'Anionic Surfactant');
   assert(
     UNIVERSAL_INGREDIENTS.length === beforeLen,
-    'Test 16: Search and filter operations do not mutate or truncate UNIVERSAL_INGREDIENTS',
+    'Test 21: Search and filter operations do not mutate or truncate UNIVERSAL_INGREDIENTS',
     `Length: ${UNIVERSAL_INGREDIENTS.length}`
   );
 
