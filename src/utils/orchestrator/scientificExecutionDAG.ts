@@ -875,7 +875,8 @@ export class ScientificExecutionDAG {
             ingredients: state.resolvedIngredients,
             productCategory: state.canonicalCategory,
             batchSizeKg: state.batchSizeKg,
-            waterHardnessPpm: state.waterHardnessPpm ?? undefined
+            waterHardnessPpm: state.waterHardnessPpm ?? undefined,
+            labMeasurements: state.rawInput.powderLabInputs
           });
           const powderStatus = state.powderReport?.verdict?.overallStatus;
           state.powderStatus = powderStatus === 'SCREENING_ONLY' ? 'SCREENING' :
