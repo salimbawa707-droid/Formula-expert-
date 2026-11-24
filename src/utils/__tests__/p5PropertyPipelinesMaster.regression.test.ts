@@ -115,6 +115,15 @@ export function runP5PropertyPipelinesTestSuite() {
     washVolumeL: undefined,
     washDoseGrams: undefined
   });
+  const missingBatchScenarioRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    batchSizeKg: undefined,
+    batchSize: undefined
+  });
+  const invalidDoseScenarioRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    washDoseGrams: 0
+  });
   assert(
     'Phase 2: Category Routing',
     'HLB is NOT_APPLICABLE for laundry powder profile',
@@ -146,6 +155,21 @@ export function runP5PropertyPipelinesTestSuite() {
       Number.isNaN(missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg),
     { status: missingHardnessScenarioRun.state.hardnessResult?.status, load: missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg },
     'NOT_EVALUATED with NaN load'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Zero wash dose is rejected instead of replaced by a policy default',
+    invalidDoseScenarioRun.state.hardnessResult?.status === 'NOT_EVALUATED' &&
+      Number.isNaN(invalidDoseScenarioRun.state.hardnessResult?.washDoseGrams),
+    { status: invalidDoseScenarioRun.state.hardnessResult?.status, dose: invalidDoseScenarioRun.state.hardnessResult?.washDoseGrams },
+    'NOT_EVALUATED with unavailable dose'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing batch size is visibly recorded as a 100 kg scenario assumption',
+    missingBatchScenarioRun.state.assumptions.some(a => a.includes('100 kg') && a.includes('scenario')),
+    missingBatchScenarioRun.state.assumptions,
+    'Explicit 100 kg scenario assumption'
   );
 
   // A. Neutralization executes before final pH
