@@ -1,0 +1,1094 @@
+MASTER PROMPT — DETERGENT FORMULA EXPERT
+
+COMPLETE PHASE 3 TO PHASE 10
+
+FULL SCIENTIFIC REMEDIATION, IMPLEMENTATION, TESTING AND PRODUCTION READINESS
+
+You are working on the existing Detergent Formula Expert application.
+
+Your mission is to complete ALL remaining development phases from Phase 3 through Phase 10.
+
+This is a complete implementation and remediation assignment.
+
+You must inspect the real repository, fix actual defects, implement missing functionality, correct scientific calculations, repair the ingredient database, integrate every engine into the application, write automated tests, run verification, and make the application production-ready.
+
+Do not merely produce audits, recommendations, reports, or TODO lists.
+
+You must modify the actual application source code.
+
+---
+
+A. NON-NEGOTIABLE MASTER RULES
+
+A1. AUDIT AND FIX — NOT AUDIT ONLY
+
+For every discovered problem:
+
+1. Inspect the actual source code and database.
+2. Identify the root cause.
+3. Modify the real source files.
+4. Implement the required correction.
+5. Correct underlying scientific calculations and data.
+6. Update affected UI workflows.
+7. Add automated tests.
+8. Run the tests.
+9. Fix failures caused by your modifications.
+10. Verify that the application actually uses the corrected implementation.
+
+A report without actual implementation is not completion.
+
+A TODO list without implementation is not completion.
+
+A mock implementation is not completion.
+
+A successful compilation alone is not completion.
+
+If a feature cannot be safely implemented because reliable scientific data is missing, implement appropriate fail-closed behavior and document the limitation.
+
+Never invent scientific values, chemical properties, calculation results, or test results.
+
+A2. WORK ON THE EXISTING PROJECT
+
+- Use the actual existing repository.
+- Preserve the existing architecture wherever practical.
+- Preserve existing working functionality.
+- Preserve historical formulas and batch records.
+- Preserve canonical ingredient IDs and references.
+- Do not create a separate demo application.
+- Do not create duplicate calculation engines.
+- Do not replace working engines unnecessarily.
+- Do not delete important files simply to simplify implementation.
+- Do not remove existing tests to make the test suite pass.
+
+A3. EXECUTE PHASES SEQUENTIALLY
+
+Execute in this exact order:
+
+Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 → Phase 8 → Phase 9 → Phase 10.
+
+For each phase:
+
+1. Verify prerequisites.
+2. Audit actual implementation.
+3. Fix confirmed defects.
+4. Implement missing functionality.
+5. Add and run tests.
+6. Run regression tests.
+7. Review actual code changes.
+8. Record the completed commit.
+9. Produce a phase completion report.
+
+Do not begin the next phase until the current phase meets its completion criteria.
+
+If a phase is blocked, do not falsely mark it complete. Continue only with independent work that cannot damage or invalidate the blocked dependency. Clearly identify dependent tasks.
+
+Never skip a phase silently.
+
+A4. BASELINE VERIFICATION
+
+Before starting:
+
+- Inspect current branch and HEAD SHA.
+- Inspect Git working-tree status.
+- Verify Phase 1 and Phase 2 implementation and merge status.
+- Identify all existing engines and integrations.
+- Inspect all current automated test suites.
+- Record baseline test and build results.
+
+Do not assume previous completion claims are accurate. Verify them from actual source code and Git history.
+
+---
+
+PHASE 3 — pH ENGINE, NEUTRALIZATION AND ACID-BASE SCIENCE
+
+Objective
+
+Complete and scientifically validate the entire pH prediction and neutralization system.
+
+3.1 Preserve existing engines
+
+Inspect:
+
+- PHEngine.js
+- PHEngineV2
+- Every other pH-related calculation engine.
+- Acid/base ingredient properties.
+- Formula Builder integrations.
+- Formula Expert integrations.
+- Staged Analysis integrations.
+
+Preserve the original PHEngine.js and its working functionality.
+
+Do not delete or bypass the original engine.
+
+Remove duplicate or conflicting calculation paths only after proving that replacement behavior is correct.
+
+3.2 Correct acid-base calculations
+
+Implement or repair:
+
+- Acid-base equivalents.
+- Molar mass and equivalent weight.
+- Purity and assay.
+- Raw material concentration.
+- Hydration state.
+- Stoichiometric neutralization.
+- Excess acid and excess base.
+- Multiple acid/base ingredients.
+- Polyprotic systems where supported.
+- Buffer formation.
+- Water dilution.
+- Equilibrium calculations.
+
+Clearly distinguish:
+
+1. Theoretical neutralization.
+2. Equilibrium pH.
+3. Predicted formulation pH.
+4. Experimentally measured pH.
+
+Never treat these as interchangeable.
+
+3.3 Real pH prediction
+
+Implement scientifically defensible:
+
+- Mass balance.
+- Charge balance.
+- Acid-base equilibrium.
+- Water autoionization.
+- Dissociation equilibria.
+- Buffer equilibrium.
+- Ionic strength corrections where supported.
+- Activity coefficients where justified.
+- Stable numerical solving.
+- Convergence and residual validation.
+- Solver failure handling.
+
+Do not use Henderson-Hasselbalch as a universal replacement for full equilibrium calculations.
+
+Do not silently return plausible-looking values when the solver fails.
+
+3.4 Density and dilution
+
+Correct:
+
+- Density-based conversions.
+- Raw mass and active mass.
+- Water quantity.
+- Final batch mass.
+- Final solution volume.
+- Concentration after dilution.
+- Powder and liquid ingredient handling.
+
+Do not assume 1 kg always equals 1 litre.
+
+Clearly distinguish concentrate pH from diluted wash-solution pH.
+
+3.5 Tests
+
+Test strong acids, weak acids, strong bases, weak bases, buffers, multiple ingredients, excess acid/base, dilution, units, solver convergence, missing data, and regression compatibility.
+
+Phase 3 completion requires verified scientific calculations and actual application integration.
+
+---
+
+PHASE 4 — COMPLETE INGREDIENT DATABASE AND SURFACTANT SCIENCE
+
+Objective
+
+Audit and correct EVERY canonical ingredient record in the actual ingredient database.
+
+Do not audit only a sample.
+
+4.1 Full ingredient inventory
+
+Read the entire database and enumerate every canonical ingredient.
+
+For each ingredient verify, where applicable:
+
+- Canonical ID.
+- Chemical identity.
+- Common name.
+- Synonyms.
+- CAS number.
+- Chemical formula.
+- Molecular weight.
+- Ingredient category.
+- Functional classification.
+- Surfactant classification.
+- Active matter.
+- Assay/purity.
+- Raw material concentration.
+- Moisture.
+- Carrier content.
+- Physical form.
+- Density.
+- pH.
+- Solubility.
+- Compatibility.
+- Storage information.
+- Data provenance.
+- Validation status.
+
+Correct incorrect records in the actual database.
+
+Do not invent missing information.
+
+4.2 Surfactant classification
+
+Implement scientifically correct classification:
+
+- Anionic.
+- Nonionic.
+- Cationic.
+- Amphoteric/zwitterionic.
+- Surfactant blends.
+- Non-surfactants.
+
+Explicitly prevent non-surfactants from being incorrectly classified as surfactants.
+
+Examples requiring correct classification include:
+
+- Sodium sulfate.
+- Water.
+- Sodium carbonate.
+- Sodium bicarbonate.
+- Sodium citrate.
+- Sodium gluconate.
+- GLDA.
+- Sodium metasilicate.
+- STPP.
+- Dolomite.
+- Calcium carbonate.
+
+Do not label water or ordinary builders as unlisted surfactants.
+
+4.3 Active matter engine
+
+Correct all active matter calculations.
+
+Distinguish:
+
+- Active surfactant percentage.
+- Raw material percentage.
+- Raw material assay.
+- Commercial solution concentration.
+- Purity.
+- Moisture.
+- Carrier content.
+- Blend composition.
+
+Prevent double counting of surfactant blends.
+
+Use the actual declared assay and formula mass basis.
+
+Support mixed surfactant systems correctly.
+
+4.4 Ingredient visibility and search
+
+Fix the complete ingredient database UI:
+
+- All valid ingredients must appear.
+- Correct search and filters.
+- Correct category grouping.
+- Correct ingredient details.
+- Correct unknown/unverified states.
+- Correct canonical ID mapping.
+- Correct saved formula references.
+
+No valid ingredient should incorrectly appear as unlisted merely because its metadata is incomplete.
+
+Unknown data and unknown ingredient identity must be separate states.
+
+4.5 Scientific properties
+
+Only calculate properties such as:
+
+- HLB.
+- CMC.
+- Cloud point.
+- Krafft point.
+- Solubility.
+- Compatibility.
+
+When reliable supporting information exists.
+
+Do not invent these values.
+
+4.6 Tests
+
+Test every canonical ingredient record, classification, active matter calculation, assay, blend handling, search, filtering, serialization, saved formula compatibility, and database integrity.
+
+Generate a complete machine-readable inventory and validation report from the real database.
+
+---
+
+PHASE 5 — WATER HARDNESS, CHELATION AND BUILDER PERFORMANCE ENGINE
+
+Objective
+
+Build a scientifically correct water hardness and chelation calculation system for detergent formulation.
+
+5.1 Water hardness engine
+
+Implement:
+
+- Calcium hardness.
+- Magnesium hardness.
+- Total hardness.
+- CaCO3 equivalent conversion.
+- ppm and mg/L handling.
+- Molar and equivalent conversions.
+- Water hardness categories.
+- Wash-water volume.
+- Formula dosage.
+- Dilution.
+- Hardness load per wash.
+
+Do not confuse raw calcium/magnesium concentrations with total hardness.
+
+Handle units correctly.
+
+5.2 Chelator database and capacity
+
+Verify and implement supported data for:
+
+- GLDA.
+- Sodium citrate.
+- Sodium gluconate.
+- Other existing chelating agents.
+- Builders and sequestrants where applicable.
+
+Verify:
+
+- Chemical identity.
+- Commercial assay.
+- Active concentration.
+- Hydration state.
+- Molecular weight.
+- Binding capacity.
+- Stoichiometric basis.
+- pH dependency.
+- Relevant competing ions.
+- Data source and confidence.
+
+Do not assume every chelator has the same binding capacity.
+
+Do not treat theoretical capacity as guaranteed practical performance.
+
+5.3 Chelator calculation
+
+Implement:
+
+- Theoretical hardness-binding capacity.
+- Effective capacity where validated.
+- Calcium and magnesium contributions.
+- Chelator dosage.
+- Safety margin.
+- Hardness load.
+- Remaining hardness estimate.
+- Insufficient chelator warnings.
+- Excess dosage warnings.
+
+Clearly distinguish theoretical binding from real wash performance.
+
+Use the actual formula quantities and final wash volume.
+
+5.4 Formula integration
+
+Integrate into:
+
+- Formula Builder.
+- Formula Expert.
+- Check My Formula.
+- Staged Analysis.
+- R&D Calculators.
+- Formula reports.
+
+Allow the user to configure water hardness and wash volume.
+
+Do not silently use arbitrary water hardness values.
+
+5.5 Tests
+
+Test unit conversions, hardness calculations, calcium/magnesium contributions, chelator assay, hydration, capacity, dilution, safety margins, invalid data, and regression.
+
+---
+
+PHASE 6 — FORMULA ACCOUNTING, UNIT CONSISTENCY AND INGREDIENT INGESTION
+
+Objective
+
+Eliminate every accounting discrepancy, unit mismatch, ingredient ingestion error, and formula mass inconsistency.
+
+This phase must verify the entire application data pipeline.
+
+6.1 Full accounting audit
+
+Audit:
+
+- Formula ingredient quantities.
+- Raw material weights.
+- Batch weights.
+- Batch percentages.
+- Active matter.
+- Water.
+- Density.
+- Volume.
+- Units.
+- Cost.
+- Yield.
+- Rounding.
+- Inventory consumption.
+- Batch log values.
+
+Every formula must have a consistent accounting basis.
+
+6.2 Unit normalization
+
+Implement a centralized unit normalization and conversion engine.
+
+Support appropriate units including:
+
+- kg.
+- g.
+- mg.
+- L.
+- mL.
+- Percentage.
+- ppm.
+- mg/L.
+- mol.
+- mmol.
+- Equivalent units where relevant.
+
+Reject invalid conversions.
+
+Do not convert mass to volume without a valid density.
+
+Do not allow incompatible dimensions to be added or compared.
+
+6.3 Ingredient ingestion
+
+Audit the full ingredient ingestion pipeline.
+
+Fix:
+
+- Missing canonical mappings.
+- Duplicate records.
+- Incorrect IDs.
+- Invalid aliases.
+- Wrong unit assignments.
+- Missing required fields.
+- Malformed scientific values.
+- Incorrect assay interpretation.
+- Invalid category assignments.
+- Imported data inconsistencies.
+
+Preserve valid historical records.
+
+6.4 Accounting invariants
+
+Implement hard validation for:
+
+- Total formula mass.
+- Percentage totals.
+- Batch size.
+- Ingredient mass.
+- Active matter totals.
+- Raw material totals.
+- Liquid volume calculations.
+- Cost basis.
+- Inventory consumption.
+
+Do not silently normalize incorrect formulas without showing the user what changed.
+
+6.5 Tests
+
+Add complete database and accounting tests.
+
+Reconcile all previously identified ingestion and unit mismatch blockers using actual current counts.
+
+Do not claim that previous discrepancies are fixed until independently verified.
+
+---
+
+PHASE 7 — FORMULA VALIDATION, COMPATIBILITY AND SCIENTIFIC SAFETY ENGINE
+
+Objective
+
+Build a complete product-specific scientific validation system.
+
+7.1 Formula validation
+
+Validate formulas against:
+
+- Product category.
+- Product type.
+- Ingredient compatibility.
+- Active matter.
+- pH.
+- Water hardness.
+- Builder system.
+- Chelation.
+- Solubility.
+- Physical stability.
+- Intended application.
+- Dosage.
+- Processing constraints.
+
+Validation must be product-specific.
+
+Do not apply one universal set of limits to every detergent product.
+
+7.2 Compatibility engine
+
+Implement supported compatibility checks for:
+
+- Anionic and cationic interactions.
+- Surfactant combinations.
+- Enzyme compatibility.
+- Fragrance compatibility.
+- Builder interactions.
+- Electrolyte effects.
+- pH compatibility.
+- Hard-water interactions.
+- Solubility and precipitation risks.
+
+Only issue definitive compatibility conclusions when supported by evidence.
+
+Otherwise return a qualified risk or unknown status.
+
+7.3 Product-specific constraints
+
+Support relevant product categories such as:
+
+- Washing powder.
+- Liquid laundry detergent.
+- Dishwashing liquid.
+- Other existing supported categories.
+
+Each category must have its own scientific validation profile.
+
+Do not copy arbitrary limits across product categories.
+
+7.4 Safety and warnings
+
+Implement warnings for:
+
+- Invalid chemical combinations.
+- Unsupported ingredient identity.
+- Unsafe pH ranges.
+- Missing assay.
+- Excessive ingredient dosage.
+- Precipitation risk.
+- Stability concerns.
+- Incomplete scientific data.
+
+Distinguish scientific uncertainty from confirmed failure.
+
+7.5 Tests
+
+Test valid, invalid, warning, unknown, and borderline formulas for each supported product category.
+
+---
+
+PHASE 8 — FORMULA EXPERT, STAGED ANALYSIS AND CALCULATION INTEGRATION
+
+Objective
+
+Ensure the entire application works as one consistent scientific system.
+
+8.1 Unified calculation architecture
+
+Audit all calculation engines and remove conflicting duplicate logic where safe.
+
+Create a clear and maintainable integration architecture.
+
+The application must use consistent calculation outputs across:
+
+- Formula Builder.
+- Formula Expert.
+- Check My Formula.
+- Staged Analysis.
+- Formula Library.
+- R&D Calculators.
+- Batch Log.
+- Reports.
+
+8.2 Check My Formula workflow
+
+When the user presses Check My Formula:
+
+- Read the actual current formula.
+- Validate ingredient identities.
+- Validate quantities and units.
+- Calculate active matter.
+- Calculate pH where supported.
+- Calculate water hardness and chelation where supported.
+- Check compatibility.
+- Check product-specific constraints.
+- Calculate cost.
+- Identify missing scientific data.
+- Generate warnings and recommendations.
+
+Do not use stale cached values.
+
+Do not display mock results.
+
+Do not fabricate analysis.
+
+8.3 Staged Analysis
+
+Implement a reliable staged analysis workflow.
+
+Each stage must:
+
+- Have a defined purpose.
+- Use real engine outputs.
+- Record input data.
+- Record output data.
+- Record validation status.
+- Report unresolved issues.
+- Preserve stage dependencies.
+
+A stage must not show complete if its underlying calculation failed.
+
+8.4 Formula recommendations
+
+Recommendations must be grounded in actual calculation results.
+
+Do not recommend an ingredient simply because it exists in the database.
+
+Show:
+
+- Why the recommendation is made.
+- Which problem it addresses.
+- Expected calculation impact.
+- Cost impact where available.
+- Scientific uncertainty.
+- Required laboratory verification.
+
+8.5 Offline functionality
+
+All core calculations must operate offline.
+
+Do not require external AI API keys for scientific calculations.
+
+Internet-based research may be an optional separate feature, but offline calculation must remain available.
+
+8.6 Tests
+
+Test the complete end-to-end workflow with representative formulas across supported product categories.
+
+---
+
+PHASE 9 — REMOVE HARDCODED SCIENTIFIC RESULTS AND IMPLEMENT REAL CONSTRAINED OPTIMIZATION
+
+Objective
+
+Eliminate fake or hardcoded scientific outputs and implement a genuine formula optimization engine.
+
+This phase must be treated as a critical scientific integrity phase.
+
+9.1 Repository-wide hardcoded result audit
+
+Search the entire repository for:
+
+- Hardcoded pH results.
+- Hardcoded active matter.
+- Hardcoded compatibility scores.
+- Hardcoded cleaning scores.
+- Hardcoded CPI values.
+- Hardcoded hardness results.
+- Hardcoded chelator capacity.
+- Hardcoded cost calculations.
+- Hardcoded safety scores.
+- Fixed scientific recommendations.
+- Mock calculation outputs.
+- Placeholder formula analysis.
+- Duplicate scientific formulas.
+
+For each finding:
+
+1. Identify the actual source.
+2. Determine whether it is a legitimate constant, test fixture, display default, or incorrect calculation.
+3. Correct the underlying implementation.
+4. Add regression tests.
+5. Verify all application workflows.
+
+Do not remove legitimate constants without checking their scientific source.
+
+9.2 Real constrained formulation optimization
+
+Implement a real constrained optimization engine.
+
+Optimization must respect:
+
+- Product category.
+- Formula mass.
+- Ingredient availability.
+- Ingredient dosage limits.
+- Active matter targets.
+- pH targets.
+- Cost targets.
+- Water hardness.
+- Chelator requirements.
+- Ingredient compatibility.
+- Product performance.
+- Physical stability.
+- Processing constraints.
+- Safety constraints.
+- User-defined restrictions.
+
+9.3 Objective function
+
+Support transparent objective functions, such as:
+
+- Minimize formulation cost.
+- Meet active matter targets.
+- Meet performance targets.
+- Minimize unnecessary ingredients.
+- Reduce incompatibility risk.
+- Respect stability constraints.
+
+Allow appropriate weighting without hiding trade-offs.
+
+9.4 Optimization output
+
+Every suggested optimized formula must include:
+
+- Original formula.
+- Proposed formula.
+- Ingredient-wise quantity changes.
+- Total batch mass.
+- Active matter.
+- Predicted pH and calculation status.
+- Hardness/chelation analysis.
+- Cost comparison.
+- Compatibility findings.
+- Constraint violations.
+- Uncertainty.
+- Explanation of trade-offs.
+
+Never claim that an optimized formula is experimentally proven.
+
+9.5 Hard constraints versus soft objectives
+
+Hard constraints must never be silently violated.
+
+Soft objectives may be traded off only when the user or configuration allows it.
+
+If no feasible formula exists, report infeasibility rather than inventing a solution.
+
+9.6 Independent verification
+
+Recalculate every optimized formula using the production calculation engines.
+
+Do not use the optimizer's internal estimates as the final verification.
+
+9.7 Tests
+
+Test feasible solutions, infeasible constraints, cost minimization, active matter constraints, mass balance, ingredient limits, compatibility restrictions, missing data, and deterministic reproducibility.
+
+---
+
+PHASE 10 — COMPLETE SYSTEM AUDIT, PRODUCTION HARDENING AND FINAL RELEASE READINESS
+
+Objective
+
+Perform a complete end-to-end verification of the Detergent Formula Expert application.
+
+Phase 10 is not just a final report. Fix every confirmed remaining defect that falls within the project's scope.
+
+10.1 Complete application audit
+
+Inspect:
+
+- Ingredient Encyclopedia.
+- Formula Builder.
+- Formula Library.
+- AI Formulation Expert.
+- Check My Formula.
+- Staged Analysis.
+- R&D Calculators.
+- Cost Calculator.
+- Active Matter Calculator.
+- pH Calculator.
+- Water Hardness Calculator.
+- Batch Log.
+- Inventory.
+- SDS/MSDS.
+- Reports.
+- Settings.
+- Offline behavior.
+- Data persistence.
+- Import/export.
+- Mobile layout.
+- Android WebView integration.
+
+Verify that every visible feature actually works.
+
+Do not mark a feature complete just because its UI exists.
+
+10.2 Scientific integrity audit
+
+Verify:
+
+- All scientific calculations use the intended production engines.
+- All scientific values have traceable sources or declared assumptions.
+- No unsupported hardcoded results remain.
+- All unknown values are handled safely.
+- Units are consistent.
+- All calculations have tests.
+- Formula results are reproducible.
+- Saved formulas remain compatible.
+- Historical data is preserved.
+
+10.3 Data integrity
+
+Verify:
+
+- Database consistency.
+- Canonical ingredient uniqueness.
+- Formula references.
+- Inventory records.
+- Batch history.
+- Data migrations.
+- Import/export compatibility.
+- Offline persistence.
+- No accidental data loss.
+
+10.4 Security and reliability
+
+Audit:
+
+- Input validation.
+- Error handling.
+- Data validation.
+- Unsafe defaults.
+- Dependency vulnerabilities where tooling supports it.
+- API key exposure.
+- Logging of sensitive information.
+- Unhandled exceptions.
+- Performance bottlenecks.
+- Unnecessary network dependencies.
+
+Do not expose secrets in reports or commits.
+
+10.5 UI/UX verification
+
+Check:
+
+- Mobile responsiveness.
+- Desktop responsiveness.
+- Ingredient search.
+- Filters.
+- Formula editing.
+- Calculation loading states.
+- Error messages.
+- Scientific warnings.
+- Empty states.
+- Accessibility.
+- Navigation.
+- Persistence after reload.
+- Export and download workflows.
+
+Fix actual defects.
+
+10.6 Final automated testing
+
+Run:
+
+- All unit tests.
+- All integration tests.
+- All scientific reference tests.
+- All database tests.
+- All regression suites.
+- All formula workflow tests.
+- TypeScript checks.
+- Lint checks.
+- Production frontend build.
+- Android debug build where supported.
+
+Do not weaken tests to obtain green CI.
+
+Do not claim unexecuted tests passed.
+
+10.7 Final independent review
+
+After implementation:
+
+- Review the entire Git diff.
+- Check for unfinished TODOs.
+- Check for mock implementations.
+- Check for duplicate engines.
+- Check for disconnected UI.
+- Check for stale calculations.
+- Check for hardcoded results.
+- Check for missing tests.
+- Check for unverified scientific constants.
+- Check for data loss and migration errors.
+
+Run the full regression suite again after the final corrections.
+
+10.8 Release readiness
+
+Produce an honest release-readiness decision:
+
+- READY FOR RELEASE.
+- READY WITH DOCUMENTED LIMITATIONS.
+- NOT READY — BLOCKING DEFECTS REMAIN.
+
+Do not declare production-ready if any critical scientific, data-integrity, or application workflow issue remains.
+
+---
+
+B. CROSS-PHASE INTEGRATION REQUIREMENTS
+
+These rules apply to every phase.
+
+1. Use one authoritative source for each scientific calculation.
+2. Do not duplicate calculation logic across UI components.
+3. Preserve canonical ingredient IDs.
+4. Preserve formula history.
+5. Preserve backward compatibility.
+6. Use explicit units and calculation bases.
+7. Distinguish unknown from zero.
+8. Distinguish missing data from invalid data.
+9. Never fabricate scientific properties.
+10. Never silently accept incompatible units.
+11. Never display a failed calculation as a successful result.
+12. Keep core calculations offline.
+13. Add regression tests for every critical fix.
+14. Verify the actual user-facing workflow.
+15. Document scientific assumptions and limitations.
+
+---
+
+C. GIT AND CHANGE MANAGEMENT
+
+Work safely on the existing repository.
+
+For every phase:
+
+- Record starting commit SHA.
+- Review working-tree changes.
+- Keep changes logically organized.
+- Do not overwrite unrelated user work.
+- Commit completed phase work with a meaningful message when Git access permits.
+- Keep a clear phase-wise change summary.
+- Do not merge incomplete or failing work.
+- Do not push if authentication is unavailable.
+- Never claim a commit or merge occurred unless Git confirms it.
+
+If PR creation and CI are available, create a phase-wise PR or a carefully organized implementation PR.
+
+Before merging:
+
+- Review the full diff.
+- Verify all required checks.
+- Confirm no unrelated changes.
+- Confirm the merge target is correct.
+
+---
+
+D. FINAL MASTER COMPLETION REPORT
+
+After Phase 10, produce one consolidated report containing:
+
+1. Project status
+
+- Repository.
+- Branch.
+- Final HEAD SHA.
+- Starting HEAD SHA.
+- Phase 1–10 status.
+
+2. Phase-wise completion table
+
+For every phase, report:
+
+- Audit status.
+- Actual code changes.
+- Database changes.
+- Scientific changes.
+- Tests added.
+- Tests executed.
+- Pass/fail counts.
+- Build result.
+- Commit SHA.
+- Remaining blockers.
+
+3. Ingredient database
+
+- Total canonical ingredients.
+- Valid records.
+- Corrected records.
+- Duplicate records.
+- Unsupported records.
+- Missing scientific data.
+- Surfactant classification counts.
+
+All counts must come from the actual database.
+
+4. Scientific engine status
+
+- pH engine.
+- Neutralization engine.
+- Active matter engine.
+- Water hardness engine.
+- Chelation engine.
+- Compatibility engine.
+- Formula validation engine.
+- Cost engine.
+- Optimization engine.
+
+5. Application integration
+
+Report which actual workflows were verified end to end.
+
+6. Testing and build
+
+Provide exact test counts and actual build results.
+
+7. Remaining limitations
+
+List all unresolved issues without hiding them.
+
+8. Final release decision
+
+Choose one:
+
+- READY FOR RELEASE.
+- READY WITH DOCUMENTED LIMITATIONS.
+- NOT READY.
+
+Explain the evidence behind the decision.
+
+---
+
+E. EXECUTION INSTRUCTIONS
+
+Start immediately with repository inspection and baseline verification.
+
+Then execute Phase 3 through Phase 10 in order.
+
+Do not ask me to approve each individual code correction that is already required by this specification.
+
+Use sound engineering judgment.
+
+If a task is blocked, explain the exact blocker and complete safe independent work without pretending the blocked work is complete.
+
+Do not stop after producing an audit.
+
+Do not stop after writing documentation.
+
+Do not stop after adding placeholder functions.
+
+Do not stop after a successful build.
+
+Complete actual implementation, scientific validation, automated testing, regression verification, and final production-readiness assessment.
+
+THE FINAL GOAL IS A FUNCTIONAL, SCIENTIFICALLY DEFENSIBLE, OFFLINE-CAPABLE AND PRODUCTION-READY DETERGENT FORMULA EXPERT APPLICATION — NOT JUST A PROJECT WITH GREEN TESTS.
