@@ -212,6 +212,29 @@ export function runP1Phase2ChelationTestSuite() {
   const case7Cap = calculateFormulationChelationCapacity(case7Formula, 20);
   assertNear('Reference Cases', 'Case 7: 3% Sodium Citrate Dihydrate Capacity', case7Cap.totalSequestrationMg, 90.0);
 
+  // Generic citrate has no hydration/grade identity and must not inherit the dihydrate benchmark.
+  const genericCitrate = calculateFormulationChelationCapacity(
+    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0 }],
+    20
+  );
+  assert(
+    genericCitrate.status === 'INSUFFICIENT_DATA' &&
+      genericCitrate.hasUnknownChelators === true &&
+      genericCitrate.totalSequestrationMg === 0,
+    'Grade Identity',
+    'Generic sodium citrate remains unresolved instead of silently becoming dihydrate'
+  );
+
+  const genericCitrateCapacity = calculateFormulationChelationCapacity(
+    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0 }],
+    20
+  );
+  assert(
+    genericCitrateCapacity.details.some(d => d.name === 'Sodium Citrate' && d.provenance !== 'AUTHORITATIVE'),
+    'Grade Identity',
+    'Ambiguous citrate capacity is not represented as authoritative'
+  );
+
   // Case 8: Mixed GLDA 47% (2%) + Sodium Citrate (3%)
   // Combined capacity = 54.8 + 90.0 = 144.8 mg CaCO3
   const case8Formula: FormulationIngredient[] = [
