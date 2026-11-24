@@ -125,8 +125,11 @@ export interface CanonicalFormulaInput {
   temperature?: number;
   temperatureC?: number;
   machineProfile?: MachineProfileInput;
+  waterVolumeL?: number;
+  washVolumeL?: number;
   dose?: number;
   doseGrams?: number;
+  washDoseGrams?: number;
   manufacturingProcess?: ManufacturingProcessInput;
   costContext?: CostContextInput;
   regulatoryContext?: RegulatoryContext;
