@@ -473,11 +473,21 @@ Provide exactly 3 distinct sources in JSON format conforming to this schema:
       const numericProperty = values.every(value => typeof value === 'number' && Number.isFinite(value));
       if (numericProperty) {
         const metadataKeys = [`${prop}Unit`, `${prop}Basis`, `${prop}Method`, `${prop}Conditions`];
-        const metadataComplete = propertySources.length === values.length && propertySources.every(source =>
-          metadataKeys.every(key => typeof source.extractedParameters?.[key] === 'string' && source.extractedParameters[key].trim().length > 0) &&
-          typeof source.extractedParameters?.grade === 'string' && source.extractedParameters.grade.trim().length > 0 &&
-          (!grade || source.extractedParameters.grade.trim().toLowerCase() === grade.trim().toLowerCase())
-        );
+        const metadataComplete = propertySources.length === values.length && propertySources.every(source => {
+          const sourceText = String(source.rawContent || '').toLowerCase();
+          const sourceGrade = String(source.extractedParameters?.grade || '').trim();
+          const metadataPresent = metadataKeys.every(key =>
+            typeof source.extractedParameters?.[key] === 'string' &&
+            source.extractedParameters[key].trim().length > 0 &&
+            sourceText.includes(source.extractedParameters[key].trim().toLowerCase())
+          );
+          const valuePresent = sourceText.includes(String(source.extractedParameters?.[prop]).toLowerCase());
+          return metadataPresent &&
+            Boolean(sourceGrade) &&
+            sourceText.includes(sourceGrade.toLowerCase()) &&
+            valuePresent &&
+            (!grade || sourceGrade.toLowerCase() === grade.trim().toLowerCase());
+        });
         const signatures = propertySources.map(source => metadataKeys
           .map(key => String(source.extractedParameters[key]).trim().toLowerCase().replace(/\s+/g, ' '))
           .concat([String(source.extractedParameters.grade || '').trim().toLowerCase()])
