@@ -166,7 +166,13 @@ export default function DocsLibrary() {
         setError('Source URL must be a valid HTTPS or HTTP URL.'); return;
       }
     }
-    const attachmentValidation = attachment ? await validateAttachment(attachment) : {};
+    let attachmentValidation: { error?: string; mimeType?: string } = {};
+    try {
+      attachmentValidation = attachment ? await validateAttachment(attachment) : {};
+    } catch (e) {
+      setError(e instanceof Error ? `Could not read the selected attachment: ${e.message}` : 'Could not read the selected attachment.');
+      return;
+    }
     if (attachmentValidation.error) { setError(attachmentValidation.error); return; }
     if (reviewStatus === 'REVIEWED_BY_USER' && !reviewedBy.trim()) {
       setError('Enter the reviewer name for a user-reviewed record.'); return;
