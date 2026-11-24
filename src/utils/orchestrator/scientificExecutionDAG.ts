@@ -575,7 +575,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE', state.rawInput.productSubProfileId)
+          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE')
         ) {
           state.hlbResult = {
             blendedHLB: null,
@@ -602,7 +602,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE', state.rawInput.productSubProfileId)
+          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE')
         ) {
           state.hardnessResult = {
             status: 'NOT_APPLICABLE',
@@ -899,7 +899,7 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         if (
           state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
-          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE', state.rawInput.productSubProfileId)
+          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE')
         ) {
           state.cleaningResult = {
             cpi: null,
