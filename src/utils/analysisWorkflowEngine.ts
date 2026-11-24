@@ -966,9 +966,10 @@ export async function executeStagedScientificAnalysis(
     climateScore: null // No validated climate-risk scoring model is available.
   };
 
-  completeStage('PROCESS_COSTING', 'COMPLETED', {
-    details: `Finished Cost: ₹${formulaCost.costPerKg.toFixed(2)}/kg | Total Batch: ₹${formulaCost.totalBatchCost.toFixed(2)} (${formulaCost.isComplete ? 'Complete' : `${formulaCost.missingPriceCount} unpriced`})`,
-    intermediate: costingIntermediate
+  completeStage('PROCESS_COSTING', 'COMPLETED_WITH_WARNINGS', {
+    details: `Finished Cost: ${Number.isFinite(formulaCost.costPerKg) ? `₹${formulaCost.costPerKg.toFixed(2)}/kg` : 'N/A'} | Total Batch: ${Number.isFinite(formulaCost.totalBatchCost) ? `₹${formulaCost.totalBatchCost.toFixed(2)}` : 'N/A'} (${formulaCost.isComplete ? 'Complete' : `${formulaCost.missingPriceCount} unpriced / input incomplete`})`,
+    warnings: marginChain.assumptions,
+    intermediate: { ...costingIntermediate, marginAssumptions: marginChain.assumptions }
   });
 
   // =========================================================================
