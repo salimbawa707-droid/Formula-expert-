@@ -18,7 +18,7 @@
 
 import { FormulationIngredient } from '../types';
 import { normalizeProductCategory, getProductCategory } from '../domain/productTaxonomy';
-import { mapFormulationIngredientsToPHEngineInput, getSolverReadyIngredients } from './pHEngineAdapter';
+import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import { StoichiometricNeutralizationEngine } from '../domain/ph/stoichiometricNeutralizationEngine';
 import { HLBEngine } from './hlbEngine';
@@ -28,14 +28,11 @@ import {
   calculateActiveMatter,
   calculateRawSurfactants
 } from './activeMatterEngine';
-import {
-  calculateWaterHardnessTolerance,
-  getProductHardnessPolicy
-} from './chelatorEngine';
+import { calculateWaterHardnessTolerance } from './chelatorEngine';
 import { ViscosityEngine, calculateDetailedViscosity } from './viscosityEngine';
 import { calculateDensity, calculateTotalSolids } from './densityEngine';
 import { calculateLiquidNVR } from './liquidNvrEngine';
-import { evaluatePowderFormulation, PowderLabMeasurementInputs } from './powderEngine';
+import { PowderLabMeasurementInputs } from './powderEngine';
 import { calculateCleaningPerformance, calculateCPI } from './cleaningPerformanceEngine';
 import { calculateFormulationCompatibility, evaluateFormulationStability } from './compatibilityEngine';
 import { getPreservativeWarning } from './calculators';
@@ -254,8 +251,12 @@ export interface StagedWorkflowProgress {
 export interface FormulaAnalysisSnapshot {
   formulaName: string;
   productCategory: string;
+  productSubProfileId?: string;
   batchSizeKg: number;
   waterHardnessPpm: number | null;
+  washVolumeL?: number;
+  washDoseGrams?: number;
+  temperatureC?: number;
   ingredients: FormulationIngredient[];
   powderLabInputs?: PowderLabMeasurementInputs;
   activeFormulaVersion?: string;
@@ -268,28 +269,38 @@ export interface FormulaAnalysisSnapshot {
 export function calculateFormulaFingerprint(inputs: {
   formulaName: string;
   productCategory: string;
+  productSubProfileId?: string;
   batchSizeKg: number;
   waterHardnessPpm: number | null;
-  ingredients: Array<{ id?: string; name: string; percentage?: number; activeMatterPct?: number; role?: string; costPerKg?: number | null }>;
+  ingredients: Array<{ id?: string; name: string; percentage?: number; percent?: number; percentageInFormula?: number; rawPercent?: number; activeMatterPct?: number; activePercent?: number; activeMatterPurity?: number; role?: string; costPerKg?: number | null }>;
   powderLabInputs?: PowderLabMeasurementInputs;
 }): string {
   const cleanCat = (inputs.productCategory || '').trim().toLowerCase();
   const cleanName = (inputs.formulaName || '').trim().toLowerCase();
-  const cleanHardness = inputs.waterHardnessPpm === null ? 'UNKNOWN' : String(inputs.waterHardnessPpm);
+  const cleanHardness = typeof inputs.waterHardnessPpm === 'number' && Number.isFinite(inputs.waterHardnessPpm) && inputs.waterHardnessPpm >= 0 ? String(inputs.waterHardnessPpm) : 'UNKNOWN';
+  const cleanSubProfile = typeof inputs.productSubProfileId === 'string' && inputs.productSubProfileId.trim() ? inputs.productSubProfileId.trim().toUpperCase() : 'UNSPECIFIED';
 
   const sortedIngs = (inputs.ingredients || [])
     .map((ing) => {
       const name = (ing.name || '').trim().toLowerCase();
-      const pct = (Number(ing.percentage) || 0).toFixed(4);
-      const act = (Number(ing.activeMatterPct) || 0).toFixed(2);
-      const cost = ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg).toFixed(2) : 'null';
+      const rawPct = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? ing.rawPercent;
+      const numericPct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+      const pct = Number.isFinite(numericPct) && numericPct >= 0 && numericPct <= 100
+        ? numericPct.toFixed(4)
+        : (rawPct === undefined || rawPct === null || rawPct === '' ? 'MISSING_PCT' : 'INVALID_PCT');
+      const rawActive = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity;
+      const numericActive = rawActive === undefined || rawActive === null || rawActive === '' ? Number.NaN : Number(rawActive);
+      const act = Number.isFinite(numericActive) && numericActive >= 0 && numericActive <= 100 ? numericActive.toFixed(2) : 'UNKNOWN_AM';
+      const rawCost = ing.costPerKg;
+      const numericCost = rawCost === undefined || rawCost === null || rawCost === '' ? Number.NaN : Number(rawCost);
+      const cost = Number.isFinite(numericCost) && numericCost >= 0 ? numericCost.toFixed(2) : (rawCost === undefined || rawCost === null || rawCost === '' ? 'MISSING_PRICE' : 'INVALID_PRICE');
       return `${name}:${pct}:${act}:${cost}`;
     })
     .sort()
     .join('|');
 
   const powderStr = inputs.powderLabInputs && Object.keys(inputs.powderLabInputs).length > 0 ? JSON.stringify(inputs.powderLabInputs) : '';
-  const raw = `CAT:${cleanCat}|NAME:${cleanName}|HARD:${cleanHardness}|INGS:${sortedIngs}|POWDER:${powderStr}`;
+  const raw = `CAT:${cleanCat}|SUBPROFILE:${cleanSubProfile}|NAME:${cleanName}|HARD:${cleanHardness}|INGS:${sortedIngs}|POWDER:${powderStr}`;
 
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
@@ -452,22 +463,36 @@ export async function executeStagedScientificAnalysis(
     if (!name) {
       validationErrors.push(`Ingredient #${i + 1} has an empty chemical name.`);
     }
-    const pct = Number(ing.percentage ?? (ing as any).percent ?? 0);
-    if (isNaN(pct) || pct < 0) {
-      validationErrors.push(`Ingredient '${name || `#${i + 1}`}' has an invalid quantity (${pct}%).`);
+    const rawPct = ing.percentage ?? (ing as any).percent ?? (ing as any).percentageInFormula ?? (ing as any).rawPercent;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      validationErrors.push(`Ingredient '${name || `#${i + 1}`}' has a missing or invalid quantity (${Number.isFinite(pct) ? pct : 'unavailable'}%).`);
     }
-    const purity = ing.activeMatterPct ?? null;
-    if (isNaN(purity) || purity < 0 || purity > 100) {
-      validationErrors.push(`Ingredient '${name}' has invalid active purity (${purity}%). Must be 0–100%.`);
+    const rawPurity = ing.activeMatterPct ?? (ing as any).activePercent ?? (ing as any).activeMatterPurity ?? (ing as any).purity;
+    if (rawPurity !== undefined && rawPurity !== null && rawPurity !== '') {
+      const purity = Number(rawPurity);
+      if (!Number.isFinite(purity) || purity < 0 || purity > 100) {
+        validationErrors.push(`Ingredient '${name}' has invalid active purity (${Number.isFinite(purity) ? purity : 'unavailable'}%). Must be 0–100%.`);
+      }
     }
   }
 
   const immutableSnapshot: FormulaAnalysisSnapshot = {
     formulaName: snapshot.formulaName || 'Unnamed Formulation',
     productCategory: snapshot.productCategory,
+    productSubProfileId: snapshot.productSubProfileId,
     batchSizeKg: snapshot.batchSizeKg,
     waterHardnessPpm: typeof snapshot.waterHardnessPpm === 'number' && Number.isFinite(snapshot.waterHardnessPpm) && snapshot.waterHardnessPpm >= 0 ? snapshot.waterHardnessPpm : null,
-    ingredients: rawIngredients.map((i) => ({ ...i })),
+    ingredients: rawIngredients.map((i) => {
+      const rawPct = i.percentage ?? (i as any).percent ?? (i as any).percentageInFormula ?? (i as any).rawPercent;
+      const percentage = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+      const rawActive = i.activeMatterPct ?? (i as any).activePercent ?? (i as any).activeMatterPurity ?? (i as any).purity;
+      return {
+        ...i,
+        percentage,
+        activeMatterPct: rawActive === undefined || rawActive === null || rawActive === '' ? undefined : Number(rawActive)
+      };
+    }),
     powderLabInputs: snapshot.powderLabInputs ? { ...snapshot.powderLabInputs } : undefined,
     activeFormulaVersion: snapshot.activeFormulaVersion || '1.0.0'
   };
@@ -489,13 +514,13 @@ export async function executeStagedScientificAnalysis(
       isRevisionMatched: analyzedFingerprint === currentLiveFingerprint,
       timestamp: Date.now(),
       durationTotalMs: Date.now() - startTimeOverall,
-      recomputedMassBalancePct: 0,
-      liveMassBalancePct: rawIngredients.reduce((s, i) => s + (Number(i.percentage) || 0), 0),
+      recomputedMassBalancePct: Number.NaN,
+      liveMassBalancePct: Number.NaN,
       isMassBalanceConsistent: false,
-      recomputedActiveSurfactantPct: 0,
-      liveActiveSurfactantPct: calculateActiveSurfactants(rawIngredients),
+      recomputedActiveSurfactantPct: Number.NaN,
+      liveActiveSurfactantPct: Number.NaN,
       isActiveSurfactantConsistent: false,
-      recomputedCostPerKg: 0,
+      recomputedCostPerKg: Number.NaN,
       liveCostPerKg: calculateFormulaCost(rawIngredients, snapshot.batchSizeKg).costPerKg,
       isCostConsistent: false,
       recomputedPH: null,
@@ -547,19 +572,16 @@ export async function executeStagedScientificAnalysis(
 
   const canonicalCategory = normalizeProductCategory(immutableSnapshot.productCategory);
   const categoryDef = getProductCategory(canonicalCategory);
-  const totalRawMass = immutableSnapshot.ingredients.reduce(
-    (sum, i) => sum + (Number(i.percentage) || 0),
-    0
-  );
-  const massDeviation = Number((totalRawMass - 100.0).toFixed(4));
-  const isBalanced = Math.abs(totalRawMass - 100.0) < 0.05;
+  const massPercentages = immutableSnapshot.ingredients.map(i => Number(i.percentage));
+  const hasValidMassPercentages = massPercentages.every(pct => Number.isFinite(pct) && pct >= 0 && pct <= 100);
+  const totalRawMass = hasValidMassPercentages ? massPercentages.reduce((sum, pct) => sum + pct, 0) : Number.NaN;
+  const massDeviation = Number.isFinite(totalRawMass) ? Number((totalRawMass - 100.0).toFixed(4)) : Number.NaN;
+  const isBalanced = Number.isFinite(totalRawMass) && Math.abs(totalRawMass - 100.0) < 0.05;
 
   const waterIng = immutableSnapshot.ingredients.find(
     (i) => (i.name || '').toLowerCase().includes('water') || (i.name || '').toLowerCase().includes('aqua')
   );
-  const waterPct = isPowder
-    ? (waterIng ? Number(waterIng.percentage) || 0 : 0)
-    : (waterIng ? Number(waterIng.percentage) || 0 : Math.max(0, 100 - totalRawMass));
+  const waterPct = waterIng ? Number(waterIng.percentage) : 0;
 
   const massBalanceIntermediate = {
     totalRawMass: Number(totalRawMass.toFixed(3)),
@@ -571,6 +593,9 @@ export async function executeStagedScientificAnalysis(
   };
 
   const massBalanceWarnings: string[] = [];
+  if (!waterIng && !isPowder) {
+    massBalanceWarnings.push('No explicit water ingredient was supplied; the unallocated mass remainder is not inferred to be water.');
+  }
   if (!isBalanced) {
     massBalanceWarnings.push(
       `Formula does not sum to 100.00% (Current: ${totalRawMass.toFixed(2)}%, Imbalance: ${Math.abs(100 - totalRawMass).toFixed(2)}%).`
@@ -601,20 +626,27 @@ export async function executeStagedScientificAnalysis(
   let nonionicPct = 0;
   let amphotericPct = 0;
   let cationicPct = 0;
+  let chargeDataComplete = true;
 
   for (const ing of immutableSnapshot.ingredients) {
     const role = (ing.role || ing.category || '').toLowerCase();
     const name = (ing.name || '').toLowerCase();
-    const act = (Number(ing.percentage) || 0) * (ing.activeMatterPct !== null ? (Number(ing.activeMatterPct) / 100) : 0);
-
-    if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap')) {
-      anionicPct += act;
-    } else if (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside')) {
-      nonionicPct += act;
-    } else if (role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine') || name.includes('amine oxide')) {
-      amphotericPct += act;
-    } else if (role.includes('cationic') || name.includes('chloride') || name.includes('esterquat')) {
-      cationicPct += act;
+    const isAnionic = role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap');
+    const isNonionic = role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside');
+    const isAmphoteric = role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine') || name.includes('amine oxide');
+    const isCationic = role.includes('cationic') || name.includes('esterquat');
+    if (isAnionic || isNonionic || isAmphoteric || isCationic) {
+      const pct = Number(ing.percentage);
+      const assay = ing.activeMatterPct === undefined || ing.activeMatterPct === null ? Number.NaN : Number(ing.activeMatterPct);
+      if (!Number.isFinite(pct) || !Number.isFinite(assay) || assay < 0 || assay > 100) {
+        chargeDataComplete = false;
+        continue;
+      }
+      const act = pct * (assay / 100);
+      if (isAnionic) anionicPct += act;
+      else if (isNonionic) nonionicPct += act;
+      else if (isAmphoteric) amphotericPct += act;
+      else if (isCationic) cationicPct += act;
     }
   }
 
@@ -622,10 +654,10 @@ export async function executeStagedScientificAnalysis(
     rawSurfactantsTotal: Number(rawSurfactantsTotal.toFixed(2)),
     totalSurfactantActivePct: Number(totalSurfactantActivePct.toFixed(2)),
     totalActiveMatterPct: totalActiveMatterPct !== null ? Number(totalActiveMatterPct.toFixed(2)) : null,
-    anionicPct: Number(anionicPct.toFixed(2)),
-    nonionicPct: Number(nonionicPct.toFixed(2)),
-    amphotericPct: Number(amphotericPct.toFixed(2)),
-    cationicPct: Number(cationicPct.toFixed(2)),
+    anionicPct: chargeDataComplete ? Number(anionicPct.toFixed(2)) : Number.NaN,
+    nonionicPct: chargeDataComplete ? Number(nonionicPct.toFixed(2)) : Number.NaN,
+    amphotericPct: chargeDataComplete ? Number(amphotericPct.toFixed(2)) : Number.NaN,
+    cationicPct: chargeDataComplete ? Number(cationicPct.toFixed(2)) : Number.NaN,
     hlb: hlbResult.blendedHLB,
     hlbStatus: hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE'
   };
@@ -651,31 +683,25 @@ export async function executeStagedScientificAnalysis(
 
   let advancedPH = calculatePHAdvanced(mappedPHInput, immutableSnapshot.batchSizeKg, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-    targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
+    targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 :
               (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
   });
-
-  if ((advancedPH.pH === null || !Number.isFinite(advancedPH.pH)) && mappedPHInput.length > 0) {
-    try {
-      const solverReady = getSolverReadyIngredients(mappedPHInput);
-      if (solverReady.length > 0) {
-        const fallbackAdv = calculatePHAdvanced(solverReady, immutableSnapshot.batchSizeKg, {
-          productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-          targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
-                    (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
-        });
-        if (typeof fallbackAdv.pH === 'number' && Number.isFinite(fallbackAdv.pH)) {
-          advancedPH = fallbackAdv;
-        }
-      }
-    } catch {
-      // Ignore
-    }
+  const hasSecondaryAcidBaseChemistry =
+    (neutralizationResult.value?.secondaryAcidsPresent?.length ?? 0) > 0 ||
+    (neutralizationResult.value?.secondaryBasesPresent?.length ?? 0) > 0;
+  const hasPHActiveChemistry = neutralizationResult.value?.status !== 'NO_REACTION' || hasSecondaryAcidBaseChemistry;
+  if (!hasPHActiveChemistry) {
+    advancedPH = {
+      ...advancedPH,
+      pH: null,
+      solverConverged: false,
+      warnings: [...(advancedPH.warnings || []), 'No identified acid/base or secondary buffer chemistry is present; solvent-water equilibrium is not accepted as formulation pH.']
+    };
   }
 
   const phIntermediate = {
     neutralizationStatus: neutralizationResult.value?.status || 'UNKNOWN',
-    neutralizationFraction: neutralizationResult.value?.primaryNeutralizationFraction ?? 1.0,
+    neutralizationFraction: neutralizationResult.value?.primaryNeutralizationFraction ?? null,
     equilibriumPH: advancedPH.pH,
     solverConverged: advancedPH.solverConverged,
     bufferCapacity: advancedPH.bufferCapacity,
@@ -701,23 +727,30 @@ export async function executeStagedScientificAnalysis(
   const hardnessResult = calculateWaterHardnessTolerance(
     immutableSnapshot.ingredients,
     immutableSnapshot.waterHardnessPpm ?? undefined,
-    undefined,
-    undefined,
+    immutableSnapshot.washVolumeL,
+    immutableSnapshot.washDoseGrams,
     immutableSnapshot.batchSizeKg,
-    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
+    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
+    true
   );
 
   let chelatorActivePct = 0;
+  let chelatorActivePctComplete = true;
   const chelatorNames: string[] = [];
   immutableSnapshot.ingredients.forEach((ing) => {
     const name = ing.name.toLowerCase();
     const role = (ing.role || '').toLowerCase();
-    const act = (ing.activeMatterPct ?? 0) / 100;
-    const activePct = (Number(ing.percentage) || 0) * act;
-    if (role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate')) {
-      chelatorActivePct += activePct;
-      chelatorNames.push(ing.name);
+    if (!(role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate'))) return;
+    const rawPct = ing.percentage ?? (ing as any).percent;
+    const pct = rawPct === undefined || rawPct === null ? Number.NaN : Number(rawPct);
+    const rawActive = ing.activeMatterPct ?? (ing as any).activePercent;
+    const active = rawActive === undefined || rawActive === null ? Number.NaN : Number(rawActive);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100 || !Number.isFinite(active) || active < 0 || active > 100) {
+      chelatorActivePctComplete = false;
+      return;
     }
+    chelatorActivePct += pct * (active / 100);
+    chelatorNames.push(ing.name);
   });
 
   const hardnessScenarioEvaluated = hardnessResult.status !== 'NOT_EVALUATED';
@@ -727,7 +760,7 @@ export async function executeStagedScientificAnalysis(
     maxSupportedPpm: hardnessScenarioEvaluated ? hardnessResult.maxSupportedPpm : null,
     hardnessLoadMg: hardnessScenarioEvaluated ? hardnessResult.hardnessLoadMg : null,
     totalSequestrationMg: hardnessScenarioEvaluated ? hardnessResult.totalSequestrationMg : null,
-    chelatorActivePct: Number(chelatorActivePct.toFixed(2)),
+    chelatorActivePct: chelatorActivePctComplete ? Number(chelatorActivePct.toFixed(2)) : null,
     chelatorNames: Array.from(new Set(chelatorNames))
   };
 
@@ -743,13 +776,15 @@ export async function executeStagedScientificAnalysis(
   await new Promise((r) => setTimeout(r, 0));
   if (checkAbort()) throw new Error('Analysis cancelled');
 
+  const viscosityTemperatureAssumed = immutableSnapshot.temperatureC === undefined || immutableSnapshot.temperatureC === null;
+  const viscosityTemperatureC = immutableSnapshot.temperatureC ?? 25;
   const viscReport = ViscosityEngine.evaluateViscosity(immutableSnapshot.ingredients, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     targetPH: advancedPH.pH ?? null,
-    temperatureC: 25
+    temperatureC: viscosityTemperatureC
   });
 
-  const detailedVisc = calculateDetailedViscosity(immutableSnapshot.ingredients, { temperatureC: 25 });
+  const detailedVisc = calculateDetailedViscosity(immutableSnapshot.ingredients, { temperatureC: viscosityTemperatureC });
 
   const densityResult = calculateDensity(
     immutableSnapshot.ingredients,
@@ -759,17 +794,7 @@ export async function executeStagedScientificAnalysis(
   const totalSolidsPct = calculateTotalSolids(immutableSnapshot.ingredients);
 
   let nvrResult: any = null;
-  let powderReport: any = null;
-
-  if (isPowder) {
-    powderReport = evaluatePowderFormulation({
-      ingredients: immutableSnapshot.ingredients,
-      productCategory: immutableSnapshot.productCategory,
-      batchSizeKg: immutableSnapshot.batchSizeKg,
-      waterHardnessPpm: immutableSnapshot.waterHardnessPpm ?? undefined,
-      labMeasurements: immutableSnapshot.powderLabInputs || {}
-    });
-  } else {
+  if (!isPowder) {
     nvrResult = calculateLiquidNVR(immutableSnapshot.ingredients, immutableSnapshot.batchSizeKg);
   }
 
@@ -782,13 +807,16 @@ export async function executeStagedScientificAnalysis(
     totalSolidsPct,
     nvrPercentage: nvrResult?.nvrPercentage ?? null,
     isNvrComplete: nvrResult?.isComplete ?? false,
-    powderBulkDensityGPerL: powderReport?.densityReport?.predictedBulkDensityGPerL ?? null
+    viscosityTemperatureC,
+    viscosityTemperatureProvenance: viscosityTemperatureAssumed ? 'ENGINEERING_REFERENCE_ASSUMPTION' : 'USER_SUPPLIED',
+    powderPropertiesDeferredToAuthoritativeDAG: isPowder
   };
 
-  completeStage('RHEOLOGY_DENSITY', 'COMPLETED', {
+  completeStage('RHEOLOGY_DENSITY', viscosityTemperatureAssumed ? 'COMPLETED_WITH_WARNINGS' : 'COMPLETED', {
     details: isPowder
-      ? `Powder bulk density: ${powderReport?.densityReport?.predictedBulkDensityGPerL ?? 'N/A'} g/L | Solids: ${totalSolidsPct.toFixed(1)}%`
-      : `Viscosity: ${viscReport.viscosityCp} cPs | Density: ${densityResult.densityGPerCm3.toFixed(3)} g/cm³ | NVR: ${nvrResult?.nvrPercentage?.toFixed(1) ?? 'N/A'}%`,
+      ? `Powder physical properties deferred to authoritative DAG evaluation | Solids: ${Number.isFinite(totalSolidsPct) ? totalSolidsPct.toFixed(1) : 'N/A'}%`
+      : `Viscosity: ${Number.isFinite(viscReport.viscosityCp) ? viscReport.viscosityCp : 'N/A'} cPs | Density: ${Number.isFinite(densityResult.densityGPerCm3) ? densityResult.densityGPerCm3.toFixed(3) : 'N/A'} g/cm³ | NVR: ${nvrResult?.nvrPercentage?.toFixed(1) ?? 'N/A'}%`,
+    warnings: viscosityTemperatureAssumed ? ['Viscosity uses 25 °C as an explicit engineering reference assumption; supply actual test temperature for a production decision.'] : [],
     intermediate: rheologyIntermediate
   });
 
@@ -812,6 +840,10 @@ export async function executeStagedScientificAnalysis(
     undefined,
     {
       ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
+      washVolumeL: immutableSnapshot.washVolumeL,
+      washDoseGrams: immutableSnapshot.washDoseGrams,
+      batchSizeKg: immutableSnapshot.batchSizeKg,
+      failIfHardnessMissing: true,
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
@@ -824,6 +856,10 @@ export async function executeStagedScientificAnalysis(
     undefined,
     {
       ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
+      washVolumeL: immutableSnapshot.washVolumeL,
+      washDoseGrams: immutableSnapshot.washDoseGrams,
+      batchSizeKg: immutableSnapshot.batchSizeKg,
+      failIfHardnessMissing: true,
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
@@ -930,9 +966,10 @@ export async function executeStagedScientificAnalysis(
     climateScore: null // No validated climate-risk scoring model is available.
   };
 
-  completeStage('PROCESS_COSTING', 'COMPLETED', {
-    details: `Finished Cost: ₹${formulaCost.costPerKg.toFixed(2)}/kg | Total Batch: ₹${formulaCost.totalBatchCost.toFixed(2)} (${formulaCost.isComplete ? 'Complete' : `${formulaCost.missingPriceCount} unpriced`})`,
-    intermediate: costingIntermediate
+  completeStage('PROCESS_COSTING', 'COMPLETED_WITH_WARNINGS', {
+    details: `Finished Cost: ${Number.isFinite(formulaCost.costPerKg) ? `₹${formulaCost.costPerKg.toFixed(2)}/kg` : 'N/A'} | Total Batch: ${Number.isFinite(formulaCost.totalBatchCost) ? `₹${formulaCost.totalBatchCost.toFixed(2)}` : 'N/A'} (${formulaCost.isComplete ? 'Complete' : `${formulaCost.missingPriceCount} unpriced / input incomplete`})`,
+    warnings: marginChain.assumptions,
+    intermediate: { ...costingIntermediate, marginAssumptions: marginChain.assumptions }
   });
 
   // =========================================================================
@@ -947,31 +984,39 @@ export async function executeStagedScientificAnalysis(
     formulaName: immutableSnapshot.formulaName,
     formulaVersion: immutableSnapshot.activeFormulaVersion || '1.0.0',
     productCategory: immutableSnapshot.productCategory,
-    ingredients: immutableSnapshot.ingredients.map((ing, idx) => ({
-      ...ing,
-      ingredientId: ing.id || `ing-${idx}`,
-      percentage: Number(ing.percentage ?? (ing as any).percent ?? 0),
-      costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
-    })),
+    productSubProfileId: immutableSnapshot.productSubProfileId,
+    ingredients: immutableSnapshot.ingredients.map((ing, idx) => {
+      const rawPercentage = ing.percentage ?? (ing as any).percent;
+      return {
+        ...ing,
+        ingredientId: ing.id || `ing-${idx}`,
+        percentage: rawPercentage === undefined || rawPercentage === null || (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
+          ? Number.NaN
+          : Number(rawPercentage),
+        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
+      };
+    }),
     batchSizeKg: immutableSnapshot.batchSizeKg,
     ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
-    costContext: {
-      targetCostPerKg: 45.0
-    }
+    washVolumeL: immutableSnapshot.washVolumeL,
+    washDoseGrams: immutableSnapshot.washDoseGrams,
+    temperatureC: immutableSnapshot.temperatureC,
+    powderLabInputs: immutableSnapshot.powderLabInputs
   };
 
   const orchestratorResult = FormulaScientificOrchestrator.evaluate(orchestratorInput);
 
   // Authoritative Recomputation and Consistency Checks
-  const liveMassBalancePct = rawIngredients.reduce((s, i) => s + (Number(i.percentage) || 0), 0);
+  const livePercentages = immutableSnapshot.ingredients.map(i => Number(i.percentage));
+  const liveMassBalancePct = livePercentages.every(Number.isFinite) ? livePercentages.reduce((sum, pct) => sum + pct, 0) : Number.NaN;
   const recomputedMassBalancePct = orchestratorResult.massBalance.totalPercentage;
-  const isMassBalanceConsistent = Math.abs(liveMassBalancePct - recomputedMassBalancePct) < 0.05;
+  const isMassBalanceConsistent = Number.isFinite(liveMassBalancePct) && Number.isFinite(recomputedMassBalancePct) && Math.abs(liveMassBalancePct - recomputedMassBalancePct) < 0.05;
 
-  const liveActiveSurfactantPct = calculateActiveSurfactants(rawIngredients);
+  const liveActiveSurfactantPct = calculateActiveSurfactants(immutableSnapshot.ingredients);
   const recomputedActiveSurfactantPct = orchestratorResult.activeMatterResult.totalSurfactantActivePct;
-  const isActiveSurfactantConsistent = Math.abs(liveActiveSurfactantPct - recomputedActiveSurfactantPct) < 0.05;
+  const isActiveSurfactantConsistent = Number.isFinite(liveActiveSurfactantPct) && Number.isFinite(recomputedActiveSurfactantPct) && Math.abs(liveActiveSurfactantPct - recomputedActiveSurfactantPct) < 0.05;
 
-  const liveCost = calculateFormulaCost(rawIngredients, immutableSnapshot.batchSizeKg);
+  const liveCost = calculateFormulaCost(immutableSnapshot.ingredients, immutableSnapshot.batchSizeKg);
   const recomputedCostPerKg = orchestratorResult.costResult.costPerKg;
   const liveCostVal = Number.isFinite(liveCost.costPerKg) ? liveCost.costPerKg : null;
   const recomputedCostVal = Number.isFinite(recomputedCostPerKg) ? recomputedCostPerKg : null;
@@ -1194,7 +1239,7 @@ export async function executeStagedScientificAnalysis(
     timestamp: Date.now(),
     formulaSnapshot: immutableSnapshot,
     orchestratorResult,
-    powderReport,
+    powderReport: orchestratorResult.powderReport ?? null,
     scientificResults,
     decisionReport,
     stagedExecutionTrace: Array.from(stageRecords.values()),

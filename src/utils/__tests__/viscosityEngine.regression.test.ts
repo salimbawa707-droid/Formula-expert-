@@ -353,6 +353,31 @@ export function runViscosityEngineTestSuite(): { passed: number; failed: number;
     { cp: 'NaN', dataSource: 'unsupported' }
   );
 
+
+  const nonReferenceTemperatureReport = ViscosityEngine.evaluateViscosity(dishwashIngredients, {
+    productCategory: 'Hand Dishwashing Liquid',
+    targetPH: 7.0,
+    temperatureC: 40
+  });
+  assert(
+    'Non-reference temperature is not silently applied',
+    nonReferenceTemperatureReport.warnings.some(w => w.includes('remains a 25 °C reference estimate')),
+    nonReferenceTemperatureReport.warnings,
+    'Explicit 25 °C reference limitation warning'
+  );
+
+  const invalidTemperatureReport = ViscosityEngine.evaluateViscosity(dishwashIngredients, {
+    productCategory: 'Hand Dishwashing Liquid',
+    targetPH: 7.0,
+    temperatureC: 101
+  });
+  assert(
+    'Out-of-range temperature input is rejected',
+    Number.isNaN(invalidTemperatureReport.viscosityCp) && invalidTemperatureReport.dataSource === 'unsupported',
+    { viscosityCp: invalidTemperatureReport.viscosityCp, dataSource: invalidTemperatureReport.dataSource },
+    { viscosityCp: 'NaN', dataSource: 'unsupported' }
+  );
+
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 

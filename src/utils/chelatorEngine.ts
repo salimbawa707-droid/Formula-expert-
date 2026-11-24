@@ -837,6 +837,7 @@ export interface FormulationChelationCapacityResult {
   chelatorCount: number;
   unknownChelatorCount: number;
   hasUnknownChelators: boolean;
+  invalidIngredientCount: number;
   status: 'COMPLETE' | 'INSUFFICIENT_DATA';
 }
 
@@ -848,13 +849,15 @@ export interface FormulationChelationCapacityResult {
  * - Per-dose capacity (mg CaCO3) vs Entire batch capacity (grams CaCO3)
  */
 export function calculateFormulationChelationCapacity(
-  ingredients: FormulationIngredient[], 
-  washDoseGrams: number = 20, 
-  batchSizeKg: number = 100
+  ingredients: FormulationIngredient[],
+  washDoseGrams?: number,
+  batchSizeKg?: number
 ): FormulationChelationCapacityResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
-  const dose = typeof washDoseGrams === 'number' && !isNaN(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : 20;
-  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  const doseIsValid = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0;
+  const batchIsValid = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0;
+  const dose = doseIsValid ? washDoseGrams : Number.NaN;
+  const batchKg = batchIsValid ? batchSizeKg : Number.NaN;
 
   let totalSequestrationMg = 0;
   let batchSequestrationGrams = 0;
@@ -862,31 +865,29 @@ export function calculateFormulationChelationCapacity(
   let builderCapacityMg = 0;
   let chelatorCount = 0;
   let unknownChelatorCount = 0;
+  let invalidIngredientCount = 0;
 
   const details: FormulationChelationIngredientDetail[] = ings.map(ing => {
     const rawName = ing?.name || 'Unknown';
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const validPct = isNaN(pct) || pct < 0 ? 0 : pct;
-    const massGrams = (validPct / 100) * dose;
-    const batchMassGrams = (validPct / 100) * batchKg * 1000;
+    const rawPct = (ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    const validPct = Number.isFinite(pct) && pct >= 0 && pct <= 100 ? pct : Number.NaN;
+    const hasValidPct = Number.isFinite(validPct);
+    if (!hasValidPct) invalidIngredientCount++;
+    const massGrams = hasValidPct ? (validPct / 100) * dose : Number.NaN;
+    const batchMassGrams = hasValidPct ? (validPct / 100) * batchKg * 1000 : Number.NaN;
 
     const explicitActive = (ing as any)?.activeMatterPct ?? (ing as any)?.activePercent ?? (ing as any)?.purity;
     const validation = validateActiveMatterInput(explicitActive);
-    let capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
-    if (capacityResult.status === 'INSUFFICIENT_DATA' && (/citrate/i.test(rawName) || /sodium citrate/i.test(rawName))) {
-      const dihydrate = AUTHORITATIVE_CHELATOR_DATABASE.find(s => s.id === 'citrate-dihydrate');
-      if (dihydrate) {
-        capacityResult = {
-          capacityMgCaCO3PerGram: dihydrate.effectiveCommercialCapacityMgPerG,
-          status: 'VALID',
-          evidenceId: dihydrate.evidenceId
-        };
-      }
-    }
+    // Do not silently resolve an ambiguous citrate hydration grade as dihydrate.
+    // getChelatorBindingCapacity is the single authority for grade identity and evidence.
+    const capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
     const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
     
-    const boundCaCO3Mg = massGrams * bindingCapacityMgPerG;
-    const batchBoundCaCO3Grams = (batchMassGrams * bindingCapacityMgPerG) / 1000;
+    const boundCaCO3Mg = hasValidPct ? massGrams * bindingCapacityMgPerG : Number.NaN;
+    const batchBoundCaCO3Grams = hasValidPct ? (batchMassGrams * bindingCapacityMgPerG) / 1000 : Number.NaN;
 
     // Reuse the exact species resolved by the grade-validated capacity lookup.
     // A second broad name matcher previously misclassified GLDA-99 powder as
@@ -896,7 +897,9 @@ export function calculateFormulationChelationCapacity(
       : undefined;
 
     const rawRole = ((ing as any)?.role || (ing as any)?.category || '').toLowerCase();
-    const isDeclaredChelator = /chelat|builder|sequestr/i.test(rawRole) || /chelat|sequestr/i.test(rawName);
+    const isDeclaredChelator =
+      /chelat|builder|sequestr/i.test(rawRole) ||
+      /chelat|sequestr|citrate|glda|mgda|edta|dtpa|stpp|tripolyphosphate|phosphonate|hedp|zeolite|polyacrylate|polycarboxylate/i.test(rawName);
     const isUnknownChelator = isDeclaredChelator && !matchedSpecies && bindingCapacityMgPerG === 0;
 
     if (isUnknownChelator) {
@@ -914,8 +917,10 @@ export function calculateFormulationChelationCapacity(
       }
     }
 
-    totalSequestrationMg += boundCaCO3Mg;
-    batchSequestrationGrams += batchBoundCaCO3Grams;
+    if (hasValidPct) {
+      totalSequestrationMg += boundCaCO3Mg;
+      batchSequestrationGrams += batchBoundCaCO3Grams;
+    }
 
     const activePct = typeof explicitActive === 'number' ? explicitActive : (matchedSpecies?.activeDefault ?? null);
     const activeMassGrams = (activePct !== null) ? (validPct / 100) * dose * (activePct / 100) : 0;
@@ -948,16 +953,18 @@ export function calculateFormulationChelationCapacity(
     };
   });
 
-  return { 
-    totalSequestrationMg, 
-    batchSequestrationGrams, 
-    chelationCapacityMg,
-    builderCapacityMg,
+  const hasInvalidScenario = !doseIsValid || ings.length === 0;
+  return {
+    totalSequestrationMg: invalidIngredientCount > 0 || hasInvalidScenario ? Number.NaN : totalSequestrationMg,
+    batchSequestrationGrams: invalidIngredientCount > 0 || hasInvalidScenario || !batchIsValid ? Number.NaN : batchSequestrationGrams,
+    chelationCapacityMg: invalidIngredientCount > 0 || hasInvalidScenario ? Number.NaN : chelationCapacityMg,
+    builderCapacityMg: invalidIngredientCount > 0 || hasInvalidScenario ? Number.NaN : builderCapacityMg,
     details,
     chelatorCount,
     unknownChelatorCount,
     hasUnknownChelators: unknownChelatorCount > 0,
-    status: unknownChelatorCount > 0 ? 'INSUFFICIENT_DATA' : 'COMPLETE'
+    invalidIngredientCount,
+    status: unknownChelatorCount > 0 || invalidIngredientCount > 0 || hasInvalidScenario ? 'INSUFFICIENT_DATA' : 'COMPLETE'
   };
 }
 
@@ -1014,7 +1021,22 @@ export function calculateDynamicChelatorRequirement(
   const hardnessLoadMg = calculateWaterHardnessLoad(targetHardnessPpm, vol);
   const requiredSequestrationMg = hardnessLoadMg * (1 + margin / 100);
 
-  const { totalSequestrationMg } = calculateFormulationChelationCapacity(ingredients, dose);
+  const existingCapacity = Array.isArray(ingredients) && ingredients.length === 0
+    ? 0
+    : calculateFormulationChelationCapacity(ingredients, dose).totalSequestrationMg;
+  if (!Number.isFinite(existingCapacity)) {
+    return {
+      waterHardnessPpm: targetHardnessPpm, washVolumeL: vol, washDoseGrams: dose,
+      hardnessLoadMg, safetyMarginPct: margin, requiredSequestrationMg,
+      existingSequestrationMg: Number.NaN, capacityDeficitMg: Number.NaN,
+      capacitySurplusMg: Number.NaN, additionalGLDA47RequiredPct: Number.NaN,
+      additionalCitrateRequiredPct: Number.NaN, additionalMGDA38RequiredPct: Number.NaN,
+      recommendedAction: 'INSUFFICIENT_DATA: ingredient percentages or chelator identity are invalid; no chelator recommendation is calculated.',
+      calculationBasis: 'NOT_EVALUATED: existing formulation chelation capacity is unavailable.',
+      isSufficient: false, status: 'INSUFFICIENT_DATA'
+    };
+  }
+  const totalSequestrationMg = existingCapacity;
   const capacityDeficitMg = Math.max(0, requiredSequestrationMg - totalSequestrationMg);
   const capacitySurplusMg = Math.max(0, totalSequestrationMg - requiredSequestrationMg);
 
@@ -1107,11 +1129,58 @@ export function calculateWaterHardnessTolerance(
   waterHardnessPpm?: number | null,
   washVolumeL?: number | null,
   washDoseGrams?: number | null,
-  batchSizeKg: number = 100,
-  productCategoryOrProfileId?: string
+  batchSizeKg?: number,
+  productCategoryOrProfileId?: string,
+  requireExplicitScenarioInputs: boolean = true
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const policy = getProductHardnessPolicy(productCategoryOrProfileId);
+
+  // Category-level NOT_APPLICABLE must be resolved before scenario completeness checks.
+  if (requireExplicitScenarioInputs && policy.requiresHardnessControl && (
+    !(typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0) ||
+    !(typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0) ||
+    !(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0) ||
+    !(typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0)
+  )) {
+    const missing: string[] = [];
+    if (!(typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0)) missing.push('waterHardnessPpm');
+    if (!(typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0)) missing.push('washVolumeL');
+    if (!(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0)) missing.push('washDoseGrams');
+    if (!(typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0)) missing.push('batchSizeKg');
+    const unavailable = Number.NaN;
+    return {
+      status: 'NOT_EVALUATED',
+      maxSupportedPpm: unavailable,
+      maxSupportedStoichiometricPpm: unavailable,
+      rating: 'NOT EVALUATED — explicit wash scenario required',
+      description: `Hardness protection was not calculated. Missing or invalid inputs: ${missing.join(', ')}.`,
+      totalSequestrationMg: unavailable,
+      chelationCapacityMg: unavailable,
+      builderCapacityMg: unavailable,
+      requiredSequestrationMg: unavailable,
+      hardnessLoadMg: unavailable,
+      capacityDeficitMg: unavailable,
+      capacitySurplusMg: unavailable,
+      hardnessProtectionRatio: unavailable,
+      additionalGLDA47RequiredPct: unavailable,
+      additionalCitrateRequiredPct: unavailable,
+      additionalMGDA38RequiredPct: unavailable,
+      batchSequestrationGrams: unavailable,
+      washDoseGrams: unavailable,
+      washVolumeL: unavailable,
+      batchSizeKg: unavailable,
+      safetyMarginPct: unavailable,
+      sufficiency: 'baseline',
+      isApplicable: true,
+      category: productCategoryOrProfileId,
+      provenance: 'UNKNOWN',
+      limitations: [`Explicit scenario inputs required: ${missing.join(', ')}.`],
+      valueOf: () => 'NOT EVALUATED',
+      toString: () => 'NOT EVALUATED'
+    };
+  }
+
   const vol = typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : (policy.defaultWashVolumeL || 10);
   const dose = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : (policy.defaultDoseGrams || 20);
   const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;

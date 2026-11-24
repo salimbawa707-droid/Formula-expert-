@@ -812,12 +812,13 @@ export function resolveProductSubclass(
     return 'DISHWASH_AUTO_DETERGENT';
   }
 
-  // Toilet Cleaner
-  if (combined.includes('hcl') || combined.includes('mineral acid') || combined.includes('bowl')) {
-    return 'TOILET_CLEANER_MINERAL_ACID';
-  }
+  // Toilet Cleaner: resolve explicit chemistry before generic product wording.
+  // "Bowl" alone does not prove a mineral-acid system; do not infer acid class.
   if (combined.includes('organic acid') || combined.includes('eco-organic') || combined.includes('citric acid toilet')) {
     return 'TOILET_CLEANER_ORGANIC_ACID';
+  }
+  if (combined.includes('hcl') || combined.includes('mineral acid')) {
+    return 'TOILET_CLEANER_MINERAL_ACID';
   }
 
   // Bathroom Cleaner

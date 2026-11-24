@@ -35,6 +35,8 @@ import { FormulaScientificOrchestrator } from '../orchestrator/formulaScientific
 import { ScientificExecutionDAG } from '../orchestrator/scientificExecutionDAG';
 import { CanonicalFormulaInput } from '../orchestrator/types';
 import { computeFormulaFingerprint } from '../provenanceEngine';
+import { isEngineApplicable } from '../../domain/scientificProductProfiles';
+import { calculateTotalSolids } from '../densityEngine';
 
 interface TestResult {
   group: string;
@@ -90,7 +92,10 @@ export function runP5PropertyPipelinesTestSuite() {
       { name: 'Sodium Tripolyphosphate (STPP)', percentage: 5.0, activeMatterPct: 100, role: 'Builder', costPerKg: 110 }
     ],
     batchSizeKg: 100,
-    waterHardnessPpm: 150
+    waterHardnessPpm: 150,
+    powderLabInputs: {
+      measuredBulkDensityGPerL: 450
+    }
   };
 
   // Run DAG execution
@@ -99,6 +104,167 @@ export function runP5PropertyPipelinesTestSuite() {
   const liquidResult = FormulaScientificOrchestrator.evaluate(liquidFormulaInput);
   const powderRun = dag.executeDAG(powderFormulaInput);
   const powderResult = FormulaScientificOrchestrator.evaluate(powderFormulaInput);
+
+  // Phase 2 category-applicability regression cases.
+  const softenerRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    productCategory: 'FABRIC_SOFTENER'
+  });
+  const toiletRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    productCategory: 'TOILET_CLEANER'
+  });
+  const organicToiletSubProfileRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    formulaName: 'Eco Organic Acid Toilet Bowl Cleaner',
+    productCategory: 'TOILET_CLEANER',
+    productSubProfileId: 'TOILET_CLEANER_ORGANIC_ACID'
+  });
+  const mineralToiletSubProfileRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    formulaName: 'Mineral Acid Heavy Descaling Toilet Cleaner',
+    productCategory: 'TOILET_CLEANER',
+    productSubProfileId: 'TOILET_CLEANER_MINERAL_ACID'
+  });
+  const missingHardnessScenarioRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    waterHardnessPpm: undefined,
+    washVolumeL: undefined,
+    washDoseGrams: undefined
+  });
+  const missingBatchScenarioRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    batchSizeKg: undefined,
+    batchSize: undefined
+  });
+  const invalidDoseScenarioRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    washDoseGrams: 0
+  });
+  const noSurfactantRun = dag.executeDAG({
+    ...liquidFormulaInput,
+    ingredients: [{ name: 'Water', percentage: 100, activeMatterPct: 0 }]
+  });
+  assert(
+    'Phase 2: Category Routing',
+    'HLB is NOT_APPLICABLE for laundry powder profile',
+    powderRun.state.hlbStatus === 'NOT_APPLICABLE' &&
+      powderRun.trace.find(t => t.nodeId === 'HLB')?.status === 'NOT_APPLICABLE',
+    { state: powderRun.state.hlbStatus, trace: powderRun.trace.find(t => t.nodeId === 'HLB')?.status },
+    'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Sub-profile Routing',
+    'Organic-acid toilet bowl formula uses its own profile and permits anionic surfactants',
+    !organicToiletSubProfileRun.state.compatibilityResult?.alerts.some((a: any) => a.id === 'category-policy-anionic-toilet_cleaner'),
+    organicToiletSubProfileRun.state.compatibilityResult?.alerts.map((a: any) => a.id),
+    'No canonical toilet-anionic prohibition'
+  );
+  assert(
+    'Phase 2: Sub-profile Routing',
+    'Mineral-acid toilet formula enforces its anionic restriction',
+    mineralToiletSubProfileRun.state.compatibilityResult?.alerts.some((a: any) => a.id === 'category-policy-anionic-toilet_cleaner'),
+    mineralToiletSubProfileRun.state.compatibilityResult?.alerts.map((a: any) => a.id),
+    'Mineral-acid anionic prohibition present'
+  );
+  assert(
+    'Phase 2: Category Routing',
+    'Chelation is NOT_APPLICABLE for toilet cleaner profile',
+    toiletRun.state.chelationStatus === 'NOT_APPLICABLE' &&
+      toiletRun.trace.find(t => t.nodeId === 'WATER_CHELATION')?.status === 'NOT_APPLICABLE',
+    { state: toiletRun.state.chelationStatus, trace: toiletRun.trace.find(t => t.nodeId === 'WATER_CHELATION')?.status },
+    'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Category Routing',
+    'Cleaning performance is NOT_APPLICABLE for fabric softener profile',
+    softenerRun.state.cleaningStatus === 'NOT_APPLICABLE' &&
+      softenerRun.trace.find(t => t.nodeId === 'CLEANING_CPI')?.status === 'NOT_APPLICABLE',
+    { state: softenerRun.state.cleaningStatus, trace: softenerRun.trace.find(t => t.nodeId === 'CLEANING_CPI')?.status },
+    'NOT_APPLICABLE'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing hardness, wash volume and dose remain NOT_EVALUATED in DAG',
+    missingHardnessScenarioRun.state.hardnessResult?.status === 'NOT_EVALUATED' &&
+      Number.isNaN(missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg),
+    { status: missingHardnessScenarioRun.state.hardnessResult?.status, load: missingHardnessScenarioRun.state.hardnessResult?.hardnessLoadMg },
+    'NOT_EVALUATED with NaN load'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing hardness scenario is not mislabeled as sufficient chelation',
+    missingHardnessScenarioRun.state.chelationStatus === 'INSUFFICIENT_DATA' &&
+      missingHardnessScenarioRun.state.chelationResult?.isSufficient === null,
+    { status: missingHardnessScenarioRun.state.chelationStatus, sufficient: missingHardnessScenarioRun.state.chelationResult?.isSufficient },
+    'INSUFFICIENT_DATA / null'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'No surfactant in an applicable category is INSUFFICIENT_DATA, not NOT_APPLICABLE',
+    noSurfactantRun.state.hlbStatus === 'INSUFFICIENT_DATA' &&
+      noSurfactantRun.trace.find(t => t.nodeId === 'HLB')?.status === 'COMPLETED',
+    { state: noSurfactantRun.state.hlbStatus, trace: noSurfactantRun.trace.find(t => t.nodeId === 'HLB')?.status },
+    'INSUFFICIENT_DATA / COMPLETED'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Zero wash dose is rejected instead of replaced by a policy default',
+    invalidDoseScenarioRun.state.hardnessResult?.status === 'NOT_EVALUATED' &&
+      Number.isNaN(invalidDoseScenarioRun.state.hardnessResult?.washDoseGrams),
+    { status: invalidDoseScenarioRun.state.hardnessResult?.status, dose: invalidDoseScenarioRun.state.hardnessResult?.washDoseGrams },
+    'NOT_EVALUATED with unavailable dose'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing batch size is visibly recorded as a 100 kg scenario assumption',
+    missingBatchScenarioRun.state.assumptions.some(a => a.includes('100 kg') && a.includes('scenario')),
+    missingBatchScenarioRun.state.assumptions,
+    'Explicit 100 kg scenario assumption'
+  );
+
+  const canonicalCategories = [
+    'LAUNDRY_LIQUID',
+    'LAUNDRY_POWDER',
+    'DISHWASH_MANUAL',
+    'DISHWASH_AUTOMATIC',
+    'FLOOR_CLEANER',
+    'MULTIPURPOSE_CLEANER',
+    'TOILET_CLEANER',
+    'BATHROOM_CLEANER',
+    'GLASS_CLEANER',
+    'FABRIC_SOFTENER',
+    'HAND_WASH',
+    'KITCHEN_DEGREASER',
+    'CAR_SHAMPOO'
+  ];
+  for (const category of canonicalCategories) {
+    const categoryRun = dag.executeDAG({ ...liquidFormulaInput, productCategory: category });
+    const hlbNotApplicable = categoryRun.trace.find(t => t.nodeId === 'HLB')?.status === 'NOT_APPLICABLE';
+    const chelationNotApplicable = categoryRun.trace.find(t => t.nodeId === 'WATER_CHELATION')?.status === 'NOT_APPLICABLE';
+    const cleaningNotApplicable = categoryRun.trace.find(t => t.nodeId === 'CLEANING_CPI')?.status === 'NOT_APPLICABLE';
+    assert(
+      'Phase 2: All-Category Routing',
+      `${category}: HLB applicability matches canonical product profile`,
+      hlbNotApplicable === !isEngineApplicable(category, 'HLB_ENGINE'),
+      { notApplicable: hlbNotApplicable, profileApplicable: isEngineApplicable(category, 'HLB_ENGINE') },
+      'DAG applicability equals profile registry'
+    );
+    assert(
+      'Phase 2: All-Category Routing',
+      `${category}: chelation applicability matches canonical product profile`,
+      chelationNotApplicable === !isEngineApplicable(category, 'CHELATOR_ENGINE'),
+      { notApplicable: chelationNotApplicable, profileApplicable: isEngineApplicable(category, 'CHELATOR_ENGINE') },
+      'DAG applicability equals profile registry'
+    );
+    assert(
+      'Phase 2: All-Category Routing',
+      `${category}: cleaning applicability matches canonical product profile`,
+      cleaningNotApplicable === !isEngineApplicable(category, 'CLEANING_PERFORMANCE_ENGINE'),
+      { notApplicable: cleaningNotApplicable, profileApplicable: isEngineApplicable(category, 'CLEANING_PERFORMANCE_ENGINE') },
+      'DAG applicability equals profile registry'
+    );
+  }
 
   // A. Neutralization executes before final pH
   const neutIdx = liquidRun.trace.findIndex(t => t.nodeId === 'NEUTRALIZATION');
@@ -199,6 +365,14 @@ export function runP5PropertyPipelinesTestSuite() {
     powderEngineTraceInLiquid?.status === 'NOT_APPLICABLE' && powderEngineTraceInPowder?.status === 'COMPLETED',
     { liquid: powderEngineTraceInLiquid?.status, powder: powderEngineTraceInPowder?.status },
     { liquid: 'NOT_APPLICABLE', powder: 'COMPLETED' }
+  );
+
+  assert(
+    'Phase 2: Powder Evidence Routing',
+    'Powder lab measurements reach the single authoritative DAG powder evaluation',
+    powderRun.state.powderReport?.density?.measuredBulkDensityGPerL === 450,
+    powderRun.state.powderReport?.density?.measuredBulkDensityGPerL,
+    450
   );
 
   // J. Liquid rheology is not executed for powder
@@ -348,6 +522,36 @@ export function runP5PropertyPipelinesTestSuite() {
     liquidResult.compatibilityResult.compatibilityStatusSemantic === 'COMPATIBLE_BY_RULE',
     liquidResult.compatibilityResult.compatibilityStatusSemantic,
     'NO_KNOWN_CONFLICT or COMPATIBLE_BY_RULE'
+  );
+
+  // Y. Total-solids calculations fail closed on missing/incomplete composition.
+  assert(
+    'Phase 5 Pipelines',
+    'Y1. Empty ingredient list does not report zero total solids',
+    Number.isNaN(calculateTotalSolids([] as any)),
+    calculateTotalSolids([] as any),
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 5 Pipelines',
+    'Y2. Missing ingredient percentage does not become zero solids',
+    Number.isNaN(calculateTotalSolids([{ name: 'Sodium Sulfate' } as any])),
+    calculateTotalSolids([{ name: 'Sodium Sulfate' } as any]),
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 5 Pipelines',
+    'Y3. Incomplete formula mass balance does not produce total solids',
+    Number.isNaN(calculateTotalSolids([{ name: 'Water', percentage: 80 }, { name: 'Sodium Sulfate', percentage: 10 }] as any)),
+    calculateTotalSolids([{ name: 'Water', percentage: 80 }, { name: 'Sodium Sulfate', percentage: 10 }] as any),
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 5 Pipelines',
+    'Y4. Complete formula reports explicit solids percentage',
+    calculateTotalSolids([{ name: 'Water', percentage: 90 }, { name: 'Sodium Sulfate', percentage: 10 }] as any) === 10,
+    calculateTotalSolids([{ name: 'Water', percentage: 90 }, { name: 'Sodium Sulfate', percentage: 10 }] as any),
+    10
   );
 
   // X. Pricing behavior remains unchanged

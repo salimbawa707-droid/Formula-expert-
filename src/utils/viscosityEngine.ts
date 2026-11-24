@@ -402,6 +402,13 @@ export class ViscosityEngine {
     const factors: ViscosityContributingFactor[] = [];
     const diagnostics: string[] = [];
     const warnings: string[] = [];
+    if (options.temperatureC === undefined || options.temperatureC === null) {
+      warnings.push('No test temperature was supplied; the primary viscosity estimate is reported at the 25 °C engineering reference.');
+    } else if (!Number.isFinite(options.temperatureC) || options.temperatureC < 0 || options.temperatureC > 100) {
+      return unavailableReport('Temperature input must be finite and between 0 °C and 100 °C.');
+    } else if (Math.abs(options.temperatureC - 25) > 0.01) {
+      warnings.push(`The primary viscosity scalar remains a 25 °C reference estimate; supplied ${options.temperatureC} °C is not applied as a temperature correction by this model.`);
+    }
     const recommendations: string[] = [];
 
     const normCategory = productCategory ? normalizeProductCategory(productCategory) : undefined;

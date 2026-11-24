@@ -62,6 +62,74 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   assertNear('Cationic Only', 'Cationic-only score is 100', resCationicOnly.compatibilityScore, 100);
   assertEqual('Cationic Only', 'Cationic-only zero alerts', resCationicOnly.alerts.length, 0);
 
+  // 3A. Canonical category surfactant permissions
+  const laundryCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 7.0, 'LAUNDRY_LIQUID');
+  assertEqual('Category Surfactant Policy', 'Laundry liquid rejects cationic-only surfactant systems', laundryCationic.compatible, false);
+  assertEqual('Category Surfactant Policy', 'Laundry liquid emits cationic policy violation', laundryCationic.alerts.some(a => a.id === 'category-policy-cationic-laundry_liquid'), true);
+
+  const toiletAnionic = calculateFormulationCompatibility(formulaAnionicOnly as any, 2.0, 'TOILET_CLEANER');
+  assertEqual('Category Surfactant Policy', 'Toilet cleaner rejects anionic surfactant systems', toiletAnionic.compatible, false);
+  assertEqual('Category Surfactant Policy', 'Toilet cleaner emits anionic policy violation', toiletAnionic.alerts.some(a => a.id === 'category-policy-anionic-toilet_cleaner'), true);
+
+  const autoDishAnionic = calculateFormulationCompatibility(formulaAnionicOnly as any, 10.0, 'DISHWASH_AUTOMATIC');
+  assertEqual('Category Surfactant Policy', 'Automatic dishwash rejects anionic surfactant systems', autoDishAnionic.compatible, false);
+  assertEqual('Category Surfactant Policy', 'Automatic dishwash emits low-foam profile violation', autoDishAnionic.alerts.some(a => a.id === 'autodish-foam-overflow-hazard'), true);
+  const automaticDishwashSodiumSulfate = calculateFormulationCompatibility([
+    { name: 'Sodium Sulfate', percentage: 10, activeMatterPct: 100, category: 'Filler' },
+    { name: 'Water', percentage: 90, activeMatterPct: 0, category: 'Solvent' }
+  ] as any, 10.0, 'DISHWASH_AUTOMATIC');
+  assertEqual(
+    'Category Surfactant Policy',
+    'Sodium sulfate filler is not misclassified as an anionic surfactant',
+    automaticDishwashSodiumSulfate.alerts.some(a => a.id === 'autodish-foam-overflow-hazard'),
+    false
+  );
+
+  const softenerCationic = calculateFormulationCompatibility(formulaCationicOnly as any, 4.0, 'FABRIC_SOFTENER');
+  assertEqual('Category Surfactant Policy', 'Fabric softener permits cationic surfactants by profile', softenerCationic.alerts.some(a => a.id === 'category-policy-cationic-fabric_softener'), false);
+  const organicToiletAnionic = calculateFormulationCompatibility(
+    formulaAnionicOnly as any, 2.0, 'TOILET_CLEANER', 'TOILET_CLEANER_ORGANIC_ACID'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'Organic-acid toilet bowl cleaner permits anionic surfactants',
+    organicToiletAnionic.alerts.some(a => a.id === 'category-policy-anionic-toilet_cleaner'),
+    false
+  );
+  const mineralToiletAnionic = calculateFormulationCompatibility(
+    formulaAnionicOnly as any, 0.5, 'TOILET_CLEANER', 'TOILET_CLEANER_MINERAL_ACID'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'Mineral-acid toilet cleaner rejects anionic surfactants',
+    mineralToiletAnionic.alerts.some(a => a.id === 'category-policy-anionic-toilet_cleaner'),
+    true
+  );
+  const acidFreeBathroomAnionic = calculateFormulationCompatibility(
+    formulaAnionicOnly as any, 9.5, 'BATHROOM_CLEANER', 'BATHROOM_CLEANER_ACID_FREE_DISINFECTANT'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'Acid-free quat bathroom profile rejects anionic surfactants',
+    acidFreeBathroomAnionic.alerts.some(a => a.id === 'category-policy-anionic-bathroom_cleaner'),
+    true
+  );
+  const mismatchedSubProfile = calculateFormulationCompatibility(
+    formulaAnionicOnly as any, 7.0, 'LAUNDRY_LIQUID', 'TOILET_CLEANER_MINERAL_ACID'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'A toilet-cleaner sub-profile cannot be applied to laundry liquid',
+    mismatchedSubProfile.evidenceStatus,
+    'INSUFFICIENT_DATA'
+  );
+  assertEqual(
+    'Sub-profile Surfactant Policy',
+    'Mismatched sub-profile cannot return a compatibility pass',
+    mismatchedSubProfile.compatible,
+    false
+  );
+
   // 4. Anionic + Cationic Interaction Hazard
   const formulaIncompatible = [
     { name: 'LABSA 96%', percentage: 10, activeMatterPct: 96, category: 'Anionic Surfactant' },

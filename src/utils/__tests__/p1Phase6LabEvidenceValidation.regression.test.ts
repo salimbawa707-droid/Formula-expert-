@@ -30,6 +30,7 @@ import {
   evaluateCategoryModelValidation,
   proposeCalibrationCandidates,
   evaluateFormulaScientificValidation,
+  getCategoryRequiredLabBattery,
   CATEGORY_EVIDENCE_MATRIX,
   DetailedLabEvidenceRecord
 } from '../labEvidenceEngine';
@@ -480,6 +481,79 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
 
   assert('29. All 39 canonical formula templates remain intact', FORMULAS.length >= 39, FORMULAS.length, 39);
   assert('30. All 13 Canonical Product Categories Defined in Evidence Matrix', CANONICAL_PRODUCT_CATEGORY_IDS.every(id => Boolean(CATEGORY_EVIDENCE_MATRIX[id])), true, true);
+
+  const requiredCategoryEvidence = [
+    ['TOILET_CLEANER', 'clingRheology'],
+    ['BATHROOM_CLEANER', 'clingRheology'],
+    ['DISHWASH_MANUAL', 'mildness'],
+    ['DISHWASH_MANUAL', 'foamStability'],
+    ['DISHWASH_AUTOMATIC', 'zeroFoamCompliance'],
+    ['DISHWASH_AUTOMATIC', 'residueStreaking'],
+    ['FLOOR_CLEANER', 'residueStreaking'],
+    ['FLOOR_CLEANER', 'glossRetention'],
+    ['MULTIPURPOSE_CLEANER', 'residueStreaking'],
+    ['CAR_SHAMPOO', 'residueStreaking'],
+    ['GLASS_CLEANER', 'residueStreaking'],
+    ['HAND_WASH', 'mildness'],
+    ['KITCHEN_DEGREASER', 'bakedGreaseRemoval'],
+    ['CAR_SHAMPOO', 'paintworkLubricity']
+  ] as const;
+  const categoryEvidenceGaps = requiredCategoryEvidence.filter(([category, key]) =>
+    !getCategoryRequiredLabBattery(category as any).includes(key)
+  );
+  assert(
+    '31. Product-specific required lab battery covers profile safety/performance policies',
+    categoryEvidenceGaps.length === 0,
+    categoryEvidenceGaps,
+    []
+  );
+
+  const toiletValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-toilet-cling',
+    formulaVersion: '1.0',
+    productCategory: 'TOILET_CLEANER',
+    isComputationallyValid: true,
+    predictedMetrics: { pH: 2.0, viscosityCps: 500 },
+    labEvidenceRecords: []
+  });
+  assert(
+    '32. Toilet cleaner cannot be lab-validated without cling rheology evidence',
+    toiletValidation.missingTests.includes('clingRheology') && !toiletValidation.isLabValidated,
+    toiletValidation.missingTests,
+    'clingRheology required'
+  );
+
+  const measuredClingRecord: DetailedLabEvidenceRecord = {
+    measurementId: 'm-toilet-cling-01',
+    formulaId: 'f-toilet-cling',
+    formulaVersion: '1.0',
+    categoryId: 'TOILET_CLEANER',
+    parameterKey: 'clingRheology',
+    value: 45,
+    unit: 's',
+    testMethod: 'Vertical panel cling test',
+    testDate: '2026-11-24',
+    provenance: 'MEASURED',
+    sampleId: 'sample-toilet-01',
+    batchId: 'batch-toilet-01',
+    operator: 'Lab Operator A'
+  };
+  const toiletMeasuredOnlyValidation = evaluateFormulaScientificValidation({
+    formulaId: 'f-toilet-cling',
+    formulaVersion: '1.0',
+    productCategory: 'TOILET_CLEANER',
+    isComputationallyValid: true,
+    predictedMetrics: { pH: 2.0, viscosityCps: 500 },
+    labEvidenceRecords: [measuredClingRecord]
+  });
+  assert(
+    '33. Measured-only cling test can satisfy evidence completion without a fake prediction',
+    toiletMeasuredOnlyValidation.completedTests.includes('clingRheology') &&
+      !toiletMeasuredOnlyValidation.missingTests.includes('clingRheology') &&
+      !toiletMeasuredOnlyValidation.comparisons.some(c => c.parameterKey === 'clingRheology'),
+    { completed: toiletMeasuredOnlyValidation.completedTests, missing: toiletMeasuredOnlyValidation.missingTests },
+    'clingRheology completed as measured-only; no predicted-vs-measured comparison'
+  );
 
   // --------------------------------------------------------------------------
   // SUMMARY

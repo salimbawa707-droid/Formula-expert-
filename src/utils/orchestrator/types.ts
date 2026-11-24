@@ -21,6 +21,7 @@ import {
 import { PerformanceProvenance } from '../cleaningPerformanceEngine';
 import { RegulatoryContext, RegulatoryEvaluationReport } from '../regulatoryEngine';
 import { AIGradeResult } from '../gradeEngine';
+import type { PowderLabMeasurementInputs } from '../powderEngine/types';
 
 // =============================================================================
 // EVALUATION PIPELINE STAGES
@@ -112,6 +113,8 @@ export interface CanonicalFormulaInput {
   formulaName?: string;
   formulaVersion?: string;
   productCategory?: string | ProductCategoryId;
+  /** Explicit specialized scientific profile ID; never inferred from a generic display name. */
+  productSubProfileId?: string;
   physicalForm?: PhysicalForm;
   ingredients: CanonicalIngredientInput[];
   batchSize?: number;
@@ -124,14 +127,18 @@ export interface CanonicalFormulaInput {
   temperature?: number;
   temperatureC?: number;
   machineProfile?: MachineProfileInput;
+  waterVolumeL?: number;
+  washVolumeL?: number;
   dose?: number;
   doseGrams?: number;
+  washDoseGrams?: number;
   manufacturingProcess?: ManufacturingProcessInput;
   costContext?: CostContextInput;
   regulatoryContext?: RegulatoryContext;
   climatePreset?: string;
   labEvidence?: LabMeasurementRecord[];
   researchEvidence?: any[];
+  powderLabInputs?: PowderLabMeasurementInputs;
 }
 
 // =============================================================================

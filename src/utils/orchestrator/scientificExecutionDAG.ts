@@ -21,10 +21,7 @@ import {
   ActiveMatterEngine,
   calculateActiveMatterResult
 } from '../activeMatterEngine';
-import {
-  calculateWaterHardnessTolerance,
-  getProductHardnessPolicy
-} from '../chelatorEngine';
+import { calculateWaterHardnessTolerance } from '../chelatorEngine';
 import { calculateFormulationCompatibility } from '../compatibilityEngine';
 import { calculateCleaningPerformance } from '../cleaningPerformanceEngine';
 import { ViscosityEngine, calculateDetailedViscosity } from '../viscosityEngine';
@@ -47,6 +44,7 @@ import { findSubstitutionsForFormula } from '../substitutionEngine';
 import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../specificationEngine';
 import { validateActiveMatterInput } from '../activeMatterInputGuard';
 import { validatePHInput } from '../phInputGuard';
+import { isEngineApplicable } from '../../domain/scientificProductProfiles';
 
 // =============================================================================
 // 1. STRONGLY TYPED INTERMEDIATE SCIENTIFIC STATE MODEL
@@ -316,7 +314,8 @@ export class ScientificExecutionDAG {
           'FORMULA',
           state.formulaVersion,
           state.normalizedIngredients as any,
-          state.canonicalCategory
+          state.canonicalCategory,
+          state.rawInput.productSubProfileId
         );
       }
     });
@@ -574,9 +573,23 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER'],
       execute: (state) => {
+        if (
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
+          !isEngineApplicable(state.canonicalCategory, 'HLB_ENGINE')
+        ) {
+          state.hlbResult = {
+            blendedHLB: null,
+            hasSurfactants: false,
+            status: 'NOT_APPLICABLE',
+            reason: `HLB analysis is not part of the ${state.canonicalCategory} scientific profile.`
+          };
+          state.hlbValue = null;
+          state.hlbStatus = 'NOT_APPLICABLE';
+          return;
+        }
         state.hlbResult = HLBEngine.calculateBlendedHLB(state.resolvedIngredients);
         state.hlbValue = state.hlbResult.hasSurfactants ? state.hlbResult.blendedHLB : null;
-        state.hlbStatus = state.hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE';
+        state.hlbStatus = state.hlbResult.hasSurfactants ? 'VALID' : 'INSUFFICIENT_DATA';
       }
     });
 
@@ -587,36 +600,56 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['ACTIVE_MATTER', 'CATEGORY_ROUTING'],
       execute: (state) => {
-        const hardnessPolicy = getProductHardnessPolicy(
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
-        );
-        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.waterVolumeL;
-        const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams;
-        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null
-          ? hardnessPolicy.defaultWashVolumeL
-          : Number(rawWashVolume);
-        const washDoseGrams = rawDose === undefined || rawDose === null
-          ? hardnessPolicy.defaultDoseGrams
-          : Number(rawDose);
-
-        if (rawWashVolume === undefined || rawWashVolume === null) {
-          state.assumptions.push('Wash volume uses the product hardness policy default; replace with the actual wash volume for a production decision.');
+        if (
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
+          !isEngineApplicable(state.canonicalCategory, 'CHELATOR_ENGINE')
+        ) {
+          state.hardnessResult = {
+            status: 'NOT_APPLICABLE',
+            totalSequestrationMg: 0,
+            chelationCapacityMg: 0,
+            builderCapacityMg: 0,
+            maxSupportedPpm: Number.NaN,
+            washVolumeL: Number.NaN,
+            washDoseGrams: Number.NaN,
+            batchSizeKg: state.batchSizeKg,
+            isApplicable: false,
+            category: state.canonicalCategory,
+            provenance: 'AUTHORITATIVE',
+            sufficiency: 'not_applicable'
+          };
+          state.chelationResult = {
+            isSufficient: null,
+            status: 'NOT_APPLICABLE',
+            chelatorActivePct: null,
+            chelatorActiveMatterVerified: false,
+            chelatorNames: [],
+            bindingCapacityCaCO3GPer100g: null,
+            hardnessProtectionRatio: null
+          };
+          state.rawCapacity = Number.NaN;
+          state.protectionAssessment = 'NOT_APPLICABLE';
+          state.chelationStatus = 'NOT_APPLICABLE';
+          return;
         }
-        if (rawDose === undefined || rawDose === null) {
-          state.assumptions.push('Wash dose uses the product hardness policy default; replace with the actual dose for a production decision.');
-        }
 
-        const effectiveWashVol = Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : (hardnessPolicy.defaultWashVolumeL || 10);
-        const effectiveWashDose = Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : (hardnessPolicy.defaultDoseGrams || 20);
-        const effectiveBatchKg = Number.isFinite(state.batchSizeKg) && state.batchSizeKg > 0 ? state.batchSizeKg : 100;
+        const rawWashVolume = state.rawInput.machineProfile?.waterVolumeL ?? state.rawInput.washVolumeL ?? state.rawInput.waterVolumeL;
+        const rawDose = state.rawInput.dose ?? state.rawInput.washDoseGrams ?? state.rawInput.doseGrams;
+        const washVolumeL = rawWashVolume === undefined || rawWashVolume === null ? undefined : Number(rawWashVolume);
+        const washDoseGrams = rawDose === undefined || rawDose === null ? undefined : Number(rawDose);
+        const rawBatchSize = state.rawInput.batchSizeKg ?? state.rawInput.batchSize;
+        const explicitBatchSizeKg = typeof rawBatchSize === 'number' && Number.isFinite(rawBatchSize) && rawBatchSize > 0
+          ? rawBatchSize
+          : Number.NaN;
 
         const hardnessRes = calculateWaterHardnessTolerance(
           state.resolvedIngredients,
           state.waterHardnessPpm,
-          effectiveWashVol,
-          effectiveWashDose,
-          effectiveBatchKg,
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
+          washVolumeL,
+          washDoseGrams,
+          explicitBatchSizeKg,
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
+          true
         );
 
         state.hardnessResult = hardnessRes;
@@ -626,7 +659,11 @@ export class ScientificExecutionDAG {
           ? 'SCREENING_PASS'
           : hardnessRes.status === 'NOT_APPLICABLE'
             ? 'NOT_APPLICABLE'
-            : ((hardnessRes.totalSequestrationMg || 0) > 0 ? 'SCREENING_PASS' : 'INSUFFICIENT');
+            : hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA'
+              ? 'INSUFFICIENT'
+              : hardnessRes.status === 'FAIL'
+                ? 'SCREENING_FAIL'
+                : 'SCREENING_REVIEW';
 
         let chelatorActivePct = 0;
         let hasUnknownChelatorActiveMatter = false;
@@ -652,7 +689,11 @@ export class ScientificExecutionDAG {
         });
 
         state.chelationResult = {
-          isSufficient: hardnessRes.status === 'PASS' ? true : (hardnessRes.status === 'NOT_APPLICABLE' ? null : ((hardnessRes.totalSequestrationMg || 0) > 0 ? true : false)),
+          isSufficient: hardnessRes.status === 'PASS'
+            ? true
+            : (hardnessRes.status === 'NOT_APPLICABLE' || hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA')
+              ? null
+              : false,
           status: hardnessRes.status === 'PASS' ? 'SCREENING' : hardnessRes.status,
           chelatorActivePct: hasUnknownChelatorActiveMatter ? null : Number(chelatorActivePct.toFixed(2)),
           chelatorActiveMatterVerified: !hasUnknownChelatorActiveMatter,
@@ -663,9 +704,7 @@ export class ScientificExecutionDAG {
 
         if (hardnessRes.status === 'NOT_APPLICABLE') {
           state.chelationStatus = 'NOT_APPLICABLE';
-        } else if (hardnessRes.status === 'PASS' || ((hardnessRes.totalSequestrationMg || 0) > 0)) {
-          state.chelationStatus = 'SCREENING';
-        } else if (hasUnknownChelatorActiveMatter) {
+        } else if (hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA' || hasUnknownChelatorActiveMatter) {
           state.chelationStatus = 'INSUFFICIENT_DATA';
         } else {
           state.chelationStatus = 'SCREENING';
@@ -685,7 +724,7 @@ export class ScientificExecutionDAG {
           : ((typeof state.pHIntermediate === 'number' && Number.isFinite(state.pHIntermediate) && state.pHIntermediate >= 0 && state.pHIntermediate <= 14)
             ? state.pHIntermediate
             : undefined);
-        const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory);
+        const compRes = calculateFormulationCompatibility(state.resolvedIngredients, ph, state.canonicalCategory, state.rawInput.productSubProfileId);
         state.compatibilityResult = compRes;
         state.compatibilityScore = Number.isFinite(compRes.compatibilityScore) ? compRes.compatibilityScore : Number.NaN;
         state.compatible = compRes.compatible === true;
@@ -731,14 +770,19 @@ export class ScientificExecutionDAG {
           return;
         }
 
+        const viscosityTemperature = state.rawInput.temperatureC ?? state.rawInput.temperature;
+        if (viscosityTemperature === undefined || viscosityTemperature === null) {
+          state.assumptions.push('Viscosity temperature defaults to 25 °C as an explicitly labeled reference scenario.');
+        }
+        const effectiveViscosityTemperature = viscosityTemperature ?? 25;
         const viscReport = ViscosityEngine.evaluateViscosity(state.resolvedIngredients, {
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
           targetPH: state.finalEquilibriumPH ?? null,
-          temperatureC: state.rawInput.temperatureC ?? state.rawInput.temperature ?? 25,
+          temperatureC: effectiveViscosityTemperature,
           activeMatterReport: state.activeMatterReport // Consume authoritative active matter result
         });
 
-        const detailedVisc = calculateDetailedViscosity(state.resolvedIngredients, { temperatureC: 25 });
+        const detailedVisc = calculateDetailedViscosity(state.resolvedIngredients, { temperatureC: effectiveViscosityTemperature });
 
         state.viscosityResult = {
           predictedViscosityCp: viscReport.viscosityCp,
@@ -747,7 +791,7 @@ export class ScientificExecutionDAG {
           flowMechanism: detailedVisc.mechanism,
           description: viscReport.isFluid ? `${viscReport.viscosityCp} cPs (${viscReport.rating})` : 'N/A (Solid / Powder)',
           assumedShearRate: '~20 s^-1 (Standard Brookfield RVT @ 20 RPM)',
-          temperatureC: state.rawInput.temperatureC ?? state.rawInput.temperature ?? 25,
+          temperatureC: effectiveViscosityTemperature,
           modelMaturity: 'EMPIRICAL_MODEL',
           viscosityReport: viscReport
         };
@@ -832,7 +876,8 @@ export class ScientificExecutionDAG {
             ingredients: state.resolvedIngredients,
             productCategory: state.canonicalCategory,
             batchSizeKg: state.batchSizeKg,
-            waterHardnessPpm: state.waterHardnessPpm ?? undefined
+            waterHardnessPpm: state.waterHardnessPpm ?? undefined,
+            labMeasurements: state.rawInput.powderLabInputs
           });
           const powderStatus = state.powderReport?.verdict?.overallStatus;
           state.powderStatus = powderStatus === 'SCREENING_ONLY' ? 'SCREENING' :
@@ -852,9 +897,28 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['PH_EQUILIBRIUM', 'ACTIVE_MATTER', 'WATER_CHELATION', 'COMPATIBILITY'],
       execute: (state) => {
+        if (
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' &&
+          !isEngineApplicable(state.canonicalCategory, 'CLEANING_PERFORMANCE_ENGINE')
+        ) {
+          state.cleaningResult = {
+            cpi: null,
+            provenance: 'NOT_APPLICABLE',
+            scoreType: 'NOT_APPLICABLE',
+            isCleaningApplicable: false,
+            productCategory: state.canonicalCategory,
+            missingInputs: [],
+            limitations: [`Cleaning performance is not part of the ${state.canonicalCategory} scientific profile.`]
+          };
+          state.cpi = null;
+          state.adjustedEffectiveCleaningInput = null;
+          state.cleaningStatus = 'NOT_APPLICABLE';
+          return;
+        }
+
         // Enforce dependencies: chelation and compatibility must complete and pass down states
         const hardnessSufficient =
-          state.chelationStatus === 'NOT_APPLICABLE' && state.waterHardnessPpm === 0
+          state.chelationStatus === 'NOT_APPLICABLE'
             ? true
             : state.chelationResult?.isSufficient === true;
 
@@ -981,6 +1045,7 @@ export class ScientificExecutionDAG {
           overheadPct,
           packagingCostPerUnit
         );
+        state.assumptions.push(...(marginChain.assumptions || []));
 
         state.costResult = {
           ...formulaCost,
@@ -1146,6 +1211,7 @@ export class ScientificExecutionDAG {
           // Do not turn the internal unknown-version sentinel into an evidence target.
           formulaVersion: state.rawInput.formulaVersion,
           productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : (state.rawInput.productCategory || 'UNKNOWN_PRODUCT_CATEGORY'),
+          productSubProfileId: state.rawInput.productSubProfileId,
           ingredients: state.resolvedIngredients,
           labMeasurements: state.rawInput.labEvidence || [],
           waterHardnessPpm: state.waterHardnessPpm ?? undefined,
@@ -1373,7 +1439,9 @@ export class ScientificExecutionDAG {
 
       resolvedIngredients: [],
       unknownParameters: [],
-      assumptions: [],
+      assumptions: batchSizeDefaulted
+        ? ['Batch size was not supplied; 100 kg is used only as an explicit calculation scenario, not as a measured or confirmed production batch.']
+        : [],
 
       neutralizationState: null,
       pHIntermediate: null,
@@ -1535,7 +1603,12 @@ export class ScientificExecutionDAG {
       nodeTrace.startTime = Date.now();
       try {
         nodeDef.execute(state);
-        nodeTrace.status = 'COMPLETED';
+        const semanticStatus =
+          nodeId === 'HLB' ? state.hlbStatus :
+          nodeId === 'WATER_CHELATION' ? state.chelationStatus :
+          nodeId === 'CLEANING_CPI' ? state.cleaningStatus :
+          undefined;
+        nodeTrace.status = semanticStatus === 'NOT_APPLICABLE' ? 'NOT_APPLICABLE' : 'COMPLETED';
         completedNodes.add(nodeId);
       } catch (err: any) {
         console.error(`DAG NODE [${nodeId}] FAILED:`, err);

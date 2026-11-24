@@ -234,8 +234,115 @@ export function runPhase10ConsistencyTestSuite(): {
   assert(
     'Defect 1: AIFormulator Source Check',
     'AIFormulator consumes canonical hlbResult from orchestrator output',
-    aiFormulatorSource.includes('hlbResult: o?.hlbResult'),
     aiFormulatorSource.includes('hlbResult: o.hlbResult'),
+    aiFormulatorSource.includes('hlbResult: o.hlbResult'),
+    true
+  );
+
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent pH fallback calculator',
+    !aiFormulatorSource.includes('calculatePHAdvanced') && !aiFormulatorSource.includes('getSolverReadyIngredients'),
+    aiFormulatorSource.includes('calculatePHAdvanced'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent cleaning fallback calculator',
+    !aiFormulatorSource.includes('calculateCleaningPerformance'),
+    aiFormulatorSource.includes('calculateCleaningPerformance'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent hardness/chelation fallback calculator',
+    !aiFormulatorSource.includes('calculateWaterHardnessTolerance'),
+    aiFormulatorSource.includes('calculateWaterHardnessTolerance'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator has no independent compatibility fallback calculator',
+    !aiFormulatorSource.includes('calculateFormulationCompatibility'),
+    aiFormulatorSource.includes('calculateFormulationCompatibility'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'AIFormulator does not evaluate powder formulation a second time',
+    !aiFormulatorSource.includes('evaluatePowderFormulation') &&
+      aiFormulatorSource.includes('powderReport: orchResult.powderReport'),
+    aiFormulatorSource.includes('evaluatePowderFormulation'),
+    false
+  );
+  assert(
+    'Phase 2: AIFormulator SSOT',
+    'Powder lab measurements are passed through the canonical orchestrator input',
+    aiFormulatorSource.includes('powderLabInputs: snapshot.powderLabInputs'),
+    aiFormulatorSource.includes('powderLabInputs: snapshot.powderLabInputs'),
+    true
+  );
+
+  const stagedWorkflowPath = path.resolve(process.cwd(), 'src/utils/analysisWorkflowEngine.ts');
+  const stagedWorkflowSource = fs.readFileSync(stagedWorkflowPath, 'utf8');
+  assert(
+    'Phase 2: Staged Workflow Integrity',
+    'Staged workflow has no pH fallback that replaces an unavailable authoritative result',
+    !stagedWorkflowSource.includes('getSolverReadyIngredients') && !stagedWorkflowSource.includes('fallbackAdv'),
+    stagedWorkflowSource.includes('fallbackAdv'),
+    false
+  );
+  assert(
+    'Phase 2: Staged Workflow Integrity',
+    'Staged workflow defers powder report to the authoritative orchestrator DAG',
+    !stagedWorkflowSource.includes('evaluatePowderFormulation') &&
+      stagedWorkflowSource.includes('powderReport: orchestratorResult.powderReport'),
+    stagedWorkflowSource.includes('evaluatePowderFormulation'),
+    false
+  );
+  assert(
+    'Phase 2: Staged Workflow Integrity',
+    'Staged workflow requires explicit wash scenario inputs for hardness and CPI',
+    stagedWorkflowSource.includes('immutableSnapshot.washVolumeL') &&
+      stagedWorkflowSource.includes('immutableSnapshot.washDoseGrams') &&
+      stagedWorkflowSource.includes('failIfHardnessMissing: true'),
+    'explicit wash volume/dose and strict CPI mode',
+    true
+  );
+  assert(
+    'Phase 2: Staged Workflow Integrity',
+    'Staged workflow does not use hardcoded target cost of 45 per kg',
+    !stagedWorkflowSource.includes('targetCostPerKg: 45.0'),
+    stagedWorkflowSource.includes('targetCostPerKg: 45.0'),
+    false
+  );
+
+  const resultsPanelPath = path.resolve(process.cwd(), 'src/components/aiformulator/ScientificResultsPanel.tsx');
+  const resultsPanelSource = fs.readFileSync(resultsPanelPath, 'utf8');
+  assert(
+    'Phase 2: UI Truthfulness',
+    'Results panel does not infer cleaning scores from active matter alone',
+    !resultsPanelSource.includes('activeMatter * 3.8') &&
+      !resultsPanelSource.includes('activeMatter * 4.2') &&
+      !resultsPanelSource.includes('activeMatter * 3.5'),
+    'No inferred CPI or soil-removal score',
+    true
+  );
+  assert(
+    'Phase 2: UI Truthfulness',
+    'Results panel does not invent a 100 ppm/100 score or default 20 g/10 L wash scenario',
+    !resultsPanelSource.includes('washVolumeL || 10') &&
+      !resultsPanelSource.includes('washDoseGrams || 20') &&
+      !resultsPanelSource.includes('compatibilityScore ? 100 : 0'),
+    'No silent wash defaults or compatibility score fallback',
+    true
+  );
+  assert(
+    'Phase 2: UI Truthfulness',
+    'Results panel shows safety score as unavailable instead of defaulting to 100',
+    !resultsPanelSource.includes('finalScore ?? 100') &&
+      !resultsPanelSource.includes('rating || "SAFE"'),
+    'N/A / NOT EVALUATED',
     true
   );
 

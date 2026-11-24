@@ -76,20 +76,29 @@ public class DocumentRegisterWebViewPersistenceTest {
     }
 
     private static void openDocsRegister(ActivityScenario<MainActivity> scenario) throws Exception {
-        long deadline = System.currentTimeMillis() + 45000;
+        long deadline = System.currentTimeMillis() + 60000;
+        boolean navigationReady = false;
         while (System.currentTimeMillis() < deadline) {
-            String state = evaluate(scenario, "document.readyState");
-            if (state != null && state.contains("complete")) break;
+            String state = evaluate(scenario,
+                "(()=>{const b=document.querySelector(\"button[data-testid='nav-docs_library']\");return document.readyState+'|'+(b?'NAV_READY':'NAV_WAIT')})()");
+            if (state != null && state.contains("NAV_READY")) { navigationReady = true; break; }
             Thread.sleep(300);
         }
-        evaluate(scenario, "(()=>{const b=[...document.querySelectorAll('button')].find(x=>(x.innerText||'').includes('Docs & SDS')||(x.innerText||'').trim()==='Documents');if(b)b.click();return 'NAV_CLICKED'})()");
-        deadline = System.currentTimeMillis() + 30000;
+        assertTrue("R&D navigation did not become available in Android WebView", navigationReady);
+        String clicked = evaluate(scenario,
+            "(()=>{const b=document.querySelector(\"button[data-testid='nav-docs_library']\");if(!b)return 'NAV_MISSING';b.click();return 'NAV_CLICKED'})()");
+        assertTrue("Docs & SDS navigation control was not clicked: " + clicked,
+            clicked != null && clicked.contains("NAV_CLICKED"));
+
+        deadline = System.currentTimeMillis() + 60000;
         while (System.currentTimeMillis() < deadline) {
             String ready = evaluate(scenario, "document.querySelector('#docs-library-root') ? 'READY' : 'WAIT'");
             if (ready != null && ready.contains("READY")) return;
             Thread.sleep(300);
         }
-        throw new AssertionError("Docs & SDS register did not mount in Android WebView");
+        String diagnostic = evaluate(scenario,
+            "(()=>JSON.stringify({title:document.title,url:location.href,readyState:document.readyState,nav:!!document.querySelector(\"button[data-testid='nav-docs_library']\"),main:document.querySelector('main')?.innerText?.slice(0,500)||'',root:!!document.querySelector('#docs-library-root')}) )()");
+        throw new AssertionError("Docs & SDS register did not mount in Android WebView; state=" + diagnostic);
     }
 
     @Test

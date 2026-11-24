@@ -5,6 +5,7 @@ import { calculateActiveSurfactants } from './activeMatterEngine';
 import { getAuditedIngredientCategory } from './calculators';
 import { getCategoryPHLimits } from './scientificRouter';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
+import { tryGetScientificProductProfile } from '../domain/scientificProductProfiles';
 import { PHCalculationOptions } from '../domain/ph/types';
 
 // ============================================================================
@@ -97,12 +98,18 @@ export interface FormulationCompatibilityResult {
 export function calculateFormulationCompatibility(
   ingredients: FormulationIngredient[],
   estimatedPH?: number | string,
-  categoryOrId?: string
+  categoryOrId?: string,
+  subProfileOrFormulaName?: string
 ): FormulationCompatibilityResult {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
   const canonicalCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY' = categoryOrId
     ? normalizeProductCategory(categoryOrId)
     : 'UNKNOWN_PRODUCT_CATEGORY';
+  const categoryProfile = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY'
+    ? tryGetScientificProductProfile(canonicalCategory, subProfileOrFormulaName)
+    : undefined;
+  const calculationPolicy = categoryProfile?.calculationPolicy;
+  const invalidSubProfile = Boolean(subProfileOrFormulaName) && canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' && !categoryProfile;
 
   // 1. Resolve pH value
   let phVal = Number.NaN;
@@ -173,24 +180,16 @@ export function calculateFormulationCompatibility(
       waterPct += pct;
     }
 
-    // Anionic
-    if (
-      cat.includes('anionic') ||
-      name.includes('labsa') ||
-      name.includes('sles') ||
-      name.includes('sls') ||
-      name.includes('aos') ||
-      name.includes('sulfate') ||
-      name.includes('sulphonate') ||
-      name.includes('sulfonate') ||
-      name.includes('soap')
-    ) {
-      // Exclude short-chain aryl hydrotropes (SCS, SXS) which lack surfactant micelle foaming properties
-      if (!name.includes('cumene') && !name.includes('xylene') && !name.includes('scs') && !name.includes('sxs')) {
-        hasAnionic = true;
-        anionicPct += pct;
-        anionicIngs.push(ing.name);
-      }
+    // Anionic surfactants: do not classify every sulfate/sulfonate salt as a surfactant.
+    // Sodium sulfate and similar inorganic salts are builders/fillers, not anionic detergents.
+    const hasExplicitAnionicRole = cat.includes('anionic');
+    const hasKnownAnionicSurfactantIdentity =
+      /\blabsa\b|linear alkylbenzene sulfonic acid|alkylbenzene sulfonate|\bsles\b|sodium laureth sulfate|\bsls\b|sodium lauryl sulfate|sodium dodecyl sulfate|\bsds\b|\baos\b|alpha olefin sulfonate|alkyl ether sulfate|alkyl sulfate surfactant|\bsoap\b/i.test(name);
+    const isShortChainHydrotrope = /cumene|xylene|\bscs\b|\bsxs\b/.test(name);
+    if (!isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
+      hasAnionic = true;
+      anionicPct += pct;
+      anionicIngs.push(ing.name);
     }
 
     // Cationic
@@ -380,21 +379,6 @@ export function calculateFormulationCompatibility(
       recommendation: 'Verify phase stability or replace cationic component with amphoteric or nonionic co-surfactants.',
       affectedIngredients: [...anionicIngs, ...cationicIngs],
       condition: `Anionic active (${anionicPct.toFixed(1)}%) + Cationic active (${cationicPct.toFixed(1)}%)`
-    });
-  }
-
-  // Fabric Softener Specific Anionic Contamination Check
-  if (canonicalCategory === 'FABRIC_SOFTENER' && hasAnionic && anionicPct > 0.1) {
-    penaltySum += 40;
-    alerts.push({
-      id: 'softener-anionic-contamination',
-      title: 'Fabric Softener Anionic Contamination Failure',
-      mechanism: 'IONIC',
-      severity: 'Critical',
-      message: 'Fabric softeners rely on cationic esterquats for fiber substantivity. Presence of anionic surfactant (>0.1%) causes catastrophic esterquat charge neutralization, emulsion breakdown, and total loss of fabric softening efficacy.',
-      recommendation: 'Remove anionic surfactants completely from cationic fabric softener formulation.',
-      affectedIngredients: anionicIngs,
-      condition: `Fabric Softener containing ${anionicPct.toFixed(1)}% anionic surfactant`
     });
   }
 
@@ -724,18 +708,35 @@ export function calculateFormulationCompatibility(
     });
   }
 
-  // Automatic Dishwasher High-Foaming Surfactant Machine Hazard
-  if (canonicalCategory === 'DISHWASH_AUTOMATIC' && hasAnionic && anionicPct > 0.5) {
+  // Enforce the canonical product profile's surfactant permissions for every category.
+  if (calculationPolicy?.allowAnionicSurfactants === false && hasAnionic && anionicPct > 0) {
+    penaltySum += 40;
+    const isAutomaticDishwash = canonicalCategory === 'DISHWASH_AUTOMATIC';
+    alerts.push({
+      id: canonicalCategory === 'DISHWASH_AUTOMATIC' ? 'autodish-foam-overflow-hazard' : canonicalCategory === 'FABRIC_SOFTENER' ? 'softener-anionic-contamination' : `category-policy-anionic-${canonicalCategory.toLowerCase()}`,
+      title: `Anionic surfactant prohibited for ${categoryProfile?.label || canonicalCategory}`,
+      mechanism: isAutomaticDishwash ? 'PHASE_STABILITY' : 'IONIC',
+      severity: 'Critical',
+      message: isAutomaticDishwash
+        ? `Automatic dishwash requires low/zero-foam chemistry; anionic surfactants (${anionicIngs.join(', ')}) violate the category profile and create foam-overflow risk.`
+        : `The canonical ${categoryProfile?.label || canonicalCategory} profile disallows anionic surfactants. Detected: ${anionicIngs.join(', ')} (${anionicPct.toFixed(2)}% formula).`,
+      recommendation: 'Remove the prohibited anionic surfactant or select a product category whose profile permits it.',
+      affectedIngredients: anionicIngs,
+      condition: `Anionic surfactant total = ${anionicPct.toFixed(2)}%`
+    });
+  }
+
+  if (calculationPolicy?.allowCationicSurfactants === false && hasCationic && cationicPct > 0) {
     penaltySum += 40;
     alerts.push({
-      id: 'autodish-foam-overflow-hazard',
-      title: 'Automatic Dishwasher Machine Foam Overflow Hazard',
-      mechanism: 'PHASE_STABILITY',
+      id: `category-policy-cationic-${canonicalCategory.toLowerCase()}`,
+      title: `Cationic surfactant prohibited for ${categoryProfile?.label || canonicalCategory}`,
+      mechanism: 'IONIC',
       severity: 'Critical',
-      message: `Automatic dishwashers require zero-foam / low-foam detergency. Anionic surfactants (SLES, LABSA, SLS) create intense foaming, causing dishwasher pump cavitation and floor flooding.`,
-      recommendation: 'Eliminate anionic surfactants. Use low-foaming EO/PO block copolymer nonionic surfactants.',
-      affectedIngredients: anionicIngs,
-      condition: `Auto Dishwasher detergent containing ${anionicPct.toFixed(1)}% anionic surfactant`
+      message: `The canonical ${categoryProfile?.label || canonicalCategory} profile disallows cationic surfactants. Detected: ${cationicIngs.join(', ')} (${cationicPct.toFixed(2)}% formula).`,
+      recommendation: 'Remove the prohibited cationic surfactant or select a product category whose profile permits it.',
+      affectedIngredients: cationicIngs,
+      condition: `Cationic surfactant total = ${cationicPct.toFixed(2)}%`
     });
   }
 
@@ -762,9 +763,10 @@ export function calculateFormulationCompatibility(
     : Number.NaN;
 
   const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = hasFormulaData && !hasCriticalOrHigh;
+  const compatible = hasFormulaData && !hasCriticalOrHigh && !invalidSubProfile;
   const warnings = alerts.map(a => a.message);
   if (!pHAvailable) warnings.push('pH is unavailable or invalid; pH-dependent compatibility rules were not evaluated.');
+  if (invalidSubProfile) warnings.push('The supplied product sub-profile does not belong to the selected canonical category; category-specific compatibility cannot be evaluated.');
   if (safeIngs.length === 0) warnings.push('No ingredient composition was supplied; compatibility cannot be evaluated.');
   if (hasInvalidIngredientPercentage) warnings.push('One or more ingredient percentages are missing, invalid, negative, or above 100%; compatibility cannot be evaluated.');
 
@@ -785,7 +787,7 @@ export function calculateFormulationCompatibility(
   }
 
   const modelType = 'Mechanism-Classified Deterministic Interaction Matrix (Phase 6)';
-  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = (!pHAvailable || !hasFormulaData) && !hasCriticalOrHigh
+  const riskLevel: CompatibilitySeverity | 'UNKNOWN' = (!pHAvailable || !hasFormulaData || invalidSubProfile) && !hasCriticalOrHigh
     ? 'UNKNOWN'
     : alerts.some(a => a.severity === 'Critical')
       ? 'Critical'
@@ -836,8 +838,8 @@ export function calculateFormulationCompatibility(
     return name.includes('unknown') || name.includes('uncharacterized') || (cat.includes('unknown') && !name.includes('water'));
   });
 
-  if (safeIngs.length === 0) {
-    compatibilityStatusSemantic = 'UNKNOWN';
+  if (safeIngs.length === 0 || invalidSubProfile) {
+    compatibilityStatusSemantic = 'INSUFFICIENT_DATA';
     evidenceStatus = 'INSUFFICIENT_DATA';
   } else if (alerts.some(a => a.severity === 'Critical')) {
     compatibilityStatusSemantic = 'INCOMPATIBLE';

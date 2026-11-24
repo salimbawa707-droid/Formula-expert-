@@ -551,8 +551,8 @@ export class ActiveMatterEngine {
    * Evaluates complete Active Matter and Mass Balance Report for a formulation.
    */
   public static calculateActiveMatterReport(
-    ingredients: FormulationIngredient[], 
-    batchSizeKg: number = 100
+    ingredients: FormulationIngredient[],
+    batchSizeKg?: number
   ): ActiveMatterReport {
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
     const hasNonEmptyFormula = safeIngs.length > 0;
@@ -744,7 +744,9 @@ export class ActiveMatterEngine {
       },
       contributions,
       isFullyAuthoritative: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && nonAuthoritativeCount === 0 && hasValidBatchSize,
-      activeMatterStatus: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 && hasValidBatchSize ? 'COMPLETE' : 'INSUFFICIENT_DATA',
+      // Composition-based active-matter status is independent of batch mass.
+      // Batch-specific kg outputs remain NaN when no explicit batch size is supplied.
+      activeMatterStatus: hasNonEmptyFormula && ingredientsWithMissingActive === 0 && invalidPercentageCount === 0 ? 'COMPLETE' : 'INSUFFICIENT_DATA',
       ingredientsCount: contributions.length,
       ingredientsWithMissingActive,
       invalidPercentageCount,

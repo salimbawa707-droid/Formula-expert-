@@ -38,6 +38,30 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
   const [copiedFingerprint, setCopiedFingerprint] = useState(false);
 
   const evalResult = orchestratorResult || scientificResults?.orchestratorResult || scientificResults;
+  const safetyScore = typeof scientificResults?.health?.finalScore === 'number' && Number.isFinite(scientificResults.health.finalScore)
+    ? scientificResults.health.finalScore
+    : null;
+  const safetyRating = scientificResults?.health?.rating || 'NOT EVALUATED';
+  const safetyMessage = scientificResults?.health?.alerts?.[0]?.message || 'No safety assessment is available. Review ingredient SDS records and complete the required hazard evaluation.';
+  const solidsValue = typeof scientificResults?.totalSolids === 'number' && Number.isFinite(scientificResults.totalSolids)
+    ? scientificResults.totalSolids
+    : null;
+  const cleaningScore = [scientificResults?.cleaning?.cleaningScore, scientificResults?.cleaning?.cpi]
+    .find((value: any) => typeof value === 'number' && Number.isFinite(value)) ?? null;
+  const hardnessIsNotApplicable = scientificResults?.waterHardness?.status === 'NOT_APPLICABLE' ||
+    scientificResults?.waterHardness?.isApplicable === false;
+  const hardnessIsEvaluated = !hardnessIsNotApplicable &&
+    scientificResults?.waterHardness?.status !== 'NOT_EVALUATED' &&
+    scientificResults?.waterHardness?.status !== 'INSUFFICIENT_DATA' &&
+    Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg) &&
+    Number.isFinite(scientificResults?.waterHardness?.maxSupportedPpm);
+  const chelationCapacityAvailable = !hardnessIsNotApplicable && Number.isFinite(scientificResults?.waterHardness?.totalSequestrationMg);
+  const compatibilityNotEvaluated = scientificResults?.compatibility?.status === 'NOT_EVALUATED' ||
+    scientificResults?.compatibility?.compatibilityStatusSemantic === 'UNKNOWN';
+  const compatibilityScore = typeof scientificResults?.compatibility?.compatibilityScore === 'number' &&
+    Number.isFinite(scientificResults.compatibility.compatibilityScore)
+    ? scientificResults.compatibility.compatibilityScore
+    : null;
   // ... rest of the code
 
   const handleDownloadDossier = () => {
@@ -62,8 +86,8 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
   };
 
   const provenanceReport = scientificResults?.provenanceReport || scientificResults?.qualityGateResult?.provenanceReport;
-  const overallState = provenanceReport?.overallProvenanceState || (scientificResults?.isLabValidated ? 'LAB_VALIDATED' : 'SCIENTIFICALLY_SCREENED');
-  const fingerprint = provenanceReport?.formulaFingerprint || evalResult?.provenance?.fingerprint || 'ID[F-1.0]|VER[1.0.0]';
+  const overallState = provenanceReport?.overallProvenanceState || (scientificResults?.isLabValidated ? 'LAB_VALIDATED' : (scientificResults?.screeningStatus && scientificResults.screeningStatus !== 'NOT_EVALUATED' ? 'SCIENTIFICALLY_SCREENED' : 'NOT_EVALUATED'));
+  const fingerprint = provenanceReport?.formulaFingerprint || evalResult?.provenance?.fingerprint || 'PENDING — NOT EVALUATED';
   const trace = evalResult?.executionTrace;
 
   const handleCopyFingerprint = () => {
@@ -265,7 +289,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               Newton-Raphson charge balance ({(() => {
                 const val = typeof scientificResults?.pH === 'number' ? scientificResults.pH : (typeof scientificResults?.phResult?.ph === 'number' ? scientificResults.phResult.ph : null);
                 return val !== null ? (val < 6.8 ? "Acidic" : val > 8.5 ? "Alkaline" : "Neutral") : "Equilibrium Pending";
-              })()}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || scientificResults?.phConfidence || "Theoretical Model"}</span>. Physical electrode test required for release.
+              })()}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || scientificResults?.phConfidence || "NOT EVALUATED"}</span>. Physical electrode test required for release.
             </p>
             {typeof scientificResults?.pH === 'number' && scientificResults.pH > 9.5 && scientificResults.details?.recognizedContributors?.includes('sodium_citrate') && !scientificResults.details?.recognizedContributors?.includes('citric_acid') && (
               <div className="mt-2 text-[11px] bg-amber-950/50 border border-amber-500/40 rounded-lg p-2 text-amber-200">
@@ -436,25 +460,27 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
                 {productCategory.toLowerCase().includes("powder")
-                  ? `${(scientificResults?.totalSolids ?? 0).toFixed(1)}%`
+                  ? `${solidsValue !== null ? solidsValue.toFixed(1) + '%' : 'N/A'}`
                   : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
                   ? "INSUFFICIENT_DATA"
-                  : `${(scientificResults?.totalSolids ?? 0).toFixed(1)}%`}
+                  : (solidsValue !== null ? solidsValue.toFixed(1) + '%' : 'N/A')}
               </span>
               <span className="text-xs text-slate-400 font-semibold">
                 {productCategory.toLowerCase().includes("powder")
                   ? "Total Dry Solids"
                   : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
-                  ? `Known NVR coverage: ${(scientificResults?.nvrResult?.dataCompleteness ?? 0).toFixed(0)}%`
+                  ? `Known NVR coverage: ${typeof scientificResults?.nvrResult?.dataCompleteness === 'number' ? scientificResults.nvrResult.dataCompleteness.toFixed(0) + '%' : 'N/A'}`
                   : "Non-Volatile Residue"}
               </span>
             </div>
             <p className="text-[11px] text-slate-300 font-medium leading-tight">
-              {productCategory.toLowerCase().includes("powder")
-                ? `Dry powder matter: ${(scientificResults?.totalSolids ?? 0).toFixed(1)}% • Hydrate moisture: ${(100 - (scientificResults?.totalSolids ?? 0)).toFixed(1)}%.`
+              {solidsValue === null
+                ? 'Total solids / NVR is NOT EVALUATED because required ingredient property data is incomplete.'
+                : productCategory.toLowerCase().includes("powder")
+                ? 'Powder solids value is available. Moisture is reported separately only when measured.'
                 : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
-                ? `NVR: INSUFFICIENT_DATA • Known NVR coverage: ${(scientificResults?.nvrResult?.dataCompleteness ?? 0).toFixed(0)}%. Insufficient NVR data for ${(scientificResults?.nvrResult?.unknownIngredients || []).join(', ')}.`
-                : `Volatile solvent fraction: ${(100 - (scientificResults?.totalSolids ?? 0)).toFixed(1)}% • Non-volatile residue: ${(scientificResults?.totalSolids ?? 0).toFixed(1)}% (Calculated).`}
+                ? 'NVR is INSUFFICIENT_DATA; unknown ingredient volatility must be characterized.'
+                : 'Non-volatile residue is calculated from characterized ingredient fractions.'}
             </p>
             {!productCategory.toLowerCase().includes("powder") && (
               <div className="pt-1.5 border-t border-slate-800/80 text-[11px] flex items-center justify-between">
@@ -525,7 +551,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                     {scientificResults.cmc?.available ? Math.round(scientificResults.cmc.ppm) : "Unavailable"}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">
-                    {scientificResults?.cmc?.available ? `ppm (${(scientificResults?.cmc?.molar ?? 0).toFixed(2)} mM)` : "no prediction"}
+                    {scientificResults?.cmc?.available ? `ppm (${typeof scientificResults?.cmc?.molar === 'number' ? scientificResults.cmc.molar.toFixed(2) : 'N/A'} mM)` : "no prediction"}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
@@ -593,9 +619,9 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                     ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" 
                     : "bg-blue-950/80 text-blue-300 border-blue-500/40")
               }`}>
-                {!isMetricApplicable(productCategory, "cleaningScore") 
-                  ? "NOT APPLICABLE" 
-                  : (scientificResults.cleaning.isMeasured ? "LAB MEASURED" : "PREDICTED MODEL")}
+                {!isMetricApplicable(productCategory, "cleaningScore")
+                  ? "NOT APPLICABLE"
+                  : cleaningScore === null ? "NOT EVALUATED" : (scientificResults.cleaning.isMeasured ? "LAB MEASURED" : "PREDICTED MODEL")}
               </span>
             </div>
             {isMetricApplicable(productCategory, "cleaningScore") ? (
@@ -603,34 +629,24 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-mono font-extrabold text-emerald-400">
                     {(() => {
-                      const score = scientificResults.cleaning?.cleaningScore ?? scientificResults.cleaning?.cpi;
-                      if (typeof score === 'number' && Number.isFinite(score) && score > 0) return score;
-                      const active = scientificResults.activeMatter || 0;
-                      if (active > 0) return Math.min(95, Math.max(30, Math.round(active * 3.8 + 20)));
-                      return 0;
+                      return cleaningScore !== null ? cleaningScore : 'N/A';
                     })()}
                   </span>
                   <span className="text-xs text-token-secondary font-bold">/ 100 Index</span>
                   <span className="text-[10px] text-token-primary font-bold ml-auto">
                     {(() => {
                       const power = scientificResults.cleaning?.cleaningPower ?? scientificResults.cleaning?.qualitativePower;
-                      if (power && power !== 'Unavailable') return power;
-                      const score = scientificResults.cleaning?.cleaningScore ?? scientificResults.cleaning?.cpi ?? (scientificResults.activeMatter > 0 ? Math.round(scientificResults.activeMatter * 3.8 + 20) : 0);
-                      return score >= 80 ? 'Heavy Duty / Superior' : score >= 60 ? 'High Detergency' : score >= 40 ? 'Moderate Detergency' : 'Standard';
+                      return power && power !== 'Unavailable' ? power : 'NOT EVALUATED';
                     })()}
                   </span>
                 </div>
                 <p className="text-[11px] text-token-primary font-medium leading-tight">
                   Degreasing: {(() => {
                     const d = scientificResults.cleaning?.degreasingScore ?? scientificResults.cleaning?.domainScores?.degreasing;
-                    if (typeof d === 'number' && Number.isFinite(d) && d > 0) return d;
-                    const active = scientificResults.activeMatter || 0;
-                    return active > 0 ? Math.min(95, Math.max(25, Math.round(active * 4.2))) : 0;
+                    return typeof d === 'number' && Number.isFinite(d) ? d : 'N/A';
                   })()}% | Particulate Soil: {(() => {
                     const p = scientificResults.cleaning?.particulateSoilRemoval ?? scientificResults.cleaning?.domainScores?.particulate;
-                    if (typeof p === 'number' && Number.isFinite(p) && p > 0) return p;
-                    const active = scientificResults.activeMatter || 0;
-                    return active > 0 ? Math.min(95, Math.max(25, Math.round(active * 3.5 + 15))) : 0;
+                    return typeof p === 'number' && Number.isFinite(p) ? p : 'N/A';
                   })()}%. Model estimate (R&D screening).
                 </p>
               </>
@@ -651,56 +667,39 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">8. Hard Water Tolerance</span>
               <span className={`text-[10px] font-extrabold font-mono px-2.5 py-0.5 rounded-full border ${
-                scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable
-                  ? "bg-slate-800 text-slate-400 border-slate-700"
-                  : (scientificResults.waterHardness.status === "PASS" || (scientificResults.waterHardness.totalSequestrationMg || 0) > 0 || (scientificResults.waterHardness.maxSupportedPpm || 0) > 0)
+                hardnessIsNotApplicable || !hardnessIsEvaluated
+                  ? "bg-slate-800 text-slate-300 border-slate-700"
+                  : scientificResults.waterHardness.status === "PASS"
                     ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40"
-                    : scientificResults.waterHardness.status === "WARNING"
-                      ? "bg-amber-950/80 text-amber-300 border-amber-500/40"
-                      : "bg-slate-800 text-slate-400 border-slate-700"
+                    : "bg-amber-950/80 text-amber-300 border-amber-500/40"
               }`}>
-                {scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable
+                {hardnessIsNotApplicable
                   ? "NOT APPLICABLE"
-                  : (scientificResults.waterHardness.status === "PASS" || (scientificResults.waterHardness.totalSequestrationMg || 0) > 0 || (scientificResults.waterHardness.maxSupportedPpm || 0) > 0)
-                    ? (waterHardnessPpm ? scientificResults.waterHardness.status : "INTRINSIC CAPACITY")
-                    : (waterHardnessPpm ? scientificResults.waterHardness.status : "UNCHELATED")}
+                  : !hardnessIsEvaluated
+                    ? "NOT EVALUATED"
+                    : scientificResults.waterHardness.status}
               </span>
             </div>
-            {scientificResults.waterHardness.status === "NOT_APPLICABLE" || !scientificResults.waterHardness.isApplicable ? (
-              <>
-                <span className="text-xs text-slate-500 block pt-1 italic font-semibold">
-                  N/A — Not required for this category
-                </span>
-                <p className="text-[11px] text-slate-500 leading-tight">
-                  {scientificResults.waterHardness.description || "Category does not rely on wash-liquor water hardness sequestration."}
-                </p>
-              </>
-            ) : (scientificResults.waterHardness.maxSupportedPpm || 0) > 0 || (scientificResults.waterHardness.totalSequestrationMg || 0) > 0 ? (
-              <>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-mono font-extrabold text-white">
-                    {scientificResults.waterHardness.maxSupportedPpm ?? Math.round((scientificResults.waterHardness.totalSequestrationMg || 0) / (scientificResults.waterHardness.washVolumeL || 10))}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold">
-                    ppm CaCO₃ max {waterHardnessPpm ? `(w/ margin for ${waterHardnessPpm} ppm target)` : "(Intrinsic builder capacity)"}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Sequestration: {Math.round(scientificResults.waterHardness.totalSequestrationMg || 0)} mg CaCO₃ per {scientificResults.waterHardness.washDoseGrams || 20}g dose in {scientificResults.waterHardness.washVolumeL || 10}L wash. {scientificResults.waterHardness.description || "Active builder package provides hard water tolerance."}
-                </p>
-              </>
+            {hardnessIsNotApplicable ? (
+              <p className="text-[11px] text-slate-500 leading-tight">
+                N/A — This product category does not require a wash-water hardness calculation.
+              </p>
+            ) : !hardnessIsEvaluated ? (
+              <p className="text-[11px] text-amber-300 leading-tight">
+                Hard-water protection is NOT EVALUATED. Supply measured hardness, wash volume, detergent dose and batch size before relying on a capacity result.
+              </p>
             ) : (
               <>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-mono font-extrabold text-slate-400">
-                    0
+                  <span className="text-2xl font-mono font-extrabold text-white">
+                    {scientificResults.waterHardness.maxSupportedPpm}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">
-                    ppm CaCO₃ max (Unchelated)
+                    ppm CaCO₃ maximum supported
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
-                  No active chelating builders detected in formula. Detergency relies on surfactant calcium tolerance.
+                  Sequestration: {Math.round(scientificResults.waterHardness.totalSequestrationMg)} mg CaCO₃ per {scientificResults.waterHardness.washDoseGrams}g dose in {scientificResults.waterHardness.washVolumeL}L wash.
                 </p>
               </>
             )}
@@ -711,23 +710,27 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">9. Builder / Chelation</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                (scientificResults?.waterHardness?.totalSequestrationMg || 0) > 0
+                chelationCapacityAvailable
                   ? "bg-teal-950/80 text-teal-300 border-teal-500/40"
                   : "bg-slate-800 text-slate-400 border-slate-700"
               }`}>
-                {(scientificResults?.waterHardness?.totalSequestrationMg || 0) > 0 ? "Active Sequestration" : "Unchelated"}
+                {chelationCapacityAvailable ? "CALCULATED CAPACITY" : "NOT EVALUATED"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {Math.round(scientificResults?.waterHardness?.totalSequestrationMg || 0)}
+                {chelationCapacityAvailable
+                  ? Math.round(scientificResults.waterHardness.totalSequestrationMg)
+                  : 'N/A'}
               </span>
-              <span className="text-xs text-slate-400 font-semibold">mg CaCO₃ / {scientificResults?.waterHardness?.washDoseGrams || 20}g dose</span>
+              <span className="text-xs text-slate-400 font-semibold">
+                mg CaCO₃ {chelationCapacityAvailable && Number.isFinite(scientificResults?.waterHardness?.washDoseGrams) ? 'per ' + scientificResults.waterHardness.washDoseGrams + 'g dose' : ''}
+              </span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {(scientificResults?.chelatorNames || []).length > 0 || (scientificResults?.waterHardness?.totalSequestrationMg || 0) > 0
-                ? `Active agents: ${(scientificResults?.chelatorNames || []).length > 0 ? (scientificResults.chelatorNames || []).slice(0, 3).join(", ") : 'Chelating builders'}. Chelation: ${Math.round(scientificResults?.waterHardness?.chelationCapacityMg || 0)} mg | Builder: ${Math.round(scientificResults?.waterHardness?.builderCapacityMg || 0)} mg.`
-                : "No active chelating builders detected; detergency relies on surfactant calcium tolerance."}
+              {chelationCapacityAvailable
+                ? 'Identified agents: ' + ((scientificResults?.chelatorNames || []).join(', ') || 'Not identified')
+                : 'Chelation capacity is unavailable until ingredient grade, assay and formula percentages are validated.'}
             </p>
           </div>
         </div>
@@ -744,14 +747,14 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">10. Foam Profile</span>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border-blue-500/40">
-                Ross-Miles
+                NOT MEASURED
               </span>
             </div>
             <span className="text-sm font-extrabold text-white block mt-1">
               {scientificResults.foam}
             </span>
             <p className="text-[11px] text-slate-400 leading-tight">
-              Stability evaluated from anionic-amphoteric synergistic packing.
+              Qualitative foam profile only; a standardized Ross-Miles test is required for measured foam stability.
             </p>
           </div>
 
@@ -760,16 +763,16 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">11. Compatibility</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                scientificResults?.compatibility?.compatible ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-rose-950/80 text-rose-300 border-rose-500/40"
+                compatibilityNotEvaluated
+                  ? "bg-slate-800 text-slate-300 border-slate-700"
+                  : scientificResults?.compatibility?.compatible ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-rose-950/80 text-rose-300 border-rose-500/40"
               }`}>
-                {scientificResults?.compatibility?.compatible ? "PASSED" : "HAZARD"}
+                {compatibilityNotEvaluated ? "NOT EVALUATED" : scientificResults?.compatibility?.compatible ? "PASSED" : "HAZARD"}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {Number.isFinite(scientificResults?.compatibility?.compatibilityScore)
-                  ? scientificResults.compatibility.compatibilityScore
-                  : (scientificResults?.compatibility?.compatible ? 100 : 0)}
+                {compatibilityScore ?? 'N/A'}
               </span>
               <span className="text-xs text-slate-400 font-semibold">/ 100 Rating</span>
             </div>
@@ -777,7 +780,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               {scientificResults?.compatibility?.alerts?.[0]?.message ||
                (scientificResults?.compatibility?.warnings || []).find((w: string) => !w.includes('pH is unavailable')) ||
                scientificResults?.compatibility?.warnings?.[0] ||
-               "No anionic/cationic precipitation or degradation hazards."}
+               (compatibilityNotEvaluated ? 'Compatibility was not evaluated because required input data is unavailable.' : 'No compatibility warning was returned.')}
             </p>
           </div>
 
@@ -786,14 +789,14 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">12. Category Suitability</span>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border-emerald-500/40">
-                Verified
+                Category Profile
               </span>
             </div>
             <span className="text-xs font-bold text-white block truncate mt-1">
               {scientificResults?.categorySuitability || productCategory}
             </span>
             <p className="text-[11px] text-slate-400 leading-tight">
-              Tested against manufacturing standards for {productCategory}.
+              Mapped to the canonical {productCategory} profile; this is not a laboratory validation.
             </p>
           </div>
         </div>
@@ -810,19 +813,21 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">13. Safety / GHS Status</span>
               <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
-                (scientificResults?.health?.finalScore ?? 100) >= 75 ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-amber-950/80 text-amber-300 border-amber-500/40"
+                safetyScore === null
+                  ? "bg-slate-900/80 text-slate-300 border-slate-700"
+                  : safetyScore >= 75 ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-amber-950/80 text-amber-300 border-amber-500/40"
               }`}>
-                {scientificResults?.health?.rating || "SAFE"}
+                {safetyRating}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-extrabold text-white">
-                {scientificResults?.health?.finalScore ?? 100}
+                {safetyScore ?? 'N/A'}
               </span>
               <span className="text-xs text-slate-400 font-semibold">/ 100 GHS Score</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-tight">
-              {scientificResults?.health?.alerts?.[0]?.message || "GHS safety rating passed. Standard personal protective equipment applies."}
+              {safetyMessage}
             </p>
           </div>
 

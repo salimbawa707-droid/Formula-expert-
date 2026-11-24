@@ -165,6 +165,35 @@ export async function runFormulaAnalysisWorkflowTestSuite(): Promise<{
       currentLiveFingerprint: 'FP-INVALID'
     });
     assert('3. Validation', 'Negative percentage triggers validation failure', invalidResult.status === 'FAILED', invalidResult.status, 'FAILED');
+    const missingPctSnapshot: FormulaAnalysisSnapshot = {
+      formulaName: 'Missing Percentage Formula',
+      productCategory: 'Laundry Liquid',
+      batchSizeKg: 100,
+      waterHardnessPpm: 150,
+      ingredients: [{ id: '1', name: 'LABSA', activeMatterPct: 90 } as any]
+    };
+    const missingPctResult = await executeStagedScientificAnalysis({
+      snapshot: missingPctSnapshot,
+      currentLiveFingerprint: 'FP-MISSING-PCT'
+    });
+    assert('3. Validation', 'Missing percentage triggers validation failure instead of becoming zero', missingPctResult.status === 'FAILED', missingPctResult.status, 'FAILED');
+    assert('3. Validation', 'Missing percentage error is explicit', missingPctResult.error?.includes('missing or invalid quantity') === true, missingPctResult.error, 'missing or invalid quantity');
+
+    const missingPctFingerprint = calculateFormulaFingerprint({
+      formulaName: 'Fingerprint Formula',
+      productCategory: 'Laundry Liquid',
+      batchSizeKg: 100,
+      waterHardnessPpm: null,
+      ingredients: [{ name: 'LABSA', activeMatterPct: 90 } as any]
+    });
+    const zeroPctFingerprint = calculateFormulaFingerprint({
+      formulaName: 'Fingerprint Formula',
+      productCategory: 'Laundry Liquid',
+      batchSizeKg: 100,
+      waterHardnessPpm: null,
+      ingredients: [{ name: 'LABSA', percentage: 0, activeMatterPct: 90 } as any]
+    });
+    assert('3. Validation', 'Missing percentage and explicit zero have different staged fingerprints', missingPctFingerprint !== zeroPctFingerprint, missingPctFingerprint !== zeroPctFingerprint, true);
 
     // Missing chemical name
     const missingNameSnapshot: FormulaAnalysisSnapshot = {

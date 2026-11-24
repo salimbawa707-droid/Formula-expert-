@@ -200,17 +200,81 @@ export function runP1Phase2ChelationTestSuite() {
   const case5Cap = calculateFormulationChelationCapacity(case5Formula, 20);
   assertNear('Reference Cases', 'Case 5: 2% GLDA 47% Capacity', case5Cap.totalSequestrationMg, 54.8);
 
+  const missingDoseCapacity = calculateFormulationChelationCapacity(case5Formula);
+  assert(
+    missingDoseCapacity.status === 'INSUFFICIENT_DATA' &&
+      Number.isNaN(missingDoseCapacity.totalSequestrationMg),
+    'Input Integrity',
+    'Missing dose is not replaced by a 20 g default'
+  );
+
+  const missingBatchCapacity = calculateFormulationChelationCapacity(case5Formula, 20);
+  assert(
+    missingBatchCapacity.status === 'COMPLETE' &&
+      Number.isFinite(missingBatchCapacity.totalSequestrationMg) &&
+      Number.isNaN(missingBatchCapacity.batchSequestrationGrams),
+    'Input Integrity',
+    'Per-dose capacity remains calculable while batch-scaled grams stay unavailable without batch size'
+  );
+
   // Case 6: GLDA 99% Powder (2.0% in 20g dose)
   // Raw mass = 0.40 g -> bound CaCO3 = 0.40 * 282.2 = 112.88 mg
   const case6Formula: FormulationIngredient[] = [{ id: '1', name: 'GLDA 99% Powder', percentage: 2.0, activeMatterPct: 99 }];
   const case6Cap = calculateFormulationChelationCapacity(case6Formula, 20);
   assertNear('Reference Cases', 'Case 6: 2% GLDA 99% Powder Capacity', case6Cap.totalSequestrationMg, 112.88, 0.1);
 
+  const missingPercentageCapacity = calculateFormulationChelationCapacity(
+    [{ id: 'missing-pct', name: 'GLDA 47% Liquid' } as any],
+    20
+  );
+  assert(
+    missingPercentageCapacity.status === 'INSUFFICIENT_DATA' &&
+      missingPercentageCapacity.invalidIngredientCount === 1 &&
+      Number.isNaN(missingPercentageCapacity.totalSequestrationMg),
+    'Input Integrity',
+    'Missing ingredient percentage blocks numeric chelation capacity'
+  );
+
+  const outOfRangePercentageCapacity = calculateFormulationChelationCapacity(
+    [{ id: 'invalid-pct', name: 'GLDA 47% Liquid', percentage: 101 } as any],
+    20
+  );
+  assert(
+    outOfRangePercentageCapacity.status === 'INSUFFICIENT_DATA' &&
+      outOfRangePercentageCapacity.invalidIngredientCount === 1 &&
+      Number.isNaN(outOfRangePercentageCapacity.totalSequestrationMg),
+    'Input Integrity',
+    'Above-100% ingredient percentage blocks numeric chelation capacity'
+  );
+
   // Case 7: Sodium Citrate Dihydrate (3.0% in 20g dose)
   // Raw mass = 0.60 g -> bound CaCO3 = 0.60 * 150 = 90.0 mg
   const case7Formula: FormulationIngredient[] = [{ id: '1', name: 'Sodium Citrate Dihydrate', percentage: 3.0 }];
   const case7Cap = calculateFormulationChelationCapacity(case7Formula, 20);
   assertNear('Reference Cases', 'Case 7: 3% Sodium Citrate Dihydrate Capacity', case7Cap.totalSequestrationMg, 90.0);
+
+  // Generic citrate has no hydration/grade identity and must not inherit the dihydrate benchmark.
+  const genericCitrate = calculateFormulationChelationCapacity(
+    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0, role: 'Chelator' }],
+    20
+  );
+  assert(
+    genericCitrate.status === 'INSUFFICIENT_DATA' &&
+      genericCitrate.hasUnknownChelators === true &&
+      genericCitrate.totalSequestrationMg === 0,
+    'Grade Identity',
+    'Generic sodium citrate remains unresolved instead of silently becoming dihydrate'
+  );
+
+  const genericCitrateCapacity = calculateFormulationChelationCapacity(
+    [{ id: 'generic-citrate', name: 'Sodium Citrate', percentage: 3.0, role: 'Chelator' }],
+    20
+  );
+  assert(
+    genericCitrateCapacity.details.some(d => d.name === 'Sodium Citrate' && d.provenance !== 'AUTHORITATIVE'),
+    'Grade Identity',
+    'Ambiguous citrate capacity is not represented as authoritative'
+  );
 
   // Case 8: Mixed GLDA 47% (2%) + Sodium Citrate (3%)
   // Combined capacity = 54.8 + 90.0 = 144.8 mg CaCO3
@@ -263,8 +327,59 @@ export function runP1Phase2ChelationTestSuite() {
   const highCapacityFormula: FormulationIngredient[] = [
     { id: '1', name: 'Sodium Citrate Dihydrate', percentage: 100 } // In 20g dose = 20g * 150 = 3000 mg
   ];
-  const tolHigh = calculateWaterHardnessTolerance(highCapacityFormula, 100, 10, 20);
+  const tolHigh = calculateWaterHardnessTolerance(highCapacityFormula, 100, 10, 20, 100);
   assert(tolHigh.sufficiency === 'sufficient', 'Sufficiency Logic', 'High Capacity Formula is SUFFICIENT');
+
+  // Strict DAG mode must not invent 150 ppm, wash volume, dose, or batch size.
+  const missingScenario = calculateWaterHardnessTolerance(
+    highCapacityFormula,
+    undefined,
+    undefined,
+    undefined,
+    Number.NaN,
+    'LAUNDRY_LIQUID'
+  );
+  assert(
+    missingScenario.status === 'NOT_EVALUATED' &&
+      missingScenario.provenance === 'UNKNOWN' &&
+      Number.isNaN(missingScenario.hardnessLoadMg) &&
+      Number.isNaN(missingScenario.maxSupportedPpm),
+    'Input Integrity',
+    'Strict mode returns NOT_EVALUATED without fabricating hardness or dose metrics'
+  );
+
+  const explicitScenario = calculateWaterHardnessTolerance(
+    highCapacityFormula,
+    100,
+    10,
+    20,
+    100,
+    'LAUNDRY_LIQUID'
+  );
+  assert(
+    explicitScenario.status === 'PASS' &&
+      explicitScenario.hardnessLoadMg === 1000 &&
+      explicitScenario.washVolumeL === 10 &&
+      explicitScenario.washDoseGrams === 20,
+    'Input Integrity',
+    'Strict mode calculates only when all wash-scenario inputs are explicit and valid'
+  );
+
+  const missingBatchOnly = calculateWaterHardnessTolerance(
+    highCapacityFormula,
+    100,
+    10,
+    20,
+    undefined,
+    'LAUNDRY_LIQUID'
+  );
+  assert(
+    missingBatchOnly.status === 'NOT_EVALUATED' &&
+      Number.isNaN(missingBatchOnly.batchSizeKg) &&
+      Number.isNaN(missingBatchOnly.maxSupportedPpm),
+    'Input Integrity',
+    'Missing batch size is rejected by default without opting into strict mode'
+  );
   assertNear('Sufficiency Logic', 'Zero Deficit for High Capacity Formula', tolHigh.capacityDeficitMg, 0);
   assertNear('Sufficiency Logic', 'Zero Additional GLDA Required', tolHigh.additionalGLDA47RequiredPct, 0);
   assertNear('Sufficiency Logic', 'Zero Additional Citrate Required', tolHigh.additionalCitrateRequiredPct, 0);

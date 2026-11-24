@@ -12,10 +12,10 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
   productCategory,
   onConsultChemistryAI
 }) => {
-  const screeningStatus = scientificResults.screeningStatus || "SCREENING: WITHIN CALCULATED TARGETS";
-  const specVerdict = scientificResults.specVerdict || "NEEDS REVISION — Cost exceeds maximum specification";
-  const labEvidenceVerdict = scientificResults.labEvidenceVerdict || "NOT LAB VALIDATED — 4 required measurements missing";
-  const releaseGateDecision = scientificResults.releaseGateDecision || "BLOCKED";
+  const screeningStatus = scientificResults.screeningStatus || "NOT EVALUATED";
+  const specVerdict = scientificResults.specVerdict || "PENDING — Specification evaluation not available";
+  const labEvidenceVerdict = scientificResults.labEvidenceVerdict || "NOT LAB VALIDATED — Evidence not supplied";
+  const releaseGateDecision = scientificResults.releaseGateDecision || "BLOCKED — Evaluation incomplete";
 
   return (
     <div className="bg-[#0e1629] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-lg">
@@ -191,8 +191,8 @@ export const FormulaVerdictPanel: React.FC<FormulaVerdictPanelProps> = React.mem
         <div className="text-right">
           <div className="text-slate-400 font-semibold text-[10px] uppercase">Screening Score</div>
           <span className="text-cyan-400 font-mono text-sm font-extrabold">
-            {scientificResults.aiGrade?.score || 85}/100 
-            <span className="text-slate-500 font-normal ml-1">({scientificResults.aiGrade?.grade || 'B+'})</span>
+            {typeof scientificResults.aiGrade?.score === 'number' && Number.isFinite(scientificResults.aiGrade.score) ? scientificResults.aiGrade.score : 'N/A'}/100 
+            <span className="text-slate-500 font-normal ml-1">({scientificResults.aiGrade?.grade || 'N/A'})</span>
           </span>
         </div>
       </div>

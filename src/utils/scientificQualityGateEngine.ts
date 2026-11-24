@@ -87,6 +87,7 @@ export interface MasterScientificQualityGateInput {
   formulaName?: string;
   formulaVersion?: string;
   productCategory?: string;
+  productSubProfileId?: string;
   subCategory?: string;
   specificationProfileId?: string;
   ingredients: FormulationIngredient[];
@@ -513,7 +514,7 @@ export function evaluateScientificQualityGate(
   }
 
   // C. Hard Water & Chelation Output (Product-Aware)
-  const productHardnessPolicy = getProductHardnessPolicy(input.specificationProfileId || input.subCategory || canonicalCategory);
+  const productHardnessPolicy = getProductHardnessPolicy(input.productSubProfileId || input.specificationProfileId || input.subCategory || canonicalCategory);
   const hardnessTolerance = hardnessScenarioComplete
     ? calculateWaterHardnessTolerance(
         rawIngs,
@@ -521,7 +522,7 @@ export function evaluateScientificQualityGate(
         input.washVolumeL,
         input.washDoseGrams,
         input.batchSizeKg,
-        input.specificationProfileId || input.subCategory || canonicalCategory
+        input.productSubProfileId || input.specificationProfileId || input.subCategory || canonicalCategory
       )
     : null;
 
@@ -556,7 +557,8 @@ export function evaluateScientificQualityGate(
   const compRes = calculateFormulationCompatibility(
     rawIngs,
     compatibilityPHAvailable ? finalPH : undefined,
-    canonicalCategory
+    canonicalCategory,
+    input.productSubProfileId
   );
   const criticalCompatibilityAlerts = compRes.alerts.filter(
     alert => alert.severity === 'Critical' || alert.severity === 'High'
@@ -993,13 +995,15 @@ export function evaluateScientificQualityGate(
     formulaId,
     formulaVersion,
     rawIngs,
-    canonicalCategory
+    canonicalCategory,
+    input.productSubProfileId
   );
 
   const provenanceReport = generateMasterScientificProvenanceReport({
     formulaId: input.formulaId,
     formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
+    productSubProfileId: input.productSubProfileId,
     ingredients: rawIngs,
     speciationResult: { pH: finalPH, isMeasured: isPHMeasured, confidence: phConfidence },
     activeMatterResult: {

@@ -69,6 +69,10 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   assertEqual('CPI & Cleaning Score Equality', 'calculateCPI matches cleaningScore', cpiBaseline, perfBaseline.cleaningScore);
 
   // Missing pH must not silently inherit a neutral default and emit predictive KPIs.
+  const perfWithoutScenario = calculateCleaningPerformance(formula1 as any, 8.0, 'LAUNDRY_LIQUID');
+  assertEqual('Fail-Closed Inputs', 'Missing hardness wash scenario returns INSUFFICIENT_DATA by default', perfWithoutScenario.provenance, 'INSUFFICIENT_DATA');
+  assertEqual('Fail-Closed Inputs', 'Missing hardness wash scenario emits no CPI', perfWithoutScenario.cpi, null);
+
   const perfWithoutPH = calculateCleaningPerformance(formula1 as any, undefined, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 });
   assertEqual('Fail-Closed Inputs', 'Missing pH provenance is INSUFFICIENT_DATA', perfWithoutPH.provenance, 'INSUFFICIENT_DATA');
   assertEqual('Fail-Closed Inputs', 'Missing pH emits no category KPIs', perfWithoutPH.categoryKPIs.length, 0);

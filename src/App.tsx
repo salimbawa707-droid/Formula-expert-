@@ -941,6 +941,7 @@ export default function App() {
               return (
                 <button
                   key={item.id}
+                  data-testid={`nav-${item.id}`}
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                     isActive

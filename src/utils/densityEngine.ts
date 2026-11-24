@@ -69,8 +69,10 @@ export function getStandardComponentDensity(name: string): number | null {
 
 export function calculateDensity(
   ingredients: FormulationIngredient[] = [],
-  totalBatchMassGrams: number = 100
+  totalBatchMassGrams?: number
 ): DensityCalculationResult {
+  const massBasisAssumed = totalBatchMassGrams === undefined || totalBatchMassGrams === null;
+  const massBasisGrams = massBasisAssumed ? 100 : totalBatchMassGrams as number;
   const safeList = Array.isArray(ingredients) ? ingredients : [];
   const unavailable = (
     reason: string,
@@ -88,6 +90,7 @@ export function calculateDensity(
     densityStatus: 'INSUFFICIENT_DATA',
     provenance: 'INSUFFICIENT_DATA',
     unknownDensityIngredients,
+    assumptions: massBasisAssumed ? ['A 100 g reference mass basis was used because totalBatchMassGrams was not supplied; density is composition-based, while total mass and volume reflect this reference basis.'] : [],
     limitations: [reason, 'A measured density (e.g. pycnometer/digital density meter) is required for production or packaging decisions.'],
     contributions: [],
     notes: `INSUFFICIENT_DATA: ${reason}`
@@ -96,7 +99,7 @@ export function calculateDensity(
   if (safeList.length === 0) {
     return unavailable('No ingredient composition was supplied; pure-water density is not substituted for an empty formula.');
   }
-  if (!Number.isFinite(totalBatchMassGrams) || totalBatchMassGrams <= 0) {
+  if (!Number.isFinite(massBasisGrams) || massBasisGrams <= 0) {
     return unavailable('Total batch mass must be a finite value greater than zero.');
   }
 
@@ -142,7 +145,7 @@ export function calculateDensity(
       unknownDensityIngredients.push(name);
       continue;
     }
-    const compMassG = (rawPct / 100) * totalBatchMassGrams;
+    const compMassG = (rawPct / 100) * massBasisGrams;
     const compVolCm3 = compMassG / compDensity;
     totalMass += compMassG;
     totalVolume += compVolCm3;
@@ -177,6 +180,7 @@ export function calculateDensity(
     specificGravity: Number(specificGravity.toFixed(3)),
     totalMassGrams: Number(totalMass.toFixed(2)),
     totalVolumeCm3: Number(totalVolume.toFixed(2)),
+    assumptions: massBasisAssumed ? ['A 100 g reference mass basis was used because totalBatchMassGrams was not supplied; density is composition-based, while total mass and volume reflect this reference basis.'] : [],
     isIdealVolumeAdditivity: true,
     confidence: hasReferenceDensity ? 'LOW' : 'MEDIUM',
     modelType: 'IDEAL_VOLUME_ADDITIVITY_SCREENING',
@@ -191,20 +195,28 @@ export function calculateDensity(
       'Empirical pycnometer or digital density-meter measurement is required for packaging and production specifications.'
     ],
     contributions,
-    notes: hasReferenceDensity
+    notes: (hasReferenceDensity
       ? 'SCREENING ESTIMATE: One or more generic reference densities were used. Do not treat this value as verified.'
-      : 'SCREENING ESTIMATE: User-supplied component densities were used with ideal volume additivity. Independent measurement is still required.'
+      : 'SCREENING ESTIMATE: User-supplied component densities were used with ideal volume additivity. Independent measurement is still required.') + (massBasisAssumed ? ' A 100 g reference mass basis was assumed.' : '')
   };
 }
 
 export function calculateTotalSolids(ingredients: FormulationIngredient[]): number {
-  const safeIngs = Array.isArray(ingredients) ? ingredients : [];
-  return Number(safeIngs.reduce((acc, ing) => {
+  if (!Array.isArray(ingredients) || ingredients.length === 0) return Number.NaN;
+  let totalSolids = 0;
+  let totalMassPct = 0;
+  for (const ing of ingredients) {
     const name = (ing?.name || '').toLowerCase();
     const role = (ing?.role || (ing as any)?.category || '').toLowerCase();
-    const isVolatile = name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol') || role.includes('solvent');
-    const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0);
-    const solidFraction = isVolatile && (name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol')) ? 0 : 1;
-    return acc + (pct * solidFraction);
-  }, 0).toFixed(2));
+    const rawPct = (ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? (ing as any)?.rawPercent;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) return Number.NaN;
+    totalMassPct += pct;
+    const isWaterOrVolatileSolvent = name.includes('water') || name.includes('aqua') || name.includes('alcohol') || name.includes('ipa') || name.includes('ethanol');
+    const isVolatileSolventRole = role.includes('solvent') && !name.includes('propylene glycol') && !name.includes('glycerin');
+    const solidFraction = isWaterOrVolatileSolvent || isVolatileSolventRole ? 0 : 1;
+    totalSolids += pct * solidFraction;
+  }
+  if (!Number.isFinite(totalMassPct) || Math.abs(totalMassPct - 100) > 0.05) return Number.NaN;
+  return Number(totalSolids.toFixed(2));
 }

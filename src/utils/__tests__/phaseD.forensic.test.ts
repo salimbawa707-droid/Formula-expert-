@@ -136,7 +136,7 @@ export function runPhaseDForensicTestSuite(): {
     { id: '1', name: 'Sodium Citrate Dihydrate', percentage: 50.0, activeMatterPct: 100, role: 'Builder' },
     { id: '2', name: 'Water', percentage: 50.0, activeMatterPct: 0 }
   ];
-  const hardnessRes = calculateWaterHardnessTolerance(chelatedFormula, 100, 10, 20);
+  const hardnessRes = calculateWaterHardnessTolerance(chelatedFormula, 100, 10, 20, 100);
   assert('6. Builder & Chelation Flow', 'T6a: Hard water chelation tolerance calculated', hardnessRes.maxSupportedPpm > 0, true, true);
   assert('6. Builder & Chelation Flow', 'T6b: High-chelator formula evaluates to sufficient', hardnessRes.sufficiency === 'sufficient', hardnessRes.sufficiency, 'sufficient');
 

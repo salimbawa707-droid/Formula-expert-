@@ -6,6 +6,12 @@ export function runDensityEngineRegressionTestSuite() {
     results.push({ name, passed, actual, expected });
   };
 
+
+  const referenceMass = calculateDensity([{ name: 'Water', percentage: 100 }]);
+  assert('Reference Mass Basis', 'Default 100 g basis is disclosed as an assumption', referenceMass.assumptions?.some(a => a.includes('100 g reference mass')) === true, referenceMass.assumptions, '100 g reference mass assumption');
+  const explicitMass = calculateDensity([{ name: 'Water', percentage: 100 }], 250);
+  assert('Reference Mass Basis', 'Explicit batch mass is not labelled as assumed', explicitMass.assumptions?.length === 0, explicitMass.assumptions, []);
+
   const empty = calculateDensity([]);
   assert('Empty formula does not inherit pure-water density', empty.densityStatus === 'INSUFFICIENT_DATA' && Number.isNaN(empty.densityGPerCm3), empty.densityStatus, 'INSUFFICIENT_DATA');
   assert('Empty formula has no measured/predicted density value', Number.isNaN(empty.densityGPerCm3), empty.densityGPerCm3, 'NaN');

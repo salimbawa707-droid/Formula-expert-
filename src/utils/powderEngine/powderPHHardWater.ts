@@ -28,11 +28,12 @@ export function calculatePowderPH(
   let targetMax: number | undefined;
   let targetLabel = '';
   let isSpecified = true;
+  const customTargetProvided = labInputs?.customPHTargetMin !== undefined || labInputs?.customPHTargetMax !== undefined;
 
-  if (labInputs?.customPHTargetMin !== undefined || labInputs?.customPHTargetMax !== undefined) {
-    targetMin = labInputs.customPHTargetMin ?? null;
-    targetMax = labInputs.customPHTargetMax ?? 11.5;
-    targetLabel = labInputs.customPHTargetLabel || `User-Defined Specification Target (${targetMin} – ${targetMax})`;
+  if (customTargetProvided) {
+    targetMin = labInputs?.customPHTargetMin;
+    targetMax = labInputs?.customPHTargetMax;
+    targetLabel = labInputs.customPHTargetLabel || `User-Defined Specification Target (${targetMin ?? 'missing'} – ${targetMax ?? 'missing'})`;
   } else if (isDelicate) {
     targetMin = 7.0;
     targetMax = 8.5;
@@ -54,8 +55,14 @@ export function calculatePowderPH(
     targetLabel = 'Target not specified';
   }
 
+  const targetRangeValid = !customTargetProvided || (
+    typeof targetMin === 'number' && Number.isFinite(targetMin) && targetMin >= 0 && targetMin <= 14 &&
+    typeof targetMax === 'number' && Number.isFinite(targetMax) && targetMax >= 0 && targetMax <= 14 &&
+    targetMin <= targetMax
+  );
+
   // 1. CALCULATE LEGACY HEURISTIC FOR NON_AUTHORITATIVE DIAGNOSTIC USE
-  let legacyHeuristicPH = 10.5;
+  let legacyHeuristicPH: number | undefined = classifiedIngredients.length > 0 ? 10.5 : undefined;
   let sodaAshPct = 0;
   let metasilicatePct = 0;
   let causticPct = 0;
@@ -71,29 +78,36 @@ export function calculatePowderPH(
     if (name.includes('labsa') || name.includes('acid slurry')) labsaPct += pct;
   });
 
-  if (causticPct > 2 || metasilicatePct > 15) {
-    legacyHeuristicPH = 11.8;
-  } else if (sodaAshPct > 15 || metasilicatePct > 5) {
-    legacyHeuristicPH = 10.6;
-  } else if (sodaAshPct > 5) {
-    legacyHeuristicPH = 9.8;
-  } else if (isDelicate || (sodaAshPct === 0 && metasilicatePct === 0)) {
-    legacyHeuristicPH = 8.0;
-  }
-
-  if (labsaPct > 0) {
-    const rawIngs = classifiedIngredients.map(i => ({
-      name: i.name,
-      percentage: i.inputPercentage,
-      activeMatterPct: i.activeMatterPct
-    }));
-    const neutResult = StoichiometricNeutralizationEngine.evaluatePrimaryNeutralization(rawIngs, 100);
-    if (neutResult.value.status === 'UNDER_NEUTRALIZED') {
-      legacyHeuristicPH = 4.5;
+  if (classifiedIngredients.length > 0) {
+    if (causticPct > 2 || metasilicatePct > 15) {
+      legacyHeuristicPH = 11.8;
+    } else if (sodaAshPct > 15 || metasilicatePct > 5) {
+      legacyHeuristicPH = 10.6;
+    } else if (sodaAshPct > 5) {
+      legacyHeuristicPH = 9.8;
+    } else if (isDelicate || (sodaAshPct === 0 && metasilicatePct === 0)) {
+      legacyHeuristicPH = 8.0;
     }
   }
 
-  const concentrationPct = labInputs?.customPHConcentrationPct || 1.0;
+  const rawIngs = classifiedIngredients.map(i => ({
+    name: i.name,
+    percentage: i.inputPercentage,
+    activeMatterPct: i.activeMatterPct
+  }));
+  const neutralizationResult = classifiedIngredients.length > 0
+    ? StoichiometricNeutralizationEngine.evaluatePrimaryNeutralization(rawIngs, 100)
+    : null;
+  if (labsaPct > 0 && neutralizationResult?.value.status === 'UNDER_NEUTRALIZED') {
+    legacyHeuristicPH = 4.5;
+  }
+
+  const rawConcentrationPct = labInputs?.customPHConcentrationPct;
+  const concentrationPct = rawConcentrationPct === undefined || rawConcentrationPct === null
+    ? 1.0
+    : Number(rawConcentrationPct);
+  const concentrationValid = Number.isFinite(concentrationPct) && concentrationPct > 0 && concentrationPct <= 100;
+  const concentrationWasAssumed = rawConcentrationPct === undefined || rawConcentrationPct === null;
 
   // 2. AUTHORITATIVE ELECTROLYTE SPECIATION VIA THE UNIVERSAL pH ENGINE v2
   const v2Category = isDishwash ? 'AUTOMATIC_DISHWASH_POWDER' : 'LAUNDRY_POWDER';
@@ -105,8 +119,15 @@ export function calculatePowderPH(
 
   let calculatedPH: number | undefined = undefined;
   let isPHAvailable = false;
+  const neutralizationStatus = neutralizationResult?.value.status;
+  const hasSecondaryAcidBaseChemistry =
+    (neutralizationResult?.value.secondaryAcidsPresent?.length ?? 0) > 0 ||
+    (neutralizationResult?.value.secondaryBasesPresent?.length ?? 0) > 0;
+  const hasPHActiveChemistry =
+    ['FULLY_NEUTRALIZED', 'ACID_EXCESS', 'UNDER_NEUTRALIZED', 'BASE_EXCESS'].includes(String(neutralizationStatus)) ||
+    hasSecondaryAcidBaseChemistry;
 
-  if (classifiedIngredients.length > 0) {
+  if (classifiedIngredients.length > 0 && concentrationValid && hasPHActiveChemistry) {
     try {
       const v2Res = PHEngineV2.calculatePH(engineInputs, 100, {
         productCategory: v2Category,
@@ -114,31 +135,29 @@ export function calculatePowderPH(
         slurryConcentrationPct: concentrationPct,
         temperatureC: 25.0
       });
-      if (v2Res && v2Res.converged && Number.isFinite(v2Res.pH) && !isNaN(v2Res.pH)) {
+      if (v2Res && v2Res.converged && Number.isFinite(v2Res.pH) && v2Res.pH >= 0 && v2Res.pH <= 14) {
         calculatedPH = v2Res.pH;
         isPHAvailable = true;
-      } else {
-        calculatedPH = undefined;
-        isPHAvailable = false;
       }
     } catch (err) {
       console.warn('PHEngineV2 calculation failed inside powder engine.', err);
       calculatedPH = undefined;
       isPHAvailable = false;
     }
-  } else {
-    calculatedPH = legacyHeuristicPH;
-    isPHAvailable = true;
   }
 
   const measuredPH = labInputs?.measured1PctAqueousPH;
-  const isMeasuredAvailable = measuredPH !== undefined && Number.isFinite(measuredPH) && measuredPH > 0;
+  const isMeasuredAvailable = concentrationValid && measuredPH !== undefined &&
+    Number.isFinite(measuredPH) && measuredPH >= 0 && measuredPH <= 14;
   const effectivePH = isMeasuredAvailable ? measuredPH : (isPHAvailable ? calculatedPH : undefined);
 
   let isWithinTarget = false;
   let statusMessage = '';
 
-  if (effectivePH !== undefined && Number.isFinite(effectivePH) && !isNaN(effectivePH)) {
+  if (!targetRangeValid) {
+    isWithinTarget = false;
+    statusMessage = 'INVALID_INPUT: custom pH target must include valid minimum and maximum values between 0 and 14, with minimum no greater than maximum.';
+  } else if (effectivePH !== undefined && Number.isFinite(effectivePH) && !isNaN(effectivePH)) {
     if (isSpecified && targetMin !== undefined && targetMax !== undefined) {
       isWithinTarget = effectivePH >= targetMin && effectivePH <= targetMax;
       statusMessage = isWithinTarget
@@ -152,7 +171,13 @@ export function calculatePowderPH(
     }
   } else {
     isWithinTarget = false;
-    statusMessage = `1% aqueous test solution pH calculation failed to converge (UNAVAILABLE). Cannot verify compliance against ${targetLabel || 'target specification'}.`;
+    statusMessage = !concentrationValid
+      ? 'INVALID_INPUT: slurry concentration must be a finite value greater than 0% and no more than 100%.'
+      : classifiedIngredients.length === 0
+        ? 'INSUFFICIENT_DATA: no powder ingredients were supplied; no pH value or heuristic baseline is returned.'
+        : !hasPHActiveChemistry && !isMeasuredAvailable
+          ? 'INSUFFICIENT_DATA: no acid/base or secondary buffer chemistry is identified and no measured pH was supplied.'
+          : `UNAVAILABLE: pH calculation did not produce a valid result. Cannot verify compliance against ${targetLabel || 'target specification'}.`;
   }
 
   // 3. DEFINE EXPLICIT SCIENTIFIC SLURRY PREPARATION CONFIGURATION
@@ -164,24 +189,24 @@ export function calculatePowderPH(
     finalVolumeMl: 100,
     temperatureC: 25.0,
     preparationAssumptions: [
-      'Standardized 1.0% w/v sample dissolution in demineralized water.',
+      concentrationWasAssumed ? 'Standardized 1.0% w/v slurry reference assumed because no custom concentration was supplied.' : 'User-supplied slurry concentration used; verify the laboratory method and record it in the batch record.',
       'Potentiometric glass electrode calibrated with standard pH buffers.',
       'Continuous stirring to reach solid-liquid analytical equilibrium.'
     ],
     equilibrationTimeMin: 10,
-    measurementBasis: `Standard ${concentrationPct}% w/v Aqueous Solution Potentiometric Glass Electrode Method`
+    measurementBasis: concentrationValid ? `Standard ${concentrationPct}% w/v Aqueous Solution Potentiometric Glass Electrode Method` : 'UNAVAILABLE — invalid slurry concentration'
   };
 
   return {
     testBasis: {
-      sampleConcentrationPct: concentrationPct,
+      sampleConcentrationPct: concentrationValid ? concentrationPct : Number.NaN,
       waterVolumeMl: 100,
-      sampleMassG: concentrationPct,
+      sampleMassG: concentrationValid ? concentrationPct : Number.NaN,
       temperatureC: 25,
       solutionHardnessPpm: 0,
       waterQuality: 'Demineralized / Distilled Water',
       equilibrationTimeMin: 10,
-      method: `Standard ${concentrationPct}% w/v Aqueous Solution Potentiometric Glass Electrode Method`
+      method: concentrationValid ? `Standard ${concentrationPct}% w/v Aqueous Solution Potentiometric Glass Electrode Method` : 'UNAVAILABLE — invalid slurry concentration'
     },
     slurryBasis,
     measuredPH,

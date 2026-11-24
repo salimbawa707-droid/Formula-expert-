@@ -683,7 +683,6 @@ export const SCIENTIFIC_PRODUCT_PROFILES: Record<ProductCategoryId, ScientificPr
       'VISCOSITY_ENGINE',
       'CLEANING_PERFORMANCE_ENGINE',
       'COMPATIBILITY_ENGINE',
-      'CHELATOR_ENGINE',
       'DENSITY_ENGINE',
       'DILUTION_ENGINE',
       'LAB_HEALTH_ENGINE',
@@ -712,7 +711,7 @@ export const SCIENTIFIC_PRODUCT_PROFILES: Record<ProductCategoryId, ScientificPr
       requiresPowderCalculations: false,
       requiresViscositySaltCurve: true,
       requiresHLBAnalysis: true,
-      requiresChelationHardness: true,
+      requiresChelationHardness: false,
       requiresSkinSafetyMetrics: true,
       requiresStreakResidueMetrics: false,
       requiresClingRheology: false,
@@ -1112,7 +1111,12 @@ export const SCIENTIFIC_SUB_PROFILES: Record<string, ScientificProductProfile> =
 export function getScientificProductProfile(categoryOrId?: string, subProfileOrFormulaName?: string): ScientificProductProfile {
   // 1. Direct match in SCIENTIFIC_SUB_PROFILES
   if (subProfileOrFormulaName && SCIENTIFIC_SUB_PROFILES[subProfileOrFormulaName]) {
-    return SCIENTIFIC_SUB_PROFILES[subProfileOrFormulaName];
+    const selected = SCIENTIFIC_SUB_PROFILES[subProfileOrFormulaName];
+    const requestedCategory = normalizeProductCategory(categoryOrId);
+    if (categoryOrId && requestedCategory !== 'UNKNOWN_PRODUCT_CATEGORY' && selected.categoryId !== requestedCategory) {
+      throw new Error(`Scientific sub-profile ${subProfileOrFormulaName} belongs to ${selected.categoryId}, not requested category ${requestedCategory}.`);
+    }
+    return selected;
   }
   if (categoryOrId && SCIENTIFIC_SUB_PROFILES[categoryOrId]) {
     return SCIENTIFIC_SUB_PROFILES[categoryOrId];
@@ -1121,7 +1125,12 @@ export function getScientificProductProfile(categoryOrId?: string, subProfileOrF
   // 2. Subclass resolution from combined descriptor
   const resolvedSub = resolveProductSubclass(categoryOrId, subProfileOrFormulaName);
   if (resolvedSub && SCIENTIFIC_SUB_PROFILES[resolvedSub]) {
-    return SCIENTIFIC_SUB_PROFILES[resolvedSub];
+    const selected = SCIENTIFIC_SUB_PROFILES[resolvedSub];
+    const requestedCategory = normalizeProductCategory(categoryOrId);
+    if (categoryOrId && requestedCategory !== 'UNKNOWN_PRODUCT_CATEGORY' && selected.categoryId !== requestedCategory) {
+      throw new Error(`Resolved scientific sub-profile ${resolvedSub} belongs to ${selected.categoryId}, not requested category ${requestedCategory}.`);
+    }
+    return selected;
   }
 
   // 3. Fallback to canonical category

@@ -100,9 +100,13 @@ export function computeFormulaFingerprint(
   formulaId: string = 'UNKNOWN_FORMULA_ID',
   formulaVersion: string = 'UNKNOWN_VERSION',
   ingredients: FormulationIngredient[] = [],
-  productCategory: string = 'UNKNOWN_PRODUCT_CATEGORY'
+  productCategory: string = 'UNKNOWN_PRODUCT_CATEGORY',
+  productSubProfileId?: string
 ): string {
   const normCat = normalizeProductCategory(productCategory);
+  const normSubProfile = typeof productSubProfileId === 'string' && productSubProfileId.trim()
+    ? productSubProfileId.trim().toUpperCase()
+    : 'UNSPECIFIED';
 
   const hasUnknownActiveMatter = ingredients.some((ingredient) => {
     const amValue = ingredient.activeMatterPct ?? (ingredient as any).activePercent ?? (ingredient as any).activeMatterPurity;
@@ -113,12 +117,25 @@ export function computeFormulaFingerprint(
       amValue > 100
     );
   });
+  const hasInvalidPercentages = ingredients.some((ingredient) => {
+    const rawPct = ingredient.percentage ?? (ingredient as any).percent ?? (ingredient as any).percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      ? Number.NaN
+      : Number(rawPct);
+    return !Number.isFinite(pct) || pct < 0 || pct > 100;
+  });
 
   const sortedIngs = [...ingredients]
     .filter(i => i && (i.name || i.id))
     .map(i => {
       const nameKey = (i.id || i.name || '').toLowerCase().trim();
-      const pct = Number(i.percentage) || 0;
+      const rawPct = i.percentage ?? (i as any).percent ?? (i as any).percentageInFormula;
+      const numericPct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+        ? Number.NaN
+        : Number(rawPct);
+      const pctKey = Number.isFinite(numericPct) && numericPct >= 0 && numericPct <= 100
+        ? numericPct.toFixed(4)
+        : (rawPct === undefined || rawPct === null || rawPct === '' ? 'MISSING_PCT' : 'INVALID_PCT');
 
       const amValue = i.activeMatterPct ?? (i as any).activePercent ?? (i as any).activeMatterPurity;
       const activeMatterForIntegrity =
@@ -129,14 +146,14 @@ export function computeFormulaFingerprint(
           ? amValue.toFixed(2)
           : 'UNKNOWN';
 
-      return `${nameKey}:${pct.toFixed(4)}:AM[${activeMatterForIntegrity}]`;
+      return `${nameKey}:${pctKey}:AM[${activeMatterForIntegrity}]`;
     })
     .sort()
     .join(';');
 
-  const integrityFlag = hasUnknownActiveMatter ? 'INVALID_AM' : 'VALID_AM';
+  const integrityFlag = [hasUnknownActiveMatter ? 'INVALID_AM' : 'VALID_AM', hasInvalidPercentages ? 'INVALID_PCT' : null].filter(Boolean).join('|');
 
-  return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|ING[${sortedIngs}]|INTEGRITY[${integrityFlag}]`;
+  return `ID[${formulaId}]|VER[${formulaVersion}]|CAT[${normCat}]|SUBPROFILE[${normSubProfile}]|ING[${sortedIngs}]|INTEGRITY[${integrityFlag}]`;
 }
 
 /**
@@ -155,7 +172,7 @@ export function checkResultTraceability(
   if (recordedFingerprint !== currentFingerprint) {
     return {
       isStale: true,
-      staleReason: 'Recipe, ingredient percentages, or formula version changed since evaluation.'
+      staleReason: 'Recipe, ingredient percentages, product category/sub-profile, or formula version changed since evaluation.'
     };
   }
   return { isStale: false };
@@ -168,6 +185,7 @@ export function generateMasterScientificProvenanceReport(params: {
   formulaId?: string;
   formulaVersion?: string;
   productCategory?: string;
+  productSubProfileId?: string;
   ingredients: FormulationIngredient[];
   recordedFingerprint?: string;
   speciationResult?: { pH: number | null; isMeasured?: boolean; confidence?: string };
@@ -185,7 +203,7 @@ export function generateMasterScientificProvenanceReport(params: {
   const rawCat = params.productCategory || 'UNKNOWN_PRODUCT_CATEGORY';
   const canonicalCategory = normalizeProductCategory(rawCat);
   const categoryLabel = getProductCategoryLabel(canonicalCategory);
-  const currentFingerprint = computeFormulaFingerprint(formulaId, formulaVersion, params.ingredients, rawCat);
+  const currentFingerprint = computeFormulaFingerprint(formulaId, formulaVersion, params.ingredients, rawCat, params.productSubProfileId);
   const evaluatedAt = new Date().toISOString();
 
   const traceabilityCheck = checkResultTraceability(params.recordedFingerprint || currentFingerprint, currentFingerprint);
