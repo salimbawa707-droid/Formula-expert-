@@ -70,6 +70,7 @@ export interface ActiveFormulaState {
   name: string;
   category?: string;
   categoryId?: ProductCategoryId;
+  productSubProfileId?: string;
   targetPH?: number | null;
   batchSizeKg?: number;
   waterHardnessPpm?: number;
