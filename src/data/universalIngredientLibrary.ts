@@ -5267,6 +5267,63 @@ export function getAllUniversalIngredients(): UniversalIngredient[] {
   return UNIVERSAL_INGREDIENTS;
 }
 
+
+/**
+ * Resolve formula-entered names to a canonical catalog identity.
+ * Aliases are explicit to avoid unsafe substring/fuzzy matches and preserve
+ * commercial-grade distinctions. A recognized identity can still require
+ * grade review (for example, a stated 100% NaOH versus catalog 99% flakes).
+ */
+export interface IngredientIdentityResolution {
+  ingredient: UniversalIngredient;
+  matchType: 'CANONICAL' | 'ALIAS';
+  gradeCompatible: boolean;
+}
+
+const normalizeIngredientIdentity = (value: string): string =>
+  String(value || '').toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+
+const INGREDIENT_IDENTITY_ALIASES: Record<string, { id: string; gradeCompatible: boolean }> = {
+  'linear alkylbenzene sulfonic acid labsa 90%': { id: 'labsa-90', gradeCompatible: true },
+  'linear alkylbenzene sulfonic acid 90%': { id: 'labsa-90', gradeCompatible: true },
+  'labsa 90%': { id: 'labsa-90', gradeCompatible: true },
+  'sodium laureth sulfate sles 70%': { id: 'sles-70', gradeCompatible: true },
+  'sodium lauryl ether sulfate sles 70%': { id: 'sles-70', gradeCompatible: true },
+  'sles 70%': { id: 'sles-70', gradeCompatible: true },
+  'cocamidopropyl betaine capb 30%': { id: 'capb-30-uni', gradeCompatible: true },
+  'capb 30%': { id: 'capb-30-uni', gradeCompatible: true },
+  'sodium citrate dihydrate': { id: 'sodium-citrate-uni', gradeCompatible: true },
+  'sodium citrate dihydrate custom': { id: 'sodium-citrate-uni', gradeCompatible: true },
+  'optical brightener cbs-x': { id: 'cbs-x', gradeCompatible: true },
+  'cbs-x': { id: 'cbs-x', gradeCompatible: true },
+  'tinopal cbs-x': { id: 'cbs-x', gradeCompatible: true },
+  'sodium chloride salt': { id: 'sodium-chloride-uni', gradeCompatible: true },
+  'salt': { id: 'sodium-chloride-uni', gradeCompatible: false },
+  'sodium hydroxide caustic soda lye 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
+  'caustic soda 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
+  'sodium hydroxide 100%': { id: 'naoh-flakes-99', gradeCompatible: false },
+  'naoh 100%': { id: 'naoh-flakes-99', gradeCompatible: false }
+};
+
+export function resolveUniversalIngredientIdentity(query: string): IngredientIdentityResolution | null {
+  const raw = String(query || '').trim();
+  if (!raw) return null;
+  const normalized = normalizeIngredientIdentity(raw);
+  const canonical = UNIVERSAL_INGREDIENTS.find(item =>
+    [item.id, item.name, item.productName, item.inciName, ...(item.keywords || [])]
+      .filter(Boolean)
+      .some(value => normalizeIngredientIdentity(String(value)) === normalized)
+  );
+  if (canonical) return { ingredient: canonical, matchType: 'CANONICAL', gradeCompatible: true };
+
+  const alias = INGREDIENT_IDENTITY_ALIASES[raw.toLowerCase()];
+  const normalizedAlias = alias || Object.entries(INGREDIENT_IDENTITY_ALIASES)
+    .find(([key]) => normalizeIngredientIdentity(key) === normalized)?.[1];
+  if (!normalizedAlias) return null;
+  const ingredient = UNIVERSAL_INGREDIENTS.find(item => item.id === normalizedAlias.id);
+  return ingredient ? { ingredient, matchType: 'ALIAS', gradeCompatible: normalizedAlias.gradeCompatible } : null;
+}
+
 export function getAllCategories(): string[] {
   return Array.from(new Set(UNIVERSAL_INGREDIENTS.map(i => i.category)));
 }
