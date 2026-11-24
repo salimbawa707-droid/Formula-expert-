@@ -895,7 +895,6 @@ export default function FormulaExpert({
           const matched = matchedResolution?.ingredient;
           if (matched) {
             const isUnknownActive = matched.id === 'aristo-9' || matched.unknownProperties?.includes('activeMatter');
-            updated.name = matched.name;
             const preserveUserActiveMatter = ing.activeMatterInputSource === 'USER_ENTERED' || matchedResolution?.gradeCompatible === false;
             updated.activeMatterPct = preserveUserActiveMatter ? ing.activeMatterPct : isUnknownActive ? undefined : matched.activeDefault;
             updated.activeMatterInputSource = preserveUserActiveMatter ? (ing.activeMatterInputSource || 'UNKNOWN') : isUnknownActive ? 'UNKNOWN' : matched.activeDefault !== undefined ? 'CATALOG_DEFAULT' : 'UNKNOWN';
@@ -1690,9 +1689,9 @@ export default function FormulaExpert({
                           const canonicalById = ing.canonicalIngredientId
                             ? UNIVERSAL_INGREDIENTS.find(u => u.id === ing.canonicalIngredientId)
                             : undefined;
-                          const identityResolution = canonicalById
+                          const identityResolution = resolveUniversalIngredientIdentity(clean) || (canonicalById
                             ? { ingredient: canonicalById, matchType: 'CANONICAL' as const, gradeCompatible: true }
-                            : resolveUniversalIngredientIdentity(clean);
+                            : null);
                           const isMatched = Boolean(identityResolution);
                           const isVerifiedByResearch = ing.provenance?.verificationStatus === 'VERIFIED' || ing.notes?.includes('Gemini AI');
 
@@ -1898,9 +1897,9 @@ export default function FormulaExpert({
                       const canonicalById = ing.canonicalIngredientId
                         ? UNIVERSAL_INGREDIENTS.find(u => u.id === ing.canonicalIngredientId)
                         : undefined;
-                      const identityResolution = canonicalById
+                      const identityResolution = resolveUniversalIngredientIdentity(clean) || (canonicalById
                         ? { ingredient: canonicalById, matchType: 'CANONICAL' as const, gradeCompatible: true }
-                        : resolveUniversalIngredientIdentity(clean);
+                        : null);
                       const isMatched = Boolean(identityResolution);
                       const isVerifiedByResearch = ing.provenance?.verificationStatus === 'VERIFIED' || ing.notes?.includes('Gemini AI');
 
