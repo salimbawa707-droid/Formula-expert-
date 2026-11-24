@@ -92,6 +92,10 @@ jobs:
     name: Capacitor Android debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # GitHub-hosted Linux runners may not expose KVM. Android Emulator requires
+      # this opt-in to run QEMU TCG when hardware acceleration is unavailable.
+      ANDROID_I_WANT_MY_TCG: "yes"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
