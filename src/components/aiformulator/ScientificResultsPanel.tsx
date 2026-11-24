@@ -289,7 +289,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               Newton-Raphson charge balance ({(() => {
                 const val = typeof scientificResults?.pH === 'number' ? scientificResults.pH : (typeof scientificResults?.phResult?.ph === 'number' ? scientificResults.phResult.ph : null);
                 return val !== null ? (val < 6.8 ? "Acidic" : val > 8.5 ? "Alkaline" : "Neutral") : "Equilibrium Pending";
-              })()}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || scientificResults?.phConfidence || "Theoretical Model"}</span>. Physical electrode test required for release.
+              })()}) • <span className="text-token-primary font-bold">{scientificResults.phConfidence?.confidence || scientificResults?.phConfidence || "NOT EVALUATED"}</span>. Physical electrode test required for release.
             </p>
             {typeof scientificResults?.pH === 'number' && scientificResults.pH > 9.5 && scientificResults.details?.recognizedContributors?.includes('sodium_citrate') && !scientificResults.details?.recognizedContributors?.includes('citric_acid') && (
               <div className="mt-2 text-[11px] bg-amber-950/50 border border-amber-500/40 rounded-lg p-2 text-amber-200">
@@ -463,7 +463,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                   ? `${solidsValue !== null ? solidsValue.toFixed(1) + '%' : 'N/A'}`
                   : scientificResults?.nvrResult && !scientificResults.nvrResult.isComplete
                   ? "INSUFFICIENT_DATA"
-                  : `${(scientificResults?.totalSolids ?? 0).toFixed(1)}%`}
+                  : (solidsValue !== null ? solidsValue.toFixed(1) + '%' : 'N/A')}
               </span>
               <span className="text-xs text-slate-400 font-semibold">
                 {productCategory.toLowerCase().includes("powder")
@@ -551,7 +551,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
                     {scientificResults.cmc?.available ? Math.round(scientificResults.cmc.ppm) : "Unavailable"}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">
-                    {scientificResults?.cmc?.available ? `ppm (${(scientificResults?.cmc?.molar ?? 0).toFixed(2)} mM)` : "no prediction"}
+                    {scientificResults?.cmc?.available ? `ppm (${typeof scientificResults?.cmc?.molar === 'number' ? scientificResults.cmc.molar.toFixed(2) : 'N/A'} mM)` : "no prediction"}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-tight">
