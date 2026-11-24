@@ -609,6 +609,34 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
       globalNpeScreen.reviewRequired.some(r => r.ruleId === 'RULE_NAME_BASED_CHEMICAL_SCREENING')
   );
 
+  const identifierMatchedNpe = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 99.5, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'Proprietary nonionic blend', percentage: 0.5, casNumber: '9016-45-9', activePercentage: 100 }
+    ],
+    productCategory: 'LAUNDRY_LIQUID',
+    jurisdiction: 'EU',
+    maxPhosphatePctOverride: 1.0
+  });
+  assert(
+    'Regulatory threshold firewall: CAS identifier matching catches NPE and phosphate override cannot relax an NPE limit',
+    identifierMatchedNpe.failedRules.some(r => r.ruleId === 'RULE_EU_REACH_NPE_BAN')
+  );
+
+  const euDoseBasisUnknown = RegulatoryComplianceEngine.evaluate({
+    ingredients: [
+      { name: 'Water', percentage: 90, casNumber: '7732-18-5', activePercentage: 0 },
+      { name: 'Sodium Tripolyphosphate (STPP)', percentage: 10, casNumber: '7758-29-4', activePercentage: 100 }
+    ],
+    productCategory: 'LAUNDRY_POWDER',
+    jurisdiction: 'EU'
+  });
+  assert(
+    'Regulatory threshold firewall: gram-per-dose rules are UNKNOWN_DATA without an actual dose input, never compared as weight percent',
+    euDoseBasisUnknown.reviewRequired.some(r => r.ruleId === 'RULE_EU_DETERGENT_PHOSPHATE_BAN' && r.status === 'UNKNOWN_DATA') &&
+      !euDoseBasisUnknown.passedRules.some(r => r.ruleId === 'RULE_EU_DETERGENT_PHOSPHATE_BAN')
+  );
+
   const testInputIndiaSTPP: RegulatoryEvaluationInput = {
     ingredients: [
       { name: 'Sodium Tripolyphosphate (STPP)', percentage: 10.0 },
