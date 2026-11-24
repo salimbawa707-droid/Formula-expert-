@@ -959,16 +959,34 @@ export default function FormulaExpert({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nameOrAlias: ingredientName.trim() })
       });
-      if (!res.ok) throw new Error('Research failed or server unavailable');
-      const researchData = await res.json();
+      const researchData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(researchData.error || researchData.details || `Research request failed (HTTP ${res.status}).`);
+      }
 
       if (researchData.localMatch) {
         setResearchNotification(researchData.message || 'Ingredient already exists locally. Gemini was skipped.');
         return;
       }
       if (researchData.requiresUserApproval !== false) {
-        const summary = typeof researchData.summary === 'string' ? ' ' + researchData.summary : '';
-        setResearchNotification('Research candidate found, but it is not verified. Check the original manufacturer TDS/COA before adding it to the database.' + summary);
+        const summary = typeof researchData.summary === 'string' ? researchData.summary : '';
+        const parameters = researchData.parameters && typeof researchData.parameters === 'object'
+          ? Object.entries(researchData.parameters)
+              .filter(([, value]) => value !== null && value !== undefined && typeof value !== 'object')
+              .slice(0, 6)
+              .map(([key, value]) => `${key}: ${String(value)}`)
+              .join(' | ')
+          : '';
+        const sources = Array.isArray(researchData.sources)
+          ? researchData.sources.slice(0, 3).map((source: any) =>
+              [source.title, source.url].filter(Boolean).join(' — ')
+            ).join(' | ')
+          : '';
+        const details = [summary, parameters, sources].filter(Boolean).join(' | ');
+        setResearchNotification(
+          'Web research returned an unverified candidate. Review the original TDS/SDS/COA before using values in calculations or approving it. ' +
+          (details || 'No usable extracted properties or source references were returned.')
+        );
         return;
       }
 
@@ -1704,9 +1722,9 @@ export default function FormulaExpert({
                         {(() => {
                           const clean = (ing.name || '').trim();
                           if (!clean || clean.length < 2) return null;
-                          const canonicalById = ing.canonicalIngredientId
-                            ? UNIVERSAL_INGREDIENTS.find(u => u.id === ing.canonicalIngredientId)
-                            : undefined;
+                          const canonicalById = UNIVERSAL_INGREDIENTS.find(u =>
+                            u.id === ing.canonicalIngredientId || u.id === ing.id
+                          );
                           const identityResolution = resolveUniversalIngredientIdentity(clean) || (canonicalById
                             ? { ingredient: canonicalById, matchType: 'CANONICAL' as const, gradeCompatible: true }
                             : null);
