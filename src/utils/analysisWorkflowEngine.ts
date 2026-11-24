@@ -18,7 +18,7 @@
 
 import { FormulationIngredient } from '../types';
 import { normalizeProductCategory, getProductCategory } from '../domain/productTaxonomy';
-import { mapFormulationIngredientsToPHEngineInput, getSolverReadyIngredients } from './pHEngineAdapter';
+import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
 import { StoichiometricNeutralizationEngine } from '../domain/ph/stoichiometricNeutralizationEngine';
 import { HLBEngine } from './hlbEngine';
@@ -35,7 +35,7 @@ import {
 import { ViscosityEngine, calculateDetailedViscosity } from './viscosityEngine';
 import { calculateDensity, calculateTotalSolids } from './densityEngine';
 import { calculateLiquidNVR } from './liquidNvrEngine';
-import { evaluatePowderFormulation, PowderLabMeasurementInputs } from './powderEngine';
+import { PowderLabMeasurementInputs } from './powderEngine';
 import { calculateCleaningPerformance, calculateCPI } from './cleaningPerformanceEngine';
 import { calculateFormulationCompatibility, evaluateFormulationStability } from './compatibilityEngine';
 import { getPreservativeWarning } from './calculators';
@@ -256,6 +256,9 @@ export interface FormulaAnalysisSnapshot {
   productCategory: string;
   batchSizeKg: number;
   waterHardnessPpm: number | null;
+  washVolumeL?: number;
+  washDoseGrams?: number;
+  temperatureC?: number;
   ingredients: FormulationIngredient[];
   powderLabInputs?: PowderLabMeasurementInputs;
   activeFormulaVersion?: string;
@@ -655,24 +658,6 @@ export async function executeStagedScientificAnalysis(
               (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
   });
 
-  if ((advancedPH.pH === null || !Number.isFinite(advancedPH.pH)) && mappedPHInput.length > 0) {
-    try {
-      const solverReady = getSolverReadyIngredients(mappedPHInput);
-      if (solverReady.length > 0) {
-        const fallbackAdv = calculatePHAdvanced(solverReady, immutableSnapshot.batchSizeKg, {
-          productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-          targetPH: (neutralizationResult.value?.status === 'ACID_EXCESS' || neutralizationResult.value?.status === 'UNDER_NEUTRALIZED') ? 3.0 : 
-                    (neutralizationResult.value?.status === 'BASE_EXCESS') ? 11.0 : null
-        });
-        if (typeof fallbackAdv.pH === 'number' && Number.isFinite(fallbackAdv.pH)) {
-          advancedPH = fallbackAdv;
-        }
-      }
-    } catch {
-      // Ignore
-    }
-  }
-
   const phIntermediate = {
     neutralizationStatus: neutralizationResult.value?.status || 'UNKNOWN',
     neutralizationFraction: neutralizationResult.value?.primaryNeutralizationFraction ?? 1.0,
@@ -701,23 +686,30 @@ export async function executeStagedScientificAnalysis(
   const hardnessResult = calculateWaterHardnessTolerance(
     immutableSnapshot.ingredients,
     immutableSnapshot.waterHardnessPpm ?? undefined,
-    undefined,
-    undefined,
+    immutableSnapshot.washVolumeL,
+    immutableSnapshot.washDoseGrams,
     immutableSnapshot.batchSizeKg,
-    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
+    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
+    true
   );
 
   let chelatorActivePct = 0;
+  let chelatorActivePctComplete = true;
   const chelatorNames: string[] = [];
   immutableSnapshot.ingredients.forEach((ing) => {
     const name = ing.name.toLowerCase();
     const role = (ing.role || '').toLowerCase();
-    const act = (ing.activeMatterPct ?? 0) / 100;
-    const activePct = (Number(ing.percentage) || 0) * act;
-    if (role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate')) {
-      chelatorActivePct += activePct;
-      chelatorNames.push(ing.name);
+    if (!(role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate'))) return;
+    const rawPct = ing.percentage ?? (ing as any).percent;
+    const pct = rawPct === undefined || rawPct === null ? Number.NaN : Number(rawPct);
+    const rawActive = ing.activeMatterPct ?? (ing as any).activePercent;
+    const active = rawActive === undefined || rawActive === null ? Number.NaN : Number(rawActive);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100 || !Number.isFinite(active) || active < 0 || active > 100) {
+      chelatorActivePctComplete = false;
+      return;
     }
+    chelatorActivePct += pct * (active / 100);
+    chelatorNames.push(ing.name);
   });
 
   const hardnessScenarioEvaluated = hardnessResult.status !== 'NOT_EVALUATED';
@@ -727,7 +719,7 @@ export async function executeStagedScientificAnalysis(
     maxSupportedPpm: hardnessScenarioEvaluated ? hardnessResult.maxSupportedPpm : null,
     hardnessLoadMg: hardnessScenarioEvaluated ? hardnessResult.hardnessLoadMg : null,
     totalSequestrationMg: hardnessScenarioEvaluated ? hardnessResult.totalSequestrationMg : null,
-    chelatorActivePct: Number(chelatorActivePct.toFixed(2)),
+    chelatorActivePct: chelatorActivePctComplete ? Number(chelatorActivePct.toFixed(2)) : null,
     chelatorNames: Array.from(new Set(chelatorNames))
   };
 
@@ -743,13 +735,14 @@ export async function executeStagedScientificAnalysis(
   await new Promise((r) => setTimeout(r, 0));
   if (checkAbort()) throw new Error('Analysis cancelled');
 
+  const viscosityTemperatureC = immutableSnapshot.temperatureC ?? 25;
   const viscReport = ViscosityEngine.evaluateViscosity(immutableSnapshot.ingredients, {
     productCategory: canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
     targetPH: advancedPH.pH ?? null,
-    temperatureC: 25
+    temperatureC: viscosityTemperatureC
   });
 
-  const detailedVisc = calculateDetailedViscosity(immutableSnapshot.ingredients, { temperatureC: 25 });
+  const detailedVisc = calculateDetailedViscosity(immutableSnapshot.ingredients, { temperatureC: viscosityTemperatureC });
 
   const densityResult = calculateDensity(
     immutableSnapshot.ingredients,
@@ -761,15 +754,7 @@ export async function executeStagedScientificAnalysis(
   let nvrResult: any = null;
   let powderReport: any = null;
 
-  if (isPowder) {
-    powderReport = evaluatePowderFormulation({
-      ingredients: immutableSnapshot.ingredients,
-      productCategory: immutableSnapshot.productCategory,
-      batchSizeKg: immutableSnapshot.batchSizeKg,
-      waterHardnessPpm: immutableSnapshot.waterHardnessPpm ?? undefined,
-      labMeasurements: immutableSnapshot.powderLabInputs || {}
-    });
-  } else {
+  if (!isPowder) {
     nvrResult = calculateLiquidNVR(immutableSnapshot.ingredients, immutableSnapshot.batchSizeKg);
   }
 
@@ -782,12 +767,12 @@ export async function executeStagedScientificAnalysis(
     totalSolidsPct,
     nvrPercentage: nvrResult?.nvrPercentage ?? null,
     isNvrComplete: nvrResult?.isComplete ?? false,
-    powderBulkDensityGPerL: powderReport?.densityReport?.predictedBulkDensityGPerL ?? null
+    powderPropertiesDeferredToAuthoritativeDAG: isPowder
   };
 
   completeStage('RHEOLOGY_DENSITY', 'COMPLETED', {
     details: isPowder
-      ? `Powder bulk density: ${powderReport?.densityReport?.predictedBulkDensityGPerL ?? 'N/A'} g/L | Solids: ${totalSolidsPct.toFixed(1)}%`
+      ? `Powder physical properties deferred to authoritative DAG evaluation | Solids: ${totalSolidsPct.toFixed(1)}%`
       : `Viscosity: ${viscReport.viscosityCp} cPs | Density: ${densityResult.densityGPerCm3.toFixed(3)} g/cm³ | NVR: ${nvrResult?.nvrPercentage?.toFixed(1) ?? 'N/A'}%`,
     intermediate: rheologyIntermediate
   });
@@ -812,6 +797,10 @@ export async function executeStagedScientificAnalysis(
     undefined,
     {
       ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
+      washVolumeL: immutableSnapshot.washVolumeL,
+      washDoseGrams: immutableSnapshot.washDoseGrams,
+      batchSizeKg: immutableSnapshot.batchSizeKg,
+      failIfHardnessMissing: true,
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
@@ -824,6 +813,10 @@ export async function executeStagedScientificAnalysis(
     undefined,
     {
       ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
+      washVolumeL: immutableSnapshot.washVolumeL,
+      washDoseGrams: immutableSnapshot.washDoseGrams,
+      batchSizeKg: immutableSnapshot.batchSizeKg,
+      failIfHardnessMissing: true,
       compatibilityStatus: compatibilityResult.compatible ? 'COMPATIBLE' : 'INCOMPATIBLE',
       hasCriticalCompatibilityAlert: !compatibilityResult.compatible
     }
@@ -947,17 +940,23 @@ export async function executeStagedScientificAnalysis(
     formulaName: immutableSnapshot.formulaName,
     formulaVersion: immutableSnapshot.activeFormulaVersion || '1.0.0',
     productCategory: immutableSnapshot.productCategory,
-    ingredients: immutableSnapshot.ingredients.map((ing, idx) => ({
-      ...ing,
-      ingredientId: ing.id || `ing-${idx}`,
-      percentage: Number(ing.percentage ?? (ing as any).percent ?? 0),
-      costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
-    })),
+    ingredients: immutableSnapshot.ingredients.map((ing, idx) => {
+      const rawPercentage = ing.percentage ?? (ing as any).percent;
+      return {
+        ...ing,
+        ingredientId: ing.id || `ing-${idx}`,
+        percentage: rawPercentage === undefined || rawPercentage === null || (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
+          ? Number.NaN
+          : Number(rawPercentage),
+        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
+      };
+    }),
     batchSizeKg: immutableSnapshot.batchSizeKg,
     ...(immutableSnapshot.waterHardnessPpm !== null ? { waterHardnessPpm: immutableSnapshot.waterHardnessPpm } : {}),
-    costContext: {
-      targetCostPerKg: 45.0
-    }
+    washVolumeL: immutableSnapshot.washVolumeL,
+    washDoseGrams: immutableSnapshot.washDoseGrams,
+    temperatureC: immutableSnapshot.temperatureC,
+    powderLabInputs: immutableSnapshot.powderLabInputs
   };
 
   const orchestratorResult = FormulaScientificOrchestrator.evaluate(orchestratorInput);
