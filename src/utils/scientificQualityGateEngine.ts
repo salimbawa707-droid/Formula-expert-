@@ -87,6 +87,7 @@ export interface MasterScientificQualityGateInput {
   formulaName?: string;
   formulaVersion?: string;
   productCategory?: string;
+  productSubProfileId?: string;
   subCategory?: string;
   specificationProfileId?: string;
   ingredients: FormulationIngredient[];
@@ -492,7 +493,7 @@ export function evaluateScientificQualityGate(
   }
 
   const specTemplate = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' 
-    ? getSpecificationTemplateForCategory(input.specificationProfileId || input.subCategory || canonicalCategory, formulaName)
+    ? getSpecificationTemplateForCategory(input.productSubProfileId || input.specificationProfileId || input.subCategory || canonicalCategory, formulaName)
     : null;
   const specActiveParam = specTemplate?.parameters?.find(p => p.parameterKey === 'activeMatter');
   const categoryMinActivePct = specActiveParam?.min !== undefined 
@@ -993,13 +994,15 @@ export function evaluateScientificQualityGate(
     formulaId,
     formulaVersion,
     rawIngs,
-    canonicalCategory
+    canonicalCategory,
+    input.productSubProfileId
   );
 
   const provenanceReport = generateMasterScientificProvenanceReport({
     formulaId: input.formulaId,
     formulaVersion: input.formulaVersion,
     productCategory: canonicalCategory,
+    productSubProfileId: input.productSubProfileId,
     ingredients: rawIngs,
     speciationResult: { pH: finalPH, isMeasured: isPHMeasured, confidence: phConfidence },
     activeMatterResult: {
