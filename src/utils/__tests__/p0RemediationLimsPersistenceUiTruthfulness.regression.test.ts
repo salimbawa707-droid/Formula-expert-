@@ -60,10 +60,11 @@ export function runP0RemediationLimsPersistenceUiTruthfulnessTestSuite(): {
       docsLibrarySource.includes('window.setTimeout(() => URL.revokeObjectURL(url), 1000)')
   );
   assert(
-    'DOCS 5: Invalid legacy expiry dates are not misreported as no-expiry documents',
-    docsLibrarySource.includes("return 'INVALID'") &&
+    'DOCS 5: Expiry dates use a digit-only ISO date regex and reject impossible calendar dates',
+    docsLibrarySource.includes("if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(expiryDate)) return 'INVALID';") &&
       docsLibrarySource.includes("validity === 'INVALID'") &&
-      docsLibrarySource.includes("T00:00:00.000Z")
+      docsLibrarySource.includes("T00:00:00.000Z") &&
+      docsLibrarySource.includes("utcDate.toISOString().slice(0, 10) !== expiryDate")
   );
   assert(
     'DOCS 6: Local document mutation failures are surfaced to the user',
