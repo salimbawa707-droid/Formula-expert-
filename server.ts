@@ -375,6 +375,17 @@ app.post(
       });
     }
 
+    if (!process.env.GEMINI_API_KEY?.trim()) {
+      return res.status(503).json({
+        success: false,
+        status: 'GEMINI_NOT_CONFIGURED',
+        code: 'GEMINI_API_KEY_MISSING',
+        requiresUserApproval: true,
+        error: 'Gemini API key is not configured on the server. Add GEMINI_API_KEY to the server environment, then retry internet research.',
+        details: 'Known catalog ingredients continue to resolve locally. No source-free Gemini output or guessed chemical properties will be saved.'
+      });
+    }
+
     const systemInstruction = `You are a Senior Detergent R&D Chemist, Industrial Formulator, and Chemical Specification Specialist.
 Your mission is to perform rigorous research on chemical raw materials, commercial surfactants, builders, chelators, and additives used in cleaning, cosmetics, and industrial detergents.
 Find authentic Technical Data Sheets (TDS), Safety Data Sheets (SDS), manufacturer specifications (e.g., BASF, Stepan, Clariant, Galaxy Surfactants, Solvay, Evonik, Croda, Nouryon, Dow), or official chemical registries (PubChem, ECHA, CosIng).
