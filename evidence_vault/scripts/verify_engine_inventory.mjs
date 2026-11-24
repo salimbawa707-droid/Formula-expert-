@@ -23,7 +23,7 @@ const legacyEntries = fs.readFileSync(legacyListPath, 'utf8').split(/\r?\n/).map
 const uniqueEntries = [...new Set(legacyEntries)];
 const duplicateEntries = legacyEntries.filter((entry, index) => legacyEntries.indexOf(entry) !== index);
 const missingEntries = uniqueEntries.filter((entry) => !fs.existsSync(path.join(root, entry)));
-const auditCsvLines = fs.existsSync(auditCsvPath) ? fs.readFileSync(auditCsvPath, 'utf8').trim().split(/\\r?\\n/) : [];
+const auditCsvLines = fs.existsSync(auditCsvPath) ? fs.readFileSync(auditCsvPath, 'utf8').trim().split(/\r?\n/) : [];
 const auditCsvPaths = auditCsvLines.slice(1).map((line) => line.match(/^\"([^\"]+)\"/)?.[1]).filter(Boolean);
 const csvOnlyPaths = auditCsvPaths.filter((entry) => !uniqueEntries.includes(entry));
 const listOnlyPaths = uniqueEntries.filter((entry) => !auditCsvPaths.includes(entry));
