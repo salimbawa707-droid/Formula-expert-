@@ -79,6 +79,10 @@ export function calculateLiquidNVR(
       }
     }
 
+    if (fraction !== undefined && (!Number.isFinite(fraction) || fraction < 0 || fraction > 1)) {
+      return invalid(`Ingredient ${ing.name || index + 1} has an invalid non-volatile fraction; expected a finite fraction from 0 to 1.`, [ing.name || 'Unknown Ingredient']);
+    }
+
     if (fraction !== undefined && Number.isFinite(fraction) && fraction >= 0 && fraction <= 1) {
       knownNvrSum += percentage * fraction;
       knownMassSum += percentage;
