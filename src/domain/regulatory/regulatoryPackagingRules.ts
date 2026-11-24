@@ -12,7 +12,7 @@ import { PackagingComplianceReport, RegulatoryJurisdictionId } from './types';
 export class PackagingComplianceEngine {
   public static evaluatePackaging(
     jurisdiction: RegulatoryJurisdictionId,
-    signalWord: 'DANGER' | 'WARNING' | 'NONE',
+    _signalWord: 'DANGER' | 'WARNING' | 'NONE',
     calculatedPH?: number
   ): PackagingComplianceReport {
     const findings: string[] = [];
