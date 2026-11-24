@@ -75,22 +75,51 @@ export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: numb
   return data ? { cmcMolar: data.cmcMolar, cmcPpm: data.cmcPpm } : null;
 };
 
+
 export const calculateMixedCmc = (ingredients: any[]) => {
   return calculateMixedCMC(ingredients);
 };
+
+function readFormulaPercentage(ingredient: any): number {
+  const raw = ingredient?.percentage ?? ingredient?.percent ?? ingredient?.percentageInFormula ?? ingredient?.rawPercent;
+  return raw === undefined || raw === null || (typeof raw === 'string' && raw.trim() === '') ? Number.NaN : Number(raw);
+}
+
+function readFormulaActiveMatter(ingredient: any): number | undefined {
+  const explicit = ingredient?.activeMatterPct ?? ingredient?.activePercent ?? ingredient?.activeMatterPurity ?? ingredient?.activePct ?? ingredient?.purity;
+  const resolved = explicit === undefined || explicit === null || explicit === ''
+    ? getDefaultActiveMatter(ingredient?.name || '')
+    : explicit;
+  return resolved === undefined || resolved === null || resolved === '' ? undefined : Number(resolved);
+}
+
+function readFormulaCost(ingredient: any): number | null {
+  const raw = ingredient?.costPerKg;
+  return raw === undefined || raw === null || raw === '' ? null : Number(raw);
+}
+
+function getFormulaMassBalance(ingredients: FormulationIngredient[]): number {
+  if (!Array.isArray(ingredients) || ingredients.length === 0) return Number.NaN;
+  const values = ingredients.map(readFormulaPercentage);
+  return values.every(value => Number.isFinite(value) && value >= 0 && value <= 100)
+    ? values.reduce((sum, value) => sum + value, 0)
+    : Number.NaN;
+}
 
 // Formula Fingerprint Computation (Deterministic hash of formulation state)
 export function computeFormulaFingerprint(inputs: {
   formulaName: string;
   productCategory: string;
+  productSubProfileId?: string;
   batchSizeKg: number;
   waterHardnessPpm: number | null;
-  ingredients: Array<{ id?: string; name: string; percentage?: number; activeMatterPct?: number; role?: string; costPerKg?: number | null }>;
+  ingredients: Array<{ id?: string; name: string; percentage?: number; percent?: number; percentageInFormula?: number; rawPercent?: number; activeMatterPct?: number; activePercent?: number; activeMatterPurity?: number; role?: string; costPerKg?: number | null }>;
   powderLabInputs?: PowderLabMeasurementInputs;
 }): string {
   const cleanCat = (inputs.productCategory || '').trim().toLowerCase();
   const cleanName = (inputs.formulaName || '').trim().toLowerCase();
-  const cleanHardness = inputs.waterHardnessPpm === null ? 'UNKNOWN' : String(inputs.waterHardnessPpm);
+  const cleanHardness = typeof inputs.waterHardnessPpm === 'number' && Number.isFinite(inputs.waterHardnessPpm) && inputs.waterHardnessPpm >= 0 ? String(inputs.waterHardnessPpm) : 'UNKNOWN';
+  const cleanSubProfile = typeof inputs.productSubProfileId === 'string' && inputs.productSubProfileId.trim() ? inputs.productSubProfileId.trim().toUpperCase() : 'UNSPECIFIED';
 
   const sortedIngs = (inputs.ingredients || [])
     .map((ing) => {
@@ -109,7 +138,7 @@ export function computeFormulaFingerprint(inputs: {
 
   const powderStr = inputs.powderLabInputs ? JSON.stringify(inputs.powderLabInputs) : '';
   // Intensive chemical composition fingerprint (excludes batchSizeKg scaling)
-  const raw = `CAT:${cleanCat}|NAME:${cleanName}|HARD:${cleanHardness}|INGS:${sortedIngs}|POWDER:${powderStr}`;
+  const raw = `CAT:${cleanCat}|SUBPROFILE:${cleanSubProfile}|NAME:${cleanName}|HARD:${cleanHardness}|INGS:${sortedIngs}|POWDER:${powderStr}`;
 
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
@@ -127,6 +156,7 @@ export interface DeepAnalysisState {
   formulaSnapshot: {
     formulaName: string;
     productCategory: string;
+    productSubProfileId?: string;
     batchSizeKg: number;
     waterHardnessPpm: number | null;
     ingredients: FormulationIngredient[];
@@ -141,6 +171,7 @@ export interface DeepAnalysisState {
 export function runDeepScientificAnalysis(snapshot: {
   formulaName: string;
   productCategory: string;
+  productSubProfileId?: string;
   batchSizeKg: number;
   waterHardnessPpm: number | null;
   ingredients: FormulationIngredient[];
@@ -152,6 +183,7 @@ export function runDeepScientificAnalysis(snapshot: {
     formulaName: snapshot.formulaName,
     formulaVersion: snapshot.activeFormulaVersion || '1.0.0',
     productCategory: snapshot.productCategory,
+    productSubProfileId: snapshot.productSubProfileId,
     ingredients: snapshot.ingredients.map((ing, idx) => {
       const rawPercentage = ing.percentage ?? (ing as any).percent;
       return {
@@ -331,10 +363,12 @@ export default function FormulaExpert({
   });
 
   const [batchSizeKg, setBatchSizeKg] = useState<number>(() => {
-    const saved = localStorage.getItem("formula_expert_batchSize");
-    if (activeFormula?.batchSizeKg && activeFormula.batchSizeKg > 0) return activeFormula.batchSizeKg;
-    if (activeFormula?.batchSize && activeFormula.batchSize > 0) return activeFormula.batchSize;
-    return saved ? Number(saved) : 100;
+    if (activeFormula) {
+      const existingBatch = activeFormula.batchSizeKg ?? activeFormula.batchSize;
+      return typeof existingBatch === 'number' && Number.isFinite(existingBatch) && existingBatch > 0 ? existingBatch : Number.NaN;
+    }
+    const saved = Number(localStorage.getItem("formula_expert_batchSize"));
+    return Number.isFinite(saved) && saved > 0 ? saved : 100;
   });
 
   const [formulaName, setFormulaName] = useState<string>(() => {
@@ -356,9 +390,9 @@ export default function FormulaExpert({
       return activeFormula.ingredients.map((ing, idx) => ({
         ...ing,
         id: ing.id || `ing-${Date.now()}-${idx}`,
-        percentage: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? getDefaultActiveMatter(ing.name || "")),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+        percentage: readFormulaPercentage(ing),
+        activeMatterPct: readFormulaActiveMatter(ing),
+        costPerKg: readFormulaCost(ing),
         role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
       }));
     }
@@ -440,9 +474,11 @@ export default function FormulaExpert({
     const initCat = activeFormula?.category || activeFormula?.productType
       ? normalizeProductCategory(activeFormula.category || activeFormula.productType!)
       : normalizeProductCategory(localStorage.getItem("formula_expert_category") || "Laundry Liquid");
-    const initBatch = (activeFormula?.batchSizeKg && activeFormula.batchSizeKg > 0)
-      ? activeFormula.batchSizeKg
-      : ((activeFormula?.batchSize && activeFormula.batchSize > 0) ? activeFormula.batchSize : (localStorage.getItem("formula_expert_batchSize") ? Number(localStorage.getItem("formula_expert_batchSize")) : 100));
+    const storedBatch = Number(localStorage.getItem("formula_expert_batchSize"));
+    const existingBatch = activeFormula?.batchSizeKg ?? activeFormula?.batchSize;
+    const initBatch = activeFormula
+      ? (typeof existingBatch === 'number' && Number.isFinite(existingBatch) && existingBatch > 0 ? existingBatch : Number.NaN)
+      : (Number.isFinite(storedBatch) && storedBatch > 0 ? storedBatch : 100);
     const initHardness = activeFormula?.waterHardnessSource === 'USER_ENTERED' || activeFormula?.waterHardnessSource === 'MEASURED'
       ? (typeof activeFormula.waterHardnessPpm === 'number' && Number.isFinite(activeFormula.waterHardnessPpm) && activeFormula.waterHardnessPpm >= 0 ? activeFormula.waterHardnessPpm : null)
       : null;
@@ -452,9 +488,9 @@ export default function FormulaExpert({
       initIngs = activeFormula.ingredients.map((ing, idx) => ({
         ...ing,
         id: ing.id || `ing-${Date.now()}-${idx}`,
-        percentage: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? getDefaultActiveMatter(ing.name || "")),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+        percentage: readFormulaPercentage(ing),
+        activeMatterPct: readFormulaActiveMatter(ing),
+        costPerKg: readFormulaCost(ing),
         role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
       }));
     } else {
@@ -473,6 +509,7 @@ export default function FormulaExpert({
     return runDeepScientificAnalysis({
       formulaName: initName,
       productCategory: initCat,
+      productSubProfileId: activeFormula?.productSubProfileId,
       batchSizeKg: initBatch,
       waterHardnessPpm: initHardness,
       ingredients: initIngs,
@@ -486,6 +523,7 @@ export default function FormulaExpert({
     return computeFormulaFingerprint({
       formulaName,
       productCategory,
+      productSubProfileId: activeFormula?.productSubProfileId,
       batchSizeKg,
       waterHardnessPpm,
       ingredients,
@@ -597,14 +635,15 @@ export default function FormulaExpert({
 
       const rawCat = activeFormula.category || activeFormula.productType;
       const cat = rawCat ? normalizeProductCategory(rawCat) : "UNKNOWN_PRODUCT_CATEGORY";
-      const batch = activeFormula.batchSizeKg || activeFormula.batchSize || 0;
+      const batchCandidate = activeFormula.batchSizeKg ?? activeFormula.batchSize;
+      const batch = typeof batchCandidate === 'number' && Number.isFinite(batchCandidate) && batchCandidate > 0 ? batchCandidate : Number.NaN;
       const name = activeFormula.name || "New Formula";
       const ings = activeFormula.ingredients.map((ing, idx) => ({
         ...ing,
         id: ing.id || `ing-${Date.now()}-${idx}`,
-        percentage: Number(ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? 0),
-        activeMatterPct: Number(ing.activeMatterPct ?? ing.activePercent ?? getDefaultActiveMatter(ing.name || "")),
-        costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
+        percentage: readFormulaPercentage(ing),
+        activeMatterPct: readFormulaActiveMatter(ing),
+        costPerKg: readFormulaCost(ing),
         role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
       }));
 
@@ -619,6 +658,7 @@ export default function FormulaExpert({
       const snapshot = {
         formulaName: name,
         productCategory: cat,
+        productSubProfileId: activeFormula.productSubProfileId,
         batchSizeKg: batch,
         waterHardnessPpm: activeFormula.waterHardnessSource === 'USER_ENTERED' || activeFormula.waterHardnessSource === 'MEASURED' ? activeFormula.waterHardnessPpm ?? null : null,
         ingredients: ings,
@@ -652,9 +692,9 @@ export default function FormulaExpert({
         ingredients: ingredients.map((ing, idx) => ({
           ...ing,
           id: ing.id || `ing-${idx}`,
-          percentage: Number(ing.percentage) || 0,
-          percent: Number(ing.percentage) || 0,
-          activeMatterPct: Number(ing.activeMatterPct !== undefined ? ing.activeMatterPct : (ing.activePercent !== undefined ? ing.activePercent : getDefaultActiveMatter(ing.name || ""))),
+          percentage: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
+          percent: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
+          activeMatterPct: readFormulaActiveMatter(ing),
           costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
           role: ing.role || ing.function || getAuditedIngredientCategory(ing.name || "")
         }))
@@ -715,8 +755,8 @@ export default function FormulaExpert({
     const newIng: FormulationIngredient = {
       id: `ing-${Date.now()}-${ingredients.length}`,
       name: "",
-      percentage: 0,
-      activeMatterPct: 100,
+      percentage: Number.NaN,
+      activeMatterPct: undefined,
       role: "Additive",
       costPerKg: null
     };
@@ -729,7 +769,7 @@ export default function FormulaExpert({
     const newIng: FormulationIngredient = {
       id: `ing-${Date.now()}-${ingredients.length}`,
       name: selected.name,
-      percentage: 0,
+      percentage: Number.NaN,
       category: selected.category,
       role: selected.category || selected.function || getAuditedIngredientCategory(selected.name),
       function: selected.function,
@@ -978,12 +1018,12 @@ export default function FormulaExpert({
         (ing.role && ing.role.toLowerCase().includes("solvent"))
     );
 
-    let nonWaterSum = 0;
-    list.forEach((ing, idx) => {
-      if (idx !== waterIdx) {
-        nonWaterSum += Number(ing.percentage) || 0;
-      }
-    });
+    const nonWaterRows = list.filter((_, idx) => idx !== waterIdx);
+    if (nonWaterRows.some(ing => !Number.isFinite(readFormulaPercentage(ing)) || readFormulaPercentage(ing) < 0 || readFormulaPercentage(ing) > 100)) {
+      setPowderBalanceToast('Cannot auto-balance water: one or more non-water ingredient percentages are missing or invalid. Enter valid percentages first.');
+      return;
+    }
+    const nonWaterSum = nonWaterRows.reduce((sum, ing) => sum + readFormulaPercentage(ing), 0);
 
     const balancedWaterPct = Math.max(0, Number((100 - nonWaterSum).toFixed(3)));
 
@@ -1005,7 +1045,13 @@ export default function FormulaExpert({
 
   // Verify Powder Mass Balance (Strictly NO auto-water addition)
   const handleVerifyPowderBalance = () => {
-    const sum = ingredients.reduce((s, i) => s + (Number(i.percentage) || 0), 0);
+    const percentages = ingredients.map(readFormulaPercentage);
+    if (percentages.some(pct => !Number.isFinite(pct) || pct < 0 || pct > 100)) {
+      setPowderBalanceToast('Invalid powder formula: one or more ingredient percentages are missing or outside 0–100%.');
+      setTimeout(() => setPowderBalanceToast(null), 8000);
+      return;
+    }
+    const sum = percentages.reduce((s, pct) => s + pct, 0);
     if (Math.abs(sum - 100) < 0.01) {
       setPowderBalanceToast("✓ 100.00% Stoichiometric Mass Balance: All solid builders, surfactants, and fillers sum to exact 100.00% batch.");
     } else if (sum < 100) {
@@ -1030,27 +1076,26 @@ export default function FormulaExpert({
 
   // Live Totals Calculations (Decoupled, strictly reflecting immediate live editing inputs)
   const totals = useMemo(() => {
-    const totalRaw = ingredients.reduce((sum, i) => sum + (Number(i.percentage) || 0), 0);
-    const rawSurfactants = calculateRawSurfactants(ingredients);
-    const activeSurfactants = calculateActiveSurfactants(ingredients);
+    const totalRaw = getFormulaMassBalance(ingredients);
+    const compositionValid = Number.isFinite(totalRaw);
+    const rawSurfactants = compositionValid ? calculateRawSurfactants(ingredients) : Number.NaN;
+    const activeSurfactants = compositionValid ? calculateActiveSurfactants(ingredients) : Number.NaN;
 
     // Water % calculation: strictly 0 for powder unless user explicitly added water
     const waterIng = ingredients.find(
       (i) => (i.name || "").toLowerCase().includes("water") || (i.name || "").toLowerCase().includes("aqua")
     );
-    const waterPct = isPowder
-      ? (waterIng ? Number(waterIng.percentage) || 0 : 0)
-      : (waterIng ? Number(waterIng.percentage) || 0 : Math.max(0, 100 - totalRaw));
+    const waterPct = waterIng && Number.isFinite(readFormulaPercentage(waterIng)) ? readFormulaPercentage(waterIng) : (waterIng ? Number.NaN : 0);
 
     return {
       totalRaw: Number(totalRaw.toFixed(2)),
       rawSurfactants: Number(rawSurfactants.toFixed(2)),
       activeSurfactants: Number(activeSurfactants.toFixed(2)),
       waterPct: Number(waterPct.toFixed(2)),
-      missingPct: Math.max(0, Number((100 - totalRaw).toFixed(2))),
+      missingPct: Number.isFinite(totalRaw) ? Math.max(0, Number((100 - totalRaw).toFixed(2))) : Number.NaN,
       costPerKg: formulaCost.costPerKg,
       totalBatchCost: formulaCost.totalBatchCost,
-      isBalanced: Math.abs(totalRaw - 100) < 0.05
+      isBalanced: Number.isFinite(totalRaw) && Math.abs(totalRaw - 100) < 0.05
     };
   }, [ingredients, formulaCost, isPowder]);
 
@@ -1083,7 +1128,7 @@ export default function FormulaExpert({
       waterHardnessPpm,
       ingredients: ingredients.map((i) => ({
         name: i.name,
-        percentage: Number(i.percentage) || 0,
+        percentage: Number.isFinite(Number(i.percentage)) ? Number(i.percentage) : null,
         activeMatterPct: i.activeMatterPct,
         role: i.role,
         costPerKg: i.costPerKg
@@ -1188,9 +1233,9 @@ export default function FormulaExpert({
             ingredients: ingredients.map((ing, idx) => ({
               ...ing,
               id: ing.id || `ing-${idx}`,
-              percentage: Number(ing.percentage) || 0,
-              percent: Number(ing.percentage) || 0,
-              activeMatterPct: Number(ing.activeMatterPct) || 0,
+              percentage: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
+              percent: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
+              activeMatterPct: readFormulaActiveMatter(ing),
               costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
             }))
           };
@@ -1292,9 +1337,9 @@ export default function FormulaExpert({
         ingredients: ingredients.map((ing, idx) => ({
           ...ing,
           id: ing.id || `ing-${idx}`,
-          percentage: Number(ing.percentage) || 0,
-          percent: Number(ing.percentage) || 0,
-          activeMatterPct: Number(ing.activeMatterPct) || 0,
+          percentage: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
+          percent: Number.isFinite(Number(ing.percentage)) ? Number(ing.percentage) : Number.NaN,
+          activeMatterPct: readFormulaActiveMatter(ing),
           costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null
         }))
       };
@@ -1483,8 +1528,8 @@ export default function FormulaExpert({
             <input
               type="number"
               min="1"
-              value={batchSizeKg}
-              onChange={(e) => setBatchSizeKg(Math.max(1, Number(e.target.value) || 0))}
+              value={Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : ""}
+              onChange={(e) => setBatchSizeKg(e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))
               className="w-full bg-[#0e1629] border border-slate-600 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-white font-mono font-bold focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none"
             />
           </div>
@@ -1704,8 +1749,8 @@ export default function FormulaExpert({
                             min="0"
                             max="100"
                             step="any"
-                            value={ing.percentage ?? 0}
-                            onChange={(e) => handleUpdateIngredient(ingId, "percentage", Number(e.target.value) || 0)}
+                            value={Number.isFinite(Number(ing.percentage)) ? ing.percentage : ""}
+                            onChange={(e) => handleUpdateIngredient(ingId, "percentage", e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))}
                             className="w-20 bg-[#131d35] border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm font-mono text-right text-cyan-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none font-bold"
                           />
                           <span className="text-slate-500 text-xs font-semibold">%</span>
@@ -1720,8 +1765,8 @@ export default function FormulaExpert({
                             min="0"
                             max="100"
                             step="any"
-                            value={ing.activeMatterPct ?? null}
-                            onChange={(e) => handleUpdateIngredient(ingId, "activeMatterPct", Number(e.target.value) || 0)}
+                            value={Number.isFinite(Number(ing.activeMatterPct)) ? ing.activeMatterPct : ""}
+                            onChange={(e) => handleUpdateIngredient(ingId, "activeMatterPct", e.target.value.trim() === "" ? undefined : Number(e.target.value))}
                             className="w-16 bg-[#131d35] border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm font-mono text-right text-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none font-semibold"
                           />
                           <span className="text-slate-500 text-xs font-semibold">%</span>
@@ -1905,8 +1950,8 @@ export default function FormulaExpert({
                         min="0"
                         max="100"
                         step="any"
-                        value={ing.percentage ?? 0}
-                        onChange={(e) => handleUpdateIngredient(ingId, "percentage", Number(e.target.value) || 0)}
+                        value={Number.isFinite(Number(ing.percentage)) ? ing.percentage : ""}
+                        onChange={(e) => handleUpdateIngredient(ingId, "percentage", e.target.value.trim() === "" ? Number.NaN : Number(e.target.value))}
                         className="w-full bg-[#0e1629] border border-slate-700 rounded px-1.5 py-1 font-mono font-bold text-cyan-300 text-xs mt-0.5"
                       />
                     </div>
@@ -1917,8 +1962,8 @@ export default function FormulaExpert({
                         min="0"
                         max="100"
                         step="any"
-                        value={ing.activeMatterPct ?? null}
-                        onChange={(e) => handleUpdateIngredient(ingId, "activeMatterPct", Number(e.target.value) || 0)}
+                        value={Number.isFinite(Number(ing.activeMatterPct)) ? ing.activeMatterPct : ""}
+                        onChange={(e) => handleUpdateIngredient(ingId, "activeMatterPct", e.target.value.trim() === "" ? undefined : Number(e.target.value))}
                         className="w-full bg-[#0e1629] border border-slate-700 rounded px-1.5 py-1 font-mono text-slate-300 text-xs mt-0.5"
                       />
                     </div>
@@ -2252,8 +2297,8 @@ export default function FormulaExpert({
           ingredients={deepAnalysisState.formulaSnapshot.ingredients.map((ing) => ({
             id: ing.id,
             name: ing.name,
-            percentage: Number(ing.percentage) || 0,
-            activeMatterPct: ing.activeMatterPct !== undefined ? Number(ing.activeMatterPct) : 100,
+            percentage: readFormulaPercentage(ing),
+            activeMatterPct: readFormulaActiveMatter(ing) ?? Number.NaN,
             costPerKg: ing.costPerKg !== undefined && ing.costPerKg !== null && !isNaN(Number(ing.costPerKg)) ? Number(ing.costPerKg) : null,
             role: ing.role
           }))}
