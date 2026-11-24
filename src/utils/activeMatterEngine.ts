@@ -551,8 +551,8 @@ export class ActiveMatterEngine {
    * Evaluates complete Active Matter and Mass Balance Report for a formulation.
    */
   public static calculateActiveMatterReport(
-    ingredients: FormulationIngredient[], 
-    batchSizeKg: number = 100
+    ingredients: FormulationIngredient[],
+    batchSizeKg?: number
   ): ActiveMatterReport {
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
     const hasNonEmptyFormula = safeIngs.length > 0;
