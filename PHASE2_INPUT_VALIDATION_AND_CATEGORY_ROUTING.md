@@ -141,3 +141,17 @@ The AIFormulator view model and result panels previously displayed defaults such
 - All 13 canonical categories are checked against profile applicability for HLB, chelation and cleaning.
 
 **Verification remains pending:** the latest PR quality-gate run is pending; none of these latest additions is marked passing until the run completes and any failures are fixed.
+
+
+## Explicit handoff register — issues not to lose
+
+These were found during the Phase 2 sweep and are assigned to later phases because they require domain-specific engine changes rather than a local input guard. They remain open until the assigned phase closes them.
+
+| Finding | Assigned phase | Required action |
+|---|---|---|
+| `compositionNormalizer.ts` currently initializes missing active assay to 100% before using the acid/base profile; assay provenance and active fraction need to be reconciled so unknown acid/base assay cannot produce an authoritative numeric pH | Phase 3 — pH & Neutralization | Use assay profile/provenance, block unsupported pH-active assay inputs, and test known/unknown grade cases |
+| `compatibilityEngine.ts` invokes pH with a fixed 100 kg reference mass when pH is absent; confirm the reference-basis invariance and expose it as an assumption or remove the hidden fallback | Phase 3 — pH & Neutralization | Verify mass-basis independence with reference cases and ensure no missing assay is bypassed |
+| `calculators.ts` contains an unsourced CAPAO CMC numeric fallback (0.20 M / 46 ppm) | Phase 4 — Active Matter & Surfactant Science | Remove or mark unavailable until exact identity, molecular weight and source-backed pure CMC are available |
+| DAG mass-balance state is computed, but all downstream execution and release-gate consequences need a dedicated proof across categories | Phase 10 — Integration & Certification | Prove unbalanced formula cannot be marked production-ready; retain exploratory screening only with clear status |
+
+These are not considered fixed by this Phase 2 report. They are durable phase handoffs and must be checked off in their assigned phase before the final ten-phase audit can pass.
