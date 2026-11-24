@@ -73,3 +73,42 @@ Phase 2 turns Phase 1 wiring findings into enforceable input contracts. Missing,
 7. Update this report only when each item has source evidence and passing verification.
 
 **Exit criterion:** Phase 2 remains open until all identified input-integrity and category-routing defects in scope are fixed, regression tests pass, and the evidence is recorded. Phase 10 will perform the final cross-engine integration re-audit; it is not a substitute for fixing Phase 2 defects now.
+
+
+## Additional Phase 2 remediation — UI and staged workflow
+
+### 5. AIFormulator duplicate fallback calculations removed
+
+The primary `runDeepScientificAnalysis` path previously recalculated pH, cleaning, hardness/chelation and compatibility in the UI when orchestrator outputs were absent, and evaluated powder separately before the orchestrator evaluated it again.
+
+**Change:** `runDeepScientificAnalysis` now consumes the orchestrator's canonical outputs only. Missing ingredient percentages are forwarded as invalid/unavailable values instead of being converted to zero. Powder lab measurements are passed through `CanonicalFormulaInput.powderLabInputs` and the DAG powder node; the powder report displayed by AIFormulator comes from the orchestrator.
+
+### 6. Staged workflow fail-closed and duplicate powder path
+
+The staged workflow previously retried pH with `getSolverReadyIngredients`, evaluated powder before the final orchestrator (which evaluated it again), called hardness with missing wash volume/dose, and supplied a fixed ₹45/kg target cost.
+
+**Change:**
+- Removed the secondary pH fallback; no numeric pH is accepted when the neutralization result has no identified acid/base or secondary buffer chemistry.
+- Hardness calculation now uses strict explicit-input mode and optional `washVolumeL` / `washDoseGrams` fields.
+- Cleaning/CPI stage now sets `failIfHardnessMissing: true` and passes only explicit wash scenario inputs.
+- Powder evaluation is deferred to the authoritative DAG; the final staged result uses `orchestratorResult.powderReport`.
+- Missing ingredient percentages are preserved as `NaN` for the validation gate rather than coerced to zero.
+- Removed the hardcoded ₹45/kg target-cost context.
+- Viscosity stage records the 25 °C engineering reference as an assumption/warning when no test temperature is supplied.
+
+### 7. Scientific result UI no longer fabricates fallback metrics
+
+The AIFormulator view model and result panels previously displayed defaults such as pH 7.00, HLB 0, cleaning score 85, 100% NVR coverage, 150 ppm hardness assumptions, 20 g / 10 L wash conditions, compatibility score 0/100 or PASS-like wording, safety score 100 / SAFE, and AI grade B+ even when no calculation was available.
+
+**Change:** unavailable values now display as `N/A`, `NOT EVALUATED`, `PENDING`, or `INSUFFICIENT_DATA`; cleaning scores are no longer inferred from active matter alone; no hardness dose/volume is invented; compatibility and safety are not marked as passed without evidence. Category profile mapping is not labeled as laboratory verification.
+
+## First CI feedback and correction record
+
+- The first draft-PR CI exposed an incorrect import path for `isEngineApplicable`; corrected to the canonical `scientificProductProfiles` module.
+- The next executed full regression run reported two assertions:
+  1. An old data-contract test expected negative and above-100% chelator percentages to be clamped to zero. Updated to the fail-closed contract: `INSUFFICIENT_DATA`, invalid ingredient count, and no numeric total.
+  2. The strict DAG path was not reading the canonical `washVolumeL` field. Added explicit `washVolumeL`, `waterVolumeL`, and `washDoseGrams` to the input contract and corrected the field mapping.
+- Frontend build and P1 Phase 6 lab-evidence suite passed on an earlier intermediate commit; the full TypeScript regression suite had 2 failing assertions at that point. Later commits have not yet received a completed full CI run.
+- Android debug APK job was cancelled by subsequent branch updates; no APK build result is claimed.
+
+**Current state:** Phase 2 remains IN PROGRESS. Regression tests and full CI must be rerun against the latest branch head. The draft PR remains unmerged.
