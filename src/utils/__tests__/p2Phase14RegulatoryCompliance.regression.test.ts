@@ -727,6 +727,20 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
   );
 
   // Regression: no name-based assay, CAS, or impurity fabrication.
+  const invalidPercentageIngredient = RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 120, activePercentage: 28 });
+  assert(
+    'Scientific firewall: invalid as-supplied percentage blocks active-matter calculation',
+    invalidPercentageIngredient.activeMatterPct === undefined &&
+      invalidPercentageIngredient.missingDataPoints.some(x => x.includes('As-supplied percentage'))
+  );
+  assert(
+    'Scientific firewall: dioxane formula calculation rejects incomplete mass balance',
+    RegulatoryIngredientEngine.calculateFormulaDioxanePpm([
+      RegulatoryIngredientEngine.processIngredient({ name: 'Water', percentage: 70 }),
+      RegulatoryIngredientEngine.processIngredient({ name: 'SLES', percentage: 20, activePercentage: 28, impuritiesPpm: { dioxane_1_4: 0 } })
+    ]) === null
+  );
+
   const unverifiedSles = RegulatoryIngredientEngine.processIngredient({ name: 'SLES 28%', percentage: 30 });
   assert(
     'Scientific firewall: SLES trade name does not infer active matter, CAS identity, or dioxane assay',
