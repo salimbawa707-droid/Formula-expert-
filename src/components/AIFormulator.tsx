@@ -495,35 +495,75 @@ export default function FormulaExpert({
     return currentFingerprint !== deepAnalysisState.fingerprint;
   }, [currentFingerprint, deepAnalysisState]);
 
-  // Deep scientific analysis view-model selectors with bulletproof safe fallback normalization
+  // Scientific result selectors preserve unavailable values; UI defaults must never imply a completed calculation.
   const scientificResults = useMemo(() => {
     const res = deepAnalysisState?.scientificResults || {};
     return {
-      pH: typeof res.pH === 'number' && Number.isFinite(res.pH) ? res.pH : 7.00,
-      hlb: typeof res.hlb === 'number' && Number.isFinite(res.hlb) ? res.hlb : 0,
-      viscosity: res.viscosity || 'Medium Body',
-      density: res.density || { densityGPerCm3: 1.0, specificGravity: 1.0, densityKgPerM3: 1000, totalVolumeCm3: 100000 },
-      nvrResult: res.nvrResult || { isComplete: true, dataCompleteness: 100, unknownIngredients: [] },
-      totalSolids: res.totalSolids ?? 0,
-      activeSurfactants: res.activeSurfactants ?? 0,
-      rawSurfactants: res.rawSurfactants ?? 0,
-      waterPct: res.waterPct ?? 0,
-      surfactantBreakdown: res.surfactantBreakdown || { anionic: 0, nonionic: 0, amphoteric: 0, cationic: 0, total: 0 },
-      cmc: res.cmc || { available: false, ppm: 0, molar: 0, eligibilityStatus: 'UNAVAILABLE', eligibilityReasons: [] },
-      cleaning: res.cleaning || { cleaningScore: 85, isMeasured: false, cpi: 85 },
-      waterHardness: res.waterHardness || { totalSequestrationMg: 0, chelationCapacityMg: 0, builderCapacityMg: 0, washDoseGrams: 20 },
+      pH: typeof res.pH === 'number' && Number.isFinite(res.pH) ? res.pH : null,
+      hlb: typeof res.hlb === 'number' && Number.isFinite(res.hlb) ? res.hlb : null,
+      viscosity: res.viscosity ?? 'NOT EVALUATED',
+      density: res.density || {
+        densityGPerCm3: null,
+        specificGravity: null,
+        densityStatus: 'INSUFFICIENT_DATA'
+      },
+      nvrResult: res.nvrResult || {
+        nvrPercentage: null,
+        isComplete: false,
+        dataCompleteness: null,
+        unknownIngredients: [],
+        status: 'INSUFFICIENT_DATA'
+      },
+      totalSolids: res.totalSolids ?? null,
+      activeSurfactants: res.activeSurfactants ?? res.activeMatter ?? null,
+      rawSurfactants: res.rawSurfactants ?? null,
+      waterPct: res.waterPct ?? null,
+      surfactantBreakdown: res.surfactantBreakdown ?? null,
+      cmc: res.cmc || {
+        available: false,
+        ppm: null,
+        molar: null,
+        eligibilityStatus: 'UNAVAILABLE',
+        eligibilityReasons: []
+      },
+      cleaning: res.cleaning || {
+        cleaningScore: null,
+        isMeasured: false,
+        cpi: null,
+        provenance: 'INSUFFICIENT_DATA',
+        status: 'INSUFFICIENT_DATA'
+      },
+      waterHardness: res.waterHardness || {
+        status: 'NOT_EVALUATED',
+        totalSequestrationMg: null,
+        chelationCapacityMg: null,
+        builderCapacityMg: null,
+        washDoseGrams: null
+      },
       chelatorNames: res.chelatorNames || [],
-      foam: res.foam || 'Medium Stable Foam',
-      compatibility: res.compatibility || { compatible: true, compatibilityScore: 100, warnings: [] },
-      categorySuitability: res.categorySuitability || 'High (Optimal Formulation Profile)',
-      health: res.health || { finalScore: 90, rating: 'SAFE', alerts: [] },
-      screeningStatus: res.screeningStatus || 'SCREENING: WITHIN CALCULATED TARGETS',
-      specVerdict: res.specVerdict || 'SPECIFICATION PASSED',
-      labEvidenceVerdict: res.labEvidenceVerdict || 'NOT LAB VALIDATED',
-      releaseGateDecision: res.releaseGateDecision || 'CONDITIONAL',
+      foam: res.foam ?? 'UNKNOWN',
+      compatibility: res.compatibility || {
+        compatible: false,
+        compatibilityScore: null,
+        compatibilityStatusSemantic: 'UNKNOWN',
+        status: 'NOT_EVALUATED',
+        warnings: [],
+        alerts: []
+      },
+      categorySuitability: res.categorySuitability ?? 'UNKNOWN',
+      health: res.health || {
+        finalScore: null,
+        rating: 'ASSESSMENT_INCOMPLETE',
+        alerts: [],
+        isAssessmentComplete: false
+      },
+      screeningStatus: res.screeningStatus ?? 'NOT_EVALUATED',
+      specVerdict: res.specVerdict ?? 'PENDING',
+      labEvidenceVerdict: res.labEvidenceVerdict ?? 'NOT LAB VALIDATED',
+      releaseGateDecision: res.releaseGateDecision ?? 'BLOCKED',
       verdictReasons: res.verdictReasons || [],
-      attentionExplanation: res.attentionExplanation || 'Formula meets screening criteria. Verify with benchtop measurements.',
-      aiGrade: res.aiGrade || { score: 85, grade: 'B+' },
+      attentionExplanation: res.attentionExplanation ?? 'Scientific analysis has not been run for this formula.',
+      aiGrade: res.aiGrade ?? null,
       expertReport: res.expertReport ? {
         strengths: Array.isArray(res.expertReport.strengths) ? res.expertReport.strengths : [],
         issues: Array.isArray(res.expertReport.issues) ? res.expertReport.issues : [],
