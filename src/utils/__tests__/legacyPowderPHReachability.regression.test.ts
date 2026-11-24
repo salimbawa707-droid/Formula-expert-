@@ -155,10 +155,35 @@ export function runLegacyPowderPHReachabilityTestSuite(): {
   const legacyHeuristic = calculatePowderPH([], 'Laundry Powder');
   assert(
     'P0 Fix 4: Heuristic Isolation',
-    'Test 4: Legacy calculatePowderPH returns default baseline when empty',
-    legacyHeuristic.calculatedAqueousPH === 8.0 || legacyHeuristic.calculatedAqueousPH === 10.5,
-    legacyHeuristic.calculatedAqueousPH,
-    'Heuristic number'
+    'Test 4: Empty ingredient list returns unavailable pH instead of a heuristic number',
+    legacyHeuristic.calculatedAqueousPH === undefined &&
+      legacyHeuristic.source === 'INSUFFICIENT_DATA' &&
+      legacyHeuristic.isWithinTarget === false,
+    { pH: legacyHeuristic.calculatedAqueousPH, source: legacyHeuristic.source, withinTarget: legacyHeuristic.isWithinTarget },
+    'undefined / INSUFFICIENT_DATA / false'
+  );
+
+  const zeroSlurryConcentration = calculatePowderPH(powderIngredients as any, 'Laundry Powder', {
+    customPHConcentrationPct: 0
+  });
+  assert(
+    'P0 Fix 4: Heuristic Isolation',
+    'Test 4: Explicit zero slurry concentration is rejected instead of replaced by 1%',
+    zeroSlurryConcentration.calculatedAqueousPH === undefined &&
+      zeroSlurryConcentration.source === 'INSUFFICIENT_DATA',
+    { pH: zeroSlurryConcentration.calculatedAqueousPH, source: zeroSlurryConcentration.source },
+    'undefined / INSUFFICIENT_DATA'
+  );
+
+  const inertPowder = calculatePowderPH([
+    { name: 'Sodium Sulfate', inputPercentage: 100, activeMatterPct: 100 } as any
+  ], 'Laundry Powder');
+  assert(
+    'P0 Fix 4: Heuristic Isolation',
+    'Test 4: Non-acid/base powder does not accept pure-water equilibrium as formula pH',
+    inertPowder.calculatedAqueousPH === undefined && inertPowder.source === 'INSUFFICIENT_DATA',
+    { pH: inertPowder.calculatedAqueousPH, source: inertPowder.source },
+    'undefined / INSUFFICIENT_DATA'
   );
   assert(
     'P0 Fix 4: Heuristic Isolation',
