@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { AlertTriangle, Archive, CheckCircle2, Download, FileText, Plus, Search, ShieldAlert, Trash2, Upload, X } from 'lucide-react';
 import { db, RndDocumentRecord, RndDocumentReviewStatus, RndDocumentType } from '../db/database';
 
@@ -14,6 +15,24 @@ const DOCUMENT_TYPES: { value: RndDocumentType; label: string }[] = [
 ];
 
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
+interface NativeDocumentDownloadPlugin {
+  saveAttachment(options: { base64: string; fileName: string; mimeType: string }): Promise<{
+    uri: string; fileName: string; sizeBytes: number; location: string;
+  }>;
+}
+
+const NativeDocumentDownload = registerPlugin<NativeDocumentDownloadPlugin>('DocumentDownload');
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+}
 
 function createDocumentId(): string {
   const cryptoApi = globalThis.crypto;
@@ -106,6 +125,7 @@ export default function DocsLibrary() {
   const [typeFilter, setTypeFilter] = useState<'ALL' | RndDocumentType>('ALL');
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [documentType, setDocumentType] = useState<RndDocumentType>('SDS');
@@ -151,6 +171,7 @@ export default function DocsLibrary() {
     setSourceUrl(''); setIssueDate(''); setExpiryDate(''); setReviewNotes('');
     setReviewedBy(''); setReviewStatus('UNREVIEWED'); setAttachment(null);
     setError('');
+    setSuccessMessage('');
   };
 
   const saveDocument = async (event: React.FormEvent) => {
@@ -218,8 +239,25 @@ export default function DocsLibrary() {
     }
   };
 
-  const downloadAttachment = (doc: RndDocumentRecord) => {
+  const downloadAttachment = async (doc: RndDocumentRecord) => {
     if (!doc.attachment || !doc.fileName) return;
+    setError('');
+    setSuccessMessage('');
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const base64 = await blobToBase64(doc.attachment);
+        const saved = await NativeDocumentDownload.saveAttachment({
+          base64,
+          fileName: doc.fileName,
+          mimeType: doc.mimeType || doc.attachment.type || 'application/octet-stream'
+        });
+        setSuccessMessage(`Saved to ${saved.location}/${saved.fileName}`);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not save the attachment on this device.');
+      }
+      return;
+    }
+
     const url = URL.createObjectURL(doc.attachment);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -228,8 +266,6 @@ export default function DocsLibrary() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    // Android WebView may start the download asynchronously; revoke only after
-    // the click has been handed to the browser download pipeline.
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
@@ -299,6 +335,7 @@ export default function DocsLibrary() {
       </div>
 
       {error && !showForm && <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-950/30 p-3 text-sm text-rose-200">{error}</div>}
+      {successMessage && <div role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-3 text-sm text-emerald-200">{successMessage}</div>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-700 bg-[#0e1629] p-4"><div className="text-xs text-slate-400">Total records</div><div className="mt-1 text-2xl font-bold text-white">{documents.length}</div></div>
@@ -343,7 +380,7 @@ export default function DocsLibrary() {
             <div className="flex items-start justify-between gap-3"><div><span className="text-xs font-bold uppercase tracking-wide text-blue-300">{DOCUMENT_TYPES.find(t => t.value === doc.documentType)?.label || doc.documentType}</span><h3 className="mt-1 font-bold text-white">{doc.title}</h3><p className="mt-1 text-xs text-slate-400">{doc.issuer || 'Issuer not recorded'}{doc.referenceNumber ? ` · ${doc.referenceNumber}` : ''}</p></div><button onClick={() => void deleteDocument(doc.id)} aria-label={`Delete ${doc.title}`} className="rounded-lg p-2 text-slate-500 hover:bg-rose-950/40 hover:text-rose-300"><Trash2 className="h-4 w-4" /></button></div>
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-400"><div>Jurisdiction: <span className="text-slate-200">{doc.jurisdiction || 'Not specified'}</span></div><div>Revision: <span className="text-slate-200">{doc.revision || 'Not specified'}</span></div><div>Issue: <span className="text-slate-200">{doc.issueDate || 'Not recorded'}</span></div><div>Review / expiry: <span className={(validity === 'EXPIRED' || validity === 'INVALID') ? 'text-rose-300' : validity === 'EXPIRING' ? 'text-amber-300' : 'text-slate-200'}>{doc.expiryDate || 'No date'}{validity === 'INVALID' ? ' · Invalid date' : ''}</span></div></div>
             <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3"><span className={`rounded-full border px-2.5 py-1 text-xs ${doc.reviewStatus === 'REVIEWED_BY_USER' ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300' : doc.reviewStatus === 'REJECTED' ? 'border-rose-500/30 bg-rose-950/30 text-rose-300' : 'border-amber-500/30 bg-amber-950/30 text-amber-300'}`}>{statusLabel(doc.reviewStatus)}</span>{(validity === 'EXPIRED' || validity === 'INVALID') && <span className="inline-flex items-center gap-1 text-xs text-rose-300"><AlertTriangle className="h-3 w-3" />{validity === 'EXPIRED' ? 'Past review date' : 'Invalid expiry date'}</span>}{doc.reviewedBy && <span className="text-xs text-slate-400">Reviewer: {doc.reviewedBy}</span>}</div>
-            <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-slate-500">{doc.fileName || (doc.sourceUrl ? 'Source link only' : 'No file')} · {formatSize(doc.fileSizeBytes)}</span><div className="flex gap-2">{doc.attachment && <button onClick={() => downloadAttachment(doc)} className="inline-flex items-center gap-1 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"><Download className="h-3.5 w-3.5" />Download</button>}{doc.reviewStatus === 'UNREVIEWED' && <button onClick={() => void reviewDocument(doc)} className="inline-flex items-center gap-1 rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-600"><CheckCircle2 className="h-3.5 w-3.5" />Mark reviewed</button>}{doc.reviewStatus === 'REVIEWED_BY_USER' && <button onClick={() => void unreviewDocument(doc)} className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300">Reopen review</button>}{doc.sourceUrl && <a href={doc.sourceUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-blue-300">Source</a>}</div></div>
+            <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-slate-500">{doc.fileName || (doc.sourceUrl ? 'Source link only' : 'No file')} · {formatSize(doc.fileSizeBytes)}</span><div className="flex gap-2">{doc.attachment && <button onClick={() => void downloadAttachment(doc)} className="inline-flex items-center gap-1 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"><Download className="h-3.5 w-3.5" />Download</button>}{doc.reviewStatus === 'UNREVIEWED' && <button onClick={() => void reviewDocument(doc)} className="inline-flex items-center gap-1 rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-600"><CheckCircle2 className="h-3.5 w-3.5" />Mark reviewed</button>}{doc.reviewStatus === 'REVIEWED_BY_USER' && <button onClick={() => void unreviewDocument(doc)} className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300">Reopen review</button>}{doc.sourceUrl && <a href={doc.sourceUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-blue-300">Source</a>}</div></div>
           </article>;
         })}</div>}
       <p className="text-xs text-slate-500">This register tracks documents only. It does not generate SDS content, infer COA values, verify supplier authenticity, or grant regulatory approval. Keep separate backups of important attachments.</p>
