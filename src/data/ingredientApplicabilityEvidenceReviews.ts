@@ -286,3 +286,62 @@ export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3: IngredientEvidenceRev
     limitations: ['No catalog-specific TDS/CoA or supplier identity evidence has been reviewed.', 'EU legal threshold is not asserted as Indian law; obtain India-specific legal advice before commercialization.', 'This conditional status is a risk hold, not a positive recommendation to use NPEs.', 'Prefer evaluating an NPE-free alcohol ethoxylate/APG alternative for new consumer formulations.']
   }))
 ];
+
+
+/**
+ * Nonionic batch 4 — fragrance solubilizers and low-foam EO/PO surfactant.
+ * These are adjunct/function-specific reviews, not primary laundry surfactant approvals.
+ */
+export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_4: IngredientEvidenceReview[] = [
+  {
+    ingredientId: 'peg-40-hco', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Ethoxylated hydrogenated castor oil nonionic solubilizer/emulsifier; fragrance and oil-phase carrier rather than a default primary laundry detergent surfactant.',
+    compatibilityMechanism: 'Supplier specifications describe a water-soluble nonionic solubilizer/emulsifier with HLB around 13 and pH near neutral in dilute aqueous solution. It may help incorporate fragrance/oil components, but clarity, perfume retention, foam, rinse residue and interaction with the anionic surfactant blend must be established in the finished laundry liquid.',
+    concentrationFinding: 'Catalog activeDefault/assay is not supplier verified. Supplier documents give differing suggested levels for cosmetic/fragrance solubilization (for example 0.5–5% or 1–10%); these are not validated laundry-detergent use limits and are not transferred to this matrix. No permitted use range assigned.',
+    pHFinding: 'Supplier grade examples report pH 5–7 at 1% or pH 6–7 at 5–10% aqueous solution, depending on grade and method. These values are raw-material test conditions, not finished laundry-liquid pH limits.',
+    incompatibilityRisks: ['Excess solubilizer may suppress foam or alter detergency and rinse feel.', 'Fragrance-to-solubilizer ratio is perfume-specific; haze or separation can occur.', 'Some grades are pastes that crystallize or turn hazy in storage and require controlled warming/homogenization.', 'Exact PEG-40 HCO identity, ethoxylation profile, residual EO/dioxane and lot specification require supplier confirmation.'],
+    evidence: [
+      {title:'AWL Agri business PEG-40 HCO technical data sheet',url:'https://5.imimg.com/data5/ANDROID/Doc/2025/8/535113151/SQ/RQ/QT/17794088/tds-peg-40-hco-pdf.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'PCC Exol Rokacet HR40 product brochure',url:'https://www.products.pcc.eu/wp-content/uploads/import/product/broszura/0d1a171f-0db0-4b35-a305-58ca1f4b1fb4/rokacet-hr40_broszura_en.pdf',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['No laundry-specific supplier formula or performance dose has been established.', 'Confirm exact grade/CoA and test perfume compatibility, cold stability, foam, detergency and rinse residue before use.']
+  },
+  {
+    ingredientId: 'polysorbate-20', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'High-HLB nonionic sorbitan laurate ethoxylate; fragrance/oil solubilizer and secondary wetting/emulsifying adjunct.',
+    compatibilityMechanism: 'Supplier data gives HLB about 16.7 and describes solubilization of lipophilic materials; another supplier lists cleaning/detergent use as a nonionic wetting agent. This supports testing as a fragrance or oily-soil adjunct, not treating it as a primary laundry surfactant or assuming detergent performance from HLB alone.',
+    concentrationFinding: 'Catalog activeDefault is not a verified assay. Supplier documentation provides physical specifications and cosmetic solubilizer uses but no validated laundry-liquid dose. No permitted use range assigned.',
+    pHFinding: 'Viswaat supplier data reports pH 5–7 in a 5% aqueous solution for its Polysorbate 20 grade. This is not a universal grade limit or finished-product pH specification.',
+    incompatibilityRisks: ['High-HLB solubilizer may change perfume partitioning, foam, rinse and surfactant phase behavior.', 'Oxidation/peroxide and fatty-acid profile can vary by grade and storage history.', 'Do not assume compatibility with concentrated electrolyte or alkaline builder loads without stability testing.'],
+    evidence: [
+      {title:'Viswaat Chemicals polysorbate technical specifications',url:'https://www.viswaat.com/polysorbates.php',evidenceType:'SUPPLIER_TDS'},
+      {title:'Elemental Polysorbate 20 technical data sheet',url:'https://www.ellementalpro.com/download/M-1624_TDS_S.pdf',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Supplier evidence is primarily solubilizer/personal-care data; detergent-specific laundry performance remains unproven.', 'Obtain exact grade CoA and test fragrance clarity, cold/heat stability, foam, cleaning and rinse residue.']
+  },
+  {
+    ingredientId: 'polysorbate-80', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'High-HLB oleate-based nonionic sorbitan ethoxylate; oil-phase emulsifier/solubilizer and potential oily-soil emulsification adjunct.',
+    compatibilityMechanism: 'Supplier data identifies Polysorbate 80 as a nonionic emulsifier with HLB around 15 and pH 6–8 in 5% aqueous solution. Its oleate-rich hydrophobe differs materially from Polysorbate 20; the two grades are not interchangeable. Laundry-liquid use remains a formulation hypothesis requiring actual soil and perfume tests.',
+    concentrationFinding: 'Catalog activeDefault is not a verified assay. Supplier table provides HLB and dilute-solution pH but no laundry-detergent use level. No permitted use range assigned.',
+    pHFinding: 'Viswaat supplier data reports pH 6–8 in a 5% aqueous solution for its Polysorbate 80 grade. This is not a finished laundry-liquid pH target.',
+    incompatibilityRisks: ['Oleate unsaturation increases sensitivity to oxidation; peroxide value and storage age matter.', 'May alter foam, perfume release, rinse residue and phase behavior.', 'Electrolytes, alkaline builders and fragrance composition can affect emulsion stability.'],
+    evidence: [
+      {title:'Viswaat Chemicals polysorbate technical specifications',url:'https://www.viswaat.com/polysorbates.php',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['No supplier-specific laundry formula or use-level evidence reviewed.', 'Verify fatty-acid profile, peroxide value, CoA and stability in the actual anionic/nonionic blend.']
+  },
+  {
+    ingredientId: 'pluronic-pe-6400', productCategoryId: 'DISHWASH_AUTOMATIC', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'EO/PO block-copolymer nonionic low-foaming surfactant; detergency and wetting adjunct for mechanically agitated machine dishwashing.',
+    compatibilityMechanism: 'Published product data for BASF Pluronic PE 6400 describes a 100% active low-foaming nonionic block copolymer, with a reported cloud point near 60°C and application in dishwashers and industrial bottle washing. Its low-foam profile is directionally relevant to automatic dishwashing, but the product taxonomy includes multiple subclasses and the evidence does not validate a complete automatic-dishwash formula.',
+    concentrationFinding: 'Catalog activeDefault/100% claim is not a batch assay. Supplier-style product data gives typical properties but no universal automatic-dishwash use level. No permitted use range assigned.',
+    pHFinding: 'Available product data reports pH about 7 for a 5% aqueous solution. This is a raw-material test condition; alkaline automatic-dishwash product pH and high-temperature stability must be evaluated independently.',
+    incompatibilityRisks: ['Cloud point and detergency depend on temperature, electrolyte and builder composition.', 'Low foam must be confirmed under machine spray/soil conditions; foam control is system-level.', 'Compatibility with enzymes, bleach systems, chelants and packaging requires subclass-specific testing.', 'The available data is a distributor reproduction of BASF product properties, not an authenticated current BASF TDS/CoA.'],
+    evidence: [
+      {title:'Pluronic PE 6400 product data reproducing BASF typical properties and dishwasher applications',url:'https://www.longerchem.com/sdp/169999/4/pd-560972/9691583-2592909/Plurionic_PE6400.html',evidenceType:'TECHNICAL_GUIDANCE'}
+    ],
+    limitations: ['Obtain current BASF or authorized distributor TDS/SDS and lot CoA before approving procurement.', 'Validate low-foam behavior, cleaning, cloud point, rinse/sheening and enzyme/bleach compatibility in the exact automatic-dishwash subclass.']
+  }
+];
+
