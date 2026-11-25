@@ -101,6 +101,15 @@ export function runP1Phase8IngredientIntelligenceTestSuite(): { total: number; p
   assert('7f. CAPB acidic toilet-cleaner rationale identifies its amphoteric/zwitterionic character', INGREDIENT_INTELLIGENCE_REGISTRY['capb'].categoryApplicability['TOILET_CLEANER']?.reasoning.includes('zwitterionic/amphoteric'), true, true);
 
 
+  assert('7g. LABSA bathroom-cleaner rationale does not claim surfactant alone dissolves mineral scale', !INGREDIENT_INTELLIGENCE_REGISTRY['labsa'].categoryApplicability['BATHROOM_CLEANER'].reasoning.toLowerCase().includes('hard water deposits'), true, true);
+  assert('7h. SLES bathroom-cleaner rationale separates soap/oily soil from mineral scale', INGREDIENT_INTELLIGENCE_REGISTRY['sles'].categoryApplicability['BATHROOM_CLEANER'].reasoning.includes('does not by itself dissolve mineral scale'), true, true);
+  assert('7i. AOS bathroom-cleaner rationale requires acid/chelant for mineral scale removal', INGREDIENT_INTELLIGENCE_REGISTRY['aos'].categoryApplicability['BATHROOM_CLEANER'].reasoning.includes('requires an acid or chelant'), true, true);
+  assert('7j. GLDA kitchen-degreaser rationale does not mislabel chelation as saponification', !INGREDIENT_INTELLIGENCE_REGISTRY['glda'].categoryApplicability['KITCHEN_DEGREASER'].reasoning.toLowerCase().includes('saponification booster'), true, true);
+  assert('7k. GLDA hand-wash rationale does not claim GLDA itself creates lather', INGREDIENT_INTELLIGENCE_REGISTRY['glda'].categoryApplicability['HAND_WASH'].reasoning.includes('not itself a lathering surfactant'), true, true);
+  assert('7l. CAPB car-shampoo rationale does not guarantee paint safety without testing', INGREDIENT_INTELLIGENCE_REGISTRY['capb'].categoryApplicability['CAR_SHAMPOO'].reasoning.includes('without finished-formula and use-dilution compatibility testing'), true, true);
+  assert('7m. Citric-acid manual dishwash rationale does not equate pH with skin mildness', INGREDIENT_INTELLIGENCE_REGISTRY['citric-acid'].categoryApplicability['DISHWASH_MANUAL'].reasoning.includes('does not establish skin mildness'), true, true);
+  assert('7n. Soda-ash floor-cleaner rationale does not equate carbonate with caustic saponification', INGREDIENT_INTELLIGENCE_REGISTRY['soda-ash'].categoryApplicability['FLOOR_CLEANER'].reasoning.includes('not equivalent to a strong caustic saponification system'), true, true);
+
   // --------------------------------------------------------------------------
   // TEST GROUP 3: Structured Multi-Material Interaction Mismatch Warnings
   // --------------------------------------------------------------------------
