@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { INITIAL_VAULT_STATE } from '../src/domain/vault/initialData';
 import type { AIReviewGateRecord } from '../src/domain/vault/types';
 import { validatePhase4BAIReview } from '../src/utils/vault/vaultLogic';
@@ -21,10 +21,11 @@ function safeVaultPath(rootDir: string, reference: string): string {
     throw new Error(`Artifact path is outside evidence_vault/ai_review/: ${reference}`);
   }
   const root = resolve(rootDir);
+  const allowedRoot = resolve(root, 'evidence_vault', 'ai_review');
   const absolute = resolve(root, reference);
-  const rel = relative(root, absolute);
-  if (isAbsolute(rel) || rel === '..' || rel.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)) {
-    throw new Error(`Artifact path escapes repository root: ${reference}`);
+  const rel = relative(allowedRoot, absolute);
+  if (isAbsolute(rel) || rel === '..' || rel.startsWith(`..${sep}`)) {
+    throw new Error(`Artifact path escapes evidence_vault/ai_review/: ${reference}`);
   }
   return absolute;
 }
