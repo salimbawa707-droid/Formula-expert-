@@ -254,12 +254,21 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           script: cd android && bash ./gradlew --no-daemon connectedDebugAndroidTest
 
+      - name: Capture Android WebView runtime logs
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          adb logcat -d -v threadtime > android-webview-logcat.txt 2>&1
+          grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console' android-webview-logcat.txt | tail -n 800 > android-webview-errors.txt
+          true
+
       - name: Upload Android instrumentation reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formula-expert-android-instrumentation-reports
-          path: android/app/build/reports/androidTests/connected/
+          path: |\n            android/app/build/reports/androidTests/connected/\n            android-webview-logcat.txt\n            android-webview-errors.txt
           if-no-files-found: ignore
 
       - name: Upload debug APK
