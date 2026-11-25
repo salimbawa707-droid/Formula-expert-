@@ -94,7 +94,7 @@ try {
   const pathTraversal = validateAIReviewArtifacts({
     ...validReview,
     reviewPasses: validReview.reviewPasses.map((pass, index) =>
-      index === 1 ? { ...pass, resultArtifactRef: '../outside.json' } : pass
+      index === 1 ? { ...pass, resultArtifactRef: 'evidence_vault/ai_review/../../outside.json' } : pass
     ),
   }, root);
   assert.equal(pathTraversal.valid, false);
