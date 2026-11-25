@@ -733,8 +733,7 @@ export async function executeStagedScientificAnalysis(
     immutableSnapshot.washVolumeL,
     immutableSnapshot.washDoseGrams,
     immutableSnapshot.batchSizeKg,
-    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined,
-    true
+    canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined
   );
 
   let chelatorActivePct = 0;
