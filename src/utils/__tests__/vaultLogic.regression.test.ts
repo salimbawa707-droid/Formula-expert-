@@ -188,7 +188,7 @@ export function runVaultLogicTestSuite() {
     unresolvedDiscrepancyCount: 0,
     sourceHashesPinned: true,
     automatedValidationStatus: 'PASSED',
-    evidenceRefs: ['evidence_vault/forensic_reports/phase4b-final-review.md', 'evidence_vault/review_workbooks/phase4b-ai-review-ledger.csv'],
+    evidenceRefs: ['EVD-001', 'DS-001'],
     reviewPasses: [
       {
         method: 'SOURCE_FIRST_TRANSCRIPTION',
@@ -237,6 +237,10 @@ export function runVaultLogicTestSuite() {
   const aiRouteGate = canUnlockPhase5(aiState);
   assert(aiRouteGate.allowed === true, 'AI Review Gate', 'Complete AI-only route can replace human review when every other gate is satisfied');
   assert(aiRouteGate.reason.includes('AI_ONLY'), 'AI Review Gate', 'Gate result explicitly identifies the AI-only verification route');
+  const unknownRefState = JSON.parse(JSON.stringify(aiState));
+  unknownRefState.phases.find((phase: any) => phase.phaseId === 'phase-4b').aiReview.evidenceRefs = ['EVD-001', 'MISSING-EVIDENCE-ID'];
+  assert(canUnlockPhase5(unknownRefState).allowed === false, 'AI Review Gate', 'Unknown evidence references block AI-only closure');
+
 
   const rejectedHumanState = JSON.parse(JSON.stringify(aiState));
   rejectedHumanState.phases.find((phase: any) => phase.phaseId === 'phase-4b').independentVerificationStatus = 'REJECTED';
