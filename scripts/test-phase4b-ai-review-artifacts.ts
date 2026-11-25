@@ -99,6 +99,14 @@ try {
   }, root);
   assert.equal(pathTraversal.valid, false);
 
+  const sameFileForBoth = validateAIReviewArtifacts({
+    ...validReview,
+    reviewPasses: validReview.reviewPasses.map((pass, index) =>
+      index === 0 ? { ...pass, resultArtifactRef: manifestRef } : pass
+    ),
+  }, root);
+  assert.equal(sameFileForBoth.valid, false);
+
   const missingArtifact = validateAIReviewArtifacts({
     ...validReview,
     reviewPasses: validReview.reviewPasses.map((pass, index) =>
@@ -107,7 +115,7 @@ try {
   }, root);
   assert.equal(missingArtifact.valid, false);
 
-  console.log('Phase 4B AI review artifact integrity tests: 6/6 PASS');
+  console.log('Phase 4B AI review artifact integrity tests: 7/7 PASS');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
