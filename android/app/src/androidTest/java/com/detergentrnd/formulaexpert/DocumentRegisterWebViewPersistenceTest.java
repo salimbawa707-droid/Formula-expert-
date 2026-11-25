@@ -87,7 +87,10 @@ public class DocumentRegisterWebViewPersistenceTest {
         if (!navigationReady) {
             String diagnostic = evaluate(scenario,
                 "(()=>JSON.stringify({title:document.title,url:location.href,readyState:document.readyState,root:document.querySelector('#root')?.innerText?.slice(0,1800)||'',body:document.body?.innerText?.slice(0,2200)||'',scripts:[...document.scripts].map(s=>s.src),navButtons:[...document.querySelectorAll('button')].map(b=>(b.innerText||'').trim()).filter(Boolean).slice(0,40),runtimeError:!!document.body?.innerText?.includes('Laboratory Runtime Exception')}))()");
-            throw new AssertionError("R&D navigation did not become available in Android WebView; diagnostic=" + diagnostic);
+            String startupDiagnostic = evaluate(scenario,
+                "(()=>JSON.stringify({title:document.title,url:location.href,readyState:document.readyState,bodyText:document.body?.innerText?.slice(0,1200)||'',bodyHtml:document.body?.innerHTML?.slice(0,1800)||'',rootHtml:document.querySelector('#root')?.innerHTML?.slice(0,1800)||'',navButtons:[...document.querySelectorAll('button[data-testid^=nav-]')].length,scripts:[...document.scripts].map(s=>s.src).filter(Boolean),userAgent:navigator.userAgent,localStorageKeys:Object.keys(localStorage)}) )()");
+            android.util.Log.e("DocumentWebViewTest", "WebView startup diagnostics=" + startupDiagnostic);
+            throw new AssertionError("R&D navigation did not become available in Android WebView; diagnostic=" + diagnostic + "; startup=" + startupDiagnostic);
         }
         String clicked = evaluate(scenario,
             "(()=>{const b=document.querySelector(\"button[data-testid='nav-docs_library']\");if(!b)return 'NAV_MISSING';b.click();return 'NAV_CLICKED'})()");
