@@ -126,7 +126,7 @@ pusic_2006_table_8_dose_1_pureed_tomato,8,dose_1,pureed_tomato,93.63,93.63,MATCH
 pusic_2006_table_8_dose_1_shoe_cream,8,dose_1,shoe_cream,73.5,73.5,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
 pusic_2006_table_8_dose_1_standard_fabric_control,8,dose_1,standard_fabric_control,95.12,95.12,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
 pusic_2006_table_8_dose_2_black_coffee,8,dose_2,black_coffee,91.57,91.57,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
-pusic_2006_table_8_dose_2_red_wine,8,dose_2,red_wine,81.35,81.35,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
+pusic_2006_table_8_dose_2_red_wine,8,dose_2,red_wine,83.35,83.35,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Corrected 2026-11-26 after follow-up AI visual re-read; transcription comparison only, not lab validation"
 pusic_2006_table_8_dose_2_cocoa,8,dose_2,cocoa,93.88,93.88,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
 pusic_2006_table_8_dose_2_blood,8,dose_2,blood,65.12,65.12,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
 pusic_2006_table_8_dose_2_pumpkin_seed_oil,8,dose_2,pumpkin_seed_oil,79.9,79.9,MATCH,AI-assisted visual comparison against publisher PDF page image,13,"Transcription comparison only; not lab validation"
