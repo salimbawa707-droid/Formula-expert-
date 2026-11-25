@@ -25,7 +25,8 @@ const evidenceReviews = [
   ...LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS,
   ...AOS_LAUNDRY_EVIDENCE_REVIEWS,
   ...ANIONIC_SURFACTANT_EVIDENCE_REVIEWS,
-  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS,
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2
 ];
 const evidenceKeys = new Set(evidenceReviews.map((review) => `${review.ingredientId}::${review.productCategoryId}`));
 if (evidenceKeys.size !== evidenceReviews.length) throw new Error('Duplicate evidence review pair.');
@@ -45,9 +46,9 @@ for (const review of evidenceReviews) {
 if (INGREDIENT_APPLICABILITY_REVIEW_SUMMARY.matrixPairCount !== expectedPairs) {
   throw new Error('Review summary count mismatch.');
 }
-console.log(`PASS: ${UNIVERSAL_INGREDIENTS.length} ingredients × ${CANONICAL_PRODUCT_CATEGORY_IDS.length} categories = ${expectedPairs} unique, fail-closed review pairs.`);
+console.log(`PASS: ${UNIVERSAL_INGREDIENTS.length} ingredients × ${CANONICAL_PRODUCT_CATEGORY_IDS.length} categories = ${expectedPairs} unique matrix pairs.`);
 
-import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
+import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2 } from '../src/data/ingredientApplicabilityEvidenceReviews';
 
 const reviewedKeys = new Set<string>();
 for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
@@ -118,8 +119,8 @@ if (ANIONIC_SURFACTANT_EVIDENCE_REVIEWS.length !== expectedAnionic.size) {
 }
 console.log(`PASS: ${ANIONIC_SURFACTANT_EVIDENCE_REVIEWS.length} SAS/SLS grade/category chemistry reviews.`);
 
-const expectedNonionics = new Set(['lae-7', 'lae-9', 'apg-0810']);
-for (const review of NONIONIC_SURFACTANT_EVIDENCE_REVIEWS) {
+const expectedNonionics = new Set(['lae-7', 'lae-9', 'apg-0810', 'lae-3', 'lae-12']);
+for (const review of [...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2]) {
   if (!expectedNonionics.has(review.ingredientId) || review.productCategoryId !== 'LAUNDRY_LIQUID') {
     throw new Error(`Unexpected nonionic review scope: ${review.ingredientId} / ${review.productCategoryId}`);
   }
@@ -132,7 +133,7 @@ for (const review of NONIONIC_SURFACTANT_EVIDENCE_REVIEWS) {
     throw new Error(`Incomplete nonionic chemistry review: ${review.ingredientId}`);
   }
 }
-if (NONIONIC_SURFACTANT_EVIDENCE_REVIEWS.length !== expectedNonionics.size) {
+if (NONIONIC_SURFACTANT_EVIDENCE_REVIEWS.length + NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2.length !== expectedNonionics.size) {
   throw new Error('Missing initial nonionic surfactant review record.');
 }
-console.log(`PASS: ${NONIONIC_SURFACTANT_EVIDENCE_REVIEWS.length} initial nonionic chemistry reviews.`);
+console.log(`PASS: ${expectedNonionics.size} nonionic chemistry reviews across two batches.`);
