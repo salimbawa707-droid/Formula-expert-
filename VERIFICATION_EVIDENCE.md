@@ -48,3 +48,17 @@ executed and whose output is retained.
   green suite is weaker evidence than the assertion counts suggest.
 - Chemical, stoichiometric and laboratory correctness cannot be proven by software CI.
   A green pipeline is evidence about software behaviour only.
+
+## 5. Re-audit 2026-11-25
+
+Executed on the full tree after the App Check work: `tsc --noEmit` exit 0,
+`vite build` exit 0 (`✓ built in 12.04s`), `bun run test:all` exit 0,
+`bun run test:phase6` 48/48, `bun install --frozen-lockfile` exit 0.
+`bun audit` now runs (the earlier "no dependency scanning" gap is partially
+closed) and reports 6 advisories: 1 high `@grpc/grpc-js` (via `firebase-admin`),
+3 moderate (`glob`, `minimatch`, `uuid`), 2 low. These are open, not fixed.
+
+Six defects were found and fixed in that pass — unmounted CORS middleware,
+unset `trust proxy`, missing `users/{uid}/calibration_proposals` rules, a
+diagnostics string typo, dead Firestore imports and root scratch files. Details,
+remaining owner actions and unverified areas are in `FORENSIC_AUDIT_2026-11-25.md`.
