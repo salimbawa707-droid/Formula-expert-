@@ -374,4 +374,18 @@ jobs:
 
       - name: Test AI-only source review guardrails
         run: python evidence_vault/scripts/test_validate_pusic_ai_evidence.py
+      - name: Validate Pušić AI visual re-audit correction ledger
+        run: >-
+          python evidence_vault/scripts/validate_pusic_ai_visual_reaudit.py
+          evidence_vault/datasets/pusic_2006_tables_5_8_r460.csv
+          evidence_vault/review_workbooks/pusic_2006_ai_visual_comparison_144.csv
+          evidence_vault/review_workbooks/pusic_2006_ai_visual_reaudit_2026-11-26.csv
+
+      - name: Test Pušić AI visual re-audit correction guardrails
+        run: python evidence_vault/scripts/test_validate_pusic_ai_visual_reaudit.py
+      - name: Validate Phase 4B AI review artifact integrity
+        run: bun run scripts/validate-phase4b-ai-review-artifacts.ts
+
+      - name: Test Phase 4B AI review artifact integrity
+        run: bun run scripts/test-phase4b-ai-review-artifacts.ts
       # Figshare shampoo dataset gate intentionally excluded: this is a laundry formulation app.
