@@ -84,7 +84,11 @@ public class DocumentRegisterWebViewPersistenceTest {
             if (state != null && state.contains("NAV_READY")) { navigationReady = true; break; }
             Thread.sleep(300);
         }
-        assertTrue("R&D navigation did not become available in Android WebView", navigationReady);
+        if (!navigationReady) {
+            String diagnostic = evaluate(scenario,
+                "(()=>JSON.stringify({title:document.title,url:location.href,readyState:document.readyState,root:document.querySelector('#root')?.innerText?.slice(0,1800)||'',body:document.body?.innerText?.slice(0,2200)||'',scripts:[...document.scripts].map(s=>s.src),navButtons:[...document.querySelectorAll('button')].map(b=>(b.innerText||'').trim()).filter(Boolean).slice(0,40),runtimeError:!!document.body?.innerText?.includes('Laboratory Runtime Exception')}))()");
+            throw new AssertionError("R&D navigation did not become available in Android WebView; diagnostic=" + diagnostic);
+        }
         String clicked = evaluate(scenario,
             "(()=>{const b=document.querySelector(\"button[data-testid='nav-docs_library']\");if(!b)return 'NAV_MISSING';b.click();return 'NAV_CLICKED'})()");
         assertTrue("Docs & SDS navigation control was not clicked: " + clicked,
