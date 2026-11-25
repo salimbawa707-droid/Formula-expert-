@@ -1,5 +1,11 @@
 import { UNIVERSAL_INGREDIENTS } from './universalIngredientLibrary';
 import {
+  LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS,
+  AOS_LAUNDRY_EVIDENCE_REVIEWS,
+  ANIONIC_SURFACTANT_EVIDENCE_REVIEWS,
+  NONIONIC_SURFACTANT_EVIDENCE_REVIEWS
+} from './ingredientApplicabilityEvidenceReviews';
+import {
   CANONICAL_PRODUCT_CATEGORY_IDS,
   PRODUCT_TAXONOMY_MAP,
   type ProductCategoryId
@@ -48,20 +54,35 @@ export interface IngredientCategoryReview {
   reviewerNote: string;
 }
 
+const ALL_EVIDENCE_REVIEWS = [
+  ...LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS,
+  ...AOS_LAUNDRY_EVIDENCE_REVIEWS,
+  ...ANIONIC_SURFACTANT_EVIDENCE_REVIEWS,
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS
+];
+
+const evidenceReviewByPair = new Map(
+  ALL_EVIDENCE_REVIEWS.map((review) => [
+    `${review.ingredientId}::${review.productCategoryId}`,
+    review
+  ])
+);
+
 export const INGREDIENT_CATEGORY_REVIEW_MATRIX: IngredientCategoryReview[] =
   UNIVERSAL_INGREDIENTS.flatMap((ingredient) =>
     CANONICAL_PRODUCT_CATEGORY_IDS.map((productCategoryId) => {
       const product = PRODUCT_TAXONOMY_MAP[productCategoryId];
       const explicitRole = ingredient.role?.trim();
       const functionRole = ingredient.function?.trim();
+      const evidenceReview = evidenceReviewByPair.get(`${ingredient.id}::${productCategoryId}`);
       return {
         ingredientId: ingredient.id,
         ingredientName: ingredient.name,
         ingredientCatalogCategory: ingredient.category,
         casNumber: ingredient.casNumber,
         identityType: ingredient.identityType ?? null,
-        chemicalRole: explicitRole || functionRole || null,
-        roleBasis: explicitRole ? 'EXPLICIT_ROLE' : functionRole ? 'FUNCTION_DESCRIPTION' : 'MISSING',
+        chemicalRole: evidenceReview?.chemicalRole ?? explicitRole || functionRole || null,
+        roleBasis: evidenceReview ? 'EXPLICIT_ROLE' : explicitRole ? 'EXPLICIT_ROLE' : functionRole ? 'FUNCTION_DESCRIPTION' : 'MISSING',
         commercialGradeDefaultPct: typeof ingredient.activeDefault === 'number' ? ingredient.activeDefault : null,
         commercialGradeDefaultBasis: typeof ingredient.activeDefault === 'number'
           ? 'CATALOG_DEFAULT_NOT_VERIFIED_ASSAY'
@@ -73,14 +94,16 @@ export const INGREDIENT_CATEGORY_REVIEW_MATRIX: IngredientCategoryReview[] =
         productTargetPHMin: product.targetPHMin,
         productTargetPHMax: product.targetPHMax,
         productTargetActiveMatterPct: product.activeMatterTargetPct,
-        decision: 'NOT_REVIEWED',
+        decision: evidenceReview?.decision ?? 'NOT_REVIEWED',
         permittedUseMinPct: null,
         permittedUseMaxPct: null,
-        concentrationBasis: null,
-        compatibilityMechanism: null,
-        incompatibilityRisks: [],
-        evidenceRefs: [],
-        reviewerNote: 'Pending ingredient-specific chemical identity, supplier-grade limits, pH stability, use-level evidence and finished-product compatibility review. Taxonomy targets are screening context only.'
+        concentrationBasis: evidenceReview?.concentrationFinding ?? null,
+        compatibilityMechanism: evidenceReview?.compatibilityMechanism ?? null,
+        incompatibilityRisks: evidenceReview?.incompatibilityRisks ?? [],
+        evidenceRefs: evidenceReview?.evidence.map((item) => item.url) ?? [],
+        reviewerNote: evidenceReview
+          ? `Evidence review recorded. Concentration: ${evidenceReview.concentrationFinding} pH: ${evidenceReview.pHFinding} Limitations: ${evidenceReview.limitations.join(' ')}`
+          : 'Pending ingredient-specific chemical identity, supplier-grade limits, pH stability, use-level evidence and finished-product compatibility review. Taxonomy targets are screening context only.'
       } satisfies IngredientCategoryReview;
     })
   );
