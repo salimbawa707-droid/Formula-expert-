@@ -118,11 +118,23 @@ if (ANIONIC_SURFACTANT_EVIDENCE_REVIEWS.length !== expectedAnionic.size) {
 }
 console.log(`PASS: ${ANIONIC_SURFACTANT_EVIDENCE_REVIEWS.length} SAS/SLS grade/category chemistry reviews.`);
 
-const expectedNonionics = new Set(['lae-7', 'lae-9', 'apg-0810', 'lae-3', 'lae-12', 'apg-1214', 'np-6', 'np-9', 'np-10']);
-for (const review of [...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2, ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3]) {
-  if (!expectedNonionics.has(review.ingredientId) || review.productCategoryId !== 'LAUNDRY_LIQUID') {
-    throw new Error(`Unexpected nonionic review scope: ${review.ingredientId} / ${review.productCategoryId}`);
-  }
+const nonionicReviews = [
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS,
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2,
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3
+];
+const expectedNonionicPairs = new Set([
+  'lae-7::LAUNDRY_LIQUID', 'lae-9::LAUNDRY_LIQUID', 'apg-0810::LAUNDRY_LIQUID',
+  'lae-3::LAUNDRY_LIQUID', 'lae-12::LAUNDRY_LIQUID',
+  'apg-1214::LAUNDRY_LIQUID', 'apg-1214::DISHWASH_MANUAL', 'apg-1214::KITCHEN_DEGREASER',
+  'np-6::LAUNDRY_LIQUID', 'np-9::LAUNDRY_LIQUID', 'np-10::LAUNDRY_LIQUID'
+]);
+const actualNonionicPairs = new Set(nonionicReviews.map((review) => `${review.ingredientId}::${review.productCategoryId}`));
+if (actualNonionicPairs.size !== nonionicReviews.length) throw new Error('Duplicate nonionic ingredient/category evidence pair.');
+for (const key of expectedNonionicPairs) {
+  if (!actualNonionicPairs.has(key)) throw new Error(`Missing nonionic review pair: ${key}`);
+}
+for (const review of nonionicReviews) {
   if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
     throw new Error(`Nonionic review references unknown ingredient: ${review.ingredientId}`);
   }
@@ -132,7 +144,7 @@ for (const review of [...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, ...NONIONIC_SURFA
     throw new Error(`Incomplete nonionic chemistry review: ${review.ingredientId}`);
   }
 }
-if (NONIONIC_SURFACTANT_EVIDENCE_REVIEWS.length + NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2.length + NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3.length !== expectedNonionics.size) {
-  throw new Error('Missing initial nonionic surfactant review record.');
+if (actualNonionicPairs.size !== expectedNonionicPairs.size) {
+  throw new Error('Unexpected or missing nonionic ingredient/category evidence pair.');
 }
-console.log(`PASS: ${expectedNonionics.size} nonionic ingredient IDs reviewed across three batches.`);
+console.log(`PASS: ${actualNonionicPairs.size} nonionic ingredient/category reviews across three batches.`);
