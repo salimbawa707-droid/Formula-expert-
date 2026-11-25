@@ -114,7 +114,7 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
     await db.formulas.put(record);
     
     // Sync to Firestore if authenticated with Firebase
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       try {
         const { saveUserFormula } = await import('../services/firebaseClient');
         await saveUserFormula(firebaseAuth.currentUser.uid, record);
