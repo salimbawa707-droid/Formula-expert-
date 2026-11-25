@@ -85,3 +85,38 @@ const laundryLiquidSurfactantReviews: IngredientEvidenceReview[] = [
 ];
 
 export const LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS = laundryLiquidSurfactantReviews;
+
+export const AOS_LAUNDRY_EVIDENCE_REVIEWS: IngredientEvidenceReview[] = [
+  {
+    ingredientId: 'aos-38',
+    productCategoryId: 'LAUNDRY_LIQUID',
+    decision: 'APPLICABLE',
+    chemicalRole: 'Aqueous sodium C14-16 alpha-olefin sulfonate anionic surfactant; primary or co-primary cleanser, wetting, emulsifying and foam contributor.',
+    compatibilityMechanism: 'AOS sulfonate headgroup provides anionic detergency; supplier TDS describes laundry detergent use, water solubility, foam and emulsification. AOS is chemically distinct from sulfate ester surfactants and has reported hard-water tolerance, but blend compatibility and machine foam must be tested.',
+    concentrationFinding: 'Catalog activeDefault 38% is consistent with supplier TDS active matter 37–39% for a named AOS 38 grade. This verifies a plausible grade specification, not the actual catalog supplier lot. No approved finished-product use range assigned; category active matter target 16% is a product screening target, not a raw-material dose.',
+    pHFinding: 'Supplier specifications vary: one AOS 38 TDS reports pH 7–9 in 5% aqueous solution; another reports pH 8.5–11.5 under a different solution basis. Do not merge these into one universal raw-material pH limit. LAUNDRY_LIQUID target pH 7.5–9.5 is a finished-product screening range only.',
+    incompatibilityRisks: ['Anionic AOS is incompatible with cationic fabric-softener actives through ion-pairing/precipitation risk.', 'High foam may be unsuitable for front-load or controlled-foam products without blend/dose qualification.', 'Electrolytes, hydrotropes and co-surfactants can shift viscosity and phase stability.', 'Supplier active matter, free alkali, sulfate, chloride and unsulfated matter vary by grade.'],
+    evidence: [
+      { title: 'Raw Chem AOS 38 technical data sheet (2025)', url: 'https://rprorwxholqklp5p.leadongcdn.com/TDS-22034-AOS38-RC-aidlpBpqKoqloSRnlomrmnrip.pdf?dp=GvUApKfKKUAU', evidenceType: 'SUPPLIER_TDS' },
+      { title: 'ORID AOS 38 product specification', url: 'https://www.sodiumdodecylsulfate.com/pdf/Sodium%20C14-16%20olefin%20sulfonate%2038%28AOS38%29.pdf', evidenceType: 'SUPPLIER_TDS' },
+      { title: 'Indian AOS 38 commercial listing', url: 'https://ases.in/products/alpha-olefin-sulphonate-a-o-s-liquid', evidenceType: 'TECHNICAL_GUIDANCE' }
+    ],
+    limitations: ['Obtain the actual supplier TDS and lot CoA before setting raw-material assay or pH bounds.', 'No universal concentration maximum/minimum is established by the cited TDS.', 'Finished foam profile, detergency, viscosity, storage stability and fabric compatibility require testing.']
+  },
+  {
+    ingredientId: 'aos-92',
+    productCategoryId: 'LAUNDRY_POWDER',
+    decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Concentrated solid sodium C14-16 olefin sulfonate anionic surfactant for dry detergent blends.',
+    compatibilityMechanism: 'Powder AOS can supply anionic detergency and foam after dissolution in wash water. Powder suitability depends on particle form, active assay, moisture, carrier/salt content, dust behavior and dry-blend uniformity; liquid AOS 38 data cannot validate the 92% powder grade.',
+    concentrationFinding: 'Catalog activeDefault 92% is not verified by a grade-specific CoA/TDS. A separate supplier document describes AOS powder at 90–94% active, but this is not confirmation of this catalog supplier or exact grade. No permitted use range assigned; the laundry-powder active matter target is not a raw-material dosage limit.',
+    pHFinding: 'No verified pH specification for the exact catalog AOS 92 grade is available. AOS 38 solution pH data must not be transferred to the powder grade. Finished laundry-powder slurry pH target 9.5–11.5 is only screening context and does not establish dry raw-material stability.',
+    incompatibilityRisks: ['Moisture and hygroscopic salt/carrier content can promote caking and poor flow.', 'Anionic AOS is incompatible with cationic softener actives in a combined aqueous phase.', 'High foam can conflict with low-foam machine requirements.', 'Dust exposure and local supplier SDS handling controls must be assessed.'],
+    evidence: [
+      { title: 'MOS Chemical AOS grades specification (AOS 92 active 90–94%)', url: 'https://www.mos-surfactant.com/products/categories/sodium-alpha-olefin-sulfonate-aos.html', evidenceType: 'SUPPLIER_TDS' },
+      { title: 'Ultramarine AOS powder specification (95% grade; adjacent grade only)', url: 'https://5.imimg.com/data5/SELLER/Doc/2024/2/388913319/NZ/TT/NG/151282752/alpha-olefin-sulfonate-aos.pdf', evidenceType: 'SUPPLIER_TDS' }
+    ],
+    limitations: ['Exact supplier TDS/CoA for the catalog 92% grade is mandatory; 95% and 90–94% adjacent grades are not interchangeable evidence.', 'Confirm moisture, bulk density, particle size, free alkali, sulfate and chloride.', 'Dry-blend flow, caking, dissolution, foam and wash performance require pilot-batch testing.']
+  }
+];
+
