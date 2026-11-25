@@ -40,7 +40,7 @@ All conditions below are mandatory:
 3. Both required methods are present: `SOURCE_FIRST_TRANSCRIPTION` and `INDEPENDENT_SOURCE_RECHECK`.
 4. Both passes use the same pinned source-manifest SHA-256 and produce distinct result SHA-256 hashes.
 5. Both passes are blind to the other pass's output and report zero unresolved discrepancies.
-6. All source hashes are pinned and all evidence references resolve to registered vault evidence, dataset, engine, or audit IDs; the source-manifest hash pins the underlying committed artifacts.
+6. All source hashes are pinned and all evidence references resolve to registered vault evidence, dataset, engine, or audit IDs; the source-manifest hash pins the underlying committed artifacts; each pass also stores the manifest path and its own result-artifact path.
 7. The automated evidence, accounting, provenance, schema, regression, and fail-closed validators pass on the exact commit being considered for closure.
 8. The consolidated discrepancy register has zero unresolved items. Corrected items retain their original value, corrected value, source location, reason, and history.
 9. Dataset rights and license status are explicitly classified. `REVIEW_PENDING`, unknown rights, or non-commercial restrictions cannot be silently treated as commercial clearance.
@@ -69,7 +69,7 @@ The `ProjectPhase.aiReview` record stores:
 - coverage percentage and unresolved discrepancy count;
 - source-hash pinning and latest automated validation status;
 - registered vault evidence/dataset/engine/audit IDs (the runtime gate rejects unknown IDs);
-- two review-pass records with method, model, timestamp, source-manifest hash, result hash, blind flag, and discrepancy count;
+- two review-pass records with method, model, timestamp, source-manifest path/hash, result-artifact path/hash, blind flag, and discrepancy count;
 - `humanReviewPerformed: false`.
 
 `validatePhase4BAIReview` enforces the semantic acceptance criteria. `validateAndParseVaultJSON` enforces structural validity. `canUnlockPhase5` accepts either the existing human-confirmed route or the complete AI-only route, but never allows an AI route to override a recorded human-review rejection. All other Phase 5 gates remain unchanged.
@@ -94,3 +94,8 @@ The Pušić production CSV's `reviewer_2`, `review_match`, and `SOURCE_EXTRACTED
 | Phase 4 — automated closure and Phase 5 decision | Run exact-head CI, validate full evidence coverage and every gate, then close Phase 4B | **LOCKED/PENDING**. The AI gate record remains IN_PROGRESS / PARTIAL_SUBGATE / 0%; Phase 5 stays LOCKED. |
 
 Phase 1 is the only active AI review phase. Do not mark it complete merely because the Pušić sub-gate or nonionic literature review is complete; the complete Phase 4B checklist must be enumerated and covered.
+
+
+## Artifact integrity validation
+
+A Phase 4B AI review cannot be marked PASSED on metadata alone. Each review pass must reference a source manifest and a distinct result artifact under `evidence_vault/ai_review/`. The dedicated artifact validator reads the committed files and recomputes SHA-256; the recorded hashes must match the actual bytes. Path traversal or references outside the AI review vault are rejected. While the phase record is IN_PROGRESS, the validator reports that the gate is not closed and does not require future artifacts to exist yet.
