@@ -202,3 +202,28 @@ export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS: IngredientEvidenceReview[] = 
     limitations: ['Confirm exact supplier grade, pH test method and solids/active-matter definition.', 'No universal dose or pH stability limit inferred.', 'Test blend clarity, foam, viscosity, pH drift and storage stability.']
   }
 ];
+
+
+/** Second nonionic batch: lower- and higher-EO alcohol ethoxylate grades. */
+export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2: IngredientEvidenceReview[] = [
+  {
+    ingredientId: 'lae-3', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Low-EO C12–15 fatty alcohol ethoxylate nonionic surfactant; oil-soluble emulsifier and oily-soil coupling aid rather than a presumed fully water-soluble primary detergent.',
+    compatibilityMechanism: 'Three EO units give lower hydrophilicity than LAE-7/LAE-9. PETRONAS C12–C14 FAE-3 identifies the grade as nonionic and homecare/I&I cleaner emulsifier, but reports it insoluble in water and no aqueous cloud point. It therefore requires a compatible solvent/hydrotrope or blend architecture and clarity testing; do not assume it will dissolve as a neat aqueous surfactant.',
+    concentrationFinding: 'Catalog activeDefault 100% is not a supplier assay. Adjacent PETRONAS C12–C14 FAE-3 data gives water max 0.1%; no use range or universal dose is established.',
+    pHFinding: 'PETRONAS reports pH 6.0–7.5 in 1% IPA/water, not plain water. This cannot be treated as an aqueous pH stability range. Finished laundry-liquid target pH 7.5–9.5 is only screening context.',
+    incompatibilityRisks: ['Water insolubility can cause haze, separation or poor incorporation in aqueous laundry liquid.', 'Low EO/higher oil affinity can change detergency and rinse behavior.', 'Solvent/hydrotrope addition changes VOC, flammability, preservation and regulatory profile.', 'Cationic incompatibility must be assessed for mixed systems.'],
+    evidence: [{title:'PETRONAS Ethonas FAE-3 product data sheet',url:'https://www.petronas.com/pcg/sites/default/files/2023-07/Products_Documents_FAE-3_May23%20SCA.pdf',evidenceType:'SUPPLIER_TDS'}],
+    limitations: ['C12–C14 is adjacent evidence to catalog C12–15; exact supplier grade TDS/CoA required.', 'No numeric permitted use range assigned.', 'Do not approve for a clear water-based laundry liquid until solubility, dilution path, clouding and storage tests pass.']
+  },
+  {
+    ingredientId: 'lae-12', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Higher-EO C12–15 fatty alcohol ethoxylate nonionic surfactant; hydrophilic detergent/emulsifier candidate with high water compatibility relative to low-EO homologues.',
+    compatibilityMechanism: 'Higher average EO generally increases hydrophilicity. An Indian supplier lists C12–C15 EO-12 as a nonionic surfactant with 99.5% active content and a 63–66°C cloud point. These are supplier-reported properties for a named commercial product, not a verification of the catalog grade. Cloud point and phase behavior still depend on electrolyte, temperature and blend composition.',
+    concentrationFinding: 'Catalog activeDefault 100% is unverified; one Indian supplier reports 99.5% active content for its C12–C15 EO-12 product. This is a supplier-specific specification, not a guaranteed catalog assay. No finished-product use range assigned.',
+    pHFinding: 'Supplier reports pH 5.5–7.5 and cloud point 63–66°C; the pH test method is not stated on the product page, so it must not be treated as a validated stability window. Finished laundry-liquid target 7.5–9.5 is screening context only.',
+    incompatibilityRisks: ['Electrolyte and temperature can move cloud point and cause haze/phase separation.', 'High nonionic loading can reduce foam and alter viscosity.', 'Confirm EO distribution, residual EO/1,4-dioxane and supplier quality limits.', 'Anionic/nonionic compatibility is generally plausible but final blend stability remains formula-specific.'],
+    evidence: [{title:'Matangi Industries C12–C15 Alcohol Ethoxylate 12 product specification',url:'https://www.matangiindustries.com/products/c12-c15-alcohol-ethoxylate-12/',evidenceType:'SUPPLIER_TDS'}],
+    limitations: ['Supplier page is not a lot-specific CoA; obtain current TDS/SDS/CoA for the exact material.', 'pH method is unspecified; do not infer raw-material pH tolerance.', 'No numeric use range assigned; validate cloud point, low/high-temperature stability, detergency and rinse.']
+  }
+];
