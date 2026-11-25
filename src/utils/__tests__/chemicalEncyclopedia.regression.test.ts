@@ -244,10 +244,18 @@ export function runChemicalEncyclopediaTestSuite() {
   const unresolvedCatalogNames = UNIVERSAL_INGREDIENTS
     .filter(item => !resolveUniversalIngredientIdentity(item.name))
     .map(item => item.id);
+  const unresolvedCatalogIds = UNIVERSAL_INGREDIENTS
+    .filter(item => !resolveUniversalIngredientIdentity(item.id))
+    .map(item => item.id);
   assert(
     unresolvedCatalogNames.length === 0,
     'Test 20B: Every ingredient in the complete master database resolves by its display name',
     `Unresolved records: ${unresolvedCatalogNames.length}`
+  );
+  assert(
+    unresolvedCatalogIds.length === 0,
+    'Test 20D: Every ingredient in the complete master database resolves by its canonical ID',
+    `Unresolved records: ${unresolvedCatalogIds.length}`
   );
 
   // 20C. Common base-identity shorthand should be recognized without choosing a grade.
