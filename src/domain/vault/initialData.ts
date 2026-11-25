@@ -203,7 +203,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
     {
       phaseId: 'phase-5',
       name: 'Phase 5 — Numerical Validation & Model Calibration',
-      subtitle: 'LOCKED — Strictly Gated Behind Phase 4B Formal Sign-Off',
+      subtitle: 'LOCKED — Requires Complete Phase 4B AI-Only or Human Review',
       status: 'LOCKED',
       reportedClosed: false,
       independentVerificationStatus: 'UNESTABLISHED',
