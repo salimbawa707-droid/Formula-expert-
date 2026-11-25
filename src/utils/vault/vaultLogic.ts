@@ -216,6 +216,8 @@ export function validatePhase4BAIReview(
   const methods = new Set<string>();
   const sourceManifests = new Set<string>();
   const resultHashes = new Set<string>();
+  const manifestRefs = new Set<string>();
+  const resultRefs = new Set<string>();
   const sha256 = /^[a-f0-9]{64}$/i;
 
   for (const pass of review.reviewPasses) {
@@ -224,18 +226,23 @@ export function validatePhase4BAIReview(
     methods.add(pass.method);
     if (typeof pass.reviewerModel !== 'string' || !pass.reviewerModel.trim()) return fail('AI review model identity is missing.');
     if (typeof pass.reviewedAt !== 'string' || !Number.isFinite(Date.parse(pass.reviewedAt))) return fail('AI review timestamp is invalid.');
+    if (typeof pass.sourceManifestRef !== 'string' || !pass.sourceManifestRef.startsWith('evidence_vault/ai_review/')) return fail('AI review source manifest reference must point inside evidence_vault/ai_review/.');
     if (typeof pass.sourceManifestSha256 !== 'string' || !sha256.test(pass.sourceManifestSha256)) return fail('AI review source manifest hash is invalid.');
+    if (typeof pass.resultArtifactRef !== 'string' || !pass.resultArtifactRef.startsWith('evidence_vault/ai_review/')) return fail('AI review result artifact reference must point inside evidence_vault/ai_review/.');
     if (typeof pass.resultSha256 !== 'string' || !sha256.test(pass.resultSha256)) return fail('AI review result hash is invalid.');
     if (pass.blindToOtherPasses !== true) return fail('Each AI review pass must be blind to the other pass result.');
     if (!Number.isSafeInteger(pass.discrepancyCount) || pass.discrepancyCount !== 0) return fail('Each AI review pass must have zero unresolved discrepancies.');
+    manifestRefs.add(pass.sourceManifestRef);
     sourceManifests.add(pass.sourceManifestSha256);
+    resultRefs.add(pass.resultArtifactRef);
     resultHashes.add(pass.resultSha256);
   }
 
   if (methods.size !== 2 || !requiredMethods.has('SOURCE_FIRST_TRANSCRIPTION') || !requiredMethods.has('INDEPENDENT_SOURCE_RECHECK')) {
     return fail('AI review must include both source-first transcription and independent source re-check methods.');
   }
-  if (sourceManifests.size !== 1) return fail('AI review passes do not reference the same pinned source manifest.');
+  if (manifestRefs.size !== 1 || sourceManifests.size !== 1) return fail('AI review passes do not reference the same pinned source manifest.');
+  if (resultRefs.size !== review.reviewPasses.length) return fail('AI review passes must reference distinct result artifacts.');
   if (resultHashes.size !== review.reviewPasses.length) return fail('AI review pass outputs must have distinct hashes.');
 
   return { passed: true, reason: 'Complete AI-only Phase 4B review passed its two-pass, source-pinned, zero-discrepancy protocol.' };
@@ -469,11 +476,16 @@ export function validateAndParseVaultJSON(jsonStr: string): {
           if (!['SOURCE_FIRST_TRANSCRIPTION', 'INDEPENDENT_SOURCE_RECHECK'].includes(pass.method)) {
             errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].method is invalid.`);
           }
-          for (const field of ['reviewerModel', 'reviewedAt', 'sourceManifestSha256', 'resultSha256']) {
+          for (const field of ['reviewerModel', 'reviewedAt', 'sourceManifestRef', 'sourceManifestSha256', 'resultArtifactRef', 'resultSha256']) {
             if (!isNonEmptyString(pass[field])) errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} is required.`);
           }
           if (typeof pass.reviewedAt === 'string' && !Number.isFinite(Date.parse(pass.reviewedAt))) {
             errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].reviewedAt is invalid.`);
+          }
+          for (const field of ['sourceManifestRef', 'resultArtifactRef']) {
+            if (typeof pass[field] === 'string' && !pass[field].startsWith('evidence_vault/ai_review/')) {
+              errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} must point inside evidence_vault/ai_review/.`);
+            }
           }
           for (const field of ['sourceManifestSha256', 'resultSha256']) {
             if (typeof pass[field] === 'string' && !/^[a-f0-9]{64}$/i.test(pass[field])) {
