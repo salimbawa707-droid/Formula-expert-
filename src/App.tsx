@@ -25,6 +25,7 @@ import {
   Users,
   ShieldCheck
 } from 'lucide-react';
+import { isConfiguredAdminEmail } from './config/adminAccess';
 import { ChemicalLabelVisionScannerModal } from './components/scanner/ChemicalLabelVisionScannerModal';
 import { CollaborativeFormulaRoomModal } from './components/collaborative/CollaborativeFormulaRoomModal';
 import { calculateLabAlignmentScore } from './utils/labEvidenceEngine';
@@ -488,7 +489,7 @@ export default function App() {
   const isOwner = Boolean(
     currentUser &&
     currentUser.emailVerified &&
-    currentUser.email?.toLowerCase() === 'salimbawa707@gmail.com'
+    isConfiguredAdminEmail(currentUser.email)
   );
 
   const [activeTab, setActiveTab] = useState<TabType>('formula_expert');

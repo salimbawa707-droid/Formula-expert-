@@ -1,7 +1,7 @@
 import type { User } from 'firebase/auth';
 import { app, auth } from './firebaseAuthClient';
 export { auth, signInWithGoogle, signOutUser } from './firebaseAuthClient';
-import rawAppletConfig from '../../firebase-applet-config.json' with { type: 'json' };
+import { firebaseEnvConfig } from '../config/firebaseEnv';
 import { 
   getFirestore, 
   doc, 
@@ -15,8 +15,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 
-const env = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-const firestoreDatabaseId = env.VITE_FIRESTORE_DATABASE_ID || (rawAppletConfig as any)?.firestoreDatabaseId || (rawAppletConfig as any)?.projectId || '';
+const firestoreDatabaseId = firebaseEnvConfig.firestoreDatabaseId || firebaseEnvConfig.projectId;
 
 export const db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
 

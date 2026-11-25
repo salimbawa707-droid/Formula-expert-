@@ -12,9 +12,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Admin rights come only from an admins/{uid} document or a server-set
+    // admin custom claim. No personal email address lives in these rules.
     function isAdmin() {
       return isSignedIn() && (
-        (request.auth.token.email != null && request.auth.token.email.lower() == 'salimbawa707@gmail.com') ||
+        (request.auth.token.admin != null && request.auth.token.admin == true) ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }

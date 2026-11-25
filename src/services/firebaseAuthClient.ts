@@ -1,18 +1,23 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, type User } from 'firebase/auth';
-import rawAppletConfig from '../../firebase-applet-config.json' with { type: 'json' };
+import { firebaseEnvConfig, missingFirebaseEnvKeys } from '../config/firebaseEnv';
 
-const env = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-const fallbackApiKey = 'AIzaSyCSoBbyRjYpzWIjsHbKLAfgWbh6SxcONMc';
-const fallbackProjectId = 'imagined-zone-cv4kj';
+if (missingFirebaseEnvKeys.length > 0) {
+  console.error(
+    `[Firebase] Missing required environment variables: ${missingFirebaseEnvKeys.join(', ')}. ` +
+      'Copy .env.example to .env and fill in your Firebase project values.'
+  );
+}
 
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || (rawAppletConfig as any)?.apiKey || fallbackApiKey,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || (rawAppletConfig as any)?.authDomain || `${fallbackProjectId}.firebaseapp.com`,
-  projectId: env.VITE_FIREBASE_PROJECT_ID || (rawAppletConfig as any)?.projectId || fallbackProjectId,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || (rawAppletConfig as any)?.storageBucket || `${fallbackProjectId}.firebasestorage.app`,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || (rawAppletConfig as any)?.messagingSenderId || '678655473700',
-  appId: env.VITE_FIREBASE_APP_ID || (rawAppletConfig as any)?.appId || '1:678655473700:web:d29cf4d8feff5e983240b1',
+  apiKey: firebaseEnvConfig.apiKey,
+  authDomain: firebaseEnvConfig.authDomain ||
+    (firebaseEnvConfig.projectId ? `${firebaseEnvConfig.projectId}.firebaseapp.com` : ''),
+  projectId: firebaseEnvConfig.projectId,
+  storageBucket: firebaseEnvConfig.storageBucket ||
+    (firebaseEnvConfig.projectId ? `${firebaseEnvConfig.projectId}.firebasestorage.app` : ''),
+  messagingSenderId: firebaseEnvConfig.messagingSenderId,
+  appId: firebaseEnvConfig.appId,
 };
 
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

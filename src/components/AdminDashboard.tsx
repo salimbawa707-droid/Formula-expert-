@@ -22,6 +22,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { apiFetch } from '../services/apiBase';
+import { isConfiguredAdminEmail } from '../config/adminAccess';
 
 interface UserProfile {
   id: string;
@@ -105,7 +106,7 @@ export const AdminDashboard: React.FC = () => {
   const isSuperAdmin = Boolean(
     currentUser &&
     currentUser.emailVerified &&
-    currentUser.email?.toLowerCase() === 'salimbawa707@gmail.com'
+    isConfiguredAdminEmail(currentUser.email)
   );
 
   const fetchData = async () => {
@@ -272,7 +273,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Admin Console Authentication</h2>
           <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-            The Admin Console is reserved for the app owner (<strong className="text-blue-400">salimbawa707@gmail.com</strong>).
+            The Admin Console is reserved for accounts on the configured <strong className="text-blue-400">ADMIN_EMAILS</strong> allow-list.
           </p>
           <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs font-mono text-slate-300 mb-6">
             Current Session: {currentUser?.email ? `${currentUser.email} (${currentUser.emailVerified ? 'Verified' : 'Unverified'})` : (profile.email || 'Guest User (Not Signed In)')}
@@ -540,7 +541,7 @@ export const AdminDashboard: React.FC = () => {
                       return (
                         <tr key={user.id} className="hover:bg-slate-800/40 transition">
                           <td className="py-3.5 px-4 font-mono font-medium text-white flex items-center gap-2">
-                            {user.email === 'salimbawa707@gmail.com' && (
+                            {isConfiguredAdminEmail(user.email) && (
                               <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded">ADMIN</span>
                             )}
                             {user.email || 'Anonymous / Unset'}

@@ -418,7 +418,7 @@ import { initializeApp, getApps, getApp, cert, type App } from 'firebase-admin/a
 import { getAuth } from 'firebase-admin/auth';
 import { google } from 'googleapis';
 import fs from 'fs';
-import firebaseConfig from '../../firebase-applet-config.json' with { type: 'json' };
+import { firebaseProjectId, isConfiguredAdminEmail } from '../config/serverEnv.ts';
 
 import {
   DurablePurchaseStore,
@@ -442,9 +442,10 @@ export function getFirebaseAdminApp(): App {
             certObj = JSON.parse(fs.readFileSync(serviceAccountKey, 'utf8'));
           }
           if (certObj) {
+            const projectId = certObj.project_id || firebaseProjectId();
             firebaseAdminApp = initializeApp({
               credential: cert(certObj),
-              projectId: certObj.project_id || (firebaseConfig as any).projectId
+              ...(projectId ? { projectId } : {})
             });
           }
         } catch (e) {
@@ -452,10 +453,11 @@ export function getFirebaseAdminApp(): App {
         }
       }
       if (!firebaseAdminApp) {
-        // Initialize with canonical project ID from applet config to support cryptographic verification of Google-signed ID tokens
-        firebaseAdminApp = initializeApp({
-          projectId: (firebaseConfig as any).projectId || 'imagined-zone-cv4kj'
-        });
+        // Initialize with the configured project ID to support cryptographic
+        // verification of Google-signed ID tokens.
+        firebaseAdminApp = initializeApp(
+          firebaseProjectId() ? { projectId: firebaseProjectId() } : {}
+        );
       }
     }
   }
@@ -620,11 +622,12 @@ export async function verifyAuthToken(
       return { valid: false, error: 'Cryptographic verification failed: Missing uid in decoded token.' };
     }
 
-    // Role comes strictly from server-assigned custom claims on the token or verified owner email
+    // Role comes strictly from server-assigned custom claims on the token or the
+    // ADMIN_EMAILS allow-list; no personal address is hardcoded in the source.
     const isOwnerAdmin =
       decodedToken.email_verified === true &&
       typeof decodedToken.email === 'string' &&
-      decodedToken.email.toLowerCase() === 'salimbawa707@gmail.com';
+      isConfiguredAdminEmail(decodedToken.email);
     const role: 'user' | 'admin' = (decodedToken.admin === true || decodedToken.role === 'admin' || isOwnerAdmin)
       ? 'admin'
       : 'user';

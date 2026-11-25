@@ -12,7 +12,7 @@ import crypto from 'crypto';
 import { initializeApp, getApps, getApp, cert, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import fs from 'fs';
-import firebaseConfig from '../../firebase-applet-config.json' with { type: 'json' };
+import { firebaseProjectId, firestoreDatabaseId } from '../config/serverEnv.ts';
 
 export interface PurchaseGrantRecord {
   tokenFingerprint: string;
@@ -56,20 +56,24 @@ export function getDurableFirestore(): Firestore | null {
         } else if (fs.existsSync(serviceAccountKey)) {
           certObj = JSON.parse(fs.readFileSync(serviceAccountKey, 'utf8'));
         }
-        if (certObj) {
+        const projectId = certObj?.project_id || firebaseProjectId();
+        if (certObj && projectId) {
           app = initializeApp({
             credential: cert(certObj),
-            projectId: certObj.project_id || (firebaseConfig as any).projectId
+            projectId
           });
+        } else if (certObj) {
+          app = initializeApp({ credential: cert(certObj) });
         } else {
-          app = initializeApp({ projectId: (firebaseConfig as any).projectId || 'imagined-zone-cv4kj' });
+          app = initializeApp({});
         }
       } else {
-        app = initializeApp({ projectId: (firebaseConfig as any).projectId || 'imagined-zone-cv4kj' });
+        const projectId = firebaseProjectId();
+        app = initializeApp(projectId ? { projectId } : {});
       }
     }
 
-    const databaseId = (firebaseConfig as any).firestoreDatabaseId;
+    const databaseId = firestoreDatabaseId();
     adminFirestoreInstance = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
     return adminFirestoreInstance;
   } catch (err) {

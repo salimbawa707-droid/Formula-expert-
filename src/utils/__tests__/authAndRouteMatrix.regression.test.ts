@@ -180,7 +180,7 @@ export async function runAuthAndRouteMatrixTestSuite(): Promise<RouteMatrixTestS
   assert(
     'ClientRBAC 1: DEFAULT_PROFILE is unprivileged guest (isAuthenticated: false, no owner email/role)',
     defaultProfileBlock.includes('isAuthenticated: false') &&
-      !defaultProfileBlock.includes('salimbawa707@gmail.com') &&
+      !defaultProfileBlock.includes('@gmail.com') &&
       !defaultProfileBlock.includes('Super Admin'),
     defaultProfileBlock,
     'unprivileged guest default'
