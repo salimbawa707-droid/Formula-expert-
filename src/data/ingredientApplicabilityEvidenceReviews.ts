@@ -227,3 +227,62 @@ export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2: IngredientEvidenceRev
     limitations: ['Supplier page is not a lot-specific CoA; obtain current TDS/SDS/CoA for the exact material.', 'pH method is unspecified; do not infer raw-material pH tolerance.', 'No numeric use range assigned; validate cloud point, low/high-temperature stability, detergency and rinse.']
   }
 ];
+
+
+/** Third nonionic batch: APG 1214 and nonylphenol ethoxylate stewardship gate. */
+export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3: IngredientEvidenceReview[] = [
+  {
+    ingredientId: 'apg-1214', productCategoryId: 'LAUNDRY_LIQUID', decision: 'APPLICABLE',
+    chemicalRole: 'C12–14 alkyl polyglucoside (lauryl glucoside) nonionic surfactant; detergency, wetting and oily-soil emulsification, typically used with anionic surfactants.',
+    compatibilityMechanism: 'Supplier literature identifies APG 1214 as a C12–14 fatty alcohol glucoside, nonionic, with high electrolyte/alkali tolerance and compatibility with anionic surfactants. A supplier formulation example includes 15 wt% commercial APG product alongside 38 wt% SLES in liquid laundry detergent; this is a specific example, not a universal dose. Product can be turbid/paste-like and its high pH can affect finished formula pH.',
+    concentrationFinding: 'Catalog activeDefault must not be treated as verified assay. Supplier specifications commonly report 50–53% solids/active-like content, but solids are not automatically equivalent to surfactant active matter. No universal use range assigned.',
+    pHFinding: 'Supplier TDS reports pH 11.5–12.5 in a 10% aqueous solution for a named APG 1214 grade. Finished laundry-liquid target pH 7.5–9.5 is screening context; APG addition can raise batch pH and requires final adjustment/verification.',
+    incompatibilityRisks: ['High native pH can push finished product outside target if not neutralized/adjusted.', 'Long-chain C12–14 APG can be viscous, turbid or paste-like at low temperature; check pumping and cold stability.', 'Solids content is not necessarily identical to active matter.', 'Free fatty alcohol, ash and magnesium content can affect clarity and storage.', 'Preservative efficacy and microbial stability must be validated for the aqueous raw material and finished product.'],
+    evidence: [
+      {title:'NaturalAPG HG1214 supplier specification and liquid laundry formulation example',url:'https://pub-mediabox-storage.rxweb-prd.com/exhibitor/document/exh-fd1474c3-cc9f-47e4-bc57-c1cf8e13dd85/a734bba3-512f-42be-81c2-6c84b90dba3c.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'Yangzhou Chenhua APG CH-1214 technical data sheet',url:'https://pub-mediabox-storage.rxweb-prd.com/exhibitor/products/exh-8994a23b-a7f1-4ff5-8467-0c5c816abb63/product-documents/pro-31f878ca-1f73-488d-affc-233b9c896a4c/ea075191-d7e6-4514-a9cc-82de44a1f5a2.pdf',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Exact catalog grade and supplier CoA must be matched before using 50–53% as a batch calculation.', 'The published 15% product addition is a single formulation example, not a recommended universal dose.', 'Validate low-temperature clarity, viscosity, detergency, foam, rinse and preservation in the actual blend.']
+  },
+  {
+    ingredientId: 'apg-1214', productCategoryId: 'DISHWASH_MANUAL', decision: 'APPLICABLE',
+    chemicalRole: 'C12–14 alkyl polyglucoside nonionic co-surfactant for wetting, grease emulsification and foam support in hand dishwashing.',
+    compatibilityMechanism: 'Supplier data identifies APG 1214 as a nonionic surfactant with detergency, emulsifying and foaming properties, and compatibility with SLS/SLES and CAPB. It can contribute to foam and viscosity synergism, but final viscosity depends on the complete anionic/amphoteric/electrolyte system.',
+    concentrationFinding: 'Supplier grades report at least 50% solids/active-like content. Do not assume solids equals active matter or transfer a laundry formula dosage into hand dishwash. No permitted use range assigned.',
+    pHFinding: 'Named supplier grade pH 11.5–12.5 in 10% aqueous solution. Manual dishwash finished pH target 6.0–8.0 is screening context; pH correction and skin compatibility testing are mandatory.',
+    incompatibilityRisks: ['Raw material alkalinity may raise finished pH beyond mildness target.', 'High viscosity and low-temperature paste formation can complicate processing.', 'Foam, salt curve and viscosity response are blend-specific.', 'Skin mildness cannot be inferred from APG origin alone; test the complete formula.'],
+    evidence: [
+      {title:'NaturalAPG HG1214 supplier specification',url:'https://pub-mediabox-storage.rxweb-prd.com/exhibitor/document/exh-fd1474c3-cc9f-47e4-bc57-c1cf8e13dd85/a734bba3-512f-42be-81c2-6c84b90dba3c.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'Wohingwater APG 1214 technical properties and compatibility',url:'https://www.wohingwater.com/En_Pr_d_gci_34_id_47.html',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Supplier claims are not independent clinical mildness evidence.', 'No use range assigned; validate foam, grease removal, skin mildness, viscosity and rinse.', 'Exact grade active matter and impurity profile require current CoA.']
+  },
+  {
+    ingredientId: 'apg-1214', productCategoryId: 'KITCHEN_DEGREASER', decision: 'APPLICABLE',
+    chemicalRole: 'C12–14 alkyl polyglucoside nonionic wetting and emulsifying surfactant for aqueous hard-surface grease removal.',
+    compatibilityMechanism: 'Supplier documentation specifically describes APG 1214 use in household/institutional hard-surface cleaning and reports alkaline/electrolyte resistance. It can assist wetting and emulsification of greasy soil in neutral-to-alkaline systems; performance in solvent-heavy degreasers requires separate phase compatibility testing.',
+    concentrationFinding: 'Supplier specification commonly gives ≥50% solids, but no exact catalog-grade assay or validated kitchen-degreaser use range is available.',
+    pHFinding: 'Named supplier grade pH 11.5–12.5 in 10% aqueous solution. Product category target pH and substrate compatibility must be checked against the actual degreaser subclass; raw-material pH is not the finished-product pH.',
+    incompatibilityRisks: ['Can contribute substantial alkalinity and viscosity.', 'Long-chain APG may show turbidity or paste formation at low temperature.', 'Solvent/hydrotrope/electrolyte blends may alter clarity and phase stability.', 'Check aluminum, painted surfaces and other alkali-sensitive substrates before use.'],
+    evidence: [
+      {title:'Yangzhou Chenhua APG CH-1214 technical data sheet',url:'https://pub-mediabox-storage.rxweb-prd.com/exhibitor/products/exh-8994a23b-a7f1-4ff5-8467-0c5c816abb63/product-documents/pro-31f878ca-1f73-488d-affc-233b9c896a4c/ea075191-d7e6-4514-a9cc-82de44a1f5a2.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'Wohingwater APG 1214 hard-surface cleaning application',url:'https://www.wohingwater.com/En_Pr_d_gci_34_id_47.html',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['No grade-specific kitchen-degreaser dosage established.', 'Validate cleaning, rinse residue, substrate compatibility, foam and storage stability.', 'Do not assume all APG 1214 grades have identical carbon-chain distribution or solids.']
+  },
+  ...(['np-6', 'np-9', 'np-10'] as const).map((ingredientId) => ({
+    ingredientId,
+    productCategoryId: 'LAUNDRY_LIQUID' as const,
+    decision: 'CONDITIONALLY_APPLICABLE' as const,
+    chemicalRole: 'Nonylphenol ethoxylate (NPE) nonionic surfactant; ethoxylate hydrophilic-lipophilic balance varies with average EO number. Historical industrial wetting/emulsifying/degreasing role.',
+    compatibilityMechanism: 'NPEs can provide nonionic wetting and emulsification, but the environmental and regulatory profile is a decisive product-design constraint. EU REACH Annex XVII restricts nonylphenol and NPEs at ≥0.1 wt% for domestic cleaning and several other uses; official Danish EPA guidance notes degradation to nonylphenol and endocrine-disruption concern. This is a market restriction/stewardship warning, not a claim that the same legal threshold applies in India.',
+    concentrationFinding: 'No recommended laundry-liquid use level is assigned. Do not formulate around NP-6/9/10 until target-market legal review, wastewater/environmental assessment and customer acceptance are documented.',
+    pHFinding: 'No exact supplier-grade pH specification has been established for the catalog records. Finished laundry-liquid target pH 7.5–9.5 is not a raw-material specification.',
+    incompatibilityRisks: ['NPE degradation products include nonylphenol, a substance of environmental concern.', 'EU REACH restriction applies to domestic cleaning at ≥0.1 wt%; export/customer-market requirements may prohibit or severely limit use.', 'EO number alone does not establish exact cloud point, active matter, impurity profile or biodegradation behavior.', 'Do not market as eco-friendly/biodegradable without substantiation.', 'Supplier grade identity and NPE isomer distribution need confirmation.'],
+    evidence: [
+      {title:'EU REACH Annex XVII entry 46 restriction for nonylphenol and nonylphenol ethoxylates',url:'https://webgate.ec.europa.eu/reqs2/public/v2/requirement/auxi/eu/32006R1907_cherest_annex_17_nonylphenol_46.pdf',evidenceType:'TECHNICAL_GUIDANCE' as const},
+      {title:'Danish Environmental Protection Agency fact sheet: nonylphenol and nonylphenol ethoxylates',url:'https://eng.mst.dk/chemicals/chemicals-in-products/chemical-legislation/fact-sheets-on-legislation/fact-sheet-nonylphenol-and-nonylphenol-ethoxylates',evidenceType:'TECHNICAL_GUIDANCE' as const}
+    ],
+    limitations: ['No catalog-specific TDS/CoA or supplier identity evidence has been reviewed.', 'EU legal threshold is not asserted as Indian law; obtain India-specific legal advice before commercialization.', 'This conditional status is a risk hold, not a positive recommendation to use NPEs.', 'Prefer evaluating an NPE-free alcohol ethoxylate/APG alternative for new consumer formulations.']
+  }))
+];
