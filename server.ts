@@ -28,9 +28,10 @@ const app = express();
 app.set('trust proxy', resolveTrustProxy(process.env.TRUST_PROXY));
 
 // CORS is only enabled when an explicit origin allowlist is configured.
-// Same-origin web deployments do not need it; the Android WebView shell
-// (origin https://localhost or capacitor://localhost) does, once
-// ALLOWED_ORIGINS or APP_URL is set in the server environment.
+// Same-origin web deployments do not need it. In production, set
+// ALLOWED_ORIGINS to the exact web origin plus the Android WebView origin(s)
+// actually emitted by the installed Capacitor build (commonly https://localhost
+// or capacitor://localhost). APP_URL alone does not implicitly trust localhost.
 if ((process.env.ALLOWED_ORIGINS || '').trim() || (process.env.APP_URL || '').trim()) {
   app.use(corsMiddleware());
 }
