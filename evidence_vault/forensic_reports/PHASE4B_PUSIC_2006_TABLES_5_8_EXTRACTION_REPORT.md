@@ -50,3 +50,8 @@ A tidy long-format CSV was transcribed from Tables 5–8 on printed page 13: **1
 - `evidence_vault/review_workbooks/pusic_2006_reconciliation_audit.csv` — per-reading audit ledger; current disposition remains `BLOCKED_PENDING_HUMAN_INDEPENDENT_OBSERVATION`.
 
 No phase gate is changed by this extraction. Phase 4B remains open until its full acceptance criteria and historical reconciliation are satisfied; Phase 5 remains locked.
+
+
+## AI-only review route clarification — 2026-11-26
+
+The production columns `reviewer_2` and `review_match`, and the status `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW`, remain specific to the legacy **human second-review path**. They are intentionally not populated with an AI model identity or synthetic human sign-off. The owner-authorized AI-only route is recorded separately in the AI visual comparison/re-audit ledgers and is governed by `PHASE4B_AI_ONLY_REVIEW_PROTOCOL_v1.md`. This separation keeps the human-review status truthful while allowing Phase 4B closure to use the explicit AI-only route once its full two-pass criteria are met. The 2026-11-26 visual re-audit corrected one source transcription (Table 8 / 25 mL/kg / Red wine: 81.35 → 83.35); see `PUSIC_2006_AI_VISUAL_REAUDIT_CORRECTION_2026-11-26.md`. The current visual re-audit is not a blind second pass and therefore does not, by itself, satisfy the full Phase 4B AI closure protocol.
