@@ -185,6 +185,62 @@ export function computeBatchCostWithNullIntegrity(
 }
 
 /**
+ * AI-only alternative to human independent verification.
+ * A partial sub-gate, a single pass, or a ledger that only compares duplicated
+ * values can never satisfy the Phase 4B closure requirement.
+ */
+export function validatePhase4BAIReview(
+  review?: AIReviewGateRecord
+): { passed: boolean; reason: string } {
+  const fail = (reason: string) => ({ passed: false, reason });
+  if (!review) return fail('AI review record is missing.');
+  if (review.status !== 'PASSED') return fail('AI review status is not PASSED.');
+  if (review.scope !== 'PHASE_4B_COMPLETE') return fail('AI review covers only a partial sub-gate, not all of Phase 4B.');
+  if (!review.protocolVersion?.trim()) return fail('AI review protocol version is missing.');
+  if (!Number.isFinite(review.coveragePct) || review.coveragePct !== 100) return fail('AI review coverage must be exactly 100%.');
+  if (!Number.isSafeInteger(review.unresolvedDiscrepancyCount) || review.unresolvedDiscrepancyCount !== 0) return fail('AI review has unresolved discrepancies.');
+  if (review.sourceHashesPinned !== true) return fail('AI review source hashes are not pinned.');
+  if (review.automatedValidationStatus !== 'PASSED') return fail('AI review automated validation has not passed.');
+  if (review.humanReviewPerformed !== false) return fail('AI-only route must not claim human review.');
+  if (!Array.isArray(review.evidenceRefs) || review.evidenceRefs.length < 2 ||
+      review.evidenceRefs.some(ref => typeof ref !== 'string' || !ref.trim()) ||
+      new Set(review.evidenceRefs).size !== review.evidenceRefs.length) {
+    return fail('AI review requires at least two unique, non-empty evidence references.');
+  }
+  if (!Array.isArray(review.reviewPasses) || review.reviewPasses.length < 2) {
+    return fail('AI review requires two distinct, blind review passes.');
+  }
+
+  const requiredMethods = new Set(['SOURCE_FIRST_TRANSCRIPTION', 'INDEPENDENT_SOURCE_RECHECK']);
+  const methods = new Set<string>();
+  const sourceManifests = new Set<string>();
+  const resultHashes = new Set<string>();
+  const sha256 = /^[a-f0-9]{64}$/i;
+
+  for (const pass of review.reviewPasses) {
+    if (!pass || !requiredMethods.has(pass.method)) return fail('AI review pass method is invalid.');
+    if (methods.has(pass.method)) return fail('AI review pass methods must be distinct.');
+    methods.add(pass.method);
+    if (typeof pass.reviewerModel !== 'string' || !pass.reviewerModel.trim()) return fail('AI review model identity is missing.');
+    if (typeof pass.reviewedAt !== 'string' || !Number.isFinite(Date.parse(pass.reviewedAt))) return fail('AI review timestamp is invalid.');
+    if (typeof pass.sourceManifestSha256 !== 'string' || !sha256.test(pass.sourceManifestSha256)) return fail('AI review source manifest hash is invalid.');
+    if (typeof pass.resultSha256 !== 'string' || !sha256.test(pass.resultSha256)) return fail('AI review result hash is invalid.');
+    if (pass.blindToOtherPasses !== true) return fail('Each AI review pass must be blind to the other pass result.');
+    if (!Number.isSafeInteger(pass.discrepancyCount) || pass.discrepancyCount !== 0) return fail('Each AI review pass must have zero unresolved discrepancies.');
+    sourceManifests.add(pass.sourceManifestSha256);
+    resultHashes.add(pass.resultSha256);
+  }
+
+  if (methods.size !== 2 || !requiredMethods.has('SOURCE_FIRST_TRANSCRIPTION') || !requiredMethods.has('INDEPENDENT_SOURCE_RECHECK')) {
+    return fail('AI review must include both source-first transcription and independent source re-check methods.');
+  }
+  if (sourceManifests.size !== 1) return fail('AI review passes do not reference the same pinned source manifest.');
+  if (resultHashes.size !== review.reviewPasses.length) return fail('AI review pass outputs must have distinct hashes.');
+
+  return { passed: true, reason: 'Complete AI-only Phase 4B review passed its two-pass, source-pinned, zero-discrepancy protocol.' };
+}
+
+/**
  * Validates Phase 5 gate transition: Phase 5 cannot be unlocked while Phase 4B is OPEN or unapproved
  */
 export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: string } {
@@ -200,12 +256,22 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
-  if (phase4B.independentVerificationStatus !== 'CONFIRMED') {
+  if (phase4B.independentVerificationStatus === 'REJECTED') {
     return {
       allowed: false,
-      reason: 'Phase 4B independent verification status is UNESTABLISHED or REJECTED.',
+      reason: 'Phase 4B human independent verification was REJECTED; AI review cannot override a recorded rejection.',
     };
   }
+
+  const aiReviewCheck = validatePhase4BAIReview(phase4B.aiReview);
+  const humanVerificationPassed = phase4B.independentVerificationStatus === 'CONFIRMED';
+  if (!humanVerificationPassed && !aiReviewCheck.passed) {
+    return {
+      allowed: false,
+      reason: `Gate blocked: neither human independent verification nor the complete AI-only review route passed. ${aiReviewCheck.reason}`,
+    };
+  }
+  const verificationRoute = humanVerificationPassed ? 'HUMAN_INDEPENDENT' : 'AI_ONLY';
 
   // Authoritative Source Provenance check
   if (state.authoritativeProvenanceStatus !== 'VERIFIED') {
@@ -267,7 +333,7 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
-  return { allowed: true, reason: 'Phase 4B acceptance criteria fully satisfied and independently verified.' };
+  return { allowed: true, reason: `Phase 4B acceptance criteria fully satisfied via ${verificationRoute} verification.` };
 }
 
 /**
