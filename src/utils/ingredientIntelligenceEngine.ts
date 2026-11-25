@@ -474,10 +474,10 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
       DISHWASH_AUTOMATIC: { status: 'NOT_APPLICABLE', reasoning: 'Extremely high foam risk for automatic washing systems.' },
       FLOOR_CLEANER: { status: 'APPLICABLE', reasoning: 'Safe, mild hard surface surfactant.' },
       MULTIPURPOSE_CLEANER: { status: 'APPLICABLE', reasoning: 'General soil cleaning booster.' },
-      TOILET_CLEANER: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'Stable as a cationic-like structure under acidic pH.' },
+      TOILET_CLEANER: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'CAPB is zwitterionic/amphoteric (not a cationic surfactant); it may provide wetting or foam in selected acid systems, subject to acid-grade, salt, viscosity, and stability checks.' },
       BATHROOM_CLEANER: { status: 'APPLICABLE', reasoning: 'Mild soap scum remover helper.' },
       GLASS_CLEANER: { status: 'NOT_APPLICABLE', reasoning: 'Surfactant leaves streaks on reflective glass.' },
-      FABRIC_SOFTENER: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'Can be formulated at low levels with cationic softeners.' },
+      FABRIC_SOFTENER: { status: 'UNKNOWN', reasoning: 'CAPB is an amphoteric co-surfactant, not a fabric-softening active; any use as a minor co-formulant requires a defined purpose and compatibility testing with the cationic system.' },
       HAND_WASH: { status: 'APPLICABLE', reasoning: 'Primary mild skin detergent booster.' },
       KITCHEN_DEGREASER: { status: 'APPLICABLE', reasoning: 'Secondary emulsifier.' },
       CAR_SHAMPOO: { status: 'APPLICABLE', reasoning: 'Standard foam stabilizer and paint safe agent.' }
@@ -631,10 +631,10 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
       DISHWASH_AUTOMATIC: { status: 'APPLICABLE', reasoning: 'Critical phosphate-free builder for spotting and filming control.' },
       FLOOR_CLEANER: { status: 'APPLICABLE', reasoning: 'Prevents limescale haze on flooring.' },
       MULTIPURPOSE_CLEANER: { status: 'APPLICABLE', reasoning: 'Excellent calcium soap scum booster.' },
-      TOILET_CLEANER: { status: 'NOT_APPLICABLE', reasoning: 'Unstable / decomposed under strongly acidic conditions.' },
+      TOILET_CLEANER: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'GLDA is documented for toilet-bowl care and broad-pH cleaning; confirm the supplied grade, acid-system compatibility, and chelation performance in the finished formula.' },
       BATHROOM_CLEANER: { status: 'APPLICABLE', reasoning: 'Cleans calcium scale under alkaline or neutral pH.' },
       GLASS_CLEANER: { status: 'APPLICABLE', reasoning: 'Used at very low levels to prevent spotting.' },
-      FABRIC_SOFTENER: { status: 'NOT_APPLICABLE', reasoning: 'High electrolyte load collapses cationic emulsion stability.' },
+      FABRIC_SOFTENER: { status: 'UNKNOWN', reasoning: 'Chelation may help control hardness, but electrolyte loading and the specific cationic softener dispersion require supplier compatibility data and finished-formula stability testing.' },
       HAND_WASH: { status: 'APPLICABLE', reasoning: 'Boosts lather in hard water.' },
       KITCHEN_DEGREASER: { status: 'APPLICABLE', reasoning: 'Saponification booster.' },
       CAR_SHAMPOO: { status: 'APPLICABLE', reasoning: 'Prevents water spotting on vehicle bodywork.' }
@@ -700,7 +700,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
       GLASS_CLEANER: { status: 'APPLICABLE', reasoning: 'Used at <0.5% for streak-free mineral removal.' },
       FABRIC_SOFTENER: { status: 'APPLICABLE', reasoning: 'Buffer to maintain pH 2.5 - 3.5 for cationic stability.' },
       HAND_WASH: { status: 'APPLICABLE', reasoning: 'Skin pH buffer (pH 5.5).' },
-      KITCHEN_DEGREASER: { status: 'NOT_APPLICABLE', reasoning: 'Acid neutralizes alkaline degreaser builders.' },
+      KITCHEN_DEGREASER: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'Citric acid can support acidic kitchen descaling and mineral-soil removal, but it is not a substitute for alkaline grease-cutting builders in heavy-duty degreasers.' },
       CAR_SHAMPOO: { status: 'APPLICABLE', reasoning: 'Water spot control agent.' }
     }
   },
@@ -759,13 +759,13 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
       DISHWASH_AUTOMATIC: { status: 'APPLICABLE', reasoning: 'Primary alkaline builder in auto dishwash powders/tablets.' },
       FLOOR_CLEANER: { status: 'APPLICABLE', reasoning: 'Provides heavy grease saponification.' },
       MULTIPURPOSE_CLEANER: { status: 'APPLICABLE', reasoning: 'Alkaline soil emulsifier.' },
-      TOILET_CLEANER: { status: 'NOT_APPLICABLE', reasoning: 'Incompatible with acidic toilet cleaners (causes violent gas release).' },
+      TOILET_CLEANER: { status: 'NOT_APPLICABLE', reasoning: 'Carbonate neutralizes the acid and releases carbon dioxide; this can cause vigorous foaming or pressure in a closed vessel, so it is unsuitable for an acidic toilet-cleaner system.' },
       BATHROOM_CLEANER: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'Used in alkaline bathroom cleaners.' },
       GLASS_CLEANER: { status: 'NOT_APPLICABLE', reasoning: 'Causes hazing and white alkaline residue on glass.' },
       FABRIC_SOFTENER: { status: 'NOT_APPLICABLE', reasoning: 'High pH collapses cationic fabric softener dispersions.' },
       HAND_WASH: { status: 'NOT_APPLICABLE', reasoning: 'Extremely harsh pH for hand skin contact.' },
       KITCHEN_DEGREASER: { status: 'APPLICABLE', reasoning: 'Key saponification builder for heavy food grease.' },
-      CAR_SHAMPOO: { status: 'NOT_APPLICABLE', reasoning: 'High alkalinity damages automotive clearcoat wax.' }
+      CAR_SHAMPOO: { status: 'CONDITIONALLY_APPLICABLE', reasoning: 'Sodium carbonate is used in some alkaline vehicle prewash and car-wash systems; keep concentration and use-dilution pH controlled, validate clearcoat/wax compatibility, and rinse before drying.' }
     }
   },
 
