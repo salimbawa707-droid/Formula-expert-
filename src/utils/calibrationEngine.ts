@@ -13,7 +13,7 @@ export class CalibrationEngine {
     validationSummary: CategoryModelValidationSummary
   ): Promise<CalibrationCandidateProposal[]> {
     const proposals = proposeCalibrationCandidates(validationSummary);
-    const userId = auth.currentUser?.uid;
+    const userId = auth?.currentUser?.uid;
     
     if (userId) {
       for (const proposal of proposals) {
