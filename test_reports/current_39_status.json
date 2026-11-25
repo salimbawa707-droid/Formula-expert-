@@ -1,7 +1,7 @@
 {
   "metadata": {
     "reportType": "CURRENT_FORMULAS_STATUS_AUDIT",
-    "generationTimestamp": "2026-11-24T21:33:28.900Z",
+    "generationTimestamp": "2026-11-25T03:58:46.296Z",
     "formulaSource": "src/data/formulas.ts",
     "taxonomySource": "src/domain/productTaxonomy.ts",
     "scientificEngines": [
