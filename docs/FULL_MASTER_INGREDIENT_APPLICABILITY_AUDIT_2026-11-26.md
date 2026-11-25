@@ -31,7 +31,7 @@ This baseline is a data-quality and coverage inventory, not a completed scientif
 
 ## Evidence-reviewed batch status (2026-11-26)
 
-The following review records are now reconciled into the generated ingredient × category matrix (20 reviewed pairs total; every other pair remains NOT_REVIEWED):
+The following review records are now reconciled into the generated ingredient × category matrix (24 reviewed pairs total; every other pair remains NOT_REVIEWED):
 
 | Ingredient grade | Category | Decision | Main limitation |
 |---|---|---|---|
@@ -63,3 +63,15 @@ Three additional nonionic ingredient families/grades were reviewed, adding 6 cat
 - NP-6, NP-9 and NP-10 / LAUNDRY_LIQUID: CONDITIONALLY_APPLICABLE risk-hold only, not a recommendation to use. EU REACH Annex XVII entry 46 restricts NP/NPE at >=0.1 wt% for domestic cleaning and other specified uses. This is not represented as Indian law; target-market legal review is required. Prefer NPE-free alternatives for new consumer products.
 
 The three NPE records have no supplier-specific grade TDS/CoA in this review. No NPE use level is approved. Evidence and limitations are carried into the matrix, and regression tests assert the exact 6 ingredient/category pairs.
+
+
+## Nonionic batch 4 — fragrance solubilizers and low-foam EO/PO grade
+
+Four further ingredient/category pairs were reviewed and reconciled into the matrix:
+
+- PEG-40 HCO / LAUNDRY_LIQUID: CONDITIONALLY_APPLICABLE as a fragrance/oil solubilizer adjunct only; no laundry-specific use level validated.
+- Polysorbate 20 / LAUNDRY_LIQUID: CONDITIONALLY_APPLICABLE as a high-HLB solubilizer/wetting adjunct; detergent performance and dose remain unproven.
+- Polysorbate 80 / LAUNDRY_LIQUID: CONDITIONALLY_APPLICABLE as a distinct oleate-based emulsifier; not interchangeable with Polysorbate 20.
+- Pluronic PE 6400 / DISHWASH_AUTOMATIC: CONDITIONALLY_APPLICABLE low-foam EO/PO candidate; available product data is distributor-reproduced and requires current authenticated supplier TDS/CoA.
+
+Total evidence-reviewed pairs: 24. None of these four entries has an approved numeric use range. All other ingredient/category pairs remain NOT_REVIEWED.
