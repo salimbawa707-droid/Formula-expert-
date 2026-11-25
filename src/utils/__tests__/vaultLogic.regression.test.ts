@@ -27,6 +27,7 @@ import {
   calculateVaultMetrics,
   computeBatchCostWithNullIntegrity,
   canUnlockPhase5,
+  validatePhase4BAIReview,
   canPromoteEngineToValidation,
   validateAndParseVaultJSON,
   exportVaultToCSV,
@@ -178,6 +179,80 @@ export function runVaultLogicTestSuite() {
   const gateCheck = canUnlockPhase5(INITIAL_VAULT_STATE);
   assert(gateCheck.allowed === false, 'Phase 5 Gate', 'Phase 5 unlock blocked on active 4B');
   assert(Boolean(/Phase 4B is still ACTIVE\/OPEN/i.test(gateCheck.reason)), 'Phase 5 Gate', 'Gate check gives reason');
+  const validAiReview = {
+    status: 'PASSED',
+    protocolVersion: 'phase4b-ai-review-v1',
+    scope: 'PHASE_4B_COMPLETE',
+    coveragePct: 100,
+    unresolvedDiscrepancyCount: 0,
+    sourceHashesPinned: true,
+    automatedValidationStatus: 'PASSED',
+    evidenceRefs: ['evidence_vault/forensic_reports/phase4b-final-review.md', 'evidence_vault/review_workbooks/phase4b-ai-review-ledger.csv'],
+    reviewPasses: [
+      {
+        method: 'SOURCE_FIRST_TRANSCRIPTION',
+        reviewerModel: 'GPT-6',
+        reviewedAt: '2026-11-26T10:00:00Z',
+        sourceManifestSha256: 'a'.repeat(64),
+        resultSha256: 'b'.repeat(64),
+        blindToOtherPasses: true,
+        discrepancyCount: 0,
+      },
+      {
+        method: 'INDEPENDENT_SOURCE_RECHECK',
+        reviewerModel: 'GPT-6',
+        reviewedAt: '2026-11-26T10:05:00Z',
+        sourceManifestSha256: 'a'.repeat(64),
+        resultSha256: 'c'.repeat(64),
+        blindToOtherPasses: true,
+        discrepancyCount: 0,
+      },
+    ],
+    humanReviewPerformed: false,
+  };
+  assert(validatePhase4BAIReview(validAiReview).passed, 'AI Review Gate', 'Complete two-pass AI-only review satisfies its own evidence protocol');
+  assert(!validatePhase4BAIReview({ ...validAiReview, scope: 'PARTIAL_SUBGATE' }).passed, 'AI Review Gate', 'A partial sub-gate cannot close all of Phase 4B');
+  assert(!validatePhase4BAIReview({ ...validAiReview, coveragePct: 99.9 }).passed, 'AI Review Gate', 'Coverage below 100% cannot pass');
+  assert(!validatePhase4BAIReview({ ...validAiReview, unresolvedDiscrepancyCount: 1 }).passed, 'AI Review Gate', 'Unresolved discrepancies block AI closure');
+  assert(!validatePhase4BAIReview({ ...validAiReview, sourceHashesPinned: false }).passed, 'AI Review Gate', 'Unpinned source hashes block AI closure');
+  assert(!validatePhase4BAIReview({ ...validAiReview, automatedValidationStatus: 'NOT_RUN' }).passed, 'AI Review Gate', 'Automated validation must pass');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.slice(0, 1) }).passed, 'AI Review Gate', 'A single AI pass is insufficient');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, method: 'SOURCE_FIRST_TRANSCRIPTION' as const } : pass) }).passed, 'AI Review Gate', 'Review methods must be distinct');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, sourceManifestSha256: 'd'.repeat(64) } : pass) }).passed, 'AI Review Gate', 'Both passes must use the same pinned source manifest');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, blindToOtherPasses: false } : pass) }).passed, 'AI Review Gate', 'The second pass must be blind to the first result');
+  assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as false }).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
+
+  const aiState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
+  const aiPhase4b = aiState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
+  aiPhase4b.status = 'CLOSED';
+  aiPhase4b.reportedClosed = true;
+  aiPhase4b.blockers = [];
+  aiPhase4b.aiReview = validAiReview;
+  aiState.authoritativeProvenanceStatus = 'VERIFIED';
+  aiState.accountingReconciliationStatus = 'RECONCILED';
+  aiState.ledgerConsistencyStatus = 'CONSISTENT';
+  aiState.activeBlockers = aiState.activeBlockers.filter((blocker: any) => blocker.phaseId !== 'phase-4b');
+  aiState.audits = aiState.audits.map((audit: any) => ({ ...audit, approvalStatus: 'APPROVED' }));
+  const aiRouteGate = canUnlockPhase5(aiState);
+  assert(aiRouteGate.allowed === true, 'AI Review Gate', 'Complete AI-only route can replace human review when every other gate is satisfied');
+  assert(aiRouteGate.reason.includes('AI_ONLY'), 'AI Review Gate', 'Gate result explicitly identifies the AI-only verification route');
+
+  const rejectedHumanState = JSON.parse(JSON.stringify(aiState));
+  rejectedHumanState.phases.find((phase: any) => phase.phaseId === 'phase-4b').independentVerificationStatus = 'REJECTED';
+  assert(canUnlockPhase5(rejectedHumanState).allowed === false, 'AI Review Gate', 'AI route cannot override a recorded human-review rejection');
+
+  const humanRouteState = JSON.parse(JSON.stringify(aiState));
+  const humanPhase4b = humanRouteState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
+  humanPhase4b.independentVerificationStatus = 'CONFIRMED';
+  delete humanPhase4b.aiReview;
+  const humanRouteGate = canUnlockPhase5(humanRouteState);
+  assert(humanRouteGate.allowed === true && humanRouteGate.reason.includes('HUMAN_INDEPENDENT'), 'AI Review Gate', 'Existing human independent-review route remains supported');
+
+  const malformedAiState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
+  malformedAiState.phases.find((phase: any) => phase.phaseId === 'phase-4b').aiReview.humanReviewPerformed = true;
+  const malformedAiResult = validateAndParseVaultJSON(JSON.stringify(malformedAiState));
+  assert(malformedAiResult.valid === false && malformedAiResult.errors.some(error => error.includes('humanReviewPerformed')), 'AI Review Schema', 'Persisted AI-only record cannot claim human review');
+
 
   // 7. Scientific Status Rules: Engine cannot be marked ready without inspected dataset
   const engine = INITIAL_VAULT_STATE.engines[0];
