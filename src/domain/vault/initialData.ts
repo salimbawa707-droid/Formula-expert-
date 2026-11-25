@@ -1238,21 +1238,21 @@ export const INITIAL_VAULT_STATE: VaultState = {
       findings: [
         {
           id: 'FIND-P4B-01',
-          description: 'Discrepancy in Engine Count: Historical reports variously claimed 64 engines (Audit Report A), 59 distinct implementation files (Source Tree Reconciliation), and 97 modular sub-engines (Initial PRD). Recorded as REPORTED_UNVERIFIED until reconciled file-by-file.',
-          severity: 'HIGH',
+          description: 'RESOLVED BY EVIDENCE-BASED DISPOSITION (2026-11-25): historical 64 and 97 source artifacts/counting rules were not found and remain UNVERIFIED; current 59/62/65/94/6 counts are separately defined, reproducible, and not interchangeable. This is not an active count-reconciliation defect. See PHASE4B_AUTHORITATIVE_PROVENANCE_ENGINE_APPLICABILITY_AI_REVIEW_2026-11-25.md.',
+          severity: 'INFORMATIONAL',
           verifiedFact: true,
           aiClaimOnly: false,
         },
         {
           id: 'FIND-P4B-02',
-          description: 'Active Blocker BLK-001: The SurfPro ZIP is not available in the Google AI Studio runtime workspace. No experimental dataset has been numerically inspected according to the latest report.',
-          severity: 'CRITICAL',
+          description: 'SUPERSEDED (2026-11-25): DS-001 canonical SURFPRO CSV is checked in, hash-pinned, and numerically inspected (1,624 source records); DS-002, DS-004, and DS-005 are also recorded as numerically inspected. The 895.5 MB microscopy ZIP remains NOT_DOWNLOADED and is not counted as inspected. This historical finding no longer describes the current dataset inventory.',
+          severity: 'INFORMATIONAL',
           verifiedFact: true,
           aiClaimOnly: false,
         },
         {
           id: 'FIND-P4B-03',
-          description: 'Phase 5 Gate Enforcement: Phase 5 remains strictly LOCKED. No algorithmic tuning or accuracy claims may be made until Phase 4B is formally approved.',
+          description: 'NOT A DEFECT — REQUIRED FAIL-CLOSED CONTROL (2026-11-25): Phase 5 must remain LOCKED until Phase 4B closure criteria pass. Do not bypass this control; it is not an unresolved audit defect.',
           severity: 'CRITICAL',
           verifiedFact: true,
           aiClaimOnly: false,
