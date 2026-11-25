@@ -114,10 +114,10 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
     await db.formulas.put(record);
     
     // Sync to Firestore if authenticated with Firebase
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       try {
         const { saveUserFormula } = await import('../services/firebaseClient');
-        await saveUserFormula(firebaseAuth.currentUser.uid, record);
+        await saveUserFormula(firebaseAuth?.currentUser.uid, record);
       } catch (err) {
         console.warn('Failed to persist formula to Firestore:', err);
       }
@@ -131,10 +131,10 @@ export const useFormulaStore = create<FormulaStore>((set, get) => ({
     await db.formulas.delete(id);
 
     // Sync deletion to Firestore if authenticated with Firebase
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       try {
         const { deleteUserFormula } = await import('../services/firebaseClient');
-        await deleteUserFormula(firebaseAuth.currentUser.uid, id);
+        await deleteUserFormula(firebaseAuth?.currentUser.uid, id);
       } catch (err) {
         console.warn('Failed to delete formula from Firestore:', err);
       }

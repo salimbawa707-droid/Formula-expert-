@@ -73,14 +73,14 @@ class CollaborationManager {
     // Generate distinct local chemist identity
     const savedName = localStorage.getItem('collab_chemist_name') || 'Dr. Chemist ' + Math.floor(100 + Math.random() * 900);
     const color = CHEMIST_COLORS[Math.floor(Math.random() * CHEMIST_COLORS.length)];
-    const id = auth.currentUser?.uid || `chemist-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const id = auth?.currentUser?.uid || `chemist-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     this.localChemist = {
       id,
-      displayName: auth.currentUser?.displayName || savedName,
+      displayName: auth?.currentUser?.displayName || savedName,
       role: 'Lead Formulator',
       color,
-      avatarLetter: (auth.currentUser?.displayName || savedName).charAt(0).toUpperCase(),
+      avatarLetter: (auth?.currentUser?.displayName || savedName).charAt(0).toUpperCase(),
       lastActive: Date.now(),
       currentField: null,
       isHost: true,

@@ -16,7 +16,7 @@ export const CalibrationProposalModal: React.FC<Props> = ({ isOpen, onClose, onA
 
   useEffect(() => {
     async function loadProposals() {
-      const userId = auth.currentUser?.uid;
+      const userId = auth?.currentUser?.uid;
       if (userId) {
         const data = await getUserCalibrationProposals(userId);
         setProposals(data);

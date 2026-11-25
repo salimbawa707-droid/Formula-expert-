@@ -477,9 +477,10 @@ export default function App() {
   };
 
   const { profile } = useSettingsStore();
-  const [currentUser, setCurrentUser] = useState(() => auth.currentUser);
+  const [currentUser, setCurrentUser] = useState(() => auth?.currentUser ?? null);
 
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
     });

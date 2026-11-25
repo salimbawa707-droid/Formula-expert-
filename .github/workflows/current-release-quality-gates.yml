@@ -2,7 +2,7 @@ name: Current Release Quality Gates
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -166,7 +166,7 @@ jobs:
         run: bun run test:all
 
   android-debug-build:
-    if: (github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true) || github.event_name == 'pull_request'
+    if: (github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true) || github.event_name == 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/fix/'))
     name: Capacitor Android debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -219,12 +219,22 @@ jobs:
       - name: Synchronize Capacitor Android project
         run: bun run cap:sync
 
-      - name: Clear stale Gradle instrumentation cache
-        run: rm -rf "$GRADLE_USER_HOME/caches/jars-9"
-
       - name: Build genuine debug APK
-        run: bash ./gradlew --no-daemon assembleDebug
+        shell: bash
         working-directory: android
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if bash ./gradlew --no-daemon --max-workers=2 assembleDebug; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Android debug build failed after 3 attempts."
+              exit 1
+            fi
+            echo "Gradle dependency/build attempt $attempt failed; retrying after backoff."
+            sleep $((attempt * 20))
+          done
 
       - name: Enable KVM for Android emulator when available
         shell: bash
@@ -252,14 +262,35 @@ jobs:
           disable-linux-hw-accel: auto
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
-          script: cd android && bash ./gradlew --no-daemon connectedDebugAndroidTest
+          script: cd android && bash ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest; test_status=$?; adb logcat -d -v threadtime > ../android-webview-logcat.txt 2>&1 || true; grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console|FATAL EXCEPTION|AndroidRuntime' ../android-webview-logcat.txt | tail -n 1200 > ../android-webview-errors.txt || true; exit "$test_status"
+
+      - name: Capture Android WebView runtime logs
+        if: always()
+        shell: bash
+        timeout-minutes: 1
+        run: |
+          set +e
+          if [ ! -s android-webview-logcat.txt ]; then
+            if command -v adb >/dev/null 2>&1; then
+              timeout 10s adb logcat -d -v threadtime > android-webview-logcat.txt 2>&1 || true
+            else
+              echo "Emulator logcat was not captured by the in-emulator test step." > android-webview-logcat.txt
+            fi
+          fi
+          if [ ! -s android-webview-errors.txt ]; then
+            grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console|FATAL EXCEPTION|AndroidRuntime' android-webview-logcat.txt | tail -n 1200 > android-webview-errors.txt || true
+          fi
+          echo "Captured $(wc -l < android-webview-logcat.txt) log lines and $(wc -l < android-webview-errors.txt) filtered lines."
 
       - name: Upload Android instrumentation reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formula-expert-android-instrumentation-reports
-          path: android/app/build/reports/androidTests/connected/
+          path: |
+            android/app/build/reports/androidTests/connected/
+            android-webview-logcat.txt
+            android-webview-errors.txt
           if-no-files-found: ignore
 
       - name: Upload debug APK

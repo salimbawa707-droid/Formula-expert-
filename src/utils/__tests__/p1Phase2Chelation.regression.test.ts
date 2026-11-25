@@ -374,11 +374,12 @@ export function runP1Phase2ChelationTestSuite() {
     'LAUNDRY_LIQUID'
   );
   assert(
-    missingBatchOnly.status === 'NOT_EVALUATED' &&
+    missingBatchOnly.status === 'PASS' &&
       Number.isNaN(missingBatchOnly.batchSizeKg) &&
-      Number.isNaN(missingBatchOnly.maxSupportedPpm),
+      Number.isNaN(missingBatchOnly.batchSequestrationGrams) &&
+      Number.isFinite(missingBatchOnly.maxSupportedPpm),
     'Input Integrity',
-    'Missing batch size is rejected by default without opting into strict mode'
+    'Missing batch mass does not block explicit per-wash hardness evaluation and never creates a batch total'
   );
   assertNear('Sufficiency Logic', 'Zero Deficit for High Capacity Formula', tolHigh.capacityDeficitMg, 0);
   assertNear('Sufficiency Logic', 'Zero Additional GLDA Required', tolHigh.additionalGLDA47RequiredPct, 0);
