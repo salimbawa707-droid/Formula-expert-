@@ -165,6 +165,9 @@ jobs:
       - name: Run all registered TypeScript regressions
         run: bun run test:all
 
+      - name: Run server security and Firestore rules contract regressions
+        run: bun run src/utils/__tests__/serverSecurityAndTruthfulHealth.test.ts
+
   android-debug-build:
     if: (github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true) || github.event_name == 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/fix/'))
     name: Capacitor Android debug APK
