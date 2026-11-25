@@ -70,7 +70,7 @@ export const AdminDashboard: React.FC = () => {
   const [formulas, setFormulas] = useState<SavedFormula[]>([]);
   const [trials, setTrials] = useState<LabTrial[]>([]);
   
-  const [currentUser, setCurrentUser] = useState<User | null>(() => auth.currentUser);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => auth?.currentUser ?? null);
   const [serverAdminVerified, setServerAdminVerified] = useState<boolean>(false);
   const [systemHealth, setSystemHealth] = useState<{
     serverOk: boolean;
@@ -93,6 +93,7 @@ export const AdminDashboard: React.FC = () => {
   });
 
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       setCurrentUser(fbUser);
       if (!fbUser) {
