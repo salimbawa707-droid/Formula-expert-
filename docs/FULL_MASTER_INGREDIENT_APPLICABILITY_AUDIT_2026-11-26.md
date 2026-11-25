@@ -39,7 +39,7 @@ The table below summarizes the initial 14 reviewed ingredient/category pairs. Su
 | SLES 70 / SLES 28 | LAUNDRY_LIQUID | APPLICABLE | Exact supplier grade, foam and finished-formula qualification required |
 | AOS 38 | LAUNDRY_LIQUID | APPLICABLE | Lot assay and foam/stability qualification required |
 | AOS 92 powder | LAUNDRY_POWDER | CONDITIONAL | Exact powder grade CoA, moisture and particle/dissolution tests required |
-| SAS 60 | LAUNDRY_LIQUID | CONDITIONAL | Catalog CAS conflicts with cited supplier TDS CAS; identity must be resolved |
+| SAS 60 | LAUNDRY_LIQUID | CONDITIONAL | Catalog identity normalized to C14–17 SAS CAS 97489-15-1; actual supplier/lot CoA still required |
 | SLS 95 needles | LAUNDRY_POWDER | CONDITIONAL | Exact grade assay, impurities and powder handling qualification required |
 | SLS 30 liquid | LAUNDRY_LIQUID | CONDITIONAL | Exact grade and laundry performance validation required |
 | LAE-7 / LAE-9 / APG 0810 | LAUNDRY_LIQUID | APPLICABLE / CONDITIONAL | Adjacent-grade evidence or supplier-specific pH/solids and blend validation required |
