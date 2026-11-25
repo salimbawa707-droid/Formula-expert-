@@ -16,20 +16,36 @@ const categories = Object.fromEntries([...new Set(ingredients.map(i => i.categor
   category,
   ingredients.filter(i => i.category === category).length
 ]));
-const invalidPercentages = ingredients.flatMap(item => {
-  const keys = ['activeDefault', 'activeMatter', 'commercialConcentrationPct', 'surfactantActiveMatterPct', 'purityPct', 'solidsPct', 'waterContentPct'] as const;
-  return keys.flatMap(key => {
-    const value = item[key];
-    return typeof value === 'number' && (value < 0 || value > 100)
-      ? [{ id: item.id, field: key, value }]
+const percentageFields = ['activeDefault', 'activeMatter', 'commercialConcentrationPct', 'surfactantActiveMatterPct', 'purityPct', 'solidsPct', 'waterContentPct'] as const;
+const nonFiniteNumericValues = ingredients.flatMap(item => {
+  const numericFields = [...percentageFields, 'densityGPerMl', 'phMin', 'phMax'] as const;
+  return numericFields.flatMap(field => {
+    const value = item[field];
+    return typeof value === 'number' && !Number.isFinite(value)
+      ? [{ id: item.id, field, value: String(value) }]
       : [];
   });
 });
+const invalidPercentages = ingredients.flatMap(item =>
+  percentageFields.flatMap(field => {
+    const value = item[field];
+    return typeof value === 'number' && Number.isFinite(value) && (value < 0 || value > 100)
+      ? [{ id: item.id, field, value }]
+      : [];
+  })
+);
 const invalidPhRanges = ingredients.filter(i =>
-  (i.phMin !== undefined && (i.phMin < 0 || i.phMin > 14)) ||
-  (i.phMax !== undefined && (i.phMax < 0 || i.phMax > 14)) ||
-  (i.phMin !== undefined && i.phMax !== undefined && i.phMin > i.phMax)
+  (typeof i.phMin === 'number' && Number.isFinite(i.phMin) && (i.phMin < 0 || i.phMin > 14)) ||
+  (typeof i.phMax === 'number' && Number.isFinite(i.phMax) && (i.phMax < 0 || i.phMax > 14)) ||
+  (typeof i.phMin === 'number' && typeof i.phMax === 'number' &&
+    Number.isFinite(i.phMin) && Number.isFinite(i.phMax) && i.phMin > i.phMax)
 ).map(i => ({ id: i.id, phMin: i.phMin, phMax: i.phMax }));
+const invalidDensities = ingredients.flatMap(item => {
+  const value = item.densityGPerMl;
+  return typeof value === 'number' && Number.isFinite(value) && value <= 0
+    ? [{ id: item.id, densityGPerMl: value }]
+    : [];
+});
 const applicabilityCoverage = {
   recordsWithExplicitApplicabilityField: ingredients.filter(i =>
     Object.keys(i as Record<string, unknown>).some(k => /applicab|productSuitability|categoryCompatibility/i.test(k))
@@ -47,8 +63,10 @@ const report = {
   missingFieldCounts: missing,
   categoryCounts: categories,
   qualityFlags: {
+    nonFiniteNumericValues,
     invalidPercentageValues: invalidPercentages,
     invalidPhRanges,
+    invalidDensities,
     recordsWithNoCAS: ingredients.filter(i => !i.casNumber).length,
     recordsWithUnknownProperties: ingredients.filter(i => (i.unknownProperties?.length ?? 0) > 0).length,
     recordsWithoutProvenance: ingredients.filter(i => !i.provenance).length
@@ -59,6 +77,6 @@ console.log(JSON.stringify(report, null, 2));
 if (total === 0 || uniqueIds.size !== total) {
   throw new Error('Master ingredient baseline failed: empty catalog or duplicate canonical IDs.');
 }
-if (invalidPercentages.length || invalidPhRanges.length) {
-  throw new Error('Master ingredient baseline failed: invalid numeric ranges require remediation.');
+if (nonFiniteNumericValues.length || invalidPercentages.length || invalidPhRanges.length || invalidDensities.length) {
+  throw new Error('Master ingredient baseline failed: non-finite or invalid numeric values require remediation.');
 }
