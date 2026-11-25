@@ -72,8 +72,6 @@ for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
 }
 console.log(`PASS: ${LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS.length} sourced liquid-laundry surfactant reviews.`);
 
-import { AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
-
 for (const review of AOS_LAUNDRY_EVIDENCE_REVIEWS) {
   if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
     throw new Error(`AOS review references unknown ingredient: ${review.ingredientId}`);
