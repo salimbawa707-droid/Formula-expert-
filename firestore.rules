@@ -152,7 +152,7 @@ service cloud.firestore {
           'rationale', 'recommendation', 'proposedAt', 'status', 'safetyWarning',
           'evidenceReferenceIds', 'updatedAt'])
         && data.proposalId is string && isValidId(data.proposalId) && data.proposalId == proposalId
-        && data.canonicalCategory is string && data.canonicalCategory.size() > 0 && data.canonicalCategory.size() <= 128
+        && data.canonicalCategory in ['LAUNDRY_LIQUID', 'LAUNDRY_POWDER', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER', 'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO']
         && data.kpiId is string && data.kpiId.size() > 0 && data.kpiId.size() <= 128
         && data.parameterName is string && data.parameterName.size() > 0 && data.parameterName.size() <= 256
         && data.proposedAt is string && data.proposedAt.size() > 0 && data.proposedAt.size() <= 64
