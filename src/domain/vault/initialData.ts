@@ -362,7 +362,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       ],
       dependencies: ['ENG-001', 'src/core/surfactantConstants.ts'],
       consumingEngines: ['ENG-003', 'ENG-004', 'ENG-005'],
-      intendedProducts: ['Liquid Detergent', 'Shampoo / Body Wash', 'Hand Dishwash Liquid'],
+      intendedProducts: ['Liquid Detergent', 'Hand Dishwash Liquid'],
       operatingConditions: 'Surfactant concentration 0.05% to 35% w/w, 15°C to 45°C',
       existingEvidenceIds: ['EVD-001', 'EVD-002', 'EVD-007'],
       requiredExperimentalVariables: [
