@@ -5283,7 +5283,11 @@ export interface IngredientIdentityResolution {
 }
 
 const normalizeIngredientIdentity = (value: string): string =>
-  String(value || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+  String(value || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    // Normalize common Indian/British supplier spellings before exact identity matching.
+    .replace(/sulph/g, 'sulf').replace(/sulphon/g, 'sulfon')
+    .replace(/deionised/g, 'deionized').replace(/demineralised/g, 'demineralized')
+    .replace(/[^a-z0-9]+/g, '');
 
 const INGREDIENT_IDENTITY_ALIASES: Record<string, { id: string; gradeCompatible: boolean }> = {
   'linear alkylbenzene sulfonic acid labsa 90%': { id: 'labsa-90', gradeCompatible: true },
