@@ -162,6 +162,8 @@ export function runVaultLogicTestSuite() {
   const partialSummary = getDatasetInspectionSummary(partiallyInspectedDatasets);
   assert(partialSummary.inspectedCount === 3, 'Dataset Inspection Summary', 'A dataset without explicit inspection and positive rows is excluded');
   assert(partialSummary.uninspectedDatasets[0]?.id === INITIAL_VAULT_STATE.datasets[0]?.id, 'Dataset Inspection Summary', 'Uninspected dataset identity is retained');
+  const emptyDatasetSummary = getDatasetInspectionSummary([]);
+  assert(emptyDatasetSummary.totalCount === 0 && emptyDatasetSummary.inspectedCount === 0 && emptyDatasetSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'Empty dataset inventory remains explicitly zero rather than implying evidence coverage');
 
   // 5. Missing prices remain strictly null, never coerced to 0.00
   const unpricedItems = INITIAL_VAULT_STATE.pricingRecords.filter(p => p.pricePerKg === null);
