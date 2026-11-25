@@ -174,7 +174,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       let currentProfile: UserProfile = profRec?.value ? { ...DEFAULT_PROFILE, ...profRec.value } : DEFAULT_PROFILE;
 
       currentProfile = clearPersistedAuthentication(currentProfile);
-      if (currentProfile.id === 'salimbawa707_owner' && !firebaseAuth.currentUser && !hasPersistedSupabaseSession()) {
+      if (currentProfile.id === 'salimbawa707_owner' && !firebaseAuth?.currentUser && !hasPersistedSupabaseSession()) {
         currentProfile = { ...DEFAULT_PROFILE };
         await db.userSettings.put({
           key: 'user_profile',
@@ -254,7 +254,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       }
 
       // Attach Firebase Auth state change listener once
-      if (!firebaseAuthListenerInitialized) {
+      if (firebaseAuth && !firebaseAuthListenerInitialized) {
         firebaseAuthListenerInitialized = true;
         onAuthStateChanged(firebaseAuth, async (fbUser) => {
           if (fbUser) {
