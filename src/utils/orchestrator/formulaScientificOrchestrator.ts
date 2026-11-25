@@ -639,14 +639,14 @@ export class FormulaScientificOrchestrator {
             : (state.hlbStatus as any ?? 'VALID')
       },
       hardnessResult: {
-        waterHardnessPpm: state.waterHardnessPpm,
+        waterHardnessPpm: Number.isFinite(state.waterHardnessPpm) ? state.waterHardnessPpm : Number.NaN,
         status: state.hardnessResult?.status || 'UNKNOWN',
-        maxSupportedPpm: state.hardnessResult?.maxSupportedPpm || 0,
-        washVolumeL: state.hardnessResult?.washVolumeL || 10,
-        washDoseGrams: state.hardnessResult?.washDoseGrams || 50,
+        maxSupportedPpm: Number.isFinite(state.hardnessResult?.maxSupportedPpm) ? state.hardnessResult.maxSupportedPpm : Number.NaN,
+        washVolumeL: Number.isFinite(state.hardnessResult?.washVolumeL) ? state.hardnessResult.washVolumeL : Number.NaN,
+        washDoseGrams: Number.isFinite(state.hardnessResult?.washDoseGrams) ? state.hardnessResult.washDoseGrams : Number.NaN,
         sufficiency: state.hardnessResult?.sufficiency || 'UNKNOWN',
-        hardnessLoadMg: state.hardnessResult?.hardnessLoadMg || 0,
-        totalSequestrationMg: state.hardnessResult?.totalSequestrationMg || 0
+        hardnessLoadMg: Number.isFinite(state.hardnessResult?.hardnessLoadMg) ? state.hardnessResult.hardnessLoadMg : Number.NaN,
+        totalSequestrationMg: Number.isFinite(state.hardnessResult?.totalSequestrationMg) ? state.hardnessResult.totalSequestrationMg : Number.NaN
       },
       chelationResult: state.chelationResult,
       compatibilityResult: {

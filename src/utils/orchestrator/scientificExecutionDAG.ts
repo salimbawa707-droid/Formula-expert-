@@ -650,8 +650,7 @@ export class ScientificExecutionDAG {
           washVolumeL,
           washDoseGrams,
           explicitBatchSizeKg,
-          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
-          true
+          state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined
         );
 
         state.hardnessResult = hardnessRes;

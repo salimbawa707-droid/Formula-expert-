@@ -3,6 +3,12 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, type User, type 
 import { firebaseEnvConfig, missingFirebaseEnvKeys } from '../config/firebaseEnv';
 import { initializeAppCheckForApp } from './firebaseAppCheck';
 
+/**
+ * Firebase is an optional cloud provider. The local R&D workspace must still
+ * start when a developer or CI runner has not supplied Firebase credentials.
+ * In that case we create a non-network placeholder app for Firestore imports,
+ * but deliberately do not initialise Firebase Auth or App Check.
+ */
 export const isFirebaseConfigured = missingFirebaseEnvKeys.length === 0;
 
 if (!isFirebaseConfigured) {
@@ -23,6 +29,8 @@ const firebaseConfig = {
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 if (isFirebaseConfigured) {
+  // Must run before the first Auth/Firestore call so every request carries an
+  // App Check token. No-op (with a console warning) until a site key is configured.
   initializeAppCheckForApp(app);
 }
 

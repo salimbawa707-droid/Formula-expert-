@@ -805,10 +805,12 @@ export function getChelatorBindingCapacity(
  * Calculates raw water hardness load in mg CaCO3.
  * Hardness Load (mg CaCO3) = Hardness (ppm or mg/L CaCO3) * Water Volume (L).
  */
-export function calculateWaterHardnessLoad(hardnessPpm: number, washVolumeL: number = 10): number {
-  const ppm = typeof hardnessPpm === 'number' && !isNaN(hardnessPpm) ? Math.max(0, hardnessPpm) : 0;
-  const vol = typeof washVolumeL === 'number' && !isNaN(washVolumeL) ? Math.max(0, washVolumeL) : 10;
-  return ppm * vol; // mg CaCO3
+export function calculateWaterHardnessLoad(hardnessPpm: number, washVolumeL?: number): number {
+  if (
+    typeof hardnessPpm !== 'number' || !Number.isFinite(hardnessPpm) || hardnessPpm < 0 ||
+    typeof washVolumeL !== 'number' || !Number.isFinite(washVolumeL) || washVolumeL <= 0
+  ) return Number.NaN;
+  return hardnessPpm * washVolumeL; // mg CaCO3
 }
 
 export interface FormulationChelationIngredientDetail {
@@ -1130,24 +1132,21 @@ export function calculateWaterHardnessTolerance(
   washVolumeL?: number | null,
   washDoseGrams?: number | null,
   batchSizeKg?: number,
-  productCategoryOrProfileId?: string,
-  requireExplicitScenarioInputs: boolean = true
+  productCategoryOrProfileId?: string
 ): WaterHardnessToleranceResult {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const policy = getProductHardnessPolicy(productCategoryOrProfileId);
 
   // Category-level NOT_APPLICABLE must be resolved before scenario completeness checks.
-  if (requireExplicitScenarioInputs && policy.requiresHardnessControl && (
+  if (policy.requiresHardnessControl && (
     !(typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0) ||
     !(typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0) ||
-    !(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0) ||
-    !(typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0)
+    !(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0)
   )) {
     const missing: string[] = [];
     if (!(typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0)) missing.push('waterHardnessPpm');
     if (!(typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0)) missing.push('washVolumeL');
     if (!(typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0)) missing.push('washDoseGrams');
-    if (!(typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0)) missing.push('batchSizeKg');
     const unavailable = Number.NaN;
     return {
       status: 'NOT_EVALUATED',
@@ -1181,11 +1180,11 @@ export function calculateWaterHardnessTolerance(
     };
   }
 
-  const vol = typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : (policy.defaultWashVolumeL || 10);
-  const dose = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : (policy.defaultDoseGrams || 20);
-  const batchKg = typeof batchSizeKg === 'number' && !isNaN(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : 100;
+  const vol = typeof washVolumeL === 'number' && Number.isFinite(washVolumeL) && washVolumeL > 0 ? washVolumeL : Number.NaN;
+  const dose = typeof washDoseGrams === 'number' && Number.isFinite(washDoseGrams) && washDoseGrams > 0 ? washDoseGrams : Number.NaN;
+  const batchKg = typeof batchSizeKg === 'number' && Number.isFinite(batchSizeKg) && batchSizeKg > 0 ? batchSizeKg : Number.NaN;
   const isUserHardnessEntered = typeof waterHardnessPpm === 'number' && Number.isFinite(waterHardnessPpm) && waterHardnessPpm >= 0;
-  const targetHardnessPpm = isUserHardnessEntered ? (waterHardnessPpm as number) : 150;
+  const targetHardnessPpm = isUserHardnessEntered ? (waterHardnessPpm as number) : Number.NaN;
 
   const { totalSequestrationMg, batchSequestrationGrams, chelationCapacityMg, builderCapacityMg } = 
     calculateFormulationChelationCapacity(ings, dose, batchKg);
@@ -1335,7 +1334,11 @@ export function calculateWaterHardnessTolerance(
   };
 }
 
-export function evaluateFormulationGreenChelators(ingredients: FormulationIngredient[]) {
+export function evaluateFormulationGreenChelators(
+  ingredients: FormulationIngredient[],
+  washDoseGrams?: number,
+  batchSizeKg?: number
+) {
   const ings = Array.isArray(ingredients) ? ingredients : [];
   const greenChelators = ings.filter(i => {
     const res = getChelatorBindingCapacity(i?.name || '');
@@ -1343,15 +1346,19 @@ export function evaluateFormulationGreenChelators(ingredients: FormulationIngred
   });
 
   const hasGreenChelator = greenChelators.length > 0;
-  const { totalSequestrationMg } = calculateFormulationChelationCapacity(ings, 20);
+  const capacity = calculateFormulationChelationCapacity(ings, washDoseGrams, batchSizeKg);
+  const evaluated = capacity.status === 'COMPLETE' && Number.isFinite(capacity.totalSequestrationMg);
 
   return {
+    status: evaluated ? 'CALCULATED' as const : 'INSUFFICIENT_DATA' as const,
     isGreen: hasGreenChelator,
     totalChelatorCount: greenChelators.length,
-    totalSequestrationMg,
-    recommendation: hasGreenChelator
-      ? `Active green chelation package binding approx ${Math.round(totalSequestrationMg)} mg CaCO₃ per wash dose.`
-      : 'Consider adding biodegradable GLDA or Sodium Citrate for hard water stability.'
+    totalSequestrationMg: evaluated ? capacity.totalSequestrationMg : null,
+    recommendation: !evaluated
+      ? 'INSUFFICIENT_DATA: enter the actual detergent dose before reporting per-wash chelation capacity. No default wash dose was assumed.'
+      : hasGreenChelator
+        ? `Estimated green-chelator package capacity: ${Math.round(capacity.totalSequestrationMg)} mg CaCO₃ for the supplied wash dose. Not a laboratory validation.`
+        : 'No registered green-chelator candidate identified in the supplied formula.'
   };
 }
 

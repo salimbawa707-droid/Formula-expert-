@@ -27,7 +27,8 @@ import {
   calculateWaterHardnessLoad,
   calculateFormulationChelationCapacity,
   calculateWaterHardnessTolerance,
-  calculateDynamicChelatorRequirement
+  calculateDynamicChelatorRequirement,
+  evaluateFormulationGreenChelators
 } from '../chelatorEngine';
 
 export interface P3TestResult {
@@ -98,6 +99,9 @@ export function runP3WaterHardnessTestSuite() {
   assertNear('Hardness Load', 'Moderate Water (150 ppm @ 10 L)', calculateWaterHardnessLoad(150, 10), 1500);
   assertNear('Hardness Load', 'Hard Water (300 ppm @ 10 L)', calculateWaterHardnessLoad(300, 10), 3000);
   assertNear('Hardness Load', 'Very Hard Water (500 ppm @ 10 L)', calculateWaterHardnessLoad(500, 10), 5000);
+  assert(Number.isNaN(calculateWaterHardnessLoad(150)), 'Fail-closed Inputs', 'Missing wash volume does not assume 10 L');
+  assert(Number.isNaN(calculateWaterHardnessLoad(150, 0)), 'Fail-closed Inputs', 'Zero wash volume is rejected');
+  assert(Number.isNaN(calculateWaterHardnessLoad(-1, 10)), 'Fail-closed Inputs', 'Negative hardness is rejected');
 
   // ---------------------------------------------------------------------------
   // 2. WASH VOLUME VARIATIONS (5 L, 10 L, 20 L, 50 L)
@@ -115,6 +119,9 @@ export function runP3WaterHardnessTestSuite() {
     { id: '1', name: 'GLDA 47% Liquid', percentage: 2.0 }, // 137 mg/g
     { id: '2', name: 'Sodium Citrate Dihydrate', percentage: 3.0 } // 150 mg/g
   ];
+  const missingDoseCapacity = calculateFormulationChelationCapacity(testFormula);
+  assert(missingDoseCapacity.status === 'INSUFFICIENT_DATA', 'Fail-closed Inputs', 'Missing wash dose does not assume 20 g');
+  assert(Number.isNaN(missingDoseCapacity.totalSequestrationMg), 'Fail-closed Inputs', 'Missing wash dose does not emit a numeric capacity');
 
   // In 5g dose:
   // GLDA mass = (2/100)*5 = 0.10g -> binds 0.10 * 137 = 13.7 mg
@@ -136,6 +143,15 @@ export function runP3WaterHardnessTestSuite() {
   // Total in 50g dose = 362.0 mg CaCO3
   const cap50g = calculateFormulationChelationCapacity(testFormula, 50);
   assertNear('Dosage Scaling', '50g Dose Sequestration Capacity', cap50g.totalSequestrationMg, 362.0);
+  assert(Number.isNaN(cap50g.batchSequestrationGrams), 'Fail-closed Inputs', 'Missing batch size does not assume a 100 kg batch');
+  const greenChelatorsWithoutDose = evaluateFormulationGreenChelators(testFormula);
+  assert(greenChelatorsWithoutDose.status === 'INSUFFICIENT_DATA' && greenChelatorsWithoutDose.totalSequestrationMg === null, 'Fail-closed Inputs', 'Green-chelator summary does not assume a 20 g wash dose');
+  const greenChelatorsWithDose = evaluateFormulationGreenChelators(testFormula, 20);
+  assert(greenChelatorsWithDose.status === 'CALCULATED' && greenChelatorsWithDose.totalSequestrationMg === 144.8, 'Fail-closed Inputs', 'Green-chelator summary uses the explicitly supplied wash dose');
+  const missingBatchTolerance = calculateWaterHardnessTolerance(testFormula, 150, 10, 20, undefined, 'LAUNDRY_LIQUID');
+  assert(missingBatchTolerance.status !== 'NOT_EVALUATED' && Number.isNaN(missingBatchTolerance.batchSizeKg) && Number.isNaN(missingBatchTolerance.batchSequestrationGrams), 'Fail-closed Inputs', 'Per-wash hardness remains calculable while batch total stays unavailable without batch mass');
+  const missingWashTolerance = calculateWaterHardnessTolerance(testFormula, 150, undefined, undefined, 100, 'LAUNDRY_LIQUID');
+  assert(missingWashTolerance.status === 'NOT_EVALUATED' && Number.isNaN(missingWashTolerance.hardnessLoadMg), 'Fail-closed Inputs', 'Missing wash volume/dose is not replaced with policy defaults');
 
   // ---------------------------------------------------------------------------
   // 4. CHELATOR ACTIVE GRADES, PURITY & MOLECULAR WEIGHT BASIS
