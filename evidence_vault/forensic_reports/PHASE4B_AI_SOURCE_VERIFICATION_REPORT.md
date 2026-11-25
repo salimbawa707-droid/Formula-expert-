@@ -26,3 +26,10 @@ Do not infer stain removal, cleaning score, CPI, normalized performance, or miss
 Passing this validator means only that the Pušić evidence ledger satisfies its programmed structural and consistency checks. It does not close Phase 4B, confirm independent verification, reconcile the repository-wide accounting/provenance ledgers, or unlock Phase 5. The validator therefore always reports Phase 5 as `LOCKED`.
 
 **Master status: Phase 4B OPEN; Phase 5 LOCKED.**
+
+
+## Follow-up AI visual re-audit correction — 2026-11-26
+
+The earlier recorded 144/144 comparison was not sufficient to establish source correctness: the production CSV and AI comparison ledger repeated the same transcription. A direct visual re-read of the archived publisher image found one discrepancy at Table 8, 25 mL/kg, Red wine: the printed value is **83.35**, not 81.35. The production CSV, current visual comparison ledger, and pending human reconciliation source-value column have been corrected. The 144-row correction ledger is `evidence_vault/review_workbooks/pusic_2006_ai_visual_reaudit_2026-11-26.csv`; see `evidence_vault/forensic_reports/PUSIC_2006_AI_VISUAL_REAUDIT_CORRECTION_2026-11-26.md`.
+
+The original 2026-11-25 ledger/report remain historical and are superseded for this single cell. Current corrected values have 144/144 production-to-comparison agreement, but this remains AI visual transcription evidence only; not blind review, human review, or `LAB_VALIDATED`. Phase 4B OPEN; Phase 5 LOCKED.
