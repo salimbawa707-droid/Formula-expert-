@@ -2,7 +2,7 @@ name: Current Release Quality Gates
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -268,7 +268,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: formula-expert-android-instrumentation-reports
-          path: |\n            android/app/build/reports/androidTests/connected/\n            android-webview-logcat.txt\n            android-webview-errors.txt
+          path: |
+            android/app/build/reports/androidTests/connected/
+            android-webview-logcat.txt
+            android-webview-errors.txt
           if-no-files-found: ignore
 
       - name: Upload debug APK
