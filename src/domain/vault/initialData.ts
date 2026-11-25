@@ -14,16 +14,16 @@ export const INITIAL_VAULT_STATE: VaultState = {
     reconciledFiles: 59,
     claimedSubmodules: 97,
     status: 'REPORTED_UNVERIFIED',
-    notes: 'Scoped source-tree audit at 891466265b3a8a6e01a6aab2c64da310116b302b: the legacy engines_reconciled.list contains 59 unique existing paths but is not a complete engine inventory; the repository has 62 source modules with Engine in the filename outside UI components (65 including 3 UI components), 94 broad engine/calculator/router/workflow candidate files, and 6 top-level ENG-001..ENG-006 vault registry records. These are different units and must not be summed or equated. The cited original Audit Report A (64) and Initial Architecture Spec (97) were not located, so those historical claims remain unverified. See evidence_vault/forensic_reports/ENGINE_COUNT_RECONCILIATION_2026-10-25.md and evidence_vault/scripts/verify_engine_inventory.mjs.',
+    notes: 'Post-ENG-005 implementation inventory at PR #99 merge-base: root engines_reconciled.list contains 55 unique existing paths and is not comprehensive; source tree contains 61 engine-named source files excluding UI, 64 including UI, 93 broad engine/calculator/router/workflow candidates, and 6 top-level ENG-001..ENG-006 vault registry records. Counts use different units and must not be summed or equated. The historical Audit Report A claim of 64 and Initial Architecture Spec claim of 97 remain UNVERIFIED because original artifacts/counting rules are unavailable; the fact that the current UI-inclusive filename count is also 64 is coincidental, not proof of equivalence. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md and its 2026-11-25 addendum, plus verify_engine_inventory.mjs.',
   },
   activeBlockers: [
     {
       id: 'BLK-002',
       phaseId: 'phase-4b',
       title: 'No eligible formula prediction pairs for Task 2 target engines',
-      impact: 'PhDat (EVD-007) is auxiliary phase-behavior evidence with zero formula-validation-eligible records. ENG-005 is unavailable at the audited main HEAD; no eligible matched-output pairs exist.',
-      environmentLimitation: 'ENG-003 is a semi-empirical formula screen; ENG-005 has no executable implementation at the audited main HEAD.',
-      workaroundOrNextAction: 'Keep validation gates open. Re-fetch/pin official Figshare file 45187180 and verify hashes; resolve 4 malformed profiles and verify composition basis/ingredient identity before any ENG-003 comparison. ENG-005 needs a real reviewed implementation and eligible source-linked foam pairs before validation claims.',
+      impact: 'PhDat (EVD-007) is auxiliary phase-behavior evidence with zero formula-validation-eligible records. ENG-005 now has a measured-series analysis utility only; no formulation-to-foam predictor or eligible matched-output pairs exist.',
+      environmentLimitation: 'ENG-003 is a semi-empirical formula screen; ENG-005 analysis utility exists, but it does not predict foam from formulations and is not numerically validated.',
+      workaroundOrNextAction: 'Keep validation gates open. Re-fetch/pin official Figshare file 45187180 and verify hashes; resolve 4 malformed profiles and verify composition basis/ingredient identity before any ENG-003 comparison. ENG-005 needs supplementary time-series acquisition/inspection and a separately specified formulation predictor with matched detergent recipes before prediction-validation claims.',
     },
     {
       id: 'BLK-003',
