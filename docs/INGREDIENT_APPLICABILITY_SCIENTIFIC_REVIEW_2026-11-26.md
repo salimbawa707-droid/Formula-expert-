@@ -60,3 +60,20 @@ After these edits, the expected status counts are: APPLICABLE 63, NOT_APPLICABLE
 ## Gate
 
 This review should merge only after the full regression suite, typecheck and production build pass on the PR head. Phase 4B remains OPEN and Phase 5 remains LOCKED. No human review or laboratory validation is claimed.
+
+
+## Second-pass role and rationale audit (follow-up PR)
+
+A second pass reviewed the *meaning* of applicability rationales, not just their status labels. It found several overclaims where an ingredient's supporting role had been described as a primary chemical mechanism or a universal product-performance guarantee. The following rationale corrections preserve category status where the ingredient remains a plausible supporting component, but narrow the claim:
+
+- LABSA, SLES and AOS in bathroom cleaner: distinguish surfactant-assisted wetting/soap-soil removal from mineral-scale dissolution; scale requires an acid or chelant system.
+- GLDA in kitchen degreaser: describe hardness chelation, not saponification; it does not replace alkaline builders or grease solvents.
+- GLDA in hand wash: describe hardness-ion sequestration, not direct lather generation.
+- LABSA in car shampoo: remove unsupported lubrication implication; paint/wax compatibility belongs to the finished formula and use dilution.
+- CAPB in floor cleaner and car shampoo: remove unqualified safety/paint-safe claims; retain role as amphoteric co-surfactant subject to residue and substrate checks.
+- Citric acid in manual dishwash: distinguish pH adjustment from proof of skin mildness.
+- Citric acid in automatic dishwash and glass cleaner: constrain claims to compatible rinse/descaling roles and formulation-dependent dose/performance.
+- Sodium carbonate in floor cleaner: describe alkalinity-assisted fatty-soil removal, not equivalence to a caustic saponification system.
+- GLDA in car shampoo: describe hardness chelation as a potential aid to spotting control, not a universal water-spot guarantee.
+
+No status was changed in this second pass. This is deliberate: the evidence justifies correcting the mechanism and limiting claims, not indiscriminately converting categories between APPLICABLE and CONDITIONAL. Regression assertions now prevent these known overclaims from silently returning. These are registry-level desk-review corrections, not finished-formula approval.
