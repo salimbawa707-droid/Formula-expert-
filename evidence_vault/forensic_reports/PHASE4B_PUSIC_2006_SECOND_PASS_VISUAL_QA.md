@@ -34,3 +34,8 @@ This was an additional visual QA pass by the same assistant, **not an independen
 ## Phase gate
 
 Phase 4B remains **OPEN** pending independent review and the separate historical source reconciliation acceptance criteria. Phase 5 remains **LOCKED**.
+
+
+## Correction notice — 2026-11-26
+
+The prior statement that all nine values in Table 8, 25 mL/kg matched the source was incorrect. The Red wine cell was transcribed as 81.35; the publisher image prints **83.35**. The production dataset and current AI comparison ledger have been corrected. The 144-row AI visual re-audit and full correction history are documented in `PUSIC_2006_AI_VISUAL_REAUDIT_CORRECTION_2026-11-26.md` and `pusic_2006_ai_visual_reaudit_2026-11-26.csv`. This notice supersedes the affected statement above; the rest of the historical QA record is preserved. No human review or lab validation is claimed.
