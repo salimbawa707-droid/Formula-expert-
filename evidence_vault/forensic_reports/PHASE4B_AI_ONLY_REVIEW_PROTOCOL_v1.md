@@ -40,7 +40,7 @@ All conditions below are mandatory:
 3. Both required methods are present: `SOURCE_FIRST_TRANSCRIPTION` and `INDEPENDENT_SOURCE_RECHECK`.
 4. Both passes use the same pinned source-manifest SHA-256 and produce distinct result SHA-256 hashes.
 5. Both passes are blind to the other pass's output and report zero unresolved discrepancies.
-6. All source hashes are pinned and all evidence references resolve to committed artifacts.
+6. All source hashes are pinned and all evidence references resolve to registered vault evidence, dataset, engine, or audit IDs; the source-manifest hash pins the underlying committed artifacts.
 7. The automated evidence, accounting, provenance, schema, regression, and fail-closed validators pass on the exact commit being considered for closure.
 8. The consolidated discrepancy register has zero unresolved items. Corrected items retain their original value, corrected value, source location, reason, and history.
 9. Dataset rights and license status are explicitly classified. `REVIEW_PENDING`, unknown rights, or non-commercial restrictions cannot be silently treated as commercial clearance.
@@ -68,7 +68,7 @@ The `ProjectPhase.aiReview` record stores:
 - status, protocol version, and full-phase versus partial scope;
 - coverage percentage and unresolved discrepancy count;
 - source-hash pinning and latest automated validation status;
-- committed evidence references;
+- registered vault evidence/dataset/engine/audit IDs (the runtime gate rejects unknown IDs);
 - two review-pass records with method, model, timestamp, source-manifest hash, result hash, blind flag, and discrepancy count;
 - `humanReviewPerformed: false`.
 
