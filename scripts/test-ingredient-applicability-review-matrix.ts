@@ -4,7 +4,7 @@ import {
 } from '../src/data/ingredientApplicabilityReviewMatrix';
 import { UNIVERSAL_INGREDIENTS } from '../src/data/universalIngredientLibrary';
 import { CANONICAL_PRODUCT_CATEGORY_IDS } from '../src/domain/productTaxonomy';
-import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3 } from '../src/data/ingredientApplicabilityEvidenceReviews';
+import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_4 } from '../src/data/ingredientApplicabilityEvidenceReviews';
 
 const expectedPairs = UNIVERSAL_INGREDIENTS.length * CANONICAL_PRODUCT_CATEGORY_IDS.length;
 const pairKeys = new Set(INGREDIENT_CATEGORY_REVIEW_MATRIX.map(
@@ -28,7 +28,8 @@ const evidenceReviews = [
   ...ANIONIC_SURFACTANT_EVIDENCE_REVIEWS,
   ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS,
   ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2,
-  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_3,
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_4
 ];
 const evidenceKeys = new Set(evidenceReviews.map((review) => `${review.ingredientId}::${review.productCategoryId}`));
 if (evidenceKeys.size !== evidenceReviews.length) throw new Error('Duplicate evidence review pair.');
@@ -148,3 +149,14 @@ if (actualNonionicPairs.size !== expectedNonionicPairs.size) {
   throw new Error('Unexpected or missing nonionic ingredient/category evidence pair.');
 }
 console.log(`PASS: ${actualNonionicPairs.size} nonionic ingredient/category reviews across three batches.`);
+for (const review of NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_4) {
+  if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
+    throw new Error(`Nonionic batch 4 references unknown ingredient: ${review.ingredientId}`);
+  }
+  if (!review.chemicalRole.trim() || !review.compatibilityMechanism.trim() ||
+      !review.concentrationFinding.trim() || !review.pHFinding.trim() ||
+      review.evidence.length === 0 || review.limitations.length === 0) {
+    throw new Error(`Incomplete nonionic batch 4 review: ${review.ingredientId}`);
+  }
+}
+console.log(`PASS: ${NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_4.length} batch-4 nonionic grade/category reviews.`);
