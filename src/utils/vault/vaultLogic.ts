@@ -273,6 +273,20 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
   const verificationRoute = humanVerificationPassed ? 'HUMAN_INDEPENDENT' : 'AI_ONLY';
+  if (!humanVerificationPassed) {
+    const unresolvedEvidenceRefs = (phase4B.aiReview?.evidenceRefs ?? []).filter(ref =>
+      !state.evidence.some(record => record.id === ref) &&
+      !state.datasets.some(record => record.id === ref) &&
+      !state.engines.some(record => record.id === ref) &&
+      !state.audits.some(record => record.id === ref)
+    );
+    if (unresolvedEvidenceRefs.length > 0) {
+      return {
+        allowed: false,
+        reason: `Gate blocked: AI review references unknown vault evidence IDs: ${unresolvedEvidenceRefs.join(', ')}.`,
+      };
+    }
+  }
 
   // Authoritative Source Provenance check
   if (state.authoritativeProvenanceStatus !== 'VERIFIED') {
