@@ -3,6 +3,7 @@ import type {
   VaultState,
   EngineRecord,
   DatasetRecord,
+  AIReviewGateRecord,
 } from '../../domain/vault/types.ts';
 import { INITIAL_HISTORICAL_RECONCILIATIONS, INITIAL_INVENTORY_METRICS } from '../../domain/vault/schemaDefaults.ts';
 
@@ -185,6 +186,69 @@ export function computeBatchCostWithNullIntegrity(
 }
 
 /**
+ * AI-only alternative to human independent verification.
+ * A partial sub-gate, a single pass, or a ledger that only compares duplicated
+ * values can never satisfy the Phase 4B closure requirement.
+ */
+export function validatePhase4BAIReview(
+  review?: AIReviewGateRecord
+): { passed: boolean; reason: string } {
+  const fail = (reason: string) => ({ passed: false, reason });
+  if (!review) return fail('AI review record is missing.');
+  if (review.status !== 'PASSED') return fail('AI review status is not PASSED.');
+  if (review.scope !== 'PHASE_4B_COMPLETE') return fail('AI review covers only a partial sub-gate, not all of Phase 4B.');
+  if (!review.protocolVersion?.trim()) return fail('AI review protocol version is missing.');
+  if (!Number.isFinite(review.coveragePct) || review.coveragePct !== 100) return fail('AI review coverage must be exactly 100%.');
+  if (!Number.isSafeInteger(review.unresolvedDiscrepancyCount) || review.unresolvedDiscrepancyCount !== 0) return fail('AI review has unresolved discrepancies.');
+  if (review.sourceHashesPinned !== true) return fail('AI review source hashes are not pinned.');
+  if (review.automatedValidationStatus !== 'PASSED') return fail('AI review automated validation has not passed.');
+  if (review.humanReviewPerformed !== false) return fail('AI-only route must not claim human review.');
+  if (!Array.isArray(review.evidenceRefs) || review.evidenceRefs.length < 2 ||
+      review.evidenceRefs.some(ref => typeof ref !== 'string' || !ref.trim()) ||
+      new Set(review.evidenceRefs).size !== review.evidenceRefs.length) {
+    return fail('AI review requires at least two unique, non-empty evidence references.');
+  }
+  if (!Array.isArray(review.reviewPasses) || review.reviewPasses.length < 2) {
+    return fail('AI review requires two distinct, blind review passes.');
+  }
+
+  const requiredMethods = new Set(['SOURCE_FIRST_TRANSCRIPTION', 'INDEPENDENT_SOURCE_RECHECK']);
+  const methods = new Set<string>();
+  const sourceManifests = new Set<string>();
+  const resultHashes = new Set<string>();
+  const manifestRefs = new Set<string>();
+  const resultRefs = new Set<string>();
+  const sha256 = /^[a-f0-9]{64}$/i;
+
+  for (const pass of review.reviewPasses) {
+    if (!pass || !requiredMethods.has(pass.method)) return fail('AI review pass method is invalid.');
+    if (methods.has(pass.method)) return fail('AI review pass methods must be distinct.');
+    methods.add(pass.method);
+    if (typeof pass.reviewerModel !== 'string' || !pass.reviewerModel.trim()) return fail('AI review model identity is missing.');
+    if (typeof pass.reviewedAt !== 'string' || !Number.isFinite(Date.parse(pass.reviewedAt))) return fail('AI review timestamp is invalid.');
+    if (typeof pass.sourceManifestRef !== 'string' || !pass.sourceManifestRef.startsWith('evidence_vault/ai_review/')) return fail('AI review source manifest reference must point inside evidence_vault/ai_review/.');
+    if (typeof pass.sourceManifestSha256 !== 'string' || !sha256.test(pass.sourceManifestSha256)) return fail('AI review source manifest hash is invalid.');
+    if (typeof pass.resultArtifactRef !== 'string' || !pass.resultArtifactRef.startsWith('evidence_vault/ai_review/')) return fail('AI review result artifact reference must point inside evidence_vault/ai_review/.');
+    if (typeof pass.resultSha256 !== 'string' || !sha256.test(pass.resultSha256)) return fail('AI review result hash is invalid.');
+    if (pass.blindToOtherPasses !== true) return fail('Each AI review pass must be blind to the other pass result.');
+    if (!Number.isSafeInteger(pass.discrepancyCount) || pass.discrepancyCount !== 0) return fail('Each AI review pass must have zero unresolved discrepancies.');
+    manifestRefs.add(pass.sourceManifestRef);
+    sourceManifests.add(pass.sourceManifestSha256);
+    resultRefs.add(pass.resultArtifactRef);
+    resultHashes.add(pass.resultSha256);
+  }
+
+  if (methods.size !== 2 || !requiredMethods.has('SOURCE_FIRST_TRANSCRIPTION') || !requiredMethods.has('INDEPENDENT_SOURCE_RECHECK')) {
+    return fail('AI review must include both source-first transcription and independent source re-check methods.');
+  }
+  if (manifestRefs.size !== 1 || sourceManifests.size !== 1) return fail('AI review passes do not reference the same pinned source manifest.');
+  if (resultRefs.size !== review.reviewPasses.length) return fail('AI review passes must reference distinct result artifacts.');
+  if (resultHashes.size !== review.reviewPasses.length) return fail('AI review pass outputs must have distinct hashes.');
+
+  return { passed: true, reason: 'Complete AI-only Phase 4B review passed its two-pass, source-pinned, zero-discrepancy protocol.' };
+}
+
+/**
  * Validates Phase 5 gate transition: Phase 5 cannot be unlocked while Phase 4B is OPEN or unapproved
  */
 export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: string } {
@@ -200,11 +264,35 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
-  if (phase4B.independentVerificationStatus !== 'CONFIRMED') {
+  if (phase4B.independentVerificationStatus === 'REJECTED') {
     return {
       allowed: false,
-      reason: 'Phase 4B independent verification status is UNESTABLISHED or REJECTED.',
+      reason: 'Phase 4B human independent verification was REJECTED; AI review cannot override a recorded rejection.',
     };
+  }
+
+  const aiReviewCheck = validatePhase4BAIReview(phase4B.aiReview);
+  const humanVerificationPassed = phase4B.independentVerificationStatus === 'CONFIRMED';
+  if (!humanVerificationPassed && !aiReviewCheck.passed) {
+    return {
+      allowed: false,
+      reason: `Gate blocked: neither human independent verification nor the complete AI-only review route passed. ${aiReviewCheck.reason}`,
+    };
+  }
+  const verificationRoute = humanVerificationPassed ? 'HUMAN_INDEPENDENT' : 'AI_ONLY';
+  if (!humanVerificationPassed) {
+    const unresolvedEvidenceRefs = (phase4B.aiReview?.evidenceRefs ?? []).filter(ref =>
+      !state.evidence.some(record => record.id === ref) &&
+      !state.datasets.some(record => record.id === ref) &&
+      !state.engines.some(record => record.id === ref) &&
+      !state.audits.some(record => record.id === ref)
+    );
+    if (unresolvedEvidenceRefs.length > 0) {
+      return {
+        allowed: false,
+        reason: `Gate blocked: AI review references unknown vault evidence IDs: ${unresolvedEvidenceRefs.join(', ')}.`,
+      };
+    }
   }
 
   // Authoritative Source Provenance check
@@ -267,7 +355,7 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
-  return { allowed: true, reason: 'Phase 4B acceptance criteria fully satisfied and independently verified.' };
+  return { allowed: true, reason: `Phase 4B acceptance criteria fully satisfied via ${verificationRoute} verification.` };
 }
 
 /**
@@ -343,6 +431,79 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     } else if (!parsed[key].every(isRecord)) {
       errors.push(`${key} must contain only JSON objects.`);
     }
+  }
+
+  if (Array.isArray(parsed.phases)) {
+    parsed.phases.forEach((phase: unknown, phaseIndex: number) => {
+      if (!isRecord(phase) || phase.aiReview === undefined) return;
+      const review = phase.aiReview;
+      if (!isRecord(review)) {
+        errors.push(`phases[${phaseIndex}].aiReview must be an object.`);
+        return;
+      }
+      if (!['NOT_STARTED', 'IN_PROGRESS', 'PASSED', 'FAILED'].includes(review.status)) {
+        errors.push(`phases[${phaseIndex}].aiReview.status is invalid.`);
+      }
+      if (typeof review.protocolVersion !== 'string' || !review.protocolVersion.trim()) {
+        errors.push(`phases[${phaseIndex}].aiReview.protocolVersion is required.`);
+      }
+      if (!['PARTIAL_SUBGATE', 'PHASE_4B_COMPLETE'].includes(review.scope)) {
+        errors.push(`phases[${phaseIndex}].aiReview.scope is invalid.`);
+      }
+      if (typeof review.coveragePct !== 'number' || !Number.isFinite(review.coveragePct) || review.coveragePct < 0 || review.coveragePct > 100) {
+        errors.push(`phases[${phaseIndex}].aiReview.coveragePct must be between 0 and 100.`);
+      }
+      if (!Number.isSafeInteger(review.unresolvedDiscrepancyCount) || review.unresolvedDiscrepancyCount < 0) {
+        errors.push(`phases[${phaseIndex}].aiReview.unresolvedDiscrepancyCount must be a non-negative integer.`);
+      }
+      if (typeof review.sourceHashesPinned !== 'boolean') {
+        errors.push(`phases[${phaseIndex}].aiReview.sourceHashesPinned must be boolean.`);
+      }
+      if (!['NOT_RUN', 'PASSED', 'FAILED'].includes(review.automatedValidationStatus)) {
+        errors.push(`phases[${phaseIndex}].aiReview.automatedValidationStatus is invalid.`);
+      }
+      if (!Array.isArray(review.evidenceRefs) || !review.evidenceRefs.every(isNonEmptyString)) {
+        errors.push(`phases[${phaseIndex}].aiReview.evidenceRefs must be an array of non-empty strings.`);
+      }
+      if (!Array.isArray(review.reviewPasses)) {
+        errors.push(`phases[${phaseIndex}].aiReview.reviewPasses must be an array.`);
+      } else {
+        review.reviewPasses.forEach((pass: unknown, passIndex: number) => {
+          if (!isRecord(pass)) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}] must be an object.`);
+            return;
+          }
+          if (!['SOURCE_FIRST_TRANSCRIPTION', 'INDEPENDENT_SOURCE_RECHECK'].includes(pass.method)) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].method is invalid.`);
+          }
+          for (const field of ['reviewerModel', 'reviewedAt', 'sourceManifestRef', 'sourceManifestSha256', 'resultArtifactRef', 'resultSha256']) {
+            if (!isNonEmptyString(pass[field])) errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} is required.`);
+          }
+          if (typeof pass.reviewedAt === 'string' && !Number.isFinite(Date.parse(pass.reviewedAt))) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].reviewedAt is invalid.`);
+          }
+          for (const field of ['sourceManifestRef', 'resultArtifactRef']) {
+            if (typeof pass[field] === 'string' && !pass[field].startsWith('evidence_vault/ai_review/')) {
+              errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} must point inside evidence_vault/ai_review/.`);
+            }
+          }
+          for (const field of ['sourceManifestSha256', 'resultSha256']) {
+            if (typeof pass[field] === 'string' && !/^[a-f0-9]{64}$/i.test(pass[field])) {
+              errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} must be a SHA-256 hex digest.`);
+            }
+          }
+          if (typeof pass.blindToOtherPasses !== 'boolean') {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].blindToOtherPasses must be boolean.`);
+          }
+          if (!Number.isSafeInteger(pass.discrepancyCount) || pass.discrepancyCount < 0) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].discrepancyCount must be a non-negative integer.`);
+          }
+        });
+      }
+      if (review.humanReviewPerformed !== false) {
+        errors.push(`phases[${phaseIndex}].aiReview.humanReviewPerformed must remain false for the AI-only route.`);
+      }
+    });
   }
 
   if (!isRecord(parsed.engineCountDiscrepancy)) {

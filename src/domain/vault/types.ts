@@ -200,6 +200,33 @@ export interface KeyDeliverable {
   notes?: string;
 }
 
+export type AIReviewPassMethod = 'SOURCE_FIRST_TRANSCRIPTION' | 'INDEPENDENT_SOURCE_RECHECK';
+
+export interface AIReviewPassRecord {
+  method: AIReviewPassMethod;
+  reviewerModel: string;
+  reviewedAt: string;
+  sourceManifestRef: string;
+  sourceManifestSha256: string;
+  resultArtifactRef: string;
+  resultSha256: string;
+  blindToOtherPasses: boolean;
+  discrepancyCount: number;
+}
+
+export interface AIReviewGateRecord {
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'PASSED' | 'FAILED';
+  protocolVersion: string;
+  scope: 'PARTIAL_SUBGATE' | 'PHASE_4B_COMPLETE';
+  coveragePct: number;
+  unresolvedDiscrepancyCount: number;
+  sourceHashesPinned: boolean;
+  automatedValidationStatus: 'NOT_RUN' | 'PASSED' | 'FAILED';
+  evidenceRefs: string[];
+  reviewPasses: AIReviewPassRecord[];
+  humanReviewPerformed: false;
+}
+
 export interface ProjectPhase {
   phaseId: string;
   name: string;
@@ -208,6 +235,7 @@ export interface ProjectPhase {
   closureReportDate?: string;
   reportedClosed: boolean;
   independentVerificationStatus: 'UNESTABLISHED' | 'CONFIRMED' | 'REJECTED';
+  aiReview?: AIReviewGateRecord;
   blockers: string[];
   description: string;
   keyDeliverables: KeyDeliverable[];
