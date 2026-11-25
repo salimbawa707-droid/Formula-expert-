@@ -99,3 +99,6 @@ Phase 1 is the only active AI review phase. Do not mark it complete merely becau
 ## Artifact integrity validation
 
 A Phase 4B AI review cannot be marked PASSED on metadata alone. Each review pass must reference a source manifest and a distinct result artifact under `evidence_vault/ai_review/`. The dedicated artifact validator reads the committed files and recomputes SHA-256; the recorded hashes must match the actual bytes. Path traversal or references outside the AI review vault are rejected. While the phase record is IN_PROGRESS, the validator reports that the gate is not closed and does not require future artifacts to exist yet.
+
+
+CI enforcement note: the artifact-integrity validator is part of the required evidence gate. A green result on an earlier commit is stale; the current pull-request head must pass the complete workflow before merge or Phase 5 consideration.
