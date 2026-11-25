@@ -162,3 +162,43 @@ export const ANIONIC_SURFACTANT_EVIDENCE_REVIEWS: IngredientEvidenceReview[] = [
     limitations: ['Confirm exact commercial grade and supplier CoA/TDS.', 'No permitted finished-product use range established.', 'Validate foam, detergency, viscosity, preservation and shelf stability in laundry liquid.']
   }
 ];
+
+
+export const NONIONIC_SURFACTANT_EVIDENCE_REVIEWS: IngredientEvidenceReview[] = [
+  {
+    ingredientId: 'lae-7', productCategoryId: 'LAUNDRY_LIQUID', decision: 'APPLICABLE',
+    chemicalRole: 'C12–15 fatty alcohol ethoxylate, nominally 7 EO; nonionic detergent surfactant for wetting, oily-soil emulsification and detergency.',
+    compatibilityMechanism: 'Ethoxylate chain provides water compatibility while the fatty alcohol chain associates with oily soil. Nonionic surfactants can be blended with anionic LAS/SLES/AOS and are useful for oily soil removal; cloud point and EO distribution determine temperature/electrolyte response.',
+    concentrationFinding: 'Catalog activeDefault 100% is only a catalog assumption; supplier TDS values for comparable C12–14 7EO grades do not verify this C12–15 product assay. No approved finished-product dose range assigned.',
+    pHFinding: 'Comparable C12–14 7EO supplier TDS reports pH 6–9 in 1% aqueous solution and cloud point 53–56°C. This is adjacent-chain evidence, not a verified LAE-7 specification. Finished laundry-liquid pH 7.5–9.5 remains screening context.',
+    incompatibilityRisks: ['Cloud point can fall with electrolyte loading and temperature changes, causing haze or phase separation.', 'Exact chain distribution and EO distribution affect detergency and cloud point.', 'Low-EO material may have limited water solubility at low temperature.', 'Verify residual EO/1,4-dioxane and supplier regulatory specifications.'],
+    evidence: [
+      {title:'Korkimya C12–C14 7EO technical data sheet',url:'https://korkimya.com/en/industries/surfactants/ethoxylated-fatty-alcohol-c12-c14-7eo/technical-data-sheet',evidenceType:'SUPPLIER_TDS'},
+      {title:'PETRONAS Ethonas FAE-9 product data sheet (adjacent 9EO grade)',url:'https://www.petronas.com/pcg/sites/default/files/2023-08/Products_Documents/FAE-9_May23%20SCA.pdf',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Exact C12–15 7EO supplier TDS/CoA is required; C12–14 7EO is adjacent evidence only.', 'No numeric use range approved.', 'Test cloud point, low-temperature clarity, oily-soil removal and compatibility with the anionic base.']
+  },
+  {
+    ingredientId: 'lae-9', productCategoryId: 'LAUNDRY_LIQUID', decision: 'APPLICABLE',
+    chemicalRole: 'C12–15 fatty alcohol ethoxylate, nominally 9 EO; water-compatible nonionic detergency and oily-soil emulsification surfactant.',
+    compatibilityMechanism: 'Higher average EO generally increases hydrophilicity and aqueous compatibility relative to lower-EO homologues, while the alkyl chain anchors into oily soil. Supplier C12–14 9EO data identifies homecare/I&I cleaning and emulsification applications; it is an adjacent chain-length grade.',
+    concentrationFinding: 'Catalog activeDefault 100% is not verified assay. PETRONAS FAE-9 describes C12–14 9EO and typical cloud point 77–82°C; those data do not verify the catalog C12–15 grade. No universal finished-product use level is inferred.',
+    pHFinding: 'PETRONAS reports pH 6.0–7.5 in 1% IPA/water (10/16) for its C12–14 9EO product. This solvent-containing test is not directly comparable with aqueous pH measurements. Finished laundry-liquid pH 7.5–9.5 is screening context only.',
+    incompatibilityRisks: ['Cloud point and phase behavior vary with electrolyte, solvent, temperature and surfactant blend.', 'Excess nonionic can reduce foam and alter viscosity.', 'Confirm EO distribution and trace ethylene oxide/1,4-dioxane controls with supplier.'],
+    evidence: [{title:'PETRONAS Ethonas FAE-9 product data sheet',url:'https://www.petronas.com/pcg/sites/default/files/2023-08/Products_Documents/FAE-9_May23%20SCA.pdf',evidenceType:'SUPPLIER_TDS'}],
+    limitations: ['Exact C12–15 9EO supplier grade is not independently confirmed.', 'No numeric use range approved.', 'Validate oily soil removal, rinse, foam, cloud point and storage stability.']
+  },
+  {
+    ingredientId: 'apg-0810', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'C8–10 alkyl polyglucoside nonionic surfactant mixture; wetting, detergency, emulsification and foam contribution.',
+    compatibilityMechanism: 'APG is a distribution of alkyl-chain and glucoside oligomers rather than a single pure molecule. It can complement anionic surfactants and improve wetting; alkaline commercial grades may raise formula pH and add substantial solids/electrolyte burden.',
+    concentrationFinding: 'Catalog activeDefault 50% is consistent with supplier APG 0810 solids of 50.0–52.0%, but this does not verify the catalog lot. Solids are not necessarily identical to surfactant active matter for every supplier test method. No use range assigned.',
+    pHFinding: 'Supplier APG 0810 TDS reports pH data for its grade, but commercial APG grades vary: examples include pH 7–9 for one 20% in IPA/water test and 11.5–12.5 for other 10% aqueous grades. Do not transfer a supplier pH range across grades. Finished laundry-liquid target 7.5–9.5 is screening context.',
+    incompatibilityRisks: ['Alkaline APG grade can shift finished pH outside the intended range.', 'Electrolytes and APG chain/oligomer distribution affect viscosity and clarity.', 'High foam may be undesirable for front-load laundry.', 'Preservation and microbial quality must be checked for aqueous commercial grade.'],
+    evidence: [
+      {title:'ZXCHEM APG 0810 technical data sheet (2026)',url:'https://www.zxchem.com/wp-content/uploads/2026/10/TDS-APG-0810-68515-73-1-2026-2.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'GreenAPG AG 0810 series technical specification',url:'https://pub-mediabox-storage.rxweb-prd.com/exhibitor/document/exh-39aa41d7-4084-4a91-939f-5490fa4b4acd/5b089507-1660-4399-af84-03846013b653.pdf',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Confirm exact supplier grade, pH test method and solids/active-matter definition.', 'No universal dose or pH stability limit inferred.', 'Test blend clarity, foam, viscosity, pH drift and storage stability.']
+  }
+];
