@@ -31,7 +31,7 @@ This baseline is a data-quality and coverage inventory, not a completed scientif
 
 ## Evidence-reviewed batch status (2026-11-26)
 
-The following review records are now reconciled into the generated ingredient × category matrix (14 reviewed pairs total; every other pair remains NOT_REVIEWED):
+The following review records are now reconciled into the generated ingredient × category matrix (20 reviewed pairs total; every other pair remains NOT_REVIEWED):
 
 | Ingredient grade | Category | Decision | Main limitation |
 |---|---|---|---|
@@ -55,11 +55,11 @@ These 14 records are not a complete category-wise chemistry audit. They mostly c
 
 ## Nonionic batch 3 — APG 1214 and NPE risk review
 
-Three additional nonionic ingredient families/grades were reviewed, adding 11 category pairs to the matrix (total evidence-reviewed pairs: 25):
+Three additional nonionic ingredient families/grades were reviewed, adding 6 category pairs to the matrix (total evidence-reviewed pairs: 20):
 
 - APG 1214 / LAUNDRY_LIQUID: APPLICABLE based on supplier TDS and a supplier liquid-laundry example; 50–53% solids is not automatically verified active matter, and the example dose is not a universal limit.
 - APG 1214 / DISHWASH_MANUAL: APPLICABLE as a nonionic co-surfactant candidate; finished pH and skin mildness must be verified because supplier 10% solution pH is 11.5–12.5.
 - APG 1214 / KITCHEN_DEGREASER: APPLICABLE as a hard-surface wetting/emulsifying candidate; substrate and solvent compatibility remain formulation-specific.
 - NP-6, NP-9 and NP-10 / LAUNDRY_LIQUID: CONDITIONALLY_APPLICABLE risk-hold only, not a recommendation to use. EU REACH Annex XVII entry 46 restricts NP/NPE at >=0.1 wt% for domestic cleaning and other specified uses. This is not represented as Indian law; target-market legal review is required. Prefer NPE-free alternatives for new consumer products.
 
-The three NPE records have no supplier-specific grade TDS/CoA in this review. No NPE use level is approved. Evidence and limitations are carried into the matrix, and regression tests assert the exact 11 ingredient/category pairs.
+The three NPE records have no supplier-specific grade TDS/CoA in this review. No NPE use level is approved. Evidence and limitations are carried into the matrix, and regression tests assert the exact 6 ingredient/category pairs.
