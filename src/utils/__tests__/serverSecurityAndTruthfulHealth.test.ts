@@ -342,7 +342,7 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
   const firestoreRules = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8');
   const calibrationValidator = firestoreRules.split('function isValidCalibrationProposal(data, proposalId) {')[1]?.split('\n    }')[0] || '';
   const evidenceListValidator = firestoreRules.split('function isStringEvidenceReferenceList(values) {')[1]?.split('\n    }')[0] || '';
-  assert('CalibrationRules 1: Required proposal fields match the TypeScript calibration contract', ['canonicalCategory', 'proposedShiftOffset', 'observedBias', 'sampleCount', 'meanAbsoluteError', 'rationale'].every(field => calibrationValidator.includes(field)), calibrationValidator.length > 0, true);
+  assert('CalibrationRules 1: Required proposal fields match the TypeScript calibration contract', ['canonicalCategory', 'proposedShiftOffset', 'observedBias', 'sampleCount', 'meanAbsoluteError', 'rationale'].every(field => calibrationValidator.includes(field)) && calibrationValidator.includes('LAUNDRY_POWDER') && calibrationValidator.includes('CAR_SHAMPOO'), calibrationValidator.length > 0, true);
   assert('CalibrationRules 2: Sample count is enforced as a positive integer', /data\.sampleCount is int && data\.sampleCount > 0/.test(calibrationValidator), calibrationValidator.includes('data.sampleCount is int && data.sampleCount > 0'), true);
   assert('CalibrationRules 3: Evidence reference list has a bounded size and string-item validation', evidenceListValidator.includes('values.size() <= 50') && evidenceListValidator.includes('values[49] is string'), evidenceListValidator.includes('values[49] is string'), true);
 
