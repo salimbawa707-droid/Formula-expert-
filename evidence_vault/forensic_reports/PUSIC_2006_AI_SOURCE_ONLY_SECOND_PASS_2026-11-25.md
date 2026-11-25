@@ -61,3 +61,8 @@ This review is not an independent human review and does not satisfy a human-only
 ## Exceptions
 
 - None. All 144 values matched exactly by numeric comparison.
+
+
+## Follow-up correction notice — 2026-11-26
+
+The reported 144/144 exact matches in this historical second-pass record are superseded for one cell. A follow-up visual re-read found Table 8, 25 mL/kg, Red wine is printed **83.35**, while this historical record and the then-current production CSV contained 81.35. The prior equality was a duplicated transcription, not proof of source accuracy. The current production CSV and comparison ledger are corrected. The 2026-11-26 re-audit ledger and correction report document the old and corrected values. This historical CSV/report are intentionally retained unchanged as audit history. AI-only; not blind review, human review, or lab validation.
