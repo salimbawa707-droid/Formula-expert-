@@ -410,7 +410,7 @@ export class ScientificLearningEngine {
 
     // Build the proposal payload for globalGovernanceRegistry
     const proposalPayload: CalibrationCandidateProposal = {
-      proposalId: `calib-prop-learning-${candidate.canonicalCategory}-${candidate.kpiId}-${Date.now()}`,
+      proposalId: `calib-prop-learning-${candidate.canonicalCategory}-${candidate.kpiId.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 48)}-${Date.now()}`,
       canonicalCategory: candidate.canonicalCategory,
       kpiId: candidate.kpiId,
       parameterName: candidate.parameterName,
