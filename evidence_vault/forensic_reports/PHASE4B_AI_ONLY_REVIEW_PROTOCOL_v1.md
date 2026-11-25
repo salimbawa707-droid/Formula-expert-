@@ -77,3 +77,8 @@ The `ProjectPhase.aiReview` record stores:
 ## Current status
 
 The Phase 4B AI review record is intentionally `IN_PROGRESS`, scope `PARTIAL_SUBGATE`, coverage 0%, with no claimed completed blind pair. The Pušić 144-cell source correction and the nonionic literature review are useful sub-gates, but they do not satisfy full Phase 4B closure. Phase 5 remains LOCKED.
+
+
+## Human-specific legacy fields
+
+The Pušić production CSV's `reviewer_2`, `review_match`, and `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW` fields belong to the legacy human-only comparison path. The AI-only route must not populate those fields with an AI identity or imply human sign-off. AI review evidence is recorded in separate AI ledgers and the `ProjectPhase.aiReview` record. The human-specific validator may therefore continue to report the human route as pending while the AI-only route is evaluated independently.
