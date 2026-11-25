@@ -99,4 +99,4 @@ function main(): void {
   if (!result.valid) process.exit(1);
 }
 
-if (import.meta.main) main();
+if ((process.argv[1] ?? '').endsWith('validate-phase4b-ai-review-artifacts.ts')) main();
