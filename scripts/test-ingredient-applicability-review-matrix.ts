@@ -50,3 +50,26 @@ for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
   }
 }
 console.log(`PASS: ${LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS.length} sourced liquid-laundry surfactant reviews.`);
+
+import { AOS_LAUNDRY_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
+
+for (const review of AOS_LAUNDRY_EVIDENCE_REVIEWS) {
+  if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
+    throw new Error(`AOS review references unknown ingredient: ${review.ingredientId}`);
+  }
+  if (review.ingredientId === 'aos-38' && review.productCategoryId !== 'LAUNDRY_LIQUID') {
+    throw new Error('AOS 38 liquid grade must be reviewed against LAUNDRY_LIQUID.');
+  }
+  if (review.ingredientId === 'aos-92' && review.productCategoryId !== 'LAUNDRY_POWDER') {
+    throw new Error('AOS 92 powder grade must be reviewed against LAUNDRY_POWDER.');
+  }
+  if (!review.chemicalRole || !review.compatibilityMechanism ||
+      !review.concentrationFinding || !review.pHFinding ||
+      review.evidence.length === 0 || review.limitations.length === 0) {
+    throw new Error(`Incomplete AOS evidence review: ${review.ingredientId}`);
+  }
+  if (review.permittedUseMinPct !== undefined || review.permittedUseMaxPct !== undefined) {
+    throw new Error('AOS evidence batch must not invent numeric permitted-use limits.');
+  }
+}
+console.log(`PASS: ${AOS_LAUNDRY_EVIDENCE_REVIEWS.length} evidence-reviewed AOS grade/category pairs.`);
