@@ -133,12 +133,12 @@ export function runVaultLogicTestSuite() {
   assert(Boolean(ds002), 'Dataset Inspection', 'DS-002 descriptive rheology dataset exists');
   assert(ds002?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-002 source workbooks are parser-inspected');
   assert(!INITIAL_VAULT_STATE.datasets.some(ds => ds.id === 'DS-003'), 'Dataset Inspection', 'Out-of-scope personal-care dataset is not registered');
-  assert(ds002?.actualRowCount === null, 'Dataset Inspection', 'DS-002 physical observation count remains unresolved');
+  assert(ds002?.actualRowCount === 11626, 'Dataset Inspection', 'DS-002 records 11,626 numeric-bearing worksheet rows; physical observation count remains unresolved');
   assert(ds002?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-002 is not formula-validation-ready');
   const ds005 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-005');
   assert(Boolean(ds005), 'Dataset Inspection', 'DS-005 RepOD source is registered');
   assert(ds005?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-005 both source worksheets are parsed and inspected');
-  assert(ds005?.actualRowCount === null, 'Dataset Inspection', 'DS-005 independent observation count remains unresolved');
+  assert(ds005?.actualRowCount === 23, 'Dataset Inspection', 'DS-005 records 23 concentration-level rows; independent replicate count remains unresolved');
   const ds004 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-004');
   assert(ds004?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-004 PhDat arrays passed the recorded source integrity audit');
   assert(ds004?.actualRowCount === 143, 'Dataset Inspection', 'DS-004 row count reflects source chemical records, not independent experiments');
@@ -147,7 +147,7 @@ export function runVaultLogicTestSuite() {
   assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
   assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
   assert(Boolean(ds005?.inspectionNotes?.includes('Unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
-  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-004'].includes(ds.id))) {
+  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-004', 'DS-005'].includes(ds.id))) {
     assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
   }
 
@@ -209,7 +209,7 @@ export function runVaultLogicTestSuite() {
   const serialized = JSON.stringify(INITIAL_VAULT_STATE);
   const parsed = JSON.parse(serialized);
   assert(parsed.datasets.length === INITIAL_VAULT_STATE.datasets.length, 'Roundtrip Preservation', 'Dataset length preserved');
-  for (const ds of parsed.datasets.filter((ds: any) => !['DS-001', 'DS-004'].includes(ds.id))) {
+  for (const ds of parsed.datasets.filter((ds: any) => !['DS-001', 'DS-002', 'DS-004', 'DS-005'].includes(ds.id))) {
     assert(ds.actualRowCount === null, 'Roundtrip Preservation', `Dataset ${ds.id} rowCount remains null`);
   }
   assert(parsed.datasets.find((ds: any) => ds.id === 'DS-001')?.actualRowCount === 1624, 'Roundtrip Preservation', 'Historical DS-001 master-record count survives roundtrip');
@@ -244,7 +244,7 @@ export function runVaultLogicTestSuite() {
   assert(legacyMigrationResult.parsedState?.version === '1.1.0', 'Schema Migration', 'Legacy backup is upgraded to schema v1.1.0');
   assert((legacyMigrationResult.parsedState?.inventoryMetrics.length || 0) >= 5, 'Schema Migration', 'Migration adds only explicitly reported inventory metrics');
   assert(legacyMigrationResult.parsedState?.historicalReconciliations[0]?.reconciliationStatus === 'UNRESOLVED', 'Schema Migration', 'Historical 27,982 claim remains unresolved after migration');
-  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' ? ds.actualRowCount === 1624 : ds.id === 'DS-004' ? ds.actualRowCount === 143 : ds.actualRowCount === null)), 'Schema Migration', 'Uninspected dataset counts remain null while audited DS-001 and DS-004 counts are preserved');
+  assert(Boolean(legacyMigrationResult.parsedState?.datasets.every(ds => ds.id === 'DS-001' ? ds.actualRowCount === 1624 : ds.id === 'DS-002' ? ds.actualRowCount === 11626 : ds.id === 'DS-004' ? ds.actualRowCount === 143 : ds.id === 'DS-005' ? ds.actualRowCount === 23 : ds.actualRowCount === null)), 'Schema Migration', 'Inspected row inventories are preserved while uninspected dataset counts remain null');
   assert(canUnlockPhase5(legacyMigrationResult.parsedState || INITIAL_VAULT_STATE).allowed === false, 'Schema Migration', 'Migration cannot unlock Phase 5');
 
   const optionalScientificExtensions = JSON.parse(exported);
