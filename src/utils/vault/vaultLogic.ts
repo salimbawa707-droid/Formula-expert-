@@ -29,20 +29,44 @@ export interface VaultMetrics {
   nullPriceIngredientsCount: number;
 }
 
+export interface DatasetInspectionSummary {
+  totalCount: number;
+  inspectedCount: number;
+  inspectedDatasets: DatasetRecord[];
+  uninspectedDatasets: DatasetRecord[];
+}
+
+/**
+ * A dataset counts as numerically inspected only when its status is explicit
+ * and its source-row inventory is a finite positive number.
+ */
+export function getDatasetInspectionSummary(
+  datasets: DatasetRecord[]
+): DatasetInspectionSummary {
+  const inspectedDatasets = datasets.filter(
+    dataset =>
+      dataset.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
+      typeof dataset.actualRowCount === 'number' &&
+      Number.isFinite(dataset.actualRowCount) &&
+      dataset.actualRowCount > 0
+  );
+  const inspectedIds = new Set(inspectedDatasets.map(dataset => dataset.id));
+
+  return {
+    totalCount: datasets.length,
+    inspectedCount: inspectedDatasets.length,
+    inspectedDatasets,
+    uninspectedDatasets: datasets.filter(dataset => !inspectedIds.has(dataset.id)),
+  };
+}
+
 export function calculateVaultMetrics(state: VaultState): VaultMetrics {
   const currentPhase = state.phases.find(p => p.status === 'ACTIVE') || state.phases[0];
 
   // Strictly compute inspected experimental datasets:
   // Must be marked NUMERICALLY_INSPECTED, have non-null positive row count,
   // and be linked to an EXPERIMENTAL or REFERENCE_DATABASE evidence record.
-  const inspectedDatasets = state.datasets.filter(d => {
-    return (
-      d.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
-      d.actualRowCount !== null &&
-      typeof d.actualRowCount === 'number' &&
-      d.actualRowCount > 0
-    );
-  });
+  const inspectedDatasets = getDatasetInspectionSummary(state.datasets).inspectedDatasets;
 
   // Engines ready for numerical validation must be explicitly READY
   const readyEngines = state.engines.filter(
@@ -232,9 +256,7 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
   }
 
   // Prevent single-dataset or partial-dataset bypass: require ALL datasets in the vault to be numerically inspected
-  const uninspectedDatasets = state.datasets.filter(
-    d => d.inspectionStatus !== 'NUMERICALLY_INSPECTED' || (d.actualRowCount ?? 0) <= 0
-  );
+  const { uninspectedDatasets } = getDatasetInspectionSummary(state.datasets);
 
   if (uninspectedDatasets.length > 0) {
     return {
