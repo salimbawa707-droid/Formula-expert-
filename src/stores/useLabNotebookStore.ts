@@ -48,7 +48,7 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
     if (firebaseAuth?.currentUser) {
       try {
         const { saveUserTrial } = await import('../services/firebaseClient');
-        await saveUserTrial(firebaseAuth.currentUser.uid, {
+        await saveUserTrial(firebaseAuth?.currentUser.uid, {
           id,
           title: record.title,
           observations: record.text,
@@ -71,12 +71,12 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
       updatedAt: new Date().toISOString()
     });
 
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       try {
         const { saveUserTrial } = await import('../services/firebaseClient');
         const note = await db.labNotes.get(id);
         if (note) {
-          await saveUserTrial(firebaseAuth.currentUser.uid, {
+          await saveUserTrial(firebaseAuth?.currentUser.uid, {
             id,
             title: note.title,
             observations: note.text,
