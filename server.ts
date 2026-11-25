@@ -939,7 +939,19 @@ async function startServer() {
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req: Request, res: Response) => {
+    // Express 5 uses path-to-regexp v8, where a bare '*' path throws
+    // "Missing parameter name at index 1" at registration time and crashes the
+    // production boot. Use a path-less fallback middleware instead so the SPA
+    // history fallback never touches the router parser.
+    app.use((req: Request, res: Response) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        res.status(404).json({ error: 'Not found.' });
+        return;
+      }
+      if (req.path === '/api' || req.path.startsWith('/api/')) {
+        res.status(404).json({ error: 'Unknown API endpoint.' });
+        return;
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
