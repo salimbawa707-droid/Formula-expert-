@@ -443,7 +443,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (!authRes.success || !authRes.user || !authRes.session) {
       throw new Error(authRes.error || 'Authentication did not return a valid user session.');
     }
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       await firebaseSignOutUser();
     }
     const user = authRes.user;
@@ -476,7 +476,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (authRes.confirmationRequired || !authRes.session) {
       return { confirmationRequired: true };
     }
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       await firebaseSignOutUser();
     }
     const updated: Partial<UserProfile> = {
@@ -674,7 +674,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   triggerCloudSync: async () => {
     set({ syncState: { ...get().syncState, isSyncing: true, error: null } });
-    const currentUser = firebaseAuth.currentUser;
+    const currentUser = firebaseAuth?.currentUser;
 
     if (currentUser) {
       try {
