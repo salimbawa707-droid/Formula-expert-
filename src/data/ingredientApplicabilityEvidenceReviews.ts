@@ -6,18 +6,6 @@ import type { ApplicabilityReviewDecision } from './ingredientApplicabilityRevie
  * Scope is limited to catalog grades with identifiable LAS/SLES chemistry.
  * Literature formulation examples are not universal safe-use limits.
  */
-export interface IngredientEvidenceReview {
-  ingredientId: string;
-  productCategoryId: ProductCategoryId;
-  decision: ApplicabilityReviewDecision;
-  chemicalRole: string;
-  compatibilityMechanism: string;
-  concentrationFinding: string;
-  pHFinding: string;
-  incompatibilityRisks: string[];
-  evidence: { title: string; url: string; evidenceType: 'SUPPLIER_TDS' | 'TECHNICAL_GUIDANCE' | 'FORMULATION_EXAMPLE' }[];
-  limitations: string[];
-}
 
 const laundryLiquidSurfactantReviews: IngredientEvidenceReview[] = [
   {
