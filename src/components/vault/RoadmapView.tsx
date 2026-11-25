@@ -193,7 +193,11 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                       <p className="text-emerald-300 font-medium">
                         Numerical inspection: {datasetInspectionSummary.inspectedCount}/{datasetInspectionSummary.totalCount} registered datasets have a finite, positive, parser-recorded row inventory.
                       </p>
-                      {datasetInspectionSummary.uninspectedDatasets.length > 0 ? (
+                      {datasetInspectionSummary.totalCount === 0 ? (
+                        <p className="text-amber-300 font-medium">
+                          No datasets are registered; numerical inspection coverage cannot be established.
+                        </p>
+                      ) : datasetInspectionSummary.uninspectedDatasets.length > 0 ? (
                         <p className="text-rose-300 font-medium">
                           Still uninspected: {datasetInspectionSummary.uninspectedDatasets.map(dataset => dataset.id).join(', ')}.
                         </p>
