@@ -51,7 +51,7 @@ for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
 }
 console.log(`PASS: ${LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS.length} sourced liquid-laundry surfactant reviews.`);
 
-import { AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
+import { AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
 
 for (const review of AOS_LAUNDRY_EVIDENCE_REVIEWS) {
   if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
@@ -97,3 +97,22 @@ if (ANIONIC_SURFACTANT_EVIDENCE_REVIEWS.length !== expectedAnionic.size) {
   throw new Error('Missing SAS/SLS review record.');
 }
 console.log(`PASS: ${ANIONIC_SURFACTANT_EVIDENCE_REVIEWS.length} SAS/SLS grade/category chemistry reviews.`);
+
+const expectedNonionics = new Set(['lae-7', 'lae-9', 'apg-0810']);
+for (const review of NONIONIC_SURFACTANT_EVIDENCE_REVIEWS) {
+  if (!expectedNonionics.has(review.ingredientId) || review.productCategoryId !== 'LAUNDRY_LIQUID') {
+    throw new Error(`Unexpected nonionic review scope: ${review.ingredientId} / ${review.productCategoryId}`);
+  }
+  if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
+    throw new Error(`Nonionic review references unknown ingredient: ${review.ingredientId}`);
+  }
+  if (!review.chemicalRole.trim() || !review.compatibilityMechanism.trim() ||
+      !review.concentrationFinding.trim() || !review.pHFinding.trim() ||
+      review.evidence.length === 0 || review.limitations.length === 0) {
+    throw new Error(`Incomplete nonionic chemistry review: ${review.ingredientId}`);
+  }
+}
+if (NONIONIC_SURFACTANT_EVIDENCE_REVIEWS.length !== expectedNonionics.size) {
+  throw new Error('Missing initial nonionic surfactant review record.');
+}
+console.log(`PASS: ${NONIONIC_SURFACTANT_EVIDENCE_REVIEWS.length} initial nonionic chemistry reviews.`);
