@@ -45,3 +45,17 @@ node evidence_vault/scripts/verify_engine_inventory.mjs
 ```
 
 The script exits non-zero if the legacy list is duplicated, contains missing paths, or the audited count definitions drift. When source files change, update the expected counts only after reviewing the resulting inventory diff.
+
+
+## Addendum — 2026-11-25 after ENG-005 analysis utility addition
+
+The current CI inventory script was run against the PR #99 merge candidate and reported:
+- 55 unique existing paths in `engines_reconciled.list` (the list is not comprehensive);
+- 61 engine-named source files excluding UI;
+- 64 engine-named files including UI;
+- 93 broad discovery candidates;
+- 6 top-level ENG-001..ENG-006 vault registry records.
+
+The new `src/utils/foamKineticsEngine.ts` file is included in the filename-based counts. The current UI-inclusive count of 64 happens to equal the historical Audit Report A claim of 64, but this is **not** evidence that the historical claim used the same definition. The historical 64 and 97 claims remain `UNVERIFIED` because their original artifacts and counting rules remain unavailable. The previous 59/62/65/94 values are an earlier source-tree snapshot and are superseded for current-head inventory reporting.
+
+The executable inventory guard now expects 61/64/93 and retains the 55-path legacy-list checks. These are implementation/source-tree counts, not a count of independent scientific models.

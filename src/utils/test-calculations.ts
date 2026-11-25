@@ -71,6 +71,7 @@ import { runSingleAuthoritativeVerdictRegressionTestSuite } from './__tests__/si
 import { runFormulaLibraryQualityGateRegressionTestSuite } from './__tests__/formulaLibraryQualityGate.regression.test';
 import { runLegacyStatusLeakageTestSuite } from './__tests__/legacyStatusLeakage.regression.test';
 import { runFoamRegressionTestSuite } from './__tests__/foamRegression.test';
+import { runFoamKineticsEngineTestSuite } from './__tests__/foamKineticsEngine.test';
 import { runCategorySuitabilityRegressionTestSuite } from './__tests__/categorySuitabilityRegression.test';
 import { runSpecFallbackRegressionTestSuite } from './__tests__/specFallback.regression.test';
 import { runHardcodedScientificResultsRegressionTestSuite } from './__tests__/hardcodedScientificResults.regression.test';
@@ -212,6 +213,7 @@ const singleVerdictSummary = runSingleAuthoritativeVerdictRegressionTestSuite();
 const formulaLibrarySummary = runFormulaLibraryQualityGateRegressionTestSuite();
 const legacyStatusLeakageSummary = runLegacyStatusLeakageTestSuite();
 const foamSummary = runFoamRegressionTestSuite();
+const foamKineticsSummary = runFoamKineticsEngineTestSuite();
 const suitabilitySummary = runCategorySuitabilityRegressionTestSuite();
 const specFallbackSummary = runSpecFallbackRegressionTestSuite();
 const hardcodedResultsSummary = runHardcodedScientificResultsRegressionTestSuite();
@@ -509,6 +511,7 @@ const executionMap: TestExecutionRecord[] = [
   { file: 'formulaLibraryQualityGate.regression.test.ts', moduleName: 'runFormulaLibraryQualityGateRegressionTestSuite', executed: true, passedAssertions: formulaLibrarySummary.passed, failedAssertions: formulaLibrarySummary.failed, totalAssertions: formulaLibrarySummary.passed + formulaLibrarySummary.failed, skipped: false },
   { file: 'legacyStatusLeakage.regression.test.ts', moduleName: 'runLegacyStatusLeakageTestSuite', executed: true, passedAssertions: legacyStatusLeakageSummary.passed, failedAssertions: legacyStatusLeakageSummary.failed, totalAssertions: legacyStatusLeakageSummary.passed + legacyStatusLeakageSummary.failed, skipped: false },
   { file: 'foamRegression.test.ts', moduleName: 'runFoamRegressionTestSuite', executed: true, passedAssertions: foamSummary.passed, failedAssertions: foamSummary.failed, totalAssertions: foamSummary.passed + foamSummary.failed, skipped: false },
+  { file: 'foamKineticsEngine.test.ts', moduleName: 'runFoamKineticsEngineTestSuite', executed: true, passedAssertions: foamKineticsSummary.passed, failedAssertions: foamKineticsSummary.failed, totalAssertions: foamKineticsSummary.passed + foamKineticsSummary.failed, skipped: false },
   { file: 'categorySuitabilityRegression.test.ts', moduleName: 'runCategorySuitabilityRegressionTestSuite', executed: true, passedAssertions: suitabilitySummary.passed, failedAssertions: suitabilitySummary.failed, totalAssertions: suitabilitySummary.passed + suitabilitySummary.failed, skipped: false },
   { file: 'specFallback.regression.test.ts', moduleName: 'runSpecFallbackRegressionTestSuite', executed: true, passedAssertions: specFallbackSummary.passed, failedAssertions: specFallbackSummary.failed, totalAssertions: specFallbackSummary.total, skipped: false },
   { file: 'hardcodedScientificResults.regression.test.ts', moduleName: 'runHardcodedScientificResultsRegressionTestSuite', executed: true, passedAssertions: hardcodedResultsSummary.passed, failedAssertions: hardcodedResultsSummary.failed, totalAssertions: hardcodedResultsSummary.total, skipped: false },
