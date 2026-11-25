@@ -26,3 +26,27 @@ if (INGREDIENT_APPLICABILITY_REVIEW_SUMMARY.matrixPairCount !== expectedPairs) {
   throw new Error('Review summary count mismatch.');
 }
 console.log(`PASS: ${UNIVERSAL_INGREDIENTS.length} ingredients × ${CANONICAL_PRODUCT_CATEGORY_IDS.length} categories = ${expectedPairs} unique, fail-closed review pairs.`);
+
+import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
+
+const reviewedKeys = new Set<string>();
+for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
+  const key = `${review.ingredientId}::${review.productCategoryId}`;
+  if (reviewedKeys.has(key)) throw new Error(`Duplicate evidence review: ${key}`);
+  reviewedKeys.add(key);
+  if (!UNIVERSAL_INGREDIENTS.some((ingredient) => ingredient.id === review.ingredientId)) {
+    throw new Error(`Evidence review references unknown ingredient: ${review.ingredientId}`);
+  }
+  if (review.productCategoryId !== 'LAUNDRY_LIQUID') {
+    throw new Error('First evidence batch must remain scoped to LAUNDRY_LIQUID.');
+  }
+  if (!review.chemicalRole.trim() || !review.compatibilityMechanism.trim() ||
+      !review.concentrationFinding.trim() || !review.pHFinding.trim() ||
+      review.evidence.length === 0 || review.limitations.length === 0) {
+    throw new Error(`Incomplete chemistry/evidence review: ${key}`);
+  }
+  if (review.decision === 'APPLICABLE' && review.incompatibilityRisks.length === 0) {
+    throw new Error(`Applicable entry must disclose incompatibility risks: ${key}`);
+  }
+}
+console.log(`PASS: ${LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS.length} sourced liquid-laundry surfactant reviews.`);
