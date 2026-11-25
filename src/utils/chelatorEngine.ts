@@ -1356,6 +1356,7 @@ export function evaluateFormulationGreenChelators(ingredients: FormulationIngred
 }
 
 export interface GreenChelatorInput {
+  id?: string;
   name: string;
   percent: number;
   type?: string;

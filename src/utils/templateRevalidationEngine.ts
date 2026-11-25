@@ -182,8 +182,8 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   const missingDataItems: string[] = [];
 
   for (const ing of rawIngs) {
-    const rawPctValue = ing.percent ?? ing.percentage;
-    const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '') ? Number.NaN : Number(rawPctValue);
+    const rawPctValue: string | number | undefined = ing.percent ?? ing.percentage;
+    const rawPct = rawPctValue === undefined || rawPctValue === null || String(rawPctValue).trim() === '' ? Number.NaN : Number(rawPctValue);
     if (!Number.isFinite(rawPct) || rawPct < 0 || rawPct > 100) {
       auditFlags.push(`Ingredient '${ing.name}' has a missing or invalid formula percentage.`);
       missingDataItems.push(`Ingredient '${ing.name}' has no valid formula percentage`);

@@ -75,8 +75,8 @@ export class FormulaScientificOrchestrator {
         errors.push(finding);
       }
 
-      const rawPct = ing.percentage ?? (ing as any).percent;
-      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      const rawPct: string | number | undefined = ing.percentage ?? (ing as any).percent;
+      const pct = rawPct === undefined || rawPct === null || String(rawPct).trim() === ''
         ? Number.NaN
         : Number(rawPct);
       if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
@@ -86,7 +86,7 @@ export class FormulaScientificOrchestrator {
       const rawPurity = ing.activeMatterPct ?? ing.activePercent;
       const purity = rawPurity === undefined || rawPurity === null
         ? undefined
-        : (typeof rawPurity === 'string' && rawPurity.trim() === '' ? Number.NaN : Number(rawPurity));
+        : (String(rawPurity).trim() === '' ? Number.NaN : Number(rawPurity));
       if (purity !== undefined && (!Number.isFinite(purity) || purity < 0 || purity > 100)) {
         const finding: QualityGateFinding = {
           id: `val-invalid-purity-${name}`,
@@ -314,8 +314,8 @@ export class FormulaScientificOrchestrator {
     const categoryDef = getProductCategory(state.canonicalCategory);
     const specParams = state.qualityGateResult?.specificationResult?.parameters || [];
     const densitySpec = specParams.find((p: any) => p.parameterKey === 'density');
-    const phMinBound = categoryDef?.phMin ?? 0;
-    const phMaxBound = categoryDef?.phMax ?? 14;
+    const phMinBound = categoryDef?.targetPHMin ?? 0;
+    const phMaxBound = categoryDef?.targetPHMax ?? 14;
     const activeMinBound = categoryDef?.activeMatterMinPct ?? 0;
     const densityMinBound = typeof densitySpec?.min === 'number' ? densitySpec.min : 0.85;
     const densityMaxBound = typeof densitySpec?.max === 'number' ? densitySpec.max : 1.50;

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx server.ts",
     "start": "node server.ts",
-    "lint": "npx vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "bun run typecheck",
     "build": "npx vite build",
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "test:phase6": "bun run scripts/run-p1-phase6-lab-evidence-regression.ts",
@@ -30,6 +31,7 @@
     "firebase": "^13.1.0",
     "firebase-admin": "^14.5.0",
     "googleapis": "^188.0.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -40,6 +42,7 @@
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "^1.4.5",
     "@types/express": "^5.0.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

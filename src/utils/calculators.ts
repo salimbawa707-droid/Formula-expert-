@@ -913,7 +913,7 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
 
     const referenceResolution = resolveEng002PureComponent(ingredient);
     if (!referenceResolution.supported) {
-      reasons.push(`${name}: ${referenceResolution.reason}`);
+      reasons.push(`${name}: ${(referenceResolution as { reason?: string }).reason ?? 'Unsupported pure-component reference.'}`);
       continue;
     }
     const reference = referenceResolution.reference;

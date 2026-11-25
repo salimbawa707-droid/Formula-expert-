@@ -30,6 +30,7 @@ export interface UniversalIngredient {
   casStatus?: 'ASSIGNED' | 'NOT_APPLICABLE_MIXTURE' | 'PROPRIETARY' | 'UNKNOWN';
   inciName: string;
   function: string;
+  role?: string;
   activeDefault?: number | null;
   activeMatter?: number | null;
   commercialConcentrationPct?: number | null;

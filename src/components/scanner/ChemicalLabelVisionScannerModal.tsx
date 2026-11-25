@@ -17,7 +17,7 @@ import {
   Eye
 } from 'lucide-react';
 import { apiFetch } from '../../services/apiBase';
-import { FormulaIngredient } from '../../types';
+import { FormulationIngredient } from '../../types';
 
 export interface ExtractedChemicalData {
   ingredientName?: string;
@@ -40,7 +40,7 @@ export interface ExtractedChemicalData {
 interface ChemicalLabelVisionScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddIngredientToFormula?: (ingredient: Partial<FormulaIngredient> & { name: string; percentage: number }) => void;
+  onAddIngredientToFormula?: (ingredient: Partial<FormulationIngredient> & { name: string; percentage: number }) => void;
 }
 
 export const ChemicalLabelVisionScannerModal: React.FC<ChemicalLabelVisionScannerModalProps> = ({

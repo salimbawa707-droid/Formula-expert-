@@ -63,8 +63,8 @@ export function calculateLiquidNVR(
   const unknownIngredients: string[] = [];
 
   for (const [index, ing] of safeIngs.entries()) {
-    const rawPercentage = ing.percentage ?? ing.percent;
-    const percentage = rawPercentage === undefined || rawPercentage === null || (typeof rawPercentage === 'string' && rawPercentage.trim() === '')
+    const rawPercentage: string | number | undefined = ing.percentage ?? ing.percent;
+    const percentage = rawPercentage === undefined || rawPercentage === null || String(rawPercentage).trim() === ''
       ? Number.NaN
       : Number(rawPercentage);
     if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {

@@ -89,7 +89,7 @@ export function runP0MasterRemediationTestSuite(): {
   const unkPHEval = FormulaScientificOrchestrator.evaluate({
     formulaName: 'Unsupported pH Formula',
     productCategory: 'LAUNDRY_LIQUID',
-    ingredients: unkPHFormula
+    ingredients: unkPHFormula as any
   });
   assert(
     3,
@@ -380,7 +380,7 @@ export function runP0MasterRemediationTestSuite(): {
   );
 
   const total = results.length;
-  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.group}] ${r.name} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
+  results.filter(r => !r.passed).forEach(r => console.log(`[FAIL] [${r.scenarioNumber}] ${r.title} :: actual=${JSON.stringify(r.actual)} expected=${JSON.stringify(r.expected)} message=${r.message}`));
   const passed = results.filter(r => r.passed).length;
   const failed = total - passed;
   const successRate = `${((passed / total) * 100).toFixed(1)}%`;

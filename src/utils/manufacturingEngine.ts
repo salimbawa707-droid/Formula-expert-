@@ -425,6 +425,7 @@ export class ManufacturingEngine {
 
       return {
         ingredientName: mat.ingredientName,
+        assayPct: planned?.assayPct ?? null,
         plannedQuantityKg: plannedKg,
         actualQuantityKg: mat.actualQuantityKg,
         varianceKg,

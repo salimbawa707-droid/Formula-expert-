@@ -49,8 +49,8 @@ export class PHEngineV2 {
         } else if (!hasRawMass && hasWeightMass && (!Number.isFinite(Number(ingredient.weightKg)) || Number(ingredient.weightKg) < 0)) {
           inputErrors.push(`Ingredient ${ingredient.name} has invalid weightKg.`);
         } else if (!hasRawMass && !hasWeightMass) {
-          const rawPct = ingredient.rawPercent;
-          const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+          const rawPct: string | number | undefined = ingredient.rawPercent;
+          const pct = rawPct === undefined || rawPct === null || String(rawPct).trim() === ''
             ? Number.NaN
             : Number(rawPct);
           if (!Number.isFinite(pct) || pct < 0 || pct > 100) {

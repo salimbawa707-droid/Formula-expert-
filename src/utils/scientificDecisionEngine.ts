@@ -187,7 +187,7 @@ export class ScientificDecisionEngine {
     // 4. Viscosity Decision Analysis
     const visc = evalResult.viscosityResult;
     const physicalForm = evalResult.formulaIdentity?.physicalForm;
-    const isSolidOrPowder = physicalForm === 'POWDER' || physicalForm === 'SOLID';
+    const isSolidOrPowder = String(physicalForm) === 'POWDER' || String(physicalForm) === 'SOLID';
     const rawViscosity = visc?.predictedViscosityCp;
     const viscosityValue = typeof rawViscosity === 'number' && Number.isFinite(rawViscosity) ? rawViscosity : null;
     propertyDecisions['viscosity'] = {

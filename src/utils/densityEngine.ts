@@ -11,6 +11,7 @@ export interface DensityCalculationResult {
   modelType: string;
   densityType: 'PREDICTED_DENSITY';
   densityStatus: 'PREDICTED' | 'SCREENING_ESTIMATE' | 'INSUFFICIENT_DATA';
+  assumptions?: string[];
   provenance: 'PREDICTED' | 'ESTIMATED' | 'INSUFFICIENT_DATA';
   unknownDensityIngredients?: string[];
   limitations?: string[];
@@ -116,8 +117,8 @@ export function calculateDensity(
   }> = [];
 
   for (const [index, ing] of safeList.entries()) {
-    const rawPctValue = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
-    const rawPct = rawPctValue === undefined || rawPctValue === null || (typeof rawPctValue === 'string' && rawPctValue.trim() === '')
+    const rawPctValue: string | number | undefined = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
+    const rawPct = rawPctValue === undefined || rawPctValue === null || String(rawPctValue).trim() === ''
       ? Number.NaN
       : Number(rawPctValue);
     if (!Number.isFinite(rawPct) || rawPct < 0 || rawPct > 100) {

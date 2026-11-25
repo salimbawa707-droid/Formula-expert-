@@ -326,10 +326,10 @@ export default function FormulationLibrary({
                         <td className="py-2.5 px-3.5 font-bold text-white">{ing.name}</td>
                         <td className="py-2.5 px-3.5 text-slate-400 text-xs font-medium">{ing.category || (ing as any).function || "Additive"}</td>
                         <td className="py-2.5 px-3.5 text-right font-mono font-bold text-slate-200">
-                          {(ing.percent ?? ing.percentage) !== undefined && (ing.percent ?? ing.percentage) !== null && (ing.percent ?? ing.percentage) !== '' && Number.isFinite(Number(ing.percent ?? ing.percentage)) ? Number(ing.percent ?? ing.percentage).toFixed(2) + '%' : 'N/A'}
+                          {(ing.percent ?? ing.percentage) !== undefined && (ing.percent ?? ing.percentage) !== null && String(ing.percent ?? ing.percentage ?? '').trim() !== '' && Number.isFinite(Number(ing.percent ?? ing.percentage)) ? Number(ing.percent ?? ing.percentage).toFixed(2) + '%' : 'N/A'}
                         </td>
                         <td className="py-2.5 px-3.5 text-right font-mono text-purple-300 font-extrabold">
-                          {(ing.percent ?? ing.percentage) !== undefined && (ing.percent ?? ing.percentage) !== null && (ing.percent ?? ing.percentage) !== '' && Number.isFinite(Number(ing.percent ?? ing.percentage)) && Number.isFinite(currentFormula.batchSizeKg) && currentFormula.batchSizeKg > 0 ? (((Number(ing.percent ?? ing.percentage) / 100) * currentFormula.batchSizeKg).toFixed(2) + ' kg') : 'N/A'}
+                          {(ing.percent ?? ing.percentage) !== undefined && (ing.percent ?? ing.percentage) !== null && String(ing.percent ?? ing.percentage ?? '').trim() !== '' && Number.isFinite(Number(ing.percent ?? ing.percentage)) && Number.isFinite(currentFormula.batchSizeKg) && currentFormula.batchSizeKg > 0 ? (((Number(ing.percent ?? ing.percentage) / 100) * currentFormula.batchSizeKg).toFixed(2) + ' kg') : 'N/A'}
                         </td>
                       </tr>
                     ))}

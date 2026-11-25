@@ -3,6 +3,7 @@ import { FormulationIngredient } from '../../types';
 export type ResultSource = 
   | 'MEASURED'
   | 'CALCULATED' 
+  | 'DERIVED'
   | 'PREDICTED' 
   | 'SCREENING'
   | 'ESTIMATED'
@@ -47,7 +48,7 @@ export interface PowderMassBalanceReport {
   assignedPercentage: number;
   unassignedPercentage: number;
   formulaTotalPct: number;
-  status: 'BALANCED' | 'INCOMPLETE' | 'EXCESS';
+  status: 'BALANCED' | 'INCOMPLETE' | 'EXCESS' | 'INVALID_INPUT';
   missingPercentage: number;
   excessPercentage: number;
   statusMessage: string;

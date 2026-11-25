@@ -2,8 +2,13 @@ import { calculateDensity } from '../densityEngine';
 
 export function runDensityEngineRegressionTestSuite() {
   const results: Array<{ name: string; passed: boolean; actual?: unknown; expected?: unknown }> = [];
-  const assert = (name: string, passed: boolean, actual?: unknown, expected?: unknown) => {
-    results.push({ name, passed, actual, expected });
+  // Some suites record a group and a message before the condition; both call shapes are supported.
+  const assert = (name: string, messageOrPassed: string | boolean, passedOrActual?: unknown, actualOrExpected?: unknown, expected?: unknown) => {
+    if (typeof messageOrPassed === 'string') {
+      results.push({ name: `${name} :: ${messageOrPassed}`, passed: Boolean(passedOrActual), actual: actualOrExpected, expected });
+      return;
+    }
+    results.push({ name, passed: messageOrPassed, actual: passedOrActual === undefined ? undefined : passedOrActual, expected: actualOrExpected });
   };
 
 

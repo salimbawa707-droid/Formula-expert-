@@ -42,7 +42,9 @@ export const CollaborativeFormulaRoomModal: React.FC<CollaborativeFormulaRoomMod
       setSessionState(newState);
       setLocalChemist(collaborationManager.getLocalChemist());
     });
-    return () => unsub();
+    return () => {
+      unsub();
+    };
   }, []);
 
   if (!isOpen) return null;

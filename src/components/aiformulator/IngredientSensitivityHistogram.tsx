@@ -29,7 +29,7 @@ export const IngredientSensitivityHistogram: React.FC<Props> = ({
     const perturbAmount = 0.5; // 0.5% adjustment
 
     // Map benchmark ingredients for quick lookup
-    const benchMap = new Map(benchmark.ingredients.map((i: any) => [i.name.toLowerCase().trim(), Number(i.percentage ?? i.percent ?? 0)]));
+    const benchMap = new Map<string, number>(benchmark.ingredients.map((i: any) => [String(i.name).toLowerCase().trim(), Number(i.percentage ?? i.percent ?? 0)]));
 
     const results = ingredients.map(ing => {
       const name = (ing.name || '').toLowerCase().trim();

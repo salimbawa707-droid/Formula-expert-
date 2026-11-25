@@ -90,7 +90,7 @@ describe('Laboratory Automation: Protocol Integrity & Scientific Conversion', ()
       objective: 'Verify blocking',
       experimentType: 'FORMULATION_DISPENSE',
       productCategory: 'LAUNDRY_LIQUID',
-      physicalForm: 'Liquid',
+      physicalForm: 'LIQUID',
       targetScaleUl: 200,
       replicates: 3,
       ingredients: [

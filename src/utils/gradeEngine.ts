@@ -798,7 +798,7 @@ function evaluateAIGradeFromLegacyOrDraft(
   }
 
   // Active child engine calls
-  const effectiveCategory = canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? canonicalCategory : undefined;
+  const effectiveCategory = canonicalCategory;
   const performanceResult = calculateCleaningPerformance(ingredients, phVal, effectiveCategory);
   const rawPerformance = performanceResult.isCleaningApplicable
     ? performanceResult.cpi

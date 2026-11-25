@@ -175,6 +175,10 @@ export interface DetailedPHResult {
   totalBufferCapacity: number | null;
   solverConverged: boolean;
   solverIterations: number;
+  /** Compatibility pass-through of details.netEquivalents; details remains authoritative. */
+  netEquivalents?: number;
+  /** Compatibility pass-through of details.netMoles (deprecated); details remains authoritative. */
+  netMoles?: number;
   details: {
     totalAcidEquivalents: number;
     totalBaseEquivalents: number;

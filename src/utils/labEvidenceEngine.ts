@@ -718,7 +718,8 @@ export type FormulaReadinessLevel =
   | 'COMPUTATIONAL_READY'
   | 'LAB_READY'
   | 'LAB_VALIDATED'
-  | 'PRODUCTION_READY';
+  | 'PRODUCTION_READY'
+  | 'BLOCKED';
 
 export type EvidenceProvenance =
   | 'CALCULATED'

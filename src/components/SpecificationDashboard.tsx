@@ -63,6 +63,7 @@ interface SpecificationDashboardProps {
     activeSurfactants?: number;
     totalPercentage?: number;
     viscosity?: string | number;
+    viscosityCp?: number | null;
     density?: number;
     liquidNVR?: number;
     liquidNVRComplete?: boolean;

@@ -53,6 +53,7 @@ import { isEngineApplicable } from '../../domain/scientificProductProfiles';
 
 export type SemanticStatus =
   | 'VALID'
+  | 'INVALID'
   | 'ESTIMATED'
   | 'SCREENING'
   | 'UNKNOWN'
@@ -450,7 +451,7 @@ export class ScientificExecutionDAG {
               productCategory: state.canonicalCategory !== 'UNKNOWN_PRODUCT_CATEGORY' ? state.canonicalCategory : undefined,
               targetPH: initialGuess
             });
-            phModelValidity = advPH.modelValidity ?? 'UNKNOWN';
+            phModelValidity = (advPH.modelValidity ?? 'UNKNOWN') as 'HIGH' | 'MODERATE' | 'LOW' | 'OUT_OF_RANGE' | 'UNKNOWN';
             const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
             const neutralizationState = state.neutralizationState;
             const hasSecondaryAcidBaseChemistry = Boolean(
@@ -660,9 +661,9 @@ export class ScientificExecutionDAG {
           ? 'SCREENING_PASS'
           : hardnessRes.status === 'NOT_APPLICABLE'
             ? 'NOT_APPLICABLE'
-            : hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA'
+            : hardnessRes.status === 'NOT_EVALUATED' || String(hardnessRes.status) === 'INSUFFICIENT_DATA'
               ? 'INSUFFICIENT'
-              : hardnessRes.status === 'FAIL'
+              : String(hardnessRes.status) === 'FAIL'
                 ? 'SCREENING_FAIL'
                 : 'SCREENING_REVIEW';
 
@@ -692,7 +693,7 @@ export class ScientificExecutionDAG {
         state.chelationResult = {
           isSufficient: hardnessRes.status === 'PASS'
             ? true
-            : (hardnessRes.status === 'NOT_APPLICABLE' || hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA')
+            : (hardnessRes.status === 'NOT_APPLICABLE' || hardnessRes.status === 'NOT_EVALUATED' || String(hardnessRes.status) === 'INSUFFICIENT_DATA')
               ? null
               : false,
           status: hardnessRes.status === 'PASS' ? 'SCREENING' : hardnessRes.status,
@@ -705,7 +706,7 @@ export class ScientificExecutionDAG {
 
         if (hardnessRes.status === 'NOT_APPLICABLE') {
           state.chelationStatus = 'NOT_APPLICABLE';
-        } else if (hardnessRes.status === 'NOT_EVALUATED' || hardnessRes.status === 'INSUFFICIENT_DATA' || hasUnknownChelatorActiveMatter) {
+        } else if (hardnessRes.status === 'NOT_EVALUATED' || String(hardnessRes.status) === 'INSUFFICIENT_DATA' || hasUnknownChelatorActiveMatter) {
           state.chelationStatus = 'INSUFFICIENT_DATA';
         } else {
           state.chelationStatus = 'SCREENING';
@@ -1173,7 +1174,7 @@ export class ScientificExecutionDAG {
         state.specificationResult = specReport;
         state.specificationStatus = specReport.verdict.status === 'PASS' 
           ? 'VALID' 
-          : (specReport.verdict.status === 'FAIL' ? 'FAILED' : 'INSUFFICIENT_DATA');
+          : (specReport.verdict.status === 'NEEDS_REVISION' ? 'FAILED' : 'INSUFFICIENT_DATA');
       }
     });
 

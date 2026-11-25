@@ -530,7 +530,7 @@ export function runP1Phase6LabEvidenceValidationTestSuite(): { total: number; pa
     categoryId: 'TOILET_CLEANER',
     parameterKey: 'clingRheology',
     value: 45,
-    unit: 's',
+    unit: 'seconds',
     testMethod: 'Vertical panel cling test',
     testDate: '2026-11-24',
     provenance: 'MEASURED',

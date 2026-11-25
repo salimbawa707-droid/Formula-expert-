@@ -187,6 +187,7 @@ export function runFormulaTemplateRevalidationTestSuite(): {
     name: 'Unknown Assay Formula',
     category: 'Liquid Laundry',
     batchSizeKg: 100,
+    targetPH: 8,
     description: 'Unknown surfactant grade must remain unavailable',
     ingredients: [
       { id: 'u1', name: 'Unregistered Anionic Surfactant QX-91', percent: 10 },
@@ -208,6 +209,7 @@ export function runFormulaTemplateRevalidationTestSuite(): {
     name: 'Missing Percentage Formula',
     category: 'Liquid Laundry',
     batchSizeKg: 100,
+    targetPH: 8,
     description: 'Missing ingredient percentage must block mass balance',
     ingredients: [
       { id: 'm1', name: 'Water' } as any,

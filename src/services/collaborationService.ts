@@ -13,7 +13,7 @@
  * ============================================================================
  */
 
-import { ActiveFormulaState, FormulaIngredient } from '../types';
+import { ActiveFormulaState, FormulationIngredient } from '../types';
 import { db, auth } from './firebaseClient';
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 

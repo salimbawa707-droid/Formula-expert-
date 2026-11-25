@@ -135,6 +135,7 @@ export interface MasterScientificQualityGateReport {
   warnings: QualityGateFinding[];
   recommendations: string[];
   uncertainties: string[];
+  unknownParameters?: string[];
   requiredLabTests: string[];
   category: string;
   modelVersion: string;
@@ -306,8 +307,8 @@ export function evaluateScientificQualityGate(
       scientificValidity = 'INVALID';
     }
 
-    const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
-    const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+    const rawPct: string | number | undefined = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula;
+    const pct = rawPct === undefined || rawPct === null || String(rawPct).trim() === ''
       ? Number.NaN
       : Number(rawPct);
     if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
@@ -408,7 +409,7 @@ export function evaluateScientificQualityGate(
     try {
       const mappedPH = mapFormulationIngredientsToPHEngineInput(rawIngs);
       const phRes = calculatePHAdvanced(mappedPH, input.batchSizeKg ?? 100, { productCategory: canonicalCategory });
-      phModelValidity = phRes.modelValidity ?? 'UNKNOWN';
+      phModelValidity = (phRes.modelValidity ?? 'UNKNOWN') as 'HIGH' | 'MODERATE' | 'LOW' | 'OUT_OF_RANGE' | 'UNKNOWN';
       const pHWithinModelDomain = phModelValidity !== 'OUT_OF_RANGE';
       computedPH = pHWithinModelDomain ? phRes.pH : null;
       phSolverConverged = phRes.solverConverged && pHWithinModelDomain;
@@ -855,7 +856,7 @@ export function evaluateScientificQualityGate(
 
       // Check missing parameters specifically
       const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent;
-      const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
+      const pct = rawPct === undefined || rawPct === null || String(rawPct).trim() === ''
         ? Number.NaN
         : Number(rawPct);
       if (!Number.isFinite(pct) || pct < 0 || pct > 100) {

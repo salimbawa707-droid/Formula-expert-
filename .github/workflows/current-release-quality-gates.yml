@@ -40,6 +40,25 @@ jobs:
       - name: Build production frontend
         run: bun run build
 
+  typescript-typecheck:
+    name: TypeScript typecheck (`bun run lint`)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run lint (tsc --noEmit)
+        run: bun run lint
+
   production-server-smoke:
     name: Production server boot and /api/health smoke test
     runs-on: ubuntu-latest

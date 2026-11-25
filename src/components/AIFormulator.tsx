@@ -185,7 +185,7 @@ export function runDeepScientificAnalysis(snapshot: {
     productCategory: snapshot.productCategory,
     productSubProfileId: snapshot.productSubProfileId,
     ingredients: snapshot.ingredients.map((ing, idx) => {
-      const rawPercentage = ing.percentage ?? (ing as any).percent;
+      const rawPercentage: string | number | undefined = ing.percentage ?? (ing as any).percent;
       return {
         ...ing,
         ingredientId: ing.id || `ing-${idx}`,
@@ -204,7 +204,7 @@ export function runDeepScientificAnalysis(snapshot: {
   });
 
   const decisionReport = ScientificDecisionEngine.evaluateDecisionIntelligence(orchResult);
-  const o = orchResult || {};
+  const o: any = orchResult || {};
   const verdict = o.verdictMatrix || {};
   const cleaning = o.cleaningResult || {
     cpi: null,
@@ -453,7 +453,9 @@ export default function FormulaExpert({
     const unsub = collaborationManager.subscribe((state) => {
       setCollabChemistCount(state.chemists.length);
     });
-    return () => unsub();
+    return () => {
+      unsub();
+    };
   }, []);
 
   // Persist history changes

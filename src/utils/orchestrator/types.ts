@@ -168,7 +168,8 @@ export interface MassBalanceOutput {
 export interface PHResultOutput {
   ph: number | null;
   isMeasured: boolean;
-  provenance: 'PREDICTED' | 'MEASURED' | 'ESTIMATED';
+  status?: string;
+  provenance: 'PREDICTED' | 'MEASURED' | 'ESTIMATED' | 'INSUFFICIENT_DATA';
   bufferCapacity: number | null;
   ionicStrength: number | null;
   confidence: string;
@@ -185,6 +186,7 @@ export interface ActiveMatterResultOutput {
   totalActiveMatterPct: number;
   meetsCategoryMin: boolean;
   categoryMinPct: number;
+  status?: string;
   surfactantBreakdown: {
     anionic: number;
     nonionic: number;
@@ -227,7 +229,7 @@ export interface HLBResultOutput {
 
 export interface HardnessResultOutput {
   waterHardnessPpm: number;
-  status: 'PASS' | 'OPTIMAL' | 'SUFFICIENT' | 'INSUFFICIENT' | 'WARNING' | 'NOT_APPLICABLE' | 'NOT_EVALUATED';
+  status: 'PASS' | 'FAIL' | 'OPTIMAL' | 'SUFFICIENT' | 'INSUFFICIENT' | 'INSUFFICIENT_DATA' | 'WARNING' | 'NOT_APPLICABLE' | 'NOT_EVALUATED';
   maxSupportedPpm: number;
   washVolumeL: number;
   washDoseGrams: number;
@@ -238,6 +240,8 @@ export interface HardnessResultOutput {
 
 export interface ChelationResultOutput {
   isSufficient: boolean;
+  status?: string;
+  chelatorActiveMatterVerified?: boolean;
   chelatorActivePct: number;
   chelatorNames: string[];
   bindingCapacityCaCO3GPer100g?: number;
@@ -248,6 +252,7 @@ export interface CompatibilityResultOutput {
   compatible: boolean;
   compatibilityScore: number | null;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN';
+  status?: string;
   alerts: Array<{ id: string; title: string; message: string; severity: string; recommendation?: string }>;
   warnings: string[];
   stabilityStatus: string;
@@ -276,13 +281,14 @@ export interface CleaningResultOutput {
   domainScores?: Record<string, number>;
   provenance: PerformanceProvenance;
   isMeasured: boolean;
-  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
   uncertainty: string;
   evidenceLevel: string;
   limitingFactors: string[];
   positiveFactors: string[];
   warnings: string[];
   missingInputs: string[];
+  limitations?: string[];
   foamProfile?: string;
   categorySuitability?: string;
   categoryKPIs?: any[];
@@ -313,6 +319,7 @@ export interface DensityResultOutput {
   dataCompleteness: number;
   isIdealVolumeAdditivity?: boolean;
   modelType?: string;
+  densityStatus?: string;
   unknownIngredients?: string[];
 }
 
@@ -331,6 +338,7 @@ export interface CostResultOutput {
   totalBatchCost: number;
   isWithinTarget: boolean;
   targetCostPerKg?: number;
+  pricingStatus?: string;
   costBreakdown?: Array<{ name: string; costPerKg: number; percentage: number; contributionPerKg: number }>;
   marginChain?: any;
 }
@@ -366,6 +374,11 @@ export interface VerdictMatrixOutput {
 export interface CanonicalFormulaEvaluationResult {
   formulaIdentity: FormulaIdentityOutput;
   scientificValidity: ScientificValidityStatus;
+  /** Active-matter rollup mirrored from the active-matter engine for legacy consumers. */
+  totalActiveMatterPct?: number | null;
+  activeMatterStatus?: string;
+  finalEquilibriumPH?: number | null;
+  phStatus?: string;
   massBalance: MassBalanceOutput;
   pHResult: PHResultOutput;
   activeMatterResult: ActiveMatterResultOutput;

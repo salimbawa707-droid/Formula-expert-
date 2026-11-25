@@ -62,7 +62,7 @@ export interface PhysicalAndChemicalStabilitySummary {
     score: number | null;
     details: string[];
   };
-  overallStorageStatus: 'COMPUTATIONALLY_STABLE' | 'STABILITY_RISK' | 'LAB_STABILITY_REQUIRED' | 'LAB_STABILITY_FAILED' | 'LAB_STABILITY_VALIDATED';
+  overallStorageStatus: 'COMPUTATIONALLY_STABLE' | 'STABILITY_RISK' | 'LAB_STABILITY_REQUIRED' | 'LAB_STABILITY_FAILED' | 'LAB_STABILITY_VALIDATED' | 'INSUFFICIENT_DATA';
 }
 
 export interface FormulationCompatibilityResult {
@@ -958,7 +958,7 @@ export function evaluateFormulationStability(
     rheologicalScore < 50 ? 'UNSTABLE' : rheologicalScore < 75 ? 'VISCOSITY_COLLAPSE_RISK' : rheologicalScore < 90 ? 'GELATION_RISK' : 'STABLE';
 
   // Overall Storage Status: Never mark LAB_STABILITY_VALIDATED without physical bench testing
-  let overallStorageStatus: 'COMPUTATIONALLY_STABLE' | 'STABILITY_RISK' | 'LAB_STABILITY_REQUIRED' | 'LAB_STABILITY_FAILED' | 'LAB_STABILITY_VALIDATED' = 'COMPUTATIONALLY_STABLE';
+  let overallStorageStatus: 'COMPUTATIONALLY_STABLE' | 'STABILITY_RISK' | 'LAB_STABILITY_REQUIRED' | 'LAB_STABILITY_FAILED' | 'LAB_STABILITY_VALIDATED' | 'INSUFFICIENT_DATA' = 'COMPUTATIONALLY_STABLE';
 
   if (physicalScore < 70 || chemicalScore < 70 || rheologicalScore < 70) {
     overallStorageStatus = 'STABILITY_RISK';

@@ -19,6 +19,8 @@ export interface TestResult {
   name: string;
   passed: boolean;
   details?: string;
+  actual?: unknown;
+  expected?: unknown;
 }
 
 export function runP0RemediationLiquidPhSpecificationRoutingTestSuite(): {

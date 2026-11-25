@@ -1660,8 +1660,8 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                             const safeDose = washDoseGrams;
                             const demandGrams = selectedChelatorDetail?.coBuilderTargetGrams;
                             const calcPct = selectedChelatorDetail?.calculatedWeightPct;
-                            if (!Number.isFinite(demandGrams) || !Number.isFinite(calcPct)) return 'Not evaluated';
-                            return `(${demandGrams!.toFixed(3)}g / ${safeDose.toFixed(3)}g) × 100 = ${calcPct!.toFixed(2)}%`;
+                            if (!Number.isFinite(demandGrams) || typeof calcPct !== 'number' || !Number.isFinite(calcPct) || typeof safeDose !== 'number' || !Number.isFinite(safeDose)) return 'Not evaluated';
+                            return `(${Number(demandGrams).toFixed(3)}g / ${safeDose.toFixed(3)}g) × 100 = ${Number(calcPct).toFixed(2)}%`;
                           })()}
                         </td>
                       </tr>
@@ -1673,8 +1673,8 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                           {(() => {
                             const calcPct = selectedChelatorDetail?.calculatedWeightPct;
                             const practical = selectedChelatorDetail?.practicalWeightPct;
-                            if (!Number.isFinite(calcPct) || !Number.isFinite(practical)) return 'Not evaluated';
-                            return `Min(${calcPct!.toFixed(2)}%, ${maxFormulationCapPct.toFixed(1)}%) = ${practical!.toFixed(2)}%`;
+                            if (typeof calcPct !== 'number' || !Number.isFinite(calcPct) || typeof practical !== 'number' || !Number.isFinite(practical)) return 'Not evaluated';
+                            return `Min(${Number(calcPct).toFixed(2)}%, ${maxFormulationCapPct.toFixed(1)}%) = ${Number(practical).toFixed(2)}%`;
                           })()}
                         </td>
                       </tr>
@@ -1687,7 +1687,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                             const practical = selectedChelatorDetail?.practicalWeightPct;
                             const practicalGrams = selectedChelatorDetail?.practicalWeightGrams;
                             if (!Number.isFinite(practical) || !Number.isFinite(practicalGrams)) return 'Not evaluated';
-                            return `${practical!.toFixed(2)}% of ${washDoseGrams.toFixed(2)}g = ${practicalGrams!.toFixed(3)}g`;
+                            return `${Number(practical).toFixed(2)}% of ${Number(washDoseGrams).toFixed(2)}g = ${Number(practicalGrams).toFixed(3)}g`;
                           })()}
                         </td>
                       </tr>

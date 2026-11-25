@@ -208,7 +208,7 @@ export interface ForensicTraceEntry {
   dimension: string;
   engineOrFunction: string;
   formulaFingerprint: string;
-  status: 'CALCULATED' | 'PREDICTED' | 'ESTIMATED' | 'UNKNOWN' | 'LAB_VALIDATED';
+  status: 'CALCULATED' | 'PREDICTED' | 'ESTIMATED' | 'UNKNOWN' | 'LAB_VALIDATED' | 'INSUFFICIENT_DATA';
   valueDisplay: string;
   confidenceLevel: string;
   consistencyStatus: 'CONSISTENT' | 'DISCREPANCY_DETECTED' | 'UNVERIFIED';
@@ -283,17 +283,20 @@ export function calculateFormulaFingerprint(inputs: {
   const sortedIngs = (inputs.ingredients || [])
     .map((ing) => {
       const name = (ing.name || '').trim().toLowerCase();
-      const rawPct = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? ing.rawPercent;
-      const numericPct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '') ? Number.NaN : Number(rawPct);
+      const rawPct: string | number | undefined = ing.percentage ?? ing.percent ?? ing.percentageInFormula ?? ing.rawPercent;
+      const rawPctText = rawPct === undefined || rawPct === null ? '' : String(rawPct).trim();
+      const numericPct = rawPctText === '' ? Number.NaN : Number(rawPctText);
       const pct = Number.isFinite(numericPct) && numericPct >= 0 && numericPct <= 100
         ? numericPct.toFixed(4)
-        : (rawPct === undefined || rawPct === null || rawPct === '' ? 'MISSING_PCT' : 'INVALID_PCT');
-      const rawActive = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity;
-      const numericActive = rawActive === undefined || rawActive === null || rawActive === '' ? Number.NaN : Number(rawActive);
+        : (rawPctText === '' ? 'MISSING_PCT' : 'INVALID_PCT');
+      const rawActive: string | number | undefined = ing.activeMatterPct ?? ing.activePercent ?? ing.activeMatterPurity;
+      const rawActiveText = rawActive === undefined || rawActive === null ? '' : String(rawActive).trim();
+      const numericActive = rawActiveText === '' ? Number.NaN : Number(rawActiveText);
       const act = Number.isFinite(numericActive) && numericActive >= 0 && numericActive <= 100 ? numericActive.toFixed(2) : 'UNKNOWN_AM';
-      const rawCost = ing.costPerKg;
-      const numericCost = rawCost === undefined || rawCost === null || rawCost === '' ? Number.NaN : Number(rawCost);
-      const cost = Number.isFinite(numericCost) && numericCost >= 0 ? numericCost.toFixed(2) : (rawCost === undefined || rawCost === null || rawCost === '' ? 'MISSING_PRICE' : 'INVALID_PRICE');
+      const rawCost: string | number | null | undefined = ing.costPerKg;
+      const rawCostText = rawCost === undefined || rawCost === null ? '' : String(rawCost).trim();
+      const numericCost = rawCostText === '' ? Number.NaN : Number(rawCostText);
+      const cost = Number.isFinite(numericCost) && numericCost >= 0 ? numericCost.toFixed(2) : (rawCostText === '' ? 'MISSING_PRICE' : 'INVALID_PRICE');
       return `${name}:${pct}:${act}:${cost}`;
     })
     .sort()
@@ -618,7 +621,7 @@ export async function executeStagedScientificAnalysis(
   const rawSurfactantsTotal = calculateRawSurfactants(immutableSnapshot.ingredients);
   const totalSurfactantActivePct = calculateActiveSurfactants(immutableSnapshot.ingredients);
   const rawAm = calculateActiveMatter(immutableSnapshot.ingredients);
-  const totalActiveMatterPct: number | null = typeof rawAm === 'number' ? rawAm : (rawAm?.value ?? null);
+  const totalActiveMatterPct: number | null = typeof rawAm === 'number' ? rawAm : ((rawAm as any)?.value ?? null);
   const hlbResult = HLBEngine.calculateBlendedHLB(immutableSnapshot.ingredients);
 
   // Calculate charge breakdowns

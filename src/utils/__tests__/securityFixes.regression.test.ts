@@ -86,11 +86,11 @@ export async function runSecurityFixesTestSuite(): Promise<SecurityFixesTestSumm
     'signed.supabase.token',
     'https://example-project.supabase.co',
     'public-anon-key',
-    async (input, init) => {
+    (async (input: any, init: any) => {
       supabaseVerificationUrl = String(input);
       supabaseVerificationBearer = new Headers(init?.headers).get('Authorization') || '';
       return new Response(JSON.stringify({ id: 'verified-supabase-user', email: 'chemist@example.com' }), { status: 200 });
-    }
+    }) as unknown as typeof fetch
   );
   assert(
     'P0 Auth 3: Supabase identity is accepted only after server-side Auth API verification',
@@ -112,7 +112,7 @@ export async function runSecurityFixesTestSuite(): Promise<SecurityFixesTestSumm
     'invalid.token',
     'https://example-project.supabase.co',
     'public-anon-key',
-    async () => new Response('{}', { status: 401 })
+    (async () => new Response('{}', { status: 401 })) as unknown as typeof fetch
   );
   assert(
     'P0 Auth 5: Supabase rejects invalid/expired tokens without creating an identity',

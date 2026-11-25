@@ -15,6 +15,8 @@ export interface TestResult {
   name: string;
   passed: boolean;
   details?: string;
+  actual?: unknown;
+  expected?: unknown;
 }
 
 export function runP0RemediationScientificVsLabValidationTestSuite(): {
@@ -52,7 +54,7 @@ export function runP0RemediationScientificVsLabValidationTestSuite(): {
     washDoseGrams: 50,
     batchSizeKg: 100
   });
-  assert('TEST 1: Calculated-only formula remains unvalidated with PREDICTED_ONLY evidence', qgResult.finalFormulaStatus !== 'LAB_VALIDATED' && qgResult.evidenceStatus === 'PREDICTED_ONLY', JSON.stringify({status:qgResult.finalFormulaStatus,evidence:qgResult.evidenceStatus,blocking:qgResult.blockingIssues,unknown:qgResult.unknownParameters}));
+  assert('TEST 1: Calculated-only formula remains unvalidated with PREDICTED_ONLY evidence', (qgResult.finalFormulaStatus as string) !== 'LAB_VALIDATED' && qgResult.evidenceStatus === 'PREDICTED_ONLY', JSON.stringify({status:qgResult.finalFormulaStatus,evidence:qgResult.evidenceStatus,blocking:qgResult.blockingIssues,unknown:qgResult.unknownParameters}));
 
   // TEST 2: Calculated PASS is not LAB_VALIDATED
   assert('TEST 2: Calculated PASS is NOT LAB_VALIDATED', qgResult.evidenceStatus !== 'FULLY_LAB_VALIDATED');
