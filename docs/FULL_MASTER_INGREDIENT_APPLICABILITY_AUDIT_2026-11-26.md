@@ -27,3 +27,27 @@ The baseline script reports record count, ID uniqueness, category distribution, 
 ## Limitations
 
 This baseline is a data-quality and coverage inventory, not a completed scientific suitability approval. It does not replace supplier-grade TDS/SDS review, compatibility/stability testing, finished-formula performance testing, or regulatory review.
+
+
+## Evidence-reviewed batch status (2026-11-26)
+
+The following review records are now reconciled into the generated ingredient × category matrix (14 reviewed pairs total; every other pair remains NOT_REVIEWED):
+
+| Ingredient grade | Category | Decision | Main limitation |
+|---|---|---|---|
+| LABSA 96 / LABSA 90 | LAUNDRY_LIQUID | CONDITIONAL | Lot acid value/assay and neutralization demand required |
+| SLES 70 / SLES 28 | LAUNDRY_LIQUID | APPLICABLE | Exact supplier grade, foam and finished-formula qualification required |
+| AOS 38 | LAUNDRY_LIQUID | APPLICABLE | Lot assay and foam/stability qualification required |
+| AOS 92 powder | LAUNDRY_POWDER | CONDITIONAL | Exact powder grade CoA, moisture and particle/dissolution tests required |
+| SAS 60 | LAUNDRY_LIQUID | CONDITIONAL | Catalog CAS conflicts with cited supplier TDS CAS; identity must be resolved |
+| SLS 95 needles | LAUNDRY_POWDER | CONDITIONAL | Exact grade assay, impurities and powder handling qualification required |
+| SLS 30 liquid | LAUNDRY_LIQUID | CONDITIONAL | Exact grade and laundry performance validation required |
+| LAE-7 / LAE-9 / APG 0810 | LAUNDRY_LIQUID | APPLICABLE / CONDITIONAL | Adjacent-grade evidence or supplier-specific pH/solids and blend validation required |
+| LAE-3 | LAUNDRY_LIQUID | CONDITIONAL | Low-EO grade reported water-insoluble; aqueous clarity/solubilization must be proven |
+| LAE-12 | LAUNDRY_LIQUID | CONDITIONAL | Supplier cloud-point data is not a catalog-lot CoA; test blend cloud point/stability |
+
+The evidence-review arrays are now consumed by ingredientApplicabilityReviewMatrix.ts; the matrix carries the review decision, mechanism, risks, concentration finding, and source URLs. Regression checks verify every evidence record resolves to exactly one matrix pair, no pair is duplicated, and no unverified numeric use range is inserted.
+
+### Current scope boundary
+
+These 14 records are not a complete category-wise chemistry audit. They mostly cover LAUNDRY_LIQUID, with powder-specific reviews for AOS 92 and SLS needles. The remaining 11 canonical categories and the remaining ingredient records still require their own chemical identity, mechanism, pH, use-level, incompatibility and evidence review. Do not represent this stage as approval of all 13 categories.
