@@ -16,6 +16,11 @@ export const firebaseEnvConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: import.meta.env.VITE_FIREBASE_APP_ID ?? '',
   firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID ?? '',
+  // App Check: proves requests come from this app, not from a copied API key.
+  appCheckEnabled: (import.meta.env.VITE_FIREBASE_APP_CHECK_ENABLED ?? 'true') !== 'false',
+  appCheckSiteKey: import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY ?? '',
+  appCheckProvider: import.meta.env.VITE_FIREBASE_APP_CHECK_PROVIDER ?? 'recaptcha-enterprise',
+  appCheckDebugToken: import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN ?? '',
 };
 
 /** Required keys; used to print one actionable message instead of a cryptic SDK error. */

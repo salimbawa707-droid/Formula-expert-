@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { firebaseEnvConfig, missingFirebaseEnvKeys } from '../config/firebaseEnv';
+import { initializeAppCheckForApp } from './firebaseAppCheck';
 
 if (missingFirebaseEnvKeys.length > 0) {
   console.error(
@@ -21,6 +22,11 @@ const firebaseConfig = {
 };
 
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// Must run before the first Auth/Firestore call so every request carries an
+// App Check token. No-op (with a console warning) until a site key is configured.
+initializeAppCheckForApp(app);
+
 export const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
