@@ -40,23 +40,25 @@ export interface DatasetInspectionSummary {
  * A dataset counts as numerically inspected only when its status is explicit
  * and its source-row inventory is a finite positive number.
  */
+function isNumericallyInspectedDataset(dataset: DatasetRecord): boolean {
+  return (
+    dataset.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
+    typeof dataset.actualRowCount === 'number' &&
+    Number.isFinite(dataset.actualRowCount) &&
+    dataset.actualRowCount > 0
+  );
+}
+
 export function getDatasetInspectionSummary(
   datasets: DatasetRecord[]
 ): DatasetInspectionSummary {
-  const inspectedDatasets = datasets.filter(
-    dataset =>
-      dataset.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
-      typeof dataset.actualRowCount === 'number' &&
-      Number.isFinite(dataset.actualRowCount) &&
-      dataset.actualRowCount > 0
-  );
-  const inspectedIds = new Set(inspectedDatasets.map(dataset => dataset.id));
+  const inspectedDatasets = datasets.filter(isNumericallyInspectedDataset);
 
   return {
     totalCount: datasets.length,
     inspectedCount: inspectedDatasets.length,
     inspectedDatasets,
-    uninspectedDatasets: datasets.filter(dataset => !inspectedIds.has(dataset.id)),
+    uninspectedDatasets: datasets.filter(dataset => !isNumericallyInspectedDataset(dataset)),
   };
 }
 
