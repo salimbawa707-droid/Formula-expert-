@@ -18,6 +18,7 @@ coverage/
 *.apk
 *.aab
 *.tar.gz
+*.zip
 
 # Local editor / temporary files
 .DS_Store
