@@ -30,8 +30,8 @@ export const INITIAL_VAULT_STATE: VaultState = {
       phaseId: 'phase-5',
       title: 'Phase 5 Execution Gate Locked',
       impact: 'Algorithmic tuning, model regression, and calibration strictly prohibited.',
-      environmentLimitation: 'Phase 4B independent closure sign-off has not been granted.',
-      workaroundOrNextAction: 'Complete evidence inventory, reconcile 59 engine files, inspect at least 3 experimental datasets, and submit to independent audit committee.',
+      environmentLimitation: 'Phase 4B AI-only review or human independent closure sign-off has not been granted.',
+      workaroundOrNextAction: 'Complete the AI-only two-pass source review protocol (or obtain human independent review), reconcile all evidence and numeric ledgers, inspect every registered dataset, and satisfy the Phase 4B gate before Phase 5.',
     },
   ],
   phases: [
@@ -150,11 +150,23 @@ export const INITIAL_VAULT_STATE: VaultState = {
       status: 'ACTIVE',
       reportedClosed: false,
       independentVerificationStatus: 'UNESTABLISHED',
+      aiReview: {
+        status: 'IN_PROGRESS',
+        protocolVersion: 'phase4b-ai-review-v1',
+        scope: 'PARTIAL_SUBGATE',
+        coveragePct: 0,
+        unresolvedDiscrepancyCount: 0,
+        sourceHashesPinned: false,
+        automatedValidationStatus: 'NOT_RUN',
+        evidenceRefs: [],
+        reviewPasses: [],
+        humanReviewPerformed: false,
+      },
       blockers: [
         'Zenodo 18961871 workbooks are parsed as descriptive evidence; no eligible formula-prediction comparisons exist for ENG-003/ENG-005 (BLK-002).',
         'Historical 64 and 97 claims lack original source artifacts; current source inventory is documented without equating unlike counts. The 27,982 aggregate is rejected as a verified physical-observation count; its original counting procedure remains unreconstructed. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md and PHASE4B_HISTORICAL_COUNT_MAPPING_RESOLUTION_2026-10-23.md.',
       ],
-      description: 'Current active phase. Ingests 11 real scientific evidence leads, establishes the empirical dataset register, verifies data provenance, reconciles the 59 engine source files, and mandates physical numerical inspection before any engine is marked ready for validation.',
+      description: 'Current active phase. Ingests and reviews scientific evidence, establishes the empirical dataset register, verifies data provenance, reconciles the 59 engine source files, and completes an owner-authorized AI-only two-pass review protocol (human review is not claimed) before Phase 5 can be unlocked.',
       keyDeliverables: [
         {
           title: 'Seed & triage 11 scientific evidence sources (experimental, reference DB, theory)',
@@ -181,10 +193,10 @@ export const INITIAL_VAULT_STATE: VaultState = {
           notes: 'Canonical workbook bytes, parser structure, units, and descriptive applicability are recorded. No direct prediction pairs are established.',
         },
         {
-          title: 'Independent Review & Phase 4B Closure Gate Approval',
-          status: 'PENDING',
+          title: 'AI Review & Phase 4B Closure Gate Approval',
+          status: 'IN_PROGRESS',
           verified: false,
-          notes: 'Mandatory gate before Phase 5 can be unlocked.',
+          notes: 'Human review is replaced by the owner-authorized AI-only route. Requires 100% Phase 4B coverage, source-first transcription plus blind independent source re-check, pinned source hashes, zero unresolved discrepancies, and passing automated validation. Human review is not claimed.',
         },
       ],
     },
@@ -196,10 +208,10 @@ export const INITIAL_VAULT_STATE: VaultState = {
       reportedClosed: false,
       independentVerificationStatus: 'UNESTABLISHED',
       blockers: [
-        'LOCKED: Phase 4B comprehensive evidence inventory must be independently reviewed and approved first.',
+        'LOCKED: Phase 4B comprehensive evidence inventory must pass the complete AI-only two-pass review protocol or human independent review first.',
         'No target engine has eligible matched prediction and observation data; direct validation remains unperformed.',
       ],
-      description: 'LOCKED. Do not begin until Phase 4B has been independently reviewed and explicitly approved. Will execute statistical residual analysis (RMSE, MAE, R2), error propagation, and model parameter tuning against real experimental datasets.',
+      description: 'LOCKED. Do not begin until Phase 4B is closed after the complete AI-only two-pass review protocol or human independent verification, and all evidence gates pass. Will execute statistical residual analysis (RMSE, MAE, R2), error propagation, and model parameter tuning against real experimental datasets.',
       keyDeliverables: [
         {
           title: 'Run numerical validation harness against inspected experimental benchmarks',
