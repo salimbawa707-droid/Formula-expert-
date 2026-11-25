@@ -982,7 +982,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       originalDatasetUrl: 'https://zenodo.org/records/18961871',
       localFileReference: 'evidence_vault/datasets/zenodo_18961871/ (four source XLSX workbooks; see data-manifest.json and round6_parser_audit.json)',
       sha256Hash: undefined,
-      actualRowCount: null, // Not a physical-observation count; historical aggregate remains unresolved.
+      actualRowCount: 11626, // Sum of numeric-bearing worksheet rows across 11 sheets; NOT independent physical observations.
       actualColumnCount: null, // Different workbooks/sheets have different schemas.
       columns: [],
       experimentalVsImputedNotes: 'Source workbooks are downloaded and parser-inspected. Keep measured rheometer readings separate from formula-derived spreadsheet values and image-derived bubble/film measurements; retain sheet, curve/sample group, units, and parent lineage. No matched complete recipe inputs for formula-level predictions.',
@@ -993,7 +993,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       numericalValidationReadiness: 'DEFICIENT',
       inspectionStatus: 'NUMERICALLY_INSPECTED',
       inspectionDate: '2026-10-22',
-      inspectionNotes: 'Descriptive source evidence only. Not eligible for held-out formula-prediction metrics because full formula inputs and matched conditions are absent. ENG-005 remains unavailable. Do not set LAB_VALIDATED based on this dataset alone.',
+      inspectionNotes: 'Numeric inspection records 11,626 numeric-bearing worksheet rows across 11 sheets (210 flow, 2,394 film, 4,405+2,384 bubble, and 2,233 rheometer rows). This is a parser-derived row inventory, NOT a count of independent physical observations; formula-derived radius/thickness cells and duplicate rows retain their source lineage and are not promoted to independent measurements. Descriptive source evidence only; no complete formula inputs or matched prediction conditions exist. ENG-005 remains unavailable. Do not set LAB_VALIDATED.',
     },
     {
       id: 'DS-004',
@@ -1023,7 +1023,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       originalDatasetUrl: 'https://repod.icm.edu.pl/dataset.xhtml?persistentId=doi%3A10.18150%2FMKCDUM',
       localFileReference: 'evidence_vault/datasets/repod_foam/data-manifest.json; normalized/PGA_LAE.csv and normalized/PLL_RH.csv; source ODS reproducible via evidence_vault/scripts/acquire_repod_foam.py (CI artifact retained 30 days)',
       sha256Hash: '3665c4386fbf75537744823246a2857fd34eceb297057d6a372c29490d56cfaf',
-      actualRowCount: null,
+      actualRowCount: 23, // 10 PGA_LAE + 13 PLL_RH concentration-level rows; NOT replicate/independent-sample count.
       actualColumnCount: 23,
       columns: [
         { name: "Surfactant concentration (c LAE; c RH)", unit: "mol/L (PLL_RH unit conflict unresolved)", missingCount: 0, isExperimental: true },
@@ -1057,7 +1057,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       applicableEngineIds: [],
       numericalValidationReadiness: 'DEFICIENT',
       inspectionStatus: 'NUMERICALLY_INSPECTED',
-      inspectionNotes: 'Auxiliary mechanistic dataset only. Unit/variable conflicts remain: PLL_RH column is labeled mol/L but article figure captions report RH concentrations in mg/dm³; workbook Vmax is mL while paper describes foam height. Actual independent observation count remains null; never count worksheet rows or repeated measurements as independent samples. Not eligible for ENG-005 validation because domain mismatch and executable predictor are absent.',
+      inspectionNotes: 'Numeric inspection records 23 concentration-level rows (10 PGA_LAE + 13 PLL_RH) across two normalized worksheets. This is a table-row count, NOT an independent replicate/sample count; source states repeated measurements but raw replicate rows are absent. Unit/variable conflicts remain: PLL_RH header says mol/L while article figure captions report RH in mg/dm³; workbook Vmax is mL while paper discusses foam height. Do not silently convert or relabel. Auxiliary mechanistic evidence only; not eligible for ENG-005 validation because domain mismatch and executable predictor are absent.',
     },
   ],
   audits: [
