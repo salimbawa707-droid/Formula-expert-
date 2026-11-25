@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth';
-import { app, auth } from './firebaseAuthClient';
+import { app, auth, isFirebaseConfigured } from './firebaseAuthClient';
 export { auth, signInWithGoogle, signOutUser } from './firebaseAuthClient';
 import { firebaseEnvConfig } from '../config/firebaseEnv';
 import { 
@@ -15,7 +15,9 @@ import {
   orderBy
 } from 'firebase/firestore';
 
-const firestoreDatabaseId = firebaseEnvConfig.firestoreDatabaseId || firebaseEnvConfig.projectId;
+const firestoreDatabaseId = isFirebaseConfigured
+  ? (firebaseEnvConfig.firestoreDatabaseId || firebaseEnvConfig.projectId)
+  : '';
 
 export const db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
 
@@ -50,7 +52,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
+      userId: auth?.currentUser?.uid,
       email: auth.currentUser?.email,
       emailVerified: auth.currentUser?.emailVerified,
       isAnonymous: auth.currentUser?.isAnonymous,
@@ -69,6 +71,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 // Connection test on boot
 export async function testFirestoreConnection(): Promise<boolean> {
+  if (!isFirebaseConfigured) return false;
   try {
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('the client is offline or connection timed out')), 3500)
