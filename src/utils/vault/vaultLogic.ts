@@ -190,6 +190,13 @@ export function computeBatchCostWithNullIntegrity(
  * A partial sub-gate, a single pass, or a ledger that only compares duplicated
  * values can never satisfy the Phase 4B closure requirement.
  */
+function isSafeAIReviewArtifactRef(value: unknown): value is string {
+  if (typeof value !== 'string' || !value.startsWith('evidence_vault/ai_review/')) return false;
+  if (value.includes('\\') || !/^[A-Za-z0-9._/-]+$/.test(value)) return false;
+  const segments = value.split('/');
+  return segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
+}
+
 export function validatePhase4BAIReview(
   review?: AIReviewGateRecord
 ): { passed: boolean; reason: string } {
@@ -226,9 +233,9 @@ export function validatePhase4BAIReview(
     methods.add(pass.method);
     if (typeof pass.reviewerModel !== 'string' || !pass.reviewerModel.trim()) return fail('AI review model identity is missing.');
     if (typeof pass.reviewedAt !== 'string' || !Number.isFinite(Date.parse(pass.reviewedAt))) return fail('AI review timestamp is invalid.');
-    if (typeof pass.sourceManifestRef !== 'string' || !pass.sourceManifestRef.startsWith('evidence_vault/ai_review/')) return fail('AI review source manifest reference must point inside evidence_vault/ai_review/.');
+    if (!isSafeAIReviewArtifactRef(pass.sourceManifestRef)) return fail('AI review source manifest reference must be a safe path inside evidence_vault/ai_review/.');
     if (typeof pass.sourceManifestSha256 !== 'string' || !sha256.test(pass.sourceManifestSha256)) return fail('AI review source manifest hash is invalid.');
-    if (typeof pass.resultArtifactRef !== 'string' || !pass.resultArtifactRef.startsWith('evidence_vault/ai_review/')) return fail('AI review result artifact reference must point inside evidence_vault/ai_review/.');
+    if (!isSafeAIReviewArtifactRef(pass.resultArtifactRef)) return fail('AI review result artifact reference must be a safe path inside evidence_vault/ai_review/.');
     if (typeof pass.resultSha256 !== 'string' || !sha256.test(pass.resultSha256)) return fail('AI review result hash is invalid.');
     if (pass.blindToOtherPasses !== true) return fail('Each AI review pass must be blind to the other pass result.');
     if (!Number.isSafeInteger(pass.discrepancyCount) || pass.discrepancyCount !== 0) return fail('Each AI review pass must have zero unresolved discrepancies.');
@@ -483,7 +490,7 @@ export function validateAndParseVaultJSON(jsonStr: string): {
             errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].reviewedAt is invalid.`);
           }
           for (const field of ['sourceManifestRef', 'resultArtifactRef']) {
-            if (typeof pass[field] === 'string' && !pass[field].startsWith('evidence_vault/ai_review/')) {
+            if (typeof pass[field] === 'string' && !isSafeAIReviewArtifactRef(pass[field])) {
               errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} must point inside evidence_vault/ai_review/.`);
             }
           }
