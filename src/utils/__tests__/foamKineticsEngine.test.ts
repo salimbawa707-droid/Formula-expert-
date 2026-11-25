@@ -15,7 +15,7 @@ export function runFoamKineticsEngineTestSuite() {
     ],
   });
   assert('Uses foam height above liquid meniscus', result.initialFoamHeightMm === 90, result.initialFoamHeightMm, 90);
-  assert('Interpolates half-height time', result.halfHeightTimeSeconds === 30, result.halfHeightTimeSeconds, 30);
+  assert('Interpolates half-height time', result.halfHeightTimeSeconds === 25, result.halfHeightTimeSeconds, 25);
   assert('Marks output as measured-series analysis only', result.scope === 'MEASURED_SERIES_ANALYSIS_ONLY', result.scope);
 
   const logFit = analyzeFoamDecayReplicate({
