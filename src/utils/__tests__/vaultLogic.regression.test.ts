@@ -437,7 +437,25 @@ export function runVaultLogicTestSuite() {
   assert(mdGenerated.includes(parsedJson.totals.usedRangeRows.toString()), 'Round 9 Audit', 'MD report contains used range rows total');
   assert(mdGenerated.includes(parsedJson.totals.numericCells.toString()), 'Round 9 Audit', 'MD report contains numeric cells total');
 
-  // 14. Round-10 Forensic Audit: Comprehensive Positive & Negative Gate Tests
+  // 14. Phase 4B dataset row-count semantics: parser rows are not independent experiments.
+  const zenodoDataset = INITIAL_VAULT_STATE.datasets.find((d: any) => d.id === 'DS-002');
+  const repodDataset = INITIAL_VAULT_STATE.datasets.find((d: any) => d.id === 'DS-005');
+  assert(
+    zenodoDataset?.actualRowCount === 11626 &&
+    zenodoDataset.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
+    zenodoDataset.inspectionNotes?.includes('NOT a count of independent physical observations'),
+    'Phase 4B Dataset Inspection',
+    'Zenodo 18961871 records 11,626 numeric-bearing worksheet rows without treating them as independent physical observations'
+  );
+  assert(
+    repodDataset?.actualRowCount === 23 &&
+    repodDataset.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
+    repodDataset.inspectionNotes?.includes('NOT an independent replicate/sample count'),
+    'Phase 4B Dataset Inspection',
+    'RepOD MKCDUM records 23 concentration-level rows without treating them as replicate/sample counts'
+  );
+
+  // 15. Round-10 Forensic Audit: Comprehensive Positive & Negative Gate Tests
   const stateActive = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   assert(canUnlockPhase5(stateActive).allowed === false, 'Round 10 Audit', 'Phase 4B active blocks Phase 5');
 
