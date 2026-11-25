@@ -13,21 +13,41 @@ if (INGREDIENT_CATEGORY_REVIEW_MATRIX.length !== expectedPairs) {
   throw new Error(`Matrix size mismatch: expected ${expectedPairs}, got ${INGREDIENT_CATEGORY_REVIEW_MATRIX.length}`);
 }
 if (pairKeys.size !== expectedPairs) throw new Error('Duplicate or missing ingredient/category pair.');
-if (INGREDIENT_CATEGORY_REVIEW_MATRIX.some((entry) => entry.decision !== 'NOT_REVIEWED')) {
-  throw new Error('Unreviewed baseline must not auto-approve applicability.');
-}
 if (INGREDIENT_CATEGORY_REVIEW_MATRIX.some((entry) =>
-  entry.permittedUseMinPct !== null || entry.permittedUseMaxPct !== null ||
-  entry.concentrationBasis !== null || entry.evidenceRefs.length !== 0
+  entry.decision === 'NOT_REVIEWED' && (
+    entry.permittedUseMinPct !== null || entry.permittedUseMaxPct !== null ||
+    entry.concentrationBasis !== null || entry.evidenceRefs.length !== 0
+  )
 )) {
-  throw new Error('Unverified use limits or evidence must not be fabricated.');
+  throw new Error('Unreviewed pairs must remain fail-closed and contain no fabricated evidence.');
+}
+const evidenceReviews = [
+  ...LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS,
+  ...AOS_LAUNDRY_EVIDENCE_REVIEWS,
+  ...ANIONIC_SURFACTANT_EVIDENCE_REVIEWS,
+  ...NONIONIC_SURFACTANT_EVIDENCE_REVIEWS
+];
+const evidenceKeys = new Set(evidenceReviews.map((review) => `${review.ingredientId}::${review.productCategoryId}`));
+if (evidenceKeys.size !== evidenceReviews.length) throw new Error('Duplicate evidence review pair.');
+for (const review of evidenceReviews) {
+  const row = INGREDIENT_CATEGORY_REVIEW_MATRIX.find((entry) =>
+    entry.ingredientId === review.ingredientId && entry.productCategoryId === review.productCategoryId
+  );
+  if (!row) throw new Error(`Evidence review missing from master matrix: ${review.ingredientId}`);
+  if (row.decision !== review.decision || row.evidenceRefs.length !== review.evidence.length ||
+      row.compatibilityMechanism !== review.compatibilityMechanism) {
+    throw new Error(`Evidence review not reconciled into matrix: ${review.ingredientId}`);
+  }
+  if (row.permittedUseMinPct !== null || row.permittedUseMaxPct !== null) {
+    throw new Error(`Unverified numeric use limit found: ${review.ingredientId}`);
+  }
 }
 if (INGREDIENT_APPLICABILITY_REVIEW_SUMMARY.matrixPairCount !== expectedPairs) {
   throw new Error('Review summary count mismatch.');
 }
 console.log(`PASS: ${UNIVERSAL_INGREDIENTS.length} ingredients × ${CANONICAL_PRODUCT_CATEGORY_IDS.length} categories = ${expectedPairs} unique, fail-closed review pairs.`);
 
-import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
+import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS } from '../src/data/ingredientApplicabilityEvidenceReviews';
 
 const reviewedKeys = new Set<string>();
 for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
