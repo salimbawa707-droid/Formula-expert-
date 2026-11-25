@@ -194,7 +194,9 @@ export function runVaultLogicTestSuite() {
         method: 'SOURCE_FIRST_TRANSCRIPTION',
         reviewerModel: 'GPT-6',
         reviewedAt: '2026-11-26T10:00:00Z',
+        sourceManifestRef: 'evidence_vault/ai_review/source-manifest.json',
         sourceManifestSha256: 'a'.repeat(64),
+        resultArtifactRef: 'evidence_vault/ai_review/pass-a.json',
         resultSha256: 'b'.repeat(64),
         blindToOtherPasses: true,
         discrepancyCount: 0,
@@ -203,7 +205,9 @@ export function runVaultLogicTestSuite() {
         method: 'INDEPENDENT_SOURCE_RECHECK',
         reviewerModel: 'GPT-6',
         reviewedAt: '2026-11-26T10:05:00Z',
+        sourceManifestRef: 'evidence_vault/ai_review/source-manifest.json',
         sourceManifestSha256: 'a'.repeat(64),
+        resultArtifactRef: 'evidence_vault/ai_review/pass-b.json',
         resultSha256: 'c'.repeat(64),
         blindToOtherPasses: true,
         discrepancyCount: 0,
@@ -222,6 +226,7 @@ export function runVaultLogicTestSuite() {
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, sourceManifestSha256: 'd'.repeat(64) } : pass) }).passed, 'AI Review Gate', 'Both passes must use the same pinned source manifest');
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, blindToOtherPasses: false } : pass) }).passed, 'AI Review Gate', 'The second pass must be blind to the first result');
   assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as any }).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: '../outside.json' } : pass) }).passed, 'AI Review Gate', 'AI review artifacts must remain inside the evidence vault');
 
   const aiState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   const aiPhase4b = aiState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
