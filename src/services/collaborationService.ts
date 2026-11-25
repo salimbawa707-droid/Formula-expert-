@@ -77,10 +77,10 @@ class CollaborationManager {
 
     this.localChemist = {
       id,
-      displayName: auth.currentUser?.displayName || savedName,
+      displayName: auth?.currentUser?.displayName || savedName,
       role: 'Lead Formulator',
       color,
-      avatarLetter: (auth.currentUser?.displayName || savedName).charAt(0).toUpperCase(),
+      avatarLetter: (auth?.currentUser?.displayName || savedName).charAt(0).toUpperCase(),
       lastActive: Date.now(),
       currentField: null,
       isHost: true,
