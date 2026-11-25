@@ -18,6 +18,8 @@
  * 8. User ownership check strictly prevents cross-user data tampering.
  */
 
+import { readFileSync } from 'node:fs';
+
 import {
   serverRateLimiter,
   sanitizeErrorMessage,
@@ -286,6 +288,63 @@ export async function runServerSecurityAndTruthfulHealthTestSuite(): Promise<{ t
   };
   mockCors(mockReqNoOrigin, mockResNoOrigin, () => { noOriginNextCalled = true; });
   assert('CORS 14: No-Origin request passes through cleanly to next() without setting Access-Control-Allow-Origin', noOriginNextCalled && !noOriginAllowedHeader, true, true);
+
+  // Production defaults must never inherit development localhost origins.
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalAllowedOrigins = process.env.ALLOWED_ORIGINS;
+  const originalAppUrl = process.env.APP_URL;
+  const runCorsProbe = (middleware: ReturnType<typeof corsMiddleware>, origin: string) => {
+    let statusCode = 0;
+    let allowOrigin = '';
+    let nextCalled = false;
+    const req: any = { headers: { origin }, method: 'GET', path: '/api/health' };
+    const res: any = {
+      setHeader: (key: string, value: string) => { if (key === 'Access-Control-Allow-Origin') allowOrigin = value; },
+      status: (code: number) => { statusCode = code; return res; },
+      json: () => {},
+      end: () => {}
+    };
+    middleware(req, res, () => { nextCalled = true; });
+    return { statusCode, allowOrigin, nextCalled };
+  };
+  try {
+    process.env.NODE_ENV = 'production';
+    process.env.APP_URL = 'https://production-app.example';
+    delete process.env.ALLOWED_ORIGINS;
+    const productionDefaultCors = corsMiddleware();
+    const productionAppOrigin = runCorsProbe(productionDefaultCors, 'https://production-app.example');
+    const productionLocalhost = runCorsProbe(productionDefaultCors, 'http://localhost:3000');
+    const productionHttpsLocalhost = runCorsProbe(productionDefaultCors, 'https://localhost');
+    assert('CORS 15: Production APP_URL remains allowed when no explicit ALLOWED_ORIGINS is set', productionAppOrigin.allowOrigin === 'https://production-app.example' && productionAppOrigin.nextCalled, productionAppOrigin, 'APP_URL allowed');
+    assert('CORS 16: Production defaults reject HTTP and HTTPS localhost origins', productionLocalhost.statusCode === 403 && productionHttpsLocalhost.statusCode === 403, { productionLocalhost, productionHttpsLocalhost }, 'both localhost origins denied');
+
+    process.env.ALLOWED_ORIGINS = 'https://production-app.example,https://localhost,capacitor://localhost';
+    const productionAndroidCors = corsMiddleware();
+    const androidHttpsOrigin = runCorsProbe(productionAndroidCors, 'https://localhost');
+    const androidCapacitorOrigin = runCorsProbe(productionAndroidCors, 'capacitor://localhost');
+    const unlistedProductionOrigin = runCorsProbe(productionAndroidCors, 'https://untrusted.example');
+    assert('CORS 17: Android WebView origins work only when explicitly allowlisted in production', androidHttpsOrigin.nextCalled && androidCapacitorOrigin.nextCalled && !unlistedProductionOrigin.nextCalled && unlistedProductionOrigin.statusCode === 403, { androidHttpsOrigin, androidCapacitorOrigin, unlistedProductionOrigin }, 'explicit origins accepted; unlisted denied');
+
+    process.env.NODE_ENV = 'test';
+    delete process.env.ALLOWED_ORIGINS;
+    delete process.env.APP_URL;
+    const developmentCors = corsMiddleware();
+    const developmentHttpsLocalhost = runCorsProbe(developmentCors, 'https://localhost');
+    assert('CORS 18: HTTPS localhost remains available in development for Android WebView testing', developmentHttpsLocalhost.nextCalled && developmentHttpsLocalhost.allowOrigin === 'https://localhost', developmentHttpsLocalhost, 'https://localhost allowed in development');
+  } finally {
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = originalNodeEnv;
+    if (originalAllowedOrigins === undefined) delete process.env.ALLOWED_ORIGINS; else process.env.ALLOWED_ORIGINS = originalAllowedOrigins;
+    if (originalAppUrl === undefined) delete process.env.APP_URL; else process.env.APP_URL = originalAppUrl;
+  }
+
+  // Static contract guard for Firestore rules. Runtime allow/deny behavior still
+  // requires the Firebase Emulator suite in CI.
+  const firestoreRules = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8');
+  const calibrationValidator = firestoreRules.split('function isValidCalibrationProposal(data, proposalId) {')[1]?.split('\n    }')[0] || '';
+  const evidenceListValidator = firestoreRules.split('function isStringEvidenceReferenceList(values) {')[1]?.split('\n    }')[0] || '';
+  assert('CalibrationRules 1: Required proposal fields match the TypeScript calibration contract', ['canonicalCategory', 'proposedShiftOffset', 'observedBias', 'sampleCount', 'meanAbsoluteError', 'rationale'].every(field => calibrationValidator.includes(field)), calibrationValidator.length > 0, true);
+  assert('CalibrationRules 2: Sample count is enforced as a positive integer', /data\.sampleCount is int && data\.sampleCount > 0/.test(calibrationValidator), calibrationValidator.includes('data.sampleCount is int && data.sampleCount > 0'), true);
+  assert('CalibrationRules 3: Evidence reference list has a bounded size and string-item validation', evidenceListValidator.includes('values.size() <= 50') && evidenceListValidator.includes('values[49] is string'), evidenceListValidator.includes('values[49] is string'), true);
 
   // --------------------------------------------------------------------------
   // TEST GROUP 5: Server-Side Authentication & Token Verification
