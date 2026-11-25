@@ -546,7 +546,7 @@ Output valid JSON only with NO markdown fences, no conversational text.`;
             tools: [{ googleSearch: {} }]
           })
         }),
-        45000,
+        60000,
         `${researchModelUsed} Google Search`
       );
       responseText = response.text || '';
