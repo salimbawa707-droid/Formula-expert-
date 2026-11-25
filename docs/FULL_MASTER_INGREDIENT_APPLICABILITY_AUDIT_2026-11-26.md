@@ -51,3 +51,15 @@ The evidence-review arrays are now consumed by ingredientApplicabilityReviewMatr
 ### Current scope boundary
 
 These 14 records are not a complete category-wise chemistry audit. They mostly cover LAUNDRY_LIQUID, with powder-specific reviews for AOS 92 and SLS needles. The remaining 11 canonical categories and the remaining ingredient records still require their own chemical identity, mechanism, pH, use-level, incompatibility and evidence review. Do not represent this stage as approval of all 13 categories.
+
+
+## Nonionic batch 3 — APG 1214 and NPE risk review
+
+Three additional nonionic ingredient families/grades were reviewed, adding 11 category pairs to the matrix (total evidence-reviewed pairs: 25):
+
+- APG 1214 / LAUNDRY_LIQUID: APPLICABLE based on supplier TDS and a supplier liquid-laundry example; 50–53% solids is not automatically verified active matter, and the example dose is not a universal limit.
+- APG 1214 / DISHWASH_MANUAL: APPLICABLE as a nonionic co-surfactant candidate; finished pH and skin mildness must be verified because supplier 10% solution pH is 11.5–12.5.
+- APG 1214 / KITCHEN_DEGREASER: APPLICABLE as a hard-surface wetting/emulsifying candidate; substrate and solvent compatibility remain formulation-specific.
+- NP-6, NP-9 and NP-10 / LAUNDRY_LIQUID: CONDITIONALLY_APPLICABLE risk-hold only, not a recommendation to use. EU REACH Annex XVII entry 46 restricts NP/NPE at >=0.1 wt% for domestic cleaning and other specified uses. This is not represented as Indian law; target-market legal review is required. Prefer NPE-free alternatives for new consumer products.
+
+The three NPE records have no supplier-specific grade TDS/CoA in this review. No NPE use level is approved. Evidence and limitations are carried into the matrix, and regression tests assert the exact 11 ingredient/category pairs.
