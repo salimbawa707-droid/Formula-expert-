@@ -1,6 +1,20 @@
 import type { ProductCategoryId } from '../domain/productTaxonomy';
 import type { ApplicabilityReviewDecision } from './ingredientApplicabilityReviewMatrix';
 
+export interface IngredientEvidenceReview {
+  ingredientId: string;
+  productCategoryId: ProductCategoryId;
+  decision: ApplicabilityReviewDecision;
+  chemicalRole: string;
+  compatibilityMechanism: string;
+  concentrationFinding: string;
+  pHFinding: string;
+  incompatibilityRisks: string[];
+  evidence: { title: string; url: string; evidenceType: 'SUPPLIER_TDS' | 'TECHNICAL_GUIDANCE' | 'FORMULATION_EXAMPLE' }[];
+  limitations: string[];
+}
+
+
 /**
  * First evidence-reviewed batch: liquid laundry surfactant raw materials.
  * Scope is limited to catalog grades with identifiable LAS/SLES chemistry.
@@ -108,3 +122,43 @@ export const AOS_LAUNDRY_EVIDENCE_REVIEWS: IngredientEvidenceReview[] = [
   }
 ];
 
+
+
+export const ANIONIC_SURFACTANT_EVIDENCE_REVIEWS: IngredientEvidenceReview[] = [
+  {
+    ingredientId: 'sas-60', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Aqueous secondary alkane sulfonate sodium salt; anionic detergent surfactant providing wetting and grease removal.',
+    compatibilityMechanism: 'SAS 60 is a secondary alkane sulfonate blend in water. Its anionic headgroup supports detergency and wetting; supplier describes detergent-industry use. Catalog CAS 68037-49-0 conflicts with the cited WeylClean SAS 60 TDS CAS 97489-15-1, so chemical identity must be reconciled before unqualified approval.',
+    concentrationFinding: 'Catalog activeDefault 60% matches the TDS approximate 60% active content, but does not verify the catalog supplier/lot. TDS reports sodium sulfate max 4.2% and paraffin max 0.7%. No finished-product use range is established.',
+    pHFinding: 'WeylClean TDS reports pH 7.0–8.0 for a 5% as-supplied aqueous solution at 20°C. This is a raw-material test condition, not finished formula pH stability. Laundry-liquid finished target 7.5–9.5 is only screening context.',
+    incompatibilityRisks: ['CAS/identity mismatch in the catalog must be resolved.', 'Anionic SAS can form insoluble complexes with cationic softener actives.', 'High surfactant/foam load may be unsuitable for low-foam front-load products without performance testing.', 'Electrolyte and residual paraffin/sulfate can affect clarity, viscosity and phase stability.'],
+    evidence: [{title:'WeylClean SAS 60 supplier product data sheet',url:'https://www.kkchemindia.com/wp-content/uploads/AZELIS-WeylClean-SAS-60_TDS86-002.pdf',evidenceType:'SUPPLIER_TDS'}],
+    limitations: ['Confirm catalog CAS and actual manufacturer grade against supplier CoA/TDS.', 'No permitted dose range inferred from the active assay.', 'Test detergency, foam, viscosity, clarity and storage stability in the intended formula.']
+  },
+  {
+    ingredientId: 'sls-needles', productCategoryId: 'LAUNDRY_POWDER', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Solid sodium lauryl sulfate fatty alcohol sulfate anionic surfactant; rapid wetting and high-foam detergency contributor.',
+    compatibilityMechanism: 'Needle form is a dry solid grade intended to dissolve/disperse in wash water. It can contribute anionic detergency in powder blends, but particle size, moisture, dusting, dissolution rate and carrier/salt content affect manufacturability and wash performance.',
+    concentrationFinding: 'Catalog activeDefault 95% is close to supplier needle specifications with minimum active matter 94%; do not treat 95% as guaranteed assay. Example supplier limits include sodium sulfate max 1.5%, sodium chloride max 0.5%, unsulfated matter max 2.0%, moisture max 3.0%. No universal finished-product dosage is assigned.',
+    pHFinding: 'Supplier needle TDS reports pH 8.5–10.5 in 1% aqueous solution; another grade specification gives pH 7.5–10.5 at 1%. This variability is grade/test dependent. Laundry-powder slurry target 9.5–11.5 is finished-product screening context only.',
+    incompatibilityRisks: ['High/flash foam can conflict with front-load low-foam detergents.', 'Anionic SLS is incompatible with cationic fabric-softener actives in the same aqueous phase.', 'Powder moisture and electrolyte levels can affect caking and dissolution.', 'Fine dust/needle handling requires supplier SDS controls.'],
+    evidence: [
+      {title:'Novochem SLS Needles technical datasheet',url:'https://slsneedles.com/pdf/novochem_sls_needles.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'Sulfolon LMN 92C SLS Needle specification',url:'https://alphachem.com.au/wp-content/uploads/2023/04/TDS-Sodium-Lauryl-Sulphate-needles.pdf',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Obtain the actual supplier CoA/TDS for the catalog 95% grade.', 'Verify assay, moisture, sulfate, chloride, unsulfated matter and particle-size distribution.', 'Run dry-blend flow/caking, dissolution, foam and fabric-cleaning trials.']
+  },
+  {
+    ingredientId: 'sls-30', productCategoryId: 'LAUNDRY_LIQUID', decision: 'CONDITIONALLY_APPLICABLE',
+    chemicalRole: 'Aqueous sodium lauryl sulfate anionic surfactant solution; primary/co-surfactant for wetting, detergency and foam.',
+    compatibilityMechanism: 'The 30% aqueous SLS solution supplies the same anionic fatty alcohol sulfate as the solid needle grade, but has a different water and electrolyte contribution. Supplier product data describes 30% active SLS solution; cited supplier application emphasis is industrial emulsion polymerization, not laundry formulation validation.',
+    concentrationFinding: 'Catalog 30% default aligns with supplier PDS active 30.0 wt%. Supplier example reports unsulfated material <1.2%, sodium chloride <0.3%, viscosity <500 cP and density 8.7 lb/gal. These are supplier-specific values, not verified catalog lot specs. No use range assigned.',
+    pHFinding: 'Pilot Chemical PDS reports pH 8.0 for a 10% solution. This is not a general pH stability envelope. Laundry-liquid target pH 7.5–9.5 is screening context only.',
+    incompatibilityRisks: ['High foam may be unsuitable for machine laundry without blend qualification.', 'Anionic SLS is incompatible with cationic surfactants.', 'Electrolytes can shift viscosity/clarity; aqueous grade adds water to the formula.', 'Do not transfer the needle grade impurity/moisture limits to the liquid grade.'],
+    evidence: [
+      {title:'Pilot Chemical Calfoam SLS-30 product data sheet',url:'https://pilotchemical.com/document.php?fileID=pds%2FPDS+303S00.pdf',evidenceType:'SUPPLIER_TDS'},
+      {title:'Pilot Ossa Calimulse SLS technical specification',url:'https://www.pilotossa.com/en-us/products/calimulse-sls',evidenceType:'SUPPLIER_TDS'}
+    ],
+    limitations: ['Confirm exact commercial grade and supplier CoA/TDS.', 'No permitted finished-product use range established.', 'Validate foam, detergency, viscosity, preservation and shelf stability in laundry liquid.']
+  }
+];
