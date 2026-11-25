@@ -262,23 +262,7 @@ jobs:
           disable-linux-hw-accel: auto
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
-          script: |
-            set +e
-            cd android
-            for attempt in 1 2 3; do
-              bash ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
-              test_status=$?
-              if [ "$test_status" -eq 0 ]; then break; fi
-              if [ "$attempt" -lt 3 ] && grep -Eqi '429|Too Many Requests|Could not GET|Could not resolve' <(tail -n 120 "$HOME/.gradle/daemon/"*/*.out.log 2>/dev/null); then
-                echo "Gradle dependency throttling detected; retrying instrumentation attempt $attempt."
-                sleep $((attempt * 20))
-              else
-                break
-              fi
-            done
-            adb logcat -d -v threadtime > ../android-webview-logcat.txt 2>&1 || true
-            grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console|FATAL EXCEPTION|AndroidRuntime' ../android-webview-logcat.txt | tail -n 1200 > ../android-webview-errors.txt || true
-            exit "$test_status"
+          script: cd android && bash ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest; test_status=$?; adb logcat -d -v threadtime > ../android-webview-logcat.txt 2>&1 || true; grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console|FATAL EXCEPTION|AndroidRuntime' ../android-webview-logcat.txt | tail -n 1200 > ../android-webview-errors.txt || true; exit "$test_status"
 
       - name: Capture Android WebView runtime logs
         if: always()
