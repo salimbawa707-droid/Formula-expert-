@@ -23,6 +23,7 @@
 
 import fs from 'node:fs';
 import { INITIAL_VAULT_STATE } from '../../domain/vault/initialData';
+import type { AIReviewGateRecord } from '../../domain/vault/types';
 import {
   calculateVaultMetrics,
   computeBatchCostWithNullIntegrity,
@@ -179,7 +180,7 @@ export function runVaultLogicTestSuite() {
   const gateCheck = canUnlockPhase5(INITIAL_VAULT_STATE);
   assert(gateCheck.allowed === false, 'Phase 5 Gate', 'Phase 5 unlock blocked on active 4B');
   assert(Boolean(/Phase 4B is still ACTIVE\/OPEN/i.test(gateCheck.reason)), 'Phase 5 Gate', 'Gate check gives reason');
-  const validAiReview = {
+  const validAiReview: AIReviewGateRecord = {
     status: 'PASSED',
     protocolVersion: 'phase4b-ai-review-v1',
     scope: 'PHASE_4B_COMPLETE',
@@ -220,7 +221,7 @@ export function runVaultLogicTestSuite() {
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, method: 'SOURCE_FIRST_TRANSCRIPTION' as const } : pass) }).passed, 'AI Review Gate', 'Review methods must be distinct');
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, sourceManifestSha256: 'd'.repeat(64) } : pass) }).passed, 'AI Review Gate', 'Both passes must use the same pinned source manifest');
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, blindToOtherPasses: false } : pass) }).passed, 'AI Review Gate', 'The second pass must be blind to the first result');
-  assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as false }).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
+  assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as any }).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
 
   const aiState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   const aiPhase4b = aiState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
