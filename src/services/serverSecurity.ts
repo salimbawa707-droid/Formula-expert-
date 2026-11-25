@@ -332,18 +332,23 @@ export function corsMiddleware(customAllowedOrigins?: string[]) {
 
   const hasCustom = Boolean(customAllowedOrigins && customAllowedOrigins.length > 0);
   const hasEnv = envOrigins.length > 0;
-  const isExplicit = hasCustom || hasEnv;
+  const isProduction = process.env.NODE_ENV === 'production';
+  // Production is always fail-closed: APP_URL may be the sole origin when no
+  // explicit ALLOWED_ORIGINS list is supplied, but development origins are
+  // never inherited from the development fallback.
+  const isExplicit = hasCustom || hasEnv || isProduction;
 
-  const defaultOrigins: string[] = [
+  const defaultOrigins: string[] = isProduction ? [] : [
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost',
+    'https://localhost',
     'capacitor://localhost',
-    'ionic://localhost',
-    'http://localhost'
+    'ionic://localhost'
   ];
 
-  // If specific legitimate Cloud Run / AI Studio app URL is set in environment, add its exact origin
-  if (process.env.APP_URL) {
+  // APP_URL is a trusted exact origin only when no explicit allowlist overrides it.
+  if (!hasCustom && !hasEnv && process.env.APP_URL) {
     const normAppUrl = normalizeOrigin(process.env.APP_URL);
     if (normAppUrl && !defaultOrigins.includes(normAppUrl)) {
       defaultOrigins.push(normAppUrl);
