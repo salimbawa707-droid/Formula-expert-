@@ -31,7 +31,7 @@ This baseline is a data-quality and coverage inventory, not a completed scientif
 
 ## Evidence-reviewed batch status (2026-11-26)
 
-The following review records are now reconciled into the generated ingredient × category matrix (24 reviewed pairs total; every other pair remains NOT_REVIEWED):
+The table below summarizes the initial 14 reviewed ingredient/category pairs. Subsequent batches bring the current total to 24; every other pair remains NOT_REVIEWED.
 
 | Ingredient grade | Category | Decision | Main limitation |
 |---|---|---|---|
