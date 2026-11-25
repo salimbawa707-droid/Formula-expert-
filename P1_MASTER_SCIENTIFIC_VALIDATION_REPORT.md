@@ -3,6 +3,13 @@
 **Project**: Detergent Formula Expert  
 **Scope**: P1 Workstreams (Stoichiometric Neutralization & pH, Water Hardness & Chelation, Viscosity Validation, Cleaning Performance Index Validation, 13 Product Categories Validation, and Evidence Vault Governance)  
 **Status**: `PASS` (Software & Mathematical Validation; Experimental Validation provisional pending empirical dataset attachment)  
+
+> **Verification status (updated 2026-11-25): the `PASS` label above is a manual review
+> verdict, not automated evidence.** This report was written before any command output was
+> retained in the repository, so its claims were not reproducible at review time. See
+> [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) for the checks CI actually executes
+> today and for the claim ledger. Claims not covered there remain `NOT VERIFIED` and must
+> not be read as release, security, or scientific certification.
 **Date**: October 31, 2026  
 
 ---

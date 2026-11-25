@@ -3,6 +3,17 @@
 **Target Repository:** `https://github.com/salimbawa707-droid/Formula-expert-.git`  
 **Audit Mode:** Direct source inspection, fail-closed scientific remediation, security hardening, PWA repair, and live script execution in workspace (`/app/applet`).
 
+
+> **Verification status (updated 2026-11-25): the `PASS` labels in this document are manual
+> review verdicts unless a command and its output are quoted next to them.** See
+> [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) for the checks CI actually executes
+> today. Nothing here certifies chemical correctness, laboratory validation, security, or
+> release readiness.
+>
+> Phase-level `PASS` rows record what a regression run reported at review time; they are not
+> independent verification. Current release position is `NOT PRODUCTION RELEASE CERTIFIED`
+> (`P2_MASTER_PRODUCTION_READINESS_REPORT.md`).
+
 ---
 
 ## 1. Environment & Verification Boundaries (Strict Honesty Disclosures)

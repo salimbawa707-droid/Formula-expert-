@@ -3,6 +3,11 @@
 **Project**: Detergent Formula Expert  
 **Scope**: P0 Defects 01–06  
 
+> **Verification status (updated 2026-11-25): the per-defect `PASS` labels below are manual
+> review verdicts, not automated evidence.** Each defect is now covered by regression tests
+> (`bun run test:all`, CI job `full-typescript-regression`), which is the only executed
+> evidence for these rows. See [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md).
+
 ---
 
 ## Defect P0-01 — Unknown Scientific Values and False Verification

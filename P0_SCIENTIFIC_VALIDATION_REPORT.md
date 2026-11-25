@@ -3,6 +3,13 @@
 **Project**: Detergent Formula Expert  
 **Scientific Review Date**: 2026-10-31  
 
+
+> **Verification status (updated 2026-11-25): the `PASS` labels in this document are manual
+> review verdicts unless a command and its output are quoted next to them.** See
+> [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) for the checks CI actually executes
+> today. Nothing here certifies chemical correctness, laboratory validation, security, or
+> release readiness.
+
 ---
 
 ## 1. Scientific Verification of P0 Corrections

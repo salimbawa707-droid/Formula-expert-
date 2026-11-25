@@ -5,6 +5,13 @@
 **Status**: PASS  
 **Execution Timestamp**: 2026-10-31  
 
+> **Verification status (updated 2026-11-25): the `PASS` label above is a manual review
+> verdict, not automated evidence.** This report predates any retained CI output. See
+> [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) for the checks that actually run.
+> Where a P0 defect is covered by the regression suite (`bun run test:all`, CI job
+> `full-typescript-regression`) it may be read as software-verified; nothing here certifies
+> chemical correctness or release readiness.
+
 ---
 
 ## 1. Executive Summary

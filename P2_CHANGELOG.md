@@ -4,6 +4,16 @@
 **Version**: 2.5.0-P2  
 **Date**: October 31, 2026  
 
+
+> **Verification status (updated 2026-11-25): the `PASS` labels in this document are manual
+> review verdicts unless a command and its output are quoted next to them.** See
+> [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) for the checks CI actually executes
+> today. Nothing here certifies chemical correctness, laboratory validation, security, or
+> release readiness.
+>
+> The regression counts recorded below (131 modules) are historical; the current suite is
+> 139 modules / 4,999 assertions.
+
 ---
 
 ## Changes in P2 (Production Readiness & Engineering)

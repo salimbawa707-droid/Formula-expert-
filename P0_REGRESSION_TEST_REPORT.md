@@ -4,6 +4,16 @@
 **Test Suite**: Master Calculation Test Runner (`npx tsx src/utils/test-calculations.ts`)  
 **Execution Timestamp**: 2026-10-31  
 
+
+> **Verification status (updated 2026-11-25): the `PASS` labels in this document are manual
+> review verdicts unless a command and its output are quoted next to them.** See
+> [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) for the checks CI actually executes
+> today. Nothing here certifies chemical correctness, laboratory validation, security, or
+> release readiness.
+>
+> The counts recorded below (131 modules / 4,606 assertions) are historical. The suite is now
+> 139 modules / 4,999 assertions; rerun `bun run test:all` before quoting numbers.
+
 ---
 
 ## 1. Master Test Suite Summary
