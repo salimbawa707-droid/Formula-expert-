@@ -45,7 +45,7 @@ export const useLabNotebookStore = create<LabNotebookStore>((set, get) => ({
 
     await db.labNotes.put(record);
 
-    if (firebaseAuth.currentUser) {
+    if (firebaseAuth?.currentUser) {
       try {
         const { saveUserTrial } = await import('../services/firebaseClient');
         await saveUserTrial(firebaseAuth.currentUser.uid, {
