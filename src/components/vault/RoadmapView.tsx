@@ -10,7 +10,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { VaultState, ProjectPhase } from '../../domain/vault/types';
-import { canUnlockPhase5 } from '../../utils/vault/vaultLogic';
+import { canUnlockPhase5, getDatasetInspectionSummary } from '../../utils/vault/vaultLogic';
 
 interface RoadmapViewProps {
   state: VaultState;
@@ -24,6 +24,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
   const [expandedPhaseId, setExpandedPhaseId] = useState<string>('phase-4b');
 
   const phase5Check = canUnlockPhase5(state);
+  const datasetInspectionSummary = getDatasetInspectionSummary(state.datasets);
 
   const getStatusBadge = (phase: ProjectPhase) => {
     switch (phase.status) {
@@ -189,9 +190,20 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                       <p className="text-slate-300">
                         The source audit separates four non-equivalent counts: 59 unique paths in the legacy list, 62 Engine-named source files outside UI components (65 including UI components), 94 broad source candidates, and six top-level vault registry records. The historical 64 and 97 claims remain unverified because their original source artifacts were not found. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md.
                       </p>
-                      <p className="text-rose-300 font-medium">
-                        Latest reported blocker: The SurfPro ZIP is not available in the Google AI Studio runtime
-                        workspace. No experimental dataset has been numerically inspected according to the latest report.
+                      <p className="text-emerald-300 font-medium">
+                        Numerical inspection: {datasetInspectionSummary.inspectedCount}/{datasetInspectionSummary.totalCount} registered datasets have a finite, positive, parser-recorded row inventory.
+                      </p>
+                      {datasetInspectionSummary.uninspectedDatasets.length > 0 ? (
+                        <p className="text-rose-300 font-medium">
+                          Still uninspected: {datasetInspectionSummary.uninspectedDatasets.map(dataset => dataset.id).join(', ')}.
+                        </p>
+                      ) : (
+                        <p className="text-slate-300">
+                          All registered datasets have passed the numerical inventory check. This does not establish independent physical-replicate lineage, matched formula-prediction pairs, or laboratory validation.
+                        </p>
+                      )}
+                      <p className="text-amber-300 font-medium">
+                        Phase 5 remains locked: {phase5Check.reason}
                       </p>
                     </div>
                   )}
