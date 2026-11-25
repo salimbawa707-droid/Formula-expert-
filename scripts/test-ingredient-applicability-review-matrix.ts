@@ -4,6 +4,7 @@ import {
 } from '../src/data/ingredientApplicabilityReviewMatrix';
 import { UNIVERSAL_INGREDIENTS } from '../src/data/universalIngredientLibrary';
 import { CANONICAL_PRODUCT_CATEGORY_IDS } from '../src/domain/productTaxonomy';
+import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2 } from '../src/data/ingredientApplicabilityEvidenceReviews';
 
 const expectedPairs = UNIVERSAL_INGREDIENTS.length * CANONICAL_PRODUCT_CATEGORY_IDS.length;
 const pairKeys = new Set(INGREDIENT_CATEGORY_REVIEW_MATRIX.map(
@@ -48,7 +49,6 @@ if (INGREDIENT_APPLICABILITY_REVIEW_SUMMARY.matrixPairCount !== expectedPairs) {
 }
 console.log(`PASS: ${UNIVERSAL_INGREDIENTS.length} ingredients × ${CANONICAL_PRODUCT_CATEGORY_IDS.length} categories = ${expectedPairs} unique matrix pairs.`);
 
-import { LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS, AOS_LAUNDRY_EVIDENCE_REVIEWS, ANIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS, NONIONIC_SURFACTANT_EVIDENCE_REVIEWS_BATCH_2 } from '../src/data/ingredientApplicabilityEvidenceReviews';
 
 const reviewedKeys = new Set<string>();
 for (const review of LAUNDRY_LIQUID_SURFACTANT_EVIDENCE_REVIEWS) {
