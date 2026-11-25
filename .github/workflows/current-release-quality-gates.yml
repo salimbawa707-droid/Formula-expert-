@@ -257,11 +257,22 @@ jobs:
       - name: Capture Android WebView runtime logs
         if: always()
         shell: bash
+        timeout-minutes: 1
         run: |
           set +e
-          adb logcat -d -v threadtime > android-webview-logcat.txt 2>&1
-          grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console' android-webview-logcat.txt | tail -n 800 > android-webview-errors.txt
-          true
+          : > android-webview-logcat.txt
+          : > android-webview-errors.txt
+          if command -v adb >/dev/null 2>&1; then
+            timeout 20s adb logcat -d -v threadtime > android-webview-logcat.txt 2>&1
+            adb_status=$?
+            if [ "$adb_status" -ne 0 ]; then
+              echo "adb logcat capture exited with status $adb_status" >> android-webview-logcat.txt
+            fi
+          else
+            echo "adb is unavailable after emulator instrumentation" >> android-webview-logcat.txt
+          fi
+          grep -Ei 'chromium|WebView|Capacitor|Uncaught|ReferenceError|TypeError|SyntaxError|Firebase|console|FATAL EXCEPTION|AndroidRuntime' android-webview-logcat.txt | tail -n 800 > android-webview-errors.txt || true
+          echo "Captured $(wc -l < android-webview-logcat.txt) log lines and $(wc -l < android-webview-errors.txt) filtered lines."
 
       - name: Upload Android instrumentation reports
         if: always()
