@@ -9,15 +9,32 @@ import {
   authenticateUserMiddleware,
   requireAdminMiddleware,
   CANONICAL_PACKAGE_NAME,
+  corsMiddleware,
   isApiKeyConfigured,
   payloadSizeValidator,
   rateLimitMiddleware,
   resolveGeminiModel,
+  resolveTrustProxy,
   securityHeadersMiddleware,
   verifyGooglePlayPurchase,
 } from './src/services/serverSecurity.ts';
 
 const app = express();
+
+// Behind Cloud Run / a reverse proxy req.ip is the proxy address unless the
+// number of trusted hops is declared, which would collapse every client into a
+// single rate-limit bucket. TRUST_PROXY controls this (default: 1 hop, which
+// matches Cloud Run; set TRUST_PROXY=false when the server is exposed directly).
+app.set('trust proxy', resolveTrustProxy(process.env.TRUST_PROXY));
+
+// CORS is only enabled when an explicit origin allowlist is configured.
+// Same-origin web deployments do not need it; the Android WebView shell
+// (origin https://localhost or capacitor://localhost) does, once
+// ALLOWED_ORIGINS or APP_URL is set in the server environment.
+if ((process.env.ALLOWED_ORIGINS || '').trim() || (process.env.APP_URL || '').trim()) {
+  app.use(corsMiddleware());
+}
+
 // Dev server must run on port 3000 per AI Studio environment constraints
 // Parse command line arguments if provided (e.g. --port 3000 --host 0.0.0.0)
 const argv = process.argv.slice(2);

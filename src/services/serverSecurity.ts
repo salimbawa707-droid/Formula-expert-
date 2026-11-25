@@ -986,7 +986,7 @@ export function runStartupSecurityDiagnostics(): {
     firebaseAdminConfigured: hasFirebase,
     firestoreConfigured: hasFirestore,
     playBillingConfigured: hasPlay,
-    policy: 'STCRIPTION_STATE_STRICT_FAIL_CLOSED'
+    policy: 'STRICT_FAIL_CLOSED_SERVER_VERIFIED'
   };
 }
 

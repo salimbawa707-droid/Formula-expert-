@@ -78,6 +78,31 @@ service cloud.firestore {
         && (!('stabilityVerdict' in data) || data.stabilityVerdict == null || (data.stabilityVerdict is string && data.stabilityVerdict.size() <= 64));
     }
 
+    // Calibration proposals are per-user lab-evidence records. They were not
+    // matched before, so they fell through to the deny-all catch-all and every
+    // save/load returned permission-denied.
+    function isValidCalibrationProposal(data, proposalId) {
+      return data.keys().hasAll(['proposalId', 'kpiId', 'parameterName', 'proposedAt', 'status', 'safetyWarning'])
+        && data.keys().hasOnly(['proposalId', 'canonicalCategory', 'kpiId', 'parameterName',
+          'currentModelParameterValue', 'currentModelValue', 'proposedShiftOffset',
+          'proposedCalibratedValue', 'observedBias', 'sampleCount', 'meanAbsoluteError', 'mae',
+          'rationale', 'recommendation', 'proposedAt', 'status', 'safetyWarning',
+          'evidenceReferenceIds', 'updatedAt'])
+        && data.proposalId is string && isValidId(data.proposalId) && data.proposalId == proposalId
+        && data.kpiId is string && data.kpiId.size() > 0 && data.kpiId.size() <= 128
+        && data.parameterName is string && data.parameterName.size() > 0 && data.parameterName.size() <= 256
+        && data.proposedAt is string && data.proposedAt.size() <= 64
+        && data.status in ['PROPOSED', 'UNDER_REVIEW', 'REJECTED']
+        && data.safetyWarning is string && data.safetyWarning.size() <= 2000
+        && (!('rationale' in data) || (data.rationale is string && data.rationale.size() <= 8192))
+        && (!('recommendation' in data) || (data.recommendation is string && data.recommendation.size() <= 2000))
+        && (!('proposedShiftOffset' in data) || data.proposedShiftOffset is number)
+        && (!('observedBias' in data) || data.observedBias is number)
+        && (!('sampleCount' in data) || data.sampleCount is number)
+        && (!('meanAbsoluteError' in data) || data.meanAbsoluteError is number)
+        && (!('evidenceReferenceIds' in data) || (data.evidenceReferenceIds is list && data.evidenceReferenceIds.size() <= 50));
+    }
+
     // 4. Match Blocks
     match /users/{userId} {
       allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
@@ -91,6 +116,13 @@ service cloud.firestore {
         allow list: if (isOwner(userId) || isAdmin()) && isValidId(userId);
         allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId);
         allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(formulaId) && isValidFormula(incoming(), userId) && incoming().userId == existing().userId;
+      }
+
+      match /calibration_proposals/{proposalId} {
+        allow get, delete: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(proposalId);
+        allow list: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+        allow create: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(proposalId) && isValidCalibrationProposal(incoming(), proposalId);
+        allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidId(proposalId) && isValidCalibrationProposal(incoming(), proposalId);
       }
 
       match /trials/{trialId} {
