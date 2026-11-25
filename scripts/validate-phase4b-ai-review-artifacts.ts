@@ -54,6 +54,10 @@ export function validateAIReviewArtifacts(
 
   const errors: string[] = [];
   for (const [index, pass] of review.reviewPasses.entries()) {
+    if (pass.sourceManifestRef === pass.resultArtifactRef) {
+      errors.push(`Pass ${index + 1}: source manifest and result artifact must be separate files.`);
+      continue;
+    }
     try {
       const manifestPath = safeVaultPath(rootDir, pass.sourceManifestRef);
       const resultPath = safeVaultPath(rootDir, pass.resultArtifactRef);
