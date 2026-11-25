@@ -81,7 +81,7 @@ export const INGREDIENT_CATEGORY_REVIEW_MATRIX: IngredientCategoryReview[] =
         ingredientCatalogCategory: ingredient.category,
         casNumber: ingredient.casNumber,
         identityType: ingredient.identityType ?? null,
-        chemicalRole: evidenceReview?.chemicalRole ?? explicitRole || functionRole || null,
+        chemicalRole: evidenceReview?.chemicalRole ?? (explicitRole || functionRole || null),
         roleBasis: evidenceReview ? 'EXPLICIT_ROLE' : explicitRole ? 'EXPLICIT_ROLE' : functionRole ? 'FUNCTION_DESCRIPTION' : 'MISSING',
         commercialGradeDefaultPct: typeof ingredient.activeDefault === 'number' ? ingredient.activeDefault : null,
         commercialGradeDefaultBasis: typeof ingredient.activeDefault === 'number'
