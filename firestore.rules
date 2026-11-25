@@ -99,12 +99,11 @@ service cloud.firestore {
       }
     }
 
-    match /collab_sessions/{sessionId} {
-      allow read, write: if isSignedIn() && isValidId(sessionId);
-    }
-
-    match /test/{docId} {
-      allow get: if isValidId(docId);
+    // Firestore connectivity probe. Only this single fixed document is readable,
+    // without auth, because the client checks connectivity before sign-in. Every
+    // other document under test/ stays denied by the global catch-all.
+    match /test/connection {
+      allow get: if true;
     }
   }
 }
