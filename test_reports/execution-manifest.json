@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-11-25T03:58:44.439Z",
+  "timestamp": "2026-11-25T12:05:29.891Z",
   "summary": {
     "discoveredCount": 139,
     "registeredCount": 139,
     "executedCount": 139,
     "skippedCount": 0,
     "failedModulesCount": 0,
-    "totalAssertionsExecuted": 4999,
-    "totalAssertionsPassed": 4999,
+    "totalAssertionsExecuted": 5012,
+    "totalAssertionsPassed": 5012,
     "totalAssertionsFailed": 0,
     "isCleanPass": true,
     "testIntegrityFailures": 0,
@@ -474,9 +474,9 @@
       "file": "p3WaterHardnessChelation.test.ts",
       "moduleName": "runP3WaterHardnessTestSuite",
       "executed": true,
-      "passedAssertions": 71,
+      "passedAssertions": 81,
       "failedAssertions": 0,
-      "totalAssertions": 71,
+      "totalAssertions": 81,
       "skipped": false
     },
     {
@@ -537,9 +537,9 @@
       "file": "chemicalEncyclopedia.regression.test.ts",
       "moduleName": "runChemicalEncyclopediaTestSuite",
       "executed": true,
-      "passedAssertions": 27,
+      "passedAssertions": 28,
       "failedAssertions": 0,
-      "totalAssertions": 27,
+      "totalAssertions": 28,
       "skipped": false
     },
     {
@@ -1113,9 +1113,9 @@
       "file": "p5PropertyPipelinesMaster.regression.test.ts",
       "moduleName": "runP5PropertyPipelinesTestSuite",
       "executed": true,
-      "passedAssertions": 78,
+      "passedAssertions": 80,
       "failedAssertions": 0,
-      "totalAssertions": 78,
+      "totalAssertions": 80,
       "skipped": false
     },
     {

@@ -74,21 +74,18 @@ export async function testFirestoreConnection(): Promise<boolean> {
   if (!isFirebaseConfigured) return false;
   try {
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('the client is offline or connection timed out')), 3500)
+      setTimeout(() => reject(new Error('the client is offline or connection timed out')), 2500)
     );
     await Promise.race([
       getDocFromServer(doc(db, 'test', 'connection')),
       timeoutPromise
     ]);
     return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.info("[Firebase] Firestore client operating in offline mode.");
-    }
+  } catch {
     return false;
   }
 }
-testFirestoreConnection();
+testFirestoreConnection().catch(() => {});
 
 export async function syncUserProfile(user: User): Promise<void> {
   const userPath = `users/${user.uid}`;
