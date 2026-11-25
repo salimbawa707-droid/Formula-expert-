@@ -93,6 +93,14 @@ export function runP1Phase8IngredientIntelligenceTestSuite(): { total: number; p
   });
   assert('7. Applicability profile mapped explicitly for all 13 canonical categories', hasAll13Categories, true, true);
 
+  assert('7a. GLDA is conditionally applicable to toilet-bowl care, not categorically incompatible with acid systems', glda.categoryApplicability['TOILET_CLEANER']?.status === 'CONDITIONALLY_APPLICABLE', true, true);
+  assert('7b. GLDA fabric-softener compatibility remains UNKNOWN pending cationic dispersion stability evidence', glda.categoryApplicability['FABRIC_SOFTENER']?.status === 'UNKNOWN', true, true);
+  assert('7c. CAPB is not misrepresented as a fabric-softening active', INGREDIENT_INTELLIGENCE_REGISTRY['capb'].categoryApplicability['FABRIC_SOFTENER']?.status === 'UNKNOWN', true, true);
+  assert('7d. Citric acid is conditionally applicable to acidic kitchen descaling, not a primary alkaline degreaser', INGREDIENT_INTELLIGENCE_REGISTRY['citric-acid'].categoryApplicability['KITCHEN_DEGREASER']?.status === 'CONDITIONALLY_APPLICABLE', true, true);
+  assert('7e. Sodium carbonate may be used conditionally in alkaline car-wash/prewash systems with pH and clearcoat controls', INGREDIENT_INTELLIGENCE_REGISTRY['soda-ash'].categoryApplicability['CAR_SHAMPOO']?.status === 'CONDITIONALLY_APPLICABLE', true, true);
+  assert('7f. CAPB acidic toilet-cleaner rationale identifies its amphoteric/zwitterionic character', INGREDIENT_INTELLIGENCE_REGISTRY['capb'].categoryApplicability['TOILET_CLEANER']?.reasoning.includes('zwitterionic/amphoteric'), true, true);
+
+
   // --------------------------------------------------------------------------
   // TEST GROUP 3: Structured Multi-Material Interaction Mismatch Warnings
   // --------------------------------------------------------------------------
