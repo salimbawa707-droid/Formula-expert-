@@ -156,7 +156,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Prevent caking with anticaking silicates',
       'Keep bulk density between 0.45-0.85 g/cm³'
     ],
-    defaultFormulaId: 'high-foam-laundry-powder',
+    defaultFormulaId: 'standard-active-laundry-powder',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: false,
@@ -185,7 +185,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Require amphoteric CAPB for mildness',
       'High viscosity (1500-2500 cP)'
     ],
-    defaultFormulaId: 'dishwash-manual-premium',
+    defaultFormulaId: 'manual-dishwash-gel',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -214,7 +214,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Prevent etching on glassware with silicates',
       'Enzyme stability'
     ],
-    defaultFormulaId: 'dishwash-auto-standard',
+    defaultFormulaId: 'auto-dish-liquid',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -243,7 +243,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Fast drying time',
       'Neutral pH range 7.0-8.0 for marble/granite safety'
     ],
-    defaultFormulaId: 'floor-cleaner-economy-pine',
+    defaultFormulaId: 'pine-disinfectant-floor-cleaner',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -272,7 +272,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Mild degreasing with APG or LAE nonionics',
       'No harsh fumes'
     ],
-    defaultFormulaId: 'multi-surface-citrus-spray',
+    defaultFormulaId: 'all-purpose-spray-cleaner',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -301,7 +301,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Corrosion inhibition required for metal pipes',
       'Acidic stability with amine ethoxylate / HCl or organic acid'
     ],
-    defaultFormulaId: 'toilet-cleaner-acid-standard',
+    defaultFormulaId: 'thick-hcl-toilet-cleaner',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: false,
@@ -330,7 +330,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Tile grout protection',
       'Effective cling time'
     ],
-    defaultFormulaId: 'bathroom-cleaner-spray',
+    defaultFormulaId: 'soap-scum-scale-remover',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -359,7 +359,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Hydrotrope solvent coupling (IPA or Glycol Ether)',
       'Instant flash drying'
     ],
-    defaultFormulaId: 'glass-cleaner-standard',
+    defaultFormulaId: 'anti-fog-glass-cleaner',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: false,
@@ -388,7 +388,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'pH controlled to 3.0-4.0 for esterquat emulsion stability',
       'Anti-microbial preservation'
     ],
-    defaultFormulaId: 'fabric-softener-standard',
+    defaultFormulaId: 'encapsulated-fragrance-softener',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: false,
@@ -417,7 +417,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Skin-soothing CAPB/Glycerin combo',
       'Smooth dispensing viscosity (1800-3000 cP)'
     ],
-    defaultFormulaId: 'hand-soap-standard',
+    defaultFormulaId: 'antibacterial-handwash-soap',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -446,7 +446,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'Glycol ether or terpene grease penetration',
       'Personal protective equipment recommended'
     ],
-    defaultFormulaId: 'kitchen-degreaser-heavy-duty',
+    defaultFormulaId: 'heavy-duty-caustic-oven-cleaner',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
@@ -475,7 +475,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
       'High slickness/lubricity to prevent swirl marks',
       'Free rinsing without water spotting'
     ],
-    defaultFormulaId: 'car-shampoo-snow-foam',
+    defaultFormulaId: 'touchless-snow-foam-car-shampoo',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
       hlb: true,
