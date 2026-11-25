@@ -227,6 +227,7 @@ export function runVaultLogicTestSuite() {
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, blindToOtherPasses: false } : pass) }).passed, 'AI Review Gate', 'The second pass must be blind to the first result');
   assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as any }).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
   assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: '../outside.json' } : pass) }).passed, 'AI Review Gate', 'AI review artifacts must remain inside the evidence vault');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: 'evidence_vault/ai_review/../../outside.json' } : pass) }).passed, 'AI Review Gate', 'AI review artifact references cannot traverse out of the AI review directory');
 
   const aiState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   const aiPhase4b = aiState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
