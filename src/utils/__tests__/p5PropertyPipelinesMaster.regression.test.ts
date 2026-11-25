@@ -137,6 +137,11 @@ export function runP5PropertyPipelinesTestSuite() {
     batchSizeKg: undefined,
     batchSize: undefined
   });
+  const missingWashOrchestratorResult = FormulaScientificOrchestrator.evaluate({
+    ...liquidFormulaInput,
+    washVolumeL: undefined,
+    washDoseGrams: undefined
+  });
   const invalidDoseScenarioRun = dag.executeDAG({
     ...liquidFormulaInput,
     washDoseGrams: 0
@@ -221,6 +226,20 @@ export function runP5PropertyPipelinesTestSuite() {
     missingBatchScenarioRun.state.assumptions.some(a => a.includes('100 kg') && a.includes('scenario')),
     missingBatchScenarioRun.state.assumptions,
     'Explicit 100 kg scenario assumption'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Missing batch mass never appears as an invented chelation batch size',
+    Number.isNaN(missingBatchScenarioRun.state.hardnessResult?.batchSizeKg) && Number.isNaN(missingBatchScenarioRun.state.hardnessResult?.batchSequestrationGrams),
+    { batchSizeKg: missingBatchScenarioRun.state.hardnessResult?.batchSizeKg, batchSequestrationGrams: missingBatchScenarioRun.state.hardnessResult?.batchSequestrationGrams },
+    'NaN / unavailable'
+  );
+  assert(
+    'Phase 2: Input Integrity',
+    'Orchestrator does not replace missing wash volume or dose with 10 L / 50 g defaults',
+    missingWashOrchestratorResult.hardnessResult.status === 'NOT_EVALUATED' && Number.isNaN(missingWashOrchestratorResult.hardnessResult.washVolumeL) && Number.isNaN(missingWashOrchestratorResult.hardnessResult.washDoseGrams),
+    { status: missingWashOrchestratorResult.hardnessResult.status, washVolumeL: missingWashOrchestratorResult.hardnessResult.washVolumeL, washDoseGrams: missingWashOrchestratorResult.hardnessResult.washDoseGrams },
+    'NOT_EVALUATED / NaN / NaN'
   );
 
   const canonicalCategories = [
