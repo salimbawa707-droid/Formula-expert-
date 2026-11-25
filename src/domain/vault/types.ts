@@ -206,7 +206,9 @@ export interface AIReviewPassRecord {
   method: AIReviewPassMethod;
   reviewerModel: string;
   reviewedAt: string;
+  sourceManifestRef: string;
   sourceManifestSha256: string;
+  resultArtifactRef: string;
   resultSha256: string;
   blindToOtherPasses: boolean;
   discrepancyCount: number;
