@@ -20,8 +20,10 @@ Scope: active app taxonomy, scientific profiles, formula templates/default mappi
 ### 3. Formula templates and default formula links
 - `src/data/formulas.ts` contains 39 formula templates in the fetched main snapshot.
 - Source scan did not find a Hair Shampoo formula category or Hair Shampoo-specific active template.
-- Taxonomy default formula IDs are checked against the formula library and their normalized category.
-- Car Shampoo formula templates are retained.
+- The first CI run exposed 12 stale taxonomy default formula IDs (including the laundry powder default); they did not match any current template IDs even though templates existed for those categories.
+- Repaired all 12 default IDs to point to existing templates in the same normalized category. The liquid laundry default was already valid.
+- The automated guard now checks every default link resolves to an existing template and that template belongs to its declared category.
+- Car Shampoo formula templates are retained; its default now points to the existing touchless snow-foam car shampoo template.
 
 ### 4. Ingredient applicability
 - `src/utils/ingredientIntelligenceEngine.ts` defines a structured applicability record keyed by `ProductCategoryId`.
@@ -50,4 +52,4 @@ No active Hair Shampoo category/profile/template/applicability data was identifi
 
 ## Verification status
 
-This report records source inspection and the added automated assertions. Runtime results must come from CI on the audit PR; no local execution or green CI is claimed by this report. Phase 4B remains OPEN and Phase 5 remains LOCKED.
+The initial CI run failed specifically on the stale LAUNDRY_POWDER default formula ID. The other 11 stale default IDs were also reconciled to existing same-category templates. The follow-up CI run must verify the repair; no green result is claimed until it completes. Phase 4B remains OPEN and Phase 5 remains LOCKED.
