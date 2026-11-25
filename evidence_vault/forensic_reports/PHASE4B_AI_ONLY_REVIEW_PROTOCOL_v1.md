@@ -82,3 +82,15 @@ The Phase 4B AI review record is intentionally `IN_PROGRESS`, scope `PARTIAL_SUB
 ## Human-specific legacy fields
 
 The Pušić production CSV's `reviewer_2`, `review_match`, and `SOURCE_EXTRACTED_PENDING_SECOND_REVIEW` fields belong to the legacy human-only comparison path. The AI-only route must not populate those fields with an AI identity or imply human sign-off. AI review evidence is recorded in separate AI ledgers and the `ProjectPhase.aiReview` record. The human-specific validator may therefore continue to report the human route as pending while the AI-only route is evaluated independently.
+
+
+## AI review execution phases and current progress
+
+| AI review phase | Scope | Current status |
+|---|---|---|
+| Phase 1 — evidence inventory and source-first review | Identify all Phase 4B sources, pin source identities, extract/inspect numeric and chemical evidence, classify applicability and rights | **IN_PROGRESS**. Pušić 144-cell source re-audit and correction are merged; four registered dataset inventories report 4/4 numerical inspection; EVD-014 through EVD-017 add category-specific nonionic/regulatory evidence. Overall Phase 4B coverage is not yet measured. |
+| Phase 2 — blind independent AI re-check | Separate AI execution re-reads the pinned source manifest without access to Phase 1 outputs | **NOT_STARTED**. The current Pušić visual re-audit was not blind and cannot count as this pass. |
+| Phase 3 — discrepancy and rights closure | Reconcile all pass disagreements, preserve correction history, resolve/hold commercial reuse rights | **PENDING**. EVD-015 and EVD-016 remain rights-pending; EVD-017 is jurisdiction-specific; further evidence and discrepancy inventory remains. |
+| Phase 4 — automated closure and Phase 5 decision | Run exact-head CI, validate full evidence coverage and every gate, then close Phase 4B | **LOCKED/PENDING**. The AI gate record remains IN_PROGRESS / PARTIAL_SUBGATE / 0%; Phase 5 stays LOCKED. |
+
+Phase 1 is the only active AI review phase. Do not mark it complete merely because the Pušić sub-gate or nonionic literature review is complete; the complete Phase 4B checklist must be enumerated and covered.
