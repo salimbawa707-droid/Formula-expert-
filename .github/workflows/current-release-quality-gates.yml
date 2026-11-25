@@ -166,7 +166,7 @@ jobs:
         run: bun run test:all
 
   android-debug-build:
-    if: (github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true) || github.event_name == 'pull_request'
+    if: (github.event_name == 'workflow_dispatch' && inputs.build_android_debug_apk == true) || github.event_name == 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/fix/'))
     name: Capacitor Android debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
