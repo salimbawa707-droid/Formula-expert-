@@ -277,13 +277,16 @@ OBS-DSVER-1,LAUNDRY_LIQUID,F-1,v2.1,BATCH-1,Cleaning Score,85.0,Score Index,ASTM
   const registeredFoam = INITIAL_VAULT_STATE.engines.find(engine => engine.id === 'ENG-005');
   assert(
     'TEST 7b',
-    'Registry points ENG-003 to its real implementation and marks ENG-005 unavailable',
+    'Registry points ENG-003 to its implementation and ENG-005 to measured-series analysis only',
     registeredRheology?.implementationStatus === 'IMPLEMENTED' &&
       registeredRheology.sourceFile === 'src/utils/viscosityEngine.ts' &&
-      registeredFoam?.implementationStatus === 'UNAVAILABLE' &&
-      registeredFoam.scientificMaturity === 'BLOCKED',
-    { rheology: registeredRheology?.sourceFile, foamStatus: registeredFoam?.implementationStatus },
-    { rheology: 'src/utils/viscosityEngine.ts', foamStatus: 'UNAVAILABLE' }
+      registeredFoam?.implementationStatus === 'IMPLEMENTED' &&
+      registeredFoam.sourceFile === 'src/utils/foamKineticsEngine.ts' &&
+      registeredFoam.scientificMaturity === 'CODE_IMPLEMENTED' &&
+      registeredFoam.numericalValidationReadiness === 'NOT_READY' &&
+      registeredFoam.evidenceCoveragePct === 0,
+    { rheology: registeredRheology?.sourceFile, foamStatus: registeredFoam?.implementationStatus, foamMaturity: registeredFoam?.scientificMaturity, foamReadiness: registeredFoam?.numericalValidationReadiness },
+    { rheology: 'src/utils/viscosityEngine.ts', foamStatus: 'IMPLEMENTED', foamMaturity: 'CODE_IMPLEMENTED', foamReadiness: 'NOT_READY' }
   );
 
   // TEST 8: Outside-domain prediction cannot become LAB_VALIDATED
