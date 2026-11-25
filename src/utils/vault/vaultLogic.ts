@@ -3,6 +3,7 @@ import type {
   VaultState,
   EngineRecord,
   DatasetRecord,
+  AIReviewGateRecord,
 } from '../../domain/vault/types.ts';
 import { INITIAL_HISTORICAL_RECONCILIATIONS, INITIAL_INVENTORY_METRICS } from '../../domain/vault/schemaDefaults.ts';
 
@@ -409,6 +410,74 @@ export function validateAndParseVaultJSON(jsonStr: string): {
     } else if (!parsed[key].every(isRecord)) {
       errors.push(`${key} must contain only JSON objects.`);
     }
+  }
+
+  if (Array.isArray(parsed.phases)) {
+    parsed.phases.forEach((phase: unknown, phaseIndex: number) => {
+      if (!isRecord(phase) || phase.aiReview === undefined) return;
+      const review = phase.aiReview;
+      if (!isRecord(review)) {
+        errors.push(`phases[${phaseIndex}].aiReview must be an object.`);
+        return;
+      }
+      if (!['NOT_STARTED', 'IN_PROGRESS', 'PASSED', 'FAILED'].includes(review.status)) {
+        errors.push(`phases[${phaseIndex}].aiReview.status is invalid.`);
+      }
+      if (typeof review.protocolVersion !== 'string' || !review.protocolVersion.trim()) {
+        errors.push(`phases[${phaseIndex}].aiReview.protocolVersion is required.`);
+      }
+      if (!['PARTIAL_SUBGATE', 'PHASE_4B_COMPLETE'].includes(review.scope)) {
+        errors.push(`phases[${phaseIndex}].aiReview.scope is invalid.`);
+      }
+      if (typeof review.coveragePct !== 'number' || !Number.isFinite(review.coveragePct) || review.coveragePct < 0 || review.coveragePct > 100) {
+        errors.push(`phases[${phaseIndex}].aiReview.coveragePct must be between 0 and 100.`);
+      }
+      if (!Number.isSafeInteger(review.unresolvedDiscrepancyCount) || review.unresolvedDiscrepancyCount < 0) {
+        errors.push(`phases[${phaseIndex}].aiReview.unresolvedDiscrepancyCount must be a non-negative integer.`);
+      }
+      if (typeof review.sourceHashesPinned !== 'boolean') {
+        errors.push(`phases[${phaseIndex}].aiReview.sourceHashesPinned must be boolean.`);
+      }
+      if (!['NOT_RUN', 'PASSED', 'FAILED'].includes(review.automatedValidationStatus)) {
+        errors.push(`phases[${phaseIndex}].aiReview.automatedValidationStatus is invalid.`);
+      }
+      if (!Array.isArray(review.evidenceRefs) || !review.evidenceRefs.every(isNonEmptyString)) {
+        errors.push(`phases[${phaseIndex}].aiReview.evidenceRefs must be an array of non-empty strings.`);
+      }
+      if (!Array.isArray(review.reviewPasses)) {
+        errors.push(`phases[${phaseIndex}].aiReview.reviewPasses must be an array.`);
+      } else {
+        review.reviewPasses.forEach((pass: unknown, passIndex: number) => {
+          if (!isRecord(pass)) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}] must be an object.`);
+            return;
+          }
+          if (!['SOURCE_FIRST_TRANSCRIPTION', 'INDEPENDENT_SOURCE_RECHECK'].includes(pass.method)) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].method is invalid.`);
+          }
+          for (const field of ['reviewerModel', 'reviewedAt', 'sourceManifestSha256', 'resultSha256']) {
+            if (!isNonEmptyString(pass[field])) errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} is required.`);
+          }
+          if (typeof pass.reviewedAt === 'string' && !Number.isFinite(Date.parse(pass.reviewedAt))) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].reviewedAt is invalid.`);
+          }
+          for (const field of ['sourceManifestSha256', 'resultSha256']) {
+            if (typeof pass[field] === 'string' && !/^[a-f0-9]{64}$/i.test(pass[field])) {
+              errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].${field} must be a SHA-256 hex digest.`);
+            }
+          }
+          if (typeof pass.blindToOtherPasses !== 'boolean') {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].blindToOtherPasses must be boolean.`);
+          }
+          if (!Number.isSafeInteger(pass.discrepancyCount) || pass.discrepancyCount < 0) {
+            errors.push(`phases[${phaseIndex}].aiReview.reviewPasses[${passIndex}].discrepancyCount must be a non-negative integer.`);
+          }
+        });
+      }
+      if (review.humanReviewPerformed !== false) {
+        errors.push(`phases[${phaseIndex}].aiReview.humanReviewPerformed must remain false for the AI-only route.`);
+      }
+    });
   }
 
   if (!isRecord(parsed.engineCountDiscrepancy)) {
