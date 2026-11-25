@@ -81,26 +81,96 @@ service cloud.firestore {
     // Calibration proposals are per-user lab-evidence records. They were not
     // matched before, so they fell through to the deny-all catch-all and every
     // save/load returned permission-denied.
+    // Firestore Rules has no list-wide map/filter operation, so validate each
+    // bounded evidence-reference element explicitly (short-circuit guards avoid
+    // indexing beyond the supplied list).
+    function isStringEvidenceReferenceList(values) {
+      return values is list && values.size() <= 50
+        && (values.size() <= 0 || values[0] is string)
+        && (values.size() <= 1 || values[1] is string)
+        && (values.size() <= 2 || values[2] is string)
+        && (values.size() <= 3 || values[3] is string)
+        && (values.size() <= 4 || values[4] is string)
+        && (values.size() <= 5 || values[5] is string)
+        && (values.size() <= 6 || values[6] is string)
+        && (values.size() <= 7 || values[7] is string)
+        && (values.size() <= 8 || values[8] is string)
+        && (values.size() <= 9 || values[9] is string)
+        && (values.size() <= 10 || values[10] is string)
+        && (values.size() <= 11 || values[11] is string)
+        && (values.size() <= 12 || values[12] is string)
+        && (values.size() <= 13 || values[13] is string)
+        && (values.size() <= 14 || values[14] is string)
+        && (values.size() <= 15 || values[15] is string)
+        && (values.size() <= 16 || values[16] is string)
+        && (values.size() <= 17 || values[17] is string)
+        && (values.size() <= 18 || values[18] is string)
+        && (values.size() <= 19 || values[19] is string)
+        && (values.size() <= 20 || values[20] is string)
+        && (values.size() <= 21 || values[21] is string)
+        && (values.size() <= 22 || values[22] is string)
+        && (values.size() <= 23 || values[23] is string)
+        && (values.size() <= 24 || values[24] is string)
+        && (values.size() <= 25 || values[25] is string)
+        && (values.size() <= 26 || values[26] is string)
+        && (values.size() <= 27 || values[27] is string)
+        && (values.size() <= 28 || values[28] is string)
+        && (values.size() <= 29 || values[29] is string)
+        && (values.size() <= 30 || values[30] is string)
+        && (values.size() <= 31 || values[31] is string)
+        && (values.size() <= 32 || values[32] is string)
+        && (values.size() <= 33 || values[33] is string)
+        && (values.size() <= 34 || values[34] is string)
+        && (values.size() <= 35 || values[35] is string)
+        && (values.size() <= 36 || values[36] is string)
+        && (values.size() <= 37 || values[37] is string)
+        && (values.size() <= 38 || values[38] is string)
+        && (values.size() <= 39 || values[39] is string)
+        && (values.size() <= 40 || values[40] is string)
+        && (values.size() <= 41 || values[41] is string)
+        && (values.size() <= 42 || values[42] is string)
+        && (values.size() <= 43 || values[43] is string)
+        && (values.size() <= 44 || values[44] is string)
+        && (values.size() <= 45 || values[45] is string)
+        && (values.size() <= 46 || values[46] is string)
+        && (values.size() <= 47 || values[47] is string)
+        && (values.size() <= 48 || values[48] is string)
+        && (values.size() <= 49 || values[49] is string);
+    }
+
+    function isCalibrationNumber(value) {
+      return value is number && value >= -1000000000000 && value <= 1000000000000;
+    }
+
     function isValidCalibrationProposal(data, proposalId) {
-      return data.keys().hasAll(['proposalId', 'kpiId', 'parameterName', 'proposedAt', 'status', 'safetyWarning'])
+      return data.keys().hasAll(['proposalId', 'canonicalCategory', 'kpiId', 'parameterName',
+          'proposedShiftOffset', 'observedBias', 'sampleCount', 'meanAbsoluteError',
+          'rationale', 'proposedAt', 'status', 'safetyWarning'])
         && data.keys().hasOnly(['proposalId', 'canonicalCategory', 'kpiId', 'parameterName',
           'currentModelParameterValue', 'currentModelValue', 'proposedShiftOffset',
           'proposedCalibratedValue', 'observedBias', 'sampleCount', 'meanAbsoluteError', 'mae',
           'rationale', 'recommendation', 'proposedAt', 'status', 'safetyWarning',
           'evidenceReferenceIds', 'updatedAt'])
         && data.proposalId is string && isValidId(data.proposalId) && data.proposalId == proposalId
+        && data.canonicalCategory in ['LAUNDRY_LIQUID', 'LAUNDRY_POWDER', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER', 'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO']
         && data.kpiId is string && data.kpiId.size() > 0 && data.kpiId.size() <= 128
         && data.parameterName is string && data.parameterName.size() > 0 && data.parameterName.size() <= 256
-        && data.proposedAt is string && data.proposedAt.size() <= 64
+        && data.proposedAt is string && data.proposedAt.size() > 0 && data.proposedAt.size() <= 64
         && data.status in ['PROPOSED', 'UNDER_REVIEW', 'REJECTED']
-        && data.safetyWarning is string && data.safetyWarning.size() <= 2000
-        && (!('rationale' in data) || (data.rationale is string && data.rationale.size() <= 8192))
+        && data.safetyWarning is string && data.safetyWarning.size() > 0 && data.safetyWarning.size() <= 2000
+        && data.rationale is string && data.rationale.size() > 0 && data.rationale.size() <= 8192
+        && isCalibrationNumber(data.proposedShiftOffset)
+        && isCalibrationNumber(data.observedBias)
+        && data.sampleCount is int && data.sampleCount > 0 && data.sampleCount <= 1000000
+        && isCalibrationNumber(data.meanAbsoluteError)
+        && data.meanAbsoluteError >= 0
+        && (!('currentModelParameterValue' in data) || isCalibrationNumber(data.currentModelParameterValue))
+        && (!('currentModelValue' in data) || isCalibrationNumber(data.currentModelValue))
+        && (!('proposedCalibratedValue' in data) || isCalibrationNumber(data.proposedCalibratedValue))
+        && (!('mae' in data) || (isCalibrationNumber(data.mae) && data.mae >= 0))
         && (!('recommendation' in data) || (data.recommendation is string && data.recommendation.size() <= 2000))
-        && (!('proposedShiftOffset' in data) || data.proposedShiftOffset is number)
-        && (!('observedBias' in data) || data.observedBias is number)
-        && (!('sampleCount' in data) || data.sampleCount is number)
-        && (!('meanAbsoluteError' in data) || data.meanAbsoluteError is number)
-        && (!('evidenceReferenceIds' in data) || (data.evidenceReferenceIds is list && data.evidenceReferenceIds.size() <= 50));
+        && (!('evidenceReferenceIds' in data) || isStringEvidenceReferenceList(data.evidenceReferenceIds))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() > 0 && data.updatedAt.size() <= 64));
     }
 
     // 4. Match Blocks
