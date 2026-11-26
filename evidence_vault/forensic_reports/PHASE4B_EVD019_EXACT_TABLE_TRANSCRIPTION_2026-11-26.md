@@ -67,3 +67,42 @@ See PHASE4B_EVD019_AI_INDEPENDENT_REVIEW_2026-11-27.md. This second AI review is
 - Engine validation: **NOT ESTABLISHED**. No matched formula prediction/observation pair is created by this transcription.
 
 **Sources:** https://www.researchgate.net/publication/275987303_Evaluation_of_Physico-Chemical_Interactions_between_Linear_Alkylbenzene_Sulfonate_LAS_and_Alcohol_Ethoxylates and DOI https://doi.org/10.3139/113.110145.
+
+
+## 3B. Independent Gibbs-factor adjudication (2026-11-27; external literature + dimensional recalculation)
+
+**Disposition: the pure-LAS discrepancy is resolved as a source-method inconsistency for interpretation; the author's actual calculation workflow remains unconfirmed.** No author response is claimed or fabricated.
+
+### Governing conditions and independent sources
+
+The surface-tension method for a 1:1 ionic surfactant has two distinct limiting cases: (a) n = 1 when an excess common, non-surface-active electrolyte/counterion is present; (b) n = 2 for an ionic surfactant without excess electrolyte, including the deionized-water case. Brusseau (2020; *Water Research* 190, 116778; DOI 10.1016/j.watres.2020.116778) explicitly states this distinction and gives Γ = -(1/xRT)·∂γ/∂ln C, with x=2 for ionic surfactant without excess electrolyte. This is independent literature, not a statement from Malihi et al. [https://pmc.ncbi.nlm.nih.gov/articles/PMC7856177/]
+
+For ionic/nonionic mixtures, a universal n=2 correction is not justified. Hua & Rosen (1982; *Journal of Colloid and Interface Science* 87(2), 469–477; DOI 10.1016/0021-9797(82)90344-7) derived a composition-dependent coefficient for ionic/nonionic mixtures; their abstract reports values near 1 under some packing conditions, rising toward 1–2 with closer ionic packing and potentially below 1 for some anionic/nonionic mixtures at large molecular areas. Therefore mixed rows must remain source-reported and method-qualified unless raw concentration series and the authors' exact path are available. [https://doi.org/10.1016/0021-9797(82)90344-7]
+
+### Recalculation of the duplicated pure-LAS row
+
+Inputs transcribed from both Table 1 and Table 2: T = 23.58 °C = 296.73 K; dγ/dlog10(C) = −15.9 mN·m⁻¹ per decade = −0.0159 N·m⁻¹ per decade; R = 8.314462618 J·mol⁻¹·K⁻¹; ln(10) = 2.302585093; N_A = 6.02214076×10²³ mol⁻¹.
+
+Using Γ = −[1/(nRT)]·dγ/dln(C) = −[1/(nRT ln(10))]·dγ/dlog10(C):
+
+| Quantity | Source-reported / implied n=1 arithmetic | Independent n=2 case (no excess electrolyte) |
+|---|---:|---:|
+| n | 1 | 2 |
+| Γ (mol·cm⁻²) | 2.7989×10⁻¹⁰ (source prints 2.82×10⁻¹⁰) | 1.3994×10⁻¹⁰ |
+| A = 1/(Γ·N_A) (Å²) | 59.33 (source prints 59) | 118.66 |
+
+The source's Γ/A pair is internally consistent with its slope to rounding, but it is the n=1 result. Under the paper's stated measurement matrix (distilled/deionized water, no excess common ion described), the independently supported ionic-surfactant case is n=2. Accordingly, **118.7 Å² is a calculated theoretical re-evaluation under the stated n=2 assumption, not an observed or author-corrected value**. Preserve the published 59 Å² in the transcription and retain both values with their provenance.
+
+### Back-calculated coefficient diagnostic across the tables
+
+Using the displayed rounded slope and Γ values, n_eff = |slope|×10⁻³ / [ln(10)·R·T·(Γ×10⁴)] was back-calculated for the 11 numeric rows. Values cluster at approximately 0.993–1.003 (rounding-level spread). This demonstrates that the printed Γ values were arithmetically generated using n≈1 throughout. Interpretation differs by row: pure nonionic AE rows are consistent with n=1; mixed ionic/nonionic rows may have a composition-dependent effective coefficient and cannot be globally corrected from these rounded tables; pure LAS in deionized water conflicts with the stated n=2 condition. This is a strong numerical diagnosis of the table calculation convention, not proof of the authors' intent.
+
+### Final EVD-019 handling
+
+1. Close the narrow **pure-LAS n-factor interpretation blocker** as independently adjudicated: use n=2 for any theoretical re-evaluation of the pure-LAS distilled/deionized-water row, while retaining the paper's printed Γ/A as source-reported values with a method warning.
+2. Keep all mixed LAS/AE Γ/A values as reported, tagged **effective-n method not independently reconstructed**. Do not force n=2 onto mixtures and do not treat n≈1 back-calculation as proof that the mixed-mixture coefficient is thermodynamically correct.
+3. No raw surface-tension concentration series or complete calculation ledger is available, so no mixed-system refit, Rubingh fit, parameter calibration, or engine validation is authorized.
+4. Author clarification was not received. It is no longer required to establish the standard theoretical result for the pure-LAS deionized-water case, but would still be useful to document the authors' actual calculation convention.
+5. Independent human transcription/review and commercial reuse clearance remain separate open gates. EVD-019 is not fully closed for Phase 4B and does not authorize commercial ingestion.
+
+**Reproducibility status:** dimensional recalculation independently reproduced in this audit; no raw-data refit performed; no experimental observation changed.
