@@ -392,18 +392,17 @@ The 11 user-visible workflow stages are a higher-level progress/evidence layer, 
 
 The architecture's 24th item, `FINALIZATION`, is emitted by `FormulaScientificOrchestrator` after the DAG as a `stageDiagnostics` entry. It is **not** a registered DAG node. Therefore the accurate count is **23 registered DAG nodes + 1 orchestrator finalization stage = 24 pipeline steps**. The earlier “24 DAG nodes” wording in comments/docs is imprecise; do not add a dummy DAG node to satisfy it.
 
-## 14. High-priority duplicate / bypass paths discovered
+## 14. Duplicate / bypass path status — rechecked against current source
 
-These are Phase 1 wiring findings to be fixed and regression-tested in the relevant later phases:
+The initial inventory report contained several AIFormulator fallback findings. Those findings are now stale and are superseded by the current source inspection:
 
-1. **AIFormulator duplicate powder evaluation:** `runDeepScientificAnalysis` calls `evaluatePowderFormulation` directly, then calls `FormulaScientificOrchestrator.evaluate`, whose DAG also invokes `evaluatePowderFormulation`. Two powder reports can therefore be generated for the same snapshot; the UI must use one authoritative result.
-2. **AIFormulator pH fallback bypass:** if the orchestrator pH is null, the UI independently calls `calculatePHAdvanced` and writes the fallback pH back into `orchResult.pHResult`. The fallback maps missing purity to 100% and defaults batch size to 100 kg. This can change a fail-closed orchestrator result into a displayed numeric pH.
-3. **AIFormulator cleaning fallback:** if cleaning output is missing/zero, the UI directly calls `calculateCleaningPerformance` using defaults (pH 8.0, hardness 150 ppm, wash volume 10 L, dose 20 g, batch 100 kg) and may normalize an unbalanced formula. These defaults can create a screening score without explicit user inputs.
-4. **AIFormulator hardness fallback:** when the orchestrator result is absent/not evaluated, the UI directly calls `calculateWaterHardnessTolerance` using 10 L / 20 g / 100 kg fallback values.
-5. **AIFormulator compatibility fallback:** the UI independently calls `calculateFormulationCompatibility` when the orchestrator result is judged missing/invalid.
-6. **Staged workflow double evaluation:** `executeStagedScientificAnalysis` runs stage-level engine calculations and then performs a final `FormulaScientificOrchestrator.evaluate` recomputation. This may be intentional for progress and forensic comparison, but the contract must explicitly identify which outputs are authoritative and prevent intermediate values from overwriting final values.
+1. **AIFormulator canonical output path:** current `AIFormulator.tsx` calls `FormulaScientificOrchestrator.evaluate` and consumes its result. It contains no direct calls/imports for `evaluatePowderFormulation`, `calculatePHAdvanced`, `calculateCleaningPerformance`, `calculateWaterHardnessTolerance`, or `calculateFormulationCompatibility`. The Phase 10 regression suite includes static assertions for this single-source-of-truth behavior.
+2. **Powder calculation ownership:** the main DAG imports and calls `evaluatePowderFormulation` in its `POWDER_ENGINE` node. The current AIFormulator path does not separately invoke that powder evaluator.
+3. **Staged workflow intermediate calculations:** `analysisWorkflowEngine.ts` still runs direct stage-level pH, hardness/chelation, compatibility, cleaning and property calculations, then invokes `FormulaScientificOrchestrator.evaluate` for final authoritative recomputation. This is a deliberate staged-analysis structure in code, but it creates repeated computation. Phase 2 / Phase 10 must prove that intermediate values are diagnostics only, do not overwrite canonical outputs, and use identical immutable inputs/assumptions where comparison is intended.
+4. **Category applicability:** current DAG source uses `isEngineApplicable` for HLB, water chelation and cleaning performance. It does not consume the complete `routeScientificExecution` route centrally. Remaining category policies need a full per-node enforcement audit (see Section 12).
+5. **Explicit scenario inputs:** the Phase 2 report records strict chelation/CPI input handling in the staged workflow, including missing wash-volume/dose handling as `NOT_EVALUATED` rather than fabricated numeric values. Other stage defaults and category-specific assumptions still require their own explicit provenance review.
 
-These are direct conflicts with the “single source of truth / no duplicate UI calculations” architecture claim and should be treated as priority integration work, not silently accepted as normal UI behavior.
+These are source-level wiring findings. They do not establish that a calculated result is experimentally accurate or that a detergent formula has passed laboratory testing.
 
 ## 15. Representative regression coverage mapped to engines
 
