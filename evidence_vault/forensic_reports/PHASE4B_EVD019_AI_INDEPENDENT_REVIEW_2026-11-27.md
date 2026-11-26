@@ -99,23 +99,41 @@ Consequently:
 
 No code-model change, parameter fit, or CMC optimization change is authorized by this review. Existing CMC diagnostic-only and fail-closed gates must remain in force.
 
-## 6.1 Cross-repository review — legacy Detergent R&D Expert
+## 6.1 Cross-repository review — all identified detergent/formula repositories
 
-The second installed repository, salimbawa707-droid/detergent-rnd-expert-v2, was also searched and the relevant CMC implementation inspected in:
+The GitHub account repository inventory was enumerated. CMC-related implementation paths were found in Formula-expert-, detergent-rnd-expert-v2, detergent-rnd-lab and Detergent-r-d-expert-. The following additional relevant repositories were checked:
 
-- src/components/RCCalculators.tsx
-- src/utils/calculators.ts
-- src/data/chem_surfactants_nonionic_amphoteric_cationic.ts
-- src/data/chem_surfactants_anionic.ts
-- src/data/formulator_ingredients.ts
+### Current Formula Expert
 
-This legacy app has a separate CMC tab that hard-codes eight pure-component CMC values, uses the ideal Clint harmonic mixing equation, and converts all mixed molar CMC outputs to ppm with a fixed 320 g/mol multiplier. Its custom CMC input can leave molar and ppm values inconsistent; its “Proportion / Ratio” input is treated as a mole fraction without explicitly stating the composition basis. Its explanatory copy claims that synergy lowers CMC and increases cleaning speed, which the ideal Clint calculation does not establish.
+The current app-facing CMC path in src/utils/calculators.ts is a provenance-gated ideal Clint calculation. Its exact supported pure-component references do not include the EVD-019 sodium-LAS / C12–C14 AE-7EO pair. EVD-019 is therefore related literature evidence only, not validation of the current engine.
 
-The legacy CMC defaults are not linked to source citations, grade, temperature, matrix, method or uncertainty. The list includes generic LABSA and LAE-9 but not the exact EVD-019 sodium-LAS / C12–C14 AE-7EO pair. Although AE-7 exists in the ingredient catalog, no EVD-019 source mapping or CMC provenance link was found in the inspected code. EVD-019 must not be used to overwrite the generic LABSA or LAE-9 defaults.
+### Legacy React CMC tab — three duplicate repositories
 
-A report-only audit PR was opened in the legacy repository: https://github.com/salimbawa707-droid/detergent-rnd-expert-v2/pull/2. No code changes were made there; the report documents the calculation and provenance defects without inventing replacement CMC values.
+The CMC defaults and calculation block in src/components/RCCalculators.tsx were compared across:
+- salimbawa707-droid/detergent-rnd-expert-v2
+- salimbawa707-droid/detergent-rnd-lab
+- salimbawa707-droid/Detergent-r-d-expert-
 
-**Cross-repository disposition:** EVD-019 is related mechanistic literature evidence, not validation of either repository's app-facing CMC calculator. The main repository's calculator uses exact supported references and fail-closed checks but currently lacks this LAS/AE-7 pair; the legacy repository has hard-coded unverified defaults and a fixed-MW ppm conversion. Neither implementation may claim EVD-019 validation.
+The extracted standalone CMC options and Clint calculation blocks are byte-for-byte identical across all three repositories. They hard-code generic CMC values without source conditions, treat an unspecified “Proportion / Ratio” as mole fraction, use a fixed 320 g/mol conversion for mixed ppm, and present unsupported synergy/cleaning claims. See the legacy CMC audit in detergent-rnd-expert-v2.
+
+### Legacy static HTML CMC path in detergent-rnd-expert-v2
+
+The root index.html is the Vite-served UI: server.ts creates Vite middleware with appType “spa”, package.json builds through Vite, and index.html contains the CMC tab and inline JavaScript. The page has no React root element and no module script loading src/main.tsx; the inline static CMC path is the active page implementation.
+
+That static CMC tab:
+- accepts formulation percentages and normalizes them directly as mole fractions;
+- uses unreferenced, unitless values such as SLES 0.08, LABSA 0.05, AEO-9 0.02 and CAPB 0.04, displaying them as CMC percent;
+- calculates an ideal Clint-style harmonic expression with dimensionally invalid inputs;
+- derives “surface tension reduction” and “cleaning efficiency” from arbitrary unvalidated equations.
+
+Separate formula analytics and a “CMC ENGINE (Real)” path calculate arithmetic weighted averages of the same unitless CMC fields and display them as CMC percent. These are not physical CMC predictions. A report-only follow-up PR records these defects: https://github.com/salimbawa707-droid/detergent-rnd-expert-v2/pull/3.
+
+### Other account repositories
+
+- salimbawa707-droid/My-formula-: no critical-micelle calculation was found in src/components/CalculatorsView.tsx; the CMC occurrence in src/domain/ingredientsMaster.ts refers to carboxymethyl cellulose thickener, not critical micelle concentration.
+- salimbawa707-droid/App-max-: identifies as Mission Forge, not a detergent formulation application; excluded from EVD-019 CMC scope.
+
+**Cross-repository disposition:** EVD-019 does not validate any of these app-facing calculators. The legacy static/React paths have additional dimensional and provenance defects and should be quarantined until corrected; the current Formula Expert path remains fail-closed for unsupported LAS/AE-7 inputs.
 
 ## 7. Findings and required actions
 
