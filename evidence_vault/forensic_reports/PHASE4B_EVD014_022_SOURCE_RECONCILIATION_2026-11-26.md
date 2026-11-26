@@ -97,6 +97,19 @@ Current per-engine evidence coverage in the canonical vault remains:
 
 The EVD-014–022 batch adds useful source-specific context, especially for ENG-002, but it does not create eligible formula-prediction pairs for ENG-003/ENG-005 or validate any engine.
 
+### 4.5 Dataset inventory is not the same as validation eligibility
+
+The canonical vault has four dataset inventory records, and all four are marked `NUMERICALLY_INSPECTED`:
+
+| Dataset | Source / recorded rows | Readiness | Why inspection does not equal validation |
+|---|---|---|---|
+| DS-001 | SurfPro; 1,624 master CSV rows and 223 detergent-active slice rows | DEFICIENT | Pure/component surfactant-property evidence; no matched mixed-formula validation. |
+| DS-002 | Zenodo 18961871; 11,626 numeric-bearing worksheet rows across 11 sheets | DEFICIENT | Count is parser-derived worksheet rows, not independent physical observations; no complete formula inputs or matched predictions. |
+| DS-004 | PhDat; 143 chemical records and 1,896,776 temperature/composition points | DEFICIENT | Auxiliary phase-behavior evidence; zero formula-validation-eligible records; raw file reacquisition/hash check still required. |
+| DS-005 | RepOD foam; 23 concentration-level rows across two sheets | DEFICIENT | Raw replicate rows absent; unit conflicts remain (PLL_RH concentration header and Vmax units); domain mismatch prevents ENG-005 validation. |
+
+Thus the inventory has **4/4 dataset records numerically inspected**, but **0/4 is currently marked numerically validation-ready**. Do not use the row counts as independent replicate counts. The Phase 5 gate's “at least three inspected experimental datasets” inventory condition is met on the current status labels, but the separate 59-engine reconciliation and independent Phase 4B closure sign-off are not complete; algorithmic tuning remains prohibited.
+
 ## 5. Governance and remaining blockers
 
 1. **Human review policy remains active.** `PHASE4B_AI_ASSISTED_VERIFICATION_POLICY_ASSESSMENT.md` is explicitly a formal proposal only and rejects fully automated AI-only acceptance. Mandatory independent second-human review remains the current policy. An AI-only receipt cannot silently replace that rule.
