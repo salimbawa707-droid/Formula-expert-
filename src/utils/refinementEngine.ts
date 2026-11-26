@@ -42,7 +42,7 @@ export class RefinementEngine {
           originalIngredient: ing.name,
           originalPercentage: ing.percentage,
           proposedPercentage: Number(validatedIngredientAvg.toFixed(2)),
-          rationale: `Historical validated formula data suggests an optimal level of ${validatedIngredientAvg.toFixed(2)}% for ${ing.name} to achieve desired performance targets.`,
+          rationale: `Descriptive mean of ingredient-specific measured percentages across at least three distinct formula/version records: ${validatedIngredientAvg.toFixed(2)}%. This is not an optimum or performance recommendation; confirm through a controlled formulation experiment.`,
         });
       }
     });
