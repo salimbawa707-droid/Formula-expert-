@@ -64,7 +64,7 @@ The repository already contains source bytes and hashes for EVD-002, EVD-006, EV
 - EVD-015, EVD-016, EVD-018, EVD-019, EVD-020, EVD-021 and EVD-022: rights remain pending; do not archive/re-distribute protected full texts or manufacturer content absent permission. Public URL and visual inspection are not repository archival.
 - EVD-017: official regulatory text rights disposition remains unknown; official text is referenced but no local source file is pinned.
 
-**Archival result:** 3 of the 9 newly reconciled EVD-014–022 documents are already source-archived/hash-pinned? **No.** The earlier 4 archived records belong to EVD-002, 006, 007 and 012, not to EVD-014–022. Therefore EVD-014–022 archival remains **0/9**.
+**Archival result:** EVD-014–022 archival remains **0/9**. The four earlier archived records are EVD-002, EVD-006, EVD-007 and EVD-012; none belongs to the EVD-014–022 batch.
 
 ## 4. Engine inventory reconciliation
 
