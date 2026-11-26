@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { AIReviewGateRecord } from '../src/domain/vault/types';
@@ -115,7 +115,21 @@ try {
   }, root);
   assert.equal(missingArtifact.valid, false);
 
-  console.log('Phase 4B AI review artifact integrity tests: 7/7 PASS');
+  // A lexically in-vault symlink must not be allowed to read an external file.
+  const outsideFile = join(root, 'outside-secret.json');
+  const symlinkRef = 'evidence_vault/ai_review/external-link.json';
+  writeFileSync(outsideFile, JSON.stringify({ outside: true }));
+  symlinkSync(outsideFile, join(root, symlinkRef));
+  const symlinkEscape = validateAIReviewArtifacts({
+    ...validReview,
+    reviewPasses: validReview.reviewPasses.map((pass, index) =>
+      index === 1 ? { ...pass, resultArtifactRef: symlinkRef } : pass
+    ),
+  }, root);
+  assert.equal(symlinkEscape.valid, false);
+  assert.match(symlinkEscape.errors.join('; '), /Symbolic links are not permitted/);
+
+  console.log('Phase 4B AI review artifact integrity tests: 8/8 PASS');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
