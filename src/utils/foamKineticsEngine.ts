@@ -45,7 +45,7 @@ export interface FoamDecayAnalysis {
   pointCount: number;
   initialFoamHeightMm: number;
   finalFoamHeightMm: number;
-  halfHeightTimeSeconds: number | null;
+  observedHalfHeightCrossingTimeSeconds: number | null;
   lateLogHeightFit: LinearFit | null;
   bubbleAreaGrowthFit: LinearFit | null;
   warnings: string[];
@@ -138,7 +138,9 @@ export function analyzeFoamDecayReplicate(
     throw new Error('Liquid-level height must be supplied for every point or omitted for every point.');
   }
 
-  const warnings: string[] = [];
+  const warnings: string[] = [
+    'Observed half-height crossing is a descriptive threshold time, not a kinetic half-life; non-exponential or logarithmic decay must be interpreted using its measured regime.',
+  ];
   const logPoints = options.logRegimeStartSeconds === undefined
     ? []
     : points.filter(point => point.timeSeconds >= options.logRegimeStartSeconds! && point.timeSeconds > 0);
@@ -180,7 +182,7 @@ export function analyzeFoamDecayReplicate(
     pointCount: points.length,
     initialFoamHeightMm: points[0].foamHeightMm,
     finalFoamHeightMm: points[points.length - 1].foamHeightMm,
-    halfHeightTimeSeconds: interpolateHalfHeightTime(points),
+    observedHalfHeightCrossingTimeSeconds: interpolateHalfHeightTime(points),
     lateLogHeightFit,
     bubbleAreaGrowthFit,
     warnings,
