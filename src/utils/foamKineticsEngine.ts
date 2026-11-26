@@ -69,8 +69,10 @@ function fitLinear(x: number[], y: number[]): LinearFit | null {
   const intercept = meanY - slope * meanX;
   const residualSumSquares = y.reduce((sum, value, index) => sum + (value - (intercept + slope * x[index])) ** 2, 0);
   const totalSumSquares = y.reduce((sum, value) => sum + (value - meanY) ** 2, 0);
+  // R² is undefined when the observed response has zero variance.
+  // Returning 1 for a perfectly constant series would falsely imply explanatory power.
   const rSquared = totalSumSquares === 0
-    ? (residualSumSquares === 0 ? 1 : null)
+    ? null
     : 1 - residualSumSquares / totalSumSquares;
 
   return { intercept, slope, rSquared, pointCount: x.length };
@@ -129,6 +131,13 @@ export function analyzeFoamDecayReplicate(
     }
   }
 
+  // A mixed reference basis silently corrupts foam height: points with a meniscus
+  // measurement are corrected while points without one remain absolute top heights.
+  const liquidLevelPointCount = points.filter(point => point.liquidLevelHeightMm !== undefined).length;
+  if (liquidLevelPointCount !== 0 && liquidLevelPointCount !== points.length) {
+    throw new Error('Liquid-level height must be supplied for every point or omitted for every point.');
+  }
+
   const warnings: string[] = [];
   const logPoints = options.logRegimeStartSeconds === undefined
     ? []
@@ -150,8 +159,17 @@ export function analyzeFoamDecayReplicate(
     ? fitLinear(bubblePoints.map(point => point.timeSeconds), bubblePoints.map(point => point.meanBubbleAreaMm2!))
     : null;
 
-  if (options.bubbleAreaFitEndSeconds !== undefined && !bubbleAreaGrowthFit) {
-    warnings.push('Insufficient bubble-area observations for the requested linear growth fit.');
+  if (options.bubbleAreaFitEndSeconds !== undefined) {
+    const eligibleTimePoints = points.filter(point =>
+      point.timeSeconds > 0 && point.timeSeconds <= options.bubbleAreaFitEndSeconds!
+    );
+    const missingBubbleAreaCount = eligibleTimePoints.length - bubblePoints.length;
+    if (missingBubbleAreaCount > 0) {
+      warnings.push(`Bubble-area fit omitted ${missingBubbleAreaCount} eligible time point(s) without measured bubble area.`);
+    }
+    if (!bubbleAreaGrowthFit) {
+      warnings.push('Insufficient bubble-area observations for the requested linear growth fit.');
+    }
   }
   if (!points.some(point => point.liquidLevelHeightMm !== undefined)) {
     warnings.push('Foam height uses foamTopHeightMm directly because no liquid-level series was supplied.');
