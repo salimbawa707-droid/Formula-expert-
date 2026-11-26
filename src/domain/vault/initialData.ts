@@ -1372,13 +1372,13 @@ export const INITIAL_VAULT_STATE: VaultState = {
       supportedEngineIds: ['ENG-002'],
       supportedClaims: [
         'Low additions of C12–C14 AE-7 to LAS reduced the mixed-system CMC and improved LAS tolerance to calcium under the study conditions.',
-        'The tested AE-2 system did not show the same calcium-solubility benefit, which the authors attributed to poor AE-2 water solubility.',
+        'The tested AE-2 system showed decreasing mixed CMC in Table 2 but did not show the same calcium-solubility benefit; the authors attributed the latter result to poor AE-2 water solubility.',
         'The authors reported an optimum tested LAS/AE-7 composition for detergency; further AE-7 increased solubility but did not further improve detergency under their test conditions.',
       ],
       applicabilityMismatches: [
-        'This is a binary LAS/AE mechanistic and detergency study, not a complete commercial laundry detergent formula with builders, enzymes, polymers, perfume, and soil-release additives.',
+        'This is a binary LAS/AE mechanistic and detergency study, not a complete commercial laundry detergent formula. Its reported powder detergency chassis includes 41% STPP, so direct transfer to phosphate-free formulas is not established.',
         'The 12% LAS / 3% AE-7 composition basis must be read in the original PDF before reconstructing exact active percentages.',
-        'CMC and surface-tension values are presented in a scanned/poorly extracted table and figures; do not ingest OCR-derived values as verified numeric data without visual PDF inspection.',
+        'Tables 1 and 2 have an AI transcription and a second AI text/arithmetic cross-check against accessible author-uploaded full-text extraction; no human second transcription is recorded. The direct PDF image was not independently re-retrieved in the second pass. The Gibbs adsorption n-factor for pure LAS appears inconsistent with the methods rule (n=2 absent excess common ion) and requires author clarification before quantitative use of Γ/A.',
         'No direct foam, viscosity, enzyme compatibility, storage stability, or machine-specific wash result is supplied.',
         'This source does not validate ENG-003 or ENG-005.',
       ],
@@ -1389,9 +1389,9 @@ export const INITIAL_VAULT_STATE: VaultState = {
       ],
       followUpActions: [
         'Use as a bounded laundry LAS/AE interaction reference; do not generalize to all nonionic surfactants.',
-        'Visually inspect the original PDF table/figures before any exact CMC or surface-tension values are transcribed.',
+        'Retain the AI transcription and second-pass cross-check; obtain a human blind transcription if formal human review is required, and seek author clarification on the Gibbs adsorption n-factor.',
         'Keep numerical reuse blocked pending copyright review.',
-        'Do not mark ENG-002 validated from this single literature source.',
+        'EVD-019 is related literature evidence for ENG-002 only; the current app-facing Clint calculator does not support the LAS/AE-7EO pair and this source does not validate the current implementation.',
       ],
       isLeadSeed: false,
     },
