@@ -57,7 +57,7 @@ The article reports Xᴹ₁ = 0.33 for LAS and βᶦ = −5.57 for the 75% LAS /
 
 ### 4.1 Γ-to-area arithmetic
 
-For each of the 11 rows with numeric Γ and A, the molecular area was recalculated using:
+For each of the 11 unique composition cases (12 displayed numeric entries because pure LAS is duplicated across Tables 1 and 2), the molecular area was recalculated using:
 
 A (Å²) = 10^16 / (Γ × N_A)
 
@@ -173,7 +173,7 @@ For the source's pure-LAS row, T=296.73 K, slope=−15.9 mN·m⁻¹ per log10 de
 - n=1: Γ=2.7989×10⁻¹⁰ mol·cm⁻² and A=59.33 Å², reproducing the paper's printed Γ=2.82×10⁻¹⁰ and A=59 Å² within rounding.
 - n=2: Γ=1.3994×10⁻¹⁰ mol·cm⁻² and A=118.66 Å².
 
-Back-calculation of n_eff from the displayed rounded slope/Γ values across all 11 numeric table rows yields approximately 0.993–1.003. This strongly indicates the tabulated Γ values were calculated using n≈1 throughout. The pure nonionic row is consistent with that factor. For mixed LAS/AE rows, n may be composition-dependent; no blanket n=2 correction is justified and no raw concentration series is available to reconstruct the effective coefficient. The pure-LAS row, however, is a 1:1 ionic surfactant measured in distilled/deionized water with no excess common ion described, so the independent literature supports n=2 for its theoretical re-evaluation.
+Back-calculation of n_eff from the displayed rounded slope/Γ values across the 11 unique composition cases (12 displayed entries; pure LAS duplicated) yields approximately 0.992–1.003 when each table's stated temperature is used (23.58 °C for Table 1; 23.5 °C for Table 2). This strongly indicates the tabulated Γ values were calculated using n≈1 throughout. The pure nonionic row is consistent with that factor. For mixed LAS/AE rows, n may be composition-dependent; no blanket n=2 correction is justified and no raw concentration series is available to reconstruct the effective coefficient. The pure-LAS row, however, is a 1:1 ionic surfactant measured in distilled/deionized water with no excess common ion described, so the independent literature supports n=2 for its theoretical re-evaluation.
 
 **Final adjudication:** retain the published 59 Å² and Γ as printed observations/transcription; separately record the calculated n=2 theoretical value of approximately 118.7 Å² (Γ≈1.3994×10⁻¹⁰ mol·cm⁻²). Mark the pure-LAS printed Γ/A as method-inconsistent with the paper's stated no-excess-electrolyte rule. Keep mixed Γ/A source-reported and tagged effective-n-not-reconstructed. The author was not contacted successfully and no response is claimed; author clarification is now optional for author-intent provenance, not a blocker to the theoretical pure-LAS interpretation.
 
