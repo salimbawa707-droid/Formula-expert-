@@ -134,6 +134,8 @@ export function runVaultLogicTestSuite() {
   const evd017 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-017');
   assert(evd017?.evidenceType === 'REFERENCE_DATABASE', 'Evidence Identity', 'EVD-017 is a regulatory reference, not an experimental dataset');
   assert(evd017?.supportedClaims.some(claim => claim.includes('0.1 wt.%')), 'Regulatory Scope', 'EVD-017 records the EU domestic-cleaning NPE threshold');
+  assert(evd017?.conditions.includes('prohibits placing on the market or use'), 'Regulatory Scope', 'EVD-017 follows the legal restriction wording rather than implying a manufacturing ban');
+  assert(evd017?.conditions.includes('article-weight threshold'), 'Regulatory Scope', 'EVD-017 keeps Entry 46a textile article weight distinct from detergent mixture concentration');
   assert(evd017?.applicabilityMismatches.some(item => item.includes('does not establish the legal status of NPE in India')), 'Regulatory Scope', 'EU restrictions are not misrepresented as Indian law');
   const evd018 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-018');
   assert(evd018?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-018 patent data remain rights-pending');
