@@ -107,6 +107,13 @@ try {
   }, root);
   assert.equal(sameFileForBoth.valid, false);
 
+  const unregisteredEvidenceReference = validateAIReviewArtifacts({
+    ...validReview,
+    evidenceRefs: ['EVD-001', 'EVD-999'],
+  }, root);
+  assert.equal(unregisteredEvidenceReference.valid, false);
+  assert.match(unregisteredEvidenceReference.errors.join('; '), /unregistered vault records: EVD-999/);
+
   const missingArtifact = validateAIReviewArtifacts({
     ...validReview,
     reviewPasses: validReview.reviewPasses.map((pass, index) =>
@@ -129,7 +136,7 @@ try {
   assert.equal(symlinkEscape.valid, false);
   assert.match(symlinkEscape.errors.join('; '), /Symbolic links are not permitted/);
 
-  console.log('Phase 4B AI review artifact integrity tests: 8/8 PASS');
+  console.log('Phase 4B AI review artifact integrity tests: 9/9 PASS');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
