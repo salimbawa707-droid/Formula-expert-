@@ -24,7 +24,7 @@ GENERATOR_HEADERS = [
 def inspect_contract(generator_text: str, committed_headers: list[str]) -> dict:
     target_match = re.search(r'TARGET_DIR\s*=\s*path\.resolve\(["\']([^"\']+)["\']\)', generator_text)
     target_dir = target_match.group(1) if target_match else None
-    csv_match = re.search(r'const csvLedger\s*=\s*"([^"]+)"', generator_text)
+    csv_match = re.search(r'(?:const|let) csvLedger\s*=\s*"([^"]+)"', generator_text)
     generated_headers = next(csv.reader([csv_match.group(1).split(r"\n", 1)[0]])) if csv_match else []
     reported_metadata_count = bool(re.search(r"reportedCount\s*:", generator_text))
     computed_rows_logic = "computedValidObs++" in generator_text
