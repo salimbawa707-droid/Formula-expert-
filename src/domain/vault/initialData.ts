@@ -1515,7 +1515,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         'Croda’s page is published under Croda Beauty and lists Skin care as the product category; the text mentions superfatting benefits in detergent systems but does not establish a Home Care category listing or detergent performance.',
       ],
       applicabilityMismatches: [
-        'The product page is categorized under Skin care and its listed applications are personal-care uses; the detergent statement is an ancillary superfatting benefit, not a laundry or dishwashing performance claim.',
+        'The product page is categorized under Skin care and its listed applications are personal-care uses; it does not list Home Care as a product category. The detergent statement is an ancillary superfatting benefit, not a laundry or dishwashing performance claim.',
         'The manufacturer description does not establish PEG-40 HCO as a primary laundry detergency surfactant.',
         'No quantitative laundry cleaning, foam, viscosity, CMC, cloud-point, stability, or dosage data are supplied in the inspected source.',
         'No direct formula-prediction or engine-validation data are supplied.',
