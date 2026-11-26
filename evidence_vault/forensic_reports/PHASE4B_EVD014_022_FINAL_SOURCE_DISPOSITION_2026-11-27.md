@@ -108,7 +108,7 @@ This confirms the procedural status of the European patent, not the status of ev
 
 **Source inspection:** official thesis record identifies author, institution, year and title. The prior numerical inspection recorded 53 Appendix A surface-tension/concentration points and retained a 74.4%/74.5% discrepancy rather than silently reconciling it. The source tests mixed oily/particulate soils on polyester/cotton fabric with palm oil and kaolinite, and studies MES/LAS/SDS with AE7/AE9. The reported 2 wt.% NaCl is salinity, not water hardness.
 
-**Rights:** REVIEW_PENDING. Publicly accessible university thesis text is not by itself a commercial reuse grant.
+**Rights:** REVIEW_PENDING / COMMERCIAL REUSE BLOCKED. Chulalongkorn's current repository policy says rights are item-specific and that CUIR collection materials commonly carry CC BY-NC 4.0 or educational-use-only restrictions; the university's public notice also says full-text use is educational and not commercial. The exact item-level rights statement for this thesis was not exposed in the NRCT DOI record inspected here. Therefore do not treat free public download as commercial permission; obtain the thesis-specific rights statement or written authorization.
 
 **Decision:** source-specific thesis evidence only; not a generic washing powder performance benchmark. No engine validation or calibration until rights, methods, units, replicate lineage and matched predictions are audited.
 
