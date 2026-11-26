@@ -15,7 +15,8 @@ export function runFoamKineticsEngineTestSuite() {
     ],
   });
   assert('Uses foam height above liquid meniscus', result.initialFoamHeightMm === 90, result.initialFoamHeightMm, 90);
-  assert('Interpolates half-height time', result.halfHeightTimeSeconds === 25, result.halfHeightTimeSeconds, 25);
+  assert('Interpolates observed half-height crossing time', result.observedHalfHeightCrossingTimeSeconds === 25, result.observedHalfHeightCrossingTimeSeconds, 25);
+  assert('Does not label observed threshold crossing as kinetic half-life', result.warnings.some(warning => warning.includes('not a kinetic half-life')), result.warnings);
   assert('Marks output as measured-series analysis only', result.scope === 'MEASURED_SERIES_ANALYSIS_ONLY', result.scope);
 
   const logFit = analyzeFoamDecayReplicate({
