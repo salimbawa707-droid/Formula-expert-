@@ -16,17 +16,12 @@ export { INGREDIENT_DATABASE };
  * so that the solver converges on the true thermodynamic equilibrium while implicit water mass covers the balance.
  */
 export function getSolverReadyIngredients(rawIngredients: IngredientInput[]): IngredientInput[] {
-  if (!Array.isArray(rawIngredients) || rawIngredients.length === 0) return [];
-
-  const recognized = rawIngredients.filter(ing => {
-    if (!ing || !ing.name) return false;
-    const name = ing.name.trim();
-    if (INGREDIENT_DATABASE[name]) return true;
-    const species = classifyChemicalSpecies(name);
-    return species !== null;
-  });
-
-  return recognized.length > 0 ? recognized : rawIngredients;
+  // Preserve the complete formulation mass. Filtering unknown/inert-looking
+  // ingredients here would let the pH solver calculate from a partial formula
+  // and bypass PHEngineV2's fail-closed unrecognized-mass guard.
+  // Known neutral species should be explicitly registered as neutral in the
+  // chemical species registry; they must not be silently dropped by this adapter.
+  return Array.isArray(rawIngredients) ? [...rawIngredients] : [];
 }
 
 /**
