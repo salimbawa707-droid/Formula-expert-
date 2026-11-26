@@ -81,3 +81,18 @@ These are software contract tests with synthetic fixtures, not experimental vali
 3. Reproduce published means/standard deviations and figure curves from the four replicate series.
 4. Add source-backed regression fixtures only after numeric transcription has been independently checked.
 5. Keep a separate future workstream for detergent-specific formula-to-foam prediction, which requires matched formulations and controlled foam tests.
+
+
+## 2026-11-26 follow-up — scientific interpretation and edge-case hardening
+
+The primary article explicitly states that its foam decay is clearly non-exponential and that a conventional half-life is not very meaningful for the long-time logarithmic regime. The output previously named `halfHeightTimeSeconds` is therefore renamed to `observedHalfHeightCrossingTimeSeconds`. It is a descriptive threshold-crossing time found by interpolation between actual measured points; it is not a kinetic half-life, and the API now returns an explicit warning against that interpretation.
+
+Additional software-contract corrections:
+- Reject mixed height-reference series where liquid-meniscus height is supplied for only some time points. Mixing corrected foam heights with uncorrected top heights would bias the series.
+- Return R-squared as `null` when the response has zero variance; R-squared is undefined in that case, even if the fitted constant equals every observation.
+- Warn when a requested bubble-area fit omits eligible time points with missing bubble-area measurements.
+- Add regression coverage for these cases and for the explicit non-half-life interpretation.
+
+Source basis: Izawa, James & Yethiraj (2026), *The decay of saline surfactant foams: a study at macroscopic and bubble scales*, Royal Society Open Science 13, 251765, DOI 10.1098/rsos.251765. The article describes late-time logarithmic foam-height decay and states that conventional half-life is not meaningful for that non-exponential decay. The study uses Triton X-100 in synthetic brines, so it remains an adjacent physical-foam study, not a detergent-formula validation dataset.
+
+Evidence boundary unchanged: code regression tests use synthetic fixtures only; supplementary time-series have not yet been acquired/reconciled in this repository; no empirical validation or detergent formulation predictor is claimed.
