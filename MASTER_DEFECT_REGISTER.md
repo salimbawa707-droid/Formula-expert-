@@ -30,11 +30,13 @@
 
 ## 2. Phase-by-Phase Remediation & Status Ledger
 
-### Phase 1 — Repository Inventory, Architecture & Build Baseline — **PASS**
-- **Verified Inventory (`node evidence_vault/scripts/verify_engine_inventory.mjs`):**
-  - `legacyList`: 55 unique entries, 0 duplicates, 0 missing entries, 55 CSV audit rows.
-  - Source filename counts: `60` engine-named source files (excluding UI), `63` including UI, `92` broad discovery candidates.
-- **Preserved Architecture:** Kept `PHEngine`, `PHEngineV2`, canonical IDs (`IngredientIdentitySSOT`), Dexie offline database, Express (`server.ts`), and all 139 test modules intact.
+### Phase 1 — Repository Inventory, Architecture & Build Baseline — **PARTIAL: inventory gate PASS; reachability classification pending**
+- **Verified Inventory (`node evidence_vault/scripts/verify_engine_inventory.mjs`):** exact PR CI on head `a478460cfcd6982ffe3753a0647e395dab3d68ff` passed the inventory step.
+  - `legacyList`: 55 unique entries, 0 duplicates, 0 missing entries, 55 CSV audit rows; CSV/list parity has 0 differences.
+  - Executed source filename counts: `61` engine-named source files (excluding UI), `64` including UI, `93` broad discovery candidates.
+- **Architecture reconciliation:** 13 canonical product IDs; 23 registered DAG nodes plus one post-DAG FINALIZATION stage (24 pipeline steps); 11 visible workflow stages. The profile applicability gates currently present in the DAG are explicitly documented rather than overstated.
+- **Remaining Phase 1 gate:** static importer/caller reachability, test-only/orphan classification and exact final-head CI are being added; do not mark Phase 1 fully closed until that report is reviewed.
+- **Preserved Architecture:** Kept `PHEngine`, `PHEngineV2`, canonical IDs (`IngredientIdentitySSOT`), Dexie offline database, and Express (`server.ts`) intact.
 
 ### Phase 2 — Input Validation, Category Routing & Sub-Profile Propagation — **PASS**
 - **Audited Paths:** Category routing (`canonicalProductCategory`), water hardness provenance (`null` when `'UNKNOWN'`), batch size propagation (`batchSizeKg`), and 39 template formulas across 13 product categories.
