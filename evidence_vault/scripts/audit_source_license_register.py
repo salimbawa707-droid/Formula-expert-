@@ -11,6 +11,7 @@ EXPECTED_ZENODO = {
     "SRC-ZEN-18961871-FILM",
 }
 EXPECTED_SURFPRO = "SRC-SURFPRO-15861809"
+ZENODO_URL = "https://zenodo.org/records/18961871"
 
 
 def audit(rows):
@@ -22,10 +23,12 @@ def audit(rows):
             errors.append(f"missing source record: {source_id}")
             continue
         license_status = row["license_status"]
-        if "RIGHTS_FIELD_BLANK" not in license_status or "UNCLEARED" not in license_status:
-            errors.append(f"{source_id}: blank Zenodo Rights field must remain explicitly uncleared")
-        if "CC-BY-4.0" in license_status or "LICENSE_VERIFIED" in row["status"]:
-            errors.append(f"{source_id}: unsupported CC BY / verified-license claim")
+        if row["source"] != ZENODO_URL:
+            errors.append(f"{source_id}: official Zenodo record URL is required for license verification")
+        if "CC-BY-4.0_CONFIRMED_OFFICIAL_ZENODO_RECORD" not in license_status:
+            errors.append(f"{source_id}: official Zenodo CC BY 4.0 license evidence is missing")
+        if "CC_BY_4.0_LICENSE_VERIFIED" not in row["status"]:
+            errors.append(f"{source_id}: archived source must retain explicit CC BY 4.0 license-verification state")
     surfpro = by_id.get(EXPECTED_SURFPRO)
     if surfpro is None:
         errors.append(f"missing source record: {EXPECTED_SURFPRO}")
