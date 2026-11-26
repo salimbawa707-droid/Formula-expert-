@@ -307,14 +307,14 @@ Using the same path filters declared in `evidence_vault/scripts/verify_engine_in
 |---|---:|
 | Non-test TS/TSX/JS/JSX files under `src/` | 292 |
 | Test/spec files under `src/` | 145 |
-| Engine-named source files excluding UI components | 60 |
-| Engine-named files including UI components | 63 |
-| Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 92 |
+| Engine-named source files excluding UI components | 61 |
+| Engine-named files including UI components | 64 |
+| Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 93 |
 | Reconciled retained wiring modules | 55 |
 
-The verifier script on the current main base hard-coded 61 / 64 / 93, while this inventory's independently recorded source-tree scan and the current release quality-gate record use 60 / 63 / 92. The audit branch updates the verifier to 60 / 63 / 92. It also retains the independent 55-path manifest / 55-row CSV parity checks. The 55-module manifest count is not a scientific-engine count.
+The exact PR CI execution on 2026-11-26 independently reported 61 / 64 / 93. An earlier draft of this document recorded 60 / 63 / 92; that draft was incorrect and is superseded by the executed CI output. The verifier is aligned to the executed 61 / 64 / 93 counts. It retains independent 55-path manifest / 55-row CSV parity checks. The 55-module manifest count is not a scientific-engine count.
 
-**Execution status:** these counts and manifest parity were independently computed from the GitHub tree and file contents. The updated Node script itself has not yet been executed in a checked-out repository or CI. It must be run in the final combined CI before merge; do not claim the script has passed yet.
+**Execution status:** these counts and manifest parity were independently computed from the GitHub tree and file contents. The first exact-PR-head CI run executed the verifier and failed only because the expected counts were incorrectly changed to 60 / 63 / 92; observed counts were 61 / 64 / 93. The script has now been restored to the observed counts. A fresh exact-head CI run is required before merge.
 
 ## 11. Production entry points and actual caller paths
 
@@ -460,7 +460,7 @@ Phase 1 is **not closed yet**. The inventory documentation is substantially comp
 
 - Exact base used for this correction: `a7f56884cb6aebf9dd2390f9643d5851e32e6546` (main at audit start).
 - Repository CI workflow `.github/workflows/current-release-quality-gates.yml` already runs `node evidence_vault/scripts/verify_engine_inventory.mjs` on pull requests to main and pushes to `fix/**`; this is the correct execution gate for the corrected script.
-- The current main-branch verifier's hard-coded expectations were 61 / 64 / 93, conflicting with the current inventory's 60 / 63 / 92. The audit branch changes only those three expected counts and their error messages; manifest and CSV integrity checks remain fail-closed.
+- Initial PR CI run #1024 on the first audit head proved the actual counts are 61 / 64 / 93. It also proved the 55-entry list and 55-row CSV match exactly, with zero duplicates, zero missing paths, and zero CSV/list mismatches. The prior 60 / 63 / 92 documentation figures were incorrect. The audit branch now keeps the verifier at 61 / 64 / 93 and corrects the inventory document to match executed CI evidence.
 - The 55-path list, 55-row CSV, and all 55 path-existence checks remain separate assertions. The 55 records are retained wiring modules, not 55 validated scientific predictors.
 - The architecture inventory identifies 13 canonical product categories, 11 visible workflow stages, and 23 registered DAG nodes. FINALIZATION is an orchestrator post-stage, not a 24th registered DAG node.
 - Category profile enforcement and single-authority calculation behavior are recorded as implementation risks for routing/orchestration phases. They must not be relabeled as scientifically verified merely because a profile registry or software test exists.
