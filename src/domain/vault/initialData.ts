@@ -501,7 +501,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       ],
       equationsModels: [
         'Foam height F(t) = measured foam-top height T(t) minus measured liquid level L(t), when L(t) is supplied.',
-        'Half-height time: linear interpolation at F(t) = F(0)/2; no extrapolation when the crossing is absent.',
+        'Observed half-height crossing: interpolate the measured threshold F(t) = F(first observed point)/2; this is descriptive and not a kinetic half-life; no extrapolation when crossing is absent.',
         'Late-time descriptive fit: F(t) = a + b log10(t), with interval boundary supplied by the caller.',
         'Bubble-area descriptive fit: A(t) = c + k t, with interval boundary supplied by the caller.',
       ],
@@ -521,14 +521,14 @@ export const INITIAL_VAULT_STATE: VaultState = {
         'Optional time-resolved mean bubble cross-sectional area (mm²), with imaging and segmentation method documented.',
         'Formulation identity, surfactant composition, salinity/hardness, temperature, generation protocol, vessel geometry, and replicate metadata for future formula-level model development.',
       ],
-      referenceOutputsRequired: ['Measured half-height time (s), interval-specific log-height slope (mm/decade), and optional bubble-area growth slope (mm²/s).'],
+      referenceOutputsRequired: ['Observed half-height crossing time (s; descriptive threshold only), interval-specific log-height slope (mm/decade), and optional bubble-area growth slope (mm²/s).'],
       evidenceCoveragePct: 0,
       numericalValidationReadiness: 'NOT_READY',
       scientificMaturity: 'CODE_IMPLEMENTED',
       independentVerificationStatus: 'UNVERIFIED',
       openQuestions: [
         'Can a formulation-level predictor be developed after acquiring matched detergent recipes and replicate-resolved foam curves?',
-        'Can the supplementary time-series data from Izawa et al. (2026) be acquired, hash-pinned, and independently parsed?',
+        'Can the authors provide machine-readable replicate-level Igor Pro/data-analysis files or raw exports, since the public Figshare item currently exposes only a PDF?',
       ],
       knownLimitations: [
         'No formulation-to-foam predictor, Ross-Miles prediction, drum-rotation model, or liquid-drainage-rate solver is implemented.',
