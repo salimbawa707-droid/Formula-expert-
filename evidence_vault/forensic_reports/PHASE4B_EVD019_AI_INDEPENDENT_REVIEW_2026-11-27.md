@@ -7,7 +7,7 @@
 **Author-uploaded full-text page:** https://www.researchgate.net/publication/275987303_Evaluation_of_Physico-Chemical_Interactions_between_Linear_Alkylbenzene_Sulfonate_LAS_and_Alcohol_Ethoxylates  
 **Independent bibliographic cross-check:** https://www.scienceopen.com/document?vid=a3d795ed-3a30-448b-bbae-a737e97f3445  
 **Rights:** REVIEW_PENDING; Carl Hanser copyright. No commercial reuse license verified. Source PDF is not archived in this repository.  
-**Gate:** EVD-019 Tables 1–2 transcription cross-checked by a second AI pass; human review NOT performed; Phase 4B remains OPEN; Phase 5 remains LOCKED.
+**Gate:** EVD-019 Tables 1–2 transcription cross-checked by a second AI pass; pure-LAS Gibbs-factor interpretation independently adjudicated; author response not received; human review NOT performed; Phase 4B remains OPEN; Phase 5 remains LOCKED.
 
 ## 1. Review scope and evidence actually inspected
 
@@ -159,3 +159,22 @@ This is not independent human approval. It does not clear copyright, source arch
 - Author-uploaded full text and extracted table text: https://www.researchgate.net/publication/275987303_Evaluation_of_Physico-Chemical_Interactions_between_Linear_Alkylbenzene_Sulfonate_LAS_and_Alcohol_Ethoxylates
 - Independent bibliographic record: https://www.scienceopen.com/document?vid=a3d795ed-3a30-448b-baae-a737e97f3445
 - DOI: https://doi.org/10.3139/113.110145
+
+
+## 4.3 Independent external adjudication — superseding the author-clarification blocker
+
+A separate thermodynamic literature check and unit-consistent recalculation now resolve the narrow pure-LAS issue without pretending an author response exists.
+
+- Brusseau (2020), *Water Research* 190, 116778, DOI 10.1016/j.watres.2020.116778, states the simplified Gibbs coefficient x=1 for nonionic surfactants or ionic surfactants with excess electrolyte, and x=2 for ionic surfactants without excess electrolyte (including deionized water). Full text: https://pmc.ncbi.nlm.nih.gov/articles/PMC7856177/ (Theory, lines 92–96).
+- Hua & Rosen (1982), *Journal of Colloid and Interface Science* 87(2), 469–477, DOI 10.1016/0021-9797(82)90344-7, derive the coefficient for ionic/nonionic binary mixtures and report that it is condition-dependent, near 1 in some conditions, increasing toward 1–2 with closer ionic packing, and potentially below 1 in some anionic/nonionic mixtures with large molecular areas. DOI landing/PDF: https://doi.org/10.1016/0021-9797(82)90344-7 and https://www.sciencedirect.com/science/article/pii/0021979782903447/pdf.
+
+For the source's pure-LAS row, T=296.73 K, slope=−15.9 mN·m⁻¹ per log10 decade, R=8.314462618 J·mol⁻¹·K⁻¹, and N_A=6.02214076×10²³ mol⁻¹. Applying Γ=−[1/(nRT ln 10)]·dγ/dlog10(C) gives:
+
+- n=1: Γ=2.7989×10⁻¹⁰ mol·cm⁻² and A=59.33 Å², reproducing the paper's printed Γ=2.82×10⁻¹⁰ and A=59 Å² within rounding.
+- n=2: Γ=1.3994×10⁻¹⁰ mol·cm⁻² and A=118.66 Å².
+
+Back-calculation of n_eff from the displayed rounded slope/Γ values across all 11 numeric table rows yields approximately 0.993–1.003. This strongly indicates the tabulated Γ values were calculated using n≈1 throughout. The pure nonionic row is consistent with that factor. For mixed LAS/AE rows, n may be composition-dependent; no blanket n=2 correction is justified and no raw concentration series is available to reconstruct the effective coefficient. The pure-LAS row, however, is a 1:1 ionic surfactant measured in distilled/deionized water with no excess common ion described, so the independent literature supports n=2 for its theoretical re-evaluation.
+
+**Final adjudication:** retain the published 59 Å² and Γ as printed observations/transcription; separately record the calculated n=2 theoretical value of approximately 118.7 Å² (Γ≈1.3994×10⁻¹⁰ mol·cm⁻²). Mark the pure-LAS printed Γ/A as method-inconsistent with the paper's stated no-excess-electrolyte rule. Keep mixed Γ/A source-reported and tagged effective-n-not-reconstructed. The author was not contacted successfully and no response is claimed; author clarification is now optional for author-intent provenance, not a blocker to the theoretical pure-LAS interpretation.
+
+This adjudication does not change raw data, does not independently refit the mixed CMC model, does not authorize commercial reuse, does not satisfy independent human review, and does not validate ENG-002 or any formula engine.
