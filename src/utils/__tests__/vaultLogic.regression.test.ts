@@ -192,6 +192,22 @@ export function runVaultLogicTestSuite() {
   const gateCheck = canUnlockPhase5(INITIAL_VAULT_STATE);
   assert(gateCheck.allowed === false, 'Phase 5 Gate', 'Phase 5 unlock blocked on active 4B');
   assert(Boolean(/Phase 4B is still ACTIVE\/OPEN/i.test(gateCheck.reason)), 'Phase 5 Gate', 'Gate check gives reason');
+  const emptyInventoryState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
+  const emptyInventoryPhase4B = emptyInventoryState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
+  emptyInventoryPhase4B.status = 'CLOSED';
+  emptyInventoryPhase4B.reportedClosed = true;
+  emptyInventoryPhase4B.independentVerificationStatus = 'CONFIRMED';
+  emptyInventoryPhase4B.blockers = [];
+  emptyInventoryState.datasets = [];
+  emptyInventoryState.authoritativeProvenanceStatus = 'VERIFIED';
+  emptyInventoryState.accountingReconciliationStatus = 'RECONCILED';
+  emptyInventoryState.ledgerConsistencyStatus = 'CONSISTENT';
+  emptyInventoryState.activeBlockers = [];
+  emptyInventoryState.audits = emptyInventoryState.audits.map((audit: any) => ({ ...audit, approvalStatus: 'APPROVED' }));
+  const emptyInventoryGate = canUnlockPhase5(emptyInventoryState);
+  assert(emptyInventoryGate.allowed === false, 'Phase 5 Gate', 'An empty dataset inventory cannot unlock Phase 5');
+  assert(/no datasets are registered/i.test(emptyInventoryGate.reason), 'Phase 5 Gate', 'Empty inventory receives an explicit fail-closed reason');
+
 
   // 7. Scientific Status Rules: Engine cannot be marked ready without inspected dataset
   const engine = INITIAL_VAULT_STATE.engines[0];
