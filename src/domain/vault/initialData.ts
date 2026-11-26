@@ -1229,7 +1229,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       evidenceType: 'REFERENCE_DATABASE',
       measuredVariables: [],
       units: ['Weight percent (wt.%)'],
-      conditions: 'Entry 46 restricts manufacture/placing on market/use of nonylphenol and nonylphenol ethoxylates as substances or in mixtures at concentrations ≥0.1 wt.% for domestic cleaning and specified other uses. Entry 46a restricts NPE in textile articles at ≥0.01 wt.% from 3 February 2021; this is a textile-article threshold, not a detergent-mixture concentration limit.',
+      conditions: 'Entry 46 prohibits placing on the market or use of nonylphenol and nonylphenol ethoxylates as substances or constituents of mixtures at concentrations ≥0.1 wt.% for specified uses including domestic cleaning. Entry 46a prohibits placing on the market, after 3 February 2021, of specified washable textile articles containing NPE at ≥0.01 wt.% by weight of the textile article or each part; this is an article-weight threshold, not a detergent-mixture concentration limit.',
       sampleCount: null,
       sourcePublicationRef: 'REACH Annex XVII Entry 46; Regulation (EU) 2016/26 adding Entry 46a; ECHA restricted-substances group listing.',
       supportedEngineIds: [],
