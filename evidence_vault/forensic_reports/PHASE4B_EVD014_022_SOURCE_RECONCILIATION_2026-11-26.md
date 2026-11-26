@@ -34,7 +34,7 @@ All nine records now have source-register entries. Source identity and scientifi
 
 ## 3. Source-register and archival reconciliation
 
-The canonical `evidence_vault/datasets/source-register.csv` previously had 19 rows and **zero EVD-014–022 references**. Nine source rows have now been appended, one for each record.
+The canonical `evidence_vault/datasets/source-register.csv` previously had 18 data rows (19 lines including the header) and **zero EVD-014–022 references**. Nine source rows have now been appended, bringing it to 27 data rows (28 lines including the header), one for each record.
 
 For every new row:
 - the primary-source URL is explicit;
