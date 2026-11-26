@@ -40,7 +40,7 @@ def inspect_contract(generator_text: str, committed_headers: list[str]) -> dict:
         "generator_contract_reproduces_committed_ledger": (
             target_dir == CANONICAL_DIR
             and GENERATOR_HEADERS == committed_headers
-            and not reported_metadata_count
+            and computed_rows_logic
         ),
     }
 
