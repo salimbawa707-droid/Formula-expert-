@@ -321,6 +321,11 @@ jobs:
         run: |
           set -euo pipefail
           find evidence_vault/scripts -type f -name '*.py' -print0 | xargs -0 -r python -m py_compile
+      - name: Audit Round-5 generator provenance contract
+        run: python evidence_vault/scripts/round22_round5_generator_provenance_audit.py
+
+      - name: Test Round-5 generator provenance contract
+        run: python evidence_vault/scripts/test_round22_round5_generator_provenance_audit.py
 
       - name: Verify Phase 1 engine inventory and dependency manifest
         run: node evidence_vault/scripts/verify_engine_inventory.mjs
