@@ -188,7 +188,7 @@ No production scientific engine source was changed. This PR changes only documen
 A module is not considered COMPLETE merely because it compiles, has a test, appears in the DAG, or has a caller. Scientific validation requires independently traceable equations/data, units, valid input domains, uncertainty/assumptions, boundary/reference cases, and (where applicable) matched physical lab evidence.
 
 
-## 7. First-pass implementation trace — verified discrepancies
+## 7. Implementation trace — resolved architecture discrepancy
 
 The complete `scientificExecutionDAG.ts` file was fetched and its actual registrations were counted by matching each `this.nodes.set(...)` declaration. It registers **23 nodes**, not 24.
 
@@ -296,7 +296,7 @@ The 55 retained module paths are:
 
 **Counting distinction:** the 55 retained wiring modules are not 55 validated physical-science predictors. The inventory includes workflow/orchestration, data governance, lab evidence, LIMS, inventory, regulatory and software-control modules. The narrower `evidence_vault/datasets/scientific_engine_inventory.csv` is an 8-record scientific model/evidence registry (including explicitly unavailable or unregistered model classes), not a replacement for the 55-module wiring inventory.
 
-## 10. Current source-tree counts and inventory guard repair
+## 10. Current source-tree counts and inventory verification
 
 Using the same path filters declared in `evidence_vault/scripts/verify_engine_inventory.mjs`, the current source tree gives:
 
@@ -434,12 +434,12 @@ This is a representative mapping, not a claim that every one of the 55 retained 
 - [x] 11 visible workflow stages mapped to the DAG pipeline.
 - [x] Main production callers and duplicate/bypass paths documented.
 - [x] Representative test coverage map recorded.
-- [x] Stale engine inventory guard counts corrected and CSV/list parity validation added.
+- [x] Source-tree counts reconciled against the unchanged inventory verifier; CSV/list parity and static reachability are enforced by CI.
 
-### Verification still pending
-- The exact-head inventory verifier and static reachability audit passed in PR run #1049.
-- The 55-row evidence CSV contains inherited 2026-11-03 caller/evidence classifications; the new exact-head static graph independently refreshed direct importer and reachability status.
-- No Phase 1 scientific correctness certification is claimed.
+### Verification completed on the code-bearing PR head
+- Inventory verifier and static reachability audit passed on exact code head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597` in PR run #1049.
+- The 55-row evidence CSV contains inherited 2026-11-03 scientific-evidence classifications; the exact-head static graph independently refreshed direct importer and reachability status.
+- No Phase 1 scientific correctness certification is claimed; software regressions are not a substitute for physical lab validation.
 - No production scientific engine was modified as part of the inventory-only correction.
 - This audit branch contains the static graph gate and corrected architecture evidence; merge remains conditional on the exact-head workflow and final diff review.
 
@@ -451,18 +451,23 @@ This is a representative mapping, not a claim that every one of the 55 retained 
 - **P1 / Phase 10 integration:** remove duplicate powder/cleaning/hardness/compatibility calculation paths; define one authoritative output contract.
 - **All phases:** test scientific validity independently of code wiring and software CI.
 
-Phase 1 is **closed as repository inventory and architecture mapping**. The exact-head inventory and static reachability gates passed. This does **not** certify predictive accuracy or laboratory performance; those require later scientific validation phases and physical experiments.
+Phase 1 is **closed as repository inventory and architecture mapping** on the code-bearing PR head. The exact-head inventory and static reachability gates passed. The final documentation-only closure commit is subject to its own exact-head CI rerun before merge. This does **not** certify predictive accuracy or laboratory performance; those require later scientific validation phases and physical experiments.
 
-## 17. 2026-11-26 exact-base audit addendum
+## 17. 2026-11-26 exact-base and static reachability audit
 
-- Exact base used for this correction: `a7f56884cb6aebf9dd2390f9643d5851e32e6546` (main at audit start).
-- Repository CI workflow `.github/workflows/current-release-quality-gates.yml` already runs `node evidence_vault/scripts/verify_engine_inventory.mjs` on pull requests to main and pushes to `fix/**`; this is the correct execution gate for the corrected script.
-- Initial PR CI run #1024 on the first audit head proved the actual counts are 61 / 64 / 93. It also proved the 55-entry list and 55-row CSV match exactly, with zero duplicates, zero missing paths, and zero CSV/list mismatches. The prior 60 / 63 / 92 documentation figures were incorrect. The audit branch now keeps the verifier at 61 / 64 / 93 and corrects the inventory document to match executed CI evidence.
-- The 55-path list, 55-row CSV, and all 55 path-existence checks remain separate assertions. The 55 records are retained wiring modules, not 55 validated scientific predictors.
-- The architecture inventory identifies 13 canonical product categories, 11 visible workflow stages, and 23 registered DAG nodes. FINALIZATION is an orchestrator post-stage, not a 24th registered DAG node.
-- Category profile enforcement and single-authority calculation behavior are recorded as implementation risks for routing/orchestration phases. They must not be relabeled as scientifically verified merely because a profile registry or software test exists.
-- No source-based evidence in this phase establishes laboratory validation, predictive accuracy, or a scientifically validated commercial formula.
-- Final Phase 1 closure requires: (1) this exact-branch inventory verifier PASS, (2) production build/typecheck and applicable regression CI PASS, (3) complete module/caller disposition report, (4) no unresolved inventory/documentation contradictions, and (5) a final audit tied to the merged commit. If any required check fails or is missing, Phase 1 remains open.
+- Exact base: `a7f56884cb6aebf9dd2390f9643d5851e32e6546` (main at audit start).
+- The main-branch inventory verifier already expected 61 / 64 / 93. An early draft incorrectly changed those values to 60 / 63 / 92; the first CI run caught the mismatch and that draft change was reverted. The final PR does not modify the inventory verifier.
+- Exact code-bearing PR head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597`: PR run #1049 and matching push run #1048 both succeeded.
+- Inventory parity: 55 manifest paths, 55 CSV rows, 0 duplicates, 0 missing paths, 0 manifest/CSV set differences.
+- Source-tree counts: 61 engine-named non-UI files, 64 including UI, 93 broad candidates. The retained 55-module set is a separate wiring inventory, not a validated scientific-engine count.
+- Static graph: 472 source/tooling files scanned from `src/`, `scripts/`, and `server.ts`; roots `src/main.tsx` and `server.ts`; 254 files reachable from roots; 53/55 retained modules production-reachable; 2/55 imported but not root-reachable; 0 test-only; 0 orphan/no-importer; 0 modules without direct production or test/tooling importers; 0 unresolved production imports; 7 unresolved tooling-only relative imports in root `scripts/`.
+- The two non-root-reachable retained modules are `empiricalCalibrationEngine.ts` and `empiricalValidationEvaluationEngine.ts`. Their production import path is through `EmpiricalValidationHub.tsx`, which is not itself imported from the production roots. Both modules have test importers. They are classified as a dormant empirical-validation feature path, not silently deleted or represented as active production functionality.
+- The static analyzer emits explicit exported symbol names and direct importer lists. It is a static module graph, not a function-level call graph or proof of runtime invocation.
+- Architecture reconciliation: 13 canonical product categories; 13 canonical profiles plus 6 specialized subprofiles; 23 registered DAG nodes plus post-DAG FINALIZATION; 11 visible workflow stages.
+- The DAG currently applies profile gates for HLB, water chelation, and cleaning; the full profile route is not centrally enforced for every node. That residual runtime policy enforcement is assigned to the routing phase.
+- AIFormulator no longer has direct fallback calculator calls for powder, pH, cleaning, hardness, or compatibility. The staged workflow still calculates intermediate results before final orchestrator recomputation; output-authority/duplicate-work verification is assigned to the orchestration phase.
+- Scientific evidence status remains separate from wiring: no source-only or software-test evidence here establishes predictive accuracy or laboratory validation. No human review or physical lab review is claimed.
+
 
 
 ### Source-tree count refresh
@@ -476,8 +481,7 @@ At the current main source snapshot, `AIFormulator.tsx` contains zero occurrence
 
 ## 18. Final exact-head closure record
 
-- PR: #111, base `a7f56884cb6aebf9dd2390f9643d5851e32e6546`, exact head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597`.
-- Exact-head push workflow run #1048 and pull-request workflow run #1049 both completed successfully.
+- PR: #111, base `a7f56884cb6aebf9dd2390f9643d5851e32e6546`. Code-bearing head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597` passed matching push workflow run #1048 and pull-request workflow run #1049. A final report-only commit follows and must pass its own exact-head rerun before merge.
 - Full TypeScript regression: **140/140 modules; 5,047/5,047 assertions; 0 failures**.
 - TypeScript typecheck, reproducible production build, production server `/api/health` smoke test, Phase 6 evidence regression, inventory verifier, static import/reachability audit, genuine Android debug APK build, and Android WebView persistence/download instrumentation all passed.
 - Android debug APK and instrumentation reports were uploaded by the successful workflow. The APK is a debug artifact, not a scientific release certification.
