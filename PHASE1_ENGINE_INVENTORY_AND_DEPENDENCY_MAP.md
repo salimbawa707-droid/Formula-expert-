@@ -13,12 +13,12 @@ Repository tree was read recursively from the exact baseline commit. Counts belo
 
 | Measure | Baseline |
 |---|---:|
-| Tracked blob files | 771 |
-| TypeScript/TSX/JS/JSX source files under `src/` and `app/` | 438 |
-| Test/spec files among those source files | 145 |
-| Non-test TypeScript/TSX files under `src/` | 292 |
-| Main branch CI run #694 | SUCCESS |
-| Main branch CI run ID | 45432038831 |
+| Tracked blob files | 791 |
+| TypeScript/TSX/JS/JSX source/test files under `src/` | 443 |
+| Test/spec files under `src/` | 146 |
+| Non-test TS/TSX/JS/JSX files under `src/` | 297 |
+| Phase 1 audit PR CI run #1024 | FAILED — count expectation mismatch; exact observed counts recorded in Section 17 |
+| Follow-up PR CI run #1027 | QUEUED at time of this update |
 | Main branch CI SHA | 2495fbf2bbb0f549acdcdc6fd63daa36f222946d |
 
 **Important counting rule:** 292 non-test source files are not 292 scientific engines. The set includes UI components, data stores, service adapters, types, persistence, regulatory rules, and other infrastructure. Engine counts must be classified by exported responsibility and production call path, not filename substring alone.
@@ -305,8 +305,8 @@ Using the same path filters declared in `evidence_vault/scripts/verify_engine_in
 
 | Count definition | Current source tree |
 |---|---:|
-| Non-test TS/TSX/JS/JSX files under `src/` | 292 |
-| Test/spec files under `src/` | 145 |
+| Non-test TS/TSX/JS/JSX files under `src/` | 297 |
+| Test/spec files under `src/` | 146 |
 | Engine-named source files excluding UI components | 61 |
 | Engine-named files including UI components | 64 |
 | Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 93 |
@@ -322,7 +322,7 @@ Current code search and source inspection confirm these principal paths:
 
 | Entry point / consumer | Observed route | Notes |
 |---|---|---|
-| `AIFormulator.runDeepScientificAnalysis` | UI -> direct powder evaluator (powder only) -> `FormulaScientificOrchestrator.evaluate` -> decision engine | The UI currently also has fallback recalculations for pH, cleaning, hardness/chelation and compatibility when orchestrator outputs are missing/empty. |
+| `AIFormulator.runDeepScientificAnalysis` | UI -> `FormulaScientificOrchestrator.evaluate` -> decision engine -> canonical result selectors | Current source contains no direct `evaluatePowderFormulation`, pH, cleaning, hardness, or compatibility fallback calculator calls in `AIFormulator.tsx`; the Phase 10 source regression asserts this single-authority behavior. |
 | `AIFormulator` staged Check My Formula path | UI -> `executeStagedScientificAnalysis` -> 11 visible stages -> final `FormulaScientificOrchestrator.evaluate` recomputation | Stages invoke individual engines and the final orchestrator evaluates the same formula again; this is a second calculation layer, not merely a display-only progress wrapper. |
 | `SmartFormulaAnalyzerPro` | UI -> `FormulaScientificOrchestrator.evaluate` | Uses the authoritative orchestrator path. |
 | `FormulationLibrary` | Library revalidation/listing -> `FormulaScientificOrchestrator.evaluate` and quality gate | Formula evaluation is performed during library checks. |
@@ -359,17 +359,18 @@ The repository has 13 canonical product profiles plus 6 specialized subclass pro
 | KITCHEN_DEGREASER | LIQUID | 14 | Alkaline saponification and caustic hazard |
 | CAR_SHAMPOO | LIQUID | 14 | Paint lubricity and rinse/spotting profile |
 
-### Verified integration gap
+### Verified category-routing integration status
 
-`scientificRouter.ts::routeScientificExecution` builds the profile's `applicableEngines` and `engineRoutingMap`. However, `scientificExecutionDAG.ts` does not import or call `routeScientificExecution` or `getScientificProductProfile`. Its `CATEGORY_ROUTING` node only normalizes the category and resolves physical form from `productTaxonomy`.
+`scientificExecutionDAG.ts` does **not** consume the complete `routeScientificExecution(...)` result or its full `engineRoutingMap` at `CATEGORY_ROUTING`. It does, however, import `isEngineApplicable` from `scientificProductProfiles` and applies profile applicability checks inside three DAG nodes:
+- `HLB`: returns `NOT_APPLICABLE` when the product profile excludes HLB.
+- `WATER_CHELATION`: returns `NOT_APPLICABLE` when the profile excludes chelation.
+- `CLEANING_CPI`: returns `NOT_APPLICABLE` when the profile excludes cleaning.
 
-The DAG then runs most nodes unconditionally. Only physical-form conditions for `POWDER_ENGINE`, `NVR`, and liquid viscosity/density are applied. Examples of profile-vs-DAG divergence to verify and correct in the dedicated routing/integration phase:
-- HLB is excluded from the laundry-powder profile, but the DAG's HLB node is not category-gated.
-- Chelation is excluded from the toilet-cleaner profile, but the DAG water-chelation node is not profile-gated.
-- Cleaning performance is excluded from the fabric-softener profile, but the DAG cleaning node is not profile-gated.
-- Other profile-only rules (for example low-foam, skin safety, cling, streak/residue and surfactant restrictions) need proof that they are enforced by the actual calculation/gate path, not just represented in a profile registry.
+This is confirmed by the current DAG source and the Phase 2 report, which records regression coverage for laundry-powder HLB, toilet-cleaner chelation, and fabric-softener cleaning. The DAG also uses physical-form/category conditions for powder and selected liquid property nodes. Therefore the earlier statement that no profile applicability was integrated, and the examples claiming HLB/chelation/cleaning are wholly ungated, are stale and superseded.
 
-This is a material architecture finding, not a proof that every affected formula currently receives an incorrect numeric result. Phase 2 / Phase 10 must test and reconcile it with category-by-category execution traces.
+**Residual routing gap:** the DAG does not centrally apply the complete profile route to every engine. Category-specific constraints beyond these three gates—such as automatic-dishwash low-foam/anionic restrictions, skin mildness, cling, streak/residue, and surfactant restrictions—still require node-by-node enforcement and category execution-trace verification. A profile registry or helper test alone is not proof that each policy changes the production result.
+
+This is an implementation/routing gap, not a laboratory validation claim. The relevant Phase 2 report documents the three existing applicability gates; remaining policy coverage belongs in the routing/integration follow-up.
 
 ## 13. Workflow-stage to DAG mapping
 
@@ -466,3 +467,12 @@ Phase 1 is **not closed yet**. The inventory documentation is substantially comp
 - Category profile enforcement and single-authority calculation behavior are recorded as implementation risks for routing/orchestration phases. They must not be relabeled as scientifically verified merely because a profile registry or software test exists.
 - No source-based evidence in this phase establishes laboratory validation, predictive accuracy, or a scientifically validated commercial formula.
 - Final Phase 1 closure requires: (1) this exact-branch inventory verifier PASS, (2) production build/typecheck and applicable regression CI PASS, (3) complete module/caller disposition report, (4) no unresolved inventory/documentation contradictions, and (5) a final audit tied to the merged commit. If any required check fails or is missing, Phase 1 remains open.
+
+
+### Source-tree count refresh
+
+A recursive Git tree read for the audit PR tree returned 791 tracked blobs; 443 TypeScript/TSX/JS/JSX files under `src/`, including 146 tests/specs and 297 non-test source files. The executable inventory verifier independently reports 61 engine-named non-test source files excluding UI, 64 including UI, and 93 broad discovery candidates. These are different counting definitions and must not be added together or called a count of scientifically validated engines.
+
+### AIFormulator duplicate-path recheck
+
+At the current main source snapshot, `AIFormulator.tsx` contains zero occurrences of `evaluatePowderFormulation`, `calculatePHAdvanced`, `calculateCleaningPerformance`, `calculateWaterHardnessTolerance`, and `calculateFormulationCompatibility`. The Phase 10 consistency regression also asserts that the UI consumes the canonical orchestrator outputs and does not reintroduce those fallback calculators. The older statements in Sections 11 and 14 that described these UI fallbacks as current defects are superseded by this recheck. `analysisWorkflowEngine.ts` still invokes stage-level calculations and then the orchestrator; this remains a separate workflow design question requiring explicit output-authority and duplicate-execution tests.
