@@ -164,7 +164,7 @@ export function runVaultLogicTestSuite() {
   const evd022 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-022');
   assert(evd022?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-022 is manufacturer specification evidence, not experimental data');
   assert(evd022?.originalUrl === 'https://www.crodabeauty.com/en-gb/products/product/198-croduret_1_40', 'Evidence Provenance', 'EVD-022 points to the direct Croda product page');
-  assert(evd022?.conditions.includes('Category is Skin care'), 'Evidence Category', 'EVD-022 is not mislabelled as a Home Care product category');
+  assert(evd022?.conditions.includes('category as Skin care'), 'Evidence Category', 'EVD-022 is not mislabelled as a Home Care product category');
   assert(evd022?.applicabilityMismatches.some(item => item.includes('does not list Home Care as a product category')), 'Evidence Scope', 'EVD-022 detergent superfatting statement is not treated as detergent validation');
   assert(evd022?.supportedClaims.some(claim => claim.includes('emulsifying and solubilising')), 'Evidence Scope', 'EVD-022 is classified as auxiliary solubiliser/emulsifier evidence');
   assert(evd022?.applicabilityMismatches.some(item => item.includes('does not establish PEG-40 HCO as a primary')), 'Evidence Scope', 'EVD-022 does not promote PEG-40 HCO to a primary laundry surfactant');
