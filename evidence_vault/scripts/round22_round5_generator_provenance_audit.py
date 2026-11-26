@@ -24,22 +24,23 @@ GENERATOR_HEADERS = [
 def inspect_contract(generator_text: str, committed_headers: list[str]) -> dict:
     target_match = re.search(r'TARGET_DIR\s*=\s*path\.resolve\(["\']([^"\']+)["\']\)', generator_text)
     target_dir = target_match.group(1) if target_match else None
-    output_header_present = all(f'"{name}"' in generator_text for name in GENERATOR_HEADERS)
+    csv_match = re.search(r'const csvLedger\s*=\s*"([^"]+)"', generator_text)
+    generated_headers = next(csv.reader([csv_match.group(1).split(r"\n", 1)[0]])) if csv_match else []
     reported_metadata_count = bool(re.search(r"reportedCount\s*:", generator_text))
     computed_rows_logic = "computedValidObs++" in generator_text
     return {
         "generator_target_dir": target_dir,
         "canonical_ledger_dir": CANONICAL_DIR,
         "writes_to_canonical_ledger_directory": target_dir == CANONICAL_DIR,
-        "generator_output_headers": GENERATOR_HEADERS if output_header_present else [],
+        "generator_output_headers": generated_headers,
         "committed_ledger_headers": committed_headers,
-        "generator_schema_matches_committed_ledger": GENERATOR_HEADERS == committed_headers,
+        "generator_schema_matches_committed_ledger": generated_headers == committed_headers,
         "author_reported_counts_are_metadata": reported_metadata_count,
         "generator_computes_numeric_bearing_rows": computed_rows_logic,
         "generator_derives_historical_27982_from_row_membership": False,
         "generator_contract_reproduces_committed_ledger": (
             target_dir == CANONICAL_DIR
-            and GENERATOR_HEADERS == committed_headers
+            and generated_headers == committed_headers
             and computed_rows_logic
         ),
     }
