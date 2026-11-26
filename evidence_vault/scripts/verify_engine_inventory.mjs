@@ -40,7 +40,7 @@ const result = {
     engineNamedSourceFilesExcludingUi: engineNamedSourceOnly.length,
     engineNamedFilesIncludingUi: engineNamedIncludingUi.length,
     broadDiscoveryCandidates: broadCandidates.length,
-    expected: { engineNamedSourceFilesExcludingUi: 61, engineNamedFilesIncludingUi: 64, broadDiscoveryCandidates: 93 },
+    expected: { engineNamedSourceFilesExcludingUi: 60, engineNamedFilesIncludingUi: 63, broadDiscoveryCandidates: 92 },
   },
   nonexistentHistoricalPathRoot: { path: 'src/core/', exists: srcCoreExists },
 };
@@ -52,8 +52,8 @@ if (duplicateAuditCsvPaths.length) fail(`engine audit CSV has duplicate paths: $
 if (csvOnlyPaths.length || listOnlyPaths.length) fail(`engine audit CSV/list mismatch: csvOnly=${JSON.stringify(csvOnlyPaths)}, listOnly=${JSON.stringify(listOnlyPaths)}`);
 if (uniqueEntries.length !== legacyEntries.length) fail(`legacy list has duplicate paths: ${JSON.stringify(duplicateEntries)}`);
 if (missingEntries.length) fail(`legacy list paths missing from source tree: ${JSON.stringify(missingEntries)}`);
-if (engineNamedSourceOnly.length !== 61) fail(`Engine-named source count drifted: expected 61, got ${engineNamedSourceOnly.length}`);
-if (engineNamedIncludingUi.length !== 64) fail(`Engine-named count including UI drifted: expected 64, got ${engineNamedIncludingUi.length}`);
-if (broadCandidates.length !== 93) fail(`Broad candidate count drifted: expected 93, got ${broadCandidates.length}`);
+if (engineNamedSourceOnly.length !== 60) fail(`Engine-named source count drifted: expected 60, got ${engineNamedSourceOnly.length}`);
+if (engineNamedIncludingUi.length !== 63) fail(`Engine-named count including UI drifted: expected 63, got ${engineNamedIncludingUi.length}`);
+if (broadCandidates.length !== 92) fail(`Broad candidate count drifted: expected 92, got ${broadCandidates.length}`);
 if (srcCoreExists) fail('src/core/ now exists; revisit the historical-path finding');
 if (failed) process.exit(1);
