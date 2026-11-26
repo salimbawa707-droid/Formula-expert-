@@ -19,6 +19,10 @@ GENERATOR_HEADERS = [
     "filename", "sheet_name", "total_rows", "header_rows", "metadata_rows",
     "blank_rows", "computed_valid_observations",
 ]
+COMMITTED_HEADERS = [
+    "filename", "sheet_name", "used_range_rows", "header_rows", "metadata_rows",
+    "blank_rows", "numeric_rows", "numeric_cells",
+]
 
 
 def inspect_contract(generator_text: str, committed_headers: list[str]) -> dict:
