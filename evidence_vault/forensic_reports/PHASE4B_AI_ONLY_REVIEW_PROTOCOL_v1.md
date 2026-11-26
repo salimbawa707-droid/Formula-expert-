@@ -106,7 +106,7 @@ CI enforcement note: the artifact-integrity validator is part of the required ev
 
 ## Canonical evidence-registry consistency audit — 2026-11-26
 
-The canonical registry in `src/domain/vault/initialData.ts` was compared with the evidence IDs cited in this protocol and the Phase 4B provenance report. It contains 12 evidence records: EVD-001, EVD-002, and EVD-004 through EVD-013. It contains four dataset records: DS-001, DS-002, DS-004, and DS-005. There is no canonical evidence record for EVD-014 through EVD-022 at this repository head.
+The canonical registry in `src/domain/vault/initialData.ts` was compared with the evidence IDs cited in this protocol and the Phase 4B provenance report. It contains 12 evidence records: EVD-001, EVD-002, and EVD-004 through EVD-013. It contains four dataset records: DS-001, DS-002, DS-004, and DS-005. There is no canonical evidence record for EVD-014 through EVD-022 at this repository head. Of the 12 evidence records, four are marked NUMERICALLY_INSPECTED (EVD-002, EVD-006, EVD-007, EVD-012), one is a blocked/failed citation quarantine (EVD-004), and seven are not numerically inspected (EVD-001, EVD-005, EVD-008, EVD-009, EVD-010, EVD-011, EVD-013). The four registered dataset records are each marked NUMERICALLY_INSPECTED, but that dataset-level status does not complete the broader source inventory.
 
 Consequences:
 
