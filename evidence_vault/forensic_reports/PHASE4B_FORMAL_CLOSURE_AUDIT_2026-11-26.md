@@ -106,3 +106,8 @@ The four registered dataset inventory records remain `DEFICIENT` for validation 
 **Phase 4B: OPEN. Phase 5: LOCKED.**
 
 This audit closes the EVD-019 AI transcription task and the missing structured-rights-field task, and it documents the current engine inventory definitions. It does **not** satisfy independent human review, EVD-014–022 archival, or the unreconstructed historical 59/64/97 claims. Do not merge as a phase closure, unlock Phase 5, or claim production/scientific validation on this basis.
+
+## CI audit correction — 2026-11-26
+
+Workflow #1124 exposed a stale guard in `audit_source_license_register.py`: it still required the four Zenodo 18961871 workbook rows to retain a blank Rights field. The current official Zenodo record page displays **Creative Commons Attribution 4.0 International** (Rights section), so preserving the old blank-rights assertion would contradict the live primary source. The source register now records the official CC BY 4.0 license and existing per-file MD5/SHA-256 values. The audit script and its regression tests have been updated to require the official Zenodo record URL, the explicit CC BY 4.0 status, and the archived-license-verification state. Workflow #1124 is not a passing run; a fresh CI run on the corrected head is still required.
+
