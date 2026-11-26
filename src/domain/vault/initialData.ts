@@ -1508,7 +1508,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       units: [],
       conditions: 'Croda Beauty identifies Croduret 40 as PEG-40 Hydrogenated Castor Oil (INCI), an alkoxylated nonionic surfactant with solubiliser and emulsifier functions. The official product page lists its category as Skin care, physical form as solid at 25°C, and applications including bath/shower, body care, facial cleansers, and shampoos. The descriptive text mentions wetting-agent use in styling waxes and superfatting benefits in detergent systems, but does not list Home Care as a product category or provide laundry/dishwashing wash-test data, foam data, dosage, CMC, cloud point, or viscosity.',
       sampleCount: null,
-      sourcePublicationRef: 'Croda Beauty Croduret 40 official product page, https://www.crodabeauty.com/en-gb/products/product/198-croduret_1_40.'
+      sourcePublicationRef: 'Croda Beauty Croduret 40 official product page, https://www.crodabeauty.com/en-gb/products/product/198-croduret_1_40.',
       supportedEngineIds: [],
       supportedClaims: [
         'PEG-40 hydrogenated castor oil is identified as an ethoxylated nonionic surfactant with emulsifying and solubilising functionality.',
