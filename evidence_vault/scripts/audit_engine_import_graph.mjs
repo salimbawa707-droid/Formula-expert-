@@ -86,7 +86,7 @@ for (const [file, source] of sources) {
     if (/\.(css|scss|sass|less|svg|png|jpe?g|webp|json|wasm)$/i.test(specifier)) continue;
     const resolved = resolveLocalImport(file, specifier, knownFiles);
     if (resolved) edges.push(resolved);
-    else unresolvedRelativeImports.push({ importer: file, specifier });
+    else unresolvedRelativeImports.push({ importer: file, specifier, scope: isTest(file) ? 'TEST_OR_TOOLING' : 'PRODUCTION' });
   }
   graph.set(file, [...new Set(edges)]);
 }
@@ -145,6 +145,8 @@ const summary = {
   orphanModules: modules.filter((item) => item.status === 'ORPHAN_NO_STATIC_IMPORTERS').length,
   modulesWithoutDirectProductionOrTestImporters: modules.filter((item) => item.directProductionImporters.length === 0 && item.directTestImporters.length === 0).length,
   unresolvedRelativeImports: unresolvedRelativeImports.length,
+  unresolvedProductionImports: unresolvedRelativeImports.filter((item) => item.scope === 'PRODUCTION').length,
+  unresolvedToolingImports: unresolvedRelativeImports.filter((item) => item.scope === 'TEST_OR_TOOLING').length,
   manifestEntries: manifest.length,
   manifestUniqueEntries: uniqueManifest.length,
   csvRows: csvPaths.length,
@@ -162,6 +164,7 @@ if (csvPaths.length !== 55) failures.push('Expected exactly 55 CSV data rows');
 if (duplicates.length || csvDuplicates.length) failures.push('Duplicate manifest/CSV paths detected');
 if (csvOnly.length || manifestOnly.length) failures.push('Manifest and CSV path sets differ');
 if (missingManifest.length) failures.push('Manifest contains missing source files');
+if (unresolvedRelativeImports.some((item) => item.scope === 'PRODUCTION')) failures.push('Unresolved relative imports in production source graph');
 if (!roots.includes('src/main.tsx')) failures.push('src/main.tsx production entrypoint not found');
 if (failures.length) {
   for (const failure of failures) console.error('PHASE 1 IMPORT GRAPH FAIL: ' + failure);
