@@ -49,7 +49,7 @@
 
 A second AI review compared the transcribed table values with the accessible author-uploaded full-text table extraction. All 7 Table 1 rows and 5 numeric Table 2 rows agree with the extracted text; the pure AE-2EO entry remains qualitative (“insoluble in water”). This is an AI text/arithmetic cross-check, not a second human review or a fresh pixel-by-pixel PDF inspection. The direct PDF download endpoint was not independently retrievable in this pass.
 
-For all 11 rows with numeric Γ and A, recalculation using A = 10^16 / (Γ × N_A), N_A = 6.02214076 × 10^23 mol−1, reproduces the reported integer Å² values within rounding.
+For all 11 unique composition cases (12 displayed numeric row entries because pure LAS is duplicated across Tables 1 and 2), recalculation using A = 10^16 / (Γ × N_A), N_A = 6.02214076 × 10^23 mol−1, reproduces the reported integer Å² values within rounding.
 
 **Methodological issue requiring author clarification:** the methods state n = 1 for dilute nonionic surfactants or 1:1 ionic surfactants with excess common non-surfactant ion, and n = 2 for 1:1 ionic surfactants without other solutes. Surface-tension measurements are described in distilled/deionized water without an added excess common ion. However, the pure-LAS row reports Γ = 2.82 × 10⁻¹⁰ mol/cm² and A = 59 Å², which numerically correspond approximately to n = 1. Applying n = 2 to the same slope gives approximately half Γ and double A (~118 Å²). The source does not explain the selected n for pure LAS or the mixed ionic/nonionic rows. Keep the published values unchanged, flag Γ/A as methodologically unresolved, and do not silently substitute recalculated values as observations.
 
