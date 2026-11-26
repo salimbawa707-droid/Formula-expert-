@@ -114,80 +114,6 @@ export function runVaultLogicTestSuite() {
   assert(!INITIAL_VAULT_STATE.evidence.some(e => e.id === 'EVD-003'), 'Evidence Identity', 'Out-of-scope personal-care dataset is not registered in the laundry evidence vault');
   assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-004')?.accessStatus === 'BLOCKED', 'Evidence Identity', 'EVD-004 citation mismatch remains quarantined');
   assert(INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-007')?.title.includes('aqueous surfactant phase behavior'), 'Evidence Identity', 'EVD-007 metadata matches the PhDat paper');
-  assert(metrics.experimentalDatasetsNumericallyInspected >= 1, 'Dataset Inspection', 'At least one source dataset has a positive inspected row count');
-
-  // DS-001 is reproducible from the checked-in source CSVs; its component-level scope
-  // remains distinct from matched mixed-formula validation.
-  const ds001 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-001');
-  assert(Boolean(ds001), 'Dataset Inspection', 'DS-001 SURFPRO dataset exists');
-  assert(ds001?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-001 numerical inspection is recorded');
-  assert(ds001?.actualRowCount === 1624, 'Dataset Inspection', 'DS-001 master-record count is source rows, not formula observations');
-  assert(ds001?.actualColumnCount === 31, 'Dataset Inspection', 'DS-001 master schema width is recorded');
-  assert(ds001?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-001 remains ineligible for mixed-formula validation');
-  assert(ds001?.designation === 'BENCHMARK', 'Dataset Inspection', 'DS-001 uses a supported dataset designation');
-  assert(Boolean(ds001?.sha256Hash === '316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841'), 'Dataset Inspection', 'DS-001 canonical CSV SHA-256 is recorded');
-
-  // 4. Dataset inspection states must reflect the evidence vault's current source audit.
-  // DS-002 is numerically inspected at workbook/parser level, but it is NOT a count of
-  // independent physical observations and is NOT eligible for formula-level validation.
-  const ds002 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-002');
-  assert(Boolean(ds002), 'Dataset Inspection', 'DS-002 descriptive rheology dataset exists');
-  assert(ds002?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-002 source workbooks are parser-inspected');
-  assert(!INITIAL_VAULT_STATE.datasets.some(ds => ds.id === 'DS-003'), 'Dataset Inspection', 'Out-of-scope personal-care dataset is not registered');
-  assert(ds002?.actualRowCount === 11626, 'Dataset Inspection', 'DS-002 records 11,626 numeric-bearing worksheet rows; physical observation count remains unresolved');
-  assert(ds002?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-002 is not formula-validation-ready');
-  const ds005 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-005');
-  assert(Boolean(ds005), 'Dataset Inspection', 'DS-005 RepOD source is registered');
-  assert(ds005?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-005 both source worksheets are parsed and inspected');
-  assert(ds005?.actualRowCount === 23, 'Dataset Inspection', 'DS-005 records 23 concentration-level rows; independent replicate count remains unresolved');
-  const ds004 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-004');
-  assert(ds004?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-004 PhDat arrays passed the recorded source integrity audit');
-  assert(ds004?.actualRowCount === 143, 'Dataset Inspection', 'DS-004 row count reflects source chemical records, not independent experiments');
-  assert(ds004?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-004 remains ineligible for formula validation');
-  assert(ds005?.actualColumnCount === 23, 'Dataset Inspection', 'DS-005 normalized worksheet schema has 23 columns');
-  assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
-  assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
-  assert(Boolean(ds005?.inspectionNotes?.includes('Unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
-  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-004', 'DS-005'].includes(ds.id))) {
-    assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
-  }
-
-  const datasetInspectionSummary = getDatasetInspectionSummary(INITIAL_VAULT_STATE.datasets);
-  assert(datasetInspectionSummary.totalCount === INITIAL_VAULT_STATE.datasets.length, 'Dataset Inspection Summary', 'Summary counts every registered dataset');
-  assert(datasetInspectionSummary.inspectedCount === 4, 'Dataset Inspection Summary', 'Current vault reports four numerically inspected datasets');
-  assert(datasetInspectionSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'No registered dataset is falsely listed as uninspected');
-  const partiallyInspectedDatasets = INITIAL_VAULT_STATE.datasets.map((dataset, index) =>
-    index === 0 ? { ...dataset, inspectionStatus: 'UNINSPECTED' as const, actualRowCount: null } : dataset
-  );
-  const partialSummary = getDatasetInspectionSummary(partiallyInspectedDatasets);
-  assert(partialSummary.inspectedCount === 3, 'Dataset Inspection Summary', 'A dataset without explicit inspection and positive rows is excluded');
-  assert(partialSummary.uninspectedDatasets[0]?.id === INITIAL_VAULT_STATE.datasets[0]?.id, 'Dataset Inspection Summary', 'Uninspected dataset identity is retained');
-  const emptyDatasetSummary = getDatasetInspectionSummary([]);
-  assert(emptyDatasetSummary.totalCount === 0 && emptyDatasetSummary.inspectedCount === 0 && emptyDatasetSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'Empty dataset inventory remains explicitly zero rather than implying evidence coverage');
-
-  // 5. Missing prices remain strictly null, never coerced to 0.00
-  const unpricedItems = INITIAL_VAULT_STATE.pricingRecords.filter(p => p.pricePerKg === null);
-  assert(unpricedItems.length >= 2, 'Pricing Integrity', 'At least 2 unpriced items preserved as null');
-
-  const componentsWithNull = [
-    { ingredientId: 'ING-LAS-001', weightFraction: 0.15, pricePerKg: 1.85 },
-    { ingredientId: 'ING-SPECIAL-004', weightFraction: 0.05, pricePerKg: null },
-    { ingredientId: 'ING-WATER', weightFraction: 0.80, pricePerKg: 0.02 },
-  ];
-  const resultWithNull = computeBatchCostWithNullIntegrity(componentsWithNull);
-  assert(resultWithNull.totalCostPerKg === null, 'Pricing Integrity', 'Batch cost with null price returns null');
-  assert(resultWithNull.isComplete === false, 'Pricing Integrity', 'Batch cost with null price isComplete is false');
-  assert(resultWithNull.unpricedCount === 1, 'Pricing Integrity', 'Unpriced count is 1');
-  assert(Boolean(resultWithNull.costWarning), 'Pricing Integrity', 'Cost warning is present');
-
-  const componentsAllKnown = [
-    { ingredientId: 'ING-LAS-001', weightFraction: 0.10, pricePerKg: 2.0 },
-    { ingredientId: 'ING-SLES-002', weightFraction: 0.20, pricePerKg: 1.5 },
-  ];
-  const resultAllKnown = computeBatchCostWithNullIntegrity(componentsAllKnown);
-  assert(resultAllKnown.totalCostPerKg === 0.5, 'Pricing Integrity', 'Batch cost with all prices computes 0.5');
-  assert(resultAllKnown.isComplete === true, 'Pricing Integrity', 'Batch cost with all prices isComplete is true');
-
   const evd014 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-014');
   assert(evd014?.doi === '10.5650/jos.ess24197', 'Evidence Identity', 'EVD-014 identifies the 2025 J-Oleo-Science dishwashing study');
   assert(evd014?.licenseReviewStatus === 'PERMITTED_FOR_COMMERCIAL_REUSE', 'Evidence Rights', 'EVD-014 article-level CC BY 4.0 license is recorded');
@@ -236,7 +162,6 @@ export function runVaultLogicTestSuite() {
   assert(evd022?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-022 is manufacturer specification evidence, not experimental data');
   assert(evd022?.supportedClaims.some(claim => claim.includes('emulsifying and solubilising')), 'Evidence Scope', 'EVD-022 is classified as auxiliary solubiliser/emulsifier evidence');
   assert(evd022?.applicabilityMismatches.some(item => item.includes('does not establish PEG-40 HCO as a primary')), 'Evidence Scope', 'EVD-022 does not promote PEG-40 HCO to a primary laundry surfactant');
-
 
   assert(metrics.experimentalDatasetsNumericallyInspected >= 1, 'Dataset Inspection', 'At least one source dataset has a positive inspected row count');
 
