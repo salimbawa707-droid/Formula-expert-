@@ -7,7 +7,7 @@ const manifestPath = path.join(root, 'engines_reconciled.list');
 const csvPath = path.join(root, 'evidence_vault/datasets/engine-audit-final-2026-11-03.csv');
 const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs'];
 const isSource = (file) => /\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$/i.test(file);
-const isTest = (file) => /(^|\/)__tests__(\/|$)|\.(test|spec)\.[^.]+$/i.test(file);
+const isTest = (file) => /(^|\/)__tests__(\/|$)|\.(test|spec)\.[^.]+$/i.test(file) || file.startsWith('scripts/');
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -71,7 +71,7 @@ if (!fs.existsSync(manifestPath)) {
 const manifest = fs.readFileSync(manifestPath, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 const uniqueManifest = [...new Set(manifest)];
 const duplicates = manifest.filter((item, index) => manifest.indexOf(item) !== index);
-const files = walk(sourceRoot).filter(isSource);
+const files = [...walk(sourceRoot), ...walk(path.join(root, 'scripts'))].filter(isSource);
 if (fs.existsSync(path.join(root, 'server.ts'))) files.push('server.ts');
 const knownFiles = new Set(files);
 const sources = new Map();
@@ -83,6 +83,7 @@ for (const [file, source] of sources) {
   const edges = [];
   for (const specifier of extractImports(source)) {
     if (!specifier.startsWith('.')) continue;
+    if (/\.(css|scss|sass|less|svg|png|jpe?g|webp|json|wasm)$/i.test(specifier)) continue;
     const resolved = resolveLocalImport(file, specifier, knownFiles);
     if (resolved) edges.push(resolved);
     else unresolvedRelativeImports.push({ importer: file, specifier });
