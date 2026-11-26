@@ -51,17 +51,19 @@ function extractImports(source) {
   return [...values];
 }
 
-function countExports(source) {
+function extractExportedSymbols(source) {
   const declarations = [...source.matchAll(/\bexport\s+(?:declare\s+)?(?:async\s+)?(?:function|class|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g)]
     .map((match) => match[1]);
   const namedBlocks = [...source.matchAll(/\bexport\s*\{([^}]+)\}/g)];
   for (const block of namedBlocks) {
     for (const entry of block[1].split(',')) {
-      const name = entry.trim().split(/\s+as\s+/).at(-1);
+      const normalized = entry.trim().replace(/^type\s+/, '');
+      const name = normalized.split(/\s+as\s+/).at(-1);
       if (name && name !== 'type') declarations.push(name);
     }
   }
-  return [...new Set(declarations)].length;
+  if (/\bexport\s+default\b/.test(source)) declarations.push('default');
+  return [...new Set(declarations)].sort();
 }
 
 if (!fs.existsSync(manifestPath)) {
@@ -127,7 +129,8 @@ const modules = uniqueManifest.map((file) => {
   return {
     path: file,
     status,
-    exportCount: sources.has(file) ? countExports(sources.get(file)) : 0,
+    exportedSymbols: sources.has(file) ? extractExportedSymbols(sources.get(file)) : [],
+    exportCount: sources.has(file) ? extractExportedSymbols(sources.get(file)).length : 0,
     directProductionImporters: productionImporters,
     directTestImporters: testImporters,
     productionReachable: reachable.has(file),
