@@ -17,7 +17,7 @@ export interface RefinementProposal {
  * Analyzes active formulations against LAB_VALIDATED empirical data 
  * to propose ingredient adjustments for enhanced performance.
  * 
- * STRICT SAFETY RULE: Always proposes adjustments; never mutates formula state.
+ * STRICT SAFETY RULE: Proposes only from ingredient-specific measured evidence; never mutates formula state.
  */
 export class RefinementEngine {
   
