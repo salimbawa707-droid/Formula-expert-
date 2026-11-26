@@ -94,7 +94,7 @@ This confirms the procedural status of the European patent, not the status of ev
 
 **Source inspection:** bibliography and accessible author-uploaded full-text extraction were checked. Tables 1–2 have been transcribed in the existing exact-transcription report; the second AI pass checked 7 Table 1 rows and 5 numeric Table 2 rows plus the qualitative pure-AE-2EO insolubility result. The Γ-to-area arithmetic reproduces the reported integer Å² values within rounding.
 
-**Unresolved scientific issue:** the paper's Gibbs adsorption n-factor method text and the pure-LAS Γ/A values are inconsistent under the stated no-added-common-ion conditions. Preserve published values; do not silently “correct” them. Author clarification and independent human review remain pending. The detergent test chassis contains 41 wt.% STPP, so it is not evidence for a phosphate-free formulation.
+**Scientific issue — independently adjudicated, with limits:** the pure-LAS row (distilled/deionized water; no excess common ion described) prints Γ/A values that reproduce n≈1, while independent Gibbs literature supports n=2 for a 1:1 ionic surfactant without excess electrolyte. Recalculation from the printed slope gives Γ≈1.3994×10⁻¹⁰ mol·cm⁻² and A≈118.66 Å² at n=2, versus the source-reported Γ=2.82×10⁻¹⁰ and A=59 Å² (n≈1). Keep the paper's values unchanged as published; record the n=2 result separately as a theoretical re-evaluation, not an observation or author correction. Back-calculated n_eff for the mixed LAS/AE rows is about 1.0, but ionic/nonionic mixture coefficients can be composition-dependent; without raw concentration series do not impose n=2 on mixtures or claim a validated mixed-system refit. External basis: Brusseau (2020), DOI 10.1016/j.watres.2020.116778, https://pmc.ncbi.nlm.nih.gov/articles/PMC7856177/; Hua & Rosen (1982), DOI 10.1016/0021-9797(82)90344-7. No author response was received; the pure-LAS theoretical interpretation no longer depends on one. Independent human review remains pending. The detergent test chassis contains 41 wt.% STPP, so it is not evidence for a phosphate-free formulation.
 
 **Rights:** REVIEW_PENDING; Carl Hanser copyright, no open commercial reuse license verified.
 
@@ -161,7 +161,7 @@ The 9/9 registry and source-register result is an identity/metadata completeness
 3. Obtain written reuse permission or a rights-cleared copy for EVD-015, EVD-016, EVD-019 and EVD-020 before any source-file redistribution, commercial table/figure reproduction or ingestion.
 4. Obtain jurisdiction-specific patent-family status advice for EVD-018; the EPO appeal decision is now pinned by citation, but does not resolve national rights.
 5. Obtain current grade-specific BASF TDS/SDS/CoA for EVD-021 and Croda technical dossier / written Home Care suitability confirmation for EVD-022.
-6. Obtain author clarification on EVD-019 Gibbs n-factor; complete an independent human transcription review if required by the current evidence governance policy.
+6. Obtain retain the EVD-019 independent Gibbs adjudication and obtain author comment only if author-intent provenance is desired; complete the independent human transcription review required by evidence governance.
 7. For any future engine use, require source-matched observables, exact material grade, protocol, units, temperature, pH, water matrix, replicates/uncertainty, and prediction-before-observation lineage. None of EVD-014–022 currently creates a finished-formula validation pair.
 
 ## 5. Formal gate
@@ -187,3 +187,8 @@ Do not describe EVD-014–022 as fully archived, rights-cleared, human-reviewed,
 - EVD-020 official NRCT thesis record: https://doi.nrct.go.th/ListDoi/listDetail?Resolve_DOI=10.14457%2FCU.the.2018.161
 - EVD-021 BASF European product-range PDF: https://www.basf.com/dam/jcr%3A18d3e3b1-4779-3ac6-b00b-5048651fdcb3/basf/www/kr/documents/ko/product/Product%20range_Europe.pdf
 - EVD-022 Croda Croduret 40 product page: https://www.crodabeauty.com/en-gb/products/product/198-croduret_1_40
+
+
+### EVD-019 independent Gibbs adjudication addendum (2026-11-27)
+
+The pure-LAS n-factor interpretation is now independently resolved for scientific use: apply n=2 to a theoretical re-evaluation of the pure sodium-LAS/deionized-water row, because no excess common ion is described. The source's printed Γ/A values are retained unchanged and flagged as n≈1-derived. The recalculated n=2 values are Γ≈1.3994×10⁻¹⁰ mol·cm⁻² and A≈118.66 Å². The 10 mixed LAS/AE rows imply n_eff≈0.993–1.003 from rounded printed values; literature shows that effective n in ionic/nonionic mixtures is composition-dependent, so the mixed rows remain source-reported and quantitatively method-qualified. This is a theoretical method adjudication, not an author response, human review, rights clearance, raw-data refit, or engine validation. See the updated EVD-019 AI review and exact transcription reports for the derivation and row-level detail.
