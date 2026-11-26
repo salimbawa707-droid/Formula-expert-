@@ -86,7 +86,7 @@ Not permitted from this source:
 
 ## 6. Evidence quality and data limitations
 
-The paper reports four macroscopic replicates and supplies supplementary analysis files/figures. The article's own supplementary-material link resolves to Figshare collection DOI 10.6084/m9.figshare.c.8304092. The prior source-register value 31314542 was a mistaken identifier (it is a PubMed PMID for an unrelated paper). The exact collection item/file list, downloadable bytes, and item-level rights have not yet been independently retrieved. No repository SHA-256 is recorded. The supplementary analysis material is not established here as a raw, machine-readable replicate time-series dataset. Therefore no exact replicate-level regression, confidence interval, residual analysis, or independent parameter refit is claimed.
+The paper reports four macroscopic replicates and supplies supplementary analysis files/figures. The article's own supplementary-material link resolves to Figshare collection DOI 10.6084/m9.figshare.c.8304092. Prior repository research recorded item DOI 10.6084/m9.figshare.31314542, version 3, as one supplementary PDF (8.11 MB) with displayed CC BY 4.0 metadata. The same integer is also a PubMed PMID for an unrelated article; this is a namespace collision, not proof of misidentification. The Figshare API/item page could not be re-opened during this pass, so collection membership, file listing and license metadata remain to be revalidated against the DOI landing page. No exact source bytes or repository SHA-256 are recorded. The supplementary analysis material is not established here as a raw, machine-readable replicate time-series dataset. Therefore no exact replicate-level regression, confidence interval, residual analysis, or independent parameter refit is claimed.
 
 The paper reports that the mean bubble area relation is approximately linear to 5,000 s and that later bubble counts become inadequate. This limits the supported fit window and should be encoded as a quality boundary if this source is ever represented in a structured dataset.
 
@@ -107,7 +107,7 @@ If exact source data become available, require:
 - Mathematical form and units: **CHECKED**.
 - Applicability boundary: **CLOSED — REFERENCE ONLY**.
 - Raw replicate refit / independent numeric labels: **NOT ESTABLISHED**.
-- Correct supplementary collection/file identity, source bytes, item-level license and SHA-256 in repository: **NOT COMPLETE — identifier correction required**.
+- Revalidation of supplementary collection/item relationship, exact source bytes and SHA-256 in repository: **NOT COMPLETE**.
 - Finished-formula engine validation: **NOT APPROVED**.
 
 No further numeric inference is justified from the current inspected source. A later update requires the exact supplementary source bytes or a new, independently measured detergent experiment.
