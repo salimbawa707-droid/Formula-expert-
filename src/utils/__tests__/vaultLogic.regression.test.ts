@@ -5,7 +5,7 @@
  * 
  * Verifies:
  * 1. Initial roadmap state: Phase 4B is active and Phase 5 locked
- * 2. 64/59/97 engine-count discrepancy is explicitly preserved
+ * 2. 64/55/97 inventory units are distinct; historical 59 is not the current verified manifest count
  * 3. SurfPro raw files and numerical inspection are tracked accurately
  * 4. At least one experimental dataset has a positive source-record count
  * 5. Pricing Integrity: Missing prices remain strictly null (never coerced to 0.00)
@@ -100,7 +100,7 @@ export function runVaultLogicTestSuite() {
 
   // 2. 64/59/97 engine-count discrepancy is explicitly preserved
   assert(metrics.engineDiscrepancyClaimedA === 64, 'Engine Discrepancy', 'Claimed A count is 64');
-  assert(metrics.engineDiscrepancyReconciledFiles === 59, 'Engine Discrepancy', 'Reconciled files count is 59');
+  assert(metrics.engineDiscrepancyReconciledFiles === 55, 'Engine Discrepancy', 'Reconciled files count is 55 verified unique legacy-manifest paths');
   assert(metrics.engineDiscrepancyClaimedSubmodules === 97, 'Engine Discrepancy', 'Claimed submodules count is 97');
   assert(metrics.engineDiscrepancyStatus === 'REPORTED_UNVERIFIED', 'Engine Discrepancy', 'Status is REPORTED_UNVERIFIED');
 
@@ -134,6 +134,8 @@ export function runVaultLogicTestSuite() {
   const evd017 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-017');
   assert(evd017?.evidenceType === 'REFERENCE_DATABASE', 'Evidence Identity', 'EVD-017 is a regulatory reference, not an experimental dataset');
   assert(evd017?.supportedClaims.some(claim => claim.includes('0.1 wt.%')), 'Regulatory Scope', 'EVD-017 records the EU domestic-cleaning NPE threshold');
+  assert(evd017?.conditions.includes('prohibits placing on the market or use'), 'Regulatory Scope', 'EVD-017 follows the legal restriction wording rather than implying a manufacturing ban');
+  assert(evd017?.conditions.includes('article-weight threshold'), 'Regulatory Scope', 'EVD-017 keeps Entry 46a textile article weight distinct from detergent mixture concentration');
   assert(evd017?.applicabilityMismatches.some(item => item.includes('does not establish the legal status of NPE in India')), 'Regulatory Scope', 'EU restrictions are not misrepresented as Indian law');
   const evd018 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-018');
   assert(evd018?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-018 patent data remain rights-pending');
@@ -141,10 +143,10 @@ export function runVaultLogicTestSuite() {
   assert(evd018?.supportedEngineIds.length === 0, 'Evidence Mapping', 'EVD-018 does not validate an existing engine');
   const evd019 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-019');
   assert(evd019?.doi === '10.3139/113.110145', 'Evidence Identity', 'EVD-019 identifies the LAS/AE interaction study');
-  assert(evd019?.numericalInspectionStatus === 'IN_PROGRESS', 'Evidence Inspection', 'EVD-019 exact CMC/reflectance values remain pending original-PDF visual verification');
+  assert(evd019?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Evidence Inspection', 'EVD-019 Tables 1 and 2 are visually transcribed; independent human review remains pending');
   assert(evd019?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-019 numerical reuse remains rights-pending');
   assert(evd019?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-019 is a bounded CMC interaction reference');
-  assert(evd019?.applicabilityMismatches.some(item => item.includes('scanned/poorly extracted table')), 'Evidence Scope', 'EVD-019 OCR-derived values are not accepted as verified numeric data');
+  assert(evd019?.applicabilityMismatches.some(item => item.includes('Gibbs adsorption n-factor')), 'Evidence Scope', 'EVD-019 source-level Gibbs adsorption n-factor ambiguity remains explicitly flagged');
   const evd020 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-020');
   assert(evd020?.doi === '10.14457/CU.the.2018.161', 'Evidence Identity', 'EVD-020 identifies the Chulalongkorn laundry detergency thesis');
   assert(evd020?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-020 numerical reuse remains rights-pending');
@@ -157,9 +159,15 @@ export function runVaultLogicTestSuite() {
   const evd021 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-021');
   assert(evd021?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-021 is manufacturer specification evidence, not experimental data');
   assert(evd021?.supportedClaims.some(claim => claim.includes('40% EO')), 'Evidence Identity', 'EVD-021 preserves the PE 6400 EO content');
-  assert(evd021?.applicabilityMismatches.some(item => item.includes('does not explicitly classify PE 6400')), 'Evidence Scope', 'EVD-021 does not infer grade-specific low-foam performance');
+  assert(evd021?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Evidence Inspection', 'EVD-021 BASF product-range numeric specifications are inspected');
+  assert(evd021?.conditions.includes('Low-foaming Nonionic Surfactants'), 'Evidence Classification', 'EVD-021 is recorded in BASF low-foaming nonionic product section');
+  assert(evd021?.supportedClaims.some(claim => claim.includes('approx. 2,900 mPa·s')), 'Evidence Specification', 'EVD-021 preserves the source-reported viscosity specification');
+  assert(evd021?.applicabilityMismatches.some(item => item.includes('not a measured foam-suppression curve')), 'Evidence Scope', 'EVD-021 manufacturer classification is not promoted to formula-specific foam validation');
   const evd022 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-022');
   assert(evd022?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-022 is manufacturer specification evidence, not experimental data');
+  assert(evd022?.originalUrl === 'https://www.crodabeauty.com/en-gb/products/product/198-croduret_1_40', 'Evidence Provenance', 'EVD-022 points to the direct Croda product page');
+  assert(evd022?.conditions.includes('category as Skin care'), 'Evidence Category', 'EVD-022 is not mislabelled as a Home Care product category');
+  assert(evd022?.applicabilityMismatches.some(item => item.includes('does not list Home Care as a product category')), 'Evidence Scope', 'EVD-022 detergent superfatting statement is not treated as detergent validation');
   assert(evd022?.supportedClaims.some(claim => claim.includes('emulsifying and solubilising')), 'Evidence Scope', 'EVD-022 is classified as auxiliary solubiliser/emulsifier evidence');
   assert(evd022?.applicabilityMismatches.some(item => item.includes('does not establish PEG-40 HCO as a primary')), 'Evidence Scope', 'EVD-022 does not promote PEG-40 HCO to a primary laundry surfactant');
 

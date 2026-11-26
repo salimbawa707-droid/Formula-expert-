@@ -226,7 +226,7 @@ export interface PricingIntegrityRecord {
 
 export interface EngineCountDiscrepancy {
   claimedA: number; // 64
-  reconciledFiles: number; // 59
+  reconciledFiles: number; // 55 verified unique legacy-manifest paths; historical 59 count not reconciled
   claimedSubmodules: number; // 97
   status: 'REPORTED_UNVERIFIED';
   notes: string;
