@@ -6,8 +6,8 @@ const sourceRoot = path.join(root, 'src');
 const manifestPath = path.join(root, 'engines_reconciled.list');
 const csvPath = path.join(root, 'evidence_vault/datasets/engine-audit-final-2026-11-03.csv');
 const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs'];
-const isSource = (file) => /\\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$/i.test(file);
-const isTest = (file) => /(^|\\/)__tests__(\\/|$)|\\.(test|spec)\\.[^.]+$/i.test(file);
+const isSource = (file) => /\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$/i.test(file);
+const isTest = (file) => /(^|\/)__tests__(\/|$)|\.(test|spec)\.[^.]+$/i.test(file);
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -39,10 +39,10 @@ function resolveLocalImport(importer, specifier, knownFiles) {
 function extractImports(source) {
   const values = new Set();
   const patterns = [
-    /(?:^|\\n)\\s*import\\s+(?:type\\s+)?(?:[\\w$*\\s{},]+?\\s+from\\s+)?['"]([^'"]+)['"]/g,
-    /(?:^|\\n)\\s*export\\s+(?:type\\s+)?[\\w$*\\s{},]+?\\s+from\\s+['"]([^'"]+)['"]/g,
-    /\\bimport\\s*\\(\\s*['"]([^'"]+)['"]\\s*\\)/g,
-    /\\brequire\\s*\\(\\s*['"]([^'"]+)['"]\\s*\\)/g,
+    /(?:^|\n)\s*import\s+(?:type\s+)?(?:[\w$*\s{},]+?\s+from\s+)?['"]([^'"]+)['"]/g,
+    /(?:^|\n)\s*export\s+(?:type\s+)?[\w$*\s{},]+?\s+from\s+['"]([^'"]+)['"]/g,
+    /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+    /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
   ];
   for (const pattern of patterns) {
     for (const match of source.matchAll(pattern)) values.add(match[1]);
@@ -51,12 +51,12 @@ function extractImports(source) {
 }
 
 function countExports(source) {
-  const declarations = [...source.matchAll(/\\bexport\\s+(?:declare\\s+)?(?:async\\s+)?(?:function|class|const|let|var|interface|type|enum)\\s+([A-Za-z_$][\\w$]*)/g)]
+  const declarations = [...source.matchAll(/\bexport\s+(?:declare\s+)?(?:async\s+)?(?:function|class|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g)]
     .map((match) => match[1]);
-  const namedBlocks = [...source.matchAll(/\\bexport\\s*\\{([^}]+)\\}/g)];
+  const namedBlocks = [...source.matchAll(/\bexport\s*\{([^}]+)\}/g)];
   for (const block of namedBlocks) {
     for (const entry of block[1].split(',')) {
-      const name = entry.trim().split(/\\s+as\\s+/).at(-1);
+      const name = entry.trim().split(/\s+as\s+/).at(-1);
       if (name && name !== 'type') declarations.push(name);
     }
   }
@@ -67,7 +67,7 @@ if (!fs.existsSync(manifestPath)) {
   console.error('PHASE 1 IMPORT GRAPH FAIL: engines_reconciled.list is missing');
   process.exit(1);
 }
-const manifest = fs.readFileSync(manifestPath, 'utf8').split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean);
+const manifest = fs.readFileSync(manifestPath, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 const uniqueManifest = [...new Set(manifest)];
 const duplicates = manifest.filter((item, index) => manifest.indexOf(item) !== index);
 const files = walk(sourceRoot).filter(isSource);
@@ -104,7 +104,7 @@ while (queue.length) {
   for (const next of graph.get(current) || []) if (!reachable.has(next)) queue.push(next);
 }
 
-const csvLines = fs.existsSync(csvPath) ? fs.readFileSync(csvPath, 'utf8').trim().split(/\\r?\\n/) : [];
+const csvLines = fs.existsSync(csvPath) ? fs.readFileSync(csvPath, 'utf8').trim().split(/\r?\n/) : [];
 const csvPaths = csvLines.slice(1).map((line) => line.match(/^"([^"]+)"/)?.[1]).filter(Boolean);
 const csvDuplicates = csvPaths.filter((item, index) => csvPaths.indexOf(item) !== index);
 const csvOnly = csvPaths.filter((item) => !uniqueManifest.includes(item));
