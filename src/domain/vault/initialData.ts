@@ -495,7 +495,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         { name: 'meanBubbleAreaMm2', unit: 'mm² (optional)', description: 'Measured mean bubble cross-sectional area for a caller-selected fitting interval.' },
       ],
       outputs: [
-        { name: 'halfHeightTimeSeconds', unit: 's or null', description: 'Linearly interpolated time when measured foam height first reaches half its initial value; null if not observed.' },
+        { name: 'observedHalfHeightCrossingTimeSeconds', unit: 's or null', description: 'Descriptive threshold-crossing time interpolated from measured foam-height points; not a kinetic half-life and not a valid exponential-decay parameter for non-exponential/logarithmic regimes.' },
         { name: 'lateLogHeightFit', unit: 'mm per log10 decade', description: 'Descriptive OLS fit of measured foam height against log10(time) for a caller-defined late-time interval.' },
         { name: 'bubbleAreaGrowthFit', unit: 'mm²/s', description: 'Descriptive OLS slope for measured mean bubble area against time in a caller-defined interval.' },
       ],
