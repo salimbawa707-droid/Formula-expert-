@@ -8,7 +8,7 @@
 
 ## 1. Table 1 — LAS / AE-7EO surface-active properties
 
-**Source temperature:** 23.5 °C. **CMC:** mg/L. **Gmin:** mN/m. **dG/dLog C:** source-reported slope (unit not separately printed). **Γ:** mol/cm². **A:** Å².
+**Source temperature:** 23.58 °C. **CMC:** mg/L. **Gmin:** mN/m. **dG/dLog C:** source-reported slope; the methods equation implies dyn/cm per log10 concentration interval (numerically mN/m per decade). **Γ:** mol/cm². **A:** Å².
 
 | LAS (%) | AE-7EO (%) | CMC (mg/L) | Gmin (mN/m) | dG/dLog C | Γ (mol/cm²) | A (Å²) |
 |---:|---:|---:|---:|---:|---:|---:|
@@ -42,12 +42,24 @@
 3. The 62.5/36.5 AE-7EO row is transcribed exactly as printed despite the 1.0% total deficit.
 4. The pure AE-2EO row is reported as “insoluble in water”; no numeric CMC or other surface parameters are supplied.
 5. The >370 ppm Ca²⁺ statement in Section 3.2 is a test-specific threshold for the stated 12% LAS / 3% AE-7EO formulation at 0.15% total surfactant use level. It is not a universal hardness tolerance.
-6. The paper’s detergent tests used 2 g/L detergent, 45 °C, and 100 / 350 ppm Ca²⁺ water-hardness conditions, with a fixed builder/salt chassis. Do not treat the surface-tension tables as finished-formula performance predictions.
+6. The paper’s detergent tests used 2 g/L detergent, 45 °C, and 100 / 350 ppm Ca²⁺ water-hardness conditions, with a fixed powder chassis reported as 11% total surfactant, 41% STPP, 35% sodium sulfate, 6% soluble silicate and 6% sodium carbonate (listed total 99%; the remaining 1% is not inferred). This is not a phosphate-free chassis. Do not treat the surface-tension tables as finished-formula performance predictions or transfer detergency results directly to phosphate-free formulas.
 7. The article reports βᶦ = −5.57 for the 75% LAS / 25% AE-7EO system and Xᴹ₁ = 0.33 for LAS in the mixed micelle. These are source-reported model results, not independently refitted values.
+
+## 3A. Second-pass AI arithmetic and method audit (2026-11-27)
+
+A second AI review compared the transcribed table values with the accessible author-uploaded full-text table extraction. All 7 Table 1 rows and 5 numeric Table 2 rows agree with the extracted text; the pure AE-2EO entry remains qualitative (“insoluble in water”). This is an AI text/arithmetic cross-check, not a second human review or a fresh pixel-by-pixel PDF inspection. The direct PDF download endpoint was not independently retrievable in this pass.
+
+For all 11 rows with numeric Γ and A, recalculation using A = 10^16 / (Γ × N_A), N_A = 6.02214076 × 10^23 mol−1, reproduces the reported integer Å² values within rounding.
+
+**Methodological issue requiring author clarification:** the methods state n = 1 for dilute nonionic surfactants or 1:1 ionic surfactants with excess common non-surfactant ion, and n = 2 for 1:1 ionic surfactants without other solutes. Surface-tension measurements are described in distilled/deionized water without an added excess common ion. However, the pure-LAS row reports Γ = 2.82 × 10⁻¹⁰ mol/cm² and A = 59 Å², which numerically correspond approximately to n = 1. Applying n = 2 to the same slope gives approximately half Γ and double A (~118 Å²). The source does not explain the selected n for pure LAS or the mixed ionic/nonionic rows. Keep the published values unchanged, flag Γ/A as methodologically unresolved, and do not silently substitute recalculated values as observations.
+
+AE-2EO mixed CMC values decrease across the numeric blend rows, although the authors report no corresponding calcium-solubility benefit under their conditions. Avoid a blanket statement that AE-2EO has “no benefit.” The fixed detergency powder chassis includes 41% STPP, so the results do not directly validate phosphate-free formulas.
+
+See PHASE4B_EVD019_AI_INDEPENDENT_REVIEW_2026-11-27.md. This second AI review is not independent human approval; rights remain REVIEW_PENDING, the source PDF remains NOT_ARCHIVED, and engine validation remains NOT_ESTABLISHED.
 
 ## 4. Gate disposition
 
-- Numerical table transcription: **AI visually checked — complete for Tables 1 and 2**.
+- Numerical table transcription: **AI visual check recorded in the first transcription pass; second AI text/arithmetic cross-check complete for Tables 1 and 2**.
 - Registry numerical-inspection status: **NUMERICALLY_INSPECTED**.
 - Independent second-human transcription: **PENDING**.
 - Source-file archival and SHA-256: **NOT DONE**; source redistribution rights remain pending.
