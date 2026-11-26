@@ -1,9 +1,6 @@
 name: Phase4B PhDat source reacquisition
 
 on:
-  push:
-    branches:
-      - 'ops/phase4b-phdat-reacquire-*'
   workflow_dispatch:
 
 permissions:
