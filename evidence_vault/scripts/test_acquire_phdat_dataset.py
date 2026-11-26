@@ -19,6 +19,21 @@ class PhDatAuditTests(unittest.TestCase):
         self.assertFalse(MODULE.cc_by_4("CC BY-NC 4.0"))
         self.assertFalse(MODULE.cc_by_4(None))
 
+    def test_metadata_is_pinned_to_version_4_and_cc_by_4(self):
+        self.assertTrue(MODULE.validate_phdat_metadata({"version": 4, "license": "CC BY 4.0"}))
+        with self.assertRaises(ValueError):
+            MODULE.validate_phdat_metadata({"version": 3, "license": "CC BY 4.0"})
+        with self.assertRaises(ValueError):
+            MODULE.validate_phdat_metadata({"version": 4, "license": "CC BY-NC 4.0"})
+
+    def test_file_identity_is_pinned_to_verified_v4_hashes(self):
+        self.assertTrue(MODULE.validate_pinned_phdat_file(
+            "PhDat.json", b"x" * MODULE.EXPECTED_FILE_BYTES,
+            MODULE.EXPECTED_FILE_MD5, MODULE.EXPECTED_FILE_SHA256
+        ))
+        with self.assertRaises(ValueError):
+            MODULE.validate_pinned_phdat_file("other.json", b"", "", "")
+
     def test_json_profile_records_schema_candidates_and_hash(self):
         raw = b'{"observations":[{"surfactant":"SDS","temperature_C":25,"concentration_wt_percent":1.0,"phase_state":"micellar"}]}'
         profile = MODULE.profile_json(raw, "fixture.json")
