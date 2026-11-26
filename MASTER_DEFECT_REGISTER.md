@@ -30,13 +30,16 @@
 
 ## 2. Phase-by-Phase Remediation & Status Ledger
 
-### Phase 1 — Repository Inventory, Architecture & Build Baseline — **PARTIAL: inventory gate PASS; reachability classification pending**
-- **Verified Inventory (`node evidence_vault/scripts/verify_engine_inventory.mjs`):** exact PR CI on head `a478460cfcd6982ffe3753a0647e395dab3d68ff` passed the inventory step.
-  - `legacyList`: 55 unique entries, 0 duplicates, 0 missing entries, 55 CSV audit rows; CSV/list parity has 0 differences.
-  - Executed source filename counts: `61` engine-named source files (excluding UI), `64` including UI, `93` broad discovery candidates.
-- **Architecture reconciliation:** 13 canonical product IDs; 23 registered DAG nodes plus one post-DAG FINALIZATION stage (24 pipeline steps); 11 visible workflow stages. The profile applicability gates currently present in the DAG are explicitly documented rather than overstated.
-- **Remaining Phase 1 gate:** static importer/caller reachability, test-only/orphan classification and exact final-head CI are being added; do not mark Phase 1 fully closed until that report is reviewed.
-- **Preserved Architecture:** Kept `PHEngine`, `PHEngineV2`, canonical IDs (`IngredientIdentitySSOT`), Dexie offline database, and Express (`server.ts`) intact.
+### Phase 1 — Repository Inventory, Architecture & Build Baseline — **PASS (inventory/mapping scope only)**
+- **Exact-head CI:** Code-bearing PR #111 head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597` passed both push run #1048 and pull-request run #1049. A final report-only commit is subject to its own exact-head CI rerun before merge.
+- **Verified inventory:** 55 unique manifest entries, 55 CSV rows, zero duplicates, zero missing paths, and zero manifest/CSV set differences.
+- **Executed source-tree counts:** 61 engine-named source files excluding UI, 64 including UI, 93 broad discovery candidates.
+- **Static reachability:** 53/55 retained modules production-reachable; 2/55 imported but not reachable from production roots; zero test-only modules; zero orphan/no-importer modules; zero unresolved production imports; seven unresolved tooling-only relative imports in root scripts.
+- **Dormant path disposition:** `empiricalCalibrationEngine.ts` and `empiricalValidationEvaluationEngine.ts` remain retained but are classified as a dormant empirical-validation path behind an unmounted `EmpiricalValidationHub`; both have test importers. No deletion or false production-live claim.
+- **Architecture:** 13 canonical product profiles, 6 specialized subprofiles, 23 registered DAG nodes plus one post-DAG FINALIZATION stage, and 11 visible workflow stages. Only HLB, water-chelation and cleaning have current in-DAG profile applicability gates; broader category-policy enforcement remains in the routing phase.
+- **Code-path recheck:** AIFormulator no longer has direct powder/pH/cleaning/hardness/compatibility fallback calculator calls. Staged workflow still computes intermediate engine outputs before final orchestrator recomputation; output-authority consistency remains a later orchestration task.
+- **Software gates on the code-bearing head:** 140/140 TypeScript test modules, 5,047/5,047 assertions, typecheck, production build, server `/api/health` smoke test, Phase 6 evidence regression, inventory verifier, static import graph, genuine Android debug APK, and Android WebView persistence/download instrumentation all passed.
+- **Scientific boundary:** This PASS closes repository inventory and architecture mapping only. It is not a claim of mathematical predictive accuracy, human review, or physical laboratory validation. Evidence maturity remains empirically unvalidated where matched independent lab data is absent.
 
 ### Phase 2 — Input Validation, Category Routing & Sub-Profile Propagation — **PASS**
 - **Audited Paths:** Category routing (`canonicalProductCategory`), water hardness provenance (`null` when `'UNKNOWN'`), batch size propagation (`batchSizeKg`), and 39 template formulas across 13 product categories.
