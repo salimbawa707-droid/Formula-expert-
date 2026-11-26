@@ -5,7 +5,7 @@
  * 
  * Verifies:
  * 1. Initial roadmap state: Phase 4B is active and Phase 5 locked
- * 2. 64/59/97 engine-count discrepancy is explicitly preserved
+ * 2. 64/55/97 inventory units are distinct; historical 59 is not the current verified manifest count
  * 3. SurfPro raw files and numerical inspection are tracked accurately
  * 4. At least one experimental dataset has a positive source-record count
  * 5. Pricing Integrity: Missing prices remain strictly null (never coerced to 0.00)
@@ -100,7 +100,7 @@ export function runVaultLogicTestSuite() {
 
   // 2. 64/59/97 engine-count discrepancy is explicitly preserved
   assert(metrics.engineDiscrepancyClaimedA === 64, 'Engine Discrepancy', 'Claimed A count is 64');
-  assert(metrics.engineDiscrepancyReconciledFiles === 59, 'Engine Discrepancy', 'Reconciled files count is 59');
+  assert(metrics.engineDiscrepancyReconciledFiles === 55, 'Engine Discrepancy', 'Reconciled files count is 55 verified unique legacy-manifest paths');
   assert(metrics.engineDiscrepancyClaimedSubmodules === 97, 'Engine Discrepancy', 'Claimed submodules count is 97');
   assert(metrics.engineDiscrepancyStatus === 'REPORTED_UNVERIFIED', 'Engine Discrepancy', 'Status is REPORTED_UNVERIFIED');
 
@@ -146,7 +146,7 @@ export function runVaultLogicTestSuite() {
   assert(evd019?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Evidence Inspection', 'EVD-019 Tables 1 and 2 are visually transcribed; independent human review remains pending');
   assert(evd019?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-019 numerical reuse remains rights-pending');
   assert(evd019?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-019 is a bounded CMC interaction reference');
-  assert(evd019?.applicabilityMismatches.some(item => item.includes('scanned/poorly extracted table')), 'Evidence Scope', 'EVD-019 OCR-derived values are not accepted as verified numeric data');
+  assert(evd019?.applicabilityMismatches.some(item => item.includes('Gibbs adsorption n-factor')), 'Evidence Scope', 'EVD-019 source-level Gibbs adsorption n-factor ambiguity remains explicitly flagged');
   const evd020 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-020');
   assert(evd020?.doi === '10.14457/CU.the.2018.161', 'Evidence Identity', 'EVD-020 identifies the Chulalongkorn laundry detergency thesis');
   assert(evd020?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-020 numerical reuse remains rights-pending');
