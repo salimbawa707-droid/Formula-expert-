@@ -31,7 +31,7 @@ class Round5GeneratorProvenanceTests(unittest.TestCase):
 
     def test_matching_path_and_schema_with_row_metric_passes_contract(self):
         result = inspect_contract(
-            'const TARGET_DIR = path.resolve("evidence_vault/datasets/zenodo_18961871"); computedValidObs++;',
+            'const TARGET_DIR = path.resolve("evidence_vault/datasets/zenodo_18961871"); const csvLedger = "filename,sheet_name,total_rows,header_rows,metadata_rows,blank_rows,computed_valid_observations"; computedValidObs++;',
             GENERATOR_HEADERS,
         )
         self.assertTrue(result["writes_to_canonical_ledger_directory"])
