@@ -157,9 +157,15 @@ export function runVaultLogicTestSuite() {
   const evd021 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-021');
   assert(evd021?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-021 is manufacturer specification evidence, not experimental data');
   assert(evd021?.supportedClaims.some(claim => claim.includes('40% EO')), 'Evidence Identity', 'EVD-021 preserves the PE 6400 EO content');
-  assert(evd021?.applicabilityMismatches.some(item => item.includes('does not explicitly classify PE 6400')), 'Evidence Scope', 'EVD-021 does not infer grade-specific low-foam performance');
+  assert(evd021?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Evidence Inspection', 'EVD-021 BASF product-range numeric specifications are inspected');
+  assert(evd021?.conditions.includes('Low-foaming Nonionic Surfactants'), 'Evidence Classification', 'EVD-021 is recorded in BASF low-foaming nonionic product section');
+  assert(evd021?.supportedClaims.some(claim => claim.includes('approx. 2,900 mPa·s')), 'Evidence Specification', 'EVD-021 preserves the source-reported viscosity specification');
+  assert(evd021?.applicabilityMismatches.some(item => item.includes('not a measured foam-suppression curve')), 'Evidence Scope', 'EVD-021 manufacturer classification is not promoted to formula-specific foam validation');
   const evd022 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-022');
   assert(evd022?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-022 is manufacturer specification evidence, not experimental data');
+  assert(evd022?.originalUrl === 'https://www.crodabeauty.com/en-gb/products/product/198-croduret_1_40', 'Evidence Provenance', 'EVD-022 points to the direct Croda product page');
+  assert(evd022?.conditions.includes('Category is Skin care'), 'Evidence Category', 'EVD-022 is not mislabelled as a Home Care product category');
+  assert(evd022?.applicabilityMismatches.some(item => item.includes('does not list Home Care as a product category')), 'Evidence Scope', 'EVD-022 detergent superfatting statement is not treated as detergent validation');
   assert(evd022?.supportedClaims.some(claim => claim.includes('emulsifying and solubilising')), 'Evidence Scope', 'EVD-022 is classified as auxiliary solubiliser/emulsifier evidence');
   assert(evd022?.applicabilityMismatches.some(item => item.includes('does not establish PEG-40 HCO as a primary')), 'Evidence Scope', 'EVD-022 does not promote PEG-40 HCO to a primary laundry surfactant');
 
