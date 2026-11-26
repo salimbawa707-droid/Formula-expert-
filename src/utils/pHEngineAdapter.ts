@@ -6,14 +6,14 @@ import {
   calculatePHAdvanced as calculatePHAdvancedV2,
   calculatePHSimple as calculatePHSimpleV2
 } from './pHEngine';
-import { classifyChemicalSpecies } from '../domain/ph/chemicalSpeciesRegistry';
 
 export { INGREDIENT_DATABASE };
 
 /**
- * Filters formulation ingredients to those with registered acid/base/buffer/solvent/electrolyte chemistry.
- * Non-reactive excipients (fragrance, dyes, preservatives, etc.) are excluded from the ionic speciation solver
- * so that the solver converges on the true thermodynamic equilibrium while implicit water mass covers the balance.
+ * Preserves every formulation ingredient at the pH-engine boundary.
+ * The authoritative pH engine must see the complete mass balance and decide
+ * whether unknown species make the equilibrium result insufficiently identified.
+ * Register known neutral excipients explicitly instead of dropping them here.
  */
 export function getSolverReadyIngredients(rawIngredients: IngredientInput[]): IngredientInput[] {
   // Preserve the complete formulation mass. Filtering unknown/inert-looking
