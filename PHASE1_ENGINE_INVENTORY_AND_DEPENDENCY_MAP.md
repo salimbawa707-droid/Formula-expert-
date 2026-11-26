@@ -1,9 +1,9 @@
 # Phase 1 — Engine Inventory & Dependency Mapping
-**Status:** IN PROGRESS — baseline captured; import/call graph and runtime reachability verification remain open  
+**Status:** VERIFICATION IN PROGRESS — inventory deliverable documented; exact-commit CI and complete module reachability classification remain open  
 **Baseline branch:** `main`  
-**Baseline commit:** `2495fbf2bbb0f549acdcdc6fd63daa36f222946d`  
-**Audit branch:** `audit/phase1-engine-inventory-20261124`  
-**Audit date:** 2026-11-24
+**Current audit base commit:** `a7f56884cb6aebf9dd2390f9643d5851e32e6546`  
+**Current audit branch:** `fix/phase1-inventory-verification-2026-11-26`  
+**Audit date:** 2026-11-26
 
 ## 1. Scope and evidence boundary
 
@@ -312,7 +312,7 @@ Using the same path filters declared in `evidence_vault/scripts/verify_engine_in
 | Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 92 |
 | Reconciled retained wiring modules | 55 |
 
-The verifier script previously hard-coded 59 / 62 / 65 / 94, which no longer matched the checked-in list and current tree. It has now been updated on this audit branch to expect 55 / 60 / 63 / 92 and to check that the 55-path manifest and 55-row CSV contain the same paths. The CSV line parser was corrected after review.
+The verifier script on the current main base hard-coded 61 / 64 / 93, while this inventory's independently recorded source-tree scan and the current release quality-gate record use 60 / 63 / 92. The audit branch updates the verifier to 60 / 63 / 92. It also retains the independent 55-path manifest / 55-row CSV parity checks. The 55-module manifest count is not a scientific-engine count.
 
 **Execution status:** these counts and manifest parity were independently computed from the GitHub tree and file contents. The updated Node script itself has not yet been executed in a checked-out repository or CI. It must be run in the final combined CI before merge; do not claim the script has passed yet.
 
@@ -440,11 +440,11 @@ This is a representative mapping, not a claim that every one of the 55 retained 
 - [x] Stale engine inventory guard counts corrected and CSV/list parity validation added.
 
 ### Verification still pending
-- The updated `verify_engine_inventory.mjs` has not yet been run in CI or a checked-out repository. It is explicitly pending final combined verification.
+- The verifier's corrected count assertions have been committed to the isolated audit branch; execution on the exact PR head remains pending GitHub Actions.
 - The 55-row wiring CSV's caller evidence is inherited from 2026-11-03; only principal current entry points and key graph edges were rechecked during this phase.
 - No Phase 1 scientific correctness certification is claimed.
-- No production source engine was modified.
-- No PR was opened and no merge was attempted.
+- No production scientific engine was modified as part of the inventory-only correction.
+- This audit branch contains a verifier correction; no merge is permitted until exact-head CI and diff review pass.
 
 ### Findings handed to later phases
 - **P0 / Phase 2 input integrity:** UI fallback calculations can reintroduce defaults and override authoritative insufficient-data states.
@@ -454,4 +454,15 @@ This is a representative mapping, not a claim that every one of the 55 retained 
 - **P1 / Phase 10 integration:** remove duplicate powder/cleaning/hardness/compatibility calculation paths; define one authoritative output contract.
 - **All phases:** test scientific validity independently of code wiring and software CI.
 
-Phase 1 is complete as an inventory/mapping phase, but its pending CI check remains a required gate in the final all-phase re-audit.
+Phase 1 is **not closed yet**. The inventory documentation is substantially complete, but the corrected verifier must pass on the exact PR head, and the remaining exported-API/caller reachability and orphan/test-only classifications must be recorded before Phase 1 can be closed. Phase 1 does not certify predictive accuracy or laboratory performance; those require later scientific validation phases and physical experiments.
+
+## 17. 2026-11-26 exact-base audit addendum
+
+- Exact base used for this correction: `a7f56884cb6aebf9dd2390f9643d5851e32e6546` (main at audit start).
+- Repository CI workflow `.github/workflows/current-release-quality-gates.yml` already runs `node evidence_vault/scripts/verify_engine_inventory.mjs` on pull requests to main and pushes to `fix/**`; this is the correct execution gate for the corrected script.
+- The current main-branch verifier's hard-coded expectations were 61 / 64 / 93, conflicting with the current inventory's 60 / 63 / 92. The audit branch changes only those three expected counts and their error messages; manifest and CSV integrity checks remain fail-closed.
+- The 55-path list, 55-row CSV, and all 55 path-existence checks remain separate assertions. The 55 records are retained wiring modules, not 55 validated scientific predictors.
+- The architecture inventory identifies 13 canonical product categories, 11 visible workflow stages, and 23 registered DAG nodes. FINALIZATION is an orchestrator post-stage, not a 24th registered DAG node.
+- Category profile enforcement and single-authority calculation behavior are recorded as implementation risks for routing/orchestration phases. They must not be relabeled as scientifically verified merely because a profile registry or software test exists.
+- No source-based evidence in this phase establishes laboratory validation, predictive accuracy, or a scientifically validated commercial formula.
+- Final Phase 1 closure requires: (1) this exact-branch inventory verifier PASS, (2) production build/typecheck and applicable regression CI PASS, (3) complete module/caller disposition report, (4) no unresolved inventory/documentation contradictions, and (5) a final audit tied to the merged commit. If any required check fails or is missing, Phase 1 remains open.
