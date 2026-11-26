@@ -30,10 +30,12 @@ export class CalibrationEngine {
       return { success: false, message: 'Proposal is not in a valid state to be applied.' };
     }
     
-    // LOGIC TO BE IMPLEMENTED: Update runtime parameter registry
-    console.log(`[CALIBRATION] Applying calibration for ${proposal.kpiId}: ${proposal.proposedShiftOffset}`);
-    
-    // Placeholder for actual mutation
-    return { success: true, message: 'Calibration proposal applied successfully.' };
+    // Proposal generation is implemented; runtime parameter mutation is not.
+    // Never report success until an approved, versioned parameter write has
+    // actually completed. Keep the proposal in PROPOSED state for review.
+    return {
+      success: false,
+      message: 'Calibration application is not implemented. Proposal remains PROPOSED; no model parameter was changed.'
+    };
   }
 }
