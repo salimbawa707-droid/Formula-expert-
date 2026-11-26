@@ -31,7 +31,7 @@ class ExecutionReceiptTests(unittest.TestCase):
             record = self.pair["pass_" + label.lower()]
             for field, content in (
                 ("prompt", (label + " prompt").encode()),
-                ("bundle", json.dumps({"included_artifacts": [] if label == "A" else ["evidence_vault/ai_review/shared/manifest.json"]}).encode()),
+                ("input_bundle", json.dumps({"included_artifacts": [] if label == "A" else ["evidence_vault/ai_review/shared/manifest.json"]}).encode()),
                 ("result", (label + " result").encode()),
                 ("receipt", json.dumps({"execution_id": label, "session_id": "session-" + label}).encode()),
             ):
