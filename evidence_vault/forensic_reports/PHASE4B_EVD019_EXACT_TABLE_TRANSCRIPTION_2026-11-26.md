@@ -81,7 +81,7 @@ For ionic/nonionic mixtures, a universal n=2 correction is not justified. Hua & 
 
 ### Recalculation of the duplicated pure-LAS row
 
-Inputs transcribed from both Table 1 and Table 2: T = 23.58 °C = 296.73 K; dγ/dlog10(C) = −15.9 mN·m⁻¹ per decade = −0.0159 N·m⁻¹ per decade; R = 8.314462618 J·mol⁻¹·K⁻¹; ln(10) = 2.302585093; N_A = 6.02214076×10²³ mol⁻¹.
+For Table 1, the pure-LAS inputs are T = 23.58 °C = 296.73 K; for the duplicated Table 2 row, T = 23.5 °C = 296.65 K; dγ/dlog10(C) = −15.9 mN·m⁻¹ per decade = −0.0159 N·m⁻¹ per decade; R = 8.314462618 J·mol⁻¹·K⁻¹; ln(10) = 2.302585093; N_A = 6.02214076×10²³ mol⁻¹.
 
 Using Γ = −[1/(nRT)]·dγ/dln(C) = −[1/(nRT ln(10))]·dγ/dlog10(C):
 
@@ -95,7 +95,7 @@ The source's Γ/A pair is internally consistent with its slope to rounding, but 
 
 ### Back-calculated coefficient diagnostic across the tables
 
-Using the displayed rounded slope and Γ values, n_eff = |slope|×10⁻³ / [ln(10)·R·T·(Γ×10⁴)] was back-calculated for the 11 numeric rows. Values cluster at approximately 0.993–1.003 (rounding-level spread). This demonstrates that the printed Γ values were arithmetically generated using n≈1 throughout. Interpretation differs by row: pure nonionic AE rows are consistent with n=1; mixed ionic/nonionic rows may have a composition-dependent effective coefficient and cannot be globally corrected from these rounded tables; pure LAS in deionized water conflicts with the stated n=2 condition. This is a strong numerical diagnosis of the table calculation convention, not proof of the authors' intent.
+Using the displayed rounded slope and Γ values, n_eff = |slope|×10⁻³ / [ln(10)·R·T·(Γ×10⁴)] was back-calculated for the 11 unique composition cases (12 displayed numeric entries, because pure LAS is repeated in both tables), using each table's own stated temperature. Values range approximately 0.992–1.003 (rounding-level spread). This demonstrates that the printed Γ values were arithmetically generated using n≈1 throughout. Interpretation differs by row: pure nonionic AE rows are consistent with n=1; mixed ionic/nonionic rows may have a composition-dependent effective coefficient and cannot be globally corrected from these rounded tables; pure LAS in deionized water conflicts with the stated n=2 condition. This is a strong numerical diagnosis of the table calculation convention, not proof of the authors' intent.
 
 ### Final EVD-019 handling
 
