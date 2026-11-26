@@ -198,7 +198,8 @@ function isSafeAIReviewArtifactRef(value: unknown): value is string {
 }
 
 export function validatePhase4BAIReview(
-  review?: AIReviewGateRecord
+  review: AIReviewGateRecord | undefined,
+  registeredReferenceIds: ReadonlySet<string>
 ): { passed: boolean; reason: string } {
   const fail = (reason: string) => ({ passed: false, reason });
   if (!review) return fail('AI review record is missing.');
@@ -214,6 +215,11 @@ export function validatePhase4BAIReview(
       review.evidenceRefs.some(ref => typeof ref !== 'string' || !ref.trim()) ||
       new Set(review.evidenceRefs).size !== review.evidenceRefs.length) {
     return fail('AI review requires at least two unique, non-empty evidence references.');
+  }
+
+  const unregisteredReferences = review.evidenceRefs.filter(ref => !registeredReferenceIds.has(ref));
+  if (unregisteredReferences.length > 0) {
+    return fail(`AI review references unregistered vault records: ${unregisteredReferences.join(', ')}.`);
   }
   if (!Array.isArray(review.reviewPasses) || review.reviewPasses.length < 2) {
     return fail('AI review requires two distinct, blind review passes.');
@@ -278,7 +284,13 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
-  const aiReviewCheck = validatePhase4BAIReview(phase4B.aiReview);
+  const registeredReferenceIds = new Set([
+    ...state.evidence.map(record => record.id),
+    ...state.datasets.map(record => record.id),
+    ...state.engines.map(record => record.id),
+    ...state.audits.map(record => record.id),
+  ]);
+  const aiReviewCheck = validatePhase4BAIReview(phase4B.aiReview, registeredReferenceIds);
   const humanVerificationPassed = phase4B.independentVerificationStatus === 'CONFIRMED';
   if (!humanVerificationPassed && !aiReviewCheck.passed) {
     return {
