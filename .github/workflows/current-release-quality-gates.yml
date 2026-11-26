@@ -326,6 +326,10 @@ jobs:
 
       - name: Test Round-5 generator provenance contract
         run: python evidence_vault/scripts/test_round22_round5_generator_provenance_audit.py
+      - name: Audit evidence source license register
+        run: python evidence_vault/scripts/audit_source_license_register.py
+      - name: Test evidence source license register
+        run: python evidence_vault/scripts/test_audit_source_license_register.py
 
       - name: Verify Phase 1 engine inventory and dependency manifest
         run: node evidence_vault/scripts/verify_engine_inventory.mjs
