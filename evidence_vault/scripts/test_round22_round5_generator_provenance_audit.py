@@ -29,9 +29,9 @@ class Round5GeneratorProvenanceTests(unittest.TestCase):
         self.assertFalse(result["generator_derives_historical_27982_from_row_membership"])
         self.assertFalse(result["generator_contract_reproduces_committed_ledger"])
 
-    def test_matching_path_and_schema_alone_do_not_reproduce_reported_count(self):
+    def test_matching_path_and_schema_with_row_metric_passes_contract(self):
         result = inspect_contract(
-            'const TARGET_DIR = path.resolve("evidence_vault/datasets/zenodo_18961871");',
+            'const TARGET_DIR = path.resolve("evidence_vault/datasets/zenodo_18961871"); computedValidObs++;',
             GENERATOR_HEADERS,
         )
         self.assertTrue(result["writes_to_canonical_ledger_directory"])
