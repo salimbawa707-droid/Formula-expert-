@@ -22,14 +22,15 @@ function resolveLocalImport(importer, specifier, knownFiles) {
   if (!specifier.startsWith('.')) return null;
   const base = path.posix.normalize(path.posix.join(path.posix.dirname(importer), specifier));
   const candidates = [];
-  if (path.posix.extname(base)) {
+  const baseExtension = path.posix.extname(base);
+  if (extensions.includes(baseExtension)) {
     candidates.push(base);
-    const ext = path.posix.extname(base);
-    if (['.js', '.mjs', '.cjs'].includes(ext)) {
-      const stem = base.slice(0, -ext.length);
+    if (['.js', '.mjs', '.cjs'].includes(baseExtension)) {
+      const stem = base.slice(0, -baseExtension.length);
       candidates.push(stem + '.ts', stem + '.tsx');
     }
   } else {
+    if (knownFiles.has(base)) candidates.push(base);
     for (const ext of extensions) candidates.push(base + ext);
     for (const ext of extensions) candidates.push(path.posix.join(base, 'index' + ext));
   }
