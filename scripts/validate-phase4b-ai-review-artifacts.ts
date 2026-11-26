@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { INITIAL_VAULT_STATE } from '../src/domain/vault/initialData';
 import type { AIReviewGateRecord } from '../src/domain/vault/types';
@@ -16,18 +16,52 @@ function sha256File(path: string): string {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
+/**
+ * Resolve and validate every path component. Lexical containment alone is not
+ * sufficient because readFileSync follows symlinks, including symlinks whose
+ * target is outside the evidence vault.
+ */
 function safeVaultPath(rootDir: string, reference: string): string {
   if (!reference.startsWith('evidence_vault/ai_review/')) {
     throw new Error(`Artifact path is outside evidence_vault/ai_review/: ${reference}`);
   }
-  const root = resolve(rootDir);
-  const allowedRoot = resolve(root, 'evidence_vault', 'ai_review');
+  if (reference.includes('\\\\')) {
+    throw new Error(`Artifact path contains an unsupported path separator: ${reference}`);
+  }
+
+  const root = realpathSync(rootDir);
+  const allowedRootLexical = resolve(root, 'evidence_vault', 'ai_review');
+  const allowedRootStat = lstatSync(allowedRootLexical);
+  if (allowedRootStat.isSymbolicLink() || !allowedRootStat.isDirectory()) {
+    throw new Error('The evidence_vault/ai_review root must be a real directory, not a symlink.');
+  }
+  const allowedRoot = realpathSync(allowedRootLexical);
   const absolute = resolve(root, reference);
   const rel = relative(allowedRoot, absolute);
   if (isAbsolute(rel) || rel === '..' || rel.startsWith(`..${sep}`)) {
     throw new Error(`Artifact path escapes evidence_vault/ai_review/: ${reference}`);
   }
-  return absolute;
+
+  // Reject symlinks in every component below the trusted root, not just at the leaf.
+  const segments = rel.split(sep).filter(Boolean);
+  let current = allowedRoot;
+  for (const segment of segments) {
+    current = resolve(current, segment);
+    const stat = lstatSync(current);
+    if (stat.isSymbolicLink()) {
+      throw new Error(`Symbolic links are not permitted in AI review artifact paths: ${reference}`);
+    }
+  }
+
+  const realCandidate = realpathSync(current);
+  const realRel = relative(allowedRoot, realCandidate);
+  if (isAbsolute(realRel) || realRel === '..' || realRel.startsWith(`..${sep}`)) {
+    throw new Error(`Resolved artifact path escapes evidence_vault/ai_review/: ${reference}`);
+  }
+  if (!lstatSync(realCandidate).isFile()) {
+    throw new Error(`AI review artifact must be a regular file: ${reference}`);
+  }
+  return realCandidate;
 }
 
 export function validateAIReviewArtifacts(
@@ -61,14 +95,6 @@ export function validateAIReviewArtifacts(
     try {
       const manifestPath = safeVaultPath(rootDir, pass.sourceManifestRef);
       const resultPath = safeVaultPath(rootDir, pass.resultArtifactRef);
-      if (!existsSync(manifestPath)) {
-        errors.push(`Pass ${index + 1}: source manifest is missing: ${pass.sourceManifestRef}`);
-        continue;
-      }
-      if (!existsSync(resultPath)) {
-        errors.push(`Pass ${index + 1}: result artifact is missing: ${pass.resultArtifactRef}`);
-        continue;
-      }
       const actualManifestHash = sha256File(manifestPath);
       const actualResultHash = sha256File(resultPath);
       if (actualManifestHash !== pass.sourceManifestSha256.toLowerCase()) {
