@@ -88,7 +88,7 @@ The Pušić production CSV's `reviewer_2`, `review_match`, and `SOURCE_EXTRACTED
 
 | AI review phase | Scope | Current status |
 |---|---|---|
-| Phase 1 — evidence inventory and source-first review | Identify all Phase 4B sources, pin source identities, extract/inspect numeric and chemical evidence, classify applicability and rights | **IN_PROGRESS**. Pušić 144-cell source re-audit and correction are merged; four registered dataset inventories report 4/4 numerical inspection; EVD-014 through EVD-022 add dishwashing and laundry nonionic studies, NPE jurisdictional restrictions, and BASF/Croda manufacturer specifications. EVD-020 Appendix A Tables A1–A5 have 53 surface-tension/concentration points visually inspected; raw table redistribution remains rights-pending. Overall Phase 4B coverage is not yet measured. |
+| Phase 1 — evidence inventory and source-first review | Identify all Phase 4B sources, pin source identities, extract/inspect numeric and chemical evidence, classify applicability and rights | **IN_PROGRESS**. Pušić 144-cell source re-audit and correction are recorded; the canonical vault currently contains 12 evidence records (EVD-001, EVD-002, and EVD-004 through EVD-013) and four dataset records (DS-001, DS-002, DS-004, DS-005). The protocol's earlier references to EVD-014 through EVD-022, including EVD-015/016/017/020/022, are **not present in the canonical `INITIAL_VAULT_STATE.evidence` registry at this repository head**. They must be treated as unregistered source leads/report references, not as registered evidence or completed coverage, until each is ingested with authoritative metadata, source identity/hash, applicability, and rights disposition. In particular, the previously stated 53-point EVD-020 Appendix A inspection and EVD-015/016 rights status are not independently represented by canonical evidence records here. Overall Phase 4B coverage is not measured; do not infer a percentage from the four dataset records or prose references. |
 | Phase 2 — blind independent AI re-check | Separate AI execution re-reads the pinned source manifest without access to Phase 1 outputs | **NOT_STARTED**. The current Pušić visual re-audit was not blind and cannot count as this pass. |
 | Phase 3 — discrepancy and rights closure | Reconcile all pass disagreements, preserve correction history, resolve/hold commercial reuse rights | **PENDING**. EVD-015 and EVD-016 remain rights-pending; EVD-017 is jurisdiction-specific; further evidence and discrepancy inventory remains. |
 | Phase 4 — automated closure and Phase 5 decision | Run exact-head CI, validate full evidence coverage and every gate, then close Phase 4B | **LOCKED/PENDING**. The AI gate record remains IN_PROGRESS / PARTIAL_SUBGATE / 0%; Phase 5 stays LOCKED. |
@@ -102,3 +102,18 @@ A Phase 4B AI review cannot be marked PASSED on metadata alone. Each review pass
 
 
 CI enforcement note: the artifact-integrity validator is part of the required evidence gate. A green result on an earlier commit is stale; the current pull-request head must pass the complete workflow before merge or Phase 5 consideration.
+
+
+## Canonical evidence-registry consistency audit — 2026-11-26
+
+The canonical registry in `src/domain/vault/initialData.ts` was compared with the evidence IDs cited in this protocol and the Phase 4B provenance report. It contains 12 evidence records: EVD-001, EVD-002, and EVD-004 through EVD-013. It contains four dataset records: DS-001, DS-002, DS-004, and DS-005. There is no canonical evidence record for EVD-014 through EVD-022 at this repository head.
+
+Consequences:
+
+- Mentions of EVD-014 through EVD-022 in reports are not proof that those records are registered, source-pinned, inspected, or rights-reviewed.
+- EVD-015/016/017/020/022 must not be counted toward evidence coverage until their full records are added and validated.
+- A report's mention of 53 visually inspected EVD-020 points does not replace a registered source record, source manifest, point-level ledger, and rights classification.
+- The four dataset records are inventory entries, not evidence that all Phase 4B sources, engines, or checklist items have 100% coverage.
+- The evidence registry has an ID gap at EVD-003; the gap alone does not prove a missing source, but it must be reconciled against the master source register rather than silently renumbered.
+
+**Disposition:** registry-to-report reconciliation is an OPEN Phase 1 task. The Phase 4B AI review record remains IN_PROGRESS / PARTIAL_SUBGATE / 0%; Phase 5 remains LOCKED. No unregistered source lead is promoted by this audit.
