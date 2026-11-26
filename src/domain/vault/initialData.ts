@@ -11,7 +11,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
   surfactantPhaseProperties: [],
   engineCountDiscrepancy: {
     claimedA: 64,
-    reconciledFiles: 55,
+    reconciledFiles: 59,
     claimedSubmodules: 97,
     status: 'REPORTED_UNVERIFIED',
     notes: 'Post-ENG-005 implementation inventory at PR #99 merge-base: root engines_reconciled.list contains 55 unique existing paths and is not comprehensive; source tree contains 61 engine-named source files excluding UI, 64 including UI, 93 broad engine/calculator/router/workflow candidates, and 6 top-level ENG-001..ENG-006 vault registry records. Counts use different units and must not be summed or equated. The historical Audit Report A claim of 64 and Initial Architecture Spec claim of 97 remain UNVERIFIED because original artifacts/counting rules are unavailable; the fact that the current UI-inclusive filename count is also 64 is coincidental, not proof of equivalence. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md and its 2026-11-25 addendum, plus verify_engine_inventory.mjs.',
