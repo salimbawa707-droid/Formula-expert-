@@ -189,7 +189,7 @@ Vault record: EVD-017. This is a regulatory reference, not an experimental datas
 | C12MEA(2) / C12AE(20) | EVD-014 | AES/DDAO aqueous mixed-surfactant system | CONDITIONAL, source-backed mechanistic evidence | Specific grades and pH conditions; not a universal foam or cleaning bonus |
 | C12–C14 APG | EVD-015 | Manual hand dishwashing with LAS/SLES/betaine | CONDITIONAL, formulation-level literature evidence | cSt cannot be compared with cP without density; reuse rights pending |
 | C9–C11 7EO / C10 7EO / C12–C15 7EO alcohol ethoxylates | EVD-016 | Manual dishwashing with SLES/AOS/amine oxide | CONDITIONAL, mixed-CMC and cleaning evidence | Ratios' active-basis ambiguity; foam height is not half-life; reuse rights pending |
-| C12–C14 AE-7 / AE-2 | EVD-019 | Laundry LAS / AE binary systems | AE-7 CONDITIONAL for LAS calcium tolerance; AE-2 benefit NOT_SUPPORTED under the tested conditions | Exact CMC/reflectance values remain unverified pending original-PDF inspection; reuse rights pending |
+| C12–C14 AE-7 / AE-2 | EVD-019 | Laundry LAS / AE binary systems | AE-7 CONDITIONAL for bounded LAS calcium tolerance; AE-2 mixed CMC decreases but calcium-solubility benefit was not observed | Tables 1–2 AI text/arithmetic cross-check complete; Gibbs n-factor ambiguity, no raw replicates, STPP chassis, rights pending |
 | AE7 / AE9 with LAS | EVD-020 | Laundry mixed oily + particulate soil, 65/35 polycotton | CONDITIONAL; 3:1 favors oil/detergency, 1:3 favors particulate removal | 2 wt.% NaCl is not water hardness; 74.4/74.5% discrepancy retained; thesis rights pending |
 | NPE-6 / NPE-9 / NPE-10 | EVD-017 | EU domestic-cleaning regulatory screen | RESTRICTED_FOR_EU_DOMESTIC_CLEANING at or above 0.1 wt.% under Entry 46; India status NOT_VERIFIED | Do not generalize EU law to India or to all nonionics |
 | PEG-40 Hydrogenated Castor Oil / Croduret 40 | EVD-022 | Croda Home Care product description | CONDITIONAL auxiliary emulsifier/solubiliser; primary laundry cleaning NOT_ASSESSED | No quantitative cleaning/foam data or grade-specific TDS/CoA inspected |
@@ -224,19 +224,25 @@ The wash test used 2.3 g/L detergent, 800 mL, 60 minutes, 200 rpm tergotometer, 
 
 **Source:** Malihi, Khaani, Changizi and Adeeb, “Evaluation of Physico-Chemical Interactions between Linear Alkylbenzene Sulfonate (LAS) and Alcohol Ethoxylates,” *Tenside Surfactants Detergents* 48(5), 395–399 (2011), DOI 10.3139/113.110145. Publisher record: https://www.degruyterbrill.com/journal/key/tsd/48/5/html. Author-uploaded full text: https://www.researchgate.net/publication/275987303_Evaluation_of_Physico-Chemical_Interactions_between_Linear_Alkylbenzene_Sulfonate_LAS_and_Alcohol_Ethoxylates.
 
-The study compared binary LAS mixtures with C12–C14 natural-source alcohol ethoxylates (60% C12 / 40% C14, average molecular weight 487 g/mol) at 7 EO and 2 EO. The LAS technical grade was declared 81.1%. Surface-tension measurements were conducted at 23.58°C. The authors report that low additions of AE-7 lower mixed-system CMC and improve LAS calcium tolerance by promoting mixed micelles containing a high proportion of nonionic molecules. The AE-2 system did not show the same calcium-solubility benefit, attributed to poor water solubility. A tested LAS/AE-7 composition of 12% LAS / 3% AE-7 required more than 370 ppm Ca2+ to form insoluble Ca(LAS)2 under the stated conditions. Further AE-7 increased solubility but did not further improve detergency in their test conditions.
+The study compared sodium LAS with a natural-source C12/C14 alcohol ethoxylate blend (60% C12 / 40% C14; average molecular weight 487 g/mol) at 7 EO and 2 EO. The surface-chemistry mixtures were prepared at varying nonionic mole fractions and measured at 23.58°C in distilled/deionized water using a Du Noüy ring tensiometer; solutions were aged one hour before measurement. The article reports that low additions of AE-7 lower mixed-system CMC and improve LAS calcium tolerance by promoting mixed micelles containing a high proportion of nonionic molecules.
+
+Tables 1 and 2 have been transcribed in PHASE4B_EVD019_EXACT_TABLE_TRANSCRIPTION_2026-11-26.md. A second AI pass cross-checked the 7 Table 1 rows and 5 numeric Table 2 rows against the accessible author-uploaded full-text extraction and recalculated all 11 numeric Γ-to-area pairs. The 62.5% LAS / 36.5% AE-7EO row remains exactly as printed (99.0% sum). AE-2EO mixed CMC values decrease in Table 2, but the authors did not observe the same calcium-solubility benefit and attribute this to poor AE-2EO water solubility; “AE-2EO provides no benefit” is therefore too broad.
+
+The article reports Xᴹ₁ = 0.33 for LAS and βᶦ = −5.57 for the 75% LAS / 25% AE-7EO system. These remain source-reported outputs, not independently refitted results; raw surface-tension concentration series and a complete calculation ledger are unavailable for independent refitting.
 
 ### Interpretation and data-quality boundary
 
-- This is directly relevant to laundry LAS + AEO interaction and gives a mechanism for why a C12–C14 7EO grade may improve hard-water tolerance more than a 2EO grade in the tested binary system.
-- It does not prove that every AEO-7 supplier grade has the same distribution or that the same ratio is optimal in a complete detergent formula.
-- The exact composition basis for the 12% LAS / 3% AE-7 statement must be checked in the original PDF before reconstructing active percentages.
-- The CMC table is poorly extracted and the detergency/calcium-sensitivity results are figure-based. Exact OCR values are not accepted as verified numerical evidence until the original PDF is visually inspected.
-- No foam, viscosity, enzyme compatibility, or storage-stability result is provided. This source does not validate ENG-003 or ENG-005.
-- Copyright is Carl Hanser Verlag 2011; numerical reuse remains `REVIEW_PENDING`.
+- This is bounded laundry-category evidence for a specific LAS / C12–C14 AE-7EO or AE-2EO system; it does not establish equivalence across all AEO supplier grades.
+- The methods describe mole-fraction variation. Table percent labels must not be silently reinterpreted as w/w%.
+- The 12% LAS / 3% AE-7EO result is a test-specific calcium precipitation threshold (>370 ppm Ca²⁺) at the stated 0.15% use level, 0.01 M sodium sulfate and pH 9; it is not a universal water-hardness tolerance.
+- Detergency tests used 2 g/L detergent at 45°C and 100/350 ppm Ca²⁺ with a fixed powder chassis containing 41% STPP. This evidence cannot be directly transferred to phosphate-free formulas or different builder systems.
+- **Gibbs adsorption concern:** the paper states n=2 for a 1:1 ionic surfactant without excess common ion, but the pure-LAS Γ/A table values appear to use n=1. The discrepancy is documented for author clarification; Γ and A remain source-reported and must not be silently corrected.
+- No foam-height/time, foam half-life, viscosity, enzyme compatibility, storage-stability or machine-specific wash result is provided.
+- No raw replicate dataset or uncertainty data sufficient for statistical re-analysis is supplied.
+- Current app-facing calculateMixedCMC is an ideal Clint calculation and current supported pure references do not include this LAS/AE-7EO pair. EVD-019 is a related literature reference only; it does not validate ENG-002 or create a matched formula prediction/observation pair.
+- Copyright is Carl Hanser Verlag 2011; numerical reuse remains REVIEW_PENDING. The source PDF is not archived or hash-pinned.
 
-**Classification:** C12–C14 AE-7 with LAS in laundry = CONDITIONAL, formulation-specific mechanistic evidence; AE-2 hard-water benefit = NOT_SUPPORTED under the tested conditions; exact CMC/reflectance numbers = NOT_VERIFIED pending PDF inspection; ENG-002 = bounded benchmark reference only, not validated.
-
+**Classification:** C12–C14 AE-7 with LAS in laundry = CONDITIONAL, source-backed mechanistic evidence under the stated conditions; AE-2EO mixed CMC reduction is reported but calcium-solubility benefit was not observed; Γ/A interpretation requires author clarification; ENG-002 = related evidence only, not validated. See PHASE4B_EVD019_AI_INDEPENDENT_REVIEW_2026-11-27.md.
 
 ## Laundry AE7 / AE9 mixed-soil detergency thesis — EVD-020
 
