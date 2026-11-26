@@ -65,5 +65,31 @@ export function runFoamKineticsEngineTestSuite() {
   } catch { invertedLevelRejected = true; }
   assert('Rejects liquid level above foam top', invertedLevelRejected, invertedLevelRejected, true);
 
+  let mixedReferenceRejected = false;
+  try {
+    analyzeFoamDecayReplicate({ replicateId: 'mixed-reference', points: [
+      { timeSeconds: 1, foamTopHeightMm: 20, liquidLevelHeightMm: 5 },
+      { timeSeconds: 2, foamTopHeightMm: 15 },
+    ] });
+  } catch { mixedReferenceRejected = true; }
+  assert('Rejects mixed absolute/meniscus height reference basis', mixedReferenceRejected, mixedReferenceRejected, true);
+
+  const constantSeries = analyzeFoamDecayReplicate({
+    replicateId: 'constant-response',
+    points: [1, 2, 3].map(timeSeconds => ({ timeSeconds, foamTopHeightMm: 10 })),
+  }, { logRegimeStartSeconds: 1 });
+  assert('Returns undefined R-squared for zero-variance response', constantSeries.lateLogHeightFit?.rSquared === null, constantSeries.lateLogHeightFit?.rSquared, null);
+
+  const partialBubbleSeries = analyzeFoamDecayReplicate({
+    replicateId: 'partial-bubble-area',
+    points: [
+      { timeSeconds: 1, foamTopHeightMm: 20, meanBubbleAreaMm2: 1 },
+      { timeSeconds: 2, foamTopHeightMm: 19 },
+      { timeSeconds: 3, foamTopHeightMm: 18, meanBubbleAreaMm2: 3 },
+      { timeSeconds: 4, foamTopHeightMm: 17, meanBubbleAreaMm2: 4 },
+    ],
+  }, { bubbleAreaFitEndSeconds: 4 });
+  assert('Warns when bubble-area fit omits eligible time points', partialBubbleSeries.warnings.some(warning => warning.includes('omitted 1 eligible time point')), partialBubbleSeries.warnings);
+
   return { passed: results.filter(result => result.passed).length, failed: results.filter(result => !result.passed).length, results };
 }
