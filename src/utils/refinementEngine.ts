@@ -8,7 +8,7 @@ export interface RefinementProposal {
   originalPercentage: number;
   proposedPercentage: number;
   rationale: string;
-  confidenceScore: number; // 0-1
+  confidenceScore?: number; // omitted unless a calibrated confidence method exists
 }
 
 /**
@@ -43,7 +43,6 @@ export class RefinementEngine {
           originalPercentage: ing.percentage,
           proposedPercentage: Number(validatedIngredientAvg.toFixed(2)),
           rationale: `Historical validated formula data suggests an optimal level of ${validatedIngredientAvg.toFixed(2)}% for ${ing.name} to achieve desired performance targets.`,
-          confidenceScore: 0.92
         });
       }
     });
@@ -52,34 +51,39 @@ export class RefinementEngine {
   }
 
   private static getValidatedAverage(ingredientName: string, records: DetailedLabEvidenceRecord[]): number | null {
-    // 1. Cross-reference with MASTER library validated formulas
-    // This provides a high-confidence "human-standard" baseline
-    const standardMatches: number[] = [];
-    const lowerName = ingredientName.toLowerCase().trim();
+    // Only accept an explicitly ingredient-specific measured percentage.
+    // Generic keys such as "activeMatterPct" cannot be attributed to a
+    // particular ingredient and must never be averaged into its recipe level.
+    const normalizedName = ingredientName.toLowerCase().trim();
+    const slug = normalizedName.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const acceptedKeys = new Set([
+      `ingredient:${normalizedName}:percentage`,
+      `ingredient:${slug}:percentage`,
+      `ingredient_${slug}_percentage`,
+      `${slug}_percentage`,
+    ]);
+    const matches = records.filter(record => {
+      const key = (record.parameterKey || '').toLowerCase().trim();
+      const unit = String(record.unit || '').toLowerCase().trim();
+      return record.qualityStatus === 'ACCEPTED' &&
+        record.sourceType === 'LAB_MEASURED' &&
+        record.provenance === 'MEASURED' &&
+        acceptedKeys.has(key) &&
+        (unit === '%' || unit === 'percent' || unit === 'wt%') &&
+        Number.isFinite(record.value) &&
+        record.value >= 0 &&
+        record.value <= 100 &&
+        Boolean(record.formulaId) &&
+        Boolean(record.formulaVersion);
+    });
 
-    try {
-      // Since we can't import FORMULAS easily here without circularity or path issues,
-      // we heuristic-match from labEvidence if possible, or use a hardcoded set of common benchmarks.
-      
-      // If labEvidence is passed, we check for 'ACCEPTED' measurements of the same ingredient
-      // However, usually labEvidence records are for KPIs, not ingredient percentages.
-      
-      // In this specific industrial R&D context, we'll use the 'evidenceRef' or 'provenance'
-      // to find relevant validated compositions if they were attached to the records.
-      
-      const relevantRecords = records.filter(r => 
-        r.qualityStatus === 'ACCEPTED' && 
-        (r.parameterKey?.toLowerCase().includes('active') || r.parameterKey?.toLowerCase().includes('matter'))
-      );
+    // Require at least three distinct formula/version observations. Repeated
+    // instrument reads of one formula are not independent formulation evidence.
+    const independentFormulaVersions = new Set(
+      matches.map(record => `${record.formulaId}::${record.formulaVersion}`)
+    );
+    if (independentFormulaVersions.size < 3) return null;
 
-      if (relevantRecords.length > 0) {
-        const sum = relevantRecords.reduce((acc, r) => acc + r.value, 0);
-        return sum / relevantRecords.length;
-      }
-    } catch (e) {
-      console.warn("Refinement correlation failed:", e);
-    }
-
-    return null;
+    return matches.reduce((sum, record) => sum + record.value, 0) / matches.length;
   }
-}
+}}
