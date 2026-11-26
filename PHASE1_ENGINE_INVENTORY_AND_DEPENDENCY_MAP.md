@@ -1,9 +1,9 @@
 # Phase 1 — Engine Inventory & Dependency Mapping
-**Status:** IN PROGRESS — baseline captured; import/call graph and runtime reachability verification remain open  
+**Status:** PASS — Phase 1 repository inventory, static module reachability classification, architecture reconciliation, and exact-head software CI complete; scientific/laboratory validation explicitly out of scope  
 **Baseline branch:** `main`  
-**Baseline commit:** `2495fbf2bbb0f549acdcdc6fd63daa36f222946d`  
-**Audit branch:** `audit/phase1-engine-inventory-20261124`  
-**Audit date:** 2026-11-24
+**Current audit base commit:** `a7f56884cb6aebf9dd2390f9643d5851e32e6546`  
+**Current audit branch:** `fix/phase1-inventory-verification-2026-11-26`  
+**Audit date:** 2026-11-26
 
 ## 1. Scope and evidence boundary
 
@@ -13,15 +13,15 @@ Repository tree was read recursively from the exact baseline commit. Counts belo
 
 | Measure | Baseline |
 |---|---:|
-| Tracked blob files | 771 |
-| TypeScript/TSX/JS/JSX source files under `src/` and `app/` | 438 |
-| Test/spec files among those source files | 145 |
-| Non-test TypeScript/TSX files under `src/` | 292 |
-| Main branch CI run #694 | SUCCESS |
-| Main branch CI run ID | 45432038831 |
-| Main branch CI SHA | 2495fbf2bbb0f549acdcdc6fd63daa36f222946d |
+| Tracked blob files | 792 |
+| TypeScript/TSX/JS/JSX source/test files under `src/` | 443 |
+| Test/spec files under `src/` | 146 |
+| Non-test TS/TSX/JS/JSX files under `src/` | 297 |
+| PR #111 exact-head workflow run #1049 | SUCCESS — all seven jobs passed on `6b5982dc4e3b2878b4f9e4c80a5542957cb39597` |
+| Matching push workflow run #1048 | SUCCESS — same exact head SHA |
+| Audit base SHA | `a7f56884cb6aebf9dd2390f9643d5851e32e6546` |
 
-**Important counting rule:** 292 non-test source files are not 292 scientific engines. The set includes UI components, data stores, service adapters, types, persistence, regulatory rules, and other infrastructure. Engine counts must be classified by exported responsibility and production call path, not filename substring alone.
+**Important counting rule:** 297 non-test source files are not 297 scientific engines. The set includes UI components, data stores, service adapters, types, persistence, regulatory rules, and other infrastructure. Engine counts must be classified by exported responsibility and production call path, not filename substring alone.
 
 ## 2. Existing architecture declarations found
 
@@ -164,41 +164,38 @@ The repository contains `ENGINE_WIRING_AND_SCIENTIFIC_INTEGRITY_AUDIT_2026-11-03
 
 The prior `P0_ENGINE_DEPENDENCY_MATRIX.md` is treated as an architecture declaration to verify, not as proof of actual execution.
 
-## 5. Phase 1 work remaining
+## 5. Phase 1 completion checklist — closed
 
-- [ ] Locate and reconcile the prior 55-module inventory and its companion evidence (including CSV path, if retained elsewhere).
-- [ ] Extract every exported function/class from all candidate engine modules.
-- [ ] Build static import/call edges for all production modules and identify actual UI/workflow entry points.
-- [ ] Trace each of the 24 DAG nodes to implementation and each implementation to a production caller or mark ORPHAN/TEST_ONLY.
-- [ ] Map all 13 product categories to required, optional, conditional, and not-applicable engines; verify category router behavior against the declared matrix.
-- [ ] Reconcile the 11 analysis stages with the 24 DAG nodes and identify duplicate, bypassed, or dead execution paths.
-- [ ] Map tests to modules and identify engines without direct unit, integration, boundary, and reference-case coverage.
-- [ ] Record per-module scientific evidence status separately from wiring status: deterministic software, literature/reference estimate, supplier-data-dependent, lab-validation-required, or unsupported.
-- [ ] Run the repository's relevant inventory/static checks and baseline test/build gates on the exact audit commit.
-- [ ] Publish the completed inventory and dependency map with reproducible counts and evidence references.
+- [x] Reconciled the retained 55-module manifest with its companion 55-row evidence CSV; all paths exist, with zero duplicates, zero missing paths, and zero set differences.
+- [x] Extracted explicit exported symbol names for each retained module and mapped direct production/test importers.
+- [x] Built and ran a static module-import graph from production roots `src/main.tsx` and `server.ts`; this is a module graph, not a function-level call graph.
+- [x] Classified all 55 retained modules: **53 production-reachable**, **2 imported but not root-reachable**, **0 test-only**, **0 orphan/no-importer**, and **0 modules without direct production or test/tooling importers**.
+- [x] Reconciled the DAG implementation: **23 registered nodes + 1 post-DAG FINALIZATION stage = 24 pipeline steps**; mapped the 11 user-visible workflow stages separately.
+- [x] Confirmed all 13 canonical product IDs have scientific product profiles and route regression coverage. The DAG currently enforces profile applicability for HLB, water chelation, and cleaning; remaining policy enforcement is explicitly handed to the routing phase.
+- [x] Rechecked duplicate/bypass paths: AIFormulator no longer has direct powder, pH, cleaning, hardness, or compatibility fallback calculators. Staged workflow still performs intermediate engine calculations before final orchestrator recomputation; output-authority verification remains a later Phase 2/10 item.
+- [x] Mapped direct test importers and recorded per-module evidence maturity separately from wiring status in the 55-row evidence CSV.
+- [x] Ran inventory verification, static reachability audit, full TypeScript regression, typecheck, production build, server health smoke test, Phase 6 evidence regression, Android debug APK build, and Android WebView instrumentation on the exact PR head.
+- [x] Published the reconciled inventory, dependency matrix, static audit script, and Phase 1 status in this PR.
+
+**Static graph result (exact head):** 472 source/tooling files scanned; 254 files reachable from the two production roots; 53/55 retained modules reachable. The two non-root-reachable modules are `src/utils/empiricalCalibrationEngine.ts` and `src/utils/empiricalValidationEvaluationEngine.ts`, whose production importer path goes through `EmpiricalValidationHub.tsx`; that component is not reachable from the application entry point. They remain retained as a dormant empirical-validation feature path because they have test importers and are not safe to delete without a product decision. The graph found **0 unresolved production imports** and **7 unresolved tooling-only imports** in root `scripts/` files; these do not affect the production graph and are recorded for separate tooling cleanup.
+
+**Scope boundary:** the static analyzer follows literal static/dynamic module imports; it does not prove runtime execution or build a function-level call graph. Phase 1 is closed as a repository inventory and architecture-mapping phase, not as scientific model or laboratory certification.
 
 ## 6. Safety / merge policy
 
-No production source code was changed in this initial inventory checkpoint. No changes were made to `main`. No merge is requested or permitted by this phase checkpoint. The audit branch is isolated from `main`.
+No production scientific engine source was changed. This PR changes only documentation, the CI workflow, and a read-only static audit script. `main` remains unchanged until the PR is merged. The diff was AI-reviewed against the exact base; no human review is recorded.
 
 A module is not considered COMPLETE merely because it compiles, has a test, appears in the DAG, or has a caller. Scientific validation requires independently traceable equations/data, units, valid input domains, uncertainty/assumptions, boundary/reference cases, and (where applicable) matched physical lab evidence.
 
 
-## 7. First-pass implementation trace — verified discrepancies
+## 7. Implementation trace — resolved architecture discrepancy
 
 The complete `scientificExecutionDAG.ts` file was fetched and its actual registrations were counted by matching each `this.nodes.set(...)` declaration. It registers **23 nodes**, not 24.
 
 Actual registered IDs:
 `NORMALIZATION`, `IDENTITY_RESOLUTION`, `CATEGORY_ROUTING`, `NEUTRALIZATION`, `PH_EQUILIBRIUM`, `ACTIVE_MATTER`, `HLB`, `WATER_CHELATION`, `COMPATIBILITY`, `VISCOSITY`, `DENSITY`, `NVR`, `POWDER_ENGINE`, `CLEANING_CPI`, `STABILITY_SCREENING`, `COSTING`, `REGULATORY`, `MANUFACTURING`, `SPECIFICATION`, `LAB_EVIDENCE`, `QUALITY_GATE`, `GRADE`, `RECOMMENDATIONS`.
 
-This creates a concrete documentation/code discrepancy:
-- The DAG file header and comments say 24 engines/nodes.
-- The implementation registers 23 node IDs.
-- Climate analysis, substitution recommendations, and lab-health scoring are executed inside the RECOMMENDATIONS node rather than being independent registered nodes.
-- No node named FINALIZATION is registered in the DAG, although the architecture matrix lists FINALIZATION as node 24.
-- The architecture matrix's 24-node sequence therefore does not match the actual registration list one-to-one.
-
-**Phase 1 action required:** establish whether these are intentional nested services and correct the architecture inventory/documentation to describe the real runtime graph. Do not add a fake node solely to make the count 24.
+**Resolved in this audit:** the implementation registers 23 node IDs. Climate analysis, substitution recommendations, and lab-health scoring are nested services inside RECOMMENDATIONS. FINALIZATION is emitted by `FormulaScientificOrchestrator` after DAG execution, not registered as a DAG node. The architecture matrix now correctly describes 23 registered DAG nodes plus one post-DAG stage. No dummy node was added.
 
 ### Early dependency / provenance risks recorded for later phases
 
@@ -299,22 +296,22 @@ The 55 retained module paths are:
 
 **Counting distinction:** the 55 retained wiring modules are not 55 validated physical-science predictors. The inventory includes workflow/orchestration, data governance, lab evidence, LIMS, inventory, regulatory and software-control modules. The narrower `evidence_vault/datasets/scientific_engine_inventory.csv` is an 8-record scientific model/evidence registry (including explicitly unavailable or unregistered model classes), not a replacement for the 55-module wiring inventory.
 
-## 10. Current source-tree counts and inventory guard repair
+## 10. Current source-tree counts and inventory verification
 
 Using the same path filters declared in `evidence_vault/scripts/verify_engine_inventory.mjs`, the current source tree gives:
 
 | Count definition | Current source tree |
 |---|---:|
-| Non-test TS/TSX/JS/JSX files under `src/` | 292 |
-| Test/spec files under `src/` | 145 |
-| Engine-named source files excluding UI components | 60 |
-| Engine-named files including UI components | 63 |
-| Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 92 |
+| Non-test TS/TSX/JS/JSX files under `src/` | 297 |
+| Test/spec files under `src/` | 146 |
+| Engine-named source files excluding UI components | 61 |
+| Engine-named files including UI components | 64 |
+| Broad engine/calculator/optimizer/formulation/workflow/predictor/router candidates | 93 |
 | Reconciled retained wiring modules | 55 |
 
-The verifier script previously hard-coded 59 / 62 / 65 / 94, which no longer matched the checked-in list and current tree. It has now been updated on this audit branch to expect 55 / 60 / 63 / 92 and to check that the 55-path manifest and 55-row CSV contain the same paths. The CSV line parser was corrected after review.
+The exact PR CI execution reported 61 / 64 / 93. The 55-module manifest is a separate retained-wiring set and is not a scientific-engine count.
 
-**Execution status:** these counts and manifest parity were independently computed from the GitHub tree and file contents. The updated Node script itself has not yet been executed in a checked-out repository or CI. It must be run in the final combined CI before merge; do not claim the script has passed yet.
+**Execution status:** the inventory verifier passed on the exact PR head. The static reachability audit also passed with 55/55 manifest/CSV parity and zero unresolved production imports.
 
 ## 11. Production entry points and actual caller paths
 
@@ -322,7 +319,7 @@ Current code search and source inspection confirm these principal paths:
 
 | Entry point / consumer | Observed route | Notes |
 |---|---|---|
-| `AIFormulator.runDeepScientificAnalysis` | UI -> direct powder evaluator (powder only) -> `FormulaScientificOrchestrator.evaluate` -> decision engine | The UI currently also has fallback recalculations for pH, cleaning, hardness/chelation and compatibility when orchestrator outputs are missing/empty. |
+| `AIFormulator.runDeepScientificAnalysis` | UI -> `FormulaScientificOrchestrator.evaluate` -> decision engine -> canonical result selectors | Current source contains no direct `evaluatePowderFormulation`, pH, cleaning, hardness, or compatibility fallback calculator calls in `AIFormulator.tsx`; the Phase 10 source regression asserts this single-authority behavior. |
 | `AIFormulator` staged Check My Formula path | UI -> `executeStagedScientificAnalysis` -> 11 visible stages -> final `FormulaScientificOrchestrator.evaluate` recomputation | Stages invoke individual engines and the final orchestrator evaluates the same formula again; this is a second calculation layer, not merely a display-only progress wrapper. |
 | `SmartFormulaAnalyzerPro` | UI -> `FormulaScientificOrchestrator.evaluate` | Uses the authoritative orchestrator path. |
 | `FormulationLibrary` | Library revalidation/listing -> `FormulaScientificOrchestrator.evaluate` and quality gate | Formula evaluation is performed during library checks. |
@@ -359,17 +356,18 @@ The repository has 13 canonical product profiles plus 6 specialized subclass pro
 | KITCHEN_DEGREASER | LIQUID | 14 | Alkaline saponification and caustic hazard |
 | CAR_SHAMPOO | LIQUID | 14 | Paint lubricity and rinse/spotting profile |
 
-### Verified integration gap
+### Verified category-routing integration status
 
-`scientificRouter.ts::routeScientificExecution` builds the profile's `applicableEngines` and `engineRoutingMap`. However, `scientificExecutionDAG.ts` does not import or call `routeScientificExecution` or `getScientificProductProfile`. Its `CATEGORY_ROUTING` node only normalizes the category and resolves physical form from `productTaxonomy`.
+`scientificExecutionDAG.ts` does **not** consume the complete `routeScientificExecution(...)` result or its full `engineRoutingMap` at `CATEGORY_ROUTING`. It does, however, import `isEngineApplicable` from `scientificProductProfiles` and applies profile applicability checks inside three DAG nodes:
+- `HLB`: returns `NOT_APPLICABLE` when the product profile excludes HLB.
+- `WATER_CHELATION`: returns `NOT_APPLICABLE` when the profile excludes chelation.
+- `CLEANING_CPI`: returns `NOT_APPLICABLE` when the profile excludes cleaning.
 
-The DAG then runs most nodes unconditionally. Only physical-form conditions for `POWDER_ENGINE`, `NVR`, and liquid viscosity/density are applied. Examples of profile-vs-DAG divergence to verify and correct in the dedicated routing/integration phase:
-- HLB is excluded from the laundry-powder profile, but the DAG's HLB node is not category-gated.
-- Chelation is excluded from the toilet-cleaner profile, but the DAG water-chelation node is not profile-gated.
-- Cleaning performance is excluded from the fabric-softener profile, but the DAG cleaning node is not profile-gated.
-- Other profile-only rules (for example low-foam, skin safety, cling, streak/residue and surfactant restrictions) need proof that they are enforced by the actual calculation/gate path, not just represented in a profile registry.
+This is confirmed by the current DAG source and the Phase 2 report, which records regression coverage for laundry-powder HLB, toilet-cleaner chelation, and fabric-softener cleaning. The DAG also uses physical-form/category conditions for powder and selected liquid property nodes. Therefore the earlier statement that no profile applicability was integrated, and the examples claiming HLB/chelation/cleaning are wholly ungated, are stale and superseded.
 
-This is a material architecture finding, not a proof that every affected formula currently receives an incorrect numeric result. Phase 2 / Phase 10 must test and reconcile it with category-by-category execution traces.
+**Residual routing gap:** the DAG does not centrally apply the complete profile route to every engine. Category-specific constraints beyond these three gates—such as automatic-dishwash low-foam/anionic restrictions, skin mildness, cling, streak/residue, and surfactant restrictions—still require node-by-node enforcement and category execution-trace verification. A profile registry or helper test alone is not proof that each policy changes the production result.
+
+This is an implementation/routing gap, not a laboratory validation claim. The relevant Phase 2 report documents the three existing applicability gates; remaining policy coverage belongs in the routing/integration follow-up.
 
 ## 13. Workflow-stage to DAG mapping
 
@@ -391,18 +389,17 @@ The 11 user-visible workflow stages are a higher-level progress/evidence layer, 
 
 The architecture's 24th item, `FINALIZATION`, is emitted by `FormulaScientificOrchestrator` after the DAG as a `stageDiagnostics` entry. It is **not** a registered DAG node. Therefore the accurate count is **23 registered DAG nodes + 1 orchestrator finalization stage = 24 pipeline steps**. The earlier “24 DAG nodes” wording in comments/docs is imprecise; do not add a dummy DAG node to satisfy it.
 
-## 14. High-priority duplicate / bypass paths discovered
+## 14. Duplicate / bypass path status — rechecked against current source
 
-These are Phase 1 wiring findings to be fixed and regression-tested in the relevant later phases:
+The initial inventory report contained several AIFormulator fallback findings. Those findings are now stale and are superseded by the current source inspection:
 
-1. **AIFormulator duplicate powder evaluation:** `runDeepScientificAnalysis` calls `evaluatePowderFormulation` directly, then calls `FormulaScientificOrchestrator.evaluate`, whose DAG also invokes `evaluatePowderFormulation`. Two powder reports can therefore be generated for the same snapshot; the UI must use one authoritative result.
-2. **AIFormulator pH fallback bypass:** if the orchestrator pH is null, the UI independently calls `calculatePHAdvanced` and writes the fallback pH back into `orchResult.pHResult`. The fallback maps missing purity to 100% and defaults batch size to 100 kg. This can change a fail-closed orchestrator result into a displayed numeric pH.
-3. **AIFormulator cleaning fallback:** if cleaning output is missing/zero, the UI directly calls `calculateCleaningPerformance` using defaults (pH 8.0, hardness 150 ppm, wash volume 10 L, dose 20 g, batch 100 kg) and may normalize an unbalanced formula. These defaults can create a screening score without explicit user inputs.
-4. **AIFormulator hardness fallback:** when the orchestrator result is absent/not evaluated, the UI directly calls `calculateWaterHardnessTolerance` using 10 L / 20 g / 100 kg fallback values.
-5. **AIFormulator compatibility fallback:** the UI independently calls `calculateFormulationCompatibility` when the orchestrator result is judged missing/invalid.
-6. **Staged workflow double evaluation:** `executeStagedScientificAnalysis` runs stage-level engine calculations and then performs a final `FormulaScientificOrchestrator.evaluate` recomputation. This may be intentional for progress and forensic comparison, but the contract must explicitly identify which outputs are authoritative and prevent intermediate values from overwriting final values.
+1. **AIFormulator canonical output path:** current `AIFormulator.tsx` calls `FormulaScientificOrchestrator.evaluate` and consumes its result. It contains no direct calls/imports for `evaluatePowderFormulation`, `calculatePHAdvanced`, `calculateCleaningPerformance`, `calculateWaterHardnessTolerance`, or `calculateFormulationCompatibility`. The Phase 10 regression suite includes static assertions for this single-source-of-truth behavior.
+2. **Powder calculation ownership:** the main DAG imports and calls `evaluatePowderFormulation` in its `POWDER_ENGINE` node. The current AIFormulator path does not separately invoke that powder evaluator.
+3. **Staged workflow intermediate calculations:** `analysisWorkflowEngine.ts` still runs direct stage-level pH, hardness/chelation, compatibility, cleaning and property calculations, then invokes `FormulaScientificOrchestrator.evaluate` for final authoritative recomputation. This is a deliberate staged-analysis structure in code, but it creates repeated computation. Phase 2 / Phase 10 must prove that intermediate values are diagnostics only, do not overwrite canonical outputs, and use identical immutable inputs/assumptions where comparison is intended.
+4. **Category applicability:** current DAG source uses `isEngineApplicable` for HLB, water chelation and cleaning performance. It does not consume the complete `routeScientificExecution` route centrally. Remaining category policies need a full per-node enforcement audit (see Section 12).
+5. **Explicit scenario inputs:** the Phase 2 report records strict chelation/CPI input handling in the staged workflow, including missing wash-volume/dose handling as `NOT_EVALUATED` rather than fabricated numeric values. Other stage defaults and category-specific assumptions still require their own explicit provenance review.
 
-These are direct conflicts with the “single source of truth / no duplicate UI calculations” architecture claim and should be treated as priority integration work, not silently accepted as normal UI behavior.
+These are source-level wiring findings. They do not establish that a calculated result is experimentally accurate or that a detergent formula has passed laboratory testing.
 
 ## 15. Representative regression coverage mapped to engines
 
@@ -437,14 +434,14 @@ This is a representative mapping, not a claim that every one of the 55 retained 
 - [x] 11 visible workflow stages mapped to the DAG pipeline.
 - [x] Main production callers and duplicate/bypass paths documented.
 - [x] Representative test coverage map recorded.
-- [x] Stale engine inventory guard counts corrected and CSV/list parity validation added.
+- [x] Source-tree counts reconciled against the unchanged inventory verifier; CSV/list parity and static reachability are enforced by CI.
 
-### Verification still pending
-- The updated `verify_engine_inventory.mjs` has not yet been run in CI or a checked-out repository. It is explicitly pending final combined verification.
-- The 55-row wiring CSV's caller evidence is inherited from 2026-11-03; only principal current entry points and key graph edges were rechecked during this phase.
-- No Phase 1 scientific correctness certification is claimed.
-- No production source engine was modified.
-- No PR was opened and no merge was attempted.
+### Verification completed on the code-bearing PR head
+- Inventory verifier and static reachability audit passed on exact code head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597` in PR run #1049.
+- The 55-row evidence CSV contains inherited 2026-11-03 scientific-evidence classifications; the exact-head static graph independently refreshed direct importer and reachability status.
+- No Phase 1 scientific correctness certification is claimed; software regressions are not a substitute for physical lab validation.
+- No production scientific engine was modified as part of the inventory-only correction.
+- This audit branch contains the static graph gate and corrected architecture evidence; merge remains conditional on the exact-head workflow and final diff review.
 
 ### Findings handed to later phases
 - **P0 / Phase 2 input integrity:** UI fallback calculations can reintroduce defaults and override authoritative insufficient-data states.
@@ -454,4 +451,39 @@ This is a representative mapping, not a claim that every one of the 55 retained 
 - **P1 / Phase 10 integration:** remove duplicate powder/cleaning/hardness/compatibility calculation paths; define one authoritative output contract.
 - **All phases:** test scientific validity independently of code wiring and software CI.
 
-Phase 1 is complete as an inventory/mapping phase, but its pending CI check remains a required gate in the final all-phase re-audit.
+Phase 1 is **closed as repository inventory and architecture mapping** on the code-bearing PR head. The exact-head inventory and static reachability gates passed. The final documentation-only closure commit is subject to its own exact-head CI rerun before merge. This does **not** certify predictive accuracy or laboratory performance; those require later scientific validation phases and physical experiments.
+
+## 17. 2026-11-26 exact-base and static reachability audit
+
+- Exact base: `a7f56884cb6aebf9dd2390f9643d5851e32e6546` (main at audit start).
+- The main-branch inventory verifier already expected 61 / 64 / 93. An early draft incorrectly changed those values to 60 / 63 / 92; the first CI run caught the mismatch and that draft change was reverted. The final PR does not modify the inventory verifier.
+- Exact code-bearing PR head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597`: PR run #1049 and matching push run #1048 both succeeded.
+- Inventory parity: 55 manifest paths, 55 CSV rows, 0 duplicates, 0 missing paths, 0 manifest/CSV set differences.
+- Source-tree counts: 61 engine-named non-UI files, 64 including UI, 93 broad candidates. The retained 55-module set is a separate wiring inventory, not a validated scientific-engine count.
+- Static graph: 472 source/tooling files scanned from `src/`, `scripts/`, and `server.ts`; roots `src/main.tsx` and `server.ts`; 254 files reachable from roots; 53/55 retained modules production-reachable; 2/55 imported but not root-reachable; 0 test-only; 0 orphan/no-importer; 0 modules without direct production or test/tooling importers; 0 unresolved production imports; 7 unresolved tooling-only relative imports in root `scripts/`.
+- The two non-root-reachable retained modules are `empiricalCalibrationEngine.ts` and `empiricalValidationEvaluationEngine.ts`. Their production import path is through `EmpiricalValidationHub.tsx`, which is not itself imported from the production roots. Both modules have test importers. They are classified as a dormant empirical-validation feature path, not silently deleted or represented as active production functionality.
+- The static analyzer emits explicit exported symbol names and direct importer lists. It is a static module graph, not a function-level call graph or proof of runtime invocation.
+- Architecture reconciliation: 13 canonical product categories; 13 canonical profiles plus 6 specialized subprofiles; 23 registered DAG nodes plus post-DAG FINALIZATION; 11 visible workflow stages.
+- The DAG currently applies profile gates for HLB, water chelation, and cleaning; the full profile route is not centrally enforced for every node. That residual runtime policy enforcement is assigned to the routing phase.
+- AIFormulator no longer has direct fallback calculator calls for powder, pH, cleaning, hardness, or compatibility. The staged workflow still calculates intermediate results before final orchestrator recomputation; output-authority/duplicate-work verification is assigned to the orchestration phase.
+- Scientific evidence status remains separate from wiring: no source-only or software-test evidence here establishes predictive accuracy or laboratory validation. No human review or physical lab review is claimed.
+
+
+
+### Source-tree count refresh
+
+A recursive Git tree read for the exact audit PR tree returned 792 tracked blobs; 443 TypeScript/TSX/JS/JSX files under `src/`, including 146 tests/specs and 297 non-test source files. The executable inventory verifier independently reports 61 engine-named non-test source files excluding UI, 64 including UI, and 93 broad discovery candidates. These are different counting definitions and must not be added together or called a count of scientifically validated engines.
+
+### AIFormulator duplicate-path recheck
+
+At the current main source snapshot, `AIFormulator.tsx` contains zero occurrences of `evaluatePowderFormulation`, `calculatePHAdvanced`, `calculateCleaningPerformance`, `calculateWaterHardnessTolerance`, and `calculateFormulationCompatibility`. The Phase 10 consistency regression also asserts that the UI consumes the canonical orchestrator outputs and does not reintroduce those fallback calculators. The older statements in Sections 11 and 14 that described these UI fallbacks as current defects are superseded by this recheck. `analysisWorkflowEngine.ts` still invokes stage-level calculations and then the orchestrator; this remains a separate workflow design question requiring explicit output-authority and duplicate-execution tests.
+
+
+## 18. Final exact-head closure record
+
+- PR: #111, base `a7f56884cb6aebf9dd2390f9643d5851e32e6546`. Code-bearing head `6b5982dc4e3b2878b4f9e4c80a5542957cb39597` passed matching push workflow run #1048 and pull-request workflow run #1049. A final report-only commit follows and must pass its own exact-head rerun before merge.
+- Full TypeScript regression: **140/140 modules; 5,047/5,047 assertions; 0 failures**.
+- TypeScript typecheck, reproducible production build, production server `/api/health` smoke test, Phase 6 evidence regression, inventory verifier, static import/reachability audit, genuine Android debug APK build, and Android WebView persistence/download instrumentation all passed.
+- Android debug APK and instrumentation reports were uploaded by the successful workflow. The APK is a debug artifact, not a scientific release certification.
+- No human review or physical laboratory validation is claimed. The scientific evidence suite explicitly retains empirically unvalidated / screening maturity where matched independent lab observations are absent.
+- Phase 1 is closed for inventory, dependency mapping, module reachability classification, and software verification. Category policy execution gaps and staged-workflow output-authority checks remain assigned to the later routing/orchestration phases.

@@ -1,7 +1,7 @@
 # P0 Engine Dependency Matrix across 13 Canonical Categories
 
 **Project**: Detergent Formula Expert  
-**Architecture**: Scientific Execution DAG (24 Reconciled Child Nodes)  
+**Architecture**: 23 Registered Scientific Execution DAG Nodes + 1 Orchestrator Post-DAG Finalization Stage (24 Pipeline Steps)  
 
 ---
 
@@ -25,7 +25,7 @@
 
 ---
 
-## DAG Node Execution Order
+## DAG Node Execution Order + Post-DAG Finalization
 
 1. **NORMALIZATION** (Mass balance & 100% sum check)
 2. **IDENTITY_RESOLUTION** (Canonical master library lookup)
@@ -50,4 +50,7 @@
 21. **QUALITY_GATE** (`scientificQualityGateEngine` commercial release decision)
 22. **GRADE** (`gradeEngine` 5-pillar AI grade)
 23. **RECOMMENDATIONS** (`expertReasoningEngine` optimization suggestions)
-24. **FINALIZATION** (Fingerprint generation & audit trace lock)
+24. **FINALIZATION — POST-DAG ORCHESTRATOR STAGE (not a registered DAG node)** (Fingerprint generation & audit trace lock; executed after the 23 registered nodes by `FormulaScientificOrchestrator`)
+
+
+> **Inventory reconciliation (2026-11-26):** The implementation in `src/utils/orchestrator/scientificExecutionDAG.ts` registers 23 nodes. `FINALIZATION` is executed after the DAG by `FormulaScientificOrchestrator`; it is not registered in `ScientificExecutionDAG.nodes`. This matrix therefore describes 24 pipeline steps, not 24 DAG child nodes. Category rows above are the intended profile map; only the HLB, water-chelation and cleaning applicability gates are currently enforced through `isEngineApplicable` inside the DAG, with physical-form guards on selected nodes. Do not interpret every matrix entry as proof of current runtime enforcement.
