@@ -12,6 +12,11 @@ ARTICLE_ID = 29071202
 API_URL = f"https://api.figshare.com/v2/articles/{ARTICLE_ID}"
 MAX_META = 10 * 1024 * 1024
 MAX_FILE = 150 * 1024 * 1024
+EXPECTED_VERSION = 4
+EXPECTED_FILE_NAME = "PhDat.json"
+EXPECTED_FILE_BYTES = 112_738_787
+EXPECTED_FILE_MD5 = "cbad98c7b20313586fb4183a4e88e539"
+EXPECTED_FILE_SHA256 = "748a29d08341bd8e868247d609401301495e24b3c1d88ed3b0ec065e2cdb12f3"
 
 
 def digest(data: bytes, algorithm="sha256"):
@@ -49,6 +54,31 @@ def cc_by_4(value):
     text = license_string(value).lower()
     compact = re.sub(r"[^a-z0-9]+", " ", text)
     return "cc by 4 0" in compact or "creativecommons.org/licenses/by/4.0" in text or "attribution 4.0 international" in text
+
+def validate_phdat_metadata(metadata):
+    """Fail closed if the official Figshare item drifts from the pinned v4 source."""
+    try:
+        version = int(metadata.get("version", -1))
+    except (TypeError, ValueError):
+        version = -1
+    if version != EXPECTED_VERSION:
+        raise ValueError(f"Unexpected PhDat version: {version}; expected {EXPECTED_VERSION}.")
+    if not cc_by_4(metadata.get("license")):
+        raise ValueError("Official Figshare metadata does not confirm CC BY 4.0.")
+    return True
+
+
+def validate_pinned_phdat_file(name, payload, md5, sha256):
+    if name != EXPECTED_FILE_NAME:
+        raise ValueError(f"Unexpected PhDat source filename: {name!r}.")
+    if len(payload) != EXPECTED_FILE_BYTES:
+        raise ValueError(f"PhDat v4 byte-size mismatch: {len(payload)} != {EXPECTED_FILE_BYTES}.")
+    if md5.lower() != EXPECTED_FILE_MD5:
+        raise ValueError(f"PhDat v4 MD5 mismatch: {md5} != {EXPECTED_FILE_MD5}.")
+    if sha256.lower() != EXPECTED_FILE_SHA256:
+        raise ValueError(f"PhDat v4 SHA-256 mismatch: {sha256} != {EXPECTED_FILE_SHA256}.")
+    return True
+
 
 
 def audit_phdat_records(parsed):
@@ -195,6 +225,7 @@ def main():
     raw_dir.mkdir(exist_ok=True)
     metadata_bytes = fetch(API_URL, MAX_META)
     metadata = json.loads(metadata_bytes.decode("utf-8"))
+    validate_phdat_metadata(metadata)
     title = str(metadata.get("title", ""))
     if title.strip().lower() != "phdat" and ("surfactant" not in title.lower() or "phase" not in title.lower()):
         raise ValueError(f"Unexpected title for Figshare item {ARTICLE_ID}: {title!r}")
@@ -216,7 +247,10 @@ def main():
         supplied_md5 = item.get("supplied_md5") or item.get("md5")
         if supplied_md5 and md5.lower() != str(supplied_md5).lower():
             raise ValueError(f"MD5 mismatch for {name}: {md5} != {supplied_md5}")
-        file_records.append({"name": name, "path": str(target.relative_to(ROOT)), "bytes": len(payload), "md5": md5, "sha256": digest(payload), "suppliedMd5": supplied_md5, "downloadUrl": url, "status": "DOWNLOADED"})
+        sha256 = digest(payload)
+        if name == EXPECTED_FILE_NAME:
+            validate_pinned_phdat_file(name, payload, md5, sha256)
+        file_records.append({"name": name, "path": str(target.relative_to(ROOT)), "bytes": len(payload), "md5": md5, "sha256": sha256, "suppliedMd5": supplied_md5, "downloadUrl": url, "status": "DOWNLOADED"})
         if name.lower().endswith(".json"):
             profiles.append(profile_json(payload, name))
         elif name.lower().endswith(".zip"):
