@@ -1,0 +1,41 @@
+name: Phase4B PhDat source reacquisition
+
+on:
+  push:
+    branches:
+      - 'ops/phase4b-phdat-reacquire-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reacquire:
+    name: Reacquire and verify official PhDat v4
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reacquire pinned Figshare item and verify source bytes
+        run: python evidence_vault/scripts/acquire_phdat_dataset.py
+
+      - name: Run offline acquisition and schema regressions
+        run: python -m unittest evidence_vault/scripts/test_acquire_phdat_dataset.py -v
+
+      - name: Upload source, manifest and audit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4b-phdat-v4-${{ github.sha }}
+          path: |
+            evidence_vault/datasets/phdat/
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.json
+            evidence_vault/forensic_reports/PHASE4B_PHDAT_INITIAL_INGESTION_AUDIT.md
+          if-no-files-found: error
+          retention-days: 90
