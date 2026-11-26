@@ -45,7 +45,7 @@ export interface FoamDecayAnalysis {
   pointCount: number;
   initialFoamHeightMm: number;
   finalFoamHeightMm: number;
-  halfHeightTimeSeconds: number | null;
+  observedHalfHeightCrossingTimeSeconds: number | null;
   lateLogHeightFit: LinearFit | null;
   bubbleAreaGrowthFit: LinearFit | null;
   warnings: string[];
@@ -69,8 +69,10 @@ function fitLinear(x: number[], y: number[]): LinearFit | null {
   const intercept = meanY - slope * meanX;
   const residualSumSquares = y.reduce((sum, value, index) => sum + (value - (intercept + slope * x[index])) ** 2, 0);
   const totalSumSquares = y.reduce((sum, value) => sum + (value - meanY) ** 2, 0);
+  // R² is undefined when the observed response has zero variance.
+  // Returning 1 for a perfectly constant series would falsely imply explanatory power.
   const rSquared = totalSumSquares === 0
-    ? (residualSumSquares === 0 ? 1 : null)
+    ? null
     : 1 - residualSumSquares / totalSumSquares;
 
   return { intercept, slope, rSquared, pointCount: x.length };
@@ -129,7 +131,16 @@ export function analyzeFoamDecayReplicate(
     }
   }
 
-  const warnings: string[] = [];
+  // A mixed reference basis silently corrupts foam height: points with a meniscus
+  // measurement are corrected while points without one remain absolute top heights.
+  const liquidLevelPointCount = points.filter(point => point.liquidLevelHeightMm !== undefined).length;
+  if (liquidLevelPointCount !== 0 && liquidLevelPointCount !== points.length) {
+    throw new Error('Liquid-level height must be supplied for every point or omitted for every point.');
+  }
+
+  const warnings: string[] = [
+    'Observed half-height crossing is a descriptive threshold time, not a kinetic half-life; non-exponential or logarithmic decay must be interpreted using its measured regime.',
+  ];
   const logPoints = options.logRegimeStartSeconds === undefined
     ? []
     : points.filter(point => point.timeSeconds >= options.logRegimeStartSeconds! && point.timeSeconds > 0);
@@ -150,8 +161,17 @@ export function analyzeFoamDecayReplicate(
     ? fitLinear(bubblePoints.map(point => point.timeSeconds), bubblePoints.map(point => point.meanBubbleAreaMm2!))
     : null;
 
-  if (options.bubbleAreaFitEndSeconds !== undefined && !bubbleAreaGrowthFit) {
-    warnings.push('Insufficient bubble-area observations for the requested linear growth fit.');
+  if (options.bubbleAreaFitEndSeconds !== undefined) {
+    const eligibleTimePoints = points.filter(point =>
+      point.timeSeconds > 0 && point.timeSeconds <= options.bubbleAreaFitEndSeconds!
+    );
+    const missingBubbleAreaCount = eligibleTimePoints.length - bubblePoints.length;
+    if (missingBubbleAreaCount > 0) {
+      warnings.push(`Bubble-area fit omitted ${missingBubbleAreaCount} eligible time point(s) without measured bubble area.`);
+    }
+    if (!bubbleAreaGrowthFit) {
+      warnings.push('Insufficient bubble-area observations for the requested linear growth fit.');
+    }
   }
   if (!points.some(point => point.liquidLevelHeightMm !== undefined)) {
     warnings.push('Foam height uses foamTopHeightMm directly because no liquid-level series was supplied.');
@@ -162,7 +182,7 @@ export function analyzeFoamDecayReplicate(
     pointCount: points.length,
     initialFoamHeightMm: points[0].foamHeightMm,
     finalFoamHeightMm: points[points.length - 1].foamHeightMm,
-    halfHeightTimeSeconds: interpolateHalfHeightTime(points),
+    observedHalfHeightCrossingTimeSeconds: interpolateHalfHeightTime(points),
     lateLogHeightFit,
     bubbleAreaGrowthFit,
     warnings,

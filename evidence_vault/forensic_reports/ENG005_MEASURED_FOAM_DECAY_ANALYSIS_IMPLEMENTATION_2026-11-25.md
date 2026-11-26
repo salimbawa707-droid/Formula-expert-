@@ -81,3 +81,36 @@ These are software contract tests with synthetic fixtures, not experimental vali
 3. Reproduce published means/standard deviations and figure curves from the four replicate series.
 4. Add source-backed regression fixtures only after numeric transcription has been independently checked.
 5. Keep a separate future workstream for detergent-specific formula-to-foam prediction, which requires matched formulations and controlled foam tests.
+
+
+## 2026-11-26 follow-up — scientific interpretation and edge-case hardening
+
+The primary article explicitly states that its foam decay is clearly non-exponential and that a conventional half-life is not very meaningful for the long-time logarithmic regime. The output previously named `halfHeightTimeSeconds` is therefore renamed to `observedHalfHeightCrossingTimeSeconds`. It is a descriptive threshold-crossing time found by interpolation between actual measured points; it is not a kinetic half-life, and the API now returns an explicit warning against that interpretation.
+
+Additional software-contract corrections:
+- Reject mixed height-reference series where liquid-meniscus height is supplied for only some time points. Mixing corrected foam heights with uncorrected top heights would bias the series.
+- Return R-squared as `null` when the response has zero variance; R-squared is undefined in that case, even if the fitted constant equals every observation.
+- Warn when a requested bubble-area fit omits eligible time points with missing bubble-area measurements.
+- Add regression coverage for these cases and for the explicit non-half-life interpretation.
+
+Source basis: Izawa, James & Yethiraj (2026), *The decay of saline surfactant foams: a study at macroscopic and bubble scales*, Royal Society Open Science 13, 251765, DOI 10.1098/rsos.251765. The article describes late-time logarithmic foam-height decay and states that conventional half-life is not meaningful for that non-exponential decay. The study uses Triton X-100 in synthetic brines, so it remains an adjacent physical-foam study, not a detergent-formula validation dataset.
+
+Evidence boundary unchanged: code regression tests use synthetic fixtures only; supplementary time-series have not yet been acquired/reconciled in this repository; no empirical validation or detergent formulation predictor is claimed.
+
+## 2026-11-26 — authoritative Figshare collection inspection
+
+The laboratory's publications page links the supplementary collection DOI `10.6084/m9.figshare.c.8304092`. The Royal Society Figshare collection page reports version 3 (posted 2026-02-16) and contains one dataset item:
+
+- Item DOI: `10.6084/m9.figshare.31314542`
+- Item title: “Supplementary material: Details on imaging, additional data and liquid physical properties …”
+- Item version: 3
+- Displayed file size: 8.11 MB
+- Displayed item licence: CC BY 4.0
+- Format/description on item page: PDF file
+- Direct Figshare downloader returned HTTP 403 in this execution; file bytes and SHA-256 were therefore NOT obtained.
+
+The supplementary PDF text confirms four trials per salinity for the bubble-area series and plots per-trial mean bubble area plus bubble counts for five salinities (0, 7, 21, 35 and 107 g/kg). It also describes the supplementary macroscopic foam-height and bubble-area plots, with standard deviation/standard error conventions. However, the public collection page lists only the PDF item; it does not list a CSV, XLSX, or Igor Pro project/data file. The article's generic data-availability statement about Igor Pro analysis files does not establish that machine-readable files are present in this public collection.
+
+**Disposition:** EVD-013 is no longer “file inventory unknown”: the public item metadata and displayed CC BY 4.0 licence are identified. But download/hash and raw numeric-series inspection remain blocked. The PDF's plotted curves are not raw machine-readable data. If manually digitized, values must be typed `DIGITIZED_FROM_FIGURE`, retain axis calibration and digitization uncertainty, and must not be mislabeled as original measured rows. Ask the authors for the underlying Igor Pro files or replicate-level exports before claiming raw-data acquisition.
+
+This source remains adjacent physical-foam evidence (Triton X-100 + synthetic brines), not a commercial detergent formula-validation dataset. Four trials per salinity are source-reported experimental replicates, not four independent formulation recipes.
