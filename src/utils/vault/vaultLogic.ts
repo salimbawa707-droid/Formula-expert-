@@ -257,6 +257,14 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
+  // An empty inventory cannot satisfy an evidence-inspection requirement by vacuous truth.
+  if (state.datasets.length === 0) {
+    return {
+      allowed: false,
+      reason: 'Gate blocked: no datasets are registered; an empty inventory cannot satisfy Phase 4B numerical inspection.',
+    };
+  }
+
   // Prevent single-dataset or partial-dataset bypass: require ALL datasets in the vault to be numerically inspected
   const { uninspectedDatasets } = getDatasetInspectionSummary(state.datasets);
 
