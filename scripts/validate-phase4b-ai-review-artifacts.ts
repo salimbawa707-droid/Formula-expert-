@@ -81,7 +81,13 @@ export function validateAIReviewArtifacts(
     };
   }
 
-  const semantic = validatePhase4BAIReview(review);
+  const registeredReferenceIds = new Set([
+    ...INITIAL_VAULT_STATE.evidence.map(record => record.id),
+    ...INITIAL_VAULT_STATE.datasets.map(record => record.id),
+    ...INITIAL_VAULT_STATE.engines.map(record => record.id),
+    ...INITIAL_VAULT_STATE.audits.map(record => record.id),
+  ]);
+  const semantic = validatePhase4BAIReview(review, registeredReferenceIds);
   if (!semantic.passed) {
     return { valid: false, skipped: false, errors: [semantic.reason], message: 'AI review semantic gate failed.' };
   }
