@@ -391,4 +391,6 @@ jobs:
 
       - name: Test Pušić AI visual re-audit correction guardrails
         run: python evidence_vault/scripts/test_validate_pusic_ai_visual_reaudit.py
+      - name: Validate Phase 4B AI execution receipt guardrails
+        run: python scripts/test_validate_phase4b_ai_execution_receipts.py
       # Figshare shampoo dataset gate intentionally excluded: this is a laundry formulation app.
