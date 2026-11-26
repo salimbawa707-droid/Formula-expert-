@@ -99,6 +99,24 @@ Consequently:
 
 No code-model change, parameter fit, or CMC optimization change is authorized by this review. Existing CMC diagnostic-only and fail-closed gates must remain in force.
 
+## 6.1 Cross-repository review — legacy Detergent R&D Expert
+
+The second installed repository, salimbawa707-droid/detergent-rnd-expert-v2, was also searched and the relevant CMC implementation inspected in:
+
+- src/components/RCCalculators.tsx
+- src/utils/calculators.ts
+- src/data/chem_surfactants_nonionic_amphoteric_cationic.ts
+- src/data/chem_surfactants_anionic.ts
+- src/data/formulator_ingredients.ts
+
+This legacy app has a separate CMC tab that hard-codes eight pure-component CMC values, uses the ideal Clint harmonic mixing equation, and converts all mixed molar CMC outputs to ppm with a fixed 320 g/mol multiplier. Its custom CMC input can leave molar and ppm values inconsistent; its “Proportion / Ratio” input is treated as a mole fraction without explicitly stating the composition basis. Its explanatory copy claims that synergy lowers CMC and increases cleaning speed, which the ideal Clint calculation does not establish.
+
+The legacy CMC defaults are not linked to source citations, grade, temperature, matrix, method or uncertainty. The list includes generic LABSA and LAE-9 but not the exact EVD-019 sodium-LAS / C12–C14 AE-7EO pair. Although AE-7 exists in the ingredient catalog, no EVD-019 source mapping or CMC provenance link was found in the inspected code. EVD-019 must not be used to overwrite the generic LABSA or LAE-9 defaults.
+
+A report-only audit PR was opened in the legacy repository: https://github.com/salimbawa707-droid/detergent-rnd-expert-v2/pull/2. No code changes were made there; the report documents the calculation and provenance defects without inventing replacement CMC values.
+
+**Cross-repository disposition:** EVD-019 is related mechanistic literature evidence, not validation of either repository's app-facing CMC calculator. The main repository's calculator uses exact supported references and fail-closed checks but currently lacks this LAS/AE-7 pair; the legacy repository has hard-coded unverified defaults and a fixed-MW ppm conversion. Neither implementation may claim EVD-019 validation.
+
 ## 7. Findings and required actions
 
 | Finding | Severity | Disposition |
