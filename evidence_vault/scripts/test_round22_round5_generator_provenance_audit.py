@@ -9,11 +9,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from round22_round5_generator_provenance_audit import inspect_contract, GENERATOR_HEADERS, COMMITTED_HEADERS
 
-
 GENERATOR_FIXTURE = r'''
 const TARGET_DIR = path.resolve("data/evidence/zenodo_18961871");
 publishedAuthorSummary: { source: "Allgood & Jones (2026)", reportedCount: 212 }
-const csvLedger = "filename,sheet_name,total_rows,header_rows,metadata_rows,blank_rows,computed_valid_observations\\n";
+const csvLedger = "filename,sheet_name,total_rows,header_rows,metadata_rows,blank_rows,computed_valid_observations";
 computedValidObs++;
 '''
 
@@ -30,10 +29,12 @@ class Round5GeneratorProvenanceTests(unittest.TestCase):
         self.assertFalse(result["generator_contract_reproduces_committed_ledger"])
 
     def test_matching_path_and_schema_with_row_metric_passes_contract(self):
-        result = inspect_contract(
-            'const TARGET_DIR = path.resolve("evidence_vault/datasets/zenodo_18961871"); const csvLedger = "filename,sheet_name,total_rows,header_rows,metadata_rows,blank_rows,computed_valid_observations"; computedValidObs++;',
-            GENERATOR_HEADERS,
+        fixture = (
+            'const TARGET_DIR = path.resolve("evidence_vault/datasets/zenodo_18961871"); '
+            'const csvLedger = "filename,sheet_name,total_rows,header_rows,metadata_rows,blank_rows,computed_valid_observations"; '
+            'computedValidObs++;'
         )
+        result = inspect_contract(fixture, GENERATOR_HEADERS)
         self.assertTrue(result["writes_to_canonical_ledger_directory"])
         self.assertTrue(result["generator_schema_matches_committed_ledger"])
         self.assertFalse(result["author_reported_counts_are_metadata"])
