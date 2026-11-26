@@ -180,6 +180,7 @@ export function runVaultLogicTestSuite() {
   const gateCheck = canUnlockPhase5(INITIAL_VAULT_STATE);
   assert(gateCheck.allowed === false, 'Phase 5 Gate', 'Phase 5 unlock blocked on active 4B');
   assert(Boolean(/Phase 4B is still ACTIVE\/OPEN/i.test(gateCheck.reason)), 'Phase 5 Gate', 'Gate check gives reason');
+  const registeredAIReviewRefs = new Set(['EVD-001', 'DS-001']);
   const validAiReview: AIReviewGateRecord = {
     status: 'PASSED',
     protocolVersion: 'phase4b-ai-review-v1',
@@ -215,19 +216,20 @@ export function runVaultLogicTestSuite() {
     ],
     humanReviewPerformed: false,
   };
-  assert(validatePhase4BAIReview(validAiReview).passed, 'AI Review Gate', 'Complete two-pass AI-only review satisfies its own evidence protocol');
-  assert(!validatePhase4BAIReview({ ...validAiReview, scope: 'PARTIAL_SUBGATE' }).passed, 'AI Review Gate', 'A partial sub-gate cannot close all of Phase 4B');
-  assert(!validatePhase4BAIReview({ ...validAiReview, coveragePct: 99.9 }).passed, 'AI Review Gate', 'Coverage below 100% cannot pass');
-  assert(!validatePhase4BAIReview({ ...validAiReview, unresolvedDiscrepancyCount: 1 }).passed, 'AI Review Gate', 'Unresolved discrepancies block AI closure');
-  assert(!validatePhase4BAIReview({ ...validAiReview, sourceHashesPinned: false }).passed, 'AI Review Gate', 'Unpinned source hashes block AI closure');
-  assert(!validatePhase4BAIReview({ ...validAiReview, automatedValidationStatus: 'NOT_RUN' }).passed, 'AI Review Gate', 'Automated validation must pass');
-  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.slice(0, 1) }).passed, 'AI Review Gate', 'A single AI pass is insufficient');
-  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, method: 'SOURCE_FIRST_TRANSCRIPTION' as const } : pass) }).passed, 'AI Review Gate', 'Review methods must be distinct');
-  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, sourceManifestSha256: 'd'.repeat(64) } : pass) }).passed, 'AI Review Gate', 'Both passes must use the same pinned source manifest');
-  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, blindToOtherPasses: false } : pass) }).passed, 'AI Review Gate', 'The second pass must be blind to the first result');
-  assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as any }).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
-  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: '../outside.json' } : pass) }).passed, 'AI Review Gate', 'AI review artifacts must remain inside the evidence vault');
-  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: 'evidence_vault/ai_review/../../outside.json' } : pass) }).passed, 'AI Review Gate', 'AI review artifact references cannot traverse out of the AI review directory');
+  assert(validatePhase4BAIReview(validAiReview, registeredAIReviewRefs).passed, 'AI Review Gate', 'Complete two-pass AI-only review satisfies its own evidence protocol');
+  assert(!validatePhase4BAIReview({ ...validAiReview, scope: 'PARTIAL_SUBGATE' }, registeredAIReviewRefs).passed, 'AI Review Gate', 'A partial sub-gate cannot close all of Phase 4B');
+  assert(!validatePhase4BAIReview({ ...validAiReview, coveragePct: 99.9 }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Coverage below 100% cannot pass');
+  assert(!validatePhase4BAIReview({ ...validAiReview, unresolvedDiscrepancyCount: 1 }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Unresolved discrepancies block AI closure');
+  assert(!validatePhase4BAIReview({ ...validAiReview, sourceHashesPinned: false }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Unpinned source hashes block AI closure');
+  assert(!validatePhase4BAIReview({ ...validAiReview, automatedValidationStatus: 'NOT_RUN' }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Automated validation must pass');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.slice(0, 1) }, registeredAIReviewRefs).passed, 'AI Review Gate', 'A single AI pass is insufficient');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, method: 'SOURCE_FIRST_TRANSCRIPTION' as const } : pass) }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Review methods must be distinct');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, sourceManifestSha256: 'd'.repeat(64) } : pass) }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Both passes must use the same pinned source manifest');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, blindToOtherPasses: false } : pass) }, registeredAIReviewRefs).passed, 'AI Review Gate', 'The second pass must be blind to the first result');
+  assert(!validatePhase4BAIReview({ ...validAiReview, humanReviewPerformed: true as any }, registeredAIReviewRefs).passed, 'AI Review Gate', 'AI-only route cannot claim human review');
+  assert(!validatePhase4BAIReview({ ...validAiReview, evidenceRefs: ['EVD-001', 'EVD-999'] }, registeredAIReviewRefs).passed, 'AI Review Gate', 'Unregistered evidence references cannot pass the closure gate');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: '../outside.json' } : pass) }, registeredAIReviewRefs).passed, 'AI Review Gate', 'AI review artifacts must remain inside the evidence vault');
+  assert(!validatePhase4BAIReview({ ...validAiReview, reviewPasses: validAiReview.reviewPasses.map((pass, index) => index === 1 ? { ...pass, resultArtifactRef: 'evidence_vault/ai_review/../../outside.json' } : pass) }, registeredAIReviewRefs).passed, 'AI Review Gate', 'AI review artifact references cannot traverse out of the AI review directory');
 
   const aiState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   const aiPhase4b = aiState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
