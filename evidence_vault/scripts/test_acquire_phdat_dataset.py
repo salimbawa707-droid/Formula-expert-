@@ -101,6 +101,19 @@ class PhDatAuditTests(unittest.TestCase):
         self.assertLessEqual(audit["phaseSumMaxAbsoluteDeviationFromOne"], 0.0005)
         self.assertEqual(audit["phaseSumDeviationPointCounts"]["greaterThan0.0005"], 0)
 
+    def test_vault_phdat_license_and_counting_units_are_correct(self):
+        source = (ROOT / "src/domain/vault/initialData.ts").read_text(encoding="utf-8")
+        evd = source.split("id: 'EVD-007'", 1)[1].split("id: 'EVD-008'", 1)[0]
+        self.assertIn("licenseReviewStatus: 'PERMITTED_FOR_COMMERCIAL_REUSE'", evd)
+        self.assertIn("licenseReviewedAt: '2026-11-26'", evd)
+        self.assertIn("sampleCount: null", evd)
+        self.assertIn("143 chemical records; not 143 independent samples", evd)
+        self.assertIn("artifact 15095000067", evd)
+        ds = source.split("id: 'DS-004'", 1)[1].split("id: 'DS-005'", 1)[0]
+        self.assertIn("actualRowCount: 143", ds)
+        self.assertIn("not committed", ds)
+        self.assertIn("1,896,776 composition/temperature points", ds)
+
     def test_source_has_no_scientific_promotion(self):
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('"labValidationStatus": "NOT_LAB_VALIDATED"', source)
