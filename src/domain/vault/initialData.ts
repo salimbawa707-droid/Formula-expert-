@@ -1265,7 +1265,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       license: 'Patent publication and technical disclosure; commercial reuse rights and patent-family status require jurisdiction-specific review',
       licenseReviewStatus: 'REVIEW_PENDING',
       licenseEvidenceReference: 'https://patents.google.com/patent/EP3622047B1/en',
-      datasetVersion: 'EP3622047A1 published 2020-03-18; EP3622047B1 published 2020-12-16; European family status listed as revoked/ceased on Google Patents',
+      datasetVersion: 'EP3622047A1 published 2020-03-18; EP3622047B1 published 2020-12-16. Google Patents labels the European record “Revoked” but explicitly warns that legal-status data are assumptions, not legal conclusions; verify in the official EPO Register before legal reliance.',
       fileName: 'EP3622047B1-liquid-laundry-detergent-composition.pdf',
       fileFormat: 'PDF',
       accessStatus: 'ACCESS_CONFIRMED',
