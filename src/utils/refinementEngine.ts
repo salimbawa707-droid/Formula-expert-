@@ -86,4 +86,4 @@ export class RefinementEngine {
 
     return matches.reduce((sum, record) => sum + record.value, 0) / matches.length;
   }
-}}
+}
