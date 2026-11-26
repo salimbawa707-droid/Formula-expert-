@@ -96,3 +96,21 @@ Additional software-contract corrections:
 Source basis: Izawa, James & Yethiraj (2026), *The decay of saline surfactant foams: a study at macroscopic and bubble scales*, Royal Society Open Science 13, 251765, DOI 10.1098/rsos.251765. The article describes late-time logarithmic foam-height decay and states that conventional half-life is not meaningful for that non-exponential decay. The study uses Triton X-100 in synthetic brines, so it remains an adjacent physical-foam study, not a detergent-formula validation dataset.
 
 Evidence boundary unchanged: code regression tests use synthetic fixtures only; supplementary time-series have not yet been acquired/reconciled in this repository; no empirical validation or detergent formulation predictor is claimed.
+
+## 2026-11-26 — authoritative Figshare collection inspection
+
+The laboratory's publications page links the supplementary collection DOI `10.6084/m9.figshare.c.8304092`. The Royal Society Figshare collection page reports version 3 (posted 2026-02-16) and contains one dataset item:
+
+- Item DOI: `10.6084/m9.figshare.31314542`
+- Item title: “Supplementary material: Details on imaging, additional data and liquid physical properties …”
+- Item version: 3
+- Displayed file size: 8.11 MB
+- Displayed item licence: CC BY 4.0
+- Format/description on item page: PDF file
+- Direct Figshare downloader returned HTTP 403 in this execution; file bytes and SHA-256 were therefore NOT obtained.
+
+The supplementary PDF text confirms four trials per salinity for the bubble-area series and plots per-trial mean bubble area plus bubble counts for five salinities (0, 7, 21, 35 and 107 g/kg). It also describes the supplementary macroscopic foam-height and bubble-area plots, with standard deviation/standard error conventions. However, the public collection page lists only the PDF item; it does not list a CSV, XLSX, or Igor Pro project/data file. The article's generic data-availability statement about Igor Pro analysis files does not establish that machine-readable files are present in this public collection.
+
+**Disposition:** EVD-013 is no longer “file inventory unknown”: the public item metadata and displayed CC BY 4.0 licence are identified. But download/hash and raw numeric-series inspection remain blocked. The PDF's plotted curves are not raw machine-readable data. If manually digitized, values must be typed `DIGITIZED_FROM_FIGURE`, retain axis calibration and digitization uncertainty, and must not be mislabeled as original measured rows. Ask the authors for the underlying Igor Pro files or replicate-level exports before claiming raw-data acquisition.
+
+This source remains adjacent physical-foam evidence (Triton X-100 + synthetic brines), not a commercial detergent formula-validation dataset. Four trials per salinity are source-reported experimental replicates, not four independent formulation recipes.
