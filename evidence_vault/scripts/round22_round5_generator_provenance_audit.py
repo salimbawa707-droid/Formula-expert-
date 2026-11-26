@@ -15,22 +15,17 @@ GENERATOR = ROOT / "evidence_vault" / "scripts" / "generate_round5_deliverables.
 LEDGER = ROOT / "evidence_vault" / "datasets" / "zenodo_18961871" / "round5_observation_ledger.csv"
 REPORT = ROOT / "evidence_vault" / "forensic_reports" / "PHASE4B_ROUND22_ROUND5_GENERATOR_PROVENANCE.json"
 CANONICAL_DIR = "evidence_vault/datasets/zenodo_18961871"
-GENERATOR_DIR = "data/evidence/zenodo_18961871"
 GENERATOR_HEADERS = [
     "filename", "sheet_name", "total_rows", "header_rows", "metadata_rows",
     "blank_rows", "computed_valid_observations",
 ]
-COMMITTED_HEADERS = [
-    "filename", "sheet_name", "used_range_rows", "header_rows", "metadata_rows",
-    "blank_rows", "numeric_rows", "numeric_cells",
-]
 
 
 def inspect_contract(generator_text: str, committed_headers: list[str]) -> dict:
-    target_match = re.search(r'TARGET_DIR\\s*=\\s*path\\.resolve\\(["\']([^"\']+)["\']\\)', generator_text)
+    target_match = re.search(r'TARGET_DIR\s*=\s*path\.resolve\(["\']([^"\']+)["\']\)', generator_text)
     target_dir = target_match.group(1) if target_match else None
     output_header_present = all(f'"{name}"' in generator_text for name in GENERATOR_HEADERS)
-    reported_metadata_count = bool(re.search(r"reportedCount\\s*:", generator_text))
+    reported_metadata_count = bool(re.search(r"reportedCount\s*:", generator_text))
     computed_rows_logic = "computedValidObs++" in generator_text
     return {
         "generator_target_dir": target_dir,
@@ -76,7 +71,7 @@ def run_audit(generator_path: Path = GENERATOR, ledger_path: Path = LEDGER) -> d
 def main() -> int:
     result = run_audit()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    REPORT.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2, ensure_ascii=False))
     # A blocked historical claim is an expected scientific disposition, not a CI failure.
     return 0
