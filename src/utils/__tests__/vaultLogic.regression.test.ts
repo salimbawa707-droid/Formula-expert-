@@ -188,6 +188,130 @@ export function runVaultLogicTestSuite() {
   assert(resultAllKnown.totalCostPerKg === 0.5, 'Pricing Integrity', 'Batch cost with all prices computes 0.5');
   assert(resultAllKnown.isComplete === true, 'Pricing Integrity', 'Batch cost with all prices isComplete is true');
 
+  const evd014 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-014');
+  assert(evd014?.doi === '10.5650/jos.ess24197', 'Evidence Identity', 'EVD-014 identifies the 2025 J-Oleo-Science dishwashing study');
+  assert(evd014?.licenseReviewStatus === 'PERMITTED_FOR_COMMERCIAL_REUSE', 'Evidence Rights', 'EVD-014 article-level CC BY 4.0 license is recorded');
+  assert(evd014?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-014 is linked to the mixed-CMC evidence scope');
+  assert(evd014?.applicabilityMismatches.some(item => item.includes('not a direct foam-height')), 'Evidence Scope', 'EVD-014 cannot be misused as direct foam half-life validation');
+  assert(INITIAL_VAULT_STATE.engines.find(engine => engine.id === 'ENG-002')?.existingEvidenceIds.includes('EVD-014'), 'Evidence Mapping', 'ENG-002 references EVD-014');
+  const evd015 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-015');
+  assert(evd015?.doi === '10.1007/s11743-008-1089-z', 'Evidence Identity', 'EVD-015 identifies the APG dishwashing formulation study');
+  assert(evd015?.sampleCount === 30, 'Evidence Inventory', 'EVD-015 records 30 central-composite design runs');
+  assert(evd015?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-015 cannot be reused commercially until rights are confirmed');
+  assert(evd015?.applicabilityMismatches.some(item => item.includes('kinematic viscosity')), 'Evidence Scope', 'EVD-015 is not directly comparable to dynamic-viscosity output');
+  const evd016 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-016');
+  assert(evd016?.doi === '10.1007/s11743-015-1784-5', 'Evidence Identity', 'EVD-016 identifies the 2016 SLES/AOS nonionic dishwashing study');
+  assert(evd016?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-016 numeric data remain blocked pending reuse-rights review');
+  assert(evd016?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-016 is linked to bounded mixed-CMC evidence');
+  assert(evd016?.applicabilityMismatches.some(item => item.includes('foam decay')), 'Evidence Scope', 'EVD-016 foam-height figure is not foam half-life validation');
+  assert(INITIAL_VAULT_STATE.engines.find(engine => engine.id === 'ENG-002')?.existingEvidenceIds.includes('EVD-016'), 'Evidence Mapping', 'ENG-002 references EVD-016');
+  const evd017 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-017');
+  assert(evd017?.evidenceType === 'REFERENCE_DATABASE', 'Evidence Identity', 'EVD-017 is a regulatory reference, not an experimental dataset');
+  assert(evd017?.supportedClaims.some(claim => claim.includes('0.1 wt.%')), 'Regulatory Scope', 'EVD-017 records the EU domestic-cleaning NPE threshold');
+  assert(evd017?.applicabilityMismatches.some(item => item.includes('does not establish the legal status of NPE in India')), 'Regulatory Scope', 'EU restrictions are not misrepresented as Indian law');
+  const evd018 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-018');
+  assert(evd018?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-018 patent data remain rights-pending');
+  assert(evd018?.applicabilityMismatches.some(item => item.includes('incremental benefit of adding AEC')), 'Evidence Scope', 'EVD-018 is not misrepresented as isolated nonionic efficacy');
+  assert(evd018?.supportedEngineIds.length === 0, 'Evidence Mapping', 'EVD-018 does not validate an existing engine');
+  const evd019 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-019');
+  assert(evd019?.doi === '10.3139/113.110145', 'Evidence Identity', 'EVD-019 identifies the LAS/AE interaction study');
+  assert(evd019?.numericalInspectionStatus === 'IN_PROGRESS', 'Evidence Inspection', 'EVD-019 exact CMC/reflectance values remain pending original-PDF visual verification');
+  assert(evd019?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-019 numerical reuse remains rights-pending');
+  assert(evd019?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-019 is a bounded CMC interaction reference');
+  assert(evd019?.applicabilityMismatches.some(item => item.includes('scanned/poorly extracted table')), 'Evidence Scope', 'EVD-019 OCR-derived values are not accepted as verified numeric data');
+  const evd020 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-020');
+  assert(evd020?.doi === '10.14457/CU.the.2018.161', 'Evidence Identity', 'EVD-020 identifies the Chulalongkorn laundry detergency thesis');
+  assert(evd020?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-020 numerical reuse remains rights-pending');
+  assert(evd020?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-020 is a bounded pure-CMC benchmark candidate');
+  assert(evd020?.limitations.some(item => item.includes('74.4%') && item.includes('74.5%')), 'Evidence Discrepancy', 'EVD-020 preserves its internal 74.4/74.5 result discrepancy');
+  assert(evd020?.supportedClaims.some(claim => claim.includes('oil removal was 73.5% and 73.9%')), 'Evidence Scope', 'EVD-020 preserves the AE7/AE9 oil-versus-particulate endpoint trade-off');
+  assert(evd020?.supportedClaims.some(claim => claim.includes('1.85 wt.% alcohol ethoxylate')), 'Evidence Scope', 'EVD-020 preserves the commercial comparator nonionic fraction without assuming active basis');
+  assert(evd020?.supportedClaims.some(claim => claim.includes('AE7 89 μM') && claim.includes('AE9 92 μM')), 'Evidence Numerics', 'EVD-020 preserves the source-reported AE7/AE9 CMC values');
+  assert(evd020?.applicabilityMismatches.some(item => item.includes('not equivalent to water hardness')), 'Evidence Scope', 'EVD-020 NaCl salinity is not conflated with water hardness');
+  const evd021 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-021');
+  assert(evd021?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-021 is manufacturer specification evidence, not experimental data');
+  assert(evd021?.supportedClaims.some(claim => claim.includes('40% EO')), 'Evidence Identity', 'EVD-021 preserves the PE 6400 EO content');
+  assert(evd021?.applicabilityMismatches.some(item => item.includes('does not explicitly classify PE 6400')), 'Evidence Scope', 'EVD-021 does not infer grade-specific low-foam performance');
+  const evd022 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-022');
+  assert(evd022?.evidenceType === 'MANUFACTURER_SPECIFICATION', 'Evidence Identity', 'EVD-022 is manufacturer specification evidence, not experimental data');
+  assert(evd022?.supportedClaims.some(claim => claim.includes('emulsifying and solubilising')), 'Evidence Scope', 'EVD-022 is classified as auxiliary solubiliser/emulsifier evidence');
+  assert(evd022?.applicabilityMismatches.some(item => item.includes('does not establish PEG-40 HCO as a primary')), 'Evidence Scope', 'EVD-022 does not promote PEG-40 HCO to a primary laundry surfactant');
+
+
+  assert(metrics.experimentalDatasetsNumericallyInspected >= 1, 'Dataset Inspection', 'At least one source dataset has a positive inspected row count');
+
+  // DS-001 is reproducible from the checked-in source CSVs; its component-level scope
+  // remains distinct from matched mixed-formula validation.
+  const ds001 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-001');
+  assert(Boolean(ds001), 'Dataset Inspection', 'DS-001 SURFPRO dataset exists');
+  assert(ds001?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-001 numerical inspection is recorded');
+  assert(ds001?.actualRowCount === 1624, 'Dataset Inspection', 'DS-001 master-record count is source rows, not formula observations');
+  assert(ds001?.actualColumnCount === 31, 'Dataset Inspection', 'DS-001 master schema width is recorded');
+  assert(ds001?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-001 remains ineligible for mixed-formula validation');
+  assert(ds001?.designation === 'BENCHMARK', 'Dataset Inspection', 'DS-001 uses a supported dataset designation');
+  assert(Boolean(ds001?.sha256Hash === '316a136630ab08097454518231b952c78d65773a125627ae38d874b889b8d841'), 'Dataset Inspection', 'DS-001 canonical CSV SHA-256 is recorded');
+
+  // 4. Dataset inspection states must reflect the evidence vault's current source audit.
+  // DS-002 is numerically inspected at workbook/parser level, but it is NOT a count of
+  // independent physical observations and is NOT eligible for formula-level validation.
+  const ds002 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-002');
+  assert(Boolean(ds002), 'Dataset Inspection', 'DS-002 descriptive rheology dataset exists');
+  assert(ds002?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-002 source workbooks are parser-inspected');
+  assert(!INITIAL_VAULT_STATE.datasets.some(ds => ds.id === 'DS-003'), 'Dataset Inspection', 'Out-of-scope personal-care dataset is not registered');
+  assert(ds002?.actualRowCount === 11626, 'Dataset Inspection', 'DS-002 records 11,626 numeric-bearing worksheet rows; physical observation count remains unresolved');
+  assert(ds002?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-002 is not formula-validation-ready');
+  const ds005 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-005');
+  assert(Boolean(ds005), 'Dataset Inspection', 'DS-005 RepOD source is registered');
+  assert(ds005?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-005 both source worksheets are parsed and inspected');
+  assert(ds005?.actualRowCount === 23, 'Dataset Inspection', 'DS-005 records 23 concentration-level rows; independent replicate count remains unresolved');
+  const ds004 = INITIAL_VAULT_STATE.datasets.find(ds => ds.id === 'DS-004');
+  assert(ds004?.inspectionStatus === 'NUMERICALLY_INSPECTED', 'Dataset Inspection', 'DS-004 PhDat arrays passed the recorded source integrity audit');
+  assert(ds004?.actualRowCount === 143, 'Dataset Inspection', 'DS-004 row count reflects source chemical records, not independent experiments');
+  assert(ds004?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-004 remains ineligible for formula validation');
+  assert(ds005?.actualColumnCount === 23, 'Dataset Inspection', 'DS-005 normalized worksheet schema has 23 columns');
+  assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
+  assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
+  assert(Boolean(ds005?.inspectionNotes?.includes('Unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
+  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-004', 'DS-005'].includes(ds.id))) {
+    assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
+  }
+
+  const datasetInspectionSummary = getDatasetInspectionSummary(INITIAL_VAULT_STATE.datasets);
+  assert(datasetInspectionSummary.totalCount === INITIAL_VAULT_STATE.datasets.length, 'Dataset Inspection Summary', 'Summary counts every registered dataset');
+  assert(datasetInspectionSummary.inspectedCount === 4, 'Dataset Inspection Summary', 'Current vault reports four numerically inspected datasets');
+  assert(datasetInspectionSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'No registered dataset is falsely listed as uninspected');
+  const partiallyInspectedDatasets = INITIAL_VAULT_STATE.datasets.map((dataset, index) =>
+    index === 0 ? { ...dataset, inspectionStatus: 'UNINSPECTED' as const, actualRowCount: null } : dataset
+  );
+  const partialSummary = getDatasetInspectionSummary(partiallyInspectedDatasets);
+  assert(partialSummary.inspectedCount === 3, 'Dataset Inspection Summary', 'A dataset without explicit inspection and positive rows is excluded');
+  assert(partialSummary.uninspectedDatasets[0]?.id === INITIAL_VAULT_STATE.datasets[0]?.id, 'Dataset Inspection Summary', 'Uninspected dataset identity is retained');
+  const emptyDatasetSummary = getDatasetInspectionSummary([]);
+  assert(emptyDatasetSummary.totalCount === 0 && emptyDatasetSummary.inspectedCount === 0 && emptyDatasetSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'Empty dataset inventory remains explicitly zero rather than implying evidence coverage');
+
+  // 5. Missing prices remain strictly null, never coerced to 0.00
+  const unpricedItems = INITIAL_VAULT_STATE.pricingRecords.filter(p => p.pricePerKg === null);
+  assert(unpricedItems.length >= 2, 'Pricing Integrity', 'At least 2 unpriced items preserved as null');
+
+  const componentsWithNull = [
+    { ingredientId: 'ING-LAS-001', weightFraction: 0.15, pricePerKg: 1.85 },
+    { ingredientId: 'ING-SPECIAL-004', weightFraction: 0.05, pricePerKg: null },
+    { ingredientId: 'ING-WATER', weightFraction: 0.80, pricePerKg: 0.02 },
+  ];
+  const resultWithNull = computeBatchCostWithNullIntegrity(componentsWithNull);
+  assert(resultWithNull.totalCostPerKg === null, 'Pricing Integrity', 'Batch cost with null price returns null');
+  assert(resultWithNull.isComplete === false, 'Pricing Integrity', 'Batch cost with null price isComplete is false');
+  assert(resultWithNull.unpricedCount === 1, 'Pricing Integrity', 'Unpriced count is 1');
+  assert(Boolean(resultWithNull.costWarning), 'Pricing Integrity', 'Cost warning is present');
+
+  const componentsAllKnown = [
+    { ingredientId: 'ING-LAS-001', weightFraction: 0.10, pricePerKg: 2.0 },
+    { ingredientId: 'ING-SLES-002', weightFraction: 0.20, pricePerKg: 1.5 },
+  ];
+  const resultAllKnown = computeBatchCostWithNullIntegrity(componentsAllKnown);
+  assert(resultAllKnown.totalCostPerKg === 0.5, 'Pricing Integrity', 'Batch cost with all prices computes 0.5');
+  assert(resultAllKnown.isComplete === true, 'Pricing Integrity', 'Batch cost with all prices isComplete is true');
+
   // 6. Phase 5 Gate Rule: Phase 5 cannot be unlocked while Phase 4B is active
   const gateCheck = canUnlockPhase5(INITIAL_VAULT_STATE);
   assert(gateCheck.allowed === false, 'Phase 5 Gate', 'Phase 5 unlock blocked on active 4B');
