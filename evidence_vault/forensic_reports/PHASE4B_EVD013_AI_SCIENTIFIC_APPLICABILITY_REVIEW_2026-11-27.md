@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-27  
 **Source:** Izawa, T., James, L. A. & Yethiraj, A. (2026), “The decay of saline surfactant foams: a study at macroscopic and bubble scales”, *Royal Society Open Science* 13:251765. DOI: 10.1098/rsos.251765.  
-**Supplementary record:** Figshare article 31314542; file-level CC BY 4.0 recorded in source register.  
+**Supplementary record:** the article points to Figshare collection DOI 10.6084/m9.figshare.c.8304092. The previously recorded numeric identifier 31314542 is incorrect: it resolves to PubMed PMID 31314542 for an unrelated 2019 physiology paper, not to this foam-study supplementary material. The collection's individual files and file-level rights still require exact identification.  
 **Review type:** independent AI literature/mathematical review; not an author re-analysis of raw video or Igor Pro source data.
 
 ## 1. Executive decision
@@ -86,7 +86,7 @@ Not permitted from this source:
 
 ## 6. Evidence quality and data limitations
 
-The paper reports four macroscopic replicates and supplies supplementary analysis files/figures. The accessible bibliographic record identifies a Figshare supplementary item; the current repository source register says the exact supplementary PDF bytes are not archived and no repository SHA-256 is recorded. The supplementary analysis material is not established here as a raw, machine-readable replicate time-series dataset. Therefore no exact replicate-level regression, confidence interval, residual analysis, or independent parameter refit is claimed.
+The paper reports four macroscopic replicates and supplies supplementary analysis files/figures. The article's own supplementary-material link resolves to Figshare collection DOI 10.6084/m9.figshare.c.8304092. The prior source-register value 31314542 was a mistaken identifier (it is a PubMed PMID for an unrelated paper). The exact collection item/file list, downloadable bytes, and item-level rights have not yet been independently retrieved. No repository SHA-256 is recorded. The supplementary analysis material is not established here as a raw, machine-readable replicate time-series dataset. Therefore no exact replicate-level regression, confidence interval, residual analysis, or independent parameter refit is claimed.
 
 The paper reports that the mean bubble area relation is approximately linear to 5,000 s and that later bubble counts become inadequate. This limits the supported fit window and should be encoded as a quality boundary if this source is ever represented in a structured dataset.
 
@@ -107,7 +107,7 @@ If exact source data become available, require:
 - Mathematical form and units: **CHECKED**.
 - Applicability boundary: **CLOSED — REFERENCE ONLY**.
 - Raw replicate refit / independent numeric labels: **NOT ESTABLISHED**.
-- Supplementary source bytes and SHA-256 in repository: **NOT COMPLETE**.
+- Correct supplementary collection/file identity, source bytes, item-level license and SHA-256 in repository: **NOT COMPLETE — identifier correction required**.
 - Finished-formula engine validation: **NOT APPROVED**.
 
 No further numeric inference is justified from the current inspected source. A later update requires the exact supplementary source bytes or a new, independently measured detergent experiment.
