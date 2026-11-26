@@ -325,6 +325,9 @@ jobs:
       - name: Verify Phase 1 engine inventory and dependency manifest
         run: node evidence_vault/scripts/verify_engine_inventory.mjs
 
+      - name: Audit Phase 1 static engine import reachability
+        run: node evidence_vault/scripts/audit_engine_import_graph.mjs
+
       - name: Test Pušić extraction validator
         run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
 
