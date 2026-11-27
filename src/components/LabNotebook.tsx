@@ -106,7 +106,7 @@ export default function LabNotebook(_props?: any) {
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newReplicateNumber, setNewReplicateNumber] = useState('1');
   const [newBatchId, setNewBatchId] = useState('');
-  const [newCompositionMethod, setNewCompositionMethod] = useState<CompositionMeasurementMethod>('GRAVIMETRIC_MASS_BALANCE');
+  const [newCompositionMethod, setNewCompositionMethod] = useState<CompositionMeasurementMethod>('GRAVIMETRIC_ASSAY');
   const [newCompositionMethodDetails, setNewCompositionMethodDetails] = useState('');
   const [newInstrumentId, setNewInstrumentId] = useState('');
   const [newCalibrationReference, setNewCalibrationReference] = useState('');
@@ -201,7 +201,6 @@ export default function LabNotebook(_props?: any) {
         replicateNumber: Number(newReplicateNumber),
         sourceType: 'LAB_MEASURED' as const,
         qualityStatus: 'ACCEPTED' as const,
-        isCalibratedInstrument: true
       } : {})
     };
 
@@ -1551,7 +1550,7 @@ export default function LabNotebook(_props?: any) {
                   <div><label className="block text-[10px] text-slate-400 mb-1">Ingredient Name</label><input value={newIngredientName} onChange={e => setNewIngredientName(e.target.value)} placeholder="Exact ingredient name" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div><label className="block text-[10px] text-slate-400 mb-1">Batch ID</label><input value={newBatchId} onChange={e => setNewBatchId(e.target.value)} placeholder="Batch reference" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div><label className="block text-[10px] text-slate-400 mb-1">Replicate Number</label><input type="number" min="1" step="1" value={newReplicateNumber} onChange={e => setNewReplicateNumber(e.target.value)} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
-                  <div><label className="block text-[10px] text-slate-400 mb-1">Composition Method</label><select value={newCompositionMethod} onChange={e => setNewCompositionMethod(e.target.value as CompositionMeasurementMethod)} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white"><option value="GRAVIMETRIC_MASS_BALANCE">Gravimetric mass balance</option><option value="VALIDATED_ASSAY">Validated assay</option><option value="OTHER_VALIDATED_METHOD">Other validated method</option></select></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Composition Method</label><select value={newCompositionMethod} onChange={e => setNewCompositionMethod(e.target.value as CompositionMeasurementMethod)} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white"><option value="GRAVIMETRIC_ASSAY">Gravimetric assay</option><option value="VALIDATED_ASSAY">Validated assay</option><option value="OTHER_VALIDATED_METHOD">Other validated method</option></select></div>
                   <div><label className="block text-[10px] text-slate-400 mb-1">Instrument ID</label><input value={newInstrumentId} onChange={e => setNewInstrumentId(e.target.value)} placeholder="Balance / instrument ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div className="col-span-2"><label className="block text-[10px] text-slate-400 mb-1">Method details / SOP reference</label><input value={newCompositionMethodDetails} onChange={e => setNewCompositionMethodDetails(e.target.value)} placeholder="SOP, preparation and calculation basis" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div><label className="block text-[10px] text-slate-400 mb-1">Instrument calibration certificate reference (operator-attested)</label><input value={newCalibrationReference} onChange={e => setNewCalibrationReference(e.target.value)} placeholder="Calibration certificate ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
