@@ -12,11 +12,12 @@
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "test:phase6": "bun run scripts/run-p1-phase6-lab-evidence-regression.ts",
     "test": "bun run test:phase6",
-    "test:all": "bun run src/utils/test-calculations.ts && bun run src/services/formulaIngredientResearchPipeline.test.ts && bun run src/services/ingredientResearchRouting.test.ts && bun run scripts/audit-hair-shampoo-removal.ts",
+    "test:all": "bun run src/utils/test-calculations.ts && bun run src/services/formulaIngredientResearchPipeline.test.ts && bun run src/services/ingredientResearchRouting.test.ts && bun run scripts/audit-hair-shampoo-removal.ts && bun run test:refinement",
     "test:db-migration": "node --import tsx src/db/database.migration.test.ts",
     "cap:sync": "cap sync android",
     "android:debug": "bun run cap:sync && node scripts/build_android_debug.mjs",
-    "test:correction-static": "node scripts/verify-correction-static.mjs"
+    "test:correction-static": "node scripts/verify-correction-static.mjs",
+    "test:refinement": "bun run src/utils/__tests__/refinementEngine.regression.test.ts"
   },
   "dependencies": {
     "3dmol": "^2.5.5",
