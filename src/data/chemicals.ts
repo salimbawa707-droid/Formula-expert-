@@ -1,5 +1,5 @@
 import { ChemicalItem } from '../types';
-import { resolveFunctionalRouting } from './ingredientFunctionalRouting';
+import { resolveFunctionalRoutingForIngredient } from './ingredientFunctionalRouting';
 
 /**
  * ============================================================================
@@ -107,8 +107,8 @@ export const COMPATIBILITY_MATRIX: Record<string, Record<string, CompatibilityMa
   }
 };
 
-function matrixClass(ingredientId: string, fallbackCategory: string): string {
-  const route = resolveFunctionalRouting(ingredientId);
+function matrixClass(ingredientId: string, fallbackCategory: string, ingredientName?: string): string {
+  const route = resolveFunctionalRoutingForIngredient({ id: ingredientId, name: ingredientName });
   if (route?.role === 'IDENTITY_UNRESOLVED') return 'UNRESOLVED';
   if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return 'Amine Oxide (pH-dependent)';
   if (route?.routingClass === 'ANIONIC') return 'Anionic Surfactant';
@@ -124,10 +124,11 @@ function matrixClass(ingredientId: string, fallbackCategory: string): string {
 
 export function resolveFunctionalCompatibilityMatrixPair(
   ingredientAId: string, ingredientACategory: string,
-  ingredientBId: string, ingredientBCategory: string
+  ingredientBId: string, ingredientBCategory: string,
+  ingredientAName?: string, ingredientBName?: string
 ): CompatibilityMatrixDecision | null {
-  const a = matrixClass(ingredientAId, ingredientACategory);
-  const b = matrixClass(ingredientBId, ingredientBCategory);
+  const a = matrixClass(ingredientAId, ingredientACategory, ingredientAName);
+  const b = matrixClass(ingredientBId, ingredientBCategory, ingredientBName);
   if (a === 'UNRESOLVED' || b === 'UNRESOLVED') return { compatible: false, status: 'INSUFFICIENT_DATA', note: 'At least one ingredient identity is unresolved; compatibility is blocked.' };
   const direct = COMPATIBILITY_MATRIX[a]?.[b];
   const reverse = COMPATIBILITY_MATRIX[b]?.[a];
