@@ -45,6 +45,9 @@ assert(!ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({
 const labsaIntelligence = resolveFormulaIntelligenceRouting('labsa-90');
 assert.equal(labsaIntelligence?.chargeLabel, 'Anionic');
 assert.equal(labsaIntelligence?.hlbEligible, false);
+const sarcosinateIntelligence = resolveFormulaIntelligenceRouting('sarcosinate-30');
+assert.equal(sarcosinateIntelligence?.chargeLabel, 'Anionic (pH-dependent)');
+assert.equal(sarcosinateIntelligence?.hlbEligible, false);
 const ldaoIntelligence = resolveFormulaIntelligenceRouting('lauryl-amine-oxide');
 assert.equal(ldaoIntelligence?.chargeLabel, 'Amine Oxide (pH-dependent)');
 assert.equal(ldaoIntelligence?.hlbEligible, false);
@@ -102,6 +105,17 @@ const labsaCationicResolvedPH = evaluateExpertReasoning({
 assert(labsaCationicResolvedPH.issues.some(issue => issue.id === 'anionic-cationic-conflict' && issue.severity === 'Critical'), 'neutralized LABSA remains anionic for opposite-charge screening');
 assert(!labsaCationicResolvedPH.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'LABSA route does not emit the sarcosinate pH-dependent warning');
 
+const sarcosinateCationicExpertReview = evaluateExpertReasoning({
+  ingredients: [
+    { id:'sarcosinate-30', canonicalIngredientId:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', category:'Anionic Surfactant', role:'Anionic Surfactant', percentage:5, activeMatterPct:30 } as any,
+    { name:'Esterquat 90%', category:'Cationic Surfactant', role:'Cationic Surfactant', percentage:5, activeMatterPct:90 } as any
+  ],
+  productCategory:'FABRIC_SOFTENER',
+  calculatedPH:3.5
+});
+assert(sarcosinateCationicExpertReview.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'expert reasoning must preserve sarcosinate pH-dependent speciation below the conservative pH threshold');
+assert(!sarcosinateCationicExpertReview.issues.some(issue => issue.id === 'anionic-cationic-conflict'), 'expert reasoning must not force sarcosinate into fixed anionic bucket below the speciation threshold');
+
 const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(analysisWorkflowSource.includes('resolveFunctionalRoutingForIngredient'), 'analysis workflow charge breakdown must resolve governed functional identity');
@@ -152,11 +166,16 @@ const ldaoActiveResolution = ActiveMatterEngine.resolveIngredientActive({
 assert.equal(ldaoActiveResolution.surfactantType, 'conditional', 'amine oxide active matter must retain a separate pH-dependent charge bucket');
 const labsaActiveResolution = ActiveMatterEngine.resolveIngredientActive({ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any);
 assert.equal(labsaActiveResolution.surfactantType, 'anionic', 'LABSA acid-form identity must resolve to aqueous anionic surfactant chemistry');
+const sarcosinateActiveResolution = ActiveMatterEngine.resolveIngredientActive({ id:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', percentage:2, activeMatterPct:30 } as any);
+assert.equal(sarcosinateActiveResolution.surfactantType, 'conditional', 'sarcosinate must retain pH-dependent carboxylate speciation');
 const labsaNameOnlyResolution = ActiveMatterEngine.resolveIngredientActive({ name:'LABSA (Acid Slurry 90%)', percentage:2, activeMatterPct:90 } as any);
 assert.equal(labsaNameOnlyResolution.surfactantType, 'anionic', 'name-only LABSA input must use the same strong-acid anionic route as canonical-ID input');
 const labsaActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any], 1);
 assert.equal(labsaActiveReport.surfactants.conditionalActivePct, 0);
 assert.equal(labsaActiveReport.surfactants.anionicActivePct, 1.8, 'LABSA must be reported in the aqueous anionic active bucket');
+const sarcosinateActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{ id:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', percentage:2, activeMatterPct:30 } as any], 1);
+assert.equal(sarcosinateActiveReport.surfactants.conditionalActivePct, 0.6);
+assert.equal(sarcosinateActiveReport.surfactants.anionicActivePct, 0, 'sarcosinate must remain outside fixed anionic active until pH speciation is resolved');
 const ldaoActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{
   id:'lauryl-amine-oxide',
   name:'Lauryl Amine Oxide 30% (LDAO)',
