@@ -28,7 +28,7 @@ assert(ionicAmphoteric.some(i => i.id === 'capb-30-uni'), 'CAPB must remain in a
 assert(!nonionic.some(i => i.id === 'lauryl-amine-oxide'), 'pH-dependent amine oxide must not be duplicated as generic nonionic');
 assert(nonionic.some(i => i.id === 'apg-0810'), 'APG must remain nonionic');
 assert(ionicAnionic.some(i => i.id === 'sles-70'), 'SLES must remain anionic');
-assert(ionicAnionic.some(i => i.id === 'labsa-90') && ionicAnionic.some(i => i.id === 'labsa-96'), 'LABSA commercial acid grades must route by exact CAS+INCI identity while retaining pH-dependent charge semantics');
+assert(ionicAnionic.some(i => i.id === 'labsa-90') && ionicAnionic.some(i => i.id === 'labsa-96'), 'LABSA commercial acid grades must route by exact CAS+INCI identity as strong-acid anionic surfactants');
 assert(ionicAnionic.some(i => i.id === 'aos-38') && ionicAnionic.some(i => i.id === 'aos-92'), 'AOS liquid and powder must route as anionic UVCB surfactant grades');
 assert(ionicAnionic.some(i => i.id === 'sas-60'), 'SAS 60 must route as anionic secondary alkane sulfonate');
 assert(ionicAnionic.some(i => i.id === 'sarcosinate-30'), 'sodium lauroyl sarcosinate must route as pH-dependent anionic surfactant');
@@ -43,7 +43,7 @@ assert(ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({ 
 assert(!ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide', category:'Polymer & Thickener' } as any), 'blocked identity must not leak into amphoteric selector');
 
 const labsaIntelligence = resolveFormulaIntelligenceRouting('labsa-90');
-assert.equal(labsaIntelligence?.chargeLabel, 'Anionic (pH-dependent)');
+assert.equal(labsaIntelligence?.chargeLabel, 'Anionic');
 assert.equal(labsaIntelligence?.hlbEligible, false);
 const ldaoIntelligence = resolveFormulaIntelligenceRouting('lauryl-amine-oxide');
 assert.equal(ldaoIntelligence?.chargeLabel, 'Amine Oxide (pH-dependent)');
@@ -89,8 +89,8 @@ const labsaCationicExpertReview = evaluateExpertReasoning({
   ],
   productCategory:'FABRIC_SOFTENER'
 });
-assert(labsaCationicExpertReview.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'expert reasoning must report conditional pH-dependent LABSA/cationic risk');
-assert(!labsaCationicExpertReview.issues.some(issue => issue.id === 'anionic-cationic-conflict'), 'expert reasoning must not claim a fixed-charge precipitation event for acid-form LABSA without pH/speciation');
+assert(labsaCationicExpertReview.issues.some(issue => issue.id === 'anionic-cationic-conflict'), 'expert reasoning must classify aqueous LABSA as anionic even when its starting raw material is acid-form');
+assert(!labsaCationicExpertReview.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'strong-acid LABSA must not retain an unsupported pH-dependent charge warning');
 const labsaCationicResolvedPH = evaluateExpertReasoning({
   ingredients: [
     { name:'LABSA (Acid Slurry 90%)', category:'Anionic Surfactant', role:'Anionic Surfactant', percentage:5, activeMatterPct:90 } as any,
@@ -99,14 +99,14 @@ const labsaCationicResolvedPH = evaluateExpertReasoning({
   productCategory:'FABRIC_SOFTENER',
   calculatedPH:7.0
 });
-assert(labsaCationicResolvedPH.issues.some(issue => issue.id === 'anionic-cationic-conflict' && issue.severity === 'Critical'), 'measured formula pH 7 must resolve LABSA to anionic species for opposite-charge screening');
-assert(!labsaCationicResolvedPH.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'resolved formula pH must not retain the unresolved-speciation warning');
+assert(labsaCationicResolvedPH.issues.some(issue => issue.id === 'anionic-cationic-conflict' && issue.severity === 'Critical'), 'neutralized LABSA remains anionic for opposite-charge screening');
+assert(!labsaCationicResolvedPH.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'LABSA route does not emit the sarcosinate pH-dependent warning');
 
 const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(analysisWorkflowSource.includes('resolveFunctionalRoutingForIngredient'), 'analysis workflow charge breakdown must resolve governed functional identity');
 assert(analysisWorkflowSource.includes('conditionalAmineOxidePct'), 'analysis workflow must expose pH-dependent amine oxide separately from fixed amphoteric totals');
-assert(analysisWorkflowSource.includes('conditionalPHDependentAnionicPct'), 'analysis workflow must expose acid-form LABSA separately from fixed anionic totals');
+assert(analysisWorkflowSource.includes('conditionalPHDependentAnionicPct'), 'analysis workflow must expose pH-dependent sarcosinate separately from fixed anionic totals');
 const qualityGateSource = readFileSync('src/utils/scientificQualityGateEngine.ts', 'utf8');
 assert(qualityGateSource.includes('resolveFunctionalRoutingForIngredient'), 'safety quality gates must consume governed functional identity');
 const smartAnalyzerSource = readFileSync('src/components/SmartFormulaAnalyzerPro.tsx', 'utf8');
@@ -119,14 +119,14 @@ assert(analysisWorkflowSource.includes('isPolymericDispersant'), 'staged workflo
 assert(dagSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'scientific DAG must exclude polymeric dispersant from primary surfactant charge totals');
 assert(qualityGateSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'safety quality gates must not apply primary-surfactant policy to polymeric dispersant');
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
-assert(dagSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'scientific DAG must not classify acid-form LABSA as fixed anionic before pH/speciation is resolved');
+assert(dagSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'scientific DAG must preserve a separate pH-dependent anionic bucket for sarcosinate');
 assert(dagSource.includes('conditionalPHDependentAnionicPct'), 'scientific DAG must expose pH-dependent anionic active separately');
 assert(dagSource.includes('conditionalAmineOxidePct'), 'scientific DAG must expose pH-dependent amine oxide separately');
 assert(dagSource.includes("dependencies: ['IDENTITY_RESOLUTION', 'PH_EQUILIBRIUM']"), 'DAG active-matter charge routing must wait for the pH equilibrium result');
 const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
 assert(activeMatterSource.includes("surfactantType: 'conditional'"), 'active matter engine must expose a separate conditional charge class');
 assert(activeMatterSource.includes('conditionalActivePct'), 'active matter report must expose pH-dependent surfactant active matter separately');
-assert(activeMatterSource.includes("routed?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'LABSA acid-form charge must not be assumed fixed anionic before neutralization/speciation');
+assert(activeMatterSource.includes("routed?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'sarcosinate charge must remain pH-dependent until the speciation threshold is reached');
 const powderSource = readFileSync('src/utils/powderEngine/powderIngredientClassification.ts', 'utf8');
 assert(powderSource.includes("functionalRoute?.role === 'IDENTITY_UNRESOLVED'"), 'powder classifier must fail closed on unresolved identity');
 assert(blockedFormula.alerts.some(a => a.id === 'identity-unresolved-compatibility-block'));
@@ -151,12 +151,12 @@ const ldaoActiveResolution = ActiveMatterEngine.resolveIngredientActive({
 } as any);
 assert.equal(ldaoActiveResolution.surfactantType, 'conditional', 'amine oxide active matter must retain a separate pH-dependent charge bucket');
 const labsaActiveResolution = ActiveMatterEngine.resolveIngredientActive({ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any);
-assert.equal(labsaActiveResolution.surfactantType, 'conditional', 'acid-form LABSA must remain a surfactant but must not enter a fixed anionic charge bucket before neutralization/speciation');
+assert.equal(labsaActiveResolution.surfactantType, 'anionic', 'LABSA acid-form identity must resolve to aqueous anionic surfactant chemistry');
 const labsaNameOnlyResolution = ActiveMatterEngine.resolveIngredientActive({ name:'LABSA (Acid Slurry 90%)', percentage:2, activeMatterPct:90 } as any);
-assert.equal(labsaNameOnlyResolution.surfactantType, 'conditional', 'name-only LABSA input must use the same pH-dependent route as canonical-ID input');
+assert.equal(labsaNameOnlyResolution.surfactantType, 'anionic', 'name-only LABSA input must use the same strong-acid anionic route as canonical-ID input');
 const labsaActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any], 1);
-assert.equal(labsaActiveReport.surfactants.conditionalActivePct, 1.8);
-assert.equal(labsaActiveReport.surfactants.anionicActivePct, 0, 'acid-form LABSA must not be silently reported as fixed anionic active');
+assert.equal(labsaActiveReport.surfactants.conditionalActivePct, 0);
+assert.equal(labsaActiveReport.surfactants.anionicActivePct, 1.8, 'LABSA must be reported in the aqueous anionic active bucket');
 const ldaoActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{
   id:'lauryl-amine-oxide',
   name:'Lauryl Amine Oxide 30% (LDAO)',
