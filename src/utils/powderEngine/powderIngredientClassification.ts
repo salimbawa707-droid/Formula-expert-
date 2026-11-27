@@ -7,7 +7,7 @@ export function classifyPowderIngredient(ing: FormulationIngredient): Classified
   const lowerName = name.toLowerCase();
   const rawRole = (ing.role || ing.category || ing.function || '').toLowerCase();
   const pct = Number((ing as any)?.percentage ?? (ing as any)?.percent ?? (ing as any)?.percentageInFormula ?? 0) || 0;
-  const cost = Number(ing.costPerKg ?? 0) || 0;
+  const cost = ing.costPerKg === undefined || ing.costPerKg === null ? Number.NaN : Number(ing.costPerKg);
   
   // Try matching against universal ingredient library for master metadata
   const masterItem = UNIVERSAL_INGREDIENTS.find(
