@@ -160,7 +160,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
           title: 'Seed & triage the registered evidence inventory (experimental, reference, theory, manufacturer specifications)',
           status: 'IN_PROGRESS',
           verified: true,
-          notes: 'Twenty-one evidence records are registered. Source-specific inspection, rights, and category applicability remain in progress; no literature reference alone is treated as engine validation or laboratory validation.',
+          notes: 'Twenty-five evidence records are registered (EVD-003 remains absent/quarantined). Source-specific inspection, rights, and category applicability remain in progress; no literature reference alone is treated as engine validation or laboratory validation.',
         },
         {
           title: 'Reconcile engine inventory: 55-path legacy manifest vs 61/64 source files and 64/97 historical claims',
@@ -1424,7 +1424,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       ],
       followUpActions: [
         'Use as a bounded laundry LAS/AE interaction reference; do not generalize to all nonionic surfactants.',
-        'Retain the Complete the second AI source-only visual pass on all 53 Appendix A points, recalculate the five CMC breakpoints, and seek author clarification on the Gibbs adsorption n-factor. Human review is not required.',
+        'Retain the published values separately from derived values. Complete a second blind AI visual transcription of all 53 Appendix A points, recalculate the five CMC breakpoints, and document the Gibbs adsorption n-factor uncertainty. Author clarification is optional follow-up, not a Phase 4B AI-review dependency.',
         'Keep numerical reuse blocked pending copyright review.',
         'EVD-019 is related literature evidence for ENG-002 only; the current app-facing Clint calculator does not support the LAS/AE-7EO pair and this source does not validate the current implementation.',
       ],
