@@ -32,7 +32,14 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
   const chemistAdvisories: string[] = [];
 
   // 1. Mass Balance Analysis
-  if (massBalance.status === 'INCOMPLETE') {
+  if (massBalance.status === 'INVALID_INPUT') {
+    issues.push({
+      title: 'Invalid Powder Mass Balance Inputs',
+      severity: 'High',
+      message: massBalance.statusMessage,
+      actionableGuidance: 'Correct every missing, malformed, non-finite, negative, or above-100% ingredient percentage before interpreting powder verdicts.'
+    });
+  } else if (massBalance.status === 'INCOMPLETE') {
     issues.push({
       title: 'Incomplete Powder Mass Balance',
       severity: 'Critical',
@@ -48,7 +55,7 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
       actionableGuidance: 'Re-normalize ingredient percentages to achieve exactly 100.00% batch total.'
     });
     chemistAdvisories.push('Formula total exceeds 100%. Re-scale percentages proportionally.');
-  } else {
+  } else if (massBalance.status === 'BALANCED') {
     strengths.push({
       title: '100.00% Formula Mass Balance',
       description: 'Assigned ingredient mass fractions sum to 100.00%. This verifies arithmetic balance only, not chemical performance or product compliance.'
@@ -155,6 +162,7 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
 
   // Overall Status Determination
   const hasCriticalEvidenceGap =
+    massBalance.status === 'INVALID_INPUT' ||
     activeMatter.hasInsufficientData ||
     powderPH.source === 'INSUFFICIENT_DATA' ||
     caking.cakingRisk === 'Insufficient Data' ||
@@ -163,7 +171,9 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
 
   let overallStatus: PowderVerdictReport['overallStatus'] = 'SCREENING_ONLY';
 
-  if (massBalance.status === 'INCOMPLETE') {
+  if (massBalance.status === 'INVALID_INPUT') {
+    overallStatus = 'INSUFFICIENT_DATA';
+  } else if (massBalance.status === 'INCOMPLETE') {
     overallStatus = 'INCOMPLETE FORMULA';
   } else if (massBalance.status === 'EXCESS') {
     overallStatus = 'EXCESS FORMULA';
@@ -175,7 +185,9 @@ export function evaluatePowderVerdict(input: PowderVerdictEvaluatorInput): Powde
     overallStatus = 'NEEDS ADJUSTMENT';
   }
 
-  const summary = massBalance.status === 'INCOMPLETE'
+  const summary = massBalance.status === 'INVALID_INPUT'
+    ? 'INSUFFICIENT DATA — Powder mass balance inputs are invalid; no balance or compliance verdict is issued.'
+    : massBalance.status === 'INCOMPLETE'
     ? `INCOMPLETE POWDER FORMULA — Unassigned formulation = ${massBalance.unassignedPercentage.toFixed(2)}% (Assigned: ${massBalance.assignedPercentage.toFixed(2)}%). Do not add water.`
     : massBalance.status === 'EXCESS'
     ? `EXCESS FORMULA — Exceeds 100.00% batch total by ${massBalance.excessPercentage.toFixed(2)} percentage points.`
