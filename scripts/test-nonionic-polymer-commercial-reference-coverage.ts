@@ -53,7 +53,7 @@ assert.match(pluronic.applicabilityNote, /Poloxamer 184|generic CAS/i);
 
 const pvno = getNormalCommercialIngredientReference("pvno-40");
 assert.ok(pvno);
-assert.match(pvno.applicabilityNote, /40%.*not supplier verification|40% is not supplier verification/i);
+assert.match(pvno.applicabilityNote, /40%.*(TDS|solids)|activeDefault 40.*confirmed solids assay/i);
 
 console.log(
   `PASS: ${targetIds.length} nonionic/polymer catalog IDs each resolve to exactly one evidence-bounded reference profile; supplier grade and lot CoA remain UNVERIFIED.`,
