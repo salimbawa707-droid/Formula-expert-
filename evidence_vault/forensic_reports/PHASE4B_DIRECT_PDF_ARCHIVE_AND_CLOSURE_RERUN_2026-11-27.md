@@ -70,3 +70,23 @@ A regression assertion now checks that the current DEFICIENT datasets cannot pro
 ## Final decision
 
 **Phase 4B remains OPEN. Phase 5 remains LOCKED.** The source review was advanced where direct records were accessible, a stale dataset-inspection test was corrected, and a fail-open engine-promotion condition was hardened. However, source-byte archival/hash pinning did not complete, and the master ingredient, rights, dataset eligibility and historical inventory gates are still unmet. The new code changes require a fresh CI result before they can be called verified.
+
+
+## 5. Run #1309 and exact-head gate status (follow-up)
+
+**Run #1309:** GitHub Actions run ID `46020250751`, exact head SHA `dc47976d405b9d013612667c3fb03d6406430826`.
+- Latest API state at follow-up: `pending`, conclusion `null`, zero jobs created.
+- Earlier runs #1305–#1308 were cancelled as new commits superseded their heads; they are not valid pass/fail evidence for the final SHA.
+- Run #1307 briefly exposed a production-server smoke-test job, but its other jobs were cancelled; it is not a complete quality-gate execution and is not used as a pass.
+- No failed job logs exist for Run #1309 because GitHub has not created any jobs. Therefore there is no new CI failure to diagnose from this run and no defensible claim that the changed TypeScript/tests pass. CI verification remains PENDING.
+
+## 6. Phase 4B gate evaluation against the checked-in state
+
+The checked-in `canUnlockPhase5` function was re-read and evaluated against the Phase 4B record in `INITIAL_VAULT_STATE`. The first mandatory condition rejects the transition:
+- Phase 4B `status = ACTIVE`;
+- `reportedClosed = false`;
+- `independentVerificationStatus = UNESTABLISHED`.
+
+The function therefore returns `allowed: false` with the reason: **“Phase 4B is still ACTIVE/OPEN. Phase 5 remains strictly LOCKED.”** This is the deterministic fail-closed outcome; it does not depend on later gate checks. The vault also retains active blocker `BLK-002` (no eligible matched formula prediction/observation pairs).
+
+**Gate rerun result: BLOCKED / NOT CLOSED.** This is an evaluation of the committed gate function and committed initial state, not a successful CI execution. The two code remediations above are committed, but require a completed exact-head CI run before verification can be claimed.
