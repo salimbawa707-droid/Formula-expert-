@@ -142,6 +142,15 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     caveats: ['Anionic charge can matter in polymer/cationic interaction screening, but do not count it as primary surfactant active.', 'Catalog activeDefault and HLB are not supplier-verified.', 'No detergent dose/performance claim is established.']
   },
   {
+    ingredientIds: ['labsa-90', 'labsa-96'],
+    expectedCategory: 'Anionic Surfactant', expectedInci: 'Dodecylbenzene Sulfonic Acid',
+    routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'PH_DEPENDENT_ANIONIC',
+    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    identityScope: 'Exact catalog CAS 27176-87-0 and INCI Dodecylbenzene Sulfonic Acid crosswalk to the SSOT LABSA identity. The acid precursor is neutralized in use; ionic surfactant state is therefore pH/speciation dependent.',
+    sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/27176-87-0'],
+    caveats: ['LABSA 90% and 96% are separate commercial grade labels; neither is supplier/lot verified by this identity route.', 'Active-matter input must come from the actual grade assay; this route does not certify the catalog default.', 'Do not assign pure-component CMC or supplier-grade HLB from this identity mapping.', 'Use formula pH/neutralization state for charge-dependent compatibility; do not treat acid-form LABSA as invariant fixed anionic species.']
+  },
+  {
     ingredientIds: ['tallow-amine-oxide'],
     expectedCategory: 'Polymer & Thickener', expectedInci: 'PEG-2 Tallow Amine',
     routingClass: 'BLOCKED', role: 'IDENTITY_UNRESOLVED', chargeBehavior: 'UNRESOLVED',
