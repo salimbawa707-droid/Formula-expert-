@@ -13,6 +13,18 @@ export interface MasterIngredientApplicabilityScreenRow {
   ingredientName: string;
   catalogClass: string;
   productCategory: ProductCategoryId;
+  casNumber: string | null;
+  inciName: string;
+  identityType: UniversalIngredient['identityType'];
+  commercialActiveDefaultPct: number | null | undefined;
+  supplierActiveMatterPct: number | null | undefined;
+  phMin: number | undefined;
+  phMax: number | undefined;
+  manufacturer: string | undefined;
+  productName: string | undefined;
+  provenanceSource: string | undefined;
+  provenanceUrl: string | undefined;
+  provenanceVerificationStatus: UniversalIngredient['provenance'] extends infer P ? P extends { verificationStatus: infer S } ? S : never : never;
   preliminaryDisposition: PreliminaryDisposition;
   rationale: string;
   criticalUnknowns: string[];
@@ -97,6 +109,18 @@ export const MASTER_INGREDIENT_APPLICABILITY_SCREEN: MasterIngredientApplicabili
         ingredientName: ingredient.name,
         catalogClass: ingredient.category,
         productCategory,
+        casNumber: ingredient.casNumber,
+        inciName: ingredient.inciName,
+        identityType: ingredient.identityType,
+        commercialActiveDefaultPct: ingredient.activeDefault,
+        supplierActiveMatterPct: ingredient.surfactantActiveMatterPct ?? ingredient.activeMatter,
+        phMin: ingredient.phMin,
+        phMax: ingredient.phMax,
+        manufacturer: ingredient.manufacturer,
+        productName: ingredient.productName,
+        provenanceSource: ingredient.provenance?.source,
+        provenanceUrl: ingredient.provenance?.sourceUrl,
+        provenanceVerificationStatus: ingredient.provenance?.verificationStatus,
         ...result,
         evidenceState: ingredient.provenance?.sourceUrl ? 'PROVENANCE_METADATA_PRESENT' as const : 'CATALOG_METADATA_ONLY' as const,
       };
