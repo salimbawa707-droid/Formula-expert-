@@ -584,7 +584,10 @@ export function runPowderEngineTestSuite(): {
       measuredReserveAlkalinityPctNa2O: Number.NaN,
       measuredSoilRemovalPct: 125,
       measuredDissolutionTimeSec: Number.POSITIVE_INFINITY,
-      measuredRossMilesInitialMm: Number.POSITIVE_INFINITY
+      measuredRossMilesInitialMm: Number.POSITIVE_INFINITY,
+      measuredBulkDensityGPerL: Number.POSITIVE_INFINITY,
+      measuredAngleOfReposeDegrees: 120,
+      measuredD50Um: Number.POSITIVE_INFINITY
     }
   });
   assert(
@@ -618,6 +621,31 @@ export function runPowderEngineTestSuite(): {
       reportInvalidMeasurements.foam.measuredRossMilesInitialMm === undefined,
     reportInvalidMeasurements.foam,
     'INSUFFICIENT_DATA with no measured height'
+  );
+
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite bulk density is rejected',
+    reportInvalidMeasurements.density.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.density.densityType === 'NOT_MEASURED',
+    reportInvalidMeasurements.density,
+    'INSUFFICIENT_DATA / NOT_MEASURED'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Angle of repose above 90 degrees is rejected',
+    reportInvalidMeasurements.angleOfRepose.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.angleOfRepose.measuredAngleDegrees === undefined,
+    reportInvalidMeasurements.angleOfRepose,
+    'INSUFFICIENT_DATA with no measured angle'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite D50 particle size is rejected',
+    reportInvalidMeasurements.particleSize.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.particleSize.status === 'INSUFFICIENT_DATA',
+    reportInvalidMeasurements.particleSize,
+    'INSUFFICIENT_DATA'
   );
 
   const passedCount = results.filter(r => r.passed).length;
