@@ -17,6 +17,7 @@
 
 import { ProductCategoryId, normalizeProductCategory, getProductCategoryLabel } from '../domain/productTaxonomy';
 import { FormulationIngredient } from '../types';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 
 // =============================================================================
 // TYPINGS & STRUCTS
@@ -1082,11 +1083,27 @@ export function traceCompatibilityReasoning(
   // A. Surfactant-Surfactant Compatibility Review
   const hasAnionic = ingredients.some(i => {
     const c = (i.category || i.role || '').toUpperCase();
-    return c.includes('ANIONIC') || i.name.toLowerCase().includes('labsa') || i.name.toLowerCase().includes('sles') || i.name.toLowerCase().includes('aos');
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (i as any).id,
+      canonicalIngredientId: (i as any).canonicalIngredientId,
+      ingredientId: (i as any).ingredientId,
+      name: i.name
+    });
+    if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+    return route
+      ? route.routingClass === 'ANIONIC'
+      : c.includes('ANIONIC') || i.name.toLowerCase().includes('labsa') || i.name.toLowerCase().includes('sles') || i.name.toLowerCase().includes('aos');
   });
 
   const hasCationic = ingredients.some(i => {
     const c = (i.category || i.role || '').toUpperCase();
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (i as any).id,
+      canonicalIngredientId: (i as any).canonicalIngredientId,
+      ingredientId: (i as any).ingredientId,
+      name: i.name
+    });
+    if (route) return route.routingClass === 'BLOCKED' ? false : route.routingClass === 'CATIONIC';
     return c.includes('CATIONIC') || i.name.toLowerCase().includes('soft') || i.name.toLowerCase().includes('quat') || i.name.toLowerCase().includes('esterquat');
   });
 
