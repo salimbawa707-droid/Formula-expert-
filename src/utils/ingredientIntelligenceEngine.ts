@@ -1159,7 +1159,7 @@ export function traceCompatibilityReasoning(
     findings.push({
       id: `compat-ph-dependent-anionic-unresolved-${normCat}-${Date.now()}`,
       findingCode: 'ERR_PH_DEPENDENT_CHARGE_UNRESOLVED',
-      severity: 'HIGH',
+      severity: 'MAJOR',
       title: 'pH-Dependent Anionic Speciation Unresolved',
       message: 'A pH-dependent anionic surfactant and cationic active are present, but no valid final-formula pH was supplied. The engine cannot assert a fixed-charge precipitation event or declare compatibility.',
       ingredientsInvolved: ['pH-dependent anionic surfactant', 'Cationic surfactant'],
