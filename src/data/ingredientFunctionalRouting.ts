@@ -189,6 +189,17 @@ const ROUTE_NAME_ALIASES: Record<string, string> = {
   'dodecylbenzene sulfonic acid': 'labsa-90'
 };
 
+export function isIngredientSurfactantByRouting(
+  input: { id?: unknown; canonicalIngredientId?: unknown; ingredientId?: unknown; name?: unknown },
+  fallbackRole?: unknown,
+  fallbackHlb?: unknown
+): boolean {
+  const route = resolveFunctionalRoutingForIngredient(input);
+  if (route) return Boolean(route.activeMatterEligible) && route.role !== 'POLYMERIC_DISPERSANT' && route.role !== 'IDENTITY_UNRESOLVED';
+  const role = String(fallbackRole || '').toLowerCase();
+  return role.includes('surfactant') || role.includes('detergent') || (fallbackHlb !== undefined && fallbackHlb !== null);
+}
+
 export function resolveFunctionalRoutingForIngredient(input: { id?: unknown; canonicalIngredientId?: unknown; ingredientId?: unknown; name?: unknown }): FunctionalRoutingDecision | null {
   const suppliedId = String(input.canonicalIngredientId || input.ingredientId || input.id || '').trim();
   const byId = suppliedId ? resolveFunctionalRouting(suppliedId) : null;
