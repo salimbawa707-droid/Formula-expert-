@@ -30,6 +30,7 @@ Scope: runtime ingredient charge/family classification, surfactant active-matter
 | `src/utils/cleaningPerformanceEngine.ts` | Ionic distribution, surfactant synergy and category KPI model | MIGRATED | Route-first charge accounting. Amine oxide is not added to fixed amphoteric synergy; unresolved mapped identity fails closed. |
 | `src/utils/orchestrator/scientificExecutionDAG.ts` | Canonical DAG charge distribution | MIGRATED | Route-first totals; pH-dependent amine oxide and unresolved identity are excluded from fixed charge buckets. |
 | `src/utils/powderEngine/powderIngredientClassification.ts` | Powder ingredient functional grouping | MIGRATED | Route decisions precede name heuristics; blocked identity becomes unclassified and receives no inherited active default. |
+| `src/data/masterIngredientApplicabilityScreen.ts` | 430 × 13 preliminary ingredient/category triage | MIGRATED | Each row now records route class/role/charge behaviour and ROUTED/UNMAPPED/BLOCKED status; blocked identity is returned as IDENTITY_OR_EVIDENCE_UNKNOWN. All 5,590 final approvals remain NOT_APPROVED. |
 | `src/components/SmartFormulaAnalyzerPro.tsx` | Formula charge labels, HLB fallback and surfactant-system fingerprint | PARTIAL | Main identity label/HLB and surfactant fingerprint use routes. Other secondary KPI/eco summaries still use role/name heuristics and require review. |
 
 ## Known residual / secondary surfaces
