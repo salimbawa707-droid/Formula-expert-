@@ -124,9 +124,8 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     },
     sourceUrl: 'https://stppgroup.com/products/detergent-chemicals/sodium-sulphate-anhydrous/',
     sourceName: 'STPP Group Sodium Sulphate Anhydrous published technical specification',
-    applicabilityNote: 'The supplier publishes multiple grades (TOP/1st/2nd). Do not select TOP grade automatically; the user's actual grade remains unknown. Moisture and ionic impurities matter for powder performance.'
-  }
-
+    applicabilityNote: 'The supplier publishes multiple grades (TOP/1st/2nd). Do not select TOP grade automatically; the user\'s actual grade remains unknown. Moisture and ionic impurities matter for powder performance.'
+  },
   {
     catalogIngredientIds: ['sles-28', 'sles-28-tech'],
     displayName: 'Sodium Laureth Sulfate',
@@ -187,7 +186,7 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     },
     sourceUrl: 'https://wschemicalsbv.com/product-nacl.html',
     sourceName: 'WS Chemicals industrial and vacuum salt published specifications',
-    applicabilityNote: 'Industrial and vacuum grades are explicitly different. The catalog label vacuum salt does not prove the user's actual grade or anti-caking additive status.'
+    applicabilityNote: 'Industrial and vacuum grades are explicitly different. The catalog label vacuum salt does not prove the user\'s actual grade or anti-caking additive status.'
   },
   {
     catalogIngredientIds: ['stpp-94', 'stpp-94-tech'],
@@ -300,7 +299,7 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     },
     sourceUrl: 'https://assets.website-files.com/5fc922269c5ed09aea1f7c22/60d09bd501ec27f36d2c2f3a_Range%20Card%20Home%20Care_II_8.5%20x%2011_V23%20Web.pdf',
     sourceName: 'BASF Home Care Product Range Card — Trilon BX Liquid',
-    applicabilityNote: 'This published reference is approximately 40% and does not establish the catalog's 39% exact grade. Use as a commercial reference band only; supplier assay and hydrate/speciation basis must be checked.'
+    applicabilityNote: 'This published reference is approximately 40% and does not establish the catalog\'s 39% exact grade. Use as a commercial reference band only; supplier assay and hydrate/speciation basis must be checked.'
   },
   {
     catalogIngredientIds: ['protease-liquid'],
@@ -408,7 +407,7 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     },
     sourceUrl: 'https://ifrafragrance.org/docs/default-source/51st-amendment/ifra-51st-amendment---guidance-for-the-use-of-ifra-standards.pdf',
     sourceName: 'IFRA-RIFM Guidance for the Use of IFRA Standards',
-    applicabilityNote: 'Fragrance is a multi-component mixture; there is no universal active %, composition, density or safe dosage. Obtain the fragrance-mixture manufacturer's IFRA Standards Conformity Certificate for the exact intended use and amendment, plus SDS/allergen and restricted-material declarations. IFRA certificate does not replace a complete safety assessment.'
+    applicabilityNote: 'Fragrance is a multi-component mixture; there is no universal active %, composition, density or safe dosage. Obtain the fragrance-mixture manufacturer\'s IFRA Standards Conformity Certificate for the exact intended use and amendment, plus SDS/allergen and restricted-material declarations. IFRA certificate does not replace a complete safety assessment.'
   },
 
   {
