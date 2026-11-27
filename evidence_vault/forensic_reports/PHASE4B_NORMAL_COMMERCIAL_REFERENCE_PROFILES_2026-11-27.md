@@ -26,7 +26,7 @@ The dataset is intentionally separate from the existing formula calculation defa
 | `aos-38` | AOS 38 liquid | Active 37–39%; unsulfonated ≤2%; sodium sulfate ≤1.5%; free alkali ≤0.35%; pH 8.5–11.5 at stated 1% active-matter solution | Ningbo MOS Chemical published grade table |
 | `soda-ash-uni*`, `soda-ash-light*` | Light soda ash | Total alkalinity ≥99% as Na2CO3; volatile matter ≤0.8%; sulfate ≤0.03%; chloride ≤0.8%; Fe2O3 ≤0.0029%; insolubles ≤0.03%; bulk density 550–720 kg/m3 | Tata Chemicals Light Soda Ash TDS |
 | `sodium-metasilicate-pentahydrate*` | Sodium metasilicate pentahydrate | Na2O 28–30%; SiO2 28–30%; dry matter 56–60%; pH 12–13 (test concentration not stated in retrieved TDS); insolubles ≤0.05% | Ankit Silicate, product P-28 TDS |
-| `sodium-sulfate-uni*` | Sodium sulfate anhydrous | Published TOP/1st/2nd grade assay minima 99.6/99.0/98.0%; TOP moisture ≤0.05%, chloride ≤0.05%, insolubles ≤0.005% | STPP Group published specification |
+| `sodium-sulfate-uni*` | Sodium sulfate anhydrous | Published TOP/1st/2nd grade assay minima 99.6/99.0/98.0%; TOP moisture ≤0.05%, chloride ≤0.05%, insolubles ≤0.005% | STPP Group published specification |\n| `sles-28*` | SLES 28 liquid | Active 28±1%; pH 7–9 at 5% solution; unsulfated matter ≤1.5%; NaCl ≤0.5% | Allied Group SLES 28 TDS |\n| `sles-70*` | SLES 70 paste | Active 68–72%; free oil ≤2.5%; NaCl ≤0.5%; Na2SO4 ≤1.5%; pH 7.5–9 at 5% solution; dioxane ≤50 ppm | Sahar Express published SLES N70 specification |\n| `naoh-flakes-99*` | Caustic soda flakes | NaOH ≥99% on dry basis; Na2CO3 ≤0.4%; NaCl ≤200 ppm; Ni ≤5 ppm | BCI Caustic Soda Flakes TDS |\n| `sodium-chloride-uni*` | Industrial / vacuum salt | Published industrial assay 97–99%; vacuum salt 99.5–99.9%; moisture and insolubles vary by grade | WS Chemicals published grade specifications |\n| `stpp-94*` | STPP 94 | Assay ≥94%; P2O5 ≥57%; insolubles ≤0.10%; pH 9.2–10.0 at 10 g/L | STPP Group published specification |
 
 The source links are embedded in the code dataset. Grade variants are not silently collapsed: the sodium sulfate source publishes multiple grades; the selected grade remains unknown. Metasilicate pentahydrate data is not reused for anhydrous metasilicate. AOS sources also show pH differences between neutral and alkaline grades; the selected grade must be preserved.
 
@@ -52,7 +52,7 @@ A candidate receives a public reference profile only when an identifiable source
 
 ## Gate status
 
-- Public commercial reference profiles implemented in this tranche: 6.
+- Public commercial reference profiles implemented in this tranche: 11.
 - Supplier grade verified by these references: 0.
 - Lot CoA verified by these references: 0.
 - Formula applicability approvals created by these references: 0.
