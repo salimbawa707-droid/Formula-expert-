@@ -99,6 +99,10 @@ export const COMPATIBILITY_MATRIX: Record<string, Record<string, CompatibilityMa
     'Anionic Surfactant': { compatible: true, note: 'Screening rule only; verify exact formulation.' },
     'Cationic Surfactant': { compatible: true, note: 'Screening rule only; verify exact formulation.' }
   },
+  'Anionic (pH-dependent)': {
+    'Cationic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Sarcosinate ionization depends on pH; do not assert a fixed anionic/cationic clash without target-pH testing.' },
+    'Amphoteric Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Test the exact sarcosinate grade at target pH and electrolyte conditions.' }
+  },
   'Amine Oxide (pH-dependent)': {
     'Anionic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Amine oxide speciation depends on pH; no universal compatibility claim is made.' },
     'Cationic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Amine oxide speciation depends on pH; no universal compatibility claim is made.' },
@@ -111,6 +115,7 @@ function matrixClass(ingredientId: string, fallbackCategory: string, ingredientN
   const route = resolveFunctionalRoutingForIngredient({ id: ingredientId, name: ingredientName });
   if (route?.role === 'IDENTITY_UNRESOLVED') return 'UNRESOLVED';
   if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return 'Amine Oxide (pH-dependent)';
+  if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return 'Anionic (pH-dependent)';
   if (route?.routingClass === 'ANIONIC') return 'Anionic Surfactant';
   if (route?.routingClass === 'AMPHOTERIC') return 'Amphoteric Surfactant';
   if (route?.routingClass === 'NONIONIC') return 'Nonionic Surfactant';
