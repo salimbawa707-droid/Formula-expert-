@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { getIngredientChemistryCrosswalk, resolveIngredientChemistrySemantics, validateIngredientChemistryCrosswalk } from '../src/domain/ingredients/ingredientChemistrySemantics';
+import { resolveFunctionalRouting, validateFunctionalRoutingAgainstCatalog } from '../src/data/ingredientFunctionalRouting';
 import { evaluateIngredientSubstitution, getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
 import { getIngredientCmcData } from '../src/utils/calculators';
 
@@ -13,6 +14,11 @@ assert.equal(resolveIngredientChemistrySemantics('potassium_xylene_sulfonate')?.
 assert.equal(resolveIngredientChemistrySemantics('citric_acid')?.acidBaseBehavior, 'WEAK_ACID');
 assert.equal(resolveIngredientChemistrySemantics('sodium_bicarbonate')?.acidBaseBehavior, 'AMPHIPROTIC_BUFFER');
 assert.equal(resolveIngredientChemistrySemantics('labsa')?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT');
+assert.equal(resolveIngredientChemistrySemantics('labsa-90')?.ingredientId, 'labsa', 'commercial LABSA catalog IDs must resolve to the exact SSOT acid identity');
+assert.equal(resolveIngredientChemistrySemantics('labsa-96')?.ingredientId, 'labsa', 'commercial LABSA catalog IDs must resolve to the exact SSOT acid identity');
+assert.equal(resolveFunctionalRouting('labsa-90')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
+assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), [], 'all functional route IDs must resolve to catalog records with exact category and INCI');
 assert.equal(resolveIngredientChemistrySemantics('citric-acid')?.acidBaseBehavior, 'WEAK_ACID', 'static intelligence canonical alias must resolve through SSOT semantics');
 assert.equal(resolveIngredientChemistrySemantics('unknown-id'), null);
 assert.equal(getIngredientIntelligence('labsa')?.chemistrySemantics?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT', 'intelligence consumer must expose separate SSOT chemistry semantics');
@@ -25,6 +31,8 @@ assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'a
 assert.equal(getIngredientCmcData('SLES')?.dataProvenance, 'HEURISTIC_SCREENING', 'legacy SLES CMC alias must remain explicitly heuristic');
 assert.equal(getIngredientCmcData('SLS')?.dataProvenance, 'SOURCE_BACKED', 'curated SLS CMC source record must retain source-backed status');
 assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
-assert(rows.every(row => row.functionalRouteStatus === 'UNMAPPED'), 'no identity may be falsely represented as migrated to the separate functional route registry');
+assert.equal(rows.find(row => row.ingredientId === 'labsa')?.functionalRouteStatus, 'ROUTED', 'LABSA exact CAS+INCI identity must map to both commercial catalog grade IDs');
+assert(rows.filter(row => row.semantics.surfactantFunctionalClass === 'NOT_SURFACTANT').every(row => row.functionalRouteStatus === 'NOT_IN_SURFACTANT_ROUTER'), 'builders, acids, buffers and polymers outside the surfactant router must not be reported as missing surfactant routes');
+assert.equal(rows.filter(row => row.functionalRouteStatus === 'UNMAPPED').length, 0, 'no current SSOT surfactant identity should remain silently unmapped');
 console.log('INGREDIENT CHEMISTRY SEMANTICS CROSSWALK PASS');
 console.log(JSON.stringify(rows.map(row => ({ ingredientId: row.ingredientId, legacyChargeClass: row.legacyChargeClass, ionicSpeciesClass: row.semantics.ionicSpeciesClass, acidBaseBehavior: row.semantics.acidBaseBehavior, surfactantFunctionalClass: row.semantics.surfactantFunctionalClass, functionalRouteStatus: row.functionalRouteStatus, status: row.status })), null, 2));
