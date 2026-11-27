@@ -59,6 +59,17 @@ export interface DetailedLabEvidenceRecord extends LabMeasurementRecord {
   methodRef?: string;
   sourceType?: 'CALCULATED' | 'USER_ENTERED' | 'LAB_MEASURED';
   isCalibratedInstrument?: boolean;
+  evidenceKind?: 'INGREDIENT_COMPOSITION';
+  ingredientCanonicalId?: string;
+  ingredientName?: string;
+  compositionBasis?: 'W_W';
+  compositionMethod?: 'GRAVIMETRIC_MASS_BALANCE' | 'VALIDATED_ASSAY' | 'OTHER_VALIDATED_METHOD';
+  compositionMethodDetails?: string;
+  instrumentId?: string;
+  instrumentCalibrationReference?: string;
+  sourceDocumentReference?: string;
+  formulaCompositionReference?: string;
+  replicateNumber?: number;
 }
 
 export interface ReplicateAnalysisResult {
