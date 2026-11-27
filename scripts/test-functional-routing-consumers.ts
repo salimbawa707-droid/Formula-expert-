@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { getIngredientsByMajorCategory } from '../src/data/rawMaterialCategories';
 import { getCategorySpecificIngredients } from '../src/components/CategoryIngredientSelector';
 import { resolveFormulaIntelligenceRouting, resolveFunctionalRouting } from '../src/data/ingredientFunctionalRouting';
+import { traceCompatibilityReasoning } from '../src/utils/ingredientIntelligenceEngine';
+import { RAW_MATERIAL_CATEGORIES } from '../src/data/rawMaterialCategories';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
@@ -22,6 +25,10 @@ const amphotericQuickFilter = getCategorySpecificIngredients('Amphoteric Surfact
 const nonionicQuickFilter = getCategorySpecificIngredients('Nonionic Surfactant');
 assert(amphotericQuickFilter.some(i => i.id === 'lauryl-amine-oxide'), 'quick selector must route amine oxide into pH-dependent ionic family');
 assert(!nonionicQuickFilter.some(i => i.id === 'lauryl-amine-oxide'), 'quick selector must not duplicate amine oxide in generic nonionic category');
+const ionicCategory = RAW_MATERIAL_CATEGORIES.find(c => c.id === 'ionic')!;
+assert(ionicCategory.subcategories!.find(s => s.id === 'anionic')!.matches({ id:'sles-70', name:'SLES 70%', category:'Anionic Surfactant' } as any), 'ionic anionic pill must use governed route');
+assert(ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({ id:'lauryl-amine-oxide', name:'Lauryl Amine Oxide', category:'Nonionic Surfactant' } as any), 'amine oxide must appear in the governed pH-dependent ionic family');
+assert(!ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide', category:'Polymer & Thickener' } as any), 'blocked identity must not leak into amphoteric selector');
 
 const ldaoIntelligence = resolveFormulaIntelligenceRouting('lauryl-amine-oxide');
 assert.equal(ldaoIntelligence?.chargeLabel, 'Amine Oxide (pH-dependent)');
@@ -51,6 +58,19 @@ const blockedFormula = calculateFormulationCompatibility([
 assert.equal(blockedFormula.compatible, false);
 assert.equal(blockedFormula.compatibilityStatusSemantic, 'INSUFFICIENT_DATA');
 assert.equal(blockedFormula.evidenceStatus, 'INSUFFICIENT_DATA');
+const intelligenceClash = traceCompatibilityReasoning([
+  { id:'sles-70', name:'SLES 70%', category:'Anionic Surfactant', percentage:10 } as any,
+  { name:'Esterquat 90%', category:'Cationic Surfactant', percentage:5 } as any
+], 'FABRIC_SOFTENER');
+assert(intelligenceClash.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), 'ingredient intelligence compatibility must consume governed anionic identity routing');
+
+const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
+assert(analysisWorkflowSource.includes('resolveFunctionalRoutingForIngredient'), 'analysis workflow charge breakdown must resolve governed functional identity');
+assert(analysisWorkflowSource.includes('conditionalAmineOxidePct'), 'analysis workflow must expose pH-dependent amine oxide separately from fixed amphoteric totals');
+const qualityGateSource = readFileSync('src/utils/scientificQualityGateEngine.ts', 'utf8');
+assert(qualityGateSource.includes('resolveFunctionalRoutingForIngredient'), 'safety quality gates must consume governed functional identity');
+const smartAnalyzerSource = readFileSync('src/components/SmartFormulaAnalyzerPro.tsx', 'utf8');
+assert(smartAnalyzerSource.includes('hasConditionalAmineOxide'), 'formula fingerprint must label pH-dependent amine oxide separately');
 assert(blockedFormula.alerts.some(a => a.id === 'identity-unresolved-compatibility-block'));
 
 const lignoSoftener = calculateFormulationCompatibility([
