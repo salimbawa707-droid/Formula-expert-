@@ -46,6 +46,7 @@ import {
 import { evaluateRegulatoryCompliance } from '../regulatoryEngine';
 import { MixtureGHSValidationEngine } from '../../domain/regulatory/regulatoryValidation';
 import { PackagingComplianceEngine } from '../../domain/regulatory/regulatoryPackagingRules';
+import { IngredientIdentitySSOT } from '../../domain/ingredients/ingredientIdentitySSOT';
 
 
 export interface TestResult {
@@ -66,6 +67,19 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
       console.error(`[FAIL] ${name}: ${message}`);
     }
   }
+
+  const globalOnlyIdentity = IngredientIdentitySSOT.resolveRegulatoryStatus('citric_acid', 'IN');
+  const globalOnlyCategory = IngredientIdentitySSOT.resolveRegulatoryStatus('citric_acid', 'GLOBAL', 'LAUNDRY_LIQUID');
+  assert(
+    'Ingredient identity SSOT: GLOBAL listing cannot be promoted to India-specific regulatory approval',
+    globalOnlyIdentity.status === 'UNKNOWN',
+    'GLOBAL inventory/listing metadata is not India-specific legal evidence'
+  );
+  assert(
+    'Ingredient identity SSOT: product-category approval requires explicit category scope',
+    globalOnlyCategory.status === 'UNKNOWN',
+    'A substance-level GLOBAL listing without productCategoryScope cannot approve a detergent category'
+  );
 
   // --------------------------------------------------------------------------
   // TEST 1: IS 869 incorrect disinfectant mapping is rejected
