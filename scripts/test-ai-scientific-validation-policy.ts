@@ -1,4 +1,4 @@
-import { assessAiScientificValidation, AiValidationEvidence } from '../utils/aiScientificValidationPolicy';
+import { assessAiScientificValidation, AiValidationEvidence } from '../src/utils/aiScientificValidationPolicy';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
