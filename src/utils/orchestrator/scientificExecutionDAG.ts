@@ -564,7 +564,7 @@ export class ScientificExecutionDAG {
               nonionic += activePct;
             } else if (route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb')))) {
               amphoteric += activePct;
-            } else if (!route && (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat')))) {
+            } else if (!route && (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat'))) {
               cationic += activePct;
             }
           }
