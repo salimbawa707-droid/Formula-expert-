@@ -25,11 +25,36 @@ const base: AiValidationEvidence = {
   chargeBalancePassed: true,
   unitsResolved: true,
   outOfDomain: false,
-  unresolvedCriticalGap: false
+  unresolvedCriticalGap: false,
+  supplierName: 'Example Chemical Supplier',
+  manufacturerName: 'Example Manufacturer',
+  supplierProductName: 'LABSA 90%',
+  supplierGrade: 'Commercial Grade 90%',
+  supplierLotNumber: 'LOT-2026-001',
+  coaEvidenceId: 'EVD-COA-001',
+  coaSha256: 'a'.repeat(64),
+  coaIssuedAt: '2026-11-20',
+  coaTestMethods: ['Active matter titration'],
+  coaMeasuredProperties: ['Active matter']
 };
 
 const qualified = assessAiScientificValidation(base, 94);
-assert(qualified.score === 94 && qualified.endpointBenchmarkQualified && qualified.supplierLotVerified, 'Qualified held-out benchmark and supplier lot evidence should remain distinct and retain the composite score.');
+assert(qualified.score === 94 && qualified.endpointBenchmarkQualified && qualified.supplierLotVerified, 'Qualified held-out benchmark and complete COA provenance should remain distinct and retain the composite score.');
+
+const routeOnlyCoa = assessAiScientificValidation({
+  ...base,
+  supplierName: undefined,
+  manufacturerName: undefined,
+  supplierProductName: undefined,
+  supplierGrade: undefined,
+  supplierLotNumber: undefined,
+  coaEvidenceId: undefined,
+  coaSha256: undefined,
+  coaIssuedAt: undefined,
+  coaTestMethods: undefined,
+  coaMeasuredProperties: undefined
+}, 94);
+assert(!routeOnlyCoa.supplierLotVerified && routeOnlyCoa.reasons.some(reason => reason.includes('Supplier COA route is incomplete')), 'A COA route label without traceable lot-specific document provenance must never verify a supplier lot.');
 assert(qualified.scoreSemantics === 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY', 'Composite screening score must never be presented as model accuracy.');
 
 const noBenchmark = assessAiScientificValidation({ ...base, matchedBenchmarkAvailable: false }, 96);
@@ -73,4 +98,4 @@ assert(unresolvedUnits.score === null && unresolvedUnits.disposition === 'CALCUL
 const invalidScore = assessAiScientificValidation(base, Number.NaN);
 assert(invalidScore.disposition === 'CALCULATION_FAILED', 'Non-finite score must fail closed.');
 
-console.log('AI scientific validation policy: 12/12 assertions passed.');
+console.log('AI scientific validation policy: 13/13 assertions passed.');
