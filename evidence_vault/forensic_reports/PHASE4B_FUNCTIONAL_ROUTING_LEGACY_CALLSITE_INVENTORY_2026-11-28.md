@@ -114,3 +114,19 @@ Audited exact PR-head source at `0763d1808c5074ab17bcdbffc78b3cf95546027d`. The 
 ### Current gate
 
 Run #1443 is PASS on the audited head. The second-pass findings above are audit findings, not fixes. No SSOT schema migration or static-profile bulk rewrite is claimed. The supplier-grade evidence gap and 5,590 `NOT_APPROVED` applicability rows remain open. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Typed SSOT chemistry-semantics adapter — 2026-11-28
+
+Added `src/domain/ingredients/ingredientChemistrySemantics.ts` as a non-destructive migration layer. It separates:
+- `ionicSpeciesClass` — ionic/electrolyte state, including pH-dependent identity;
+- `acidBaseBehavior` — acid/base mechanism;
+- `surfactantFunctionalClass` — whether the material is a surfactant and its surfactant family.
+
+The legacy `IngredientIdentityMetadata.chargeClass` is not rewritten and is not treated as a surfactant family. A machine-checked crosswalk now covers all seven current SSOT registry entries. It identifies two known legacy overloads: sodium hydroxide (`ANIONIC` legacy label but strong-base electrolyte, not surfactant) and potassium xylene sulfonate (`ANIONIC` ionic species but hydrotrope, not surfactant). LABSA is represented as an acid-form surfactant precursor with pH/neutralization-dependent ionic state; citrate and bicarbonate chemistry are represented separately from surfactant role.
+
+Added `scripts/test-ingredient-chemistry-semantics-crosswalk.ts` to `test:all`. The regression asserts full 7/7 SSOT coverage, the two expected legacy-overload cases, key acid/base classifications, and that none of these seven SSOT identities is falsely claimed to be migrated into the separate 13-route functional overlay. This deliberately exposes the existing routing gap rather than manufacturing a false crosswalk.
+
+### Verification boundary
+
+The files and regression have been committed to the PR branch. No local test execution is claimed. GitHub Actions has not yet returned a run for the new head at the time of this report. The current adapter is an explicit semantic overlay, not yet a replacement for the legacy SSOT property and not yet wired into all consumers. Consumer migration, static profile reconciliation, RCCalculators UI labelling, and full CI remain open. Phase 4B remains OPEN; Phase 5 remains LOCKED.
