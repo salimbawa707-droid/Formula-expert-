@@ -101,8 +101,9 @@ export const isMetricApplicable = (
 ): boolean => {
   const def = getProductCategory(category);
   if (!def) {
-    // If unknown, do not default to powder/liquid bypass
-    return true;
+    // Unknown product categories must not inherit metric permissions.
+    // Category-specific scientific metrics are fail-closed until identity is resolved.
+    return false;
   }
-  return def.categoryApplicability[metric] ?? true;
+  return def.categoryApplicability[metric] ?? false;
 };

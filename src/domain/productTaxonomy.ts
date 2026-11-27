@@ -78,7 +78,9 @@ export type ProductFamily =
   | 'VEHICLE_CARE';
 
 export interface CategoryMetricApplicability {
+  /** Griffin/Davies HLB screen; enabled only where the category profile routes HLB. */
   hlb: boolean;
+  /** Narrow CMC utility applicability; not a separately routed ScientificEngineId. */
   cmc: boolean;
   viscosity: boolean;
   cleaningScore: boolean;
@@ -217,7 +219,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
     defaultFormulaId: 'auto-dish-liquid',
     defaultFormulaStatus: 'AVAILABLE',
     categoryApplicability: {
-      hlb: true,
+      hlb: false,
       cmc: true,
       viscosity: true,
       cleaningScore: true,

@@ -326,7 +326,7 @@ export const SCIENTIFIC_PRODUCT_PROFILES: Record<ProductCategoryId, ScientificPr
     calculationPolicy: {
       requiresPowderCalculations: false,
       requiresViscositySaltCurve: false,
-      requiresHLBAnalysis: true,
+      requiresHLBAnalysis: false,
       requiresChelationHardness: true,
       requiresSkinSafetyMetrics: false,
       requiresStreakResidueMetrics: true,
