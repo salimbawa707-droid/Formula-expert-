@@ -159,7 +159,7 @@ for (const importer of sourceFiles) {
   for (const statement of moduleStatements(source)) {
     const target = resolveRelative(path.join(ROOT, importer), statement.specifier, candidateByStem);
     if (!target) {
-      if (CANDIDATE_PATH_RE.test(statement.specifier) && !/(^|\\/)(__tests__|tests)(\\/|$)/i.test(statement.specifier)) unresolvedCandidateLikeImports.push({ importer, specifier: statement.specifier });
+      if (CANDIDATE_PATH_RE.test(statement.specifier) && !statement.specifier.split('/').some(segment => segment === '__tests__' || segment === 'tests')) unresolvedCandidateLikeImports.push({ importer, specifier: statement.specifier });
       continue;
     }
     const edge = {
@@ -188,10 +188,10 @@ for (const module of modules.values()) {
   module.outgoingCandidateDependencies = [...new Set(module.outgoingCandidateDependencies)].sort();
   module.incomingStaticImporters.sort((a, b) => a.importer.localeCompare(b.importer));
   module.directProductionImporters = [...new Set(module.incomingStaticImporters
-    .filter(edge => !/(^|\\/)__tests__(\\/|$)/.test(edge.importer))
+    .filter(edge => !edge.importer.split('/').includes('__tests__'))
     .map(edge => edge.importer))].sort();
   module.directTestImporters = [...new Set(module.incomingStaticImporters
-    .filter(edge => /(^|\\/)__tests__(\\/|$)/.test(edge.importer))
+    .filter(edge => edge.importer.split('/').includes('__tests__'))
     .map(edge => edge.importer))].sort();
   module.productionReachable = module.directProductionImporters.length > 0;
 }
