@@ -3,7 +3,7 @@ import { getFunctionalRoutingDecisions, resolveFunctionalRouting, validateFuncti
 
 assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), []);
 const decisions = getFunctionalRoutingDecisions();
-assert.equal(decisions.length, 12);
+assert.equal(decisions.length, 13);
 assert.equal(resolveFunctionalRouting('sls-needles')?.routingClass, 'ANIONIC');
 assert.equal(resolveFunctionalRouting('sls-30')?.pureComponentCmcEligible, true);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.routingClass, 'AMPHOTERIC');
@@ -13,6 +13,8 @@ assert.equal(resolveFunctionalRouting('sles-28')?.pureComponentCmcEligible, fals
 assert.equal(resolveFunctionalRouting('aos-38')?.routingClass, 'ANIONIC');
 assert.equal(resolveFunctionalRouting('aos-92')?.pureComponentCmcEligible, false);
 assert.equal(resolveFunctionalRouting('aos-38')?.hlbEligible, false);
+assert.equal(resolveFunctionalRouting('sarcosinate-30')?.routingClass, 'ANIONIC');
+assert.equal(resolveFunctionalRouting('sarcosinate-30')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
 assert.equal(resolveFunctionalRouting('sas-60')?.routingClass, 'ANIONIC');
 assert.equal(resolveFunctionalRouting('cdea-85')?.routingClass, 'NONIONIC');
 assert.equal(resolveFunctionalRouting('cmea-90')?.role, 'NONIONIC_ALKANOLAMIDE');
