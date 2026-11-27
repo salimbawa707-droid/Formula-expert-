@@ -47,8 +47,17 @@ export function calculatePowderDissolution(
     predictedSolubility = 'Moderate (60-180s)';
   }
 
-  const isMeasured = labInputs?.measuredDissolutionTimeSec !== undefined && labInputs.measuredDissolutionTimeSec > 0;
-  const isResidueMeasured = labInputs?.measuredUndissolvedResiduePct !== undefined;
+  const hasDissolutionTimeInput = labInputs?.measuredDissolutionTimeSec !== undefined;
+  const hasResidueInput = labInputs?.measuredUndissolvedResiduePct !== undefined;
+  const validDissolutionTime = typeof labInputs?.measuredDissolutionTimeSec === 'number' &&
+    Number.isFinite(labInputs.measuredDissolutionTimeSec) && labInputs.measuredDissolutionTimeSec > 0;
+  const validResidue = typeof labInputs?.measuredUndissolvedResiduePct === 'number' &&
+    Number.isFinite(labInputs.measuredUndissolvedResiduePct) &&
+    labInputs.measuredUndissolvedResiduePct >= 0 && labInputs.measuredUndissolvedResiduePct <= 100;
+  const hasInvalidMeasurement = (hasDissolutionTimeInput && !validDissolutionTime) ||
+    (hasResidueInput && !validResidue);
+  const isMeasured = validDissolutionTime || validResidue;
+  const isResidueMeasured = validResidue;
   const isObservationProvided = labInputs?.dispersibilityObservation !== undefined && labInputs.dispersibilityObservation !== 'not observed';
 
   const suppliedTestConditions = {
@@ -57,8 +66,8 @@ export function calculatePowderDissolution(
     waterTempC: typeof labInputs?.dissolutionWaterTempC === 'number' && Number.isFinite(labInputs.dissolutionWaterTempC) ? labInputs.dissolutionWaterTempC : undefined,
     waterHardnessPpm: typeof labInputs?.dissolutionWaterHardnessPpm === 'number' && Number.isFinite(labInputs.dissolutionWaterHardnessPpm) && labInputs.dissolutionWaterHardnessPpm >= 0 ? labInputs.dissolutionWaterHardnessPpm : undefined,
     agitationRpm: typeof labInputs?.dissolutionAgitationRpm === 'number' && Number.isFinite(labInputs.dissolutionAgitationRpm) && labInputs.dissolutionAgitationRpm > 0 ? labInputs.dissolutionAgitationRpm : undefined,
-    measuredDissolutionTimeSec: labInputs?.measuredDissolutionTimeSec,
-    measuredUndissolvedResiduePct: labInputs?.measuredUndissolvedResiduePct,
+    measuredDissolutionTimeSec: validDissolutionTime ? labInputs?.measuredDissolutionTimeSec : undefined,
+    measuredUndissolvedResiduePct: validResidue ? labInputs?.measuredUndissolvedResiduePct : undefined,
     undissolvedMaterialNotes: labInputs?.dispersibilityNotes
   };
   const hasSuppliedTestConditions = [suppliedTestConditions.doseGPerL, suppliedTestConditions.waterVolumeMl, suppliedTestConditions.waterTempC, suppliedTestConditions.waterHardnessPpm, suppliedTestConditions.agitationRpm].some(value => value !== undefined);
@@ -75,7 +84,7 @@ export function calculatePowderDissolution(
     predictedColdWaterSolubility: predictedSolubility,
     hasInsolubleInorganics,
     insolubleInorganicNames: insolubleInorganics,
-    source: isMeasured ? 'MEASURED' : 'PREDICTED'
+    source: hasInvalidMeasurement ? 'INSUFFICIENT_DATA' : isMeasured || isObservationProvided ? 'MEASURED' : 'PREDICTED'
   };
 }
 
@@ -115,13 +124,20 @@ export function calculatePowderFoam(
     screeningFoamProfile = 'Moderate Foam';
   }
 
-  const isMeasured = labInputs?.measuredRossMilesInitialMm !== undefined && labInputs.measuredRossMilesInitialMm > 0;
+  const hasInitialInput = labInputs?.measuredRossMilesInitialMm !== undefined;
+  const hasFiveMinuteInput = labInputs?.measuredRossMiles5MinMm !== undefined;
+  const validInitial = typeof labInputs?.measuredRossMilesInitialMm === 'number' &&
+    Number.isFinite(labInputs.measuredRossMilesInitialMm) && labInputs.measuredRossMilesInitialMm >= 0;
+  const validFiveMinute = typeof labInputs?.measuredRossMiles5MinMm === 'number' &&
+    Number.isFinite(labInputs.measuredRossMiles5MinMm) && labInputs.measuredRossMiles5MinMm >= 0;
+  const hasInvalidMeasurement = (hasInitialInput && !validInitial) || (hasFiveMinuteInput && !validFiveMinute);
+  const isMeasured = validInitial || validFiveMinute;
 
   return {
     screeningFoamProfile,
-    measuredRossMilesInitialMm: labInputs?.measuredRossMilesInitialMm,
-    measuredRossMiles5MinMm: labInputs?.measuredRossMiles5MinMm,
-    source: isMeasured ? 'MEASURED' : 'PREDICTED'
+    measuredRossMilesInitialMm: validInitial ? labInputs?.measuredRossMilesInitialMm : undefined,
+    measuredRossMiles5MinMm: validFiveMinute ? labInputs?.measuredRossMiles5MinMm : undefined,
+    source: hasInvalidMeasurement ? 'INSUFFICIENT_DATA' : isMeasured ? 'MEASURED' : 'PREDICTED'
   };
 }
 
@@ -150,7 +166,7 @@ export function calculatePowderCleaningPerformance(
     if (ing.functionalClass === 'Anti-redeposition Polymer') hasAntiRedeposition = true;
   });
 
-  // Empirical Detergency Screening Model (0 - 100)
+  // Heuristic Detergency Screening Model (0 - 100); not empirically calibrated.
   const surfactantScore = Math.min(45, (activeSurfactantPct / 14) * 45);
   const builderScore = Math.min(30, (builderPct / 30) * 30);
   const enzymeScore = Math.min(12, enzymeCount * 6);
@@ -164,17 +180,21 @@ export function calculatePowderCleaningPerformance(
   const enzymaticStainScore = enzymeCount > 0 ? Math.min(95, 60 + enzymeCount * 15) : 30;
   const bleachableStainScore = hasBleach ? 85 : 25;
 
-  const isMeasured = labInputs?.measuredSoilRemovalPct !== undefined && labInputs.measuredSoilRemovalPct > 0;
+  const hasMeasuredInput = labInputs?.measuredSoilRemovalPct !== undefined;
+  const validMeasuredSoilRemoval = typeof labInputs?.measuredSoilRemovalPct === 'number' &&
+    Number.isFinite(labInputs.measuredSoilRemovalPct) &&
+    labInputs.measuredSoilRemovalPct >= 0 && labInputs.measuredSoilRemovalPct <= 100;
+  const isMeasured = validMeasuredSoilRemoval;
 
   return {
     screeningDetergencyScore,
-    measuredSoilRemovalPct: labInputs?.measuredSoilRemovalPct,
+    measuredSoilRemovalPct: validMeasuredSoilRemoval ? labInputs?.measuredSoilRemovalPct : undefined,
     particulateRemovalScore,
     oilyGreaseScore,
     enzymaticStainScore,
     bleachableStainScore,
     evaluationBasis: 'Multifactorial powder detergency screening model (Surfactant Synergies + Alkaline Saponification + Builder Dispersing + Enzyme/Bleach Spectrum). For commercial and regulatory performance claims, conduct standardized laboratory wash swatch testing.',
-    source: isMeasured ? 'MEASURED' : 'PREDICTED'
+    source: hasMeasuredInput && !validMeasuredSoilRemoval ? 'INSUFFICIENT_DATA' : isMeasured ? 'MEASURED' : 'PREDICTED'
   };
 }
 

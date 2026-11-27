@@ -469,6 +469,275 @@ export function runPowderEngineTestSuite(): {
     'INSUFFICIENT_DATA'
   );
 
+  // =========================================================================
+  // Phase 4B AI audit regressions: fail-closed input integrity
+  // =========================================================================
+  const reportInvalidMass = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 'not-a-number' as any, activeMatterPct: 90 },
+      { name: 'Sodium Sulphate', percentage: 100, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Invalid mass-balance input cannot create a 100% balanced strength',
+    reportInvalidMass.massBalance.status === 'INVALID_INPUT' &&
+      reportInvalidMass.massBalance.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMass.verdict.overallStatus === 'INSUFFICIENT_DATA' &&
+      !reportInvalidMass.verdict.strengths.some(s => s.title.includes('100.00% Formula Mass Balance')),
+    { massBalance: reportInvalidMass.massBalance.status, verdict: reportInvalidMass.verdict.overallStatus, strengths: reportInvalidMass.verdict.strengths },
+    'INVALID_INPUT / INSUFFICIENT_DATA / no balanced strength'
+  );
+
+  const reportUnknownSurfactant = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Mystery Specialty Surfactant', percentage: 10, activeMatterPct: 50 },
+      { name: 'Sodium Sulphate', percentage: 90, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  const unknownSurf = reportUnknownSurfactant.classification.ingredients.find(i => i.name === 'Mystery Specialty Surfactant');
+  assert(
+    'Phase 4B Input Integrity',
+    'Generic unknown surfactant is not silently classified as anionic',
+    unknownSurf?.functionalClass === 'Unclassified Surfactant' && unknownSurf.isSurfactant === true,
+    { functionalClass: unknownSurf?.functionalClass, isSurfactant: unknownSurf?.isSurfactant },
+    { functionalClass: 'Unclassified Surfactant', isSurfactant: true }
+  );
+  assert(
+    'Phase 4B Input Integrity',
+    'Unknown surfactant class blocks active-matter calculation',
+    reportUnknownSurfactant.activeMatter.hasInsufficientData &&
+      reportUnknownSurfactant.activeMatter.unresolvedIngredients.includes('Mystery Specialty Surfactant'),
+    reportUnknownSurfactant.activeMatter,
+    'INSUFFICIENT_DATA with unknown surfactant named'
+  );
+
+  const reportOverActive = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 10, activeMatterPct: 125 },
+      { name: 'Sodium Sulphate', percentage: 90, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Active-matter assay above 100% is rejected as unresolved',
+    reportOverActive.activeMatter.hasInsufficientData &&
+      reportOverActive.activeMatter.unresolvedIngredients.includes('LABSA 90%'),
+    reportOverActive.activeMatter,
+    'Invalid >100% assay unresolved'
+  );
+
+  const reportNegativeCost = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 10, activeMatterPct: 90, costPerKg: -1 },
+      { name: 'Soda Ash Dense', percentage: 40, activeMatterPct: 100, costPerKg: 0.35 },
+      { name: 'Sodium Sulphate', percentage: 50, activeMatterPct: 100, costPerKg: 0.12 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100,
+    washDoseG: 50
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Negative raw-material cost cannot produce an apparently valid cost',
+    reportNegativeCost.costing.source === 'INSUFFICIENT_DATA' &&
+      reportNegativeCost.costing.costPerKg === null &&
+      reportNegativeCost.costing.totalBatchCost === null &&
+      reportNegativeCost.costing.costPerWashDose === null &&
+      reportNegativeCost.costing.invalidCostIngredients?.includes('LABSA 90%') === true,
+    reportNegativeCost.costing,
+    'INSUFFICIENT_DATA with null totals and named invalid cost'
+  );
+
+  const reportMissingCost = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 10, activeMatterPct: 90, costPerKg: undefined as any },
+      { name: 'Soda Ash Dense', percentage: 40, activeMatterPct: 100, costPerKg: 0.35 },
+      { name: 'Sodium Sulphate', percentage: 50, activeMatterPct: 100, costPerKg: 0.12 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Missing raw-material price is not treated as a genuine zero-price quote',
+    reportMissingCost.costing.source === 'INSUFFICIENT_DATA' &&
+      reportMissingCost.costing.costPerKg === null &&
+      reportMissingCost.costing.missingCostIngredients?.includes('LABSA 90%') === true,
+    reportMissingCost.costing,
+    'INSUFFICIENT_DATA with missing cost ingredient named'
+  );
+
+  const reportInvalidMeasurements = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100,
+    labMeasurements: {
+      measuredReserveAlkalinityPctNa2O: Number.NaN,
+      measuredSoilRemovalPct: 125,
+      measuredDissolutionTimeSec: Number.POSITIVE_INFINITY,
+      measuredRossMilesInitialMm: Number.POSITIVE_INFINITY,
+      measuredBulkDensityGPerL: Number.POSITIVE_INFINITY,
+      measuredAngleOfReposeDegrees: 120,
+      measuredD50Um: Number.POSITIVE_INFINITY
+    }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Non-finite measured reserve alkalinity is not labelled MEASURED',
+    reportInvalidMeasurements.alkalinity.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.alkalinity.measuredAlkalinityPctNa2O === undefined,
+    reportInvalidMeasurements.alkalinity,
+    'INSUFFICIENT_DATA with no measured value'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Soil-removal measurement above 100% is rejected',
+    reportInvalidMeasurements.cleaningPerformance.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.cleaningPerformance.measuredSoilRemovalPct === undefined,
+    reportInvalidMeasurements.cleaningPerformance,
+    'INSUFFICIENT_DATA with no measured value'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite dissolution time is rejected',
+    reportInvalidMeasurements.dissolutionDispersibility.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.dissolutionDispersibility.dissolutionStatus === 'NOT_MEASURED',
+    reportInvalidMeasurements.dissolutionDispersibility,
+    'INSUFFICIENT_DATA / NOT_MEASURED'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite Ross-Miles foam height is rejected',
+    reportInvalidMeasurements.foam.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.foam.measuredRossMilesInitialMm === undefined,
+    reportInvalidMeasurements.foam,
+    'INSUFFICIENT_DATA with no measured height'
+  );
+
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite bulk density is rejected',
+    reportInvalidMeasurements.density.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.density.densityType === 'NOT_MEASURED',
+    reportInvalidMeasurements.density,
+    'INSUFFICIENT_DATA / NOT_MEASURED'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Angle of repose above 90 degrees is rejected',
+    reportInvalidMeasurements.angleOfRepose.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.angleOfRepose.measuredAngleDegrees === undefined,
+    reportInvalidMeasurements.angleOfRepose,
+    'INSUFFICIENT_DATA with no measured angle'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite D50 particle size is rejected',
+    reportInvalidMeasurements.particleSize.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.particleSize.status === 'INSUFFICIENT_DATA',
+    reportInvalidMeasurements.particleSize,
+    'INSUFFICIENT_DATA'
+  );
+
+  const reportEqualDensity = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measuredBulkDensityGPerL: 700, measuredTappedDensityGPerL: 700 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Equal valid bulk/tapped density yields Carr 0 and Hausner 1',
+    reportEqualDensity.flowability.carrIndexPct === 0 &&
+      reportEqualDensity.flowability.hausnerRatio === 1,
+    reportEqualDensity.flowability,
+    'Carr 0%, Hausner 1.00'
+  );
+
+  const reportInconsistentDensity = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measuredBulkDensityGPerL: 700, measuredTappedDensityGPerL: 650 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Tapped density below loose bulk density is rejected',
+    reportInconsistentDensity.density.source === 'INSUFFICIENT_DATA' &&
+      reportInconsistentDensity.flowability.source === 'INSUFFICIENT_DATA',
+    { density: reportInconsistentDensity.density, flowability: reportInconsistentDensity.flowability },
+    'Inconsistent density pair rejected'
+  );
+
+  const reportInvalidPSDRange = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measuredD50Um: 500, measuredFinesPct: 70, measuredCoarsePct: 40 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'PSD fines and coarse fractions cannot exceed 100% combined',
+    reportInvalidPSDRange.particleSize.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidPSDRange.particleSize.status === 'INSUFFICIENT_DATA',
+    reportInvalidPSDRange.particleSize,
+    'INSUFFICIENT_DATA'
+  );
+
+  const reportOverflowDensity = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: {
+      measuredSampleMassG: Number.MAX_VALUE,
+      measuredLooseVolumeMl: Number.MIN_VALUE
+    }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Finite mass and volume that overflow density arithmetic are rejected',
+    reportOverflowDensity.density.source === 'INSUFFICIENT_DATA' &&
+      reportOverflowDensity.density.densityType === 'NOT_MEASURED',
+    reportOverflowDensity.density,
+    'INSUFFICIENT_DATA / NOT_MEASURED'
+  );
+
+  const reportInvalidPHMeasurement = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measured1PctAqueousPH: 15 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Out-of-range measured pH is not silently replaced by a calculated value',
+    reportInvalidPHMeasurement.powderPH.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidPHMeasurement.powderPH.measuredPH === undefined &&
+      reportInvalidPHMeasurement.powderPH.statusMessage.includes('INVALID_INPUT'),
+    reportInvalidPHMeasurement.powderPH,
+    'INSUFFICIENT_DATA / invalid measurement disclosed'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
   const totalCount = results.length;

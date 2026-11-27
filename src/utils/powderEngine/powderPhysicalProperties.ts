@@ -28,19 +28,69 @@ export function calculatePowderDensity(
   let looseVolumeMl: number | undefined = labInputs?.measuredLooseVolumeMl;
   let tappedVolumeMl: number | undefined = labInputs?.measuredTappedVolumeMl;
 
-  if (sampleMassG && sampleMassG > 0 && looseVolumeMl && looseVolumeMl > 0) {
+  const isProvided = (value: unknown): boolean => value !== undefined && value !== null;
+  const positiveFinite = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0;
+  const suppliedDensityInputs = [
+    sampleMassG, looseVolumeMl, tappedVolumeMl,
+    labInputs?.measuredBulkDensityGPerL, labInputs?.measuredTappedDensityGPerL
+  ];
+  const hasInvalidDensityInput = suppliedDensityInputs.some(value =>
+    isProvided(value) && !positiveFinite(value)
+  );
+
+  const hasIncompleteBulkPair =
+    (isProvided(sampleMassG) || isProvided(looseVolumeMl)) &&
+    !(positiveFinite(sampleMassG) && positiveFinite(looseVolumeMl)) &&
+    !positiveFinite(labInputs?.measuredBulkDensityGPerL);
+  const hasIncompleteTappedPair =
+    isProvided(tappedVolumeMl) &&
+    !(positiveFinite(sampleMassG) && positiveFinite(tappedVolumeMl)) &&
+    !positiveFinite(labInputs?.measuredTappedDensityGPerL);
+
+  if (hasInvalidDensityInput || hasIncompleteBulkPair || hasIncompleteTappedPair) {
+    return {
+      densityType: 'NOT_MEASURED',
+      displayRange: hasInvalidDensityInput ? 'Invalid density measurement input' : 'Incomplete density measurement pair',
+      source: 'INSUFFICIENT_DATA',
+      notes: 'Density measurements require finite positive mass, volume and density values. Incomplete or invalid supplied measurements are not replaced with screening estimates.'
+    };
+  }
+
+  if (positiveFinite(sampleMassG) && positiveFinite(looseVolumeMl)) {
     measuredBulkGPerL = (sampleMassG / looseVolumeMl) * 1000;
-  } else if (labInputs?.measuredBulkDensityGPerL && labInputs.measuredBulkDensityGPerL > 0) {
+  } else if (positiveFinite(labInputs?.measuredBulkDensityGPerL)) {
     measuredBulkGPerL = labInputs.measuredBulkDensityGPerL;
   }
 
-  if (sampleMassG && sampleMassG > 0 && tappedVolumeMl && tappedVolumeMl > 0) {
+  if (positiveFinite(sampleMassG) && positiveFinite(tappedVolumeMl)) {
     measuredTappedGPerL = (sampleMassG / tappedVolumeMl) * 1000;
-  } else if (labInputs?.measuredTappedDensityGPerL && labInputs.measuredTappedDensityGPerL > 0) {
+  } else if (positiveFinite(labInputs?.measuredTappedDensityGPerL)) {
     measuredTappedGPerL = labInputs.measuredTappedDensityGPerL;
   }
 
-  if (measuredBulkGPerL !== undefined && measuredBulkGPerL > 0) {
+  if (
+    (measuredBulkGPerL !== undefined && !Number.isFinite(measuredBulkGPerL)) ||
+    (measuredTappedGPerL !== undefined && !Number.isFinite(measuredTappedGPerL))
+  ) {
+    return {
+      densityType: 'NOT_MEASURED',
+      displayRange: 'Density calculation overflow',
+      source: 'INSUFFICIENT_DATA',
+      notes: 'Finite input values produced a non-finite density result. Check the mass and volume units and magnitudes.'
+    };
+  }
+
+  if (measuredBulkGPerL !== undefined && measuredTappedGPerL !== undefined && measuredTappedGPerL < measuredBulkGPerL) {
+    return {
+      densityType: 'NOT_MEASURED',
+      displayRange: 'Inconsistent bulk/tapped density measurements',
+      source: 'INSUFFICIENT_DATA',
+      notes: 'Tapped bulk density must be greater than or equal to loose bulk density for the supplied measurement pair.'
+    };
+  }
+
+  if (measuredBulkGPerL !== undefined && Number.isFinite(measuredBulkGPerL) && measuredBulkGPerL > 0) {
     const bulkGPerL = Number(measuredBulkGPerL.toFixed(1));
     const tappedGPerL = measuredTappedGPerL !== undefined ? Number(measuredTappedGPerL.toFixed(1)) : undefined;
 
@@ -113,8 +163,10 @@ export function calculatePowderFlowability(
     densityReport.densityType === 'MEASURED' &&
     bulk !== undefined &&
     tapped !== undefined &&
-    tapped > bulk &&
-    bulk > 0
+    tapped >= bulk &&
+    bulk > 0 &&
+    Number.isFinite(tapped) &&
+    Number.isFinite(bulk)
   ) {
     const carrIndex = Number((((tapped - bulk) / tapped) * 100).toFixed(1));
     const hausner = Number((tapped / bulk).toFixed(2));
@@ -172,17 +224,24 @@ export function calculatePowderAngleOfRepose(labInputs?: PowderLabMeasurementInp
   let angleDegrees: number | undefined;
   let method: string | undefined;
   let isDirectGoniometer = false;
+  const hasDirectAngle = labInputs?.measuredAngleOfReposeDegrees !== undefined;
+  const hasGeometry = labInputs?.measuredAngleHeightMm !== undefined || labInputs?.measuredAngleRadiusMm !== undefined;
+  const directAngleValid = typeof labInputs?.measuredAngleOfReposeDegrees === 'number' &&
+    Number.isFinite(labInputs.measuredAngleOfReposeDegrees) &&
+    labInputs.measuredAngleOfReposeDegrees > 0 && labInputs.measuredAngleOfReposeDegrees <= 90;
+  const geometryValid = typeof labInputs?.measuredAngleHeightMm === 'number' &&
+    Number.isFinite(labInputs.measuredAngleHeightMm) && labInputs.measuredAngleHeightMm > 0 &&
+    typeof labInputs?.measuredAngleRadiusMm === 'number' &&
+    Number.isFinite(labInputs.measuredAngleRadiusMm) && labInputs.measuredAngleRadiusMm > 0;
+  if ((hasDirectAngle && !directAngleValid) || (hasGeometry && !geometryValid)) {
+    return { rating: 'Not Measured', source: 'INSUFFICIENT_DATA' };
+  }
 
-  if (labInputs?.measuredAngleOfReposeDegrees !== undefined && labInputs.measuredAngleOfReposeDegrees > 0) {
-    angleDegrees = labInputs.measuredAngleOfReposeDegrees;
+  if (directAngleValid) {
+    angleDegrees = labInputs!.measuredAngleOfReposeDegrees;
     method = 'Direct Goniometer / Protractor Measurement';
     isDirectGoniometer = true;
-  } else if (
-    labInputs?.measuredAngleHeightMm !== undefined &&
-    labInputs.measuredAngleHeightMm > 0 &&
-    labInputs?.measuredAngleRadiusMm !== undefined &&
-    labInputs.measuredAngleRadiusMm > 0
-  ) {
+  } else if (geometryValid) {
     const h = labInputs.measuredAngleHeightMm;
     const r = labInputs.measuredAngleRadiusMm;
     angleDegrees = (Math.atan(h / r) * 180) / Math.PI;
@@ -224,12 +283,40 @@ export function calculatePowderAngleOfRepose(labInputs?: PowderLabMeasurementInp
  * - Do NOT invent PSD values if unavailable.
  */
 export function calculatePowderParticleSize(labInputs?: PowderLabMeasurementInputs): PowderParticleSizeReport {
-  if (labInputs?.measuredD50Um && labInputs.measuredD50Um > 0) {
-    const d50 = Number(labInputs.measuredD50Um.toFixed(0));
-    const d10 = labInputs.measuredD10Um ? Number(labInputs.measuredD10Um.toFixed(0)) : undefined;
-    const d90 = labInputs.measuredD90Um ? Number(labInputs.measuredD90Um.toFixed(0)) : undefined;
-    const fines = labInputs.measuredFinesPct !== undefined ? Number(labInputs.measuredFinesPct.toFixed(1)) : undefined;
-    const coarse = labInputs.measuredCoarsePct !== undefined ? Number(labInputs.measuredCoarsePct.toFixed(1)) : undefined;
+  const hasD10 = labInputs?.measuredD10Um !== undefined;
+  const hasD50 = labInputs?.measuredD50Um !== undefined;
+  const hasD90 = labInputs?.measuredD90Um !== undefined;
+  const hasFines = labInputs?.measuredFinesPct !== undefined;
+  const hasCoarse = labInputs?.measuredCoarsePct !== undefined;
+  const validPositive = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0;
+  const validPct = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+  const hasInvalidPSD =
+    (hasD10 && !validPositive(labInputs?.measuredD10Um)) ||
+    (hasD50 && !validPositive(labInputs?.measuredD50Um)) ||
+    (hasD90 && !validPositive(labInputs?.measuredD90Um)) ||
+    (hasFines && !validPct(labInputs?.measuredFinesPct)) ||
+    (hasCoarse && !validPct(labInputs?.measuredCoarsePct)) ||
+    (validPositive(labInputs?.measuredD10Um) && validPositive(labInputs?.measuredD50Um) && labInputs!.measuredD10Um! > labInputs!.measuredD50Um!) ||
+    (validPositive(labInputs?.measuredD50Um) && validPositive(labInputs?.measuredD90Um) && labInputs!.measuredD50Um! > labInputs!.measuredD90Um!) ||
+    (validPct(labInputs?.measuredFinesPct) && validPct(labInputs?.measuredCoarsePct) &&
+      labInputs!.measuredFinesPct! + labInputs!.measuredCoarsePct! > 100);
+
+  if (hasInvalidPSD) {
+    return {
+      status: 'INSUFFICIENT_DATA',
+      dustinessRisk: 'Unknown',
+      source: 'INSUFFICIENT_DATA'
+    };
+  }
+
+  if (validPositive(labInputs?.measuredD50Um)) {
+    const d50 = Number(labInputs!.measuredD50Um!.toFixed(0));
+    const d10 = validPositive(labInputs?.measuredD10Um) ? Number(labInputs!.measuredD10Um!.toFixed(0)) : undefined;
+    const d90 = validPositive(labInputs?.measuredD90Um) ? Number(labInputs!.measuredD90Um!.toFixed(0)) : undefined;
+    const fines = validPct(labInputs?.measuredFinesPct) ? Number(labInputs!.measuredFinesPct!.toFixed(1)) : undefined;
+    const coarse = validPct(labInputs?.measuredCoarsePct) ? Number(labInputs!.measuredCoarsePct!.toFixed(1)) : undefined;
 
     let dustRisk: PowderParticleSizeReport['dustinessRisk'] = 'Unknown';
     if (fines !== undefined) {

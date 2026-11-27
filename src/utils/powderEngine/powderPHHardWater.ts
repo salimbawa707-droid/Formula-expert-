@@ -11,9 +11,9 @@ import {
 /**
  * Powder pH Engine — Universal Thermodynamic Slurry Test Basis
  * 
- * CLASSIFICATION: AUTHORITATIVE SCIENTIFIC THERMODYNAMIC EVALUATOR
- * The authoritative scientific thermodynamic equilibrium engine is PHEngineV2 (domain/ph/pHEngineV2.ts),
- * which evaluates powder products on an explicitly defined aqueous slurry basis.
+ * CLASSIFICATION: MECHANISTIC pH SCREENING CALCULATOR (NOT LAB-VALIDATED)
+ * PHEngineV2 provides a mechanistic prediction on an explicitly defined aqueous slurry basis.
+ * Calculated pH is a screening result; product confirmation requires a measured, method-defined slurry pH.
  */
 export function calculatePowderPH(
   classifiedIngredients: ClassifiedIngredient[],
@@ -147,9 +147,11 @@ export function calculatePowderPH(
   }
 
   const measuredPH = labInputs?.measured1PctAqueousPH;
-  const isMeasuredAvailable = concentrationValid && measuredPH !== undefined &&
+  const hasMeasuredPHInput = measuredPH !== undefined && measuredPH !== null;
+  const isMeasuredAvailable = concentrationValid && typeof measuredPH === 'number' &&
     Number.isFinite(measuredPH) && measuredPH >= 0 && measuredPH <= 14;
-  const effectivePH = isMeasuredAvailable ? measuredPH : (isPHAvailable ? calculatedPH : undefined);
+  const hasInvalidMeasuredPH = hasMeasuredPHInput && !isMeasuredAvailable;
+  const effectivePH = hasInvalidMeasuredPH ? undefined : isMeasuredAvailable ? measuredPH : (isPHAvailable ? calculatedPH : undefined);
 
   let isWithinTarget = false;
   let statusMessage = '';
@@ -161,23 +163,25 @@ export function calculatePowderPH(
     if (isSpecified && targetMin !== undefined && targetMax !== undefined) {
       isWithinTarget = effectivePH >= targetMin && effectivePH <= targetMax;
       statusMessage = isWithinTarget
-        ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) complies with ${targetLabel}. Alkaline wash liquor saponifies fatty acids and maintains builder dispersion.`
+        ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) is within the configured engineering screening window: ${targetLabel}. This is not a laboratory conformity result.`
         : effectivePH > targetMax
-        ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) exceeds target specification (${targetMin}–${targetMax}).`
-        : `1% aqueous test solution pH (${effectivePH.toFixed(2)}) is below the intended target window (${targetMin}–${targetMax}). Check acid slurry (LABSA) neutralization by alkaline builders.`;
+        ? `1% aqueous test solution pH (${effectivePH.toFixed(2)}) is above the configured engineering screening window (${targetMin}–${targetMax}).`
+        : `1% aqueous test solution pH (${effectivePH.toFixed(2)}) is below the configured engineering screening window (${targetMin}–${targetMax}). Check acid slurry (LABSA) neutralization by alkaline builders.`;
     } else {
       isWithinTarget = true;
       statusMessage = `1% aqueous test solution pH is ${effectivePH.toFixed(2)}. Target not specified.`;
     }
   } else {
     isWithinTarget = false;
-    statusMessage = !concentrationValid
+    statusMessage = hasInvalidMeasuredPH
+      ? 'INVALID_INPUT: measured pH must be a finite value from 0 to 14; the invalid measurement is not replaced with a calculated result.'
+      : !concentrationValid
       ? 'INVALID_INPUT: slurry concentration must be a finite value greater than 0% and no more than 100%.'
       : classifiedIngredients.length === 0
         ? 'INSUFFICIENT_DATA: no powder ingredients were supplied; no pH value or heuristic baseline is returned.'
         : !hasPHActiveChemistry && !isMeasuredAvailable
           ? 'INSUFFICIENT_DATA: no acid/base or secondary buffer chemistry is identified and no measured pH was supplied.'
-          : `UNAVAILABLE: pH calculation did not produce a valid result. Cannot verify compliance against ${targetLabel || 'target specification'}.`;
+          : `UNAVAILABLE: pH calculation did not produce a valid result. Cannot assess the configured engineering screening window ${targetLabel || '(target not specified)' }.`;
   }
 
   // 3. DEFINE EXPLICIT SCIENTIFIC SLURRY PREPARATION CONFIGURATION
@@ -209,7 +213,7 @@ export function calculatePowderPH(
       method: concentrationValid ? `Standard ${concentrationPct}% w/v Aqueous Solution Potentiometric Glass Electrode Method` : 'UNAVAILABLE — invalid slurry concentration'
     },
     slurryBasis,
-    measuredPH,
+    measuredPH: isMeasuredAvailable ? measuredPH : undefined,
     calculatedAqueousPH: calculatedPH,
     targetRange: {
       min: targetMin,
@@ -220,7 +224,7 @@ export function calculatePowderPH(
     isWithinTarget,
     statusMessage,
     isAlkalineIntended: !isDelicate,
-    source: isMeasuredAvailable ? 'MEASURED' : (isPHAvailable ? 'CALCULATED' : 'INSUFFICIENT_DATA'),
+    source: hasInvalidMeasuredPH ? 'INSUFFICIENT_DATA' : isMeasuredAvailable ? 'MEASURED' : (isPHAvailable ? 'CALCULATED' : 'INSUFFICIENT_DATA'),
     nonAuthoritativeHeuristicPH: legacyHeuristicPH
   };
 }
