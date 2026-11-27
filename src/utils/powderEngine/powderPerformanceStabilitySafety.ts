@@ -166,7 +166,7 @@ export function calculatePowderCleaningPerformance(
     if (ing.functionalClass === 'Anti-redeposition Polymer') hasAntiRedeposition = true;
   });
 
-  // Empirical Detergency Screening Model (0 - 100)
+  // Heuristic Detergency Screening Model (0 - 100); not empirically calibrated.
   const surfactantScore = Math.min(45, (activeSurfactantPct / 14) * 45);
   const builderScore = Math.min(30, (builderPct / 30) * 30);
   const enzymeScore = Math.min(12, enzymeCount * 6);
