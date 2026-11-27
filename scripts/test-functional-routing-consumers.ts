@@ -7,6 +7,7 @@ import { traceCompatibilityReasoning } from '../src/utils/ingredientIntelligence
 import { RAW_MATERIAL_CATEGORIES } from '../src/data/rawMaterialCategories';
 import { classifyPowderIngredient } from '../src/utils/powderEngine/powderIngredientClassification';
 import { ActiveMatterEngine } from '../src/utils/activeMatterEngine';
+import { calculateMixedCMC } from '../src/utils/calculators';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
@@ -118,5 +119,23 @@ const ldaoNameOnlyCmc = resolveEng002PureComponent({ name:'Lauryl Amine Oxide 30
 assert.equal(ldaoNameOnlyCmc.supported, false, 'name-only commercial amine oxide must not inherit pure C12 DDAO CMC');
 const lignoNameOnlyCmc = resolveEng002PureComponent({ name:'Sodium Lignosulfonate', casNumber:'8061-51-6', identityType:'SINGLE_SUBSTANCE' } as any);
 assert.equal(lignoNameOnlyCmc.supported, false, 'polymeric dispersant must not inherit pure-surfactant CMC');
+const ldaoMixedCmc = calculateMixedCMC([{
+  id:'lauryl-amine-oxide',
+  name:'Lauryl Amine Oxide 30% (LDAO)',
+  category:'Nonionic Surfactant',
+  percentage:5,
+  activeMatterPct:30
+} as any]);
+assert.equal(ldaoMixedCmc.available, false, 'commercial amine oxide cannot enter pure-component mixed-CMC calculation without a supported exact reference');
+const blockedMixedCmc = calculateMixedCMC([{
+  id:'tallow-amine-oxide',
+  canonicalIngredientId:'tallow-amine-oxide',
+  name:'Tallow Amine Oxide Acid Thickener',
+  category:'Polymer & Thickener',
+  percentage:2,
+  activeMatterPct:30
+} as any]);
+assert.equal(blockedMixedCmc.available, false);
+assert(blockedMixedCmc.eligibilityReasons.some(reason => reason.includes('identity is unresolved')), 'mixed-CMC engine must explicitly block conflicting ingredient identity');
 
 console.log('FUNCTIONAL ROUTING SELECTOR / MATRIX / FORMULA INTELLIGENCE CONSUMERS PASS');
