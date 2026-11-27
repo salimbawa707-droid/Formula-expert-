@@ -78,3 +78,12 @@ Additional consumer `src/data/masterIngredientApplicabilityScreen.ts` is now rou
 Regression additions in `scripts/test-master-ingredient-applicability-screen.ts` assert the LDAO charge-behaviour metadata, tallow-amine fail-closed disposition, and lignosulfonate polymeric role. All 5,590 rows remain `finalApplicability: NOT_APPROVED`.
 
 This code change has not yet been verified by a new CI run. Run #1399 predates these changes and is not evidence for this commit.
+
+
+## Master supplier-grade evidence gate — 2026-11-28
+
+Added `src/data/masterIngredientSupplierEvidenceGate.ts`, a 430-row per-catalog-ID evidence gate linked to the exact identity crosswalk and functional routing overlay. It keeps supplier contact state `NOT_CONTACTED`, supplier TDS/SDS and matching-lot CoA `NOT_PROVIDED`, lot assay null, formula applicability `NOT_TESTED`, and release `BLOCKED` for every row. The gate enumerates grade-specific evidence requirements and unresolved blockers without pretending that catalog defaults, public comparator TDS, or generic chemical identity are supplier/lot evidence.
+
+Added `scripts/test-master-ingredient-supplier-evidence-gate.ts` and wired it into `bun run test:all`. It asserts 430 unique rows, zero supplier contacts, zero verified supplier documents/lot assays, zero named-formula validations, and zero release approvals; it also checks the amine-oxide pH-dependent route, blocked tallow identity, and polymeric-dis dispersant role.
+
+This is a complete intake/control register for the 430 catalog rows, not evidence that suppliers have been contacted or that any document has been received. Actual TDS/SDS/CoA acquisition requires the exact supplier/manufacturer and product code, which are missing for most catalog rows.
