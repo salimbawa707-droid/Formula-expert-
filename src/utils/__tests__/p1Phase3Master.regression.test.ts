@@ -84,8 +84,9 @@ export function runP1Phase3MasterTestSuite(): { total: number; passed: number; f
   // Total Active Surfactant = 7.0 + 4.8 + 1.8 + 4.0 = 17.6%
   assert('Active Surfactant Sum', Math.abs(amReport.surfactants.totalActiveSurfactants - 17.6) < 0.01, amReport.surfactants.totalActiveSurfactants, 17.6);
 
-  // Anionic Active: 7.0 + 4.8 = 11.8%
-  assert('Anionic Active Surfactant', Math.abs(amReport.surfactants.anionicActivePct - 11.8) < 0.01, amReport.surfactants.anionicActivePct, 11.8);
+  // Fixed anionic active: SLES 7.0%; acid-form LABSA 4.8% remains pH-dependent until neutralization/speciation is known.
+  assert('Fixed Anionic Active Surfactant', Math.abs(amReport.surfactants.anionicActivePct - 7.0) < 0.01, amReport.surfactants.anionicActivePct, 7.0);
+  assert('Conditional pH-Dependent Anionic Active Surfactant', Math.abs(amReport.surfactants.conditionalActivePct - 4.8) < 0.01, amReport.surfactants.conditionalActivePct, 4.8);
 
   // Amphoteric Active: 1.8%
   assert('Amphoteric Active Surfactant', Math.abs(amReport.surfactants.amphotericActivePct - 1.8) < 0.01, amReport.surfactants.amphotericActivePct, 1.8);
