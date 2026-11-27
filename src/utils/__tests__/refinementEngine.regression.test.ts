@@ -2,11 +2,12 @@ import { RefinementEngine } from '../refinementEngine';
 import { DetailedLabEvidenceRecord } from '../labEvidenceEngine';
 import { validateIngredientCompositionEvidence } from '../ingredientCompositionEvidence';
 import { registerUserInstrument, resetUserInstrumentsForTest } from '../../domain/lims/instrument';
+import { canPromoteToLabValidated } from '../lims/limsEvidencePromotionEngine';
 
 export function runRefinementEngineRegressionTestSuite() {
 resetUserInstrumentsForTest();
-registerUserInstrument({
-  instrumentId: 'BALANCE-UNIT-01',
+const instrumentRegistration = registerUserInstrument({
+  instrumentId: 'REFINEMENT-REGRESSION-BALANCE-01',
   name: 'Regression Analytical Balance',
   manufacturer: 'Test Manufacturer',
   model: 'RB-01',
@@ -19,6 +20,7 @@ registerUserInstrument({
   custodian: 'Test Custodian',
   registeredBy: 'Test Analyst'
 });
+if (!instrumentRegistration.success) throw new Error(`Test instrument registration failed: ${instrumentRegistration.error}`);
 const category = 'LAUNDRY_LIQUID' as const;
 const ingredient = [{ name: 'SLES', percentage: 15 }];
 
@@ -46,8 +48,8 @@ function record(input: {
     sampleId: input.sampleId || `SAMPLE-${input.id}`,
     batchId: `BATCH-${input.formulaId}`,
     operator: 'Test Analyst',
-    instrumentId: 'BALANCE-UNIT-01',
-    instrument: 'BALANCE-UNIT-01',
+    instrumentId: 'REFINEMENT-REGRESSION-BALANCE-01',
+    instrument: 'REFINEMENT-REGRESSION-BALANCE-01',
     replicateNumber: input.replicateNumber ?? 1,
     evidenceKind: 'INGREDIENT_COMPOSITION',
     ingredientCanonicalId: 'sles',
@@ -71,6 +73,8 @@ function check(name: string, condition: boolean, actual: unknown, expected: unkn
 }
 
 // Category isolation: dishwash evidence must not influence laundry refinement.
+const gateDiagnostic = canPromoteToLabValidated(record({ id: 'gate-diagnostic', formulaId: 'GATE', value: 15 }));
+console.log(`Composition LIMS gate diagnostic: ${gateDiagnostic.allowed ? 'ALLOWED' : gateDiagnostic.reasons.join(' | ')}`);
 const categoryScoped = proposal([
   record({ id: 'l1', formulaId: 'L1', value: 10 }),
   record({ id: 'l2', formulaId: 'L2', value: 20 }),
