@@ -119,6 +119,10 @@ assert(analysisWorkflowSource.includes('isPolymericDispersant'), 'staged workflo
 assert(dagSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'scientific DAG must exclude polymeric dispersant from primary surfactant charge totals');
 assert(qualityGateSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'safety quality gates must not apply primary-surfactant policy to polymeric dispersant');
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
+assert(dagSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'scientific DAG must not classify acid-form LABSA as fixed anionic before pH/speciation is resolved');
+assert(dagSource.includes('conditionalPHDependentAnionicPct'), 'scientific DAG must expose pH-dependent anionic active separately');
+assert(dagSource.includes('conditionalAmineOxidePct'), 'scientific DAG must expose pH-dependent amine oxide separately');
+assert(dagSource.includes("dependencies: ['IDENTITY_RESOLUTION', 'PH_EQUILIBRIUM']"), 'DAG active-matter charge routing must wait for the pH equilibrium result');
 const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
 assert(activeMatterSource.includes("surfactantType: 'conditional'"), 'active matter engine must expose a separate conditional charge class');
 assert(activeMatterSource.includes('conditionalActivePct'), 'active matter report must expose pH-dependent surfactant active matter separately');
