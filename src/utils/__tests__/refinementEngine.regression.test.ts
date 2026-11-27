@@ -50,6 +50,7 @@ function record(input: {
     operator: 'Test Analyst',
     instrumentId: 'REFINEMENT-REGRESSION-BALANCE-01',
     instrument: 'REFINEMENT-REGRESSION-BALANCE-01',
+    testMethod: 'Validated gravimetric assay SOP-01',
     replicateNumber: input.replicateNumber ?? 1,
     evidenceKind: 'INGREDIENT_COMPOSITION',
     ingredientCanonicalId: 'sles',
@@ -57,7 +58,7 @@ function record(input: {
     compositionBasis: 'W_W',
     compositionMethod: 'GRAVIMETRIC_MASS_BALANCE',
     compositionMethodDetails: 'Validated gravimetric SOP-01; w/w calculation',
-    instrumentCalibrationReference: 'CAL-2026-001',
+    instrumentCalibrationReference: 'CAL-RB-001',
     sourceDocumentReference: `LABBOOK-${input.id}`,
     formulaCompositionReference: `FORMULA-SNAPSHOT-${input.formulaId}-${input.version || '1.0'}`
   };
