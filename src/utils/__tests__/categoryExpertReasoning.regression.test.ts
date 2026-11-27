@@ -138,6 +138,21 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
     'Test 8: Amine oxide remains a conditional charge species and triggers a compatibility review, not a false fixed-charge verdict'
   );
 
+  const unknownAssaySurfactant = evaluateExpertReasoning({
+    ingredients: [{
+      id: 'unverified-surfactant-grade',
+      name: 'Unlisted Anionic Surfactant Grade',
+      category: 'Anionic Surfactant',
+      percent: 10,
+    } as FormulationIngredient],
+    productCategory: 'Laundry Detergent Powder',
+    calculatedPH: 8.5,
+  });
+  assert(
+    unknownAssaySurfactant.issues.some((i) => i.id === 'surfactant-active-assay-missing' && i.severity === 'High'),
+    'Test 9: Missing surfactant active assay is a high-severity blocker, never silently treated as zero'
+  );
+
   console.log('----------------------------------------------------');
   console.log(`TOTAL CATEGORY REASONING TESTS : ${totalTests}`);
   console.log(`PASSED                         : ${passedTests}`);
