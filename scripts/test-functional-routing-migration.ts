@@ -3,11 +3,14 @@ import { getFunctionalRoutingDecisions, resolveFunctionalRouting, validateFuncti
 
 assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), []);
 const decisions = getFunctionalRoutingDecisions();
-assert.equal(decisions.length, 13);
+assert.equal(decisions.length, 14);
 assert.equal(resolveFunctionalRouting('sls-needles')?.routingClass, 'ANIONIC');
 assert.equal(resolveFunctionalRouting('sls-30')?.pureComponentCmcEligible, true);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.routingClass, 'AMPHOTERIC');
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.chargeBehavior, 'PH_DEPENDENT_AMINE_OXIDE');
+assert.equal(resolveFunctionalRouting('labsa-90')?.routingClass, 'ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa-90')?.hlbEligible, false);
 assert.equal(resolveFunctionalRouting('sles-70')?.routingClass, 'ANIONIC');
 assert.equal(resolveFunctionalRouting('sles-28')?.pureComponentCmcEligible, false);
 assert.equal(resolveFunctionalRouting('aos-38')?.routingClass, 'ANIONIC');
