@@ -28,6 +28,7 @@ export interface IngredientCompositionEvidenceInput extends IngredientCompositio
   provenance: string;
   sourceType: string;
   qualityStatus: string;
+  operator: string;
 }
 
 /**
@@ -44,6 +45,7 @@ export function validateIngredientCompositionEvidence(
   if (!input.formulaVersion?.trim()) errors.push('Exact formula version is required.');
   if (!input.batchId?.trim()) errors.push('Manufacturing batch ID is required.');
   if (!input.sampleId?.trim()) errors.push('Physical sample ID is required.');
+  if (!input.operator?.trim()) errors.push('Named analyst/operator is required.');
   if (!input.ingredientCanonicalId?.trim()) errors.push('Canonical ingredient ID is required.');
   if (!input.ingredientName?.trim()) errors.push('Ingredient name is required.');
   if (input.compositionBasis !== 'W_W') errors.push('Only explicitly defined mass fraction (w/w) is currently supported.');
