@@ -15,6 +15,7 @@ assert(nonionic.some(i => i.id === 'apg-0810'), 'APG must remain nonionic');
 assert(ionicAnionic.some(i => i.id === 'sles-70'), 'SLES must remain anionic');
 assert(ionicAnionic.some(i => i.id === 'aos-38') && ionicAnionic.some(i => i.id === 'aos-92'), 'AOS liquid and powder must route as anionic UVCB surfactant grades');
 assert(ionicAnionic.some(i => i.id === 'sas-60'), 'SAS 60 must route as anionic secondary alkane sulfonate');
+assert(ionicAnionic.some(i => i.id === 'sarcosinate-30'), 'sodium lauroyl sarcosinate must route as pH-dependent anionic surfactant');
 assert(nonionic.some(i => i.id === 'cdea-85') && nonionic.some(i => i.id === 'cmea-90'), 'Cocamide DEA/MEA must route as nonionic alkanolamides');
 const amphotericQuickFilter = getCategorySpecificIngredients('Amphoteric Surfactant');
 const nonionicQuickFilter = getCategorySpecificIngredients('Nonionic Surfactant');
