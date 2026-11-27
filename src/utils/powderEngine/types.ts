@@ -27,6 +27,7 @@ export type PowderFunctionalClass =
   | 'Nonionic Surfactant'
   | 'Amphoteric Surfactant'
   | 'Cationic Surfactant'
+  | 'Unclassified Surfactant'
   | 'Builder (Precipitation / Ion-Exchange)'
   | 'Chelating Agent / Soluble Sequestrant'
   | 'Alkalinity Contributor'
@@ -375,6 +376,8 @@ export interface PowderCostingReport {
   batchSizeKg: number | null;
   costPerWashDose: number | null; // e.g. 50g dose
   hasZeroCostIngredients: boolean;
+  invalidCostIngredients?: string[];
+  invalidPercentageIngredients?: string[];
   ingredientCostContributions: Array<{
     name: string;
     percentage: number;
