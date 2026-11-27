@@ -36,6 +36,9 @@ assert(ionicCategory.subcategories!.find(s => s.id === 'anionic')!.matches({ id:
 assert(ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({ id:'lauryl-amine-oxide', name:'Lauryl Amine Oxide', category:'Nonionic Surfactant' } as any), 'amine oxide must appear in the governed pH-dependent ionic family');
 assert(!ionicCategory.subcategories!.find(s => s.id === 'amphoteric')!.matches({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide', category:'Polymer & Thickener' } as any), 'blocked identity must not leak into amphoteric selector');
 
+const labsaIntelligence = resolveFormulaIntelligenceRouting('labsa-90');
+assert.equal(labsaIntelligence?.chargeLabel, 'Anionic (pH-dependent)');
+assert.equal(labsaIntelligence?.hlbEligible, false);
 const ldaoIntelligence = resolveFormulaIntelligenceRouting('lauryl-amine-oxide');
 assert.equal(ldaoIntelligence?.chargeLabel, 'Amine Oxide (pH-dependent)');
 assert.equal(ldaoIntelligence?.hlbEligible, false);
@@ -120,6 +123,9 @@ const ldaoActiveResolution = ActiveMatterEngine.resolveIngredientActive({
 assert.equal(ldaoActiveResolution.surfactantType, 'conditional', 'amine oxide active matter must retain a separate pH-dependent charge bucket');
 const labsaActiveResolution = ActiveMatterEngine.resolveIngredientActive({ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any);
 assert.equal(labsaActiveResolution.surfactantType, 'conditional', 'acid-form LABSA must remain a surfactant but must not enter a fixed anionic charge bucket before neutralization/speciation');
+const labsaActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any], 1);
+assert.equal(labsaActiveReport.surfactants.conditionalActivePct, 1.8);
+assert.equal(labsaActiveReport.surfactants.anionicActivePct, 0, 'acid-form LABSA must not be silently reported as fixed anionic active');
 const ldaoActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{
   id:'lauryl-amine-oxide',
   name:'Lauryl Amine Oxide 30% (LDAO)',
