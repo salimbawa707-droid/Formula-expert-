@@ -376,3 +376,16 @@ Public references:
 - CIR Ethanolamides assessment: https://journals.sagepub.com/doi/abs/10.1177/1091581815586599
 
 These sources establish family identity and general functional role only. They do not verify catalog 60/85/90% assay, free amine, nitrosamine, moisture, salt, or lot release. Supplier TDS and CoA remain mandatory for grade-specific approval.
+
+
+### Additional identity tranche — Sodium Lauroyl Sarcosinate 30% (2026-11-27)
+
+Catalog `sarcosinate-30` lists INCI Sodium Lauroyl Sarcosinate and CAS 137-16-6. PubChem CID 23668817 and ChemIDplus-deposited substance record 134973572 corroborate sodium N-lauroylsarcosinate identity and the CAS mapping. The compound is routed as a primary anionic surfactant family for normal neutral/alkaline detergent conditions, with an explicit `PH_DEPENDENT_ANIONIC` charge-behaviour tag; it is not treated as invariantly anionic at every pH.
+
+Catalog 30% is not supplier-verified. HLB and pure CMC are not transferred. The CIR source notes nitrosating-system cautions in cosmetic-use context; home-care regulatory applicability requires separate review.
+
+Sources:
+- PubChem Sodium Lauroyl Sarcosinate: https://pubchem.ncbi.nlm.nih.gov/compound/23668817
+- PubChem/ChemIDplus substance record: https://pubchem.ncbi.nlm.nih.gov/substance/134973572
+- CIR safety assessment summarized in PubChem: https://pubchem.ncbi.nlm.nih.gov/compound/23668817
+
