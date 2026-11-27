@@ -71,3 +71,31 @@ A candidate receives a public reference profile only when an identifiable source
 - Lot CoA verified by these references: 0.
 - Formula applicability approvals created by these references: 0.
 - Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Incremental mapping update — 2026-11-27 (APG / amine oxide / nonionics / polymers / enzymes)
+
+Added eight additional reference profiles to `src/data/normalCommercialIngredientReference.ts` and expanded enzyme variant coverage.
+
+### New mappings
+- **APG 0810:** supplier-published ≥50% active example; chain distribution and test basis remain grade-specific.
+- **APG 1214:** BASF Glucopon 600 UP benchmark (50% active; lauryl/myristyl glucoside blend). Not proof of pure lauryl glucoside equivalence.
+- **Lauramine oxide:** Stepan AMMONYX LO (30% amine oxide; CAS 1643-20-5); catalog identity matches. Amine oxide is amphoteric, not nonionic.
+- **LAE-3:** adjacent low-EO benchmark, BASF Lutensol AO 3 (C13–C15 oxo alcohol + 3EO); not exact C12–15 grade.
+- **LAE-12:** adjacent high-EO benchmark, BASF Lutensol A 12 N (C12–C14 + 12EO); not exact C12–15 grade.
+- **PVP K30:** BASF Luviskol K30 powder benchmark (K-value 27–33; solids 95–100%; approx. Mw 45,000 ± 5,000 g/mol by BASF GPC method). Cosmetic product reference, not detergent performance proof.
+- **PEG 4000:** industry reference framework only; no exact supplier TDS/CoA verified in this tranche.
+- **ASE polymer 33:** industry reference framework only; exact Acrysol 33 TDS, neutralization curve and CoA still required. Do not substitute dispersant copolymer data.
+
+### Enzyme mapping expansion
+The enzyme family mapping now covers base, technical, high-purity and custom-solution catalog IDs for protease, amylase, lipase, cellulase and mannanase. Named commercial examples are listed without converting product names into universal enzyme activity values:
+- Protease: Progress Go 100 L / Progress Uno 100 L.
+- Amylase: Amplify Prime 100 L / Stainzyme Plus Evity 48 T.
+- Lipase: Lipex Evity 200 L / Lipex Evity 100 T.
+- Cellulase: Celluclean 5000 L (cleaning cellulase) and Carezyme Premium 4500 L (care cellulase); these are functionally distinct.
+- Mannanase: Mannaway 200 L / Mannaway Evity 4.0 T.
+
+Novonesis' published liquid-detergent examples report formulation inclusion levels (not enzyme activity assays): protease 0.20–0.28%, amylase 0.03%, lipase 0.14–0.16%, mannanase 0.05%, and cellulase 0.06–0.08% w/w in the cited formulations. These are literature examples only, not universal dosing instructions and not transferable between products.
+
+### Verification boundary
+All profiles remain `NORMAL_COMMERCIAL_REFERENCE`; `supplierGradeStatus=UNVERIFIED` and `lotCoAStatus=UNVERIFIED`. No supplier/lot verification or formula applicability approval is implied. Catalog active defaults remain untouched. Enzyme potency still requires the exact product assay unit, method, substrate, activity per g/mL and storage stability data. Standard/industry references are not supplier verification.
