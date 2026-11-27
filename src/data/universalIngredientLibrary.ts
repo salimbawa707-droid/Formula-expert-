@@ -5242,9 +5242,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
   },
   {
     "id": "cationic-polymer-emulsion",
-    "name": "Cationic Polymer Thickening Emulsion",
+    "name": "Polyquaternium-37 Cationic Polymer Emulsion",
     "category": "Polymer & Thickener",
-    "casNumber": "9003-05-8",
+    "casNumber": "26161-33-1",
     "inciName": "Polyquaternium-37",
     "function": "Cationic Fabric Softener Viscosity Builder",
     "activeDefault": 30,
