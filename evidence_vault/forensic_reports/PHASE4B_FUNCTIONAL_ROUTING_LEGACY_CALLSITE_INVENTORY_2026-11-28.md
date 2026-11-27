@@ -68,3 +68,12 @@ The script is already included in `bun run test:all`.
 This inventory is a code-path migration record, not a laboratory validation. Public identity sources do not establish supplier grade, lot assay, impurity profile, HLB, CMC or finished-formula performance. The current master still has 397 catalog identity crosswalk gaps, 430 supplier-grade evidence gaps and 5,590 ingredient/category applicability pairs at `NOT_APPROVED`.
 
 **Phase 4B remains OPEN. Phase 5 remains LOCKED.** No human review or approval is claimed; this is an AI-authored source/code audit.
+
+
+## Applicability-screen routing extension — 2026-11-28
+
+Additional consumer `src/data/masterIngredientApplicabilityScreen.ts` is now route-aware. Each of the 5,590 preliminary ingredient/category rows records `functionalRoutingClass`, `functionalRole`, `chargeBehavior` and `identityRouteStatus` (`ROUTED`, `UNMAPPED`, `BLOCKED`). A blocked identity returns `IDENTITY_OR_EVIDENCE_UNKNOWN` before any category-level inference. Amine oxide uses its pH-dependent amphoteric-family route rather than the catalog's legacy nonionic label. Sodium lignosulfonate is represented as a polymeric dispersant, not primary surfactant active; fabric-softener pairing remains a compatibility risk requiring a test.
+
+Regression additions in `scripts/test-master-ingredient-applicability-screen.ts` assert the LDAO charge-behaviour metadata, tallow-amine fail-closed disposition, and lignosulfonate polymeric role. All 5,590 rows remain `finalApplicability: NOT_APPROVED`.
+
+This code change has not yet been verified by a new CI run. Run #1399 predates these changes and is not evidence for this commit.
