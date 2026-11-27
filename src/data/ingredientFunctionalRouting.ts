@@ -6,6 +6,7 @@ export type FunctionalRole =
   | 'AMINE_OXIDE_SURFACTANT'
   | 'ZWITTERIONIC_BETAINE'
   | 'NONIONIC_APG'
+  | 'NONIONIC_ALKANOLAMIDE'
   | 'POLYMERIC_DISPERSANT'
   | 'IDENTITY_UNRESOLVED';
 export type ChargeBehavior =
@@ -48,6 +49,33 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     identityScope: 'INCI and CAS 68585-34-2 identify the sodium laureth sulfate commercial surfactant family; the 70% paste and 28% liquid are distinct supplied grades, not one assay.',
     sourceUrls: ['https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=448&lang=eng&wbdisable=true','https://pubchem.ncbi.nlm.nih.gov/compound/23665884'],
     caveats: ['Davies HLB 40 is a screening-model value only, not a supplier-grade measured property.', 'Public chemical identity does not verify either catalog grade concentration, EO distribution, residual 1,4-dioxane or lot assay.', 'Do not assign pure-molecule CMC to commercial ethoxylate distributions.']
+  },
+  {
+    ingredientIds: ['sas-60'],
+    expectedCategory: 'Anionic Surfactant', expectedInci: 'Sodium C14-17 Sec-Alkyl Sulfonate',
+    routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'FIXED_ANIONIC',
+    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    identityScope: 'CAS 68037-49-0 and INCI support a secondary C14-17 alkyl sulfonate family within the broader C10-18 alkane sodium sulfonate UVCB family.',
+    sourceUrls: ['https://echa.europa.eu/substance-information/-/substanceinfo/100.061.994','https://kcia.or.kr/cid/search/ingd_view.php?no=18412','https://www.industrialchemicals.gov.au/sites/default/files/Secondary%20alkane%20sulfonates%20%28SAS%29_Human%20health%20tier%20II%20assessment.pdf'],
+    caveats: ['The catalog 60% grade is not verified by supplier TDS or lot CoA.', 'CAS 68037-49-0 has broad C10-18 registry scope; do not infer exact C14-17 chain distribution from CAS alone.', 'Catalog HLB 13.0 and pure-component CMC are not supported for this UVCB mixture.']
+  },
+  {
+    ingredientIds: ['cdea-85'],
+    expectedCategory: 'Nonionic Surfactant', expectedInci: 'Cocamide DEA',
+    routingClass: 'NONIONIC', role: 'NONIONIC_ALKANOLAMIDE', chargeBehavior: 'NEUTRAL_NONIONIC',
+    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    identityScope: 'CAS 68603-42-9 and INCI support the coconut fatty-acid diethanolamide family; this is a fatty-chain mixture, not a single pure molecular species.',
+    sourceUrls: ['https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=3341&wbdisable=true','https://www.industrialchemicals.gov.au/sites/default/files/Common%20skin%20sensitisers.pdf'],
+    caveats: ['85% is a catalog grade claim, not a supplier assay or matching lot CoA.', 'Supplier evidence should specify free DEA/secondary amine, nitrosamine and residual specifications.', 'Avoid N-nitrosating systems; public topical-use restrictions are not a substitute for jurisdiction-specific home-care regulatory review.', 'Catalog HLB and pure-component CMC are not grade-verified.']
+  },
+  {
+    ingredientIds: ['cmea-90'],
+    expectedCategory: 'Nonionic Surfactant', expectedInci: 'Cocamide MEA',
+    routingClass: 'NONIONIC', role: 'NONIONIC_ALKANOLAMIDE', chargeBehavior: 'NEUTRAL_NONIONIC',
+    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    identityScope: 'CAS 68140-00-1 and INCI support coconut fatty-acid monoethanolamide; authoritative assessment describes it as a C8-18 UVCB mixture.',
+    sourceUrls: ['https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=3342','https://www.canada.ca/en/environment-climate-change/services/evaluating-existing-substances/assessment-alkanolamines-fatty-alkanolamides-group.html','https://journals.sagepub.com/doi/abs/10.1177/1091581815586599'],
+    caveats: ['90% is a catalog grade claim, not a supplier assay or matching lot CoA.', 'Supplier evidence should define free MEA/secondary amine and nitrosamine-related impurities.', 'Avoid N-nitrosating systems and aerosolization as applicable to the source restrictions and local product category.', 'Catalog HLB and pure-component CMC are not grade-verified.']
   },
   {
     ingredientIds: ['aos-38','aos-92'],
