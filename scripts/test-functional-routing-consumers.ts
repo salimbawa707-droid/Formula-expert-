@@ -123,6 +123,8 @@ const ldaoActiveResolution = ActiveMatterEngine.resolveIngredientActive({
 assert.equal(ldaoActiveResolution.surfactantType, 'conditional', 'amine oxide active matter must retain a separate pH-dependent charge bucket');
 const labsaActiveResolution = ActiveMatterEngine.resolveIngredientActive({ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any);
 assert.equal(labsaActiveResolution.surfactantType, 'conditional', 'acid-form LABSA must remain a surfactant but must not enter a fixed anionic charge bucket before neutralization/speciation');
+const labsaNameOnlyResolution = ActiveMatterEngine.resolveIngredientActive({ name:'LABSA (Acid Slurry 90%)', percentage:2, activeMatterPct:90 } as any);
+assert.equal(labsaNameOnlyResolution.surfactantType, 'conditional', 'name-only LABSA input must use the same pH-dependent route as canonical-ID input');
 const labsaActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any], 1);
 assert.equal(labsaActiveReport.surfactants.conditionalActivePct, 1.8);
 assert.equal(labsaActiveReport.surfactants.anionicActivePct, 0, 'acid-form LABSA must not be silently reported as fixed anionic active');
