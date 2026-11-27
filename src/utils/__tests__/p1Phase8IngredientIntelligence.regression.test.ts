@@ -154,7 +154,7 @@ export function runP1Phase8IngredientIntelligenceTestSuite(): { total: number; p
   assert('15. SLES substituting SLES classified as DIRECT_EQUIVALENT with >90 score', directSub.tier === 'DIRECT_EQUIVALENT' && directSub.matchScore >= 90, true, true);
 
   const functionalSub = evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID');
-  assert('16. LABSA substituting SLES classified as FUNCTIONAL_ALTERNATIVE with high score', functionalSub.tier === 'FUNCTIONAL_ALTERNATIVE' && functionalSub.matchScore >= 70, true, true);
+  assert('16. LABSA acid-form substituting SLES remains INSUFFICIENT_DATA until formula pH/speciation is resolved', functionalSub.tier === 'INSUFFICIENT_DATA' && functionalSub.matchScore === 0, true, true);
 
   const badSub = evaluateIngredientSubstitution('labsa', 'labsa', 'FABRIC_SOFTENER');
   assert('17. LABSA substituted into FABRIC_SOFTENER flagged as NOT_SCIENTIFICALLY_EQUIVALENT', badSub.tier === 'NOT_SCIENTIFICALLY_EQUIVALENT' && badSub.matchScore <= 15, true, true);
