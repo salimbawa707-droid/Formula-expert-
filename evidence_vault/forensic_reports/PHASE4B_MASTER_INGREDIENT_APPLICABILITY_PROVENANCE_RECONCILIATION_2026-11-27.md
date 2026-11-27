@@ -289,3 +289,45 @@ Added `scripts/test-functional-routing-engine-integration.ts` and wired it into 
 This is a targeted migration for the four audited chemistry cases, not a claim that every one of the 430 catalog records or every legacy category consumer has been migrated. Legacy category fields remain unchanged to avoid broad unreviewed side effects. The remaining consumers (including general compatibility matrices, formula-intelligence applicability, selectors and other legacy calculators) still require a complete per-call-site migration inventory.
 
 No source evidence in this addendum verifies supplier grade, lot assay, actual active matter, HLB, or formulation performance. The 397 identity crosswalk gaps and 430 supplier-grade evidence gaps remain open.
+
+
+## 12. Priority identity source tranche and downstream consumer migration — 2026-11-27
+
+### Source-by-source tranche (family identity only; no supplier-grade promotion)
+
+| Priority family / catalog IDs | Public source reconciliation | Functional disposition | Open evidence |
+|---|---|---|---|
+| SLES 70 / SLES 28 (`sles-70`, `sles-28`) | Health Canada NHPID identifies Sodium Laureth Sulfate and lists CAS 68585-34-2 among accepted registry numbers; PubChem's sodium laureth sulfate entry includes multiple CAS/ethoxylate aliases. | Route as ANIONIC primary surfactant; keep 70% and 28% as distinct commercial grades. | EO distribution, active matter, free oil, 1,4-dioxane, salt, pH, supplier TDS and lot CoA remain unverified. Public source does not establish either catalog grade. |
+| CAPB 30 / 45 (`capb-30-uni`, `capb-45`) | CIR's CAPB safety assessment defines the coconut-fatty-acyl betaine family and lists multiple related CAS numbers; PubChem ChEBI depositor record corroborates CAS 61789-40-0. | Route as zwitterionic amphoteric betaine. | 30/45% values remain catalog labels until supplier/lot assay; fatty-acyl distribution, free amidoamine/DMAPA, salt and impurity limits remain grade-specific. |
+| Lauramine Oxide (`lauryl-amine-oxide` family) | PubChem identity is supported; Kao OXIDET DM-20 TDS explicitly describes Lauramine Oxide as nonionic/cationic depending on pH and specifies 29–31% active matter for that named Kao grade. | Keep separate `AMINE_OXIDE_SURFACTANT` role and `PH_DEPENDENT_AMINE_OXIDE` charge behaviour. Do not equate it with a classic zwitterionic betaine. | Kao TDS is a comparator only; it does not establish the user's supplier or lot. Do not copy its 29–31% assay. Exact pH/speciation and grade composition remain open. |
+| APG 0810 (`apg-0810`) | FDA GSRS/PubChem record for CAS 68515-73-1 identifies caprylyl/capryl oligoglucoside and explicitly labels the substance class as mixture; Health Canada registry lists matching INCI/CAS. | Route as NONIONIC APG; disable unsupported pure-component CMC and grade HLB transfer. | Catalog 50% value and HLB are not supplier assay/property evidence. |
+| APG 1214 (`apg-1214`) | PubChem Lauryl Glucoside record aggregates CAS 27836-64-2 and 110615-47-9 among multiple identifiers. | Nonionic functional family is supported by INCI; exact CAS-to-commercial-grade mapping remains ambiguous. | Keep exact identity crosswalk unresolved; no pure C12 glucoside CMC/HLB transfer to commercial APG mixture. |
+
+Public references:
+- Health Canada Sodium Laureth Sulfate registry: https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=448&lang=eng&wbdisable=true
+- PubChem Sodium Laureth Sulfate: https://pubchem.ncbi.nlm.nih.gov/compound/23665884
+- CIR CAPB assessment: https://journals.sagepub.com/doi/full/10.1177/1091581812447202
+- PubChem CAPB ChEBI record: https://pubchem.ncbi.nlm.nih.gov/substance/135610782
+- Kao OXIDET DM-20 TDS (comparator grade only): https://www.kaochemicals-eu.com/uploads/docs/6/y/k/mja-tds-eng-v2-oxidet-dm-20.pdf?download=1
+- FDA GSRS/PubChem APG record: https://pubchem.ncbi.nlm.nih.gov/substance/472402409
+- Health Canada Caprylyl/Capryl Glucoside registry: https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=13217&wbdisable=true
+- PubChem Lauryl Glucoside: https://pubchem.ncbi.nlm.nih.gov/compound/10893439
+
+### Runtime migration completed for this tranche
+
+- `rawMaterialCategories.ts`: Ionic/amphoteric selector uses the functional route; pH-dependent amine oxide is included in the ionic/amphoteric family and excluded from generic nonionic results. APGs remain nonionic. Legacy category labels are not silently rewritten.
+- `CategoryIngredientSelector.tsx`: quick category filtering now consults the same route and prevents the amine-oxide record from appearing as a generic nonionic ingredient.
+- `chemicals.ts`: compatibility matrix has a dedicated pH-dependent amine oxide state. Its pair result is `REQUIRES_COMPATIBILITY_TEST`, not an invented unconditional compatible/incompatible result. Unresolved identity yields `INSUFFICIENT_DATA`.
+- `compatibilityEngine.ts`: matrix pair decisions are consumed at runtime. Amine oxide + ionic/cationic pairings trigger grade/pH/electrolyte-specific test guidance; unresolved tallow identity blocks compatibility evaluation. Sodium lignosulfonate remains visible to anionic-charge/cationic interaction screening but is excluded from primary anionic surfactant category-policy totals.
+- `SmartFormulaAnalyzerPro.tsx`: charge/family labels and HLB fallback are now derived from the functional route. Amine oxide is labelled pH-dependent and catalog HLB fallback is suppressed; unresolved identity is visibly blocked.
+- `ingredientFunctionalRouting.ts`: expanded route table now covers SLES 70/28, CAPB 30/45, Lauramine Oxide, APG 0810/1214, SLS, lignosulfonate and the blocked tallow-amine record.
+
+Regression:
+- `scripts/test-functional-routing-consumers.ts` covers selector routing, formula-intelligence labels, HLB eligibility, compatibility matrix statuses, pH-dependent amine oxide handling, unresolved identity blocking and polymeric dispersant vs primary-surfactant separation.
+- Test is wired into `bun run test:all`.
+
+### Scope and gate status
+
+This is a source-backed identity-family and consumer migration tranche, not closure of the 397-record exact identity gap. The 430 supplier-grade evidence gaps remain; the 5,590 ingredient/category applicability pairs remain NOT_APPROVED. Public reference sources are not substitutes for the user's manufacturer TDS, matching lot CoA or formulation trials.
+
+Phase 4B remains OPEN. Phase 5 remains LOCKED pending complete source reconciliation, remaining call-site migration and actual supplier/lot/applicability evidence.
