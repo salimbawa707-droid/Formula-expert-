@@ -582,6 +582,253 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     applicabilityNote: 'Acrysol 33 is a trade/grade identity and cannot be inferred from generic CAS 25212-88-8 alone. Do not equate ASE with Sokalan dispersant copolymers or assign 30% polymer solids as verified. Exact product bulletin, neutralization curve and lot CoA are required.'
   },
 
+
+  {
+    catalogIngredientIds: ['lae-7-tech', 'lae-7-pure', 'lae-7-sol'],
+    displayName: 'C12–15 alcohol ethoxylate 7EO — commercial variants',
+    referenceGrade: 'BASF Lutensol A 7 N adjacent C12–14 fatty alcohol 7EO benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      chemicalNature: { value: 'C12–C14 fatty alcohol + 7 EO', unit: 'composition description' },
+      cloudPoint: { value: 53, unit: '°C', conditions: 'BASF Cloud Point Method A' },
+      hlb: { value: 12, unit: 'dimensionless' },
+      foamHeight: { value: '120 / 115', unit: 'mm', conditions: 'Ross-Miles 0.1 wt%, 25°C, 0/5 min' }
+    },
+    sourceUrl: 'https://www.basf.com/dam/jcr:cb247fec-3a83-3099-80b6-025f50eb881e/basf/www/mx/documents/2024%20HII%20Product%20Range%20Card.pdf',
+    sourceName: 'BASF Home Care & I&I Product Range Card — Lutensol A 7 N',
+    applicabilityNote: 'Adjacent C12–C14 benchmark only; catalog C12–15 alcohol distribution is not identical. Technical, high-purity and custom-solution labels do not prove those physical grades exist or share this specification.'
+  },
+  {
+    catalogIngredientIds: ['lae-9-tech', 'lae-9-pure', 'lae-9-sol'],
+    displayName: 'C12–15 alcohol ethoxylate 9EO — commercial variants',
+    referenceGrade: 'BASF Lutensol A 9 N adjacent C12–C14 fatty alcohol 9EO benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      chemicalNature: { value: 'C12–C14 fatty alcohol + 9 EO', unit: 'composition description' },
+      cloudPoint: { value: 75, unit: '°C', conditions: 'BASF Cloud Point Method A' },
+      hlb: { value: 12.9, unit: 'dimensionless' },
+      foamHeight: { value: '110 / 110', unit: 'mm', conditions: 'Ross-Miles 0.1 wt%, 25°C, 0/5 min' }
+    },
+    sourceUrl: 'https://www.basf.com/dam/jcr:cb247fec-3a83-3099-80b6-025f50eb881e/basf/www/mx/documents/2024%20HII%20Product%20Range%20Card.pdf',
+    sourceName: 'BASF Home Care & I&I Product Range Card — Lutensol A 9 N',
+    applicabilityNote: 'Adjacent C12–C14 benchmark only; not an exact C12–15 supplier grade. Cloud point method uses 1 g active surfactant + 100 g water. Variant suffixes are catalog records, not verified physical grade distinctions.'
+  },
+  {
+    catalogIngredientIds: ['np-6', 'np-6-tech', 'np-6-pure', 'np-6-sol', 'np-9', 'np-9-tech', 'np-9-pure', 'np-9-sol', 'np-10', 'np-10-tech', 'np-10-pure', 'np-10-sol'],
+    displayName: 'Nonylphenol ethoxylates NP-6 / NP-9 / NP-10',
+    referenceGrade: 'Identity and regulatory reference only; no transferable commercial specification',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      chemicalFamily: { value: 'nonylphenol ethoxylate homolog distribution; average EO number is grade-defining', unit: 'identity rule' },
+      catalogCasLimitation: { value: 'CAS 9016-45-9 is broad and does not distinguish EO number or homolog distribution', unit: 'identity limitation' },
+      commercialAssay: { value: 'requires exact supplier TDS and lot CoA; no universal assay assigned', unit: 'rule' },
+      regulatoryGate: { value: 'restricted/prohibited in multiple jurisdictions and high aquatic hazard concern; jurisdictional legal review required before any use', unit: 'hold' }
+    },
+    sourceUrl: 'https://echa.europa.eu/substances-restricted-under-reach',
+    sourceName: 'ECHA REACH restriction framework — nonylphenol and nonylphenol ethoxylates',
+    applicabilityNote: 'Do not promote NP family as a recommended modern detergent surfactant. Exact NP-n homolog profile and regional legal status must be established. Do not use generic CAS or catalog activeDefault as evidence of a commercial grade. Keep all NP entries on regulatory hold until market-specific legal review.'
+  },
+  {
+    catalogIngredientIds: ['cdea-85', 'cdea-85-tech', 'cdea-85-pure', 'cdea-85-sol'],
+    displayName: 'Cocamide DEA',
+    referenceGrade: 'Industry reference framework; exact fatty-chain distribution and residual amide/DEA specification required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      chemicalClass: { value: 'fatty acid diethanolamide; chain distribution and free DEA are grade-defining', unit: 'identity rule' },
+      assay: { value: 'catalog nominal 85% is not supplier evidence; require exact TDS/CoA', unit: 'rule' },
+      nitrosamineControl: { value: 'nitrosamine and nitrosating-agent controls require supplier declaration and finished-product risk assessment', unit: 'rule' }
+    },
+    sourceUrl: 'https://echa.europa.eu/',
+    sourceName: 'ECHA chemical safety and restriction information framework',
+    applicabilityNote: 'No exact manufacturer grade document was established for this catalog item. Do not treat 85% as verified assay or transfer it across technical/pure/solution variants. Nitrosamine risk and jurisdictional restrictions require review.'
+  },
+  {
+    catalogIngredientIds: ['cmea-90', 'cmea-90-tech', 'cmea-90-pure', 'cmea-90-sol'],
+    displayName: 'Cocamide MEA',
+    referenceGrade: 'Industry reference framework; exact fatty-chain distribution and residual free MEA specification required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      chemicalClass: { value: 'fatty acid monoethanolamide; chain distribution and free MEA are grade-defining', unit: 'identity rule' },
+      assay: { value: 'catalog nominal 90% is not supplier evidence; require exact TDS/CoA', unit: 'rule' },
+      physicalForm: { value: 'flakes, pastilles or viscous material are supplier-process dependent', unit: 'rule' }
+    },
+    sourceUrl: 'https://echa.europa.eu/',
+    sourceName: 'ECHA chemical identity and safety information framework',
+    applicabilityNote: 'No exact manufacturer grade document was established for this catalog item. Do not treat 90% as verified assay or transfer it across technical/pure/solution variants; obtain exact product specification and residual free amine data.'
+  },
+  {
+    catalogIngredientIds: ['peg-40-hco', 'peg-40-hco-tech', 'peg-40-hco-pure', 'peg-40-hco-sol'],
+    displayName: 'PEG-40 Hydrogenated Castor Oil',
+    referenceGrade: 'Compendial/industry identity framework; supplier grade TDS required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      identity: { value: 'ethoxylated hydrogenated castor oil; distribution and hydroxyl/saponification values are process dependent', unit: 'identity rule' },
+      HLB: { value: 'supplier-specific; no universal HLB assigned', unit: 'rule' },
+      assay: { value: 'require exact supplier TDS and lot CoA', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.usp.org/',
+    sourceName: 'USP compendial framework — excipient monograph and supplier grade must be checked',
+    applicabilityNote: 'Catalog HLB 15.0 is not a verified universal value. Cosmetic solubilizer grades are not automatically detergent-compatible; confirm cloud point, electrolyte tolerance, active matter and fragrance solubilization in the target matrix.'
+  },
+  {
+    catalogIngredientIds: ['polysorbate-20', 'polysorbate-20-tech', 'polysorbate-20-pure', 'polysorbate-20-sol'],
+    displayName: 'Polysorbate 20',
+    referenceGrade: 'USP/NF compendial identity framework; exact supplier specification required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      identity: { value: 'polyoxyethylene (20) sorbitan monolaurate; commercial material is a distribution of components', unit: 'identity rule' },
+      HLB: { value: 'commonly cited nominal HLB is not a lot assay or a universal measured constant', unit: 'rule' },
+      compendialTests: { value: 'acid value, saponification value, hydroxyl value, water and related substances are monograph/supplier-method specific', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.usp.org/',
+    sourceName: 'USP/NF compendial framework for Polysorbate 20',
+    applicabilityNote: 'Do not promote catalog HLB 16.7 to a verified property. Pharmaceutical/cosmetic polysorbate grades may differ in peroxide, impurities and oxidation stability; validate in the fragrance/detergent matrix.'
+  },
+  {
+    catalogIngredientIds: ['polysorbate-80', 'polysorbate-80-tech', 'polysorbate-80-pure', 'polysorbate-80-sol'],
+    displayName: 'Polysorbate 80',
+    referenceGrade: 'USP/NF compendial identity framework; exact supplier specification required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      identity: { value: 'polyoxyethylene (20) sorbitan monooleate; commercial material is a distribution of components', unit: 'identity rule' },
+      HLB: { value: 'commonly cited nominal HLB is not a lot assay or a universal measured constant', unit: 'rule' },
+      compendialTests: { value: 'acid value, saponification value, hydroxyl value, water and related substances are monograph/supplier-method specific', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.usp.org/',
+    sourceName: 'USP/NF compendial framework for Polysorbate 80',
+    applicabilityNote: 'Do not promote catalog HLB 15.0 to a verified property. Pharmaceutical/cosmetic polysorbate grades may differ in peroxide, impurities and oxidation stability; validate in the fragrance/detergent matrix.'
+  },
+  {
+    catalogIngredientIds: ['xanthan-gum-200', 'xanthan-gum-200-tech', 'xanthan-gum-200-pure', 'xanthan-gum-200-sol'],
+    displayName: 'Xanthan Gum 200 Mesh',
+    referenceGrade: 'CAGXALTM200 food-grade 200 mesh supplier specification example',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      viscosityMin: { value: 1200, unit: 'cP', conditions: '1% solution; supplier method' },
+      mesh: { value: 200, unit: 'mesh', basis: 'named grade' },
+      pHStability: { value: '3–9', unit: 'pH', basis: 'supplier published application range' }
+    },
+    sourceUrl: 'https://www.cagcolloids.com/es/download/Xanthan-Gum-Food-Grade-200-Mesh-PDS.pdf',
+    sourceName: 'CAG Hydrocolloids Xanthan Gum Food Grade 200 Mesh PDS',
+    applicabilityNote: 'Food-grade supplier example, not proof of detergent-grade or exact rheology equivalence. Viscosity depends strongly on concentration, hydration, shear history, electrolyte and test method. Technical/pure/solution variants require separate documents.'
+  },
+  {
+    catalogIngredientIds: ['cmc-technical', 'cmc-technical-tech', 'cmc-technical-pure', 'cmc-technical-sol'],
+    displayName: 'Sodium Carboxymethyl Cellulose (CMC)',
+    referenceGrade: 'Detergent-grade CMC published grade family reference',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      technicalPowderViscosity: { value: '5–600', unit: 'mPa·s', conditions: '2% solution; grade-dependent range' },
+      technicalPowderPurity: { value: '55–70', unit: '%', conditions: 'supplier grade family range' },
+      highPurityLiquidGrade: { value: '2500–5500', unit: 'mPa·s', conditions: '1% solution; grade-dependent range' },
+      pH: { value: '6.5–10', unit: 'pH', conditions: 'published detergent CMC grade family' }
+    },
+    sourceUrl: 'https://sentai-cmc.com/products/detergent-grade-cmc',
+    sourceName: 'Sentai Detergent-Grade CMC grade family specifications',
+    applicabilityNote: 'This is a family of distinct grades, not one specification. CMC degree of substitution, viscosity, purity and moisture must be selected by grade. Do not map one family range as a lot-specific value or assume all technical/pure/solution catalog variants match the same grade.'
+  },
+  {
+    catalogIngredientIds: ['hpmc-100k', 'hpmc-100k-tech', 'hpmc-100k-pure', 'hpmc-100k-sol'],
+    displayName: 'Hydroxypropyl Methylcellulose nominal 100,000 cps',
+    referenceGrade: 'KIMA HPMC K100M adjacent 100k viscosity benchmark',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      viscosity: { value: '80,000–120,000', unit: 'cP', conditions: 'supplier apparent viscosity method; grade K100M' },
+      pH: { value: '5–8', unit: 'pH', conditions: 'supplier method' },
+      lossOnDryingMax: { value: 5, unit: '%' },
+      methoxy: { value: '19–24', unit: '%' },
+      hydroxypropoxy: { value: '4–12', unit: '%' }
+    },
+    sourceUrl: 'https://www.kimacellulose.com/uploads/file/tds-hpmc-k100m.pdf',
+    sourceName: 'KIMA HPMC K100M Technical Data Sheet',
+    applicabilityNote: 'K100M is a named supplier grade with 80k–120k cP specification; method and concentration must be compared before claiming equivalence to catalog 100,000 cps. The source is pharmaceutical excipient grade, not detergent-grade qualification. Use detergent-grade compatibility and salt-tolerance testing.'
+  },
+  {
+    catalogIngredientIds: ['pvno-40', 'pvno-40-tech', 'pvno-40-pure', 'pvno-40-sol'],
+    displayName: 'Polyvinylpyridine N-Oxide (PVNO)',
+    referenceGrade: 'Industry reference framework; exact polymer molecular weight and 40% solution grade TDS required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      polymerIdentity: { value: 'polyvinylpyridine N-oxide; molecular weight and oxidation/structural specification are grade-defining', unit: 'identity rule' },
+      solutionSolids: { value: 'catalog 40% is not supplier verification; obtain solids and viscosity on exact product', unit: 'rule' },
+      dyeTransferPerformance: { value: 'must be established in defined dye/fabric wash tests', unit: 'rule' }
+    },
+    sourceUrl: 'https://patents.google.com/?q=polyvinylpyridine+N-oxide+detergent+dye+transfer',
+    sourceName: 'Published patent literature search framework for PVNO detergent dye-transfer use',
+    applicabilityNote: 'No exact commercial PVNO 40% manufacturer TDS was validated. Do not infer activeDefault 40 as a confirmed solids assay or infer performance from polymer identity alone. Obtain molecular weight, solids, viscosity, residual monomer and dye-transfer test data.'
+  },
+  {
+    catalogIngredientIds: ['peg-120-thickener'],
+    displayName: 'PEG-120 Methyl Glucose Dioleate',
+    referenceGrade: 'Yeser DOE120 supplier-published commercial TDS',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      pH: { value: '4.5–7.5', unit: 'pH', conditions: '10% aqueous solution, 25°C' },
+      acidValueMax: { value: 1, unit: 'mg KOH/g' },
+      hydroxylValue: { value: '14–26', unit: 'mg KOH/g' },
+      saponificationValue: { value: '14–26', unit: 'mg KOH/g' },
+      iodineValue: { value: '5–15', unit: 'g/100g' }
+    },
+    sourceUrl: 'https://yeserchem.com/peg-120-methyl-glucose-dioleate/',
+    sourceName: 'Yeser DOE120 PEG-120 Methyl Glucose Dioleate TDS',
+    applicabilityNote: 'Named supplier grade reference; product is promoted as mild surfactant thickener in personal-care systems. No universal active-matter percentage or detergent-matrix viscosity contribution is inferred. Check actual supplied form and compatibility with the target surfactant/electrolyte system.'
+  },
+  {
+    catalogIngredientIds: ['anti-fog-polymer'],
+    displayName: 'Acrylates Copolymer anti-fog polymer',
+    referenceGrade: 'Identity-only reference; proprietary polymer composition and grade unresolved',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      identityLimitation: { value: 'CAS 25085-34-1 / INCI Acrylates Copolymer does not identify a unique anti-fog commercial polymer grade', unit: 'identity hold' },
+      solidsAndIonicity: { value: 'require exact manufacturer TDS/CoA', unit: 'rule' },
+      antiFogPerformance: { value: 'requires substrate-specific condensation/optical test', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.dow.com/en-us/market/mkt-home-care/sub-home-care-thickeners.html',
+    sourceName: 'Dow home-care polymer application framework',
+    applicabilityNote: 'Do not assume generic Acrylates Copolymer is a specific anti-fog product or assign a solids value. Exact trade name, monomer composition, ionic character, film formation and substrate test are required.'
+  },
+  {
+    catalogIngredientIds: ['tallow-amine-oxide'],
+    displayName: 'Tallow amine ethoxylate / PEG-2 tallow amine identity hold',
+    referenceGrade: 'Identity conflict hold; not a polymer grade and not proven to be an amine oxide',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      catalogDisplayConflict: { value: 'display name says amine oxide; INCI says PEG-2 Tallow Amine (ethoxylated amine)', unit: 'identity conflict' },
+      activeAndComposition: { value: 'require exact CAS, manufacturer trade name, EO distribution, acid thickening test and CoA', unit: 'rule' }
+    },
+    sourceUrl: 'https://echa.europa.eu/',
+    sourceName: 'ECHA chemical identity verification framework',
+    applicabilityNote: 'Do not map as a polymer or amine oxide until identity is corrected. CAS 61791-26-2 is a broad tallow amine ethoxylate identity family; it does not by itself prove the displayed amine oxide chemistry. Keep blocked from formula recommendations pending exact supplier identity.'
+  },
+  {
+    catalogIngredientIds: ['cationic-polymer-emulsion'],
+    displayName: 'Polyquaternium-37 cationic polymer',
+    referenceGrade: 'Identity-confirmed polymer; commercial emulsion grade remains unverified',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      identity: { value: 'Polyquaternium-37; CAS 26161-33-1', unit: 'identity' },
+      emulsionSolids: { value: 'catalog 30% is not verified without exact product TDS/CoA', unit: 'rule' },
+      application: { value: 'cationic conditioning polymer; compatibility with anionic surfactants must be tested', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.isfchem.com/en/products/polyquaternium-37/',
+    sourceName: 'Polyquaternium-37 commercial identity reference',
+    applicabilityNote: 'CAS/INCI identity is mapped, but this does not verify the catalog 30% emulsion, carrier, stabilizer or viscosity. Do not assume compatibility with anionic laundry detergent; supplier grade and formulation compatibility testing are separate.'
+  },
+  {
+    catalogIngredientIds: ['pluronic-pe-6400'],
+    displayName: 'EO/PO block copolymer low-foam nonionic',
+    referenceGrade: 'Industry reference framework; exact Pluronic PE 6400 grade/INCI crosswalk unresolved',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      polymerClass: { value: 'poly(ethylene oxide)-poly(propylene oxide) block copolymer', unit: 'identity family' },
+      molecularWeightAndCloudPoint: { value: 'trade-grade-specific; no numeric values assigned without manufacturer bulletin', unit: 'rule' },
+      catalogInciReview: { value: 'Poloxamer 184 label must be checked against exact PE 6400 manufacturer grade', unit: 'identity hold' }
+    },
+    sourceUrl: 'https://www.basf.com/',
+    sourceName: 'Manufacturer product identity framework — exact Pluronic PE 6400 bulletin required',
+    applicabilityNote: 'CAS 9003-11-6 is broad for EO/PO block copolymers and does not specify block architecture or molecular weight. Do not assume PE 6400 equals Poloxamer 184 based on the generic CAS. Obtain exact manufacturer bulletin and identity/INCI confirmation.'
+  },
+
 ];
 
 export function getNormalCommercialIngredientReference(catalogIngredientId: string) {
