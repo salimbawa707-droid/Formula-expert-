@@ -604,9 +604,18 @@ export class ActiveMatterEngine {
       totalRawMatter += rawPct;
 
       const resolution = this.resolveIngredientActive(ing);
+      const gradeAssay = resolution.canonicalMatch?.activeMatterGradeAssayEvidence;
       const canonicalSourceVerified = Boolean(
-        resolution.canonicalMatch?.provenance?.verificationStatus === 'VERIFIED' &&
-        resolution.canonicalMatch?.provenance?.source?.trim()
+        gradeAssay &&
+        gradeAssay.verificationStatus === 'VERIFIED' &&
+        gradeAssay.evidenceId.trim() &&
+        /^https:\/\/[^\s]+$/i.test(gradeAssay.sourceUrl) &&
+        ['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION', 'LAB_COA'].includes(gradeAssay.sourceType) &&
+        gradeAssay.grade.trim() &&
+        gradeAssay.valuePct === resolution.activeMatterPct &&
+        ['AS_SUPPLIED', 'AS_RECEIVED'].includes(gradeAssay.basis) &&
+        gradeAssay.method.trim() &&
+        gradeAssay.conditions.trim()
       );
       const hasNonAuthoritativeResolution =
         resolution.dataSource === 'reference_default' ||
