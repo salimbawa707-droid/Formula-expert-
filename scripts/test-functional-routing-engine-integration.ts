@@ -8,10 +8,14 @@ const ingredient = (id: string, name: string, category: string, casNumber: strin
 }) as any;
 
 const sls = ingredient('sls-needles','SLS 95% Needles (Sodium Lauryl Sulfate)','Anionic Surfactant','151-21-3');
+const aos = ingredient('aos-38','AOS 38% Liquid (Alpha Olefin Sulfonate)','Anionic Surfactant','68439-57-6');
 const ldao = ingredient('lauryl-amine-oxide','Lauryl Amine Oxide 30%','Nonionic Surfactant','1643-20-5');
 const ligno = ingredient('lignosulfonate-na','Sodium Lignosulfonate','Anionic Surfactant','8061-51-6');
 const tallow = ingredient('tallow-amine-oxide','Tallow Amine Oxide Acid Thickener','Polymer & Thickener','61791-26-2');
 
+const aosActive = ActiveMatterEngine.resolveIngredientActive(aos);
+assert.equal(aosActive.isSurfactant, true);
+assert.equal(aosActive.surfactantType, 'anionic');
 const slsActive = ActiveMatterEngine.resolveIngredientActive(sls);
 assert.equal(slsActive.isSurfactant, true);
 assert.equal(slsActive.surfactantType, 'anionic');
@@ -29,7 +33,7 @@ assert.match(tallowActive.conflict?.message || '', /identity is unresolved/i);
 const slsHlb = HLBEngine.resolveIngredientHLB(sls);
 assert.equal(slsHlb.hlb, 40);
 assert.equal(slsHlb.dataSource, 'estimated');
-for (const material of [ldao, ligno]) {
+for (const material of [aos, ldao, ligno]) {
   const result = HLBEngine.resolveIngredientHLB(material);
   assert.equal(result.hlb, null, material.id + ' must not receive an unsupported HLB');
 }
