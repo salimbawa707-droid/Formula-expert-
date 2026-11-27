@@ -18,6 +18,7 @@ import { ScientificBadge } from "./scientific/ScientificComponents";
 import { Chemical, Formulation, FormulationIngredient } from "../types";
 import { CHEMICALS } from "../data/chemicals";
 import { getAllUniversalIngredients } from "../data/universalIngredientLibrary";
+import { resolveFormulaIntelligenceRouting } from "../data/ingredientFunctionalRouting";
 import { normalizeProductCategory, ProductCategoryId } from "../domain/productTaxonomy";
 import { apiFetch } from "../services/apiBase";
 import {
@@ -432,20 +433,22 @@ function SmartFormulaAnalyzerProInner({
         if (!dbChem || !dbChem.casNumber) missingFields.push("CAS Number");
         if (!dbChem || !dbChem.molecularWeight) missingFields.push("Molecular Weight");
 
-        const chargeType = dbChem 
+        const routeId = ing.canonicalIngredientId || ing.id || dbChem?.id;
+        const functionalRoute = routeId ? resolveFormulaIntelligenceRouting(routeId) : null;
+        const chargeType = functionalRoute?.chargeLabel || (dbChem
           ? dbChem.category.toLowerCase().includes("anionic") ? "Anionic"
             : dbChem.category.toLowerCase().includes("cationic") ? "Cationic"
             : dbChem.category.toLowerCase().includes("amphoteric") || dbChem.category.toLowerCase().includes("betaine") ? "Amphoteric"
             : dbChem.category.toLowerCase().includes("non-ionic") || dbChem.category.toLowerCase().includes("nonionic") ? "Nonionic"
             : "Neutral / Auxiliary"
-          : "Neutral / Auxiliary";
+          : "Neutral / Auxiliary");
 
-        const chemicalFamily = dbChem
-          ? dbChem.category
-          : ing.role || "Auxiliary Component";
+        const chemicalFamily = functionalRoute?.familyLabel || (dbChem ? dbChem.category : ing.role || "Auxiliary Component");
 
         const fallbackHlb = dbChem?.hlb ? parseFloat(String(dbChem.hlb)) : undefined;
-        const finalHlbValue = (ing.hlbValue !== undefined && ing.hlbValue !== null) ? ing.hlbValue : fallbackHlb;
+        const finalHlbValue = functionalRoute && !functionalRoute.hlbEligible
+          ? undefined
+          : (ing.hlbValue !== undefined && ing.hlbValue !== null) ? ing.hlbValue : fallbackHlb;
 
         return {
           ...ing,
