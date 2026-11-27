@@ -15,12 +15,18 @@ export function calculatePowderActiveMatter(classifiedIngredients: ClassifiedIng
     const inputPct = ing.inputPercentage;
     const gradePct = ing.activeMatterPct;
 
-    if (gradePct === undefined || gradePct === null || isNaN(gradePct) || gradePct <= 0) {
+    if (
+      ing.functionalClass === 'Unclassified Surfactant' ||
+      !Number.isFinite(inputPct) || inputPct < 0 || inputPct > 100 ||
+      gradePct === undefined || gradePct === null ||
+      !Number.isFinite(gradePct) || gradePct <= 0 || gradePct > 100
+    ) {
       unresolvedIngredients.push(ing.name);
       return;
     }
 
-    const activeContribution = Number(((inputPct * gradePct) / 100).toFixed(4));
+    // Keep full precision through aggregation; round only at report boundaries.
+    const activeContribution = (inputPct * gradePct) / 100;
 
     if (ing.functionalClass === 'Anionic Surfactant') {
       anionicActive += activeContribution;
