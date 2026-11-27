@@ -404,6 +404,57 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     sourceName: 'IFRA-RIFM Guidance for the Use of IFRA Standards',
     applicabilityNote: 'Fragrance is a multi-component mixture; there is no universal active %, composition, density or safe dosage. Obtain the fragrance-mixture manufacturer's IFRA Standards Conformity Certificate for the exact intended use and amendment, plus SDS/allergen and restricted-material declarations. IFRA certificate does not replace a complete safety assessment.'
   },
+
+  {
+    catalogIngredientIds: ['sodium-gluconate'],
+    displayName: 'Sodium Gluconate',
+    referenceGrade: 'Commercial chelating-grade sodium gluconate powder',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      assayMin: { value: 98, unit: '%' },
+      lossOnDryingMax: { value: 0.5, unit: '%' },
+      reducingSubstancesMax: { value: 0.7, unit: '%' },
+      pH: { value: '6.2–7.8', unit: 'pH', conditions: 'supplier test method' },
+      sulfateMax: { value: 0.02, unit: '%' },
+      chlorideMax: { value: 0.02, unit: '%' },
+      leadMax: { value: 10, unit: 'ppm' }
+    },
+    sourceUrl: 'https://dtl.mu/wp-content/uploads/2022/03/SODIUM-GLUCONATE.pdf',
+    sourceName: 'Sodium Gluconate published product specification',
+    applicabilityNote: 'A commercial powder specification example. Do not infer chelation capacity solely from assay; use a defined metal-binding test and pH/temperature conditions for formulation calculations.'
+  },
+  {
+    catalogIngredientIds: ['sodium-benzoate'],
+    displayName: 'Sodium Benzoate',
+    referenceGrade: 'Food/FCC/USP commercial preservative-grade reference',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      assayMin: { value: 99, unit: '%', basis: 'dried basis' },
+      lossOnDryingMax: { value: 1.5, unit: '%' },
+      arsenicMax: { value: 3, unit: 'mg/kg' },
+      leadMax: { value: 2, unit: 'mg/kg' },
+      pH: { value: '6.5–8.0', unit: 'pH', conditions: '1% aqueous solution; Eastman typical property' }
+    },
+    sourceUrl: 'https://productcatalog.eastman.com/tds/ProdDatasheet.aspx?pn=probenz-sg-sodium-benzoate-food-grade-kosher&product=71072050',
+    sourceName: 'Eastman Probenz SG Sodium Benzoate TDS',
+    applicabilityNote: 'The assay and moisture figures are common food-grade specification references, not proof of efficacy in alkaline laundry detergent. Benzoate antimicrobial efficacy is pH-dependent; do not treat this ingredient as an effective preservative at high detergent pH without validation.'
+  },
+  {
+    catalogIngredientIds: ['potassium-sorbate'],
+    displayName: 'Potassium Sorbate',
+    referenceGrade: 'Food additive E202 commercial powder specification',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      assay: { value: '99.0–101.0', unit: '%', basis: 'acidimetric, dried substance' },
+      assayHPLC: { value: '98.0–102.0', unit: '%', basis: 'HPLC, dried substance' },
+      lossOnDryingMax: { value: 1, unit: '%', conditions: '105°C' },
+      heavyMetalsMax: { value: 0.001, unit: '% as Pb' },
+      freeSorbicAcidMax: { value: 1, unit: '%' }
+    },
+    sourceUrl: 'https://kemicas.com/PDF/TDS/Kemicas-TDS-KS02274PotassiumSorbate.PDF',
+    sourceName: 'KEMICAS Potassium Sorbate ACS/Ph. Eur. Technical Data Sheet',
+    applicabilityNote: 'This is a laboratory/food-additive grade specification, not proof of suitability as a preservative in alkaline detergent. Sorbate efficacy is strongly pH-dependent; finished-product challenge testing and legal-use review are separate requirements.'
+  },
 ];
 
 export function getNormalCommercialIngredientReference(catalogIngredientId: string) {
