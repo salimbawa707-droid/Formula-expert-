@@ -647,7 +647,7 @@ export function evaluateScientificQualityGate(
         ingredientId: (ing as any)?.ingredientId,
         name: ing?.name
       });
-      if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+      if (route?.role === 'IDENTITY_UNRESOLVED' || route?.role === 'POLYMERIC_DISPERSANT') return false;
       const isHighFoamFamily = route
         ? route.routingClass === 'ANIONIC' || route.role === 'ZWITTERIONIC_BETAINE' || route.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE'
         : (cat.includes('anionic') || cat.includes('amphoteric') || name.includes('labsa') || name.includes('sles') || name.includes('capb') || name.includes('betaine'));
