@@ -14,6 +14,7 @@ export function calculatePowderCosting(
 
   let costPerKg = 0;
   let hasZeroCost = false;
+  const missingCostIngredients: string[] = [];
   const invalidCostIngredients: string[] = [];
   const invalidPercentageIngredients: string[] = [];
 
@@ -25,9 +26,11 @@ export function calculatePowderCosting(
     if (!pctIsValid) invalidPercentageIngredients.push(ing.name);
 
     const rawPrice = ing.costPerKg;
+    const isMissingPrice = Number.isNaN(rawPrice);
     const priceIsValid = Number.isFinite(rawPrice) && rawPrice >= 0;
     const price = priceIsValid ? rawPrice : 0;
-    if (!priceIsValid) invalidCostIngredients.push(ing.name);
+    if (isMissingPrice) missingCostIngredients.push(ing.name);
+    else if (!priceIsValid) invalidCostIngredients.push(ing.name);
     if (pct > 0 && price === 0) hasZeroCost = true;
 
     const costContribution = (pct / 100) * price;
@@ -42,7 +45,7 @@ export function calculatePowderCosting(
     };
   });
 
-  const hasInvalidInputs = invalidCostIngredients.length > 0 || invalidPercentageIngredients.length > 0;
+  const hasInvalidInputs = missingCostIngredients.length > 0 || invalidCostIngredients.length > 0 || invalidPercentageIngredients.length > 0;
   const finalCostPerKg = Number(costPerKg.toFixed(4));
   const validWashDose = typeof washDoseG === 'number' && Number.isFinite(washDoseG) && washDoseG > 0 ? washDoseG : null;
   const costPerWashDose = validWashDose === null || hasInvalidInputs
@@ -60,6 +63,7 @@ export function calculatePowderCosting(
       batchSizeKg: validBatchSize,
       costPerWashDose,
       hasZeroCostIngredients: hasZeroCost,
+      missingCostIngredients,
       invalidCostIngredients,
       invalidPercentageIngredients,
       ingredientCostContributions: contributions,
