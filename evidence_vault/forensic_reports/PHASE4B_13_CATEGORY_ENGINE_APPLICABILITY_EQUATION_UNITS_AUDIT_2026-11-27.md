@@ -52,6 +52,25 @@
 - **Kitchen degreaser:** alkaline reserve, solvent/terpene grease penetration and PPE.
 - **Car shampoo:** near-neutral pH, paint lubricity and free rinsing/no spotting.
 
+### Active-surfactant target divergence
+
+The taxonomy `activeMatterMinPct/activeMatterTargetPct` and profile `activeSurfactantRange` are not identical in 10 categories. The taxonomy target is within the profile's min/max envelope in 12 categories; **GLASS_CLEANER is the exception**: taxonomy says min 1%, target 3%, while profile says min 0.5%, max 2.5%, optimal 1.2%. The taxonomy's separate constraint says active matter must remain strictly below 3%, making its 3% target a boundary conflict. This is left OPEN for product-specification governance rather than inventing a preferred value.
+
+| Category | Taxonomy min / target % | Profile min / max / optimal % |
+|---|---:|---:|
+| DISHWASH_AUTOMATIC | 4 / 8 | 2 / 10 / 6 |
+| FLOOR_CLEANER | 3 / 6 | 3 / 8 / 5 |
+| MULTIPURPOSE_CLEANER | 4 / 8 | 4 / 10 / 6 |
+| TOILET_CLEANER | 2 / 5 | 2 / 6 / 3.5 |
+| BATHROOM_CLEANER | 3 / 7 | 3 / 8 / 5 |
+| GLASS_CLEANER | 1 / 3 | 0.5 / 2.5 / 1.2 |
+| FABRIC_SOFTENER | 4 / 12 | 4 / 15 / 8 |
+| HAND_WASH | 8 / 14 | 8 / 16 / 12 |
+| KITCHEN_DEGREASER | 8 / 16 | 8 / 18 / 14 |
+| CAR_SHAMPOO | 8 / 15 | 8 / 18 / 14 |
+
+The other three categories (LAUNDRY_LIQUID, LAUNDRY_POWDER and DISHWASH_MANUAL) have taxonomy min/target equal to profile min/optimal. No active-matter range was silently rewritten in this pass.
+
 ## Equation and input-unit audit
 
 ### 1. HLB blend
