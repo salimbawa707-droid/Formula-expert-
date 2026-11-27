@@ -290,7 +290,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     { id: 'labsa-96', name: 'LABSA 96%', percentage: 10, role: 'Anionic Surfactant' },
     { name: 'Cetrimonium Chloride', percentage: 5, role: 'Cationic Surfactant' }
   ]);
-  assert('6. Compatibility', '6.1 LABSA without a resolvable final-formula pH is not promoted to a fixed-charge clash', compClash.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), false, false);
+  const hasUnresolvedPHFixedChargeClash = compClash.alerts.some(a => a.id === 'anionic-cationic-incompatibility');
+  assert('6. Compatibility', '6.1 LABSA without a resolvable final-formula pH is not promoted to a fixed-charge clash', !hasUnresolvedPHFixedChargeClash, hasUnresolvedPHFixedChargeClash, false);
   assert('6. Compatibility', '6.1 missing pH keeps LABSA/cationic evidence insufficient', compClash.evidenceStatus === 'INSUFFICIENT_DATA', compClash.evidenceStatus, 'INSUFFICIENT_DATA');
 
   // 6.2 Acid + Bleach hazardous gas clash
