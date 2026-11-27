@@ -42,7 +42,7 @@ The source links are embedded in the code dataset. Grade variants are not silent
 | `bit-20` | BIT aqueous-glycolic preservative product | Manufacturer confirms BIT solution for cleaners/detergents; exact assay specification not fully published in retrieved page | LANXESS PREVENTOL BIT 20 N |
 | `phenoxyethanol-99` | Phenoxyethanol preservative grade | Purity ≥99% by GC; moisture ≤0.2%; specific gravity 1.105–1.110 at 20°C; pH 5.5–7.0 at 1% | Elchemy supplier TDS |
 | `kathon-cg` | CMIT/MIT 1.5% commercial benchmark | Total active 1.5%; published application guidance pH <8.5 and typical use range 0.025–0.1% product; ratio/carrier not inferred | LANXESS home-care portfolio application table |
-| `perfume-compound` | Fragrance mixture framework | IFRA Category 10A applies to laundry detergents, hand dishwashing detergents and hard-surface cleaners; no universal composition/active/dose | IFRA-RIFM Guidance for the Use of IFRA Standards |
+| `perfume-compound` | Fragrance mixture framework | IFRA Category 10A applies to laundry detergents, hand dishwashing detergents and hard-surface cleaners; no universal composition/active/dose | IFRA-RIFM Guidance for the Use of IFRA Standards |\n| `sodium-gluconate` | Sodium gluconate powder | Assay ≥98%; loss on drying ≤0.5%; pH 6.2–7.8; chloride/sulfate ≤0.02% | Published commercial chelating-grade specification |\n| `sodium-benzoate` | Sodium benzoate preservative grade | Assay ≥99% dry basis; loss on drying ≤1.5%; arsenic ≤3 mg/kg; lead ≤2 mg/kg | Eastman Probenz SG TDS |\n| `potassium-sorbate` | Potassium sorbate E202 | Assay 99–101% acidimetric (dried basis); loss on drying ≤1%; heavy metals ≤0.001% as Pb | KEMICAS ACS/Ph. Eur. TDS |
 
 ## Deliberately not inferred
 
@@ -66,7 +66,7 @@ A candidate receives a public reference profile only when an identifiable source
 
 ## Gate status
 
-- Public commercial reference profiles implemented in this tranche: 24.
+- Public commercial reference profiles implemented in this tranche: 27.
 - Supplier grade verified by these references: 0.
 - Lot CoA verified by these references: 0.
 - Formula applicability approvals created by these references: 0.
