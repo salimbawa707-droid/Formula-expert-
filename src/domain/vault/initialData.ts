@@ -1713,7 +1713,6 @@ export const INITIAL_VAULT_STATE: VaultState = {
       datasetVersion: 'IUPAC Recommendations 2002 selected Tables 2 and 3',
       fileName: 'iupac_2002_ph_standards.csv',
       fileFormat: 'CSV',
-      sizeBytes: null,
       sha256Hash: 'b3fce32985f7d233fe747e59a6d1f76ac38d8acc0ab0f0344187ef57306f5338',
       accessStatus: 'DOWNLOADED',
       downloadStatus: 'DOWNLOADED',
