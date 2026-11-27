@@ -1,7 +1,7 @@
 import { RefinementEngine } from '../refinementEngine';
 import { DetailedLabEvidenceRecord } from '../labEvidenceEngine';
 
-const category = 'LAUNDRY_LIQUID' as const;
+export function runRefinementEngineRegressionTestSuite() {\nconst category = 'LAUNDRY_LIQUID' as const;
 const ingredient = [{ name: 'SLES', percentage: 15 }];
 
 function record(input: {
@@ -126,4 +126,4 @@ for (const result of results) {
   console.log(`${result.passed ? 'PASS' : 'FAIL'} | ${result.name} | actual=${String(result.actual)} | expected=${String(result.expected)}`);
 }
 console.log(`Refinement category/weighting regressions: ${results.length - failed.length}/${results.length} PASS`);
-if (failed.length > 0) throw new Error(`${failed.length} refinement regression(s) failed`);
+if (failed.length > 0) throw new Error(`${failed.length} refinement regression(s) failed`);\nreturn { passed: results.length - failed.length, failed: failed.length, total: results.length, results };\n}
