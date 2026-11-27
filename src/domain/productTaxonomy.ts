@@ -87,7 +87,7 @@ export interface CategoryMetricApplicability {
 }
 
 export interface ProductCategoryDefinition {
-  /** Category targets remain screening-only until source evidence is attached and independently reviewed. */
+  /** Category targets remain screening-only until source evidence and matched validation results are attached and pass the project's documented AI dual-pass review. */
   specificationEvidenceStatus?: 'SOURCE_VERIFIED' | 'UNVERIFIED_ENGINEERING_TARGETS';
   specificationEvidenceNote?: string;
   id: ProductCategoryId;
