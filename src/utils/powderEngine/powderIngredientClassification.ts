@@ -16,10 +16,17 @@ export function classifyPowderIngredient(ing: FormulationIngredient): Classified
 
   let activeDefault: number | undefined;
   const rawActive = ing.activeMatterPct ?? ing.activePercent ?? (ing as any)?.activeMatter ?? (ing as any)?.purity;
-  if (rawActive !== undefined && rawActive !== null && !isNaN(Number(rawActive))) {
-    activeDefault = Number(rawActive);
+  const hasExplicitActive = rawActive !== undefined && rawActive !== null && !(typeof rawActive === 'string' && rawActive.trim() === '');
+  if (hasExplicitActive) {
+    const parsedActive = Number(rawActive);
+    activeDefault = Number.isFinite(parsedActive) && parsedActive >= 0 && parsedActive <= 100
+      ? parsedActive
+      : undefined;
   } else if (masterItem?.activeDefault !== undefined) {
-    activeDefault = masterItem.activeDefault;
+    const masterActive = Number(masterItem.activeDefault);
+    activeDefault = Number.isFinite(masterActive) && masterActive >= 0 && masterActive <= 100
+      ? masterActive
+      : undefined;
   } else {
     // Pure standard dry minerals, builders, salts and colorants default to 100% active/purity.
     // Unknown surfactants, specialty blends, or proprietary pastes without purity remain undefined (INSUFFICIENT_DATA).
@@ -99,7 +106,9 @@ export function classifyPowderIngredient(ing: FormulationIngredient): Classified
     lowerName.includes('surfactant') ||
     rawRole.includes('surfactant')
   ) {
-    functionalClass = 'Anionic Surfactant';
+    // A generic surfactant label does not establish ionic class. Preserve it as
+    // unresolved rather than silently assuming anionic chemistry.
+    functionalClass = 'Unclassified Surfactant';
   }
   // 2. Builders (Precipitation / Ion-Exchange) — Distinct from Soluble Chelators
   else if (
