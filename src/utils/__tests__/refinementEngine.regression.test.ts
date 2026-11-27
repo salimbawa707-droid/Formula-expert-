@@ -1,8 +1,24 @@
 import { RefinementEngine } from '../refinementEngine';
 import { DetailedLabEvidenceRecord } from '../labEvidenceEngine';
 import { validateIngredientCompositionEvidence } from '../ingredientCompositionEvidence';
+import { registerUserInstrument, resetUserInstrumentsForTest } from '../../domain/lims/instrument';
 
 export function runRefinementEngineRegressionTestSuite() {
+resetUserInstrumentsForTest();
+registerUserInstrument({
+  instrumentId: 'BALANCE-UNIT-01',
+  name: 'Regression Analytical Balance',
+  manufacturer: 'Test Manufacturer',
+  model: 'RB-01',
+  serialNumber: 'RB-SN-001',
+  instrumentType: 'ANALYTICAL_BALANCE',
+  calibrationCertificateReference: 'CAL-RB-001',
+  lastCalibrationDate: '2026-01-01',
+  nextCalibrationDate: '2030-01-01',
+  location: 'Regression Lab',
+  custodian: 'Test Custodian',
+  registeredBy: 'Test Analyst'
+});
 const category = 'LAUNDRY_LIQUID' as const;
 const ingredient = [{ name: 'SLES', percentage: 15 }];
 
@@ -29,6 +45,9 @@ function record(input: {
     categoryId: (input.categoryId === null ? undefined : input.categoryId ?? category) as any,
     sampleId: input.sampleId || `SAMPLE-${input.id}`,
     batchId: `BATCH-${input.formulaId}`,
+    operator: 'Test Analyst',
+    instrumentId: 'BALANCE-UNIT-01',
+    instrument: 'BALANCE-UNIT-01',
     replicateNumber: input.replicateNumber ?? 1,
     evidenceKind: 'INGREDIENT_COMPOSITION',
     ingredientCanonicalId: 'sles',
@@ -201,6 +220,8 @@ const wrongIngredientIdentity = proposal([
   record({ id: 'id3', formulaId: 'ID3', value: 30 })
 ]);
 check('canonical ingredient identity mismatch excluded', wrongIngredientIdentity === undefined, wrongIngredientIdentity, undefined);
+
+resetUserInstrumentsForTest();
 
 const failed = results.filter(result => !result.passed);
 for (const result of results) {
