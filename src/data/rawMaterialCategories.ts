@@ -47,6 +47,8 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
         matches: (i) => {
           const c = (i.category || '').toLowerCase();
           const n = (i.name || '').toLowerCase();
+          const route = resolveFunctionalRouting(i.id);
+          if (route) return route.routingClass === 'ANIONIC';
           return c.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') || n.includes('sulfate') || n.includes('sulphonate') || n.includes('soap');
         }
       },
@@ -57,6 +59,8 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
         matches: (i) => {
           const c = (i.category || '').toLowerCase();
           const n = (i.name || '').toLowerCase();
+          const route = resolveFunctionalRouting(i.id);
+          if (route) return route.routingClass === 'AMPHOTERIC';
           return c.includes('amphoteric') || n.includes('betaine') || n.includes('capb') || n.includes('amine oxide');
         }
       },
