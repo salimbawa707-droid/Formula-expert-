@@ -14,6 +14,15 @@ assert.equal(summary.finalApprovals, 0, 'AI desk-screen must never grant final a
 assert.equal(MASTER_INGREDIENT_APPLICABILITY_SCREEN.length, summary.pairCount);
 assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.rationale.trim().length > 20), 'every pair needs a specific rationale');
 assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.criticalUnknowns.length > 0), 'every pair must retain unresolved evidence requirements');
+assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.inciName.length > 0), 'every pair must preserve the catalog INCI identity');
+assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.finalApplicability === 'NOT_APPROVED'), 'no screening pair may be promoted by the desk screen');
+for (const row of MASTER_INGREDIENT_APPLICABILITY_SCREEN) {
+  const source = UNIVERSAL_INGREDIENTS.find(item => item.id === row.ingredientId);
+  assert(source, `screen row ${row.ingredientId} must resolve to a canonical master ingredient`);
+  assert.equal(row.casNumber, source.casNumber, 'CAS identity must remain linked to the exact commercial-grade record');
+  assert.equal(row.provenanceSource, source.provenance?.source, 'provenance source must not be fabricated');
+  assert.equal(row.provenanceUrl, source.provenance?.sourceUrl, 'provenance URL must not be fabricated');
+}
 
 const labsaSoftener = MASTER_INGREDIENT_APPLICABILITY_SCREEN.find(row => row.ingredientId === 'labsa-96' && row.productCategory === 'FABRIC_SOFTENER');
 assert.equal(labsaSoftener?.preliminaryDisposition, 'CHEMISTRY_CONFLICT_RISK', 'anionic surfactant must flag cationic softener incompatibility risk');
