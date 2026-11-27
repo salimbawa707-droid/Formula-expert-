@@ -202,10 +202,13 @@ Rules applied:
 1. Taxonomy minimum/target is the canonical engineering screening target; profile minimum/optimal now match it exactly. Existing profile maximum remains the upper screening bound.
 2. GLASS_CLEANER taxonomy target was 3%, contradicting its own strict-under-3% constraint; the profile already had 2.5% maximum and 1.2% optimum. Taxonomy target is corrected to 1.2%, and profile minimum is aligned to taxonomy minimum 1%.
 3. Viscosity hard constraints are sourced from profile targetViscosityCP. Taxonomy descriptive bands now mirror the executable profile ranges: LAUNDRY_LIQUID 500–1500 cP; DISHWASH_MANUAL 1200–3000 cP. These are not universal industry standards.
-4. Regression coverage requires exact taxonomy minimum/profile minimum and taxonomy target/profile optimal equality for all 13 categories.
+4. Regression coverage requires exact taxonomy minimum/profile minimum and taxonomy target/profile optimal equality for all 13 categories, plus exhaustive 15-engine × 13-category routing assertions (195 pairs) and unknown-category rejection for all 15 engines.
 
 | Category | Taxonomy min / target % | Profile min / max / optimal % |
 |---|---:|---:|
+| LAUNDRY_LIQUID | 10 / 16 | 10 / 25 / 16 |
+| LAUNDRY_POWDER | 10 / 15 | 10 / 22 / 15 |
+| DISHWASH_MANUAL | 12 / 20 | 12 / 28 / 20 |
 | DISHWASH_AUTOMATIC | 4 / 8 | 4 / 10 / 8 |
 | FLOOR_CLEANER | 3 / 6 | 3 / 8 / 6 |
 | MULTIPURPOSE_CLEANER | 4 / 8 | 4 / 10 / 8 |
@@ -238,10 +241,10 @@ External evidence gap retained: all category targets remain UNVERIFIED_ENGINEERI
 
 ## Explicitly unresolved / not promoted
 
-1. Category pH and active-matter values remain unverified engineering screening targets; no category-specific evidence dossier or independent approval is attached.
+1. Category pH and active-matter values remain unverified engineering screening targets; no category-specific evidence dossier or independent product-specification approval is attached.
 2. Internal taxonomy/profile viscosity and active-matter conflicts are reconciled in this revision; laboratory validity is not established.
 3. CMC and foam have taxonomy metric flags but no distinct ScientificEngineId; their separate utility paths remain labeled as utilities, not profile-routed engines.
 4. HLB/CPI/viscosity/CMC remain model/screening outputs; no engine is promoted to LAB_VALIDATED by this source audit.
 5. Static import/call-site analysis cannot prove all dynamic runtime behavior. Full deployment telemetry and matched finished-formula laboratory observations remain outside this audit.
 
-**Disposition:** Category-registry corrections and fail-closed regression coverage prepared. Internal target conflicts are reconciled; external product-specification evidence and independent human review remain OPEN. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+**Disposition:** Category-registry corrections and fail-closed regression coverage are implemented and CI-verified. Internal target conflicts are reconciled; external product-specification evidence and laboratory validation remain OPEN. AI source review completed and disclosed; no human review was performed or represented. Phase 4B remains OPEN; Phase 5 remains LOCKED.

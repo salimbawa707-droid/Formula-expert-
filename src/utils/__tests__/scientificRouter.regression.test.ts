@@ -329,6 +329,35 @@ export function runScientificRouterTestSuite(): { passed: number; failed: number
     );
   }
 
+  // Exhaustive category × engine matrix: every registered engine is checked for every canonical category.
+  const allEngineIds: ScientificEngineId[] = [
+    'PH_ENGINE', 'HLB_ENGINE', 'ACTIVE_MATTER_ENGINE', 'VISCOSITY_ENGINE',
+    'POWDER_ENGINE', 'CLEANING_PERFORMANCE_ENGINE', 'COMPATIBILITY_ENGINE',
+    'CHELATOR_ENGINE', 'DENSITY_ENGINE', 'DILUTION_ENGINE', 'LAB_HEALTH_ENGINE',
+    'GRADE_ENGINE', 'SPECIFICATION_ENGINE', 'EXPERT_REASONING_ENGINE', 'COSTING_ENGINE'
+  ];
+  for (const categoryId of CANONICAL_PRODUCT_CATEGORY_IDS) {
+    const registered = getApplicableEnginesForCategory(categoryId);
+    for (const engineId of allEngineIds) {
+      const expected = SCIENTIFIC_PRODUCT_PROFILES[categoryId].applicableEngines.includes(engineId);
+      assert(
+        `15x13 engine matrix: ${categoryId} / ${engineId}`,
+        isEngineApplicable(categoryId, engineId) === expected && registered.includes(engineId) === expected,
+        { direct: isEngineApplicable(categoryId, engineId), listed: registered.includes(engineId), expected },
+        { direct: expected, listed: expected, expected }
+      );
+    }
+  }
+  for (const engineId of allEngineIds) {
+    assert(
+      `Unknown category rejects engine: ${engineId}`,
+      isEngineApplicable('ALIEN_ROCKET_CLEANER', engineId) === false &&
+      getApplicableEnginesForCategory('ALIEN_ROCKET_CLEANER').length === 0,
+      { applicable: isEngineApplicable('ALIEN_ROCKET_CLEANER', engineId), registered: getApplicableEnginesForCategory('ALIEN_ROCKET_CLEANER') },
+      { applicable: false, registered: [] }
+    );
+  }
+
   // Automatic dishwasher already declares HLB as applicable and required; the engine registry must agree.
   const automaticDishwash = getScientificProductProfile('DISHWASH_AUTOMATIC');
   assert(
