@@ -276,7 +276,7 @@ The review below covers 15 candidate groups from the existing 119-row candidate-
 - Supplier-grade evidence records established for catalog records: 0.
 - Formula applicability approvals: 0.
 
-The enzyme nomenclature finding is a real catalog defect, but it is not corrected by changing the CAS or silently rewriting the record. A controlled canonical-name/alias migration is required. Likewise, zeolite-family identity is not sufficient proof of Zeolite 4A.
+The enzyme nomenclature finding was a real catalog defect. It has now been remediated in a controlled change: all four MICG-046 commercial catalog variants retain CAS 37288-54-3 and their stable IDs, while the erroneous `Mannan Endoperoxidase` label is replaced with the accepted ingredient name `Mannanase`. The canonical enzyme name is mannan endo-1,4-beta-mannosidase (EC 3.2.1.78). A dedicated regression test asserts the four rows, IDs, CAS and corrected name; it is wired into `bun run test:all`. This does not establish enzyme source organism, activity units, formulation, stabilizers or supplier grade. Likewise, zeolite-family identity is not sufficient proof of Zeolite 4A.
 
 
 
@@ -285,7 +285,7 @@ The enzyme nomenclature finding is a real catalog defect, but it is not correcte
 - Candidate groups/issues examined: 53.
 - Source-backed identity candidates (official registry, government, standards, manufacturer or authoritative nomenclature corroboration; not supplier-grade validation): 40.
 - Explicit CAS/identity conflict or grade/specificity holds: 7.
-- Additional nomenclature correction required: 1 (MICG-046 mannanase).
+- Catalog nomenclature correction implemented: 1 group / 4 commercial variants (MICG-046 mannanase).
 - Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
 - Functional-class review flags: 1 (Sodium Lignosulfonate).
 - Identity SSOT entries promoted to VERIFIED: 0.
@@ -293,3 +293,23 @@ The enzyme nomenclature finding is a real catalog defect, but it is not correcte
 - Formula applicability approvals: 0.
 
 No ingredient identity SSOT, catalog record, formula, or applicability decision was modified in this tranche. The 397 unmapped identity crosswalk rows remain unchanged; all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Post-review controlled remediation — MICG-046 mannanase nomenclature
+
+Following the sixth-tranche source review, the catalog defect was corrected directly on the PR branch.
+
+- Updated all four existing variants: `mannanase-liquid`, `mannanase-liquid-tech`, `mannanase-liquid-pure`, and `mannanase-liquid-sol`.
+- Preserved all four stable ingredient IDs and CAS 37288-54-3.
+- Replaced the incorrect `Mannan Endoperoxidase` ingredient label with `Mannanase`.
+- Added `scripts/test-mannanase-identity-nomenclature.ts`, asserting exactly four rows, expected IDs, unchanged CAS, canonical name and no regression to the erroneous label.
+- Added this regression to `package.json` `test:all`.
+
+Source basis: EFSA identifies CAS 37288-54-3 as mannan endo-1,4-beta-mannosidase (EC 3.2.1.78), and IUBMB lists the accepted name and reaction. The catalog correction is a nomenclature correction only; it does not certify enzyme activity, production organism, formulation, safety handling, supplier identity or grade assay.
+
+Commits:
+- Catalog nomenclature: `476d3e701518c37bc68f13a1ff2fdac28976fb51` and final canonical-label refinement `68b105dcd2d231208221e9d573c39be31cb03be5`.
+- Regression test: `06dcee79c2c934744f3217c69052a5a5d23a4f92` and final assertion refinement `3f0ddfdd0fe180768754ce25800a285fcca5a9b3`.
+- Test suite wiring: `80038e2c498c7f599876f3b622632c082b038fa0`.
+
+The 397 unmapped identity rows and all 5,590 NOT_APPROVED applicability rows are unchanged. No supplier-grade assay has been inferred.
