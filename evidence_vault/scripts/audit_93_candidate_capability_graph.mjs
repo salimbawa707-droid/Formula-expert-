@@ -243,6 +243,7 @@ console.log(JSON.stringify({
   sourceFileCount: graph.sourceFileCount,
   edgeCount: graph.edgeCount,
   unresolvedCandidateLikeImports: graph.unresolvedCandidateLikeImports.length,
+  unresolvedImports: graph.unresolvedCandidateLikeImports,
   markdown: rel(OUT_MD),
   json: rel(OUT_JSON)
 }, null, 2));
