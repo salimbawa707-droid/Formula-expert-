@@ -2,6 +2,7 @@ import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
 import { validateActiveMatterInput } from './activeMatterInputGuard';
 import { ActiveMatterResultObject } from './activeMatterValidation';
+import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
 
 /**
  * ============================================================================
@@ -198,7 +199,12 @@ export class ActiveMatterEngine {
   /**
    * Helper: classify surfactant charge type based on category, role, and name keywords
    */
-  public static classifySurfactantCharge(category: string, role: string, name: string): { isSurfactant: boolean; surfactantType: SurfactantChargeClass } {
+  public static classifySurfactantCharge(category: string, role: string, name: string, canonicalIngredientId?: string): { isSurfactant: boolean; surfactantType: SurfactantChargeClass } {
+    const routed = canonicalIngredientId ? resolveFunctionalRouting(canonicalIngredientId) : null;
+    if (routed?.role === 'IDENTITY_UNRESOLVED') return { isSurfactant: false, surfactantType: 'none' };
+    if (routed?.role === 'POLYMERIC_DISPERSANT') return { isSurfactant: false, surfactantType: 'none' };
+    if (routed?.routingClass === 'ANIONIC') return { isSurfactant: true, surfactantType: 'anionic' };
+    if (routed?.routingClass === 'AMPHOTERIC') return { isSurfactant: true, surfactantType: 'amphoteric' };
     const cat = (category || '').toLowerCase();
     const r = (role || '').toLowerCase();
     const n = (name || '').toLowerCase();
@@ -387,7 +393,23 @@ export class ActiveMatterEngine {
     }
 
     const resolvedCategory = canonicalMatch?.category || rawCategory || (isWater ? 'Solvent / Carrier' : isSolvent ? 'Solvent' : 'Additive');
-    const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName);
+    const routeId = canonicalMatch?.id || ing?.canonicalIngredientId || ing?.id;
+    const routed = routeId ? resolveFunctionalRouting(routeId) : null;
+    const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName, routeId);
+
+    if (routed?.role === 'IDENTITY_UNRESOLVED') {
+      return {
+        activeMatterPct: null,
+        dataSource: 'missing',
+        category: resolvedCategory,
+        isSurfactant: false,
+        surfactantType: 'none',
+        isWater,
+        isSolvent,
+        canonicalMatch,
+        conflict: { message: 'Ingredient identity is unresolved; active-matter and functional-class routing are blocked pending exact supplier identity and composition.' }
+      };
+    }
 
     // Water is strictly 0% active solids
     if (isWater) {
