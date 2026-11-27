@@ -553,12 +553,30 @@ export class IngredientIdentitySSOT {
       };
     }
 
-    const reg = item.regulatoryIdentities.find(r => r.jurisdiction.toUpperCase() === jurisdiction.toUpperCase() || r.jurisdiction === 'GLOBAL');
+    const requestedJurisdiction = jurisdiction.trim().toUpperCase();
+    // A GLOBAL inventory/listing is not a substitute for a jurisdiction-specific
+    // legal determination. Never let it satisfy India, EU, US, or another region.
+    const reg = item.regulatoryIdentities.find(
+      r => r.jurisdiction.trim().toUpperCase() === requestedJurisdiction
+    );
     if (!reg) {
       return {
         status: 'UNKNOWN',
-        restrictions: [`No specific regulatory listing found for jurisdiction "${jurisdiction}".`],
+        restrictions: [`No jurisdiction-specific regulatory listing found for "${jurisdiction}".`],
         source: 'Unlisted Jurisdiction'
+      };
+    }
+
+    // A substance-level listing without an explicit product scope cannot prove
+    // that a particular detergent category is approved or compliant.
+    if (_productCategory && (
+      !reg.productCategoryScope ||
+      !reg.productCategoryScope.some(category => category.toUpperCase() === _productCategory.trim().toUpperCase())
+    )) {
+      return {
+        status: 'UNKNOWN',
+        restrictions: [`No verified product-category scope for "${_productCategory}" in jurisdiction "${jurisdiction}".`],
+        source: reg.provenance.source
       };
     }
 
