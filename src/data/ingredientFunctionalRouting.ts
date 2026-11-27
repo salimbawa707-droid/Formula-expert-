@@ -11,6 +11,7 @@ export type FunctionalRole =
   | 'IDENTITY_UNRESOLVED';
 export type ChargeBehavior =
   | 'FIXED_ANIONIC'
+  | 'PH_DEPENDENT_ANIONIC'
   | 'ZWITTERIONIC'
   | 'PH_DEPENDENT_AMINE_OXIDE'
   | 'NEUTRAL_NONIONIC'
@@ -49,6 +50,15 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     identityScope: 'INCI and CAS 68585-34-2 identify the sodium laureth sulfate commercial surfactant family; the 70% paste and 28% liquid are distinct supplied grades, not one assay.',
     sourceUrls: ['https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=448&lang=eng&wbdisable=true','https://pubchem.ncbi.nlm.nih.gov/compound/23665884'],
     caveats: ['Davies HLB 40 is a screening-model value only, not a supplier-grade measured property.', 'Public chemical identity does not verify either catalog grade concentration, EO distribution, residual 1,4-dioxane or lot assay.', 'Do not assign pure-molecule CMC to commercial ethoxylate distributions.']
+  },
+  {
+    ingredientIds: ['sarcosinate-30'],
+    expectedCategory: 'Anionic Surfactant', expectedInci: 'Sodium Lauroyl Sarcosinate',
+    routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'PH_DEPENDENT_ANIONIC',
+    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    identityScope: 'CAS 137-16-6 and PubChem identity support sodium N-lauroylsarcosinate. The catalog 30% liquid remains a commercial solution, not pure sodium lauroylsarcosinate.',
+    sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/23668817','https://pubchem.ncbi.nlm.nih.gov/substance/134973572'],
+    caveats: ['Sarcosinate ionization is pH-dependent; anionic routing is the standard alkaline/neutral detergent-family classification, not a claim of invariant charge at all pH.', 'Catalog 30% activeDefault is not supplier assay or lot CoA.', 'Do not transfer pure-component CMC or catalog HLB without validated method and exact grade evidence.', 'CIR cautions against nitrosating systems for cosmetic-use contexts; review applicable home-care regulatory requirements separately.']
   },
   {
     ingredientIds: ['sas-60'],
