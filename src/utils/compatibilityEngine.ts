@@ -204,8 +204,9 @@ export function calculateFormulationCompatibility(
     const isPolymericDispersant = functionalRoute?.role === 'POLYMERIC_DISPERSANT';
     const isPHDependentAnionic = functionalRoute?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
     // A measured/calculated final-formula pH >= 6 establishes predominantly
-    // anionic speciation for the audited sulfonate/sarcosinate route. Without
-    // usable pH, retain the conditional state and never assert a fixed clash.
+    // pH-dependent anionic speciation applies to the audited sarcosinate route.
+    // LABSA is a strong sulfonic acid and remains fixed-anionic; only sarcosinate
+    // stays conditional until the qualified formula-pH screening threshold.
     const isPHDependentAnionicResolved = isPHDependentAnionic && pHAvailable && phVal >= 6.0;
     if (!isBlockedIdentity && !isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
       if (!isPHDependentAnionic || isPHDependentAnionicResolved) {
