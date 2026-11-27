@@ -39,12 +39,21 @@ export function calculatePowderDensity(
     isProvided(value) && !positiveFinite(value)
   );
 
-  if (hasInvalidDensityInput) {
+  const hasIncompleteBulkPair =
+    (isProvided(sampleMassG) || isProvided(looseVolumeMl)) &&
+    !(positiveFinite(sampleMassG) && positiveFinite(looseVolumeMl)) &&
+    !positiveFinite(labInputs?.measuredBulkDensityGPerL);
+  const hasIncompleteTappedPair =
+    isProvided(tappedVolumeMl) &&
+    !(positiveFinite(sampleMassG) && positiveFinite(tappedVolumeMl)) &&
+    !positiveFinite(labInputs?.measuredTappedDensityGPerL);
+
+  if (hasInvalidDensityInput || hasIncompleteBulkPair || hasIncompleteTappedPair) {
     return {
       densityType: 'NOT_MEASURED',
-      displayRange: 'Invalid density measurement input',
+      displayRange: hasInvalidDensityInput ? 'Invalid density measurement input' : 'Incomplete density measurement pair',
       source: 'INSUFFICIENT_DATA',
-      notes: 'Density measurements must be finite positive mass, volume and density values. Invalid supplied measurements are not replaced with screening estimates.'
+      notes: 'Density measurements require finite positive mass, volume and density values. Incomplete or invalid supplied measurements are not replaced with screening estimates.'
     };
   }
 
@@ -142,8 +151,10 @@ export function calculatePowderFlowability(
     densityReport.densityType === 'MEASURED' &&
     bulk !== undefined &&
     tapped !== undefined &&
-    tapped > bulk &&
-    bulk > 0
+    tapped >= bulk &&
+    bulk > 0 &&
+    Number.isFinite(tapped) &&
+    Number.isFinite(bulk)
   ) {
     const carrIndex = Number((((tapped - bulk) / tapped) * 100).toFixed(1));
     const hausner = Number((tapped / bulk).toFixed(2));
@@ -276,7 +287,9 @@ export function calculatePowderParticleSize(labInputs?: PowderLabMeasurementInpu
     (hasFines && !validPct(labInputs?.measuredFinesPct)) ||
     (hasCoarse && !validPct(labInputs?.measuredCoarsePct)) ||
     (validPositive(labInputs?.measuredD10Um) && validPositive(labInputs?.measuredD50Um) && labInputs!.measuredD10Um! > labInputs!.measuredD50Um!) ||
-    (validPositive(labInputs?.measuredD50Um) && validPositive(labInputs?.measuredD90Um) && labInputs!.measuredD50Um! > labInputs!.measuredD90Um!);
+    (validPositive(labInputs?.measuredD50Um) && validPositive(labInputs?.measuredD90Um) && labInputs!.measuredD50Um! > labInputs!.measuredD90Um!) ||
+    (validPct(labInputs?.measuredFinesPct) && validPct(labInputs?.measuredCoarsePct) &&
+      labInputs!.measuredFinesPct! + labInputs!.measuredCoarsePct! > 100);
 
   if (hasInvalidPSD) {
     return {
