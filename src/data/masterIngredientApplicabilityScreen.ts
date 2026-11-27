@@ -132,6 +132,7 @@ export const MASTER_INGREDIENT_APPLICABILITY_SCREEN: MasterIngredientApplicabili
   UNIVERSAL_INGREDIENTS.flatMap((ingredient) =>
     CANONICAL_PRODUCT_CATEGORY_IDS.map((productCategory) => {
       const result = screenOne(ingredient, productCategory);
+      const route = resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name });
       return {
         ingredientId: ingredient.id,
         ingredientName: ingredient.name,
@@ -140,11 +141,11 @@ export const MASTER_INGREDIENT_APPLICABILITY_SCREEN: MasterIngredientApplicabili
         casNumber: ingredient.casNumber,
         inciName: ingredient.inciName,
         identityType: ingredient.identityType,
-        functionalRoutingClass: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.routingClass ?? null,
-        functionalRole: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.role ?? null,
-        chargeBehavior: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.chargeBehavior ?? null,
-        identityRouteStatus: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.role === 'IDENTITY_UNRESOLVED' ? 'BLOCKED' as const
-          : resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name }) ? 'ROUTED' as const : 'UNMAPPED' as const,
+        functionalRoutingClass: route?.routingClass ?? null,
+        functionalRole: route?.role ?? null,
+        chargeBehavior: route?.chargeBehavior ?? null,
+        identityRouteStatus: route?.role === 'IDENTITY_UNRESOLVED' ? 'BLOCKED' as const
+          : route ? 'ROUTED' as const : 'UNMAPPED' as const,
         commercialActiveDefaultPct: ingredient.activeDefault,
         supplierActiveMatterPct: ingredient.surfactantActiveMatterPct ?? ingredient.activeMatter,
         phMin: ingredient.phMin,
