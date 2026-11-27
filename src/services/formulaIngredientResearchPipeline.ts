@@ -15,6 +15,8 @@ export interface FormulaIngredientResearchResult {
   unresolved: string[];
   warnings: string[];
   calculationReady: boolean;
+  /** True only when every active-matter input has property-level verified grade evidence. */
+  authoritativeCalculationReady: boolean;
   activeMatterReport?: ActiveMatterReport;
 }
 
@@ -73,6 +75,7 @@ export async function prepareFormulaForCalculation(
   }
 
   let calculationReady = unresolved.length === 0;
+  let authoritativeCalculationReady = false;
   const preparedFormula: ActiveFormulaState = {
     ...formula,
     ingredients: resolvedIngredients
@@ -97,7 +100,18 @@ export async function prepareFormulaForCalculation(
       unresolved.push('Active Matter / batch size evidence');
     }
     warnings.push(...activeMatterReport.warnings);
-    warnings.push('Formula calculation is blocked: authoritative active-matter inputs and a valid batch basis are required.');
+    warnings.push('Formula calculation is blocked: active-matter inputs and a valid batch basis are required.');
+  }
+
+  if (calculationReady && activeMatterReport) {
+    authoritativeCalculationReady = activeMatterReport.isFullyAuthoritative;
+    if (!authoritativeCalculationReady) {
+      const nonAuthoritative = activeMatterReport.contributions
+        .filter(contribution => contribution.dataSource !== 'authoritative')
+        .map(contribution => contribution.name);
+      warnings.push('Screening calculation is available, but authoritative release is blocked until every active-matter value has property-level verified supplier-grade evidence.');
+      warnings.push(...nonAuthoritative.map(name => `${name}: catalog/reference/override value is screening-only, not a verified supplier assay.`));
+    }
   }
 
   return {
@@ -107,6 +121,7 @@ export async function prepareFormulaForCalculation(
     unresolved,
     warnings,
     calculationReady,
+    authoritativeCalculationReady,
     activeMatterReport
   };
 }
@@ -120,8 +135,9 @@ export async function requireCalculationReadyFormula(
   options: FormulaIngredientResearchOptions = {}
 ): Promise<ActiveFormulaState> {
   const result = await prepareFormulaForCalculation(formula, options);
-  if (!result.calculationReady) {
-    throw new Error(`Formula is not calculation-ready. Verification required for: ${result.unresolved.join(', ')}`);
+  if (!result.calculationReady || !result.authoritativeCalculationReady) {
+    const unresolved = result.unresolved.join(', ') || 'property-level supplier-grade active-matter evidence';
+    throw new Error(`Formula is not authoritatively calculation-ready. Verification required for: ${unresolved}`);
   }
   return result.formula;
 }
