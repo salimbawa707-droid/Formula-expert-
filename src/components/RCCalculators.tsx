@@ -681,9 +681,9 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
           {activeCalcTab === "active" && (
             <div className="space-y-4 animate-fade-in" id="active-matter-calculator">
               <div className="border-b border-slate-800 pb-2">
-                <h3 className="text-sm font-bold text-white">Total Active Surfactant Matter Calculator</h3>
+                <h3 className="text-sm font-bold text-white">Active Matter Screening Calculator</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Calculate final active substance % of the formulation by summing raw surfactant inputs multiplied by active purities.
+                  Arithmetic estimate: formula mass fraction × entered active-purity fraction. The result is only as reliable as the supplied assay; catalog defaults and user-entered purity are not supplier CoA or lot verification.
                 </p>
               </div>
 
