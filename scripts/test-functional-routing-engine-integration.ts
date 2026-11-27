@@ -31,6 +31,12 @@ for (const material of [sls, ldao, ligno]) {
   assert.equal(result.hlb, null, material.id + ' must not receive an unsupported HLB');
 }
 assert.equal(HLBEngine.resolveIngredientHLB(ldao).category, 'Amphoteric Surfactant');
+const slesHlb = HLBEngine.resolveIngredientHLB(ingredient('sles-70','SLES 70% (Sodium Lauryl Ether Sulfate)','Anionic Surfactant','68585-34-2'));
+assert.equal(slesHlb.hlb, 40);
+assert.equal(slesHlb.dataSource, 'estimated', 'functional-route catalog HLB is a screening estimate, not supplier-verified');
+const apgHlb = HLBEngine.resolveIngredientHLB(ingredient('apg-1214','APG 1214 (Lauryl Glucoside 50%)','Nonionic Surfactant','110615-47-9'));
+assert.equal(apgHlb.hlb, 12.5);
+assert.equal(apgHlb.dataSource, 'estimated');
 
 assert.equal(resolveEng002PureComponent(sls).supported, true);
 assert.equal(resolveEng002PureComponent(ldao).supported, false);
