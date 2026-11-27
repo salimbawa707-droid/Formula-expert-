@@ -188,10 +188,18 @@ export class HLBEngine {
     const routeId = canonicalMatch?.id || ing?.canonicalIngredientId || ing?.id;
     const functionalRoute = routeId ? resolveFunctionalRouting(routeId) : null;
     if (functionalRoute && !functionalRoute.hlbEligible) {
+      const screenedActiveMatterPct = explicitActive !== undefined && explicitActive !== null &&
+        Number.isFinite(Number(explicitActive)) && Number(explicitActive) >= 0 && Number(explicitActive) <= 100
+        ? Number(explicitActive)
+        : canonicalMatch?.activeDefault !== undefined && canonicalMatch?.activeDefault !== null &&
+          !canonicalMatch.unknownProperties?.includes('activeMatter')
+          ? Number(canonicalMatch.activeDefault)
+          : null;
       return {
         hlb: null,
         dataSource: 'missing',
-        activeMatterPct: null,
+        // HLB ineligibility must not erase an independently supplied/catalog-screening active assay.
+        activeMatterPct: screenedActiveMatterPct,
         category: functionalRoute.routingClass === 'AMPHOTERIC' ? 'Amphoteric Surfactant' : resolvedCategory,
         isSurfactant: functionalRoute.routingClass !== 'BLOCKED',
         isIonic: functionalRoute.routingClass === 'ANIONIC' || functionalRoute.routingClass === 'AMPHOTERIC'
