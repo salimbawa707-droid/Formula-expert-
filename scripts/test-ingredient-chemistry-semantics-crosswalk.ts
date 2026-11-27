@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { getIngredientChemistryCrosswalk, resolveIngredientChemistrySemantics, validateIngredientChemistryCrosswalk } from '../src/domain/ingredients/ingredientChemistrySemantics';
-import { getIngredientIntelligence, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
+import { getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
 
 const rows = getIngredientChemistryCrosswalk();
 assert.equal(rows.length, 7, 'crosswalk must cover every current SSOT identity record');
@@ -16,6 +16,7 @@ assert.equal(resolveIngredientChemistrySemantics('citric-acid')?.acidBaseBehavio
 assert.equal(resolveIngredientChemistrySemantics('unknown-id'), null);
 assert.equal(getIngredientIntelligence('labsa')?.chemistrySemantics?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT', 'intelligence consumer must expose separate SSOT chemistry semantics');
 assert(Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).every(def => Object.values(def.grades).every(grade => grade.provenance !== 'VERIFIED_COMMERCIAL_GRADE')), 'no static grade may claim verified commercial-grade status without linked grade evidence');
+assert.equal(getIngredientIntelligenceCoverageReport().verifiedOrCommercialGrade, 0, 'source-backed metadata alone must not inflate verified grade count');
 assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'synergy-anionic-amphoteric')?.provenance, 'PREDICTED_INTERACTION', 'generic literature citation must not be represented as a pair-specific measurement');
 assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'acid-hypochlorite-chlorine-gas')?.provenance, 'PREDICTED_INTERACTION', 'rule-based hazard must not be labelled as in-app measured interaction');
 assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
