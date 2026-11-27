@@ -51,3 +51,49 @@ A PubChem record can corroborate a chemical-name/CAS candidate and expose synony
 - Phase 5: **LOCKED**.
 
 Next tranche: remaining anionic, nonionic and amphoteric surfactant groups, followed by builders/chelators, polymers, enzymes, additives, solvents and proprietary mixtures. Every source claim must be checked against the exact chemical scope; no automatic CAS-only promotion is permitted.
+
+
+## Follow-up source review — additional surfactant groups
+
+This continuation expands the source screen. These are source-backed identity candidates or explicit holds, not automatic SSOT promotions.
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-063 | Sodium Cocoyl Isethionate | 61789-32-0 | FDA GSRS record in PubChem identifies Sodium Cocoyl Isethionate, lists CAS 61789-32-0 and explicitly classifies the substance as a mixture. | Source-supported mixture identity candidate; grade fatty-acid distribution and assay remain unverified. |
+| MICG-066 | Sodium Methyl Cocoyl Taurate | 61791-42-2 | PubChem lists 12765-39-8 as the primary CAS from multiple registries and 61791-42-2 as a secondary/deprecated identifier in FDA GSRS context. | **CAS correction hold.** Catalog CAS must not be treated as primary without reconciling the exact source and identity scope. Keep both identifiers and their source roles in the audit trail. |
+| MICG-074 | Cocamidopropyl Hydroxysultaine | 68139-30-0 | FDA GSRS record in PubChem identifies the named substance, CAS 68139-30-0, UNII 62V75NI93W and substance class mixture. | Source-supported mixture identity candidate; no grade or active matter inferred. |
+| MICG-076 | Lauryl Betaine | 683-10-3 | PubChem CID 4292413 identifies Lauryldimethylbetaine, lists Lauryl betaine and CAS 683-10-3; FDA UNII record Y4P927Q133 independently names Lauryl Betaine and provides the same formula/InChIKey. | Stronger cross-source identity candidate. Preserve the separate CAS 85736-48-7 also listed in PubChem as an alternate scope/registry identifier pending exact scope check. |
+| MICG-078 | Coco-Betaine | 68424-94-2 | FDA GSRS record identifies COCO-BETAINE and CAS 68424-94-2; record includes mixture validation warnings for component betaines not yet registered. | Source-supported mixture candidate; do not collapse into Lauryl Betaine. |
+| MICG-075 | Cocamide MEA | 68140-00-1 | PubChem identifies “Amides, coco, N-(hydroxyethyl)” as UVCB and lists CAS 68140-00-1. | Source-supported UVCB identity candidate; not interchangeable with Cocamide DEA. |
+| MICG-086 | Cocamide DEA | 68603-42-9 | PubChem ChemIDplus record identifies Coconut diethanolamide and lists CAS 68603-42-9. | Source-supported UVCB identity candidate; exact fatty-acid distribution/grade remains unknown. |
+| MICG-088 | Disodium Cocoamphodiacetate | 68650-39-5 | FDA GSRS record in PubChem identifies the substance, CAS 68650-39-5 and mixture class. | Source-supported mixture identity candidate. |
+| MICG-085 | Sodium Laureth Sulfate | 68585-34-2 | ECHA Substance Information identifies “Alcohols, C10-16, ethoxylated, sulfates, sodium salts” with CAS 68585-34-2 and EC 500-223-8. | Source-supported substance-family identity; catalog grade labels SLES 28/70 remain supplier-grade claims requiring TDS/CoA. |
+| MICG-111 | Polysorbate 20 | 9005-64-5 | PubChem record identifies Polyoxyethylene Sorbitan Monolaurate / Polysorbate 20 and CAS 9005-64-5; WHO/JECFA independently describes it as a distribution mixture of sorbitol/sorbitan partial esters and lauric-acid moieties. | Source-supported mixture identity candidate; do not imply a single discrete molecular structure. |
+| MICG-112 | Polysorbate 80 | 9005-65-6 | PubChem identifies polyoxyethylene sorbitan monooleate / Polysorbate 80 and CAS 9005-65-6. | Source-supported mixture identity candidate; grade distribution remains unspecified. |
+| MICG-079–082 | C12-15 Pareth-12 / -3 / -7 / -9 | 68439-50-9 (shared) | Four different ethoxylation labels share one catalog CAS. Current evidence retrieved here does not prove that each ethoxylate distribution is uniquely represented by that single CAS. | **CAS collision hold.** Keep all four identities separate; require supplier specification with alcohol chain distribution and average EO number before exact CAS/INCI mapping. |
+| MICG-116–118 | Nonoxynol-10 / -6 / -9 | 9016-45-9 (shared) | PubChem exposes 9016-45-9 alongside a discrete nonylphenol ethoxylate record and also lists other CAS values for related scopes. That does not establish the three catalog ethoxylate-number grades as one identical chemical. | **CAS collision hold.** Do not merge N-6/N-9/N-10. Resolve each ethoxylation distribution and registry scope independently. |
+
+### Follow-up sources
+
+- FDA GSRS / PubChem, Sodium Cocoyl Isethionate: https://pubchem.ncbi.nlm.nih.gov/substance/375083712
+- PubChem, Sodium Methyl Cocoyl Taurate: https://pubchem.ncbi.nlm.nih.gov/compound/Sodium-Methyl-Cocoyl-Taurate
+- FDA GSRS / PubChem, Cocamidopropyl Hydroxysultaine: https://pubchem.ncbi.nlm.nih.gov/substance/175271429
+- PubChem, Lauryldimethylbetaine: https://pubchem.ncbi.nlm.nih.gov/compound/4292413
+- FDA SRS, Lauryl Betaine UNII Y4P927Q133: https://precision.fda.gov/uniisearch/srs/unii/Y4P927Q133
+- FDA GSRS, Coco-Betaine: https://gsrs.ncats.nih.gov/ginas/app/ui/substances/9ba23b3e-e43e-4773-ac14-2b2fffe6e0d7
+- PubChem, Cocamide MEA / Amides, coco, N-(hydroxyethyl): https://pubchem.ncbi.nlm.nih.gov/compound/Amides%2C%20coco%2C%20N-%28hydroxyethyl%29
+- PubChem, Cocamide DEA / Coconut diethanolamide: https://pubchem.ncbi.nlm.nih.gov/substance/135323658
+- FDA GSRS / PubChem, Disodium Cocoamphodiacetate: https://pubchem.ncbi.nlm.nih.gov/substance/375085028
+- ECHA, Alcohols C10-16 ethoxylated sulfates sodium salts: https://echa.europa.eu/substance-information/-/substanceinfo/100.105.713
+- PubChem, Polysorbate 20: https://pubchem.ncbi.nlm.nih.gov/compound/Polyoxyethylene%20Sorbitan%20Monolaurate
+- WHO/JECFA, Polysorbate 20: https://apps.who.int/food-additives-contaminants-jecfa-database/Home/Chemical/1139
+- PubChem, Polysorbate 80: https://pubchem.ncbi.nlm.nih.gov/compound/polysorbate%2080
+- PubChem, Nonoxynol-2 / shared CAS scope caution: https://pubchem.ncbi.nlm.nih.gov/compound/24773
+
+### New material findings
+
+- Additional groups reviewed in this tranche: 14 (MICG-063, 066, 074, 076, 078, 075, 086, 088, 085, 111, 112, 079–082, 116–118; group count is 14 when the Pareth and Nonoxynol collisions are each counted as one grouped issue).
+- New source-supported identity candidates: 11.
+- New explicit CAS/identity holds: 3 (Sodium Methyl Cocoyl Taurate identifier priority; C12-15 Pareth shared-CAS cluster; Nonoxynol shared-CAS cluster).
+- SSOT promotions: 0.
+- Supplier-grade evidence established: 0.
