@@ -1,6 +1,7 @@
 import { FormulationIngredient } from '../types';
 import { ProductCategoryId, normalizeProductCategory } from '../domain/productTaxonomy';
 import { DetailedLabEvidenceRecord } from './labEvidenceEngine';
+import { validateIngredientCompositionEvidence } from './ingredientCompositionEvidence';
 
 export interface RefinementProposal {
   id: string;
@@ -65,7 +66,8 @@ export class RefinementEngine {
         continue;
       }
 
-      const aggregate = this.getValidatedAverage(ingredientName, categoryRecords, canonicalTarget);
+      const ingredientCanonicalId = String((ingredient as any).id || ingredientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')).trim();
+      const aggregate = this.getValidatedAverage(ingredientName, ingredientCanonicalId, categoryRecords, canonicalTarget);
       if (!aggregate || Math.abs(aggregate.mean - currentPercentage) <= 0.5) continue;
 
       const slug = ingredientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -88,6 +90,7 @@ export class RefinementEngine {
 
   private static getValidatedAverage(
     ingredientName: string,
+    ingredientCanonicalId: string,
     records: DetailedLabEvidenceRecord[],
     targetCategory: ProductCategoryId
   ): { mean: number; formulaCount: number; versionCount: number; replicateCount: number } | null {
@@ -103,12 +106,25 @@ export class RefinementEngine {
     const eligible = records.filter(record => {
       const key = (record.parameterKey || '').toLowerCase().trim();
       const unit = String(record.unit || '').toLowerCase().trim();
+      const compositionGate = validateIngredientCompositionEvidence({
+        ...(record as any),
+        categoryId: record.categoryId,
+        formulaId: record.formulaId,
+        formulaVersion: record.formulaVersion,
+        sampleId: record.sampleId,
+        value: record.value,
+        unit: record.unit
+      });
       return record.qualityStatus === 'ACCEPTED' &&
         record.sourceType === 'LAB_MEASURED' &&
         record.provenance === 'MEASURED' &&
         record.categoryId !== undefined &&
         normalizeProductCategory(record.categoryId) === targetCategory &&
         acceptedKeys.has(key) &&
+        record.evidenceKind === 'INGREDIENT_COMPOSITION' &&
+        record.ingredientCanonicalId === ingredientCanonicalId &&
+        record.ingredientName?.trim().toLowerCase() === normalizedName &&
+        compositionGate.isValid &&
         (unit === '%' || unit === 'percent' || unit === 'wt%') &&
         Number.isFinite(record.value) &&
         record.value >= 0 &&
@@ -116,7 +132,7 @@ export class RefinementEngine {
         Boolean(record.formulaId?.trim()) &&
         Boolean(record.formulaVersion?.trim()) &&
         Boolean(record.measurementId?.trim());
-    });
+    });;
 
     // Build unique replicate observations per formula/version. A repeated
     // measurement ID or repeated sample/replicate pair is counted once.
