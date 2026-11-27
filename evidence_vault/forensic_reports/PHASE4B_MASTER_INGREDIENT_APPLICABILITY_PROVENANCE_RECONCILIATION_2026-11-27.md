@@ -231,3 +231,41 @@ Added:
 - Test wired into test:all.
 
 The audit adds zero supplier-grade verifications and zero applicability approvals. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+## 11. Source-backed identity reconciliation and functional routing migration — 2026-11-27
+
+### Source-by-source identity findings (bounded scope)
+
+| Catalog family | External identity evidence | Reconciliation outcome | What remains unproven |
+|---|---|---|---|
+| Sodium Lauryl Sulfate, CAS 151-21-3 | PubChem CID 3423265 identifies sodium dodecyl sulfate and lists CAS 151-21-3; ECHA lists sodium dodecyl sulphate with the same CAS and formula. | Chemical-family identity is source-backed; route as ANIONIC / primary anionic surfactant. | Needle vs paste/solution grade, assay, active matter, impurities, supplier and lot CoA. |
+| Lauryl Glucoside, catalog CAS 110615-47-9 | PubChem CID 10893439 lists Lauryl Glucoside, but also lists 27836-64-2 and 110615-47-9 among CAS identifiers. | Do not use CAS alone as a unique exact-grade crosswalk; retain unresolved/ambiguous identity pending an authoritative registry or manufacturer document tying the precise CAS to the intended substance/grade. | Catalog grade and exact product composition; supplier TDS/CoA. |
+| Lauramine Oxide, CAS 1643-20-5 | PubChem and NZ EPA CCID support lauramine oxide family identity; EU ingredient inventory lists Lauramine Oxide among surfactant/cleansing/foam functions. | Migrate functional routing from generic NONIONIC to AMPHOTERIC / amine-oxide route. | Commercial chain distribution, active, pH-dependent speciation, grade and lot evidence. |
+| Sodium Lignosulfonate | Public industrial literature describes lignosulfonate dispersant/binder uses. | Retain ANIONIC charge but distinguish POLYMERIC_DISPERSANT from conventional primary detergent surfactant. | Exact grade, molecular-weight distribution, solids, sulfonate content, detergent performance. |
+| PEG-2 Tallow Amine catalog record | Internal display name/function conflict with INCI PEG-2 Tallow Amine and CAS 61791-26-2. | Keep BLOCKED; no inferred functional class. | Exact manufacturer identity, ethoxylation distribution and product composition. |
+
+Sources:
+- PubChem Sodium Lauryl Sulfate: https://pubchem.ncbi.nlm.nih.gov/compound/3423265
+- ECHA Sodium dodecyl sulphate: https://echa.europa.eu/substance-information/-/substanceinfo/100.005.263
+- PubChem Lauryl Glucoside: https://pubchem.ncbi.nlm.nih.gov/compound/10893439
+- PubChem Lauramine Oxide: https://pubchem.ncbi.nlm.nih.gov/compound/15433
+- NZ EPA CCID Lauramine Oxide: https://www.epa.govt.nz/database-search/chemical-classification-and-information-database-ccid/view/4870BB95-03BD-402C-AF97-A674F93F773A/
+- EU Commission ingredient inventory: https://www.legislation.gov.uk/eudn/1996/335/pdfs/eudn_19960335_2006-02-09_en.pdf
+- Industrial sodium lignosulfonate reference: https://www.lignincorp.com/products/sodium-lignosulfonate/
+
+### Category-dependent routing migration
+
+Added `src/data/ingredientFunctionalRouting.ts` as an explicit, fail-closed functional routing overlay:
+- SLS catalog IDs route ANIONIC; pure CMC reference allowed only under the separately enforced identity gate. HLB disabled.
+- Lauramine oxide IDs route AMPHOTERIC; HLB and pure-component CMC are disabled for commercial grade records.
+- Sodium lignosulfonate routes as ANIONIC charge + POLYMERIC_DISPERSANT role; it is excluded from detergent surfactant active accounting, HLB and pure CMC.
+- PEG-2 Tallow Amine conflict stays BLOCKED for all model routes.
+
+Added `scripts/test-functional-routing-migration.ts`, wired into `test:all`. This checks every mapped catalog ID against current category/INCI, rejects duplicate IDs, prevents property-model enablement for blocked records and prevents lignosulfonate being counted as primary detergent active.
+
+### Engine migration boundary
+
+The overlay is a safe first migration adapter, not proof that every legacy category consumer has been migrated. The legacy category remains unchanged for compatibility while the exact consumers in HLB, active-matter, CMC, compatibility and formula-intelligence engines are audited. Do not globally rewrite category strings until each consumer uses the routing adapter and regression coverage proves no behavior regression.
+
+The 397-record identity crosswalk gap is not closed by these five bounded findings. Supplier-grade evidence remains absent; all applicability remains NOT_APPROVED. Phase 4B OPEN; Phase 5 LOCKED.
+
