@@ -45,12 +45,13 @@ The authoritative source is `src/data/universalIngredientLibrary.ts` (`UNIVERSAL
 Added `src/data/masterIngredientApplicabilityScreen.ts`. It generates one row for every live master ingredient and every canonical product category. It is intentionally a **preliminary chemistry-risk screen**, not a final APPLICABLE/NOT_APPLICABLE approval.
 
 Each row carries:
-- stable ingredient ID/name and source catalog class;
+- stable ingredient ID/name, catalog class, CAS, INCI, identity type, and commercial-grade record lineage;
 - canonical product category;
 - preliminary disposition: `CONDITIONAL_SCREEN`, `IDENTITY_OR_EVIDENCE_UNKNOWN`, or `CHEMISTRY_CONFLICT_RISK`;
 - category-specific rationale;
 - explicit critical unknowns and evidence still required;
 - `finalApplicability: NOT_APPROVED` for every pair;
+- commercial active default (explicitly not an assay), any supplier active-matter field, pH bounds, manufacturer/product identity, and provenance source/URL/verification status when present;
 - whether the row has any provenance metadata.
 
 Screening rules deliberately flag:
