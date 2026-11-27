@@ -35,19 +35,19 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     ingredientIds: ['sls-needles','sls-30','sls-needles-tech','sls-needles-pure','sls-needles-sol','sls-30-tech','sls-30-pure','sls-30-sol'],
     expectedCategory: 'Anionic Surfactant', expectedInci: 'Sodium Lauryl Sulfate',
     routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'FIXED_ANIONIC',
-    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: true,
+    activeMatterEligible: true, hlbEligible: true, pureComponentCmcEligible: true,
     identityScope: 'CAS 151-21-3 supports sodium dodecyl sulfate chemical identity, not needle/paste/solution grade, assay or lot.',
     sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/3423265','https://echa.europa.eu/substance-information/-/substanceinfo/100.005.263'],
-    caveats: ['Supplier TDS and matching lot CoA are still required for grade assay.', 'Pure-component CMC is not transferable to unidentified blends or UVCBs.', 'HLB is not an appropriate default property for this ionic surfactant.']
+    caveats: ['Davies-scale catalog HLB is a screening reference, not a supplier-grade measured property.', 'Supplier TDS and matching lot CoA are still required for grade assay.', 'Pure-component CMC is not transferable to unidentified blends or UVCBs.']
   },
   {
     ingredientIds: ['sles-70','sles-28'],
     expectedCategory: 'Anionic Surfactant', expectedInci: 'Sodium Laureth Sulfate',
     routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'FIXED_ANIONIC',
-    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    activeMatterEligible: true, hlbEligible: true, pureComponentCmcEligible: false,
     identityScope: 'INCI and CAS 68585-34-2 identify the sodium laureth sulfate commercial surfactant family; the 70% paste and 28% liquid are distinct supplied grades, not one assay.',
     sourceUrls: ['https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=448&lang=eng&wbdisable=true','https://pubchem.ncbi.nlm.nih.gov/compound/23665884'],
-    caveats: ['Public chemical identity does not verify either catalog grade concentration, EO distribution, residual 1,4-dioxane or lot assay.', 'Do not assign pure-molecule CMC or HLB to commercial ethoxylate distributions.']
+    caveats: ['Davies HLB 40 is a screening-model value only, not a supplier-grade measured property.', 'Public chemical identity does not verify either catalog grade concentration, EO distribution, residual 1,4-dioxane or lot assay.', 'Do not assign pure-molecule CMC to commercial ethoxylate distributions.']
   },
   {
     ingredientIds: ['capb-30-uni','capb-45'],
@@ -71,19 +71,19 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     ingredientIds: ['apg-0810'],
     expectedCategory: 'Nonionic Surfactant', expectedInci: 'Caprylyl/Capryl Glucoside',
     routingClass: 'NONIONIC', role: 'NONIONIC_APG', chargeBehavior: 'NEUTRAL_NONIONIC',
-    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    activeMatterEligible: true, hlbEligible: true, pureComponentCmcEligible: false,
     identityScope: 'CAS 68515-73-1 and INCI identify caprylyl/capryl oligoglucoside family; FDA GSRS/PubChem substance record explicitly describes it as a mixture.',
     sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/substance/472402409','https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=13217&wbdisable=true'],
-    caveats: ['Catalog 50% activeDefault is not supplier assay or lot CoA.', 'Mixture/oligomer distribution is not a pure single-molecule CMC reference.', 'Catalog HLB is not grade-verified.']
+    caveats: ['Catalog HLB is a screening estimate only; it is not grade-verified or a supplier measured value.', 'Catalog 50% activeDefault is not supplier assay or lot CoA.', 'Mixture/oligomer distribution is not a pure single-molecule CMC reference.']
   },
   {
     ingredientIds: ['apg-1214'],
     expectedCategory: 'Nonionic Surfactant', expectedInci: 'Lauryl Glucoside',
     routingClass: 'NONIONIC', role: 'NONIONIC_APG', chargeBehavior: 'NEUTRAL_NONIONIC',
-    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    activeMatterEligible: true, hlbEligible: true, pureComponentCmcEligible: false,
     identityScope: 'INCI supports the alkyl glucoside nonionic family, but PubChem aggregates multiple CAS identifiers for Lauryl Glucoside; exact catalog CAS 110615-47-9 and commercial C12-C14 APG composition are not uniquely reconciled.',
     sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/10893439','https://pubchem.ncbi.nlm.nih.gov/compound/Lauryl-Glucoside'],
-    caveats: ['Nonionic family routing is supported by INCI; exact CAS-to-commercial-grade crosswalk remains unresolved.', 'Catalog 50% activeDefault and HLB are not supplier-verified.', 'Do not use pure dodecyl glucoside constants for a C12-C14 oligoglucoside commercial blend.']
+    caveats: ['Nonionic family routing is supported by INCI; exact CAS-to-commercial-grade crosswalk remains unresolved.', 'Catalog HLB 12.5 is a screening estimate only; catalog 50% activeDefault and HLB are not supplier-verified.', 'Do not use pure dodecyl glucoside constants for a C12-C14 oligoglucoside commercial blend.']
   },
   {
     ingredientIds: ['lignosulfonate-na'],
