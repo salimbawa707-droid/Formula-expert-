@@ -32,12 +32,15 @@ function record(input: {
   categoryId?: string | null;
   sampleId?: string;
   replicateNumber?: number;
+  ingredientName?: string;
+  ingredientCanonicalId?: string;
+  parameterKey?: string;
 }): DetailedLabEvidenceRecord {
   return {
     measurementId: input.id,
     formulaId: input.formulaId,
     formulaVersion: input.version || '1.0',
-    parameterKey: 'ingredient:sles:percentage',
+    parameterKey: input.parameterKey || 'ingredient:sles:percentage',
     value: input.value,
     unit: '%',
     testDate: '2026-11-27',
@@ -53,8 +56,8 @@ function record(input: {
     testMethod: 'Validated gravimetric assay SOP-01',
     replicateNumber: input.replicateNumber ?? 1,
     evidenceKind: 'INGREDIENT_COMPOSITION',
-    ingredientCanonicalId: 'sles',
-    ingredientName: 'SLES',
+    ingredientCanonicalId: input.ingredientCanonicalId || 'sles',
+    ingredientName: input.ingredientName || 'SLES',
     compositionBasis: 'W_W',
     compositionMethod: 'GRAVIMETRIC_ASSAY',
     compositionMethodDetails: 'Validated gravimetric SOP-01; w/w calculation',
@@ -253,18 +256,13 @@ check('canonical ingredient ID takes precedence over database row ID', (() => {
 
 check('canonical IDs with underscores are preserved', (() => {
   const customRecords = [
-    record({ id: 'underscore-1', formulaId: 'UND1', value: 10 }),
-    record({ id: 'underscore-2', formulaId: 'UND2', value: 20 }),
-    record({ id: 'underscore-3', formulaId: 'UND3', value: 30 })
-  ].map(item => ({
-    ...item,
-    parameterKey: 'ingredient:sles:percentage',
-    ingredientCanonicalId: 'SODIUM_HYDROXIDE',
-    ingredientName: 'SLES'
-  }));
+    record({ id: 'underscore-1', formulaId: 'UND1', value: 10, ingredientCanonicalId: 'SODIUM_HYDROXIDE', ingredientName: 'Sodium Hydroxide', parameterKey: 'ingredient:sodium-hydroxide:percentage' }),
+    record({ id: 'underscore-2', formulaId: 'UND2', value: 20, ingredientCanonicalId: 'sodium_hydroxide', ingredientName: 'Sodium Hydroxide', parameterKey: 'ingredient:sodium-hydroxide:percentage' }),
+    record({ id: 'underscore-3', formulaId: 'UND3', value: 30, ingredientCanonicalId: 'sodium_hydroxide', ingredientName: 'Sodium Hydroxide', parameterKey: 'ingredient:sodium-hydroxide:percentage' })
+  ];
   const canonicalIdentityProposal = proposal(customRecords, [{
     canonicalIngredientId: 'sodium_hydroxide',
-    name: 'SLES',
+    name: 'Sodium Hydroxide',
     percentage: 15
   }]);
   return canonicalIdentityProposal?.proposedPercentage === 20;
