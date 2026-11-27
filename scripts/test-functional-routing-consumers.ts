@@ -26,14 +26,16 @@ assert.equal(resolveFormulaIntelligenceRouting('tallow-amine-oxide')?.chargeLabe
 
 const ldaoSles = resolveFunctionalCompatibilityMatrixPair('lauryl-amine-oxide','Nonionic Surfactant','sles-70','Anionic Surfactant');
 assert.equal(ldaoSles?.status, 'REQUIRES_COMPATIBILITY_TEST');
+const nameOnlyPair = resolveFunctionalCompatibilityMatrixPair('', 'Nonionic Surfactant', '', 'Anionic Surfactant', 'Lauryl Amine Oxide 30% (LDAO)', 'SLES 70% (Sodium Lauryl Ether Sulfate)');
+assert.equal(nameOnlyPair?.status, 'REQUIRES_COMPATIBILITY_TEST', 'exact catalog names must resolve when formula payload omits canonical IDs');
 const tallowSles = resolveFunctionalCompatibilityMatrixPair('tallow-amine-oxide','Polymer & Thickener','sles-70','Anionic Surfactant');
 assert.equal(tallowSles?.status, 'INSUFFICIENT_DATA');
 const anionicCationic = resolveFunctionalCompatibilityMatrixPair('sles-70','Anionic Surfactant','esterquat-90','Cationic Surfactant');
 assert.equal(anionicCationic?.compatible, false);
 
 const ldaoFormula = calculateFormulationCompatibility([
-  { id:'lauryl-amine-oxide', canonicalIngredientId:'lauryl-amine-oxide', name:'Lauryl Amine Oxide 30%', category:'Nonionic Surfactant', percentage:5 } as any,
-  { id:'sles-70', canonicalIngredientId:'sles-70', name:'SLES 70%', category:'Anionic Surfactant', percentage:10 } as any
+  { name:'Lauryl Amine Oxide 30% (LDAO)', category:'Nonionic Surfactant', percentage:5 } as any,
+  { name:'SLES 70% (Sodium Lauryl Ether Sulfate)', category:'Anionic Surfactant', percentage:10 } as any
 ], 7, 'LAUNDRY_LIQUID');
 assert(ldaoFormula.alerts.some(a => a.id === 'amine-oxide-ph-dependent-compatibility-test'));
 assert(!ldaoFormula.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), 'amine oxide must not be treated as fixed cationic/anionic charge');
