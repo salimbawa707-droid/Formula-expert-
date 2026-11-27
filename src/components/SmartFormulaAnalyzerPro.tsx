@@ -1187,13 +1187,13 @@ function SmartFormulaAnalyzerProInner({
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("2. Scientific Calculations Summary", 14, 98);
+      doc.text("2. Scientific Calculations Summary", 14, 110);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`• Total Active Surfactant Matter: ${analysisResult.totalActiveMatter}%`, 14, 106);
-      doc.text(`• Estimated pH: ${analysisResult.estpH} (Advanced pHEngine Solver)`, 14, 112);
-      doc.text(`• Hydrophilic-Lipophilic Balance (Griffin HLB): ${analysisResult.estHlb !== null ? analysisResult.estHlb : "N/A"}`, 14, 118);
+      doc.text(`• Total Active Surfactant Matter: ${analysisResult.totalActiveMatter}%`, 14, 118);
+      doc.text(`• Estimated pH: ${analysisResult.estpH} (Advanced pHEngine Solver)`, 14, 124);
+      doc.text(`• Hydrophilic-Lipophilic Balance (Griffin HLB): ${analysisResult.estHlb !== null ? analysisResult.estHlb : "N/A"}`, 14, 130);
       doc.text(`• Biodegradability Score (OECD 301): ${analysisResult.ecoMetrics.biodegradabilityPct}%`, 14, 124);
       doc.text(`• Bio-Based Plant-Sourced Carbon: ${analysisResult.ecoMetrics.plantBasedPct}%`, 14, 130);
 
@@ -1501,7 +1501,7 @@ function SmartFormulaAnalyzerProInner({
               {analysisResult.aiScientificValidation?.score ?? "BLOCKED"}
               {analysisResult.aiScientificValidation?.score !== null && analysisResult.aiScientificValidation?.score !== undefined ? "/100 max" : ""}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Not model accuracy or probability</div>
+            <div className="text-[10px] text-slate-500 mt-1">Evidence cap: {analysisResult.aiScientificValidation?.maximumScore ?? "Blocked"} / 100; not accuracy</div>
           </div>
           <div className="rounded-xl bg-gray-50 p-3">
             <div className="text-[10px] uppercase text-slate-500 font-bold">Endpoint benchmark</div>
