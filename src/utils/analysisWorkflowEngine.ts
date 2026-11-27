@@ -655,6 +655,7 @@ export async function executeStagedScientificAnalysis(
       chargeDataComplete = false;
       continue;
     }
+    if (isPolymericDispersant) continue;
     if (isAnionic || isNonionic || isAmphoteric || isCationic || isAmineOxide) {
       const pct = Number(ing.percentage);
       const assay = ing.activeMatterPct === undefined || ing.activeMatterPct === null ? Number.NaN : Number(ing.activeMatterPct);
