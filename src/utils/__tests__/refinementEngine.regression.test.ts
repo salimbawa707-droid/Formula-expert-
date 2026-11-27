@@ -10,7 +10,7 @@ function record(input: {
   formulaId: string;
   version?: string;
   value: number;
-  categoryId?: string;
+  categoryId?: string | null;
   sampleId?: string;
   replicateNumber?: number;
 }): DetailedLabEvidenceRecord {
@@ -25,7 +25,7 @@ function record(input: {
     provenance: 'MEASURED',
     qualityStatus: 'ACCEPTED',
     sourceType: 'LAB_MEASURED',
-    categoryId: input.categoryId as any,
+    categoryId: (input.categoryId === null ? undefined : input.categoryId ?? category) as any,
     sampleId: input.sampleId,
     replicateNumber: input.replicateNumber
   };
@@ -51,7 +51,7 @@ check('cross-category evidence excluded', categoryScoped?.proposedPercentage ===
 
 // Missing category cannot be treated as a wildcard.
 const missingCategory = proposal([
-  record({ id: 'm1', formulaId: 'M1', value: 10, categoryId: undefined }),
+  record({ id: 'm1', formulaId: 'M1', value: 10, categoryId: null }),
   record({ id: 'm2', formulaId: 'M2', value: 20, categoryId: undefined }),
   record({ id: 'm3', formulaId: 'M3', value: 30, categoryId: undefined })
 ]);
