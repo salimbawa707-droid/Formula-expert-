@@ -229,6 +229,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   let hasPreservative = false;
 
   const ingredientIds: string[] = [];
+  const hasExplicitFormulaPH = typeof input.calculatedPH === 'number' && Number.isFinite(input.calculatedPH) && input.calculatedPH >= 0 && input.calculatedPH <= 14;
 
   // Parse and audit ingredients cleanly
   for (const ing of ingredients) {
@@ -259,7 +260,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
 
     if (role.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos')) {
       anionicActivePct += activePct;
-      if (isPHDependentAnionic) conditionalAnionicActivePct += activePct;
+      if (isPHDependentAnionic && !(hasExplicitFormulaPH && input.calculatedPH! >= 6.0)) conditionalAnionicActivePct += activePct;
       else fixedAnionicActivePct += activePct;
       totalActiveSurfactantPct += activePct;
     } else if (role.includes('nonionic') || n.includes('lae') || n.includes('ethoxylate') || n.includes('glucoside') || n.includes('apg')) {
