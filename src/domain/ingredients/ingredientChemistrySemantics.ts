@@ -101,13 +101,15 @@ export interface IngredientChemistryCrosswalkRow {
   ingredientId: string;
   legacyChargeClass: string;
   semantics: IngredientChemistrySemantics;
-  functionalRouteStatus: 'ROUTED' | 'UNMAPPED' | 'BLOCKED';
+  functionalRouteStatus: 'ROUTED' | 'UNMAPPED' | 'BLOCKED' | 'NOT_IN_SURFACTANT_ROUTER';
   status: 'CONSISTENT' | 'LEGACY_CHARGE_OVERLOADED' | 'ROUTE_CONFLICT' | 'SEMANTICS_MISSING';
   warnings: string[];
 }
 
 export function resolveIngredientChemistrySemantics(ingredientId: string): IngredientChemistrySemantics | null {
-  const normalizedId = ingredientId === 'citric-acid' ? 'citric_acid' : ingredientId;
+  const normalizedId = ingredientId === 'citric-acid' ? 'citric_acid'
+    : ingredientId === 'labsa-90' || ingredientId === 'labsa-96' ? 'labsa'
+    : ingredientId;
   const value = SEMANTICS[normalizedId];
   return value ? { ...value } : null;
 }
@@ -117,7 +119,10 @@ export function getIngredientChemistryCrosswalk(): IngredientChemistryCrosswalkR
     const resolved = IngredientIdentitySSOT.resolveIngredientIdentity(ingredientId);
     const identity = resolved.identity;
     const semantics = SEMANTICS[ingredientId];
-    const route = resolveFunctionalRouting(ingredientId);
+    // The functional overlay is a surfactant-family router, not a universal material router.
+    // Non-surfactant SSOT identities are explicitly out of scope rather than falsely 'unmapped'.
+    const routeLookupId = ingredientId === 'labsa' ? 'labsa-90' : ingredientId;
+    const route = resolveFunctionalRouting(routeLookupId);
     const warnings: string[] = [];
     let status: IngredientChemistryCrosswalkRow['status'] = 'CONSISTENT';
     if (!identity) {
@@ -136,7 +141,9 @@ export function getIngredientChemistryCrosswalk(): IngredientChemistryCrosswalkR
       ingredientId,
       legacyChargeClass: identity?.chargeClass ?? 'UNKNOWN',
       semantics: { ...semantics },
-      functionalRouteStatus: !route ? 'UNMAPPED' : route.routingClass === 'BLOCKED' ? 'BLOCKED' : 'ROUTED',
+      functionalRouteStatus: semantics.surfactantFunctionalClass === 'NOT_SURFACTANT'
+        ? 'NOT_IN_SURFACTANT_ROUTER'
+        : !route ? 'UNMAPPED' : route.routingClass === 'BLOCKED' ? 'BLOCKED' : 'ROUTED',
       status,
       warnings
     };
