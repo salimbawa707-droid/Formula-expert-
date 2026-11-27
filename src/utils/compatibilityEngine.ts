@@ -162,6 +162,7 @@ export function calculateFormulationCompatibility(
   const cationicIngs: string[] = [];
   const identityBlockedIngs: string[] = [];
   const amineOxideIngs: string[] = [];
+  const phDependentAnionicIngs: string[] = [];
   const acidIngs: string[] = [];
   const alkaliIngs: string[] = [];
   const oxidizerIngs: string[] = [];
@@ -201,10 +202,15 @@ export function calculateFormulationCompatibility(
     const isShortChainHydrotrope = /cumene|xylene|\bscs\b|\bsxs\b/.test(name);
     const isBlockedIdentity = functionalRoute?.role === 'IDENTITY_UNRESOLVED';
     const isPolymericDispersant = functionalRoute?.role === 'POLYMERIC_DISPERSANT';
+    const isPHDependentAnionic = functionalRoute?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
     if (!isBlockedIdentity && !isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
-      hasAnionic = true;
-      anionicPct += pct;
-      anionicChargeIngs.push(ing.name);
+      if (!isPHDependentAnionic) {
+        hasAnionic = true;
+        anionicPct += pct;
+        anionicChargeIngs.push(ing.name);
+      } else {
+        phDependentAnionicIngs.push(ing.name);
+      }
       if (!isPolymericDispersant) {
         hasAnionicSurfactant = true;
         anionicSurfactantPct += pct;
@@ -419,13 +425,13 @@ export function calculateFormulationCompatibility(
   if (matrixTestPairs.length > 0) {
     penaltySum += 10;
     alerts.push({
-      id: 'amine-oxide-ph-dependent-compatibility-test',
-      title: 'pH-Dependent Amine Oxide — Compatibility Test Required',
+      id: 'ph-dependent-surfactant-compatibility-test',
+      title: 'pH-Dependent Surfactant — Compatibility Test Required',
       severity: 'Medium',
       mechanism: 'IONIC',
       message: matrixTestPairs.join(' | '),
       recommendation: 'Evaluate the exact commercial grades at target pH, electrolyte level, temperature and storage conditions; do not infer fixed zwitterionic behaviour.',
-      affectedIngredients: [...amineOxideIngs]
+      affectedIngredients: [...amineOxideIngs, ...phDependentAnionicIngs]
     });
   }
 
