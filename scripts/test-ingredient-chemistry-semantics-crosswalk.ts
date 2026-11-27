@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { getIngredientChemistryCrosswalk, resolveIngredientChemistrySemantics, validateIngredientChemistryCrosswalk } from '../src/domain/ingredients/ingredientChemistrySemantics';
 import { getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
+import { getIngredientCmcData } from '../src/utils/calculators';
 
 const rows = getIngredientChemistryCrosswalk();
 assert.equal(rows.length, 7, 'crosswalk must cover every current SSOT identity record');
@@ -19,6 +20,8 @@ assert(Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).every(def => Object.value
 assert.equal(getIngredientIntelligenceCoverageReport().verifiedOrCommercialGrade, 0, 'source-backed metadata alone must not inflate verified grade count');
 assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'synergy-anionic-amphoteric')?.provenance, 'PREDICTED_INTERACTION', 'generic literature citation must not be represented as a pair-specific measurement');
 assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'acid-hypochlorite-chlorine-gas')?.provenance, 'PREDICTED_INTERACTION', 'rule-based hazard must not be labelled as in-app measured interaction');
+assert.equal(getIngredientCmcData('SLES')?.dataProvenance, 'HEURISTIC_SCREENING', 'legacy SLES CMC alias must remain explicitly heuristic');
+assert.equal(getIngredientCmcData('SLS')?.dataProvenance, 'SOURCE_BACKED', 'curated SLS CMC source record must retain source-backed status');
 assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
 assert(rows.every(row => row.functionalRouteStatus === 'UNMAPPED'), 'no identity may be falsely represented as migrated to the separate functional route registry');
 console.log('INGREDIENT CHEMISTRY SEMANTICS CROSSWALK PASS');
