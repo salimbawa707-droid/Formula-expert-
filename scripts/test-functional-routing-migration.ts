@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { getFunctionalRoutingDecisions, resolveFunctionalRouting, validateFunctionalRoutingAgainstCatalog } from '../src/data/ingredientFunctionalRouting';
+
+assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), []);
+const decisions = getFunctionalRoutingDecisions();
+assert.equal(decisions.length, 4);
+assert.equal(resolveFunctionalRouting('sls-needles')?.routingClass, 'ANIONIC');
+assert.equal(resolveFunctionalRouting('sls-30')?.pureComponentCmcEligible, true);
+assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.routingClass, 'AMPHOTERIC');
+assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.hlbEligible, false);
+assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.pureComponentCmcEligible, false);
+assert.equal(resolveFunctionalRouting('lignosulfonate-na')?.role, 'POLYMERIC_DISPERSANT');
+assert.equal(resolveFunctionalRouting('lignosulfonate-na')?.activeMatterEligible, false);
+assert.equal(resolveFunctionalRouting('tallow-amine-oxide')?.routingClass, 'BLOCKED');
+assert.equal(resolveFunctionalRouting('tallow-amine-oxide')?.pureComponentCmcEligible, false);
+assert.equal(resolveFunctionalRouting('unknown-id'), null);
+const copy = resolveFunctionalRouting('sls-needles')!;
+copy.caveats.push('tamper');
+assert.equal(resolveFunctionalRouting('sls-needles')!.caveats.includes('tamper'), false);
+console.log('FUNCTIONAL ROUTING MIGRATION AUDIT PASS');
+console.log(JSON.stringify(decisions.map(({ingredientIds,routingClass,role,activeMatterEligible,hlbEligible,pureComponentCmcEligible})=>({ingredientIds,routingClass,role,activeMatterEligible,hlbEligible,pureComponentCmcEligible})),null,2));
