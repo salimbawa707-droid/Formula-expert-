@@ -16,6 +16,16 @@ assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.rationale.trim().
 assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.criticalUnknowns.length > 0), 'every pair must retain unresolved evidence requirements');
 assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.inciName.length > 0), 'every pair must preserve the catalog INCI identity');
 assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => row.finalApplicability === 'NOT_APPROVED'), 'no screening pair may be promoted by the desk screen');
+assert(MASTER_INGREDIENT_APPLICABILITY_SCREEN.every(row => ['ROUTED','UNMAPPED','BLOCKED'].includes(row.identityRouteStatus)), 'every applicability row must expose its functional identity route state');
+const ldaoLaundry = MASTER_INGREDIENT_APPLICABILITY_SCREEN.find(row => row.ingredientId === 'lauryl-amine-oxide' && row.productCategory === 'LAUNDRY_LIQUID');
+assert.equal(ldaoLaundry?.functionalRoutingClass, 'AMPHOTERIC', 'amine oxide functional family must override its legacy nonionic catalog label in applicability triage');
+assert.equal(ldaoLaundry?.chargeBehavior, 'PH_DEPENDENT_AMINE_OXIDE', 'amine oxide pH-dependent charge behavior must be preserved in applicability rows');
+const tallowLaundry = MASTER_INGREDIENT_APPLICABILITY_SCREEN.find(row => row.ingredientId === 'tallow-amine-oxide' && row.productCategory === 'LAUNDRY_LIQUID');
+assert.equal(tallowLaundry?.identityRouteStatus, 'BLOCKED', 'identity-conflict ingredient must be marked blocked in applicability triage');
+assert.equal(tallowLaundry?.preliminaryDisposition, 'IDENTITY_OR_EVIDENCE_UNKNOWN', 'blocked identity must never receive a category suitability inference');
+const lignoSoftener = MASTER_INGREDIENT_APPLICABILITY_SCREEN.find(row => row.ingredientId === 'lignosulfonate-na' && row.productCategory === 'FABRIC_SOFTENER');
+assert.equal(lignoSoftener?.functionalRole, 'POLYMERIC_DISPERSANT', 'lignosulfonate must be distinguished from primary surfactant active');
+assert.equal(lignoSoftener?.preliminaryDisposition, 'CHEMISTRY_CONFLICT_RISK', 'anionic polymeric dispersant still requires explicit cationic-softener compatibility testing');
 for (const row of MASTER_INGREDIENT_APPLICABILITY_SCREEN) {
   const source = UNIVERSAL_INGREDIENTS.find(item => item.id === row.ingredientId);
   assert(source, `screen row ${row.ingredientId} must resolve to a canonical master ingredient`);
