@@ -1,5 +1,6 @@
 import { UNIVERSAL_INGREDIENTS, type UniversalIngredient } from './universalIngredientLibrary';
 import { CANONICAL_PRODUCT_CATEGORY_IDS, type ProductCategoryId } from '../domain/productTaxonomy';
+import { resolveFunctionalRoutingForIngredient } from './ingredientFunctionalRouting';
 
 /**
  * Conservative AI desk-screen for catalog triage.
@@ -16,6 +17,10 @@ export interface MasterIngredientApplicabilityScreenRow {
   casNumber: string | null;
   inciName: string;
   identityType: UniversalIngredient['identityType'];
+  functionalRoutingClass: string | null;
+  functionalRole: string | null;
+  chargeBehavior: string | null;
+  identityRouteStatus: 'ROUTED' | 'UNMAPPED' | 'BLOCKED';
   commercialActiveDefaultPct: number | null | undefined;
   supplierActiveMatterPct: number | null | undefined;
   phMin: number | undefined;
@@ -33,7 +38,12 @@ export interface MasterIngredientApplicabilityScreenRow {
 }
 
 function screenOne(ingredient: UniversalIngredient, category: ProductCategoryId): Pick<MasterIngredientApplicabilityScreenRow, 'preliminaryDisposition' | 'rationale' | 'criticalUnknowns' | 'finalApplicability'> {
-  const c = ingredient.category.toLowerCase();
+  const route = resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name });
+  const c = route?.role === 'POLYMERIC_DISPERSANT' ? 'polymer & thickener'
+    : route?.routingClass === 'ANIONIC' ? 'anionic surfactant'
+    : route?.routingClass === 'AMPHOTERIC' ? 'amphoteric surfactant'
+    : route?.routingClass === 'NONIONIC' ? 'nonionic surfactant'
+    : ingredient.category.toLowerCase();
   const proprietary = ingredient.identityType === 'PROPRIETARY_BLEND' || ingredient.casStatus === 'PROPRIETARY' || (!ingredient.casNumber && ingredient.identityType !== 'MULTI_COMPONENT_MIXTURE');
   const unknowns = [
     ...(proprietary ? ['Full composition / identity disclosure'] : []),
@@ -44,8 +54,26 @@ function screenOne(ingredient: UniversalIngredient, category: ProductCategoryId)
     'Category-specific use level, process, compatibility and finished-formula test'
   ];
 
+  if (route?.role === 'IDENTITY_UNRESOLVED') {
+    return {
+      preliminaryDisposition: 'IDENTITY_OR_EVIDENCE_UNKNOWN',
+      rationale: 'Governed identity crosswalk is blocked by a catalog name/INCI/CAS conflict; no functional applicability conclusion is permitted.',
+      criticalUnknowns: [...unknowns, 'Exact manufacturer product code, full composition and corrected identity crosswalk'],
+      finalApplicability: 'NOT_APPROVED'
+    };
+  }
+
   if (proprietary) {
     return { preliminaryDisposition: 'IDENTITY_OR_EVIDENCE_UNKNOWN', rationale: 'Proprietary or composition-incomplete material: no category compatibility can be concluded from trade name/function alone.', criticalUnknowns: unknowns, finalApplicability: 'NOT_APPROVED' };
+  }
+
+  if (route?.role === 'POLYMERIC_DISPERSANT' && category === 'FABRIC_SOFTENER') {
+    return {
+      preliminaryDisposition: 'CHEMISTRY_CONFLICT_RISK',
+      rationale: 'Anionic polymeric dispersant is not a primary anionic surfactant, but may interact with cationic softener actives; exact compatibility testing is required.',
+      criticalUnknowns: [...unknowns, 'Turbidity/precipitation and deposition testing with the exact cationic softener system'],
+      finalApplicability: 'NOT_APPROVED'
+    };
   }
 
   if (c === 'anionic surfactant' && category === 'FABRIC_SOFTENER') {
@@ -112,6 +140,11 @@ export const MASTER_INGREDIENT_APPLICABILITY_SCREEN: MasterIngredientApplicabili
         casNumber: ingredient.casNumber,
         inciName: ingredient.inciName,
         identityType: ingredient.identityType,
+        functionalRoutingClass: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.routingClass ?? null,
+        functionalRole: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.role ?? null,
+        chargeBehavior: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.chargeBehavior ?? null,
+        identityRouteStatus: resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name })?.role === 'IDENTITY_UNRESOLVED' ? 'BLOCKED' as const
+          : resolveFunctionalRoutingForIngredient({ id: ingredient.id, name: ingredient.name }) ? 'ROUTED' as const : 'UNMAPPED' as const,
         commercialActiveDefaultPct: ingredient.activeDefault,
         supplierActiveMatterPct: ingredient.surfactantActiveMatterPct ?? ingredient.activeMatter,
         phMin: ingredient.phMin,
