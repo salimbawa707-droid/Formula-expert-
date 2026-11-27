@@ -287,7 +287,7 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // =========================================================================
   // 6.1 Anionic + Cationic precipitation conflict
   const compClash = calculateFormulationCompatibility([
-    { name: 'LABSA 96%', percentage: 10, role: 'Anionic Surfactant' },
+    { id: 'labsa-96', name: 'LABSA 96%', percentage: 10, role: 'Anionic Surfactant' },
     { name: 'Cetrimonium Chloride', percentage: 5, role: 'Cationic Surfactant' }
   ]);
   assert('6. Compatibility', '6.1 LABSA without a resolvable final-formula pH is not promoted to a fixed-charge clash', compClash.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), false, false);
