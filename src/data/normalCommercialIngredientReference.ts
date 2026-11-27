@@ -126,6 +126,86 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     sourceName: 'STPP Group Sodium Sulphate Anhydrous published technical specification',
     applicabilityNote: 'The supplier publishes multiple grades (TOP/1st/2nd). Do not select TOP grade automatically; the user's actual grade remains unknown. Moisture and ionic impurities matter for powder performance.'
   }
+
+  {
+    catalogIngredientIds: ['sles-28', 'sles-28-tech'],
+    displayName: 'Sodium Laureth Sulfate',
+    referenceGrade: 'SLES 28% liquid',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      activeMatter: { value: '28 ± 1', unit: '% w/w', basis: 'as supplied' },
+      pH: { value: '7–9', unit: 'pH', conditions: '5% aqueous solution' },
+      unsulfatedMatterMax: { value: 1.5, unit: '%' },
+      sodiumChlorideMax: { value: 0.5, unit: '% as NaCl' }
+    },
+    sourceUrl: 'https://alliedinds.com/download/tds_file/HpaHo47EmPh2EQGmE4OuCCGxxtUMRK0aOaossTsu.pdf',
+    sourceName: 'Allied Group SLES 28% Technical Data Sheet, product code ACSCSLES28',
+    applicabilityNote: 'One supplier-published 28% liquid grade. Other SLES 28 products may have different EO distribution, pH test concentration, salt and unsulfated matter limits.'
+  },
+  {
+    catalogIngredientIds: ['sles-70', 'sles-70-tech'],
+    displayName: 'Sodium Laureth Sulfate',
+    referenceGrade: 'SLES 70% paste',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      activeMatter: { value: '68–72', unit: '% w/w', basis: 'as supplied' },
+      freeOilMax: { value: 2.5, unit: '%' },
+      sodiumChlorideMax: { value: 0.5, unit: '%' },
+      sodiumSulfateMax: { value: 1.5, unit: '%' },
+      pH: { value: '7.5–9', unit: 'pH', conditions: '5% solution' },
+      dioxaneMax: { value: 50, unit: 'ppm' }
+    },
+    sourceUrl: 'https://www.sahar-express.com/sles/',
+    sourceName: 'Sahar Express SLES N70 published technical data',
+    applicabilityNote: 'Published supplier data for SLES N70. Do not apply to the SLES 28 liquid or infer exact EO distribution from the generic name; the grade and method remain supplier-dependent.'
+  },
+  {
+    catalogIngredientIds: ['naoh-flakes-99', 'naoh-flakes-99-tech'],
+    displayName: 'Sodium Hydroxide',
+    referenceGrade: 'Caustic soda flakes, dry-basis commercial grade',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      purityMin: { value: 99, unit: '% NaOH', basis: 'dry basis' },
+      sodiumCarbonateMax: { value: 0.4, unit: '% Na2CO3' },
+      sodiumChlorideMax: { value: 200, unit: 'ppm' },
+      nickelMax: { value: 5, unit: 'ppm' }
+    },
+    sourceUrl: 'https://bci.sa/media/212/Caustic-Soda-Flakes_TDS.pdf',
+    sourceName: 'BCI Caustic Soda Flakes Technical Data Sheet',
+    applicabilityNote: 'Dry-basis purity is not automatically the as-supplied assay. Hygroscopic flakes can absorb water; use the lot CoA for actual neutralization stoichiometry. Not applicable to 50% lye.'
+  },
+  {
+    catalogIngredientIds: ['sodium-chloride-uni', 'sodium-chloride-uni-tech'],
+    displayName: 'Sodium Chloride',
+    referenceGrade: 'Refined industrial / vacuum salt reference',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      industrialAssay: { value: '97–99', unit: '% NaCl' },
+      vacuumSaltAssay: { value: '99.5–99.9', unit: '% NaCl' },
+      industrialMoistureMax: { value: '0.2–0.5', unit: '%', basis: 'published range' },
+      industrialInsolublesMax: { value: '0.05–0.2', unit: '%', basis: 'published range' }
+    },
+    sourceUrl: 'https://wschemicalsbv.com/product-nacl.html',
+    sourceName: 'WS Chemicals industrial and vacuum salt published specifications',
+    applicabilityNote: 'Industrial and vacuum grades are explicitly different. The catalog label vacuum salt does not prove the user's actual grade or anti-caking additive status.'
+  },
+  {
+    catalogIngredientIds: ['stpp-94', 'stpp-94-tech'],
+    displayName: 'Sodium Tripolyphosphate',
+    referenceGrade: 'STPP 94 detergent-industry grade',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      assayMin: { value: 94, unit: '% Na5P3O10' },
+      phosphorusPentoxideMin: { value: 57, unit: '% P2O5' },
+      ferricMax: { value: 0.008, unit: '%' },
+      waterInsolubleMax: { value: 0.1, unit: '%' },
+      pH: { value: '9.2–10.0', unit: 'pH', conditions: '10 g/L solution' },
+      bulkDensity: { value: '0.85–0.99', unit: 'g/cm3' }
+    },
+    sourceUrl: 'https://stppgroup.com/products/detergent-chemicals/sodium-tripolyphosphate/',
+    sourceName: 'STPP Group Sodium Tripolyphosphate published technical specification',
+    applicabilityNote: 'This is a phosphate builder reference and does not meet a phosphate-free product constraint. Phase/applicability gates remain separate.'
+  },
 ];
 
 export function getNormalCommercialIngredientReference(catalogIngredientId: string) {
