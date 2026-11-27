@@ -95,6 +95,15 @@ const duplicateReplicate = proposal([
 ]);
 check('duplicate sample replicate is deduplicated', duplicateReplicate?.evidenceReplicateCount === 3, duplicateReplicate?.evidenceReplicateCount, 3);
 
+// Repeated rows for one sample without replicate numbers are also deduplicated.
+const missingReplicateNumber = proposal([
+  record({ id: 'missing-rep-a', formulaId: 'F1', value: 10, sampleId: 'S1' }),
+  record({ id: 'missing-rep-b', formulaId: 'F1', value: 10, sampleId: 'S1' }),
+  record({ id: 'missing-rep-c', formulaId: 'F2', value: 20, sampleId: 'S2' }),
+  record({ id: 'missing-rep-d', formulaId: 'F3', value: 30, sampleId: 'S3' })
+]);
+check('same sample without replicate number is deduplicated', missingReplicateNumber?.evidenceReplicateCount === 3, missingReplicateNumber?.evidenceReplicateCount, 3);
+
 // Conflicting values for one sample/replicate make that formula version ambiguous and excluded.
 const conflictingDuplicate = proposal([
   record({ id: 'conf-a', formulaId: 'F1', value: 10, sampleId: 'S1', replicateNumber: 1 }),
