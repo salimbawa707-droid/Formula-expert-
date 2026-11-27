@@ -246,7 +246,8 @@ export class HLBEngine {
     ) {
       return {
         hlb: Number(canonicalMatch.hlb),
-        dataSource: 'authoritative',
+        // Functional-route catalog values are screening references until supplier-grade evidence is attached.
+        dataSource: functionalRoute ? 'estimated' : 'authoritative',
         activeMatterPct,
         category: resolvedCategory,
         isSurfactant: true,
