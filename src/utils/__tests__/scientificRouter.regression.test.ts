@@ -2,6 +2,7 @@ import {
   CANONICAL_PRODUCT_CATEGORY_IDS,
   getProductCategory,
 } from '../../domain/productTaxonomy';
+import type { ProductCategoryId } from '../../domain/productTaxonomy';
 import { isMetricApplicable } from '../../components/aiformulator/constants';
 import {
   SCIENTIFIC_PRODUCT_PROFILES,
@@ -10,6 +11,7 @@ import {
   isEngineApplicable,
   getCalculationPolicy,
 } from '../../domain/scientificProductProfiles';
+import type { ScientificEngineId } from '../../domain/scientificProductProfiles';
 import {
   routeScientificExecution,
   isPowderCategory,
@@ -243,6 +245,46 @@ export function runScientificRouterTestSuite(): { passed: number; failed: number
   assert('Unknown category string fails safely and explicitly without fallback to LAUNDRY_LIQUID', unknownFailed, true, true);
 
   // 12. Engine applicability helpers return expected boolean flags
+  // Full 15-engine x 13-category applicability contract (195 independent matrix assertions).
+  const allCategories: readonly ProductCategoryId[] = CANONICAL_PRODUCT_CATEGORY_IDS;
+  const expectedEngineCategories: Record<ScientificEngineId, readonly ProductCategoryId[]> = {
+    PH_ENGINE: allCategories,
+    HLB_ENGINE: ['LAUNDRY_LIQUID', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'BATHROOM_CLEANER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'],
+    ACTIVE_MATTER_ENGINE: allCategories,
+    VISCOSITY_ENGINE: ['LAUNDRY_LIQUID', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER', 'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'],
+    POWDER_ENGINE: ['LAUNDRY_POWDER'],
+    CLEANING_PERFORMANCE_ENGINE: ['LAUNDRY_LIQUID', 'LAUNDRY_POWDER', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'TOILET_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'],
+    COMPATIBILITY_ENGINE: allCategories,
+    CHELATOR_ENGINE: ['LAUNDRY_LIQUID', 'LAUNDRY_POWDER', 'DISHWASH_MANUAL', 'DISHWASH_AUTOMATIC', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'BATHROOM_CLEANER', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'],
+    DENSITY_ENGINE: allCategories,
+    DILUTION_ENGINE: ['LAUNDRY_LIQUID', 'DISHWASH_MANUAL', 'FLOOR_CLEANER', 'MULTIPURPOSE_CLEANER', 'BATHROOM_CLEANER', 'GLASS_CLEANER', 'FABRIC_SOFTENER', 'HAND_WASH', 'KITCHEN_DEGREASER', 'CAR_SHAMPOO'],
+    LAB_HEALTH_ENGINE: allCategories,
+    GRADE_ENGINE: allCategories,
+    SPECIFICATION_ENGINE: allCategories,
+    EXPERT_REASONING_ENGINE: allCategories,
+    COSTING_ENGINE: allCategories
+  };
+  for (const [engineId, applicableCategories] of Object.entries(expectedEngineCategories) as [ScientificEngineId, readonly ProductCategoryId[]][]) {
+    for (const categoryId of allCategories) {
+      const expected = applicableCategories.includes(categoryId);
+      const actual = isEngineApplicable(categoryId, engineId);
+      assert(
+        `Full engine matrix: ${engineId} / ${categoryId}`,
+        actual === expected,
+        actual,
+        expected
+      );
+    }
+  }
+  for (const engineId of Object.keys(expectedEngineCategories) as ScientificEngineId[]) {
+    assert(
+      `Unknown category cannot route ${engineId}`,
+      isEngineApplicable('Alien Rocket Cleaner', engineId) === false,
+      false,
+      false
+    );
+  }
+
   // 12A. Category applicability is a single contract across taxonomy, profile, policy and UI metric gates.
   for (const categoryId of CANONICAL_PRODUCT_CATEGORY_IDS) {
     const definition = getProductCategory(categoryId);

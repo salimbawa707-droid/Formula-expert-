@@ -71,6 +71,30 @@ The taxonomy `activeMatterMinPct/activeMatterTargetPct` and profile `activeSurfa
 
 The other three categories (LAUNDRY_LIQUID, LAUNDRY_POWDER and DISHWASH_MANUAL) have taxonomy min/target equal to profile min/optimal. No active-matter range was silently rewritten in this pass.
 
+## Complete scientific profile engine applicability matrix
+
+The following matrix lists all 15 `ScientificEngineId` values and every canonical category enabled by the profile registry. The regression suite now asserts every engine/category pair (15 × 13 = 195 assertions), plus unknown-category rejection for every engine.
+
+| Engine ID | Applicable categories |
+|---|---|
+| PH_ENGINE | All 13 categories |
+| HLB_ENGINE | LAUNDRY_LIQUID, DISHWASH_MANUAL, DISHWASH_AUTOMATIC, FLOOR_CLEANER, MULTIPURPOSE_CLEANER, BATHROOM_CLEANER, HAND_WASH, KITCHEN_DEGREASER, CAR_SHAMPOO |
+| ACTIVE_MATTER_ENGINE | All 13 categories |
+| VISCOSITY_ENGINE | All liquid categories (12); not LAUNDRY_POWDER |
+| POWDER_ENGINE | LAUNDRY_POWDER only |
+| CLEANING_PERFORMANCE_ENGINE | All categories except FABRIC_SOFTENER |
+| COMPATIBILITY_ENGINE | All 13 categories |
+| CHELATOR_ENGINE | LAUNDRY_LIQUID, LAUNDRY_POWDER, DISHWASH_MANUAL, DISHWASH_AUTOMATIC, FLOOR_CLEANER, MULTIPURPOSE_CLEANER, BATHROOM_CLEANER, KITCHEN_DEGREASER, CAR_SHAMPOO |
+| DENSITY_ENGINE | All 13 categories |
+| DILUTION_ENGINE | LAUNDRY_LIQUID, DISHWASH_MANUAL, FLOOR_CLEANER, MULTIPURPOSE_CLEANER, BATHROOM_CLEANER, GLASS_CLEANER, FABRIC_SOFTENER, HAND_WASH, KITCHEN_DEGREASER, CAR_SHAMPOO |
+| LAB_HEALTH_ENGINE | All 13 categories |
+| GRADE_ENGINE | All 13 categories |
+| SPECIFICATION_ENGINE | All 13 categories |
+| EXPERT_REASONING_ENGINE | All 13 categories |
+| COSTING_ENGINE | All 13 categories |
+
+CMC and foam are intentionally not included in this 15-engine list because no `CMC_ENGINE` or `FOAM_ENGINE` exists in the profile type. Powder's internal foam and cleaning calculations are subfunctions of `POWDER_ENGINE`, not independent profile engines.
+
 ## Equation and input-unit audit
 
 ### 1. HLB blend
@@ -124,6 +148,63 @@ Implemented ideal Clint mixed-micelle rule:
 - Hardness: ppm as CaCO3; wash volume: L; dose: g; capacity: mg CaCO3-equivalent per g commercial chelator; batch mass: kg where batch scaling is reported.
 - This is stoichiometric capacity arithmetic/screening, not a complete conditional Ca/Mg speciation model: pH, competing ligands, ionic strength, precipitation kinetics and ligand protonation can change real free-ion concentrations.
 - Category hardness policy is applied before requiring scenario inputs; unknown categories use the explicit unknown policy rather than a guessed category.
+
+### 6. pH equilibrium/speciation
+
+The pH engine solves the electroneutrality residual:
+
+`F(pH) = Q_positive(pH) - Q_negative(pH) = 0`
+
+pH is defined from hydrogen-ion activity, `pH = -log10(a_H+)`. Polyprotic species are distributed by pKa-based ionization fractions; the water autoionization constant is temperature-dependent. Optional non-ideal modes calculate ionic strength `I = 0.5 × Σ(c_i z_i²)` and apply Davies or extended Debye–Hückel activity coefficients within the code's declared routing limits. The solver uses safeguarded Newton–Raphson with bracketed bisection fallback.
+
+- Ingredient mass: kg or % w/w on the supplied batch basis; batch mass: kg.
+- Temperature: °C; ionic strength: mol/L; species concentration: mol/L; pKa and pH: dimensionless.
+- A numerical root is withheld when recognized acid/base/buffer species or required assay data are insufficient. It is a model prediction, not a formula-specific laboratory measurement.
+
+### 7. Active matter and water balance
+
+`active_i_pct = rawDose_i_pct × activeAssay_i_pct / 100`
+
+`carrier_i_pct = rawDose_i_pct - active_i_pct`
+
+`batchActiveMass_i_kg = active_i_pct × batchMass_kg / 100`
+
+- Raw dose and assay: % w/w; batch mass: kg; output active/carrier masses: kg.
+- Water balance separates free added water from carried water introduced by aqueous commercial raw materials.
+- Missing or conflicting assays are exposed in provenance/diagnostics; grade names are not universally treated as lot-specific certificates.
+
+### 8. Powder mass balance and physical properties
+
+`formulaTotal_pct = Σ ingredientDose_pct`; `unassigned_pct = 100 - formulaTotal_pct`.
+
+- Ingredient dose: % w/w; batch size: kg; moisture: %; bulk density: g/cm³; particle size: source/test-specific units; flow outputs include dimensionless Carr/Hausner ratios and angle of repose in degrees.
+- Powder engine decomposes the formula into mass balance, ingredient classification, active matter, moisture/dry matter, builder/chelation, alkalinity, density/flow, pH, hardness, dissolution, foam, safety and stability checks.
+- It does not auto-fill missing powder mass with water or an invented filler. Powder pH uses a 1% aqueous slurry basis as stated by the engine.
+
+### 9. Density estimate
+
+`componentVolume_cm3 = componentMass_g / componentDensity_g_cm3`
+
+`mixtureDensity_g_cm3 = Σ(componentMass_g) / Σ(componentVolume_cm3)`
+
+- Formula percentages: % w/w; reference batch mass: g; component density: g/cm³; component volume: cm³; reported mixture density: g/cm³ and kg/m³.
+- The model assumes ideal volume additivity and uses name-mapped/reference component densities unless explicit density is supplied. It is a predicted screening estimate; packaging/fill decisions require measured density.
+
+### 10. Dilution
+
+`C1 × V1 = C2 × V2`; `V1 = C2 × V2 / C1`; `waterAdded = V2 - V1`.
+
+- C1 and C2 must use the same concentration basis; V1 and V2 use the same volume unit (the UI commonly uses L).
+- The function rejects zero/negative source concentration, nonpositive target volume, negative target concentration, and target concentration greater than source concentration.
+
+### 11. Rule/registry engines without one universal chemical equation
+
+- **Compatibility:** category-conditioned ingredient-pair and hazard rules produce alerts and a screening score; no universal scalar equation substitutes for compatibility testing.
+- **Lab health, grade and specification:** status/provenance/range gates; outputs depend on registered thresholds and evidence completeness, not a universal chemistry equation.
+- **Expert reasoning:** category-scoped rule/context assembly; not an independent physical predictor.
+- **Costing:** deterministic sum of ingredient quantity × entered unit price, with missing-price handling; it is commercial arithmetic, not a scientific performance model.
+- **Cleaning/CPI:** category-specific rule branches and weighted heuristic KPIs; the inventory labels this heuristic screening, not measured detergency.
+- **Foam kinetics:** no executable formula predictor is registered as a profile engine; the separately implemented foam-decay utility analyses measured time-series data only.
 
 ## Corrections applied in this branch
 
