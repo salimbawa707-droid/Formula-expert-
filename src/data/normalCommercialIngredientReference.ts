@@ -34,6 +34,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Linear Alkylbenzene Sulphonic Acid',
     referenceGrade: 'LABSA 96 commercial grade',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeContentMin: { value: 96, unit: '% w/w', basis: 'as supplied' },
       freeOilMax: { value: 1.5, unit: '% w/w' },
@@ -50,6 +53,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Linear Alkylbenzene Sulphonic Acid',
     referenceGrade: 'LABSA 90 commercial grade',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeContentNominal: { value: 90, unit: '%', basis: 'commercial grade designation' }
     },
@@ -62,6 +68,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium C14-16 Olefin Sulfonate',
     referenceGrade: 'AOS 38 liquid',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: '37–39', unit: '% w/w', basis: 'as supplied' },
       unsulfonatedMatterMax: { value: 2, unit: '% w/w' },
@@ -79,6 +88,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Carbonate Anhydrous',
     referenceGrade: 'Light soda ash, published manufacturer grade',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       totalAlkalinityMin: { value: 99, unit: '% as Na2CO3' },
       volatileMatterMax: { value: 0.8, unit: '%', basis: 'at packaging' },
@@ -98,6 +110,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Metasilicate Pentahydrate',
     referenceGrade: 'Pentahydrate 5H2O, published Indian supplier specification',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       sodiumOxide: { value: '28–30', unit: '% Na2O' },
       silica: { value: '28–30', unit: '% SiO2' },
@@ -114,6 +129,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Sulphate Anhydrous',
     referenceGrade: 'Anhydrous detergent-industry commercial specification',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assayTopMin: { value: 99.6, unit: '% Na2SO4', basis: 'TOP grade' },
       assayFirstMin: { value: 99, unit: '% Na2SO4', basis: '1st grade' },
@@ -131,6 +149,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Laureth Sulfate',
     referenceGrade: 'SLES 28% liquid',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: '28 ± 1', unit: '% w/w', basis: 'as supplied' },
       pH: { value: '7–9', unit: 'pH', conditions: '5% aqueous solution' },
@@ -146,6 +167,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Laureth Sulfate',
     referenceGrade: 'SLES 70% paste',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: '68–72', unit: '% w/w', basis: 'as supplied' },
       freeOilMax: { value: 2.5, unit: '%' },
@@ -163,6 +187,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Hydroxide',
     referenceGrade: 'Caustic soda flakes, dry-basis commercial grade',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       purityMin: { value: 99, unit: '% NaOH', basis: 'dry basis' },
       sodiumCarbonateMax: { value: 0.4, unit: '% Na2CO3' },
@@ -178,6 +205,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Chloride',
     referenceGrade: 'Refined industrial / vacuum salt reference',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       industrialAssay: { value: '97–99', unit: '% NaCl' },
       vacuumSaltAssay: { value: '99.5–99.9', unit: '% NaCl' },
@@ -193,6 +223,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Tripolyphosphate',
     referenceGrade: 'STPP 94 detergent-industry grade',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assayMin: { value: 94, unit: '% Na5P3O10' },
       phosphorusPentoxideMin: { value: 57, unit: '% P2O5' },
@@ -211,6 +244,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'C12-15 Alcohol Ethoxylate 7EO',
     referenceGrade: 'BIO-SOFT N25-7 representative C12-15 linear alcohol ethoxylate',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: 100, unit: '%', basis: 'as supplied' },
       cloudPoint: { value: 50, unit: '°C', conditions: '1% aqueous' },
@@ -227,6 +263,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'C12-15 Alcohol Ethoxylate 9EO',
     referenceGrade: 'BIO-SOFT EH-9 representative alcohol ethoxylate',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       cloudPoint: { value: 64, unit: '°C', conditions: '10 wt% actives aqueous solution' },
       hlb: { value: 12.5, unit: 'dimensionless' },
@@ -243,6 +282,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Tetrasodium Glutamate Diacetate',
     referenceGrade: 'Dissolvine GL-47-S, 47% solution',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assayAsGLDA_Na4Min: { value: 47.4, unit: '% w/w' },
       density: { value: 1.4, unit: 'g/cm3', conditions: 'approximate' },
@@ -260,6 +302,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Trisodium Methylglycinediacetate',
     referenceGrade: 'BASF Trilon M Liquid T, approx. 40% MGDA-Na3',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       concentrationAsMGDA_Na3: { value: '39–41', unit: '% w/w' },
       density: { value: '1.29–1.33', unit: 'g/cm3', conditions: '20°C' },
@@ -276,6 +321,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Trisodium Citrate Dihydrate',
     referenceGrade: 'USP/FCC/E331 commercial dihydrate specification example',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assay: { value: '99.0–100.5', unit: '%', basis: 'USP/FCC/E331 specification' },
       water: { value: '10.0–13.0', unit: '%', basis: 'dihydrate' },
@@ -292,6 +340,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Tetrasodium EDTA',
     referenceGrade: 'BASF Trilon BX Liquid, approx. 40% reference',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: 40, unit: '%', basis: 'approximate' },
       pH: { value: 11.5, unit: 'pH', conditions: '1% in distilled water' },
@@ -306,6 +357,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Detergent liquid protease preparation',
     referenceGrade: 'Novonesis Progress Go 100 L product-specific activity benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activity: { value: 150000, unit: 'KIPU-A/g', basis: 'specific commercial product as listed by distributor' },
       physicalForm: { value: 'liquid', unit: 'form' },
@@ -320,6 +374,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Detergent enzyme preparations — activity-unit reference rule',
     referenceGrade: 'Commercial detergent enzyme preparations; supplier-labelled activity',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activityBasis: { value: 'activity units per gram or millilitre, with named assay method and substrate', unit: 'method-specific' },
       massActiveMatter: { value: 'not a valid cross-enzyme potency metric', unit: 'rule' },
@@ -340,6 +397,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Carbomer 940 crosslinked polyacrylic acid',
     referenceGrade: 'Lubrizol Carbopol 940 NF specification benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       carboxylicAcidAssay: { value: '56–68', unit: '%', basis: 'Lubrizol method' },
       viscosity: { value: '40000–60000', unit: 'cP', conditions: '0.5 wt% mucilage; neutralized pH 7.3–7.8; Brookfield RVT 20 rpm, 25°C' },
@@ -355,6 +415,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: '1,2-Benzisothiazolin-3-one',
     referenceGrade: 'LANXESS PREVENTOL BIT 20 N aqueous-glycolic solution',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: 20, unit: '%', basis: 'product grade designation; verify exact regional TDS/CoA' },
       chemicalIdentity: { value: 'BIT', unit: 'active substance' },
@@ -369,6 +432,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: '2-Phenoxyethanol',
     referenceGrade: 'High-purity phenoxyethanol commercial specification example',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       purityMin: { value: 99, unit: '% by GC' },
       moistureMax: { value: 0.2, unit: '% by mass' },
@@ -385,6 +451,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'CMIT/MIT preservative blend',
     referenceGrade: 'KATHON CG/ICP commercial 1.5% active reference',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       totalActiveMatter: { value: 1.5, unit: '%', basis: 'published commercial product benchmark' },
       applicationPH: { value: '<8.5', unit: 'pH', conditions: 'published home-care application guidance' },
@@ -399,6 +468,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Commercial fragrance mixture for laundry and cleaning products',
     referenceGrade: 'Industry standard reference — IFRA product-category and supplier conformity framework',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       laundryDetergentCategory: { value: '10A', unit: 'IFRA category', conditions: 'hand wash and machine laundry detergents' },
       handDishwashingCategory: { value: '10A', unit: 'IFRA category', conditions: 'hand dishwashing detergents' },
@@ -415,6 +487,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Gluconate',
     referenceGrade: 'Commercial chelating-grade sodium gluconate powder',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assayMin: { value: 98, unit: '%' },
       lossOnDryingMax: { value: 0.5, unit: '%' },
@@ -433,6 +508,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Benzoate',
     referenceGrade: 'Food/FCC/USP commercial preservative-grade reference',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assayMin: { value: 99, unit: '%', basis: 'dried basis' },
       lossOnDryingMax: { value: 1.5, unit: '%' },
@@ -449,6 +527,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Potassium Sorbate',
     referenceGrade: 'Food additive E202 commercial powder specification',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       assay: { value: '99.0–101.0', unit: '%', basis: 'acidimetric, dried substance' },
       assayHPLC: { value: '98.0–102.0', unit: '%', basis: 'HPLC, dried substance' },
@@ -466,6 +547,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Alkyl polyglucoside C8–10 / APG 0810',
     referenceGrade: 'Commercial APG 0810 ≥50% active published specification example',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatterMin: { value: 50, unit: '%', basis: 'supplier published minimum; product variant dependent' },
       chemicalClass: { value: 'C8–10 alkyl polyglucoside', unit: 'identity' },
@@ -480,6 +564,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Lauryl/Myristyl glucoside APG',
     referenceGrade: 'BASF Glucopon 600 UP commercial APG benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: 50, unit: '%', basis: 'BASF product range card' },
       chemicalNature: { value: 'Lauryl/Myristyl Glucoside', unit: 'composition description' },
@@ -495,6 +582,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Lauramine Oxide',
     referenceGrade: 'Stepan AMMONYX LO commercial 30% active',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       activeMatter: { value: 30, unit: '%', basis: 'as supplied; amine oxide' },
       freeAmineMax: { value: 1, unit: '%', basis: 'product bulletin typical specification' },
@@ -512,6 +602,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Low-EO alcohol ethoxylate benchmark',
     referenceGrade: 'BASF Lutensol AO 3 adjacent C13–C15 oxo-alcohol 3EO benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalNature: { value: 'C13–C15 oxo alcohol + 3 EO', unit: 'composition description' },
       hlb: { value: 8, unit: 'dimensionless', basis: 'BASF product range card' },
@@ -526,6 +619,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'High-EO alcohol ethoxylate benchmark',
     referenceGrade: 'BASF Lutensol A 12 N C12–C14 fatty alcohol 12EO benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalNature: { value: 'C12–C14 fatty alcohol + 12 EO', unit: 'composition description' },
       cloudPoint: { value: '>100', unit: '°C', conditions: 'BASF Cloud Point Method A' },
@@ -541,6 +637,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Polyvinylpyrrolidone K30',
     referenceGrade: 'BASF Luviskol K 30 Powder commercial polymer benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       kValue: { value: '27–33', unit: 'K-value', conditions: '1% m/V in water' },
       solids: { value: '95–100', unit: '%', conditions: '140°C, vacuum, 60 min' },
@@ -557,6 +656,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Polyethylene Glycol 4000',
     referenceGrade: 'Industry reference framework for PEG 4000 molecular-weight grade',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       gradeIdentity: { value: 'PEG average molecular weight grade 4000', unit: 'nominal grade designation' },
       assay: { value: 'supplier- and pharmacopeia-grade specific; no universal numeric value assigned', unit: 'rule' },
@@ -571,6 +673,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Alkali-swellable emulsion (ASE) thickener',
     referenceGrade: 'Industry reference framework; exact Acrysol 33 grade TDS required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       polymerClass: { value: 'acidic alkali-swellable acrylic emulsion', unit: 'class' },
       neutralizationResponse: { value: 'viscosity development depends on neutralization, pH, electrolyte and surfactant matrix', unit: 'rule' },
@@ -587,6 +692,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'C12–15 alcohol ethoxylate 7EO — commercial variants',
     referenceGrade: 'BASF Lutensol A 7 N adjacent C12–14 fatty alcohol 7EO benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalNature: { value: 'C12–C14 fatty alcohol + 7 EO', unit: 'composition description' },
       cloudPoint: { value: 53, unit: '°C', conditions: 'BASF Cloud Point Method A' },
@@ -602,6 +710,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'C12–15 alcohol ethoxylate 9EO — commercial variants',
     referenceGrade: 'BASF Lutensol A 9 N adjacent C12–C14 fatty alcohol 9EO benchmark',
     evidenceClass: 'MANUFACTURER_TDS',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalNature: { value: 'C12–C14 fatty alcohol + 9 EO', unit: 'composition description' },
       cloudPoint: { value: 75, unit: '°C', conditions: 'BASF Cloud Point Method A' },
@@ -617,6 +728,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Nonylphenol ethoxylates NP-6 / NP-9 / NP-10',
     referenceGrade: 'Identity and regulatory reference only; no transferable commercial specification',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalFamily: { value: 'nonylphenol ethoxylate homolog distribution; average EO number is grade-defining', unit: 'identity rule' },
       catalogCasLimitation: { value: 'CAS 9016-45-9 is broad and does not distinguish EO number or homolog distribution', unit: 'identity limitation' },
@@ -632,6 +746,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Cocamide DEA',
     referenceGrade: 'Industry reference framework; exact fatty-chain distribution and residual amide/DEA specification required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalClass: { value: 'fatty acid diethanolamide; chain distribution and free DEA are grade-defining', unit: 'identity rule' },
       assay: { value: 'catalog nominal 85% is not supplier evidence; require exact TDS/CoA', unit: 'rule' },
@@ -646,6 +763,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Cocamide MEA',
     referenceGrade: 'Industry reference framework; exact fatty-chain distribution and residual free MEA specification required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       chemicalClass: { value: 'fatty acid monoethanolamide; chain distribution and free MEA are grade-defining', unit: 'identity rule' },
       assay: { value: 'catalog nominal 90% is not supplier evidence; require exact TDS/CoA', unit: 'rule' },
@@ -660,6 +780,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'PEG-40 Hydrogenated Castor Oil',
     referenceGrade: 'Compendial/industry identity framework; supplier grade TDS required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       identity: { value: 'ethoxylated hydrogenated castor oil; distribution and hydroxyl/saponification values are process dependent', unit: 'identity rule' },
       HLB: { value: 'supplier-specific; no universal HLB assigned', unit: 'rule' },
@@ -674,6 +797,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Polysorbate 20',
     referenceGrade: 'USP/NF compendial identity framework; exact supplier specification required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       identity: { value: 'polyoxyethylene (20) sorbitan monolaurate; commercial material is a distribution of components', unit: 'identity rule' },
       HLB: { value: 'commonly cited nominal HLB is not a lot assay or a universal measured constant', unit: 'rule' },
@@ -688,6 +814,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Polysorbate 80',
     referenceGrade: 'USP/NF compendial identity framework; exact supplier specification required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       identity: { value: 'polyoxyethylene (20) sorbitan monooleate; commercial material is a distribution of components', unit: 'identity rule' },
       HLB: { value: 'commonly cited nominal HLB is not a lot assay or a universal measured constant', unit: 'rule' },
@@ -702,6 +831,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Xanthan Gum 200 Mesh',
     referenceGrade: 'CAGXALTM200 food-grade 200 mesh supplier specification example',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       viscosityMin: { value: 1200, unit: 'cP', conditions: '1% solution; supplier method' },
       mesh: { value: 200, unit: 'mesh', basis: 'named grade' },
@@ -716,6 +848,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Sodium Carboxymethyl Cellulose (CMC)',
     referenceGrade: 'Detergent-grade CMC published grade family reference',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       technicalPowderViscosity: { value: '5–600', unit: 'mPa·s', conditions: '2% solution; grade-dependent range' },
       technicalPowderPurity: { value: '55–70', unit: '%', conditions: 'supplier grade family range' },
@@ -731,6 +866,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Hydroxypropyl Methylcellulose nominal 100,000 cps',
     referenceGrade: 'KIMA HPMC K100M adjacent 100k viscosity benchmark',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       viscosity: { value: '80,000–120,000', unit: 'cP', conditions: 'supplier apparent viscosity method; grade K100M' },
       pH: { value: '5–8', unit: 'pH', conditions: 'supplier method' },
@@ -747,6 +885,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Polyvinylpyridine N-Oxide (PVNO)',
     referenceGrade: 'Industry reference framework; exact polymer molecular weight and 40% solution grade TDS required',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       polymerIdentity: { value: 'polyvinylpyridine N-oxide; molecular weight and oxidation/structural specification are grade-defining', unit: 'identity rule' },
       solutionSolids: { value: 'catalog 40% is not supplier verification; obtain solids and viscosity on exact product', unit: 'rule' },
@@ -761,6 +902,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'PEG-120 Methyl Glucose Dioleate',
     referenceGrade: 'Yeser DOE120 supplier-published commercial TDS',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       pH: { value: '4.5–7.5', unit: 'pH', conditions: '10% aqueous solution, 25°C' },
       acidValueMax: { value: 1, unit: 'mg KOH/g' },
@@ -777,6 +921,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Acrylates Copolymer anti-fog polymer',
     referenceGrade: 'Identity-only reference; proprietary polymer composition and grade unresolved',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       identityLimitation: { value: 'CAS 25085-34-1 / INCI Acrylates Copolymer does not identify a unique anti-fog commercial polymer grade', unit: 'identity hold' },
       solidsAndIonicity: { value: 'require exact manufacturer TDS/CoA', unit: 'rule' },
@@ -791,6 +938,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Tallow amine ethoxylate / PEG-2 tallow amine identity hold',
     referenceGrade: 'Identity conflict hold; not a polymer grade and not proven to be an amine oxide',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       catalogDisplayConflict: { value: 'display name says amine oxide; INCI says PEG-2 Tallow Amine (ethoxylated amine)', unit: 'identity conflict' },
       activeAndComposition: { value: 'require exact CAS, manufacturer trade name, EO distribution, acid thickening test and CoA', unit: 'rule' }
@@ -804,6 +954,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Polyquaternium-37 cationic polymer',
     referenceGrade: 'Identity-confirmed polymer; commercial emulsion grade remains unverified',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       identity: { value: 'Polyquaternium-37; CAS 26161-33-1', unit: 'identity' },
       emulsionSolids: { value: 'catalog 30% is not verified without exact product TDS/CoA', unit: 'rule' },
@@ -818,6 +971,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'EO/PO block copolymer low-foam nonionic',
     referenceGrade: 'Industry reference framework; exact Pluronic PE 6400 grade/INCI crosswalk unresolved',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       polymerClass: { value: 'poly(ethylene oxide)-poly(propylene oxide) block copolymer', unit: 'identity family' },
       molecularWeightAndCloudPoint: { value: 'trade-grade-specific; no numeric values assigned without manufacturer bulletin', unit: 'rule' },
@@ -834,6 +990,9 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     displayName: 'Carbomer 940 catalog variants',
     referenceGrade: 'Industry reference framework; Lubrizol Carbopol 940 NF is a separate named benchmark',
     evidenceClass: 'INDUSTRY_REFERENCE',
+    supplierGradeStatus: 'UNVERIFIED',
+    lotCoAStatus: 'UNVERIFIED',
+    profileStatus: 'NORMAL_COMMERCIAL_REFERENCE',
     referenceValues: {
       polymerIdentity: { value: 'crosslinked polyacrylic acid / carbomer family', unit: 'identity' },
       variantSpecification: { value: 'technical, high-purity and custom-solution variants require separate supplier TDS/CoA', unit: 'rule' },
