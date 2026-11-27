@@ -99,3 +99,33 @@ Novonesis' published liquid-detergent examples report formulation inclusion leve
 
 ### Verification boundary
 All profiles remain `NORMAL_COMMERCIAL_REFERENCE`; `supplierGradeStatus=UNVERIFIED` and `lotCoAStatus=UNVERIFIED`. No supplier/lot verification or formula applicability approval is implied. Catalog active defaults remain untouched. Enzyme potency still requires the exact product assay unit, method, substrate, activity per g/mL and storage stability data. Standard/industry references are not supplier verification.
+
+
+## Catalog identity coverage and regression controls — 2026-11-27
+
+A catalog-wide pass over `UNIVERSAL_INGREDIENTS` identified **97 records** in the two requested categories (Nonionic Surfactant and Polymer & Thickener). The reference dataset now resolves all 97 IDs to exactly one reference profile. This includes base records and the catalog's technical, high-purity and custom-solution IDs where present. This is a mapping/coverage result, not proof that every suffix corresponds to a real, separately supplied grade.
+
+### Additional identity and evidence decisions
+- **NP-6 / NP-9 / NP-10:** grouped under a family identity/regulatory hold. Generic CAS 9016-45-9 does not distinguish average EO number or homolog distribution. No commercial assay or formula recommendation is inferred; jurisdictional review is mandatory.
+- **Cocamide DEA / MEA:** class identity only; catalog nominal 85%/90% values are not supplier evidence. Require exact chain distribution, residual free amine and nitrosamine controls.
+- **PEG-40 HCO / Polysorbate 20 / 80:** compendial/industry identity frameworks only; catalog HLB values are not treated as supplier-confirmed physical constants.
+- **Xanthan 200 mesh:** CAG 200-mesh food-grade specification example; not silently treated as detergent-grade equivalence.
+- **CMC:** detergent-grade supplier family ranges are recorded as grade-dependent; do not treat the family envelope as one exact SKU.
+- **HPMC 100k:** KIMA K100M supplier specification (80,000–120,000 cP) is an adjacent nominal-grade benchmark; its method and pharmaceutical-grade scope remain explicit.
+- **PVNO 40:** identity/application framework only; catalog 40% is not a verified solids assay.
+- **PEG-120 Methyl Glucose Dioleate:** Yeser DOE120 supplier-published TDS reference; no universal detergent viscosity or active matter inferred.
+- **Anti-fog Acrylates Copolymer:** generic CAS/INCI does not identify a unique anti-fog grade; performance and composition remain on hold.
+- **Tallow amine record:** flagged as an identity conflict. Display name says amine oxide while INCI says PEG-2 Tallow Amine; do not treat as a polymer or amine oxide until corrected.
+- **Polyquaternium-37 emulsion:** CAS/INCI identity is mapped; catalog 30% emulsion solids and anionic compatibility remain unverified.
+- **Pluronic PE 6400:** broad EO/PO CAS is insufficient to confirm the catalog Poloxamer 184 crosswalk; exact manufacturer grade bulletin required.
+- **Carbomer 940 variants:** separate framework profile added so the NF benchmark is not automatically copied to technical/pure/solution catalog suffixes.
+
+### Regression test added
+Added `scripts/test-nonionic-polymer-commercial-reference-coverage.ts` and wired it as the first test in `npm/bun run test:all`. The test asserts:
+1. all 97 nonionic/polymer catalog IDs resolve to one profile;
+2. there are no duplicate profile mappings;
+3. every profile keeps supplier-grade and lot-CoA status `UNVERIFIED`;
+4. every entry has a source URL and applicability boundary;
+5. NP entries remain on regulatory hold and tallow/PVNO/Pluronic identity caveats remain explicit.
+
+**Execution status:** the test has been added to the repository and included in `test:all`, but it has not yet been executed in a live CI run. Do not report it as passed until the CI log confirms it.
