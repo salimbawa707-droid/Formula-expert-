@@ -97,7 +97,6 @@ const intelligenceBlocked = traceCompatibilityReasoning([
   { id:'tallow-amine-oxide', name:'Tallow Amine Oxide Acid Thickener', category:'Polymer & Thickener', percentage:2 } as any
 ], 'LAUNDRY_LIQUID');
 assert(intelligenceBlocked.some(f => f.findingCode === 'ERR_INGREDIENT_IDENTITY_UNRESOLVED' && f.severity === 'FATAL'), 'ingredient intelligence must block unresolved identity instead of trusting its display label');
-assert(fs.existsSync ? true : true, '');
 const labsaCationicExpertReview = evaluateExpertReasoning({
   ingredients: [
     { name:'LABSA (Acid Slurry 90%)', category:'Anionic Surfactant', role:'Anionic Surfactant', percentage:5, activeMatterPct:90 } as any,
