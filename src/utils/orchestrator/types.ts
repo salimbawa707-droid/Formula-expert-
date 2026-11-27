@@ -189,6 +189,8 @@ export interface ActiveMatterResultOutput {
   status?: string;
   surfactantBreakdown: {
     anionic: number;
+    conditionalPHDependentAnionic: number;
+    conditionalAmineOxide: number;
     nonionic: number;
     amphoteric: number;
     cationic: number;
