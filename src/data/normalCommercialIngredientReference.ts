@@ -324,7 +324,13 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     referenceValues: {
       activityBasis: { value: 'activity units per gram or millilitre, with named assay method and substrate', unit: 'method-specific' },
       massActiveMatter: { value: 'not a valid cross-enzyme potency metric', unit: 'rule' },
-      storageStability: { value: 'must be validated in the finished detergent matrix over time', unit: 'rule' }
+      storageStability: { value: 'must be validated in the finished detergent matrix over time', unit: 'rule' },
+      proteaseExample: { value: 'Progress Go 100 L; Progress Uno 100 L', unit: 'named commercial liquid product examples' },
+      amylaseExample: { value: 'Amplify Prime 100 L; Stainzyme Plus Evity 48 T', unit: 'named commercial alpha-amylase examples' },
+      lipaseExample: { value: 'Lipex Evity 200 L; Lipex Evity 100 T', unit: 'named commercial lipase examples' },
+      cellulaseExamples: { value: 'Celluclean 5000 L (cleaning cellulase); Carezyme Premium 4500 L (care cellulase)', unit: 'named commercial cellulase examples; distinct functions' },
+      mannanaseExample: { value: 'Mannaway 200 L; Mannaway Evity 4.0 T', unit: 'named commercial mannanase examples' },
+      publishedFormulationUseLevels: { value: 'whitepaper examples only; protease 0.20–0.28%, amylase 0.03%, lipase 0.14–0.16%, mannanase 0.05%, cellulase 0.06–0.08%', unit: '% w/w of cited liquid laundry detergent examples', basis: 'Novonesis whitepaper; not transferable dosage recommendations or activity assays' }
     },
     sourceUrl: 'https://backend.novonesis.com/sites/default/files/document/2025-10/HHC_%20Whitepaper_final_enabling_greener_detergents_liquid_digital.pdf',
     sourceName: 'Novonesis Household Care liquid detergent whitepaper',
