@@ -744,6 +744,25 @@ export async function executeStagedScientificAnalysis(
     intermediate: phIntermediate
   });
 
+  // Resolve the Stage-3 conditional sarcosinate bucket only after PHEngineV2
+  // returns a converged in-domain formula pH. Missing/failed/low pH stays conditional.
+  const sarcosinateChargeResolved =
+    advancedPH.solverConverged &&
+    typeof advancedPH.pH === 'number' &&
+    Number.isFinite(advancedPH.pH) &&
+    advancedPH.pH >= 6.0;
+  if (sarcosinateChargeResolved && conditionalPHDependentAnionicPct > 0) {
+    anionicPct += conditionalPHDependentAnionicPct;
+    conditionalPHDependentAnionicPct = 0;
+    surfactantIntermediate.anionicPct = Number(anionicPct.toFixed(2));
+    surfactantIntermediate.conditionalPHDependentAnionicPct = 0;
+    (surfactantIntermediate as any).chargeResolutionBasis = 'CONVERGED_FORMULA_PH_GE_6';
+    intermediateResults.SURFACTANT_SCIENCE = surfactantIntermediate;
+  } else if (conditionalPHDependentAnionicPct > 0) {
+    (surfactantIntermediate as any).chargeResolutionBasis = 'CONDITIONAL_PH_MISSING_OR_BELOW_6';
+    intermediateResults.SURFACTANT_SCIENCE = surfactantIntermediate;
+  }
+
   // =========================================================================
   // STAGE 5: WATER HARDNESS TOLERANCE & CHELATION CAPACITY
   // =========================================================================
