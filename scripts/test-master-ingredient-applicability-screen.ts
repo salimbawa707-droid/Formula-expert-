@@ -21,8 +21,8 @@ const aristoSoftener = MASTER_INGREDIENT_APPLICABILITY_SCREEN.find(row => row.in
 assert.equal(aristoSoftener?.preliminaryDisposition, 'IDENTITY_OR_EVIDENCE_UNKNOWN', 'proprietary blend must remain unknown in every category');
 const labsaAutoDish = MASTER_INGREDIENT_APPLICABILITY_SCREEN.find(row => row.ingredientId === 'labsa-96' && row.productCategory === 'DISHWASH_AUTOMATIC');
 assert.equal(labsaAutoDish?.preliminaryDisposition, 'CONDITIONAL_SCREEN', 'automatic-dish surfactant needs low-foam grade evidence');
-assert.equal(summary.provenanceMetadataRecords, 3, 'source baseline provenance count must be visible');
-assert.equal(summary.missingPHRangeRecords, UNIVERSAL_INGREDIENTS.length, 'missing pH ranges must remain explicit');
+assert.equal(summary.provenanceMetadataRecords, UNIVERSAL_INGREDIENTS.filter(item => Boolean(item.provenance)).length, 'provenance count must reconcile to source records');
+assert.equal(summary.missingPHRangeRecords, UNIVERSAL_INGREDIENTS.filter(item => item.phMin == null || item.phMax == null).length, 'missing pH ranges must remain explicit');
 
 console.log('MASTER INGREDIENT APPLICABILITY SCREEN PASS');
 console.log(JSON.stringify(summary, null, 2));
