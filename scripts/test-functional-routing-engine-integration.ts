@@ -24,7 +24,7 @@ assert.equal(slsActive.isSurfactant, true);
 assert.equal(slsActive.surfactantType, 'anionic');
 const ldaoActive = ActiveMatterEngine.resolveIngredientActive(ldao);
 assert.equal(ldaoActive.isSurfactant, true);
-assert.equal(ldaoActive.surfactantType, 'amphoteric');
+assert.equal(ldaoActive.surfactantType, 'conditional', 'amine oxide has pH-dependent charge and must not be treated as fixed zwitterionic amphoteric');
 const lignoActive = ActiveMatterEngine.resolveIngredientActive(ligno);
 assert.equal(lignoActive.isSurfactant, false);
 assert.equal(lignoActive.surfactantType, 'none');
