@@ -86,6 +86,16 @@ const labsaCationicExpertReview = evaluateExpertReasoning({
 });
 assert(labsaCationicExpertReview.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'expert reasoning must report conditional pH-dependent LABSA/cationic risk');
 assert(!labsaCationicExpertReview.issues.some(issue => issue.id === 'anionic-cationic-conflict'), 'expert reasoning must not claim a fixed-charge precipitation event for acid-form LABSA without pH/speciation');
+const labsaCationicResolvedPH = evaluateExpertReasoning({
+  ingredients: [
+    { name:'LABSA (Acid Slurry 90%)', category:'Anionic Surfactant', role:'Anionic Surfactant', percentage:5, activeMatterPct:90 } as any,
+    { name:'Esterquat 90%', category:'Cationic Surfactant', role:'Cationic Surfactant', percentage:5, activeMatterPct:90 } as any
+  ],
+  productCategory:'FABRIC_SOFTENER',
+  calculatedPH:7.0
+});
+assert(labsaCationicResolvedPH.issues.some(issue => issue.id === 'anionic-cationic-conflict' && issue.severity === 'Critical'), 'measured formula pH 7 must resolve LABSA to anionic species for opposite-charge screening');
+assert(!labsaCationicResolvedPH.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'resolved formula pH must not retain the unresolved-speciation warning');
 
 const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
