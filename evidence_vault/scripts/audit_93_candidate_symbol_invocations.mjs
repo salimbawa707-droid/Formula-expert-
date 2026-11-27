@@ -26,7 +26,7 @@ function resolve(spec,from){const f=ts.resolveModuleName(spec,from,options,ts.sy
 function importedTarget(expr,bindings){
  while(ts.isParenthesizedExpression(expr)||ts.isAsExpression(expr)||ts.isTypeAssertionExpression(expr)||ts.isNonNullExpression(expr)) expr=expr.expression;
  if(ts.isIdentifier(expr)){const b=bindings.get(expr.text);if(b&&b.name!=='*')return {b,name:b.name};}
- if(ts.isPropertyAccessExpression(expr)&&ts.isIdentifier(expr.expression)){const b=bindings.get(expr.expression.text);if(b?.name==='*')return {b,name:expr.name.text};}
+ if(ts.isPropertyAccessExpression(expr)&&ts.isIdentifier(expr.expression)){const b=bindings.get(expr.expression.text);if(b)return {b,name:b.name==='*'?expr.name.text:b.name+'.'+expr.name.text};}
  return null;
 }
 function add(sf,node,b,name,kind,srcText,imp){
