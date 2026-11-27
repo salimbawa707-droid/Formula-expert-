@@ -26,8 +26,22 @@ function record(input: {
     qualityStatus: 'ACCEPTED',
     sourceType: 'LAB_MEASURED',
     categoryId: (input.categoryId === null ? undefined : input.categoryId ?? category) as any,
-    sampleId: input.sampleId,
-    replicateNumber: input.replicateNumber
+    sampleId: input.sampleId || `SAMPLE-${input.id}`,
+    batchId: `BATCH-${input.formulaId}`,
+    replicateNumber: input.replicateNumber ?? 1,
+    evidenceKind: 'INGREDIENT_COMPOSITION',
+    ingredientCanonicalId: 'sles',
+    ingredientName: 'SLES',
+    compositionBasis: 'W_W',
+    compositionMethod: 'GRAVIMETRIC_MASS_BALANCE',
+    compositionMethodDetails: 'Validated gravimetric SOP-01; w/w calculation',
+    instrumentId: 'BAL-01',
+    instrumentCalibrationReference: 'CAL-2026-001',
+    sourceDocumentReference: `LABBOOK-${input.id}`,
+    formulaCompositionReference: `FORMULA-SNAPSHOT-${input.formulaId}-${input.version || '1.0'}`,
+    sourceType: 'LAB_MEASURED',
+    qualityStatus: 'ACCEPTED',
+    provenance: 'MEASURED'
   };
 }
 
