@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
+import { pathToFileURL } from 'node:url';
+const tsModule = await import(pathToFileURL(process.env.TYPESCRIPT_PATH).href);
+const ts = tsModule.default || tsModule;
 
 const root=process.cwd(), src=path.join(root,'src'), out=path.join(root,'evidence_vault/forensic_reports/generated');
 const stamp='2026-11-27';

@@ -341,7 +341,11 @@ jobs:
         run: node evidence_vault/scripts/audit_93_candidate_capability_graph.mjs
 
       - name: Generate AST-backed 93-candidate symbol invocation map
-        run: node evidence_vault/scripts/audit_93_candidate_symbol_invocations.mjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/ts-parser" --no-save --ignore-scripts --no-audit --no-fund typescript@5.7.2
+          TYPESCRIPT_PATH="$RUNNER_TEMP/ts-parser/node_modules/typescript/lib/typescript.js" node evidence_vault/scripts/audit_93_candidate_symbol_invocations.mjs
 
       - name: Test Pušić extraction validator
         run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
