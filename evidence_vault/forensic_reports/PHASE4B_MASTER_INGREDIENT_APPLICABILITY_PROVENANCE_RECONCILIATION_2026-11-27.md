@@ -1,23 +1,22 @@
-# Phase 4B — Master Ingredient Applicability, Provenance and Dataset Ledger Reconciliation
+# Phase 4B — Master Ingredient, Identity Provenance and Dataset Ledger Reconciliation
 
 **Audit date:** 2026-11-27  
 **Base:** `main`  
 **Working branch:** `audit/phase4b-master-ingredient-applicability-provenance-2026-11-27`  
-**Review route:** owner-authorized AI desk-screen; no human review or approval is claimed.  
+**Review route:** owner-authorized AI source review; no human review or approval is claimed.  
 **Disposition:** Phase 4B OPEN; Phase 5 LOCKED.
 
-## 1. Canonical master ingredient source and baseline
+## 1. Canonical master ingredient catalog
 
-The authoritative source is `src/data/universalIngredientLibrary.ts` (`UNIVERSAL_INGREDIENTS`). A source-level scan of the current main file found:
+The authoritative source is `src/data/universalIngredientLibrary.ts` (`UNIVERSAL_INGREDIENTS`).
 
-- **430 records**, 430 unique IDs, 0 duplicate IDs.
-- **15 catalog classes**, not 13. The 13 are finished-product categories and are a separate taxonomy.
-- **5,590 ingredient × product-category pairs** are required (430 × 13).
-- CAS is null for 7 records; 423 records have a non-null CAS field. A CAS string alone does not establish grade purity or identity.
-- Structured `provenance` exists on only **3/430** records; only **1/430** has a `sourceUrl` in the provenance object.
-- No record has a populated `phMin` or `phMax`.
-- The catalog's `activeDefault` and HLB fields are metadata values; they are not automatically supplier assays or experimentally verified values.
-- Proprietary/composition-incomplete materials (including Aristo 9) must remain unknown until composition and grade evidence are supplied.
+- **430 ingredient records**, 430 unique IDs, zero duplicate IDs.
+- **15 raw-material catalog classes**. These are not the same thing as the 13 finished-product categories.
+- **423 records have a CAS string; 7 have null CAS.** A CAS string does not prove the exact commercial grade, chain-length distribution, EO distribution, assay, purity or supplier identity.
+- Structured `provenance` metadata exists on **3/430** records; only **1/430** has a URL in the provenance object.
+- No catalog ingredient has populated `phMin` or `phMax`.
+- No exact grade-specific supplier TDS/SDS/CoA/lot assay is attached to the 430 master records.
+- The catalog's `activeDefault`, HLB and descriptions are not automatically supplier assay values or measured grade properties.
 
 ### Catalog class distribution
 
@@ -40,118 +39,163 @@ The authoritative source is `src/data/universalIngredientLibrary.ts` (`UNIVERSAL
 | Acid & Descaler | 4 |
 | **Total** | **430** |
 
-## 2. Implemented 430 × 13 AI screening matrix
+## 2. 430 × 13 preliminary category applicability screen
 
-Added `src/data/masterIngredientApplicabilityScreen.ts`. It generates one row for every live master ingredient and every canonical product category. It is intentionally a **preliminary chemistry-risk screen**, not a final APPLICABLE/NOT_APPLICABLE approval.
+`src/data/masterIngredientApplicabilityScreen.ts` generates **5,590** ingredient/category rows from the live master catalog and canonical 13-category taxonomy.
 
-Each row carries:
-- stable ingredient ID/name, catalog class, CAS, INCI, identity type, and commercial-grade record lineage;
-- canonical product category;
-- preliminary disposition: `CONDITIONAL_SCREEN`, `IDENTITY_OR_EVIDENCE_UNKNOWN`, or `CHEMISTRY_CONFLICT_RISK`;
-- category-specific rationale;
-- explicit critical unknowns and evidence still required;
-- `finalApplicability: NOT_APPROVED` for every pair;
-- commercial active default (explicitly not an assay), any supplier active-matter field, pH bounds, manufacturer/product identity, and provenance source/URL/verification status when present;
-- whether the row has any provenance metadata.
+Each row retains:
+- canonical ingredient ID/name, CAS, INCI and identity type;
+- commercial active default (not treated as assay), any active-matter field, pH bounds, manufacturer/product identity and catalog provenance fields;
+- product category, preliminary chemistry disposition, rationale and unresolved evidence list;
+- `finalApplicability: NOT_APPROVED`.
 
-Screening rules deliberately flag:
-- anionic surfactant as a fabric-softener conditioning-active conflict risk;
-- alkaline builder/base versus acidic toilet/bathroom descaler subclasses;
-- acid/descaler versus alkaline laundry-powder, automatic-dishwash and kitchen-degreaser environments;
-- automatic-dishwash surfactants as conditional on low-foam, rinse and machine compatibility evidence;
-- enzyme, oxidizer, preservative, solvent, polymer, optical brightener and broad additive classes as requiring exact grade-specific evidence.
+The screen flags obvious chemistry risks and category-dependent evidence requirements. It is a preliminary AI chemistry-risk triage only; it does not approve a commercial ingredient grade, dose, safety or finished formula. No use range is invented.
 
-This matrix does **not** turn catalog class/name matching into scientific approval. Category subclass, supplier grade, active assay, concentration basis, pH stability, process, co-ingredients and measured compatibility/performance remain mandatory. Every generated row retains `NOT_APPROVED`; no concentration range is invented.
+Regression: `scripts/test-master-ingredient-applicability-screen.ts`, wired into `test:all`.
 
-Added `scripts/test-master-ingredient-applicability-screen.ts` and wired it into `test:all`. The regression checks full 430 × 13 coverage, unique IDs, canonical category count, complete rationales, explicit unknowns, proprietary blend fail-closed behavior, representative charge-class conflict handling, and zero final approvals.
+## 3. Identity SSOT crosswalk — newly reconciled
 
-## 3. Ingredient provenance disposition
+The repository's separate `src/domain/ingredients/ingredientIdentitySSOT.ts` contains **7 identity records**. Exact CAS **and** exact INCI matching against the master catalog yields:
 
-The catalog is not source-complete. Only three records have a structured provenance object and only one carries a provenance URL. Therefore **427 records do not have structured provenance metadata** in the master catalog. This is a catalog data-quality blocker, not something that can be repaired by inventing generic PubChem or supplier citations.
+| SSOT identity | Exact master catalog records |
+|---|---:|
+| LABSA | 5 |
+| Sodium hydroxide | 8 |
+| Citric acid | 4 |
+| Sodium bicarbonate | 4 |
+| Sodium sesquicarbonate | 4 |
+| PVNO | 4 |
+| Potassium xylene sulfonate | 4 |
+| **Total exact CAS+INCI crosswalk** | **33** |
 
-The AI screen records missing grade-specific TDS/SDS/CoA, assay, pH range, composition disclosure, compatibility and use-level evidence as unresolved. Do not use the current catalog defaults as verified supplier specifications. A follow-on evidence-enrichment pass must attach one exact source to each ingredient/grade, pin document identity/version and rights, and distinguish supplier assay from catalog defaults.
+Thus **33/430** master records have an exact CAS+INCI crosswalk to the current identity SSOT, while **397/430** do not. The seven SSOT identities are not seven supplier-grade dossiers: several catalog variants share one chemical identity while differing in concentration, form or commercial grade.
 
-## 4. Evidence-vault source and rights reconciliation
+Added:
+- `src/data/masterIngredientIdentityCoverage.ts`
+- `scripts/test-master-ingredient-identity-coverage.ts`
 
-The current `INITIAL_VAULT_STATE.evidence` contains **21 registered records**: EVD-001, EVD-002, and EVD-004–EVD-022. EVD-003 remains intentionally absent/quarantined and must not be fabricated.
+The crosswalk accepts only an exact CAS+INCI match to the same SSOT identity. A CAS-only or INCI-only match is not silently promoted. It explicitly labels every mapped row `NOT_ESTABLISHED_BY_IDENTITY_SSOT` for grade-specific evidence. The SSOT's generic source labels are retained as identity-level source metadata, not treated as attached source documents or supplier CoAs.
 
-Current structured rights states, read directly from the canonical registry:
+## 4. Ingredient provenance disposition
+
+Current counts:
+- Catalog provenance objects: **3/430**.
+- Catalog provenance URLs: **1/430**.
+- Exact identity SSOT CAS+INCI matches: **33/430**.
+- No exact identity SSOT match: **397/430**.
+- Exact supplier-grade TDS/SDS/CoA/lot assay attached to master records: **0/430**.
+
+This is not repaired by adding generic PubChem links. PubChem or an identity registry can support a discrete chemical identity lookup; it cannot establish commercial UVCB composition, surfactant EO distribution, active matter, purity, water content, impurity profile or the supplier's actual grade. Proprietary blends such as Aristo 9 remain unresolved until composition/grade documents are available.
+
+## 5. Evidence registry and source-register reconciliation
+
+The canonical `INITIAL_VAULT_STATE.evidence` now contains **25 evidence records**:
+- Existing EVD-001, EVD-002 and EVD-004–EVD-022 (EVD-003 remains absent/quarantined).
+- Newly registered EVD-023–EVD-026 for RepOD CMC, PSDI/NIST CMC, P2SURF mixed CMC and IUPAC pH standards.
+
+Rights-state counts after the four additions:
 
 | Rights status | Records |
 |---|---:|
-| PERMITTED_FOR_COMMERCIAL_REUSE | 7 |
+| PERMITTED_FOR_COMMERCIAL_REUSE | 11 |
 | REVIEW_PENDING | 10 |
 | RESTRICTED | 2 |
 | UNKNOWN | 2 |
-| **Total** | **21** |
+| **Total** | **25** |
 
-Current download states:
-- DOWNLOADED: 4 records (EVD-002, EVD-006, EVD-007, EVD-012).
-- NOT_DOWNLOADED: 15 records.
-- BLOCKED: 2 records (EVD-004 quarantine and EVD-013 retrieval block).
+Download-state counts:
+- DOWNLOADED: **8**
+- NOT_DOWNLOADED: **15**
+- BLOCKED: **2**
 
-The canonical `evidence_vault/datasets/source-register.csv` has **28 data rows**. It contains source rows for the Zenodo workbook components, SurfPro, mixed-CMC/reference sources, PubChem, NIST and EVD-013–022. A source-register row is not equivalent to an archived source file; source bytes, hashes and rights must be checked per item.
+The source register remains **28 data rows**. The new evidence records point to source-register rows already present:
+- EVD-023 ↔ `SRC-REPOD-CMC-IMF2OE`
+- EVD-024 ↔ `SRC-PSDI-CMC`
+- EVD-025 ↔ `SRC-P2SURF-MIXED-CMC`
+- EVD-026 ↔ `SRC-IUPAC-2002-PH-STANDARDS`
 
-### Important rights/provenance safeguards
+Derived PSDI slices (SLS, DDAO and detergent-homolog screen) remain subordinate to DS-007; they are not added as independent physical datasets or counted again.
 
-- SurfPro EVD-001/EVD-002 remains RESTRICTED under the repository's CC BY-NC-SA dataset terms; do not commercially ingest absent separate permission. Software and data terms are not interchangeable.
-- EVD-006/007/012 have commercial-reuse permissions recorded, but their scope is limited to their actual source data and attribution conditions.
-- EVD-013 item-level CC BY 4.0 is recorded, but the source PDF bytes remain blocked/not downloaded and no repository SHA-256 is present. License permission does not prove archival.
-- EVD-014 is article-level CC BY 4.0; source PDF is not archived in this repository.
-- EVD-015/016/018/019/020/021/022 remain REVIEW_PENDING. Public accessibility or an author-uploaded copy is not a commercial reuse license.
-- EVD-017 rights remain UNKNOWN; EU REACH text does not establish Indian regulatory compliance.
-- EVD-004 remains quarantined because source identity is unresolved.
+### Rights boundaries retained
 
-## 5. Dataset ledger reconciliation
+- SurfPro EVD-001/EVD-002 remains RESTRICTED under CC BY-NC-SA 4.0; no commercial ingestion absent separate permission.
+- EVD-006/007/012 and new EVD-023/024/025/026 have recorded open reuse terms within their actual scope and attribution obligations.
+- EVD-013 remains not archived / no repository hash.
+- EVD-014–022 retain their existing per-source pending, restricted, unknown or non-archived boundaries. Public access is not treated as commercial reuse permission.
+- EVD-004 remains quarantined due to unresolved citation identity.
 
-The canonical dataset inventory contains four records: DS-001, DS-002, DS-004 and DS-005. All four are marked `NUMERICALLY_INSPECTED`; all four are `DEFICIENT` for model validation readiness. The inspected row counts are not independent replicate counts.
+## 6. Dataset ledger — expanded from four to eight records
 
-| Dataset | Recorded rows | Inspection | Validation readiness | Remaining boundary |
-|---|---:|---|---|---|
-| DS-001 SurfPro | 1,624 | NUMERICALLY_INSPECTED | DEFICIENT | Pure/component surfactant reference; commercial reuse restricted; not mixed-formula validation. |
-| DS-002 Zenodo 18961871 | 11,626 | NUMERICALLY_INSPECTED | DEFICIENT | Numeric-bearing workbook rows, not independent samples; formulations undisclosed; no matched formula predictions. Per-workbook hashes live in parser/source manifests rather than one dataset hash field. |
-| DS-004 PhDat v4 | 143 chemical records | NUMERICALLY_INSPECTED | DEFICIENT | Phase-behavior evidence; zero formula-validation-eligible records; reacquire/hash-check source file 45187180 before any new use. |
-| DS-005 RepOD MKCDUM | 23 concentration-level rows | NUMERICALLY_INSPECTED | DEFICIENT | No raw replicate rows; PLL/RH concentration unit and Vmax volume-versus-height semantics unresolved; grouping audit needs source clarification. |
+The canonical dataset inventory now contains **8 records**, all explicitly `NUMERICALLY_INSPECTED` but **DEFICIENT** for finished-formula/model validation readiness.
 
-No dataset currently supplies eligible matched formula-prediction/observation pairs for the target engines. Consequently BLK-002 remains active. Parser success, numerical inspection and a CC BY license do not create model-validation eligibility.
+| Dataset | Rows | Columns | Evidence | What the count means | Readiness |
+|---|---:|---:|---|---|---|
+| DS-001 SurfPro | 1,624 | 31 | EVD-002 | Pure/component surfactant CSV records; not matched formula observations | DEFICIENT |
+| DS-002 Zenodo 18961871 | 11,626 | heterogeneous | EVD-006 | Numeric-bearing rows across 11 workbook sheets; not independent physical observations | DEFICIENT |
+| DS-004 PhDat | 143 | heterogeneous | EVD-007 | Chemical profile records; not formula-validation rows | DEFICIENT |
+| DS-005 RepOD MKCDUM | 23 | 23 | EVD-012 | 10 PGA_LAE + 13 PLL_RH concentration-level rows; not replicate count | DEFICIENT |
+| DS-006 RepOD cationic CMC | 202 | 15 | EVD-023 | Three source concentration-series files; not independent replicate count | DEFICIENT |
+| DS-007 PSDI/NIST CMC | 4,990 | 18 | EVD-024 | Historical measurement rows; companion 719-row compound table is a separate identity lookup | DEFICIENT |
+| DS-008 P2SURF mixed CMC | 979 | 5 | EVD-025 | Literature-compiled binary mixture composition points; not uniform independent experiments | DEFICIENT |
+| DS-009 IUPAC pH standards | 20 | 11 | EVD-026 | Selected buffer reference values; repository mapping columns are derived | DEFICIENT |
 
-## 6. Engine-count and historical accounting reconciliation
+### Dataset-specific reconciliation
 
-The canonical vault explicitly distinguishes unlike units:
-- 55 unique existing paths in the legacy engine manifest;
-- 61 engine-named source files excluding UI;
-- 64 engine-named files including UI;
-- 93 broad engine/calculator/router/workflow candidates;
-- 6 top-level ENG-001–ENG-006 vault registry records.
+**DS-006 — RepOD CMC:** 202 normalized measurement rows retain original source file, source line and source index. The source labels conductivity as mS; no cell constant is supplied, so specific conductivity cannot be calculated. Temperature, solvent/matrix, instrument, replicates and uncertainty are absent. Do not infer a validated CMC breakpoint.
 
-Historical 59, 64 and 97 claims are not interchangeable with those counts and remain unreproduced without their original source artifacts/counting rules. The historical 27,982 aggregate is not accepted as a verified physical-observation count; 29,474 is a heterogeneous arithmetic sum, not a replacement physical total.
+**DS-007 — PSDI/NIST:** 4,990 measurement rows and a separate 719-row compound table. Preserve original heterogeneous unit codes M/D/W/P/N/S/R; R means varied and is not convertible. Three reference codes remain unresolved (45005 ×2, 69016 ×1); compound 2 has a name/SMILES identity conflict; 115 compound identity entries are marked unknown. Full archive remains quarantined pending row-level curation.
 
-## 7. Closure decision
+**DS-008 — P2SURF:** 979 binary mixture CMC records, five columns. Literature-compiled rows are not automatically independent experiments or a uniform protocol. This is component-level mixed-CMC reference evidence only, not finished detergent formula validation.
 
-| Gate | Current disposition |
+**DS-009 — IUPAC pH standards:** 20 selected values, 11 columns. Repository `engine_recipe` and `mapping_note` fields are derived mappings, not source-reported observations. Benchmark scope is reference buffers at documented temperatures, not finished detergent formulas or concentrated builder matrices.
+
+Existing DS-001–DS-005 row semantics remain bounded by `PHASE4B_DATASET_ROW_COUNT_SEMANTICS_2026-11-25.md`. DS-002's four workbook hashes and sheet-level parser lineage remain in the Zenodo manifests/round-6 audit; its 11,626 is a row inventory, not a physical sample count.
+
+Added regression: `scripts/test-phase4b-dataset-ledger-reconciliation.ts`. It checks 25 evidence records, eight dataset records, unique IDs, every dataset-to-evidence link, source-register rows and exact parser-manifest row counts.
+
+## 7. Remaining blockers — not papered over
+
+1. **397 master ingredients lack exact CAS+INCI crosswalk to the current seven-entry identity SSOT.**
+2. **427 master ingredients lack structured provenance metadata; only one catalog provenance URL exists.**
+3. **0/430 master records have attached exact commercial-grade TDS/SDS/CoA/lot assay evidence.**
+4. EVD-013 is not archived/hash-pinned; EVD-014–022 retain source-specific archival or rights gaps.
+5. DS-006 lacks temperature, solvent/matrix, cell constant, instrument, replicate and uncertainty metadata.
+6. DS-007 retains three unresolved NIST reference codes and a compound identity conflict.
+7. DS-008 requires study/pair/condition grouping before any split or uncertainty analysis.
+8. DS-005 retains PLL_RH concentration-unit conflict and Vmax volume-versus-height ambiguity.
+9. DS-002 has no matched full formula inputs/predictions; worksheet row totals are not physical replicate counts.
+10. No eligible matched finished-formula prediction/observation pairs exist for the blocked target engines; BLK-002 remains active.
+11. ENG-005 remains unavailable at the audited repository head; no executable predictor is established.
+12. Historical 59/64/97 engine counts and 27,982 aggregate physical-observation claim are not reproduced as verified counts.
+
+## 8. Closure decision
+
+| Gate | Disposition |
 |---|---|
-| Master catalog count and ID uniqueness | AI source scan: 430 records, 430 unique IDs |
-| Ingredient × 13 category coverage | Implemented: 5,590 generated rows; regression gate added |
-| Preliminary chemistry conflict / unknown screening | Implemented as triage only; no final approvals |
-| Per-ingredient supplier-grade provenance | OPEN: 427 records lack structured provenance |
-| Grade-specific pH/assay/use-level evidence | OPEN: no catalog pH bounds populated |
-| Evidence registry identity / rights statuses | 21/21 structured; restrictions/pending/unknown remain |
-| Source archival and source hashes | PARTIAL: only four evidence records downloaded; additional source-specific archival remains |
-| Dataset inspection inventory | 4/4 inspected |
-| Dataset validation eligibility | 0/4 ready; BLK-002 active |
-| Historical accounting | Historical 59/64/97 and 27,982 claims not reproduced |
+| 430 ingredient source scan and unique IDs | PASS — source scan |
+| 430 × 13 applicability screen | IMPLEMENTED — preliminary triage only |
+| Exact identity SSOT crosswalk | 33 mapped; 397 unresolved |
+| Grade-specific supplier provenance | OPEN — 0/430 complete |
+| Evidence registry ↔ source register | 25 records; 28 source rows; source-specific gaps remain |
+| Dataset inventory | 8 records, all linked to evidence |
+| Numerical inspection | 8/8 records have numeric/source-structure inspection status |
+| Model-validation readiness | 0/8 READY; all 8 DEFICIENT |
+| Matched finished-formula validation pairs | 0 eligible |
 | Phase 4B | **OPEN** |
 | Phase 5 | **LOCKED** |
 
-**Decision:** Do not close Phase 4B and do not unlock Phase 5. The catalog screening and ledger reconciliation are materially advanced and reproducible, but evidence gaps are substantive: per-grade provenance, source archival, unresolved dataset semantics, and zero eligible matched formula-validation pairs. AI dual-pass review cannot authenticate missing supplier documents or manufacture experimental observations.
+**Decision:** Do not close Phase 4B and do not unlock Phase 5. The master catalog screen, identity crosswalk and expanded dataset/evidence ledger are now reproducible in code and tests, but supplier-grade provenance and finished-formula validation evidence are still missing. AI source review cannot authenticate missing supplier documents or manufacture experimental observations.
 
-## 8. Reproduction
+## 9. Reproduction
 
-- Canonical ingredient source: `src/data/universalIngredientLibrary.ts`
-- Category source: `src/domain/productTaxonomy.ts`
-- Generated matrix: `src/data/masterIngredientApplicabilityScreen.ts`
-- Regression: `scripts/test-master-ingredient-applicability-screen.ts`
-- Evidence registry: `src/domain/vault/initialData.ts`
+- Master ingredient source: `src/data/universalIngredientLibrary.ts`
+- Identity SSOT: `src/domain/ingredients/ingredientIdentitySSOT.ts`
+- Identity coverage: `src/data/masterIngredientIdentityCoverage.ts`
+- Applicability matrix: `src/data/masterIngredientApplicabilityScreen.ts`
+- Evidence and dataset registry: `src/domain/vault/initialData.ts`
 - Source register: `evidence_vault/datasets/source-register.csv`
-
-Run `bun run scripts/test-master-ingredient-applicability-screen.ts` and `bun run test:all`.
+- Tests:
+  - `bun run scripts/test-master-ingredient-applicability-screen.ts`
+  - `bun run scripts/test-master-ingredient-identity-coverage.ts`
+  - `bun run scripts/test-phase4b-dataset-ledger-reconciliation.ts`
+  - `bun run test:all`
