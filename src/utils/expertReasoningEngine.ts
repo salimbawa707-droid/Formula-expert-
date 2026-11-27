@@ -407,8 +407,8 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
     issues.push({
       id: 'ph-dependent-anionic-cationic-conditional',
       issue: 'Conditional Ionic Compatibility Risk (pH-Dependent Anionic Acid + Cationic Active)',
-      whyItMatters: 'Acid-form LABSA does not have a fixed anionic charge state until neutralization/speciation is established. The neutralized LAS species may ion-pair with cationic actives; do not declare compatibility or incompatibility from the legacy charge label alone.',
-      scientificBasis: 'Acid-base neutralization and pH-dependent sulfonic-acid/sulfonate speciation followed by electrostatic ion pairing.',
+      whyItMatters: 'The sarcosinate carboxylate is pH-dependent (reported pKa about 3.6). Below the conservative pH screening boundary, its anionic fraction and solubility cannot be treated as equivalent to the fully ionized sodium salt; a fixed-charge precipitation verdict would overstate certainty.',
+      scientificBasis: 'Henderson–Hasselbalch carboxylate speciation followed by possible electrostatic interaction with cationic actives; the current pH >= 6 boundary is a conservative screening rule, not a continuous speciation solver.',
       scientificType: 'PREDICTIVE',
       severity: 'High',
       whatToCheck: 'Verify neutralization equivalents and measured formula pH, then run a compatibility/precipitation test on the exact formula and grade.'

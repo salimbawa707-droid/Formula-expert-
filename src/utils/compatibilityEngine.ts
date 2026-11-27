@@ -212,13 +212,14 @@ export function calculateFormulationCompatibility(
         hasAnionic = true;
         anionicPct += pct;
         anionicChargeIngs.push(ing.name);
+        if (!isPolymericDispersant) {
+          hasAnionicSurfactant = true;
+          anionicSurfactantPct += pct;
+          anionicIngs.push(ing.name);
+        }
       } else {
+        // Conditional sarcosinate is not a fixed anionic category violation until pH/speciation is resolved.
         phDependentAnionicIngs.push(ing.name);
-      }
-      if (!isPolymericDispersant) {
-        hasAnionicSurfactant = true;
-        anionicSurfactantPct += pct;
-        anionicIngs.push(ing.name);
       }
     }
 

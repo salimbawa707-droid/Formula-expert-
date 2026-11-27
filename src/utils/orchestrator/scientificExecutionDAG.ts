@@ -556,7 +556,7 @@ export class ScientificExecutionDAG {
           const validation = validateActiveMatterInput(ing.activeMatterPct);
           const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
           // Unknown assay and unresolved identity are not assigned to a charge subtotal.
-          // pH-dependent amine oxide and acid-form LABSA are exposed separately from fixed-charge totals.
+          // pH-dependent amine oxide and sarcosinate are exposed separately from fixed-charge totals.
           if (route?.role === 'IDENTITY_UNRESOLVED' || route?.role === 'POLYMERIC_DISPERSANT') return;
           if (typeof resolvedActive === 'number' && Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100) {
             const activePct = ing.percentage * (resolvedActive / 100);

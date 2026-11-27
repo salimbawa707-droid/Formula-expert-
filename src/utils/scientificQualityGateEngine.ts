@@ -616,7 +616,9 @@ export function evaluateScientificQualityGate(
       });
       if (route?.role === 'IDENTITY_UNRESOLVED' || route?.role === 'POLYMERIC_DISPERSANT') return false;
       const isAnionic = route
-        ? route.routingClass === 'ANIONIC'
+        ? (route.chargeBehavior === 'PH_DEPENDENT_ANIONIC'
+            ? compatibilityPHAvailable && finalPH >= 6.0
+            : route.routingClass === 'ANIONIC')
         : (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls'));
       return pct > 0 && isAnionic;
     });
