@@ -27,7 +27,7 @@ assert.equal(rows.length, 979, 'P2SURF source row count must remain unchanged');
 assert.equal(mapped.length, rows.length, 'every source row must have one lineage-preserving grouping row');
 assert.equal(new Set(mapped.map(row => row[ai.source_line])).size, 979, 'source line numbers must be unique');
 assert.equal(mapped[0][ai.source_line], '2');
-assert.equal(mapped.at(-1)?.[ai.source_line], '980');
+assert.equal(mapped[mapped.length - 1]?.[ai.source_line], '980');
 const pairIds = new Set(mapped.map(row => row[ai.pair_group_id]));
 assert.equal(pairIds.size, 522, 'unordered SMILES pair count must be reproducible');
 const compositionKeys = mapped.map(row => [row[ai.pair_group_id], row[ai.canonical_fraction_a], row[ai.canonical_fraction_b]].join('|'));
