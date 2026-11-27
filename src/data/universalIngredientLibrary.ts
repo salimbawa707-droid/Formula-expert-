@@ -202,13 +202,22 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "id": "sas-60",
     "name": "Sodium Alkane Sulfonate 60% (SAS 60)",
     "category": "Anionic Surfactant",
-    "casNumber": "68037-49-0",
+    "casNumber": "97489-15-1",
+    "identityType": "COMMERCIAL_UVCB",
+    "casStatus": "ASSIGNED",
     "inciName": "Sodium C14-17 Sec-Alkyl Sulfonate",
     "function": "Secondary Alkane Sulfonate",
     "activeDefault": 60,
     "costPerKg": null,
     "hlb": 13.0,
-    "description": "Highly soluble anionic surfactant with superior grease cutting."
+    "description": "Aqueous C14-17 secondary alkane sulfonate sodium salt grade; verify exact supplier assay and identity against the purchased lot CoA/TDS.",
+    "provenance": {
+      "sourceType": "STANDARD_CHEMICAL",
+      "source": "WeylClean SAS 60 product data sheet; C14-17 secondary alkane sulfonate sodium salts",
+      "sourceUrl": "https://www.kkchemindia.com/wp-content/uploads/AZELIS-WeylClean-SAS-60_TDS86-002.pdf",
+      "verificationStatus": "NEEDS_VERIFICATION",
+      "notes": "CAS 97489-15-1 identifies the cited C14-17 secondary alkane sulfonate grade. This catalog record is not proof that a purchased supplier lot is WeylClean or meets its specification; confirm supplier identity and CoA before procurement/formulation approval."
+    }
   },
   {
     "id": "sarcosinate-30",
