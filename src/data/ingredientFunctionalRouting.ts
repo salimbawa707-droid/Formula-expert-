@@ -50,6 +50,15 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     caveats: ['Davies HLB 40 is a screening-model value only, not a supplier-grade measured property.', 'Public chemical identity does not verify either catalog grade concentration, EO distribution, residual 1,4-dioxane or lot assay.', 'Do not assign pure-molecule CMC to commercial ethoxylate distributions.']
   },
   {
+    ingredientIds: ['aos-38','aos-92'],
+    expectedCategory: 'Anionic Surfactant', expectedInci: 'Sodium C14-16 Olefin Sulfonate',
+    routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'FIXED_ANIONIC',
+    activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
+    identityScope: 'CAS 68439-57-6 and INCI identify the sodium C14-16 olefin sulfonate UVCB family: a mixture of alkene sulfonates and hydroxyalkane sulfonates, not one discrete pure molecule.',
+    sourceUrls: ['https://www.canada.ca/en/environment-climate-change/services/evaluating-existing-substances/screening-assessment-alkyl-sulfatesa-olefin-sulfonate-group-chemical-abstracts-service-registry-numbers-139.html','https://precision.fda.gov/uniisearch/srs/unii/O9W3D3YF5U','https://echa.europa.eu/es/substance-information/-/substanceinfo/100.158.197'],
+    caveats: ['38% liquid and 92% powder are separate catalog commercial grade claims; supplier TDS and matching lot CoA are not provided.', 'Do not transfer pure-molecule CMC to the UVCB distribution.', 'Catalog HLB 12.0 is not a supported Davies-scale value for this UVCB and is blocked.', 'AOS composition includes sulfonate/hydroxyalkane distribution and possible sulfate/salt/water fractions; actual assay and impurities require supplier evidence.']
+  },
+  {
     ingredientIds: ['capb-30-uni','capb-45'],
     expectedCategory: 'Amphoteric Surfactant', expectedInci: 'Cocamidopropyl Betaine',
     routingClass: 'AMPHOTERIC', role: 'ZWITTERIONIC_BETAINE', chargeBehavior: 'ZWITTERIONIC',
