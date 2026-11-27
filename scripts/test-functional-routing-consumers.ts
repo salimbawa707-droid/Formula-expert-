@@ -6,6 +6,7 @@ import { resolveFormulaIntelligenceRouting, resolveFunctionalRouting } from '../
 import { traceCompatibilityReasoning } from '../src/utils/ingredientIntelligenceEngine';
 import { RAW_MATERIAL_CATEGORIES } from '../src/data/rawMaterialCategories';
 import { classifyPowderIngredient } from '../src/utils/powderEngine/powderIngredientClassification';
+import { ActiveMatterEngine } from '../src/utils/activeMatterEngine';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
@@ -77,6 +78,9 @@ assert(cleaningPerformanceSource.includes('resolveFunctionalRoutingForIngredient
 assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'ZWITTERIONIC'"), 'cleaning performance must separate zwitterionic betaine from amine oxide');
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
+const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
+assert(activeMatterSource.includes("surf actantType: 'conditional'".replace(' ','')) || activeMatterSource.includes("surf actantType: 'conditional'".replace(' ','')), 'active matter engine must expose a separate conditional charge class');
+assert(activeMatterSource.includes('conditionalActivePct'), 'active matter report must expose conditional amine oxide active matter separately');
 const powderSource = readFileSync('src/utils/powderEngine/powderIngredientClassification.ts', 'utf8');
 assert(powderSource.includes("functionalRoute?.role === 'IDENTITY_UNRESOLVED'"), 'powder classifier must fail closed on unresolved identity');
 assert(blockedFormula.alerts.some(a => a.id === 'identity-unresolved-compatibility-block'));
@@ -93,6 +97,21 @@ assert.equal(powderAmineOxide.functionalClass, 'Amphoteric Surfactant', 'powder 
 const powderBlocked = classifyPowderIngredient({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide Acid Thickener', category:'Polymer & Thickener', percentage:2 } as any);
 assert.equal(powderBlocked.functionalClass, 'Unclassified Surfactant', 'powder classifier must not trust conflicting tallow-amine display name');
 assert.equal(powderBlocked.activeMatterPct, undefined, 'blocked powder identity cannot inherit active-matter default');
+const ldaoActiveResolution = ActiveMatterEngine.resolveIngredientActive({
+  id:'lauryl-amine-oxide',
+  name:'Lauryl Amine Oxide 30% (LDAO)',
+  percentage:2,
+  activeMatterPct:30
+} as any);
+assert.equal(ldaoActiveResolution.surfactantType, 'conditional', 'amine oxide active matter must retain a separate pH-dependent charge bucket');
+const ldaoActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{
+  id:'lauryl-amine-oxide',
+  name:'Lauryl Amine Oxide 30% (LDAO)',
+  percentage:2,
+  activeMatterPct:30
+} as any], 1);
+assert.equal(ldaoActiveReport.surfactants.conditionalActivePct, 0.6);
+assert.equal(ldaoActiveReport.surfactants.amphotericActivePct, 0, 'amine oxide must not be counted as fixed zwitterionic betaine');
 const ldaoNameOnlyCmc = resolveEng002PureComponent({ name:'Lauryl Amine Oxide 30% (LDAO)', casNumber:'1643-20-5', identityType:'SINGLE_SUBSTANCE' } as any);
 assert.equal(ldaoNameOnlyCmc.supported, false, 'name-only commercial amine oxide must not inherit pure C12 DDAO CMC');
 const lignoNameOnlyCmc = resolveEng002PureComponent({ name:'Sodium Lignosulfonate', casNumber:'8061-51-6', identityType:'SINGLE_SUBSTANCE' } as any);
