@@ -63,7 +63,7 @@ export interface DetailedLabEvidenceRecord extends LabMeasurementRecord {
   ingredientCanonicalId?: string;
   ingredientName?: string;
   compositionBasis?: 'W_W';
-  compositionMethod?: 'GRAVIMETRIC_MASS_BALANCE' | 'VALIDATED_ASSAY' | 'OTHER_VALIDATED_METHOD';
+  compositionMethod?: 'GRAVIMETRIC_ASSAY' | 'VALIDATED_ASSAY' | 'OTHER_VALIDATED_METHOD';
   compositionMethodDetails?: string;
   instrumentId?: string;
   instrumentCalibrationReference?: string;
