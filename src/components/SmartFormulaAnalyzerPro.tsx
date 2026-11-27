@@ -1162,7 +1162,7 @@ function SmartFormulaAnalyzerProInner({
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
-      doc.text(`Chemical Laboratory Diagnostic R&D Report`, 14, 28);
+      doc.text(`AI Scientific Screening & R&D Report`, 14, 28);
       doc.text(`Formula Name: ${formulaName || "Custom Sandbox"} | Product: ${productType} | Grade: ${grade}`, 14, 35);
       
       doc.setFontSize(8);
@@ -1231,7 +1231,7 @@ function SmartFormulaAnalyzerProInner({
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      doc.text("VALIDATED SCIENTIFIC LITERATURE REFERENCES:", 14, 268);
+      doc.text("REFERENCE & METHOD NOTES — NOT LOT OR LAB VALIDATION:", 14, 268);
       doc.setFont("helvetica", "normal");
       doc.text("• Surfactant HLB Blend: Griffin W.C. Calculation Method (1949/1954). Journal of the Society of Cosmetic Chemists.", 14, 274);
       doc.text("• Biodegradability: OECD 301 Protocols for Aerobic Aqueous Chemical Decomposition Standard.", 14, 280);
@@ -1805,14 +1805,14 @@ function SmartFormulaAnalyzerProInner({
       {/* EXPORT CENTER & BIBLIOGRAPHY */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-          <FileText size={14} className="text-teal-600" /> Professional Laboratory Export Center & References
+          <FileText size={14} className="text-teal-600" /> Scientific Screening Export & References
         </h4>
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={triggerPdfExport}
             className="bg-[#0f766e] hover:bg-[#0d645c] text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Download size={13} /> Export Laboratory PDF Report
+            <Download size={13} /> Export Scientific Screening PDF
           </button>
           <button
             onClick={triggerCsvExport}
