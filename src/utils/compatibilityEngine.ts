@@ -430,7 +430,7 @@ export function calculateFormulationCompatibility(
       ) && (
         String(a?.category || a?.role || '').toLowerCase().includes('cationic') ||
         String(b?.category || b?.role || '').toLowerCase().includes('cationic') ||
-        routeA?.routingClass === 'CATIONIC' || routeB?.routingClass === 'CATIONIC'
+        /cetrimonium|esterquat|benzalkonium|cationic|quat/i.test(String(a?.name || '') + ' ' + String(a?.category || a?.role || '') + ' ' + String(b?.name || '') + ' ' + String(b?.category || b?.role || ''))
       );
       if (decision?.status === 'REQUIRES_COMPATIBILITY_TEST' && !resolvedAnionicPair) matrixTestPairs.push(`${a.name} + ${b.name}: ${decision.note || 'Grade-specific compatibility test required.'}`);
     }
