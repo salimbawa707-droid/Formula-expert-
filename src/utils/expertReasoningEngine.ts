@@ -4,6 +4,7 @@ import { ActiveMatterEngine } from './activeMatterEngine';
 import { getProductCategory, normalizeProductCategory } from '../domain/productTaxonomy';
 import { calculateDynamicChelatorRequirement } from './chelatorEngine';
 import { INGREDIENT_INTELLIGENCE_REGISTRY } from './ingredientIntelligenceEngine';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 
 // =============================================================================
 // ENUMS & TYPES
@@ -215,6 +216,8 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   let totalPct = 0;
   let totalActiveSurfactantPct = 0;
   let anionicActivePct = 0;
+  let fixedAnionicActivePct = 0;
+  let conditionalAnionicActivePct = 0;
   let nonionicActivePct = 0;
   let amphotericActivePct = 0;
   let cationicActivePct = 0;
@@ -236,6 +239,13 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
     const name = (ing.name || '').trim();
     const n = name.toLowerCase();
     const role = (ing.role || (ing as any).category || activeRes.category || getAuditedIngredientCategory(name)).toLowerCase();
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ing as any).id,
+      canonicalIngredientId: (ing as any).canonicalIngredientId,
+      ingredientId: (ing as any).ingredientId,
+      name
+    });
+    const isPHDependentAnionic = route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
 
     totalPct += rawPct;
 
@@ -249,6 +259,8 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
 
     if (role.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos')) {
       anionicActivePct += activePct;
+      if (isPHDependentAnionic) conditionalAnionicActivePct += activePct;
+      else fixedAnionicActivePct += activePct;
       totalActiveSurfactantPct += activePct;
     } else if (role.includes('nonionic') || n.includes('lae') || n.includes('ethoxylate') || n.includes('glucoside') || n.includes('apg')) {
       nonionicActivePct += activePct;
@@ -287,7 +299,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   // =============================================================================
 
   // 1. Ionic Charge Conflict Check (Critical)
-  if (anionicActivePct > 0.1 && cationicActivePct > 0.1) {
+  if (fixedAnionicActivePct > 0.1 && cationicActivePct > 0.1) {
     issues.push({
       id: 'anionic-cationic-conflict',
       issue: 'Critical Ionic Precipitation Hazard (Anionic + Cationic Co-formulation)',
@@ -314,12 +326,24 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
         formulaVersion: '1.0.0',
         ingredientIds,
         relevantEngines: ['CompatibilityEngine'],
-        inputData: { anionicActivePct, cationicActivePct },
+        inputData: { fixedAnionicActivePct, conditionalAnionicActivePct, cationicActivePct },
         scientificOutputs: { compatibilityScore: 0, status: 'INCOMPATIBLE' },
         evidenceProvenance: 'THEORETICAL_PHYSICAL_CHEMISTRY',
         rulesTriggered: ['ANIONIC_CATIONIC_CHARGE_PAIR_COACERVATION'],
         uncertainty: 'HIGH_CONFIDENCE'
       }
+    });
+  }
+
+  if (conditionalAnionicActivePct > 0.1 && cationicActivePct > 0.1) {
+    issues.push({
+      id: 'ph-dependent-anionic-cationic-conditional',
+      issue: 'Conditional Ionic Compatibility Risk (pH-Dependent Anionic Acid + Cationic Active)',
+      whyItMatters: 'Acid-form LABSA does not have a fixed anionic charge state until neutralization/speciation is established. The neutralized LAS species may ion-pair with cationic actives; do not declare compatibility or incompatibility from the legacy charge label alone.',
+      scientificBasis: 'Acid-base neutralization and pH-dependent sulfonic-acid/sulfonate speciation followed by electrostatic ion pairing.',
+      scientificType: 'PREDICTIVE',
+      severity: 'High',
+      whatToCheck: 'Verify neutralization equivalents and measured formula pH, then run a compatibility/precipitation test on the exact formula and grade.'
     });
   }
 
