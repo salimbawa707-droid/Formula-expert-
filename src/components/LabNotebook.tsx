@@ -164,13 +164,14 @@ export default function LabNotebook(_props?: any) {
 
     const compositionMode = evidenceKind === 'INGREDIENT_COMPOSITION';
     const ingredientSlug = newIngredientId.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const ingredientNameSlug = newIngredientName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const newRecord: DetailedLabEvidenceRecord = {
       measurementId: 'rec-' + Date.now(),
       formulaId: newFormulaId || undefined,
       formulaVersion: newFormulaVersion,
       categoryId: newCategory,
       kpiId: compositionMode ? undefined : newKPI,
-      parameterKey: compositionMode ? `ingredient:${ingredientSlug}:percentage` : newKPI,
+      parameterKey: compositionMode ? `ingredient:${ingredientNameSlug}:percentage` : newKPI,
       value: valNum,
       unit: compositionMode ? '%' : newUnit,
       provenance: 'MEASURED',
