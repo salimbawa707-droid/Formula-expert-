@@ -313,3 +313,91 @@ Commits:
 - Test suite wiring: `80038e2c498c7f599876f3b622632c082b038fa0`.
 
 The 397 unmapped identity rows and all 5,590 NOT_APPROVED applicability rows are unchanged. No supplier-grade assay has been inferred.
+
+
+## Cross-category identity source review — polymers and thickeners (seventh tranche)
+
+Scope: all 12 candidate groups classified as `Polymer & Thickener` in the current candidate-group inventory (MICG-013, 035–037, 039, 065, 101, 105–110). The review distinguishes (a) polymer family identity, (b) grade/property claims, and (c) supplier/batch provenance. A public CAS or generic manufacturer document is not a substitute for the catalog supplier's current TDS, SDS and lot-specific CoA.
+
+| Group | Catalog identity / CAS | Evidence and provenance finding | Disposition |
+|---|---|---|---|
+| MICG-013 | Xanthan Gum; 11138-66-2; catalog says 200 mesh | FDA GSRS/PubChem supports xanthan gum identity and CAS. A separate CAG Hydrocolloids product data sheet identifies a 200-mesh food-grade product, but it does not establish that the catalog's supplier/product is that grade. Mesh, viscosity, moisture, ash, microbial limits and application-grade suitability need the actual supplier TDS/CoA. | Source-supported identity; 200-mesh and performance claims remain supplier-grade unverified. |
+| MICG-035 | Acrylates Copolymer; 25085-34-1 | PubChem/CAS Common Chemistry and Japan NITE identify 25085-34-1 as styrene-acrylic acid copolymer (acrylic acid-styrene polymer), not a generic Acrylates Copolymer identity. | **CAS/INCI identity conflict hold.** Do not silently change CAS or INCI; require the intended polymer composition and manufacturer identity document. |
+| MICG-036 | Acrylates Copolymer; 25212-88-8; catalog trade label “Acrysol 33 (ASE Polymer 30%)” | Sigma-Aldrich maps 25212-88-8 to methacrylic acid-ethyl acrylate copolymer / dispersion products (including Kollicoat MAE 30 DP). The catalog's generic Acrylates Copolymer + ASE/Acrysol 33 claim is not established by that evidence; the CAS is not sufficient to prove the exact commercial ASE product or its 30% solids. | **CAS/identity/grade hold.** Obtain manufacturer product code, exact INCI/chemical description, solids, neutralization and viscosity data. Do not substitute a related acrylic copolymer. |
+| MICG-037 | PEG-90 / PEG 4000; 25322-68-3 | Clariant Polyglykol 4000 product sheet and PCC POLIkol 4000 literature both identify PEG-90, CAS 25322-68-3, with mean molecular mass about 4,000. This supports the catalog's PEG-90 naming for PEG 4000. | Source-supported identity and grade-family nomenclature. Supplier-specific molecular-weight distribution, hydroxyl value, moisture and batch conformity remain unverified. |
+| MICG-039 | Polyvinylpyridine N-Oxide (PVNO); 26715-00-4; 40% liquid | PubChem identifies the vinylpyridine N-oxide repeat-unit precursor and CAS association; polymer reference literature identifies poly(4-vinylpyridine-N-oxide)/PVNO and its use as a laundry dye-transfer inhibitor. CAS/name support the polymer family, but the public evidence reviewed does not establish the catalog's 40% commercial liquid concentration or molecular-weight/viscosity grade. | Source-supported polymer-family identity; 40% active, molecular weight and supplier provenance unverified. |
+| MICG-065 | PEG-2 Tallow Amine; 61791-26-2; catalog ID `tallow-amine-oxide` | FDA food-contact inventory identifies CAS 61791-26-2 as PEG tallow amine / ethoxylated tallow alkylamines. The CIR review describes PEG-2 tallow amine. The CAS does not identify an amine oxide. The current catalog ID and product/function wording “amine oxide acid thickener” therefore overstate or conflate distinct chemical classes. | Source-supported PEG-2 tallow amine identity; **functional/nomenclature review flag**. Do not treat it as a proven amine oxide or assume acid-thickening performance without the manufacturer's TDS and compatibility data. |
+| MICG-101 | PEG-120 Methyl Glucose Dioleate; 86893-19-8 | Samyang KCI product data sheet identifies INCI, CAS and 100% composition, and provides product-specific specification/application information for Methyl Gluceth DOE 120KC. A separate supplier sheet also confirms PEG-120 Methyl Glucose Dioleate identity and thickening use. This supports the chemical identity, not the specific catalog lot or supplier. | Source-supported identity; supplier/lot provenance, assay and catalog-specific grade remain unverified. |
+| MICG-105 | Carbomer 940; 9003-01-4 | PubChem/HSDB identifies carbomer as high-molecular-weight crosslinked acrylic-acid polymer and explains that commercial carbomer grades differ in crosslinking and rheology. Acros COA and Spectrum specification examples identify Carbopol 940 at CAS 9003-01-4 and report 0.5% neutralized-solution viscosity ranges. This supports Carbomer 940 as a recognized grade designation, not the catalog supplier's grade. | Source-supported identity and grade family; actual viscosity, residual solvent, moisture, neutralization response and lot provenance unverified. |
+| MICG-106 | Polyquaternium-37; catalog CAS 9003-05-8; cationic emulsion, 30% active | PubChem, Sigma-Aldrich and a manufacturer/supplier identity listing identify CAS 9003-05-8 as polyacrylamide. ISF CHEM identifies Polyquaternium-37 as CAS 26161-33-1. The catalog's INCI and CAS were materially inconsistent. | **Catalog identity defect corrected:** CAS changed to 26161-33-1 while retaining the stable ingredient ID and Polyquaternium-37 INCI. The 30% active claim and emulsion carrier remain unverified pending supplier TDS/CoA. |
+| MICG-108 | PVP K30; 9003-39-8 | Supplier technical sheets identify PVP K30 at CAS 9003-39-8 and define K-value ranges around 27–32/33, with moisture and residual limits. This supports PVP family and K30 grade nomenclature, but not any current catalog supplier or batch. | Source-supported identity and grade designation; K-value, assay, residual monomer, moisture and lot provenance unverified. |
+| MICG-109 | Cellulose Gum / CMC; 9004-32-4 | PubChem identifies sodium carboxymethyl cellulose at CAS 9004-32-4. Macklin's current specification illustrates why grade must be explicit: degree of substitution 0.65–0.85 and viscosity 400–800 mPa·s at 2%, 25°C. Catalog's “technical” label does not specify DS or viscosity. | Source-supported identity; grade specification/DS/viscosity and supplier lot remain unverified. |
+| MICG-110 | Hydroxypropyl Methylcellulose (HPMC); 9004-65-3; 100K | PubChem supports the HPMC identity and CAS. Manufacturer data demonstrate that HPMC grades differ by methoxy/hydroxypropoxy substitution, viscosity and gel temperature, with viscosity classes ranging from low to very high. The catalog's “100K” label lacks a stated test concentration, temperature, method and substitution type. | Source-supported identity; 100K grade claim is not sufficiently specified or supplier-verified. Require substitution type and viscosity method/value. |
+
+### Seventh-tranche sources
+
+- FDA GSRS/PubChem, Xanthan Gum, CAS 11138-66-2: https://pubchem.ncbi.nlm.nih.gov/substance/472397308
+- CAG Hydrocolloids, Xanthan Gum Food Grade 200 Mesh PDS (2025): https://www.cagcolloids.com/es/download/Xanthan-Gum-Food-Grade-200-Mesh-PDS.pdf
+- PubChem, Styrene acrylic acid copolymer, CAS 25085-34-1: https://pubchem.ncbi.nlm.nih.gov/compound/22481611
+- Japan NITE J-CHECK, CAS 25085-34-1 substance identity: https://www.nite.go.jp/chem/jcheck/detail.action?cno=25085-34-1&mno=6-0140&request_locale=en
+- Sigma-Aldrich, CAS 25212-88-8 products / methacrylic acid-ethyl acrylate copolymer: https://www.sigmaaldrich.com/LI/en/search/25212-88-8?focus=products&page=1&perpage=30&sort=relevance&term=25212-88-8&type=cas_number
+- Clariant, Polyglykol 4000 FL/S/P/PF/PS/PSK product sheet (PEG-90, CAS 25322-68-3): https://media.knowde.com/image/upload/v1572023580/production/Collateral/25244/137358/TDS_Polyglykol_4000_PF_English.pdf
+- PCC Exol, POLIkol 4000 product brochure (PEG-90, approx. MW 4000): https://www.products.pcc.eu/wp-content/uploads/import/product/broszura/60707507-ceb5-4c0f-9d4b-0762c9cc9880/polikol-4000_broszura_en.pdf
+- PubChem, PVNO / 4-vinylpyridine 1-oxide identity: https://pubchem.ncbi.nlm.nih.gov/compound/3084465
+- DrugFuture, PVNO polymer identity and detergent dye-transfer-inhibitor literature: https://www.drugfuture.com/chemdata/PVNO.html
+- FDA food-contact inventory, PEG tallow amine CAS 61791-26-2: https://www.hfpappexternal.fda.gov/scripts/fdcc/index.cfm?id=PEGTALLOWAMINE&set=IndirectAdditives
+- CIR safety review of PEG compounds, PEG-2 tallow amine: https://pmc.ncbi.nlm.nih.gov/articles/PMC4505343/
+- Samyang KCI, Methyl Gluceth DOE 120KC TDS (INCI/CAS/composition/specification): https://www.specialchem.com/media/tds-documents/methyl-gluceth-doe-120kc_tds_250401.pdf
+- PubChem, Carbomer CAS 9003-01-4 and grade variability: https://pubchem.ncbi.nlm.nih.gov/compound/9003-01-4
+- Acros Organics, Carbopol 940 Certificate of Analysis: https://assets.thermofisher.com/TFS-Assets/GC/Acros-Organics/certificate/Certificates-of-Analysis/GEEL_27838_A0359196.pdf
+- Spectrum Chemical, Carbomer 940 NF specification: https://mtc-product-specification-store-production.s3.amazonaws.com/1711492059560_C1477-ProductSpecification.pdf
+- ISF CHEM, Polyquaternium-37 identity, CAS 26161-33-1: https://www.isfchem.com/en/products/polyquaternium-37/
+- PubChem, Polyacrylamide, CAS 9003-05-8: https://pubchem.ncbi.nlm.nih.gov/compound/Polyacrylamide
+- Scientific Polymer Products, Polyacrylamide TDS, CAS 9003-05-8: https://scipoly.com/wp-content/uploads/2020/09/001-tds.pdf
+- Unilong, PVP K30 TDS, CAS 9003-39-8 and K-value: https://unilongindustry.com/wp-content/uploads/2022/03/TDS-Polyvinylpyrrolidone-PVPK30-9003-39-8-1.pdf
+- Macklin, Sodium Carboxymethyl Cellulose specification, CAS 9004-32-4: https://api.macklin.cn/api/specification/download?item_code=S787399&lang=cn
+- PubChem, HPMC identity, CAS 9004-65-3: https://pubchem.ncbi.nlm.nih.gov/compound/137698383
+- Watson International, HPMC substitution and viscosity grade specifications: https://www.watson-int.com/hpmc-hydroxypropyl-methyl-cellulose-cas-9004-65-3/
+
+### Seventh-tranche disposition
+
+- Additional candidate groups examined: 12 (all candidate groups in the Polymer & Thickener class inventory).
+- Additional source-supported identity candidates: 9 (broad identity/grade-family support only; supplier grade and batch provenance remain separate).
+- Additional CAS/identity conflict holds: 2 (MICG-035, MICG-036).
+- Additional catalog identity correction implemented: 1 (MICG-106 Polyquaternium-37 CAS).
+- Additional functional/nomenclature review flags: 1 (MICG-065 PEG-2 Tallow Amine / “amine oxide” catalog wording).
+- Identity SSOT promotions to VERIFIED: 0.
+- Supplier-grade/lot-specific provenance records established: 0.
+- Formula applicability approvals: 0.
+
+### Controlled remediation — MICG-106 Polyquaternium-37
+
+A direct catalog correction was made on the PR branch after the source comparison showed that the prior CAS was polyacrylamide, not Polyquaternium-37.
+
+- Retained stable ingredient ID: `cationic-polymer-emulsion`.
+- Retained INCI: `Polyquaternium-37`.
+- Corrected CAS from `9003-05-8` (polyacrylamide) to `26161-33-1` (Polyquaternium-37).
+- Renamed the display label to “Polyquaternium-37 Cationic Polymer Emulsion”.
+- Added `scripts/test-polyquaternium37-identity.ts` and wired it into `test:all`.
+- Regression asserts the stable ID, INCI, corrected CAS, and absence of the old Polyacrylamide CAS pairing.
+
+Commits:
+- Catalog correction: `6a53ce2280a1f0b8727eb7077b84a6ca9d5ecf6f`.
+- Regression test: `5d245457c1418568e4ee142824c27e199ef6d400`.
+- Test suite wiring: `aed65b3f95023e6ff9a9d06b918e38f3a62e1fdc`.
+
+This correction fixes identity only. It does not validate the claimed 30% active concentration, polymer molecular weight, carrier composition, compatibility, performance or supplier batch.
+
+## Updated aggregate reconciliation (seven tranches)
+
+- Candidate groups/issues examined: 65.
+- Source-backed identity candidates: 49.
+- Explicit CAS/identity conflict or grade/specificity holds: 9.
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class / nomenclature review flags: 2 (Sodium Lignosulfonate; MICG-065 PEG-2 Tallow Amine catalog wording).
+- Catalog nomenclature/identity corrections implemented: 2 groups (MICG-046 mannanase; MICG-106 Polyquaternium-37).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade/lot-specific evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The category review is complete against the current 12-group Polymer & Thickener candidate inventory. “Complete” here means all available candidate groups were assessed and dispositioned; it does not mean every grade or supplier provenance is verified. The 397 unmapped identity crosswalk rows remain unchanged, and all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED. The new Polyquaternium-37 regression is wired into `test:all` but has not yet been executed in this environment; no CI PASS is claimed.
