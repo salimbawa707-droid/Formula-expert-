@@ -219,6 +219,11 @@ export default function LabNotebook(_props?: any) {
         setFormErrors(compositionValidation.errors);
         return;
       }
+      const promotionGate = canPromoteToLabValidated(newRecord);
+      if (!promotionGate.allowed) {
+        setFormErrors(promotionGate.reasons);
+        return;
+      }
       const duplicateIdentity = evidenceRecords.find(existing =>
         existing.evidenceKind === 'INGREDIENT_COMPOSITION' &&
         existing.formulaId === newFormulaId &&
@@ -1635,6 +1640,7 @@ export default function LabNotebook(_props?: any) {
                   <input
                     type="text"
                     value={newOperator}
+                    required={evidenceKind === 'INGREDIENT_COMPOSITION'}
                     onChange={(e) => setNewOperator(e.target.value)}
                     className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
                   />
