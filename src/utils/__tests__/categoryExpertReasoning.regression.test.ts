@@ -86,7 +86,7 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
   });
   assert(carShampooResult.issues.some((i) => i.id === 'carwash-wax-strip'), 'Test 5: Car shampoo flags alkaline wax stripping risk');
 
-  // Test 6: Route-first LABSA speciation — acid-form identity is conditional below neutralization pH.
+  // Test 6: LABSA sulfonic acid is effectively ionized in aqueous formula conditions.
   const labsa: FormulationIngredient = {
     id: 'labsa-90',
     canonicalIngredientId: 'labsa-90',
@@ -102,9 +102,9 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
     calculatedPH: 3.5,
   });
   assert(
-    acidicLabsaQuat.issues.some((i) => i.id === 'ph-dependent-anionic-cationic-conditional') &&
-      !acidicLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
-    'Test 6: Acid-form LABSA remains conditional below pH 6 and is not asserted as a fixed anionic clash'
+    acidicLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict') &&
+      !acidicLabsaQuat.issues.some((i) => i.id === 'ph-dependent-anionic-cationic-conditional'),
+    'Test 6: Acid-form LABSA is treated as aqueous anionic species; low formula pH does not suppress the charge classification'
   );
 
   const neutralizedLabsaQuat = evaluateExpertReasoning({
@@ -114,7 +114,7 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
   });
   assert(
     neutralizedLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
-    'Test 7: Neutralized LABSA routes as anionic for ionic compatibility screening at pH >= 6'
+    'Test 7: Neutralized LABSA remains anionic for ionic compatibility screening'
   );
 
   // Test 8: Amine oxide is pH-dependent, not a fixed nonionic or zwitterionic species.
