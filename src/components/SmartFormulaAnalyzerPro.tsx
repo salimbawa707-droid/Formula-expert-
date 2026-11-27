@@ -798,10 +798,21 @@ function SmartFormulaAnalyzerProInner({
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
 
     let surfactantSystem = "Anionic Base";
-    const hasAmphoteric = surfPct > 0 && safeIngs.some(i => (i?.name || "").toLowerCase().includes("capb"));
-    const hasNonionic = surfPct > 0 && safeIngs.some(i => (i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+    const getRoute = (i: any) => resolveFunctionalRoutingForIngredient({
+      id: i?.id,
+      canonicalIngredientId: i?.canonicalIngredientId,
+      ingredientId: i?.ingredientId,
+      name: i?.name
+    });
+    const hasAmphoteric = surfPct > 0 && safeIngs.some(i => getRoute(i)?.chargeBehavior === "ZWITTERIONIC");
+    const hasConditionalAmineOxide = surfPct > 0 && safeIngs.some(i => getRoute(i)?.chargeBehavior === "PH_DEPENDENT_AMINE_OXIDE");
+    const hasNonionic = surfPct > 0 && safeIngs.some(i => {
+      const route = getRoute(i);
+      return route ? route.routingClass === "NONIONIC" : ((i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+    });
     if (hasAmphoteric && hasNonionic) surfactantSystem = "Triple Synergy (Anionic + Amphoteric + Nonionic)";
     else if (hasAmphoteric) surfactantSystem = "Mild Blend (Anionic + Amphoteric)";
+    if (hasConditionalAmineOxide) surfactantSystem += " + pH-dependent amine oxide";
 
     let builderSystem = "Mineral Builders";
     const hasOrganicChelator = safeIngs.some(i => (i?.name || "").toLowerCase().includes("gluconate") || (i?.name || "").toLowerCase().includes("citrate") || (i?.name || "").toLowerCase().includes("glda"));
