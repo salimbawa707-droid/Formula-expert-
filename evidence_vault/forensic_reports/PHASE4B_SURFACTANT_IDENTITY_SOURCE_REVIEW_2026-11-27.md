@@ -223,3 +223,73 @@ No catalog record or executable crosswalk was altered. These four identity candi
 - Formula applicability approvals: 0.
 
 The fifth tranche covers four builder/neutralizer candidate groups. The 397 unmapped identity crosswalk rows remain unchanged because source review notes are not SSOT records. All 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Cross-category identity source review — builders, chelators and enzymes (sixth tranche)
+
+The review below covers 15 candidate groups from the existing 119-row candidate-group inventory. A source-backed identity means that a public registry, government/standards source or authoritative enzyme nomenclature source supports the broad name/CAS association. It does not mean that any of the four catalog grade variants has been verified.
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-007 | Sodium Metasilicate Pentahydrate | 10213-79-3 | PubChem CID 61495 identifies disodium metasilicate pentahydrate, formula Na2SiO3·5H2O, and lists CAS 10213-79-3. OECD SIDS separately identifies pentahydrate vs anhydrous vs nonahydrate forms. | Source-supported exact hydrate identity candidate. Do not collapse into anhydrous MICG-077. |
+| MICG-022 | Zeolite 4A | 1318-02-1 | PubChem's ECHA-sourced record identifies CAS 1318-02-1 as synthetic, cuboidal, crystalline, non-fibrous zeolite; the retrieved record does not establish the specific 4A framework/grade. | **Grade/specificity hold.** CAS supports a synthetic zeolite family, not a conclusive Zeolite 4A assignment. Require supplier specification including framework/type and exchange form. |
+| MICG-024 | Sodium Silicate | 1344-09-8 | PubChem and OECD/industry silicate references associate CAS 1344-09-8 with soluble sodium silicates. PubChem/HSDB notes commercial sodium silicates may be mixtures of molecular species with variable composition and SiO2:Na2O ratio. | Source-supported family identity candidate; exact commercial grade remains unresolved until modulus, solids, density and product specification are known. |
+| MICG-026 | Disodium EDTA | 139-33-3 | PubChem CID 57339238 identifies disodium EDTA, CAS 139-33-3, and separately distinguishes deprecated identifiers. | Source-supported identity candidate. Anhydrous vs hydrate state and assay remain grade-specific. |
+| MICG-032 | Trisodium Dicarboxymethyl Alaninate (MGDA) | 164462-16-2 | PubChem CID 11021984 identifies trisodium dicarboxymethyl alaninate, formula C7H8NNa3O6, CAS 164462-16-2. | Source-supported identity candidate. Commercial aqueous concentration/active assay and stereochemical/grade details remain unverified. |
+| MICG-042 | Etidronic Acid (HEDP) | 2809-21-4 | PubChem CID 3305 identifies etidronic acid, CAS 2809-21-4, also called HEDP, and describes chelating function. | Source-supported identity candidate. Catalog liquid/solids grade and neutralization state require supplier evidence. |
+| MICG-046 | Mannan Endoperoxidase | 37288-54-3 | FDA GRAS notice, EFSA assessment and IUBMB EC 3.2.1.78 identify CAS 37288-54-3 as mannan endo-1,4-beta-mannosidase / endo-beta-1,4-mannanase (mannanase), not “mannan endoperoxidase.” | **Nomenclature correction required.** CAS and intended mannanase family are supported, but catalog INCI/name is materially wrong. Do not silently edit; create a controlled alias/canonical-name correction with source and regression. |
+| MICG-053 | Sodium Gluconate | 527-07-1 | PubChem CID 23672301 identifies sodium gluconate, CAS 527-07-1, and ChEBI describes its chelating role. | Source-supported identity candidate. Hydrate/assay and supplier grade remain unverified. |
+| MICG-061 | Sodium Citrate | 6132-04-3 | PubChem CID 71474 identifies trisodium citrate dihydrate, CAS 6132-04-3, formula C6H5Na3O7·2H2O. | Source-supported dihydrate identity candidate. Do not treat anhydrous trisodium citrate as mass-equivalent; hydrate basis must be explicit. |
+| MICG-077 | Sodium Metasilicate Anhydrous | 6834-92-0 | PubChem, IPCS and OECD SIDS identify CAS 6834-92-0 as anhydrous sodium metasilicate; IPCS distinguishes pentahydrate CAS 10213-79-3 and nonahydrate CAS 13517-24-3. | Source-supported exact anhydrous identity candidate. Keep distinct from MICG-007 pentahydrate. |
+| MICG-095 | Sodium Triphosphate / STPP | 7758-29-4 | PubChem CID 24455 and ECHA identify pentasodium triphosphate / sodium tripolyphosphate, CAS 7758-29-4, formula Na5P3O10. Sigma-Aldrich lists technical grade 85% with this CAS. | Source-supported identity candidate. Vendor technical-grade listing is not the user's supplier CoA; do not apply 85% to the catalog. |
+| MICG-103 | Alpha-Amylase | 9000-90-2 | ECHA's 2025 enzyme RMOA lists alpha-amylase CAS 9000-90-2 as an enzyme identity. | Source-supported enzyme-family candidate. Enzyme source organism, activity units (e.g. U/g), formulation and stabilizers require supplier documentation. |
+| MICG-104 | Triacylglycerol Lipase | 9001-62-1 | ECHA's 2025 enzyme RMOA lists lipase CAS 9001-62-1. | Source-supported enzyme-family candidate. The broad CAS does not identify microbial source, lipase subtype, activity or liquid carrier. |
+| MICG-114 | Cellulase | 9012-54-8 | ECHA's 2025 enzyme RMOA and PubChem identify cellulase CAS 9012-54-8; PubChem also lists other cellulase-related CAS records, including 9041-92-3. | Source-supported enzyme-family candidate. Do not infer enzyme subtype, organism, activity or preparation from CAS alone. |
+| MICG-115 | Subtilisin | 9014-01-1 | ECHA's 2025 enzyme RMOA lists subtilisin CAS 9014-01-1. | Source-supported enzyme-family candidate. Protease subtype, source strain, activity units, stabilization and sensitization controls require supplier SDS/TDS/CoA. |
+
+### Sixth-tranche sources
+
+- PubChem, Sodium Metasilicate Pentahydrate, CID 61495: https://pubchem.ncbi.nlm.nih.gov/compound/Sodium%20metasilicate%20pentahydrate
+- OECD SIDS, Silicic Acid, Disodium Salt (anhydrous/pentahydrate/nonahydrate forms): https://hpvchemicals.oecd.org/ui/handler.axd?id=3cb4f34b-2afa-4004-b447-521188909235
+- PubChem, synthetic zeolite CAS 1318-02-1 (ECHA-sourced record): https://pubchem.ncbi.nlm.nih.gov/substance/505900759
+- PubChem, Sodium Silicate, CID 23266: https://pubchem.ncbi.nlm.nih.gov/compound/1344-09-8
+- PubChem, Disodium EDTA, CID 57339238: https://pubchem.ncbi.nlm.nih.gov/compound/Disodium-EDTA
+- PubChem, Trisodium Dicarboxymethyl Alaninate / MGDA, CID 11021984: https://pubchem.ncbi.nlm.nih.gov/compound/164462-16-2
+- PubChem, Etidronic Acid / HEDP, CID 3305: https://pubchem.ncbi.nlm.nih.gov/compound/Etidronic-acid
+- PubChem, Sodium Gluconate, CID 23672301: https://pubchem.ncbi.nlm.nih.gov/compound/527-07-1
+- PubChem, Sodium Citrate Dihydrate, CID 71474: https://pubchem.ncbi.nlm.nih.gov/compound/Trisodium-Citrate-Dihydrate
+- IPCS Poisons Information Monograph 500, Sodium Metasilicate hydrate forms: https://inchem.org/documents/pims/chemical/pim500.htm
+- PubChem, Sodium Tripolyphosphate, CID 24455: https://pubchem.ncbi.nlm.nih.gov/compound/7758-29-4
+- ECHA, 2025 RMOA Conclusion Document — Enzymes (alpha-amylase, lipase, cellulase, subtilisin CAS): https://echa.europa.eu/documents/10162/db990d02-d051-16ab-2068-0ca3f4bd8bbb
+- EFSA, Mannan endo-1,4-beta-mannosidase assessment (EC 3.2.1.78; CAS 37288-54-3): https://efsa.onlinelibrary.wiley.com/doi/10.2903/j.efsa.2022.7264
+- IUBMB EC 3.2.1.78 accepted enzyme name and reaction: https://iubmb.qmul.ac.uk/enzyme/EC3/2/1/78.html
+- FDA GRAS Notice 000739, mannanase enzyme identity: https://www.fda.gov/media/113323/download
+- Sigma-Aldrich, Sodium Tripolyphosphate technical grade 85% (CAS 7758-29-4): https://www.sigmaaldrich.com/IN/en/product/sigald/238503
+
+### Sixth-tranche disposition
+
+- Additional candidate groups/issues examined: 15.
+- Additional source-supported identity candidates: 14 (including source-supported family identities where commercial grade remains unresolved).
+- Additional grade/specificity hold: 1 (Zeolite 4A).
+- Additional nomenclature correction required: 1 (MICG-046; CAS identifies mannanase, not endoperoxidase).
+- Identity SSOT promotions: 0.
+- Supplier-grade evidence records established for catalog records: 0.
+- Formula applicability approvals: 0.
+
+The enzyme nomenclature finding is a real catalog defect, but it is not corrected by changing the CAS or silently rewriting the record. A controlled canonical-name/alias migration is required. Likewise, zeolite-family identity is not sufficient proof of Zeolite 4A.
+
+
+
+## Updated aggregate reconciliation (six tranches)
+
+- Candidate groups/issues examined: 53.
+- Source-backed identity candidates (official registry, government, standards, manufacturer or authoritative nomenclature corroboration; not supplier-grade validation): 40.
+- Explicit CAS/identity conflict or grade/specificity holds: 7.
+- Additional nomenclature correction required: 1 (MICG-046 mannanase).
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class review flags: 1 (Sodium Lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+No ingredient identity SSOT, catalog record, formula, or applicability decision was modified in this tranche. The 397 unmapped identity crosswalk rows remain unchanged; all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
