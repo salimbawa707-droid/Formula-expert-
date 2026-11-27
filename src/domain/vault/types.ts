@@ -176,6 +176,7 @@ export interface AuditRecord {
   promptUsed: string;
   toolEnvironmentLimitations: string;
   filesChanged: string[];
+  /** Legacy field name retained for schema compatibility; stores the documented AI review decision, not a human reviewer identity. */
   independentReviewerDecision: ReviewDecision;
   closureCriteria: string[];
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -207,6 +208,7 @@ export interface ProjectPhase {
   status: PhaseStatus;
   closureReportDate?: string;
   reportedClosed: boolean;
+  /** AI dual-pass audit state for the complete phase scope; CONFIRMED is not human approval or laboratory validation. */
   independentVerificationStatus: 'UNESTABLISHED' | 'CONFIRMED' | 'REJECTED';
   blockers: string[];
   description: string;

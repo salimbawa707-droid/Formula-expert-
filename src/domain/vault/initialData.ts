@@ -30,8 +30,8 @@ export const INITIAL_VAULT_STATE: VaultState = {
       phaseId: 'phase-5',
       title: 'Phase 5 Execution Gate Locked',
       impact: 'Algorithmic tuning, model regression, and calibration strictly prohibited.',
-      environmentLimitation: 'Phase 4B independent closure sign-off has not been granted.',
-      workaroundOrNextAction: 'Complete evidence inventory, reconcile 59 engine files, inspect at least 3 experimental datasets, and submit to independent audit committee.',
+      environmentLimitation: 'Phase 4B AI dual-pass review and evidence closure are not complete.',
+      workaroundOrNextAction: 'Complete the evidence inventory, reconcile engine-count units, inspect eligible experimental datasets, and finish the documented AI dual-pass audit. No human review is claimed; laboratory validation remains a separate evidence gate.',
     },
   ],
   phases: [
@@ -69,13 +69,13 @@ export const INITIAL_VAULT_STATE: VaultState = {
       closureReportDate: '2026-09-02',
       independentVerificationStatus: 'UNESTABLISHED',
       blockers: [],
-      description: 'Remediation of trade-name ambiguity and inconsistent CAS registry entries across detergent surfactants, builders, chelants, enzymes, and hydrotropes. Independent verification remains unestablished.',
+      description: 'Remediation of trade-name ambiguity and inconsistent CAS registry entries across detergent surfactants, builders, chelants, enzymes, and hydrotropes. AI dual-pass source verification remains unestablished; human review is not required.',
       keyDeliverables: [
         {
           title: 'Establish canonical chemical identifier dictionary (CAS & InChIKey)',
           status: 'DONE',
           verified: false,
-          notes: 'Reported complete internally; external peer review by independent detergent chemist pending.',
+          notes: 'Reported complete internally; AI dual-pass verification against authoritative CAS/InChIKey source records remains unestablished; no human review is required or claimed.',
         },
         {
           title: 'Prevent alias collision between LAS, SLES-1EO, and SLES-2EO',
@@ -94,7 +94,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       closureReportDate: '2026-09-28',
       independentVerificationStatus: 'UNESTABLISHED',
       blockers: [],
-      description: 'Remediation of three core scientific calculation flaws: F3-01 (Extended Debye-Hückel / Davies ionic activity coefficient correction), F3-02 (Mixed surfactant micellization non-linear interaction parameter), and F3-03 (Polycarboxylate & citrate chelation equilibria with Ca2+/Mg2+ hardness ions). Independent verification remains unestablished.',
+      description: 'Remediation of three core scientific calculation flaws: F3-01 (Extended Debye-Hückel / Davies ionic activity coefficient correction), F3-02 (Mixed surfactant micellization non-linear interaction parameter), and F3-03 (Polycarboxylate & citrate chelation equilibria with Ca2+/Mg2+ hardness ions). AI dual-pass source review of the complete phase remains unestablished; empirical laboratory validation is separately unestablished.',
       keyDeliverables: [
         {
           title: 'F3-01: Davies activity coefficient correction for ionic strength > 0.1M',
@@ -154,7 +154,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         'Zenodo 18961871 workbooks are parsed as descriptive evidence; no eligible formula-prediction comparisons exist for ENG-003/ENG-005 (BLK-002).',
         'Historical 64 and 97 claims lack original source artifacts; current source inventory is documented without equating unlike counts. The 27,982 aggregate is rejected as a verified physical-observation count; its original counting procedure remains unreconstructed. See ENGINE_COUNT_RECONCILIATION_2026-10-25.md and PHASE4B_HISTORICAL_COUNT_MAPPING_RESOLUTION_2026-10-23.md.',
       ],
-      description: 'Current active phase. Maintains and triages the registered scientific evidence inventory, establishes the empirical dataset register, verifies data provenance, reconciles the 59 engine source files, and requires complete evidence review before any engine is marked ready for validation.',
+      description: 'Current active phase. AI dual-pass review is the authorized audit route; the phase-wide review state remains UNESTABLISHED until the complete Phase 4B scope is audited. Maintains and triages the registered scientific evidence inventory, establishes the empirical dataset register, verifies data provenance, reconciles engine files, and requires complete evidence review before any engine is marked ready for validation.',
       keyDeliverables: [
         {
           title: 'Seed & triage the registered evidence inventory (experimental, reference, theory, manufacturer specifications)',
@@ -181,7 +181,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
           notes: 'Canonical workbook bytes, parser structure, units, and descriptive applicability are recorded. No direct prediction pairs are established.',
         },
         {
-          title: 'Independent Review & Phase 4B Closure Gate Approval',
+          title: 'AI Dual-Pass Review & Phase 4B Closure Gate Approval',
           status: 'PENDING',
           verified: false,
           notes: 'Mandatory gate before Phase 5 can be unlocked.',
@@ -191,15 +191,15 @@ export const INITIAL_VAULT_STATE: VaultState = {
     {
       phaseId: 'phase-5',
       name: 'Phase 5 — Numerical Validation & Model Calibration',
-      subtitle: 'LOCKED — Strictly Gated Behind Phase 4B Formal Sign-Off',
+      subtitle: 'LOCKED — Strictly Gated Behind Phase 4B AI Review & Evidence Closure',
       status: 'LOCKED',
       reportedClosed: false,
       independentVerificationStatus: 'UNESTABLISHED',
       blockers: [
-        'LOCKED: Phase 4B comprehensive evidence inventory must be independently reviewed and approved first.',
+        'LOCKED: Phase 4B comprehensive evidence inventory must pass the documented AI dual-pass review and all provenance/accounting evidence gates first.',
         'No target engine has eligible matched prediction and observation data; direct validation remains unperformed.',
       ],
-      description: 'LOCKED. Do not begin until Phase 4B has been independently reviewed and explicitly approved. Will execute statistical residual analysis (RMSE, MAE, R2), error propagation, and model parameter tuning against real experimental datasets.',
+      description: 'LOCKED. Do not begin until Phase 4B has completed its documented AI dual-pass review and all evidence/provenance/accounting gates are satisfied. AI review does not establish laboratory validation. Will execute statistical residual analysis (RMSE, MAE, R2), error propagation, and model parameter tuning only against eligible real experimental datasets.',
       keyDeliverables: [
         {
           title: 'Run numerical validation harness against inspected experimental benchmarks',
@@ -214,7 +214,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
           notes: 'Gated: Phase 4B must close first.',
         },
         {
-          title: 'Independent peer review of validation results by detergent physical chemist',
+          title: 'AI dual-pass review of numerical validation results',
           status: 'BLOCKED',
           verified: false,
           notes: 'Gated: Phase 4B must close first.',
@@ -1424,7 +1424,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       ],
       followUpActions: [
         'Use as a bounded laundry LAS/AE interaction reference; do not generalize to all nonionic surfactants.',
-        'Retain the AI transcription and second-pass cross-check; obtain a human blind transcription if formal human review is required, and seek author clarification on the Gibbs adsorption n-factor.',
+        'Retain the Complete the second AI source-only visual pass on all 53 Appendix A points, recalculate the five CMC breakpoints, and seek author clarification on the Gibbs adsorption n-factor. Human review is not required.',
         'Keep numerical reuse blocked pending copyright review.',
         'EVD-019 is related literature evidence for ENG-002 only; the current app-facing Clint calculator does not support the LAS/AE-7EO pair and this source does not validate the current implementation.',
       ],
@@ -1761,7 +1761,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
         },
         {
           id: 'FIND-P2-02',
-          description: 'Canonical InChIKey dictionary established; independent verification by external detergent chemist remains unestablished.',
+          description: 'Canonical InChIKey dictionary established; AI dual-pass source verification against authoritative registry records remains unestablished. No human reviewer is required or claimed.',
           severity: 'MEDIUM',
           verifiedFact: true,
           aiClaimOnly: true,
@@ -1774,7 +1774,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       filesChanged: ['src/core/chemicalDictionary.ts'],
       independentReviewerDecision: 'REQUIRES_REWORK',
       closureCriteria: [
-        'Independent validation of all 48 InChIKeys by certified analytical chemist',
+        'AI dual-pass validation of all 48 InChIKeys against authoritative registry source records, with provenance and unresolved aliases documented',
       ],
       approvalStatus: 'PENDING',
     },
@@ -1908,7 +1908,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       closureCriteria: [
         'Reconcile 59 engine source files with verified line numbers and entry points',
         'Ingest at least 1 empirical dataset with verified row/column schemas and zero imputed coercion',
-        'Independent review sign-off by external physical chemist',
+        'Documented AI dual-pass review of the complete Phase 4B scope; no human approval is claimed',
       ],
       approvalStatus: 'PENDING',
     },
@@ -1920,7 +1920,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       phase: 'Phase 4B',
       category: 'Engine Inventory',
       version: '1.2.0',
-      author: 'Scientific Audit Lead',
+      author: 'ChatGPT AI Review',
       intendedOutcome: 'Inspect Formula-expert- source tree, identify exact engine implementation files, and resolve the 64 vs 59 vs 97 count discrepancy without fabricating engine names.',
       content: `Audit Directive for Detergent Formula Expert Source Reconciliation:
 
@@ -2051,15 +2051,15 @@ Gap F3-03: Multi-Ligand Chelation Equilibrium
     },
     {
       id: 'PRM-006',
-      title: 'Independent Audit & Phase 4B Closure Review Gate',
+      title: 'AI Dual-Pass Audit & Phase 4B Closure Review Gate',
       phase: 'Phase 4B Gate',
       category: 'Gate Approval',
       version: '1.0.0',
-      author: 'Independent Scientific Review Board',
+      author: 'ChatGPT AI Review',
       intendedOutcome: 'Formal evaluation criteria to determine whether Phase 4B can be approved and Phase 5 unlocked.',
       content: `Phase 4B Formal Closure Review Protocol:
 
-The Independent Review Board shall evaluate the following 6 mandatory conditions:
+The AI dual-pass review process shall evaluate the following 6 mandatory conditions:
 [ ] 1. Engine Reconciliation: 59 implementation files in Formula-expert- are verified by file path, entry points, and physical units, explaining the 64/97 discrepancy.
 [ ] 2. Evidence Corpus: All 11 seeded evidence leads evaluated, access confirmed, and repository URLs verified.
 [ ] 3. Physical Inspection: At least 3 primary experimental datasets have completed NUMERICAL_INSPECTION (actual row count verified, columns mapped, zero fabricated entries).

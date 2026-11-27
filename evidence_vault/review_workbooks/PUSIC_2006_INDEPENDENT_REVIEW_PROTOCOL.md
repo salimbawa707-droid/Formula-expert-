@@ -1,7 +1,7 @@
-# Pušić et al. (2006) — Independent Blind Transcription Protocol
+# Pušić et al. (2006) — AI Source Review & Optional Human Blind Transcription Protocol
 
 ## 1. Purpose and Boundary
-This protocol defines the independent, blind second-pass transcription verification of the 144 printed $R_{460\text{ nm}}$ readings in Tables 5–8 (printed page 13) of:
+This protocol defines the user-authorized AI source-only second-pass transcription verification and the optional separate human blind-review path of the 144 printed $R_{460\text{ nm}}$ readings in Tables 5–8 (printed page 13) of:
 > Pušić, T.; Šostar Turk, S.; Soljačić, I.; Tarbuk, A.; Fijan, R.; Arnuš, S. (2006). *Primary Washing Effect of Powder and Liquid Detergents*. Tekstil 55(1), 11–18.  
 > Publisher Landing Page: https://tekstil.hist.hr/index.php/tekstil/article/view/3174  
 > Direct Download: https://tekstil.hist.hr/index.php/tekstil/article/download/3174/3174/3174  
