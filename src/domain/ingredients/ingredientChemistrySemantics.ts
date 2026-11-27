@@ -107,7 +107,8 @@ export interface IngredientChemistryCrosswalkRow {
 }
 
 export function resolveIngredientChemistrySemantics(ingredientId: string): IngredientChemistrySemantics | null {
-  const value = SEMANTICS[ingredientId];
+  const normalizedId = ingredientId === 'citric-acid' ? 'citric_acid' : ingredientId;
+  const value = SEMANTICS[normalizedId];
   return value ? { ...value } : null;
 }
 
