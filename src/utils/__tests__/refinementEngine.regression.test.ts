@@ -55,13 +55,9 @@ function record(input: {
     compositionBasis: 'W_W',
     compositionMethod: 'GRAVIMETRIC_MASS_BALANCE',
     compositionMethodDetails: 'Validated gravimetric SOP-01; w/w calculation',
-    instrumentId: 'BAL-01',
     instrumentCalibrationReference: 'CAL-2026-001',
     sourceDocumentReference: `LABBOOK-${input.id}`,
-    formulaCompositionReference: `FORMULA-SNAPSHOT-${input.formulaId}-${input.version || '1.0'}`,
-    sourceType: 'LAB_MEASURED',
-    qualityStatus: 'ACCEPTED',
-    provenance: 'MEASURED'
+    formulaCompositionReference: `FORMULA-SNAPSHOT-${input.formulaId}-${input.version || '1.0'}`
   };
 }
 
