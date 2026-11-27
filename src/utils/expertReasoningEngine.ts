@@ -237,7 +237,9 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
     const rawPct = Number(ing.percentage ?? (ing as any).percent ?? 0);
     const activeRes = ActiveMatterEngine.resolveIngredientActive(ing);
     const activePurity = activeRes.activeMatterPct;
-    const activePct = (rawPct * activePurity) / 100;
+    const activePct = Number.isFinite(rawPct) && Number.isFinite(activePurity)
+      ? (rawPct * activePurity) / 100
+      : Number.NaN;
     const name = (ing.name || '').trim();
     const n = name.toLowerCase();
     const role = (ing.role || (ing as any).category || activeRes.category || getAuditedIngredientCategory(name)).toLowerCase();
@@ -248,6 +250,29 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
       name
     });
     const isPHDependentAnionic = route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
+
+    if (activeRes.isSurfactant && Number.isFinite(rawPct) && rawPct > 0 && !Number.isFinite(activePurity)) {
+      issues.push({
+        id: 'surfactant-active-assay-missing',
+        issue: `Surfactant Active-Matter Assay Missing: ${name || 'Unnamed ingredient'}`,
+        whyItMatters: 'An unresolved surfactant active-matter input cannot be silently converted to zero; that would understate the active dose and distort category performance reasoning.',
+        scientificBasis: 'Active surfactant mass fraction requires a valid grade-specific assay or an explicitly labelled reference estimate.',
+        scientificType: 'CALCULATED',
+        severity: 'High',
+        whatToCheck: 'Attach the exact commercial-grade supplier TDS/lot CoA or enter a clearly labelled non-verified estimate; do not treat missing assay as 0%.'
+      });
+      recommendations.push({
+        id: 'rec-surfactant-active-assay-' + (ing.id || name || 'unknown'),
+        problem: 'Surfactant active-matter assay is unavailable.',
+        why: 'The active surfactant dose cannot be calculated reliably without a valid active-matter input.',
+        recommendedAction: 'Obtain a matching supplier-grade specification or lot CoA and rerun the formula analysis.',
+        expectedEffect: 'Prevents undercounting active surfactant and misleading category-performance conclusions.',
+        tradeOff: 'Until evidence is attached, active-matter-dependent conclusions remain limited.',
+        confidence: 'HIGH',
+        recommendationType: 'RUN_LAB_TEST',
+        authority: 'LAB_EVIDENCE'
+      });
+    }
 
     totalPct += rawPct;
 
