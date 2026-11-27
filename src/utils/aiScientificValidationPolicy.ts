@@ -39,6 +39,17 @@ export interface AiValidationEvidence {
   unitsResolved: boolean;
   outOfDomain: boolean;
   unresolvedCriticalGap: boolean;
+  /** Required provenance fields before a supplier-lot COA can be treated as attached evidence. */
+  supplierName?: string;
+  manufacturerName?: string;
+  supplierProductName?: string;
+  supplierGrade?: string;
+  supplierLotNumber?: string;
+  coaEvidenceId?: string;
+  coaSha256?: string;
+  coaIssuedAt?: string;
+  coaTestMethods?: string[];
+  coaMeasuredProperties?: string[];
 }
 
 export interface AiValidationAssessment {
@@ -125,7 +136,19 @@ export function assessAiScientificValidation(
     reasons.push('Exact chemical identity and commercial grade are not established; score capped at 60.');
   }
 
-  const supplierLotVerified = evidence.evidenceRoute === 'SUPPLIER_LOT_COA';
+  const coaProvenanceComplete =
+    evidence.evidenceRoute === 'SUPPLIER_LOT_COA' &&
+    Boolean(evidence.supplierName?.trim()) &&
+    Boolean(evidence.manufacturerName?.trim()) &&
+    Boolean(evidence.supplierProductName?.trim()) &&
+    Boolean(evidence.supplierGrade?.trim()) &&
+    Boolean(evidence.supplierLotNumber?.trim()) &&
+    Boolean(evidence.coaEvidenceId?.trim()) &&
+    /^[a-f0-9]{64}$/i.test(evidence.coaSha256 || '') &&
+    Boolean(evidence.coaIssuedAt?.trim()) &&
+    Array.isArray(evidence.coaTestMethods) && evidence.coaTestMethods.length > 0 &&
+    Array.isArray(evidence.coaMeasuredProperties) && evidence.coaMeasuredProperties.length > 0;
+  const supplierLotVerified = coaProvenanceComplete;
   const benchmarkQualified = evidence.matchedBenchmarkAvailable &&
     evidence.heldOutEvaluation &&
     Number.isInteger(evidence.sampleCount) && Number.isInteger(evidence.minimumSampleCount) &&
@@ -144,7 +167,9 @@ export function assessAiScientificValidation(
   }
 
   if (!supplierLotVerified) {
-    reasons.push('Evidence is not an exact supplier lot COA; no supplier-lot verification is claimed.');
+    reasons.push(evidence.evidenceRoute === 'SUPPLIER_LOT_COA'
+      ? 'Supplier COA route is incomplete: supplier, manufacturer, product, grade, lot, evidence ID, SHA-256, issue date, test methods and measured properties are all required before lot verification.'
+      : 'Evidence is not an exact supplier lot COA; no supplier-lot verification is claimed.');
   }
   if (evidence.evidenceRoute === 'INTERNATIONAL_REFERENCE_SPECIFICATION' ||
       evidence.evidenceRoute === 'SECONDARY_LITERATURE_REFERENCE') {
