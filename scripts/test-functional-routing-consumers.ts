@@ -4,6 +4,7 @@ import { getCategorySpecificIngredients } from '../src/components/CategoryIngred
 import { resolveFormulaIntelligenceRouting, resolveFunctionalRouting } from '../src/data/ingredientFunctionalRouting';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
+import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
 
 const ionicAmphoteric = getIngredientsByMajorCategory('ionic','amphoteric');
 const ionicAnionic = getIngredientsByMajorCategory('ionic','anionic');
