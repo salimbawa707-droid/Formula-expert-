@@ -614,7 +614,7 @@ export function evaluateScientificQualityGate(
         ingredientId: (ing as any)?.ingredientId,
         name: ing?.name
       });
-      if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+      if (route?.role === 'IDENTITY_UNRESOLVED' || route?.role === 'POLYMERIC_DISPERSANT') return false;
       const isAnionic = route
         ? route.routingClass === 'ANIONIC'
         : (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls'));
