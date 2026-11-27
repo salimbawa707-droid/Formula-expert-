@@ -376,6 +376,7 @@ export interface PowderCostingReport {
   batchSizeKg: number | null;
   costPerWashDose: number | null; // e.g. 50g dose
   hasZeroCostIngredients: boolean;
+  missingCostIngredients?: string[];
   invalidCostIngredients?: string[];
   invalidPercentageIngredients?: string[];
   ingredientCostContributions: Array<{
