@@ -1,4 +1,5 @@
 import { FormulationIngredient } from '../types';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import {
   normalizeProductCategory,
   getProductCategory,
@@ -607,7 +608,17 @@ export function evaluateScientificQualityGate(
       const name = (ing?.name || '').toLowerCase();
       const cat = (ing?.category || ing?.role || '').toLowerCase();
       const pct = Number(ing?.percentage ?? ing?.percent ?? 0);
-      return pct > 0 && (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls'));
+      const route = resolveFunctionalRoutingForIngredient({
+        id: (ing as any)?.id,
+        canonicalIngredientId: (ing as any)?.canonicalIngredientId,
+        ingredientId: (ing as any)?.ingredientId,
+        name: ing?.name
+      });
+      if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+      const isAnionic = route
+        ? route.routingClass === 'ANIONIC'
+        : (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls'));
+      return pct > 0 && isAnionic;
     });
 
     if (hasAnionicInSoftener) {
@@ -630,7 +641,17 @@ export function evaluateScientificQualityGate(
       const name = (ing?.name || '').toLowerCase();
       const cat = (ing?.category || ing?.role || '').toLowerCase();
       const pct = Number(ing?.percentage ?? ing?.percent ?? 0);
-      return pct > 0.5 && (cat.includes('anionic') || cat.includes('amphoteric') || name.includes('labsa') || name.includes('sles') || name.includes('capb') || name.includes('betaine'));
+      const route = resolveFunctionalRoutingForIngredient({
+        id: (ing as any)?.id,
+        canonicalIngredientId: (ing as any)?.canonicalIngredientId,
+        ingredientId: (ing as any)?.ingredientId,
+        name: ing?.name
+      });
+      if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+      const isHighFoamFamily = route
+        ? route.routingClass === 'ANIONIC' || route.role === 'ZWITTERIONIC_BETAINE' || route.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE'
+        : (cat.includes('anionic') || cat.includes('amphoteric') || name.includes('labsa') || name.includes('sles') || name.includes('capb') || name.includes('betaine'));
+      return pct > 0.5 && isHighFoamFamily;
     });
 
     if (highFoamSurfactant) {
