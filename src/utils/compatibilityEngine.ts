@@ -7,6 +7,8 @@ import { getCategoryPHLimits } from './scientificRouter';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
 import { tryGetScientificProductProfile } from '../domain/scientificProductProfiles';
 import { PHCalculationOptions } from '../domain/ph/types';
+import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
+import { resolveFunctionalCompatibilityMatrixPair } from '../data/chemicals';
 
 // ============================================================================
 // PHASE 6 — COMPATIBILITY & FORMULATION STABILITY TYPES & MECHANISMS
@@ -151,10 +153,15 @@ export function calculateFormulationCompatibility(
   let totalElectrolytePct = 0;
   let fragranceOilPct = 0;
   let anionicPct = 0;
+  let anionicSurfactantPct = 0;
+  let hasAnionicSurfactant = false;
   let cationicPct = 0;
 
   const anionicIngs: string[] = [];
+  const anionicChargeIngs: string[] = [];
   const cationicIngs: string[] = [];
+  const identityBlockedIngs: string[] = [];
+  const amineOxideIngs: string[] = [];
   const acidIngs: string[] = [];
   const alkaliIngs: string[] = [];
   const oxidizerIngs: string[] = [];
@@ -164,6 +171,10 @@ export function calculateFormulationCompatibility(
   for (const ing of safeIngs) {
     const name = (ing?.name || '').toLowerCase();
     const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
+    const routeId = String((ing as any)?.canonicalIngredientId || (ing as any)?.ingredientId || ing?.id || '');
+    const functionalRoute = routeId ? resolveFunctionalRouting(routeId) : null;
+    if (functionalRoute?.role === 'IDENTITY_UNRESOLVED') identityBlockedIngs.push(ing.name || routeId || 'Unknown ingredient');
+    if (functionalRoute?.role === 'AMINE_OXIDE_SURFACTANT') amineOxideIngs.push(ing.name || routeId);
     const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent;
     const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
       ? Number.NaN
@@ -182,14 +193,23 @@ export function calculateFormulationCompatibility(
 
     // Anionic surfactants: do not classify every sulfate/sulfonate salt as a surfactant.
     // Sodium sulfate and similar inorganic salts are builders/fillers, not anionic detergents.
-    const hasExplicitAnionicRole = cat.includes('anionic');
+    const hasExplicitAnionicRole = functionalRoute
+      ? functionalRoute.routingClass === 'ANIONIC'
+      : cat.includes('anionic');
     const hasKnownAnionicSurfactantIdentity =
       /\blabsa\b|linear alkylbenzene sulfonic acid|alkylbenzene sulfonate|\bsles\b|sodium laureth sulfate|\bsls\b|sodium lauryl sulfate|sodium dodecyl sulfate|\bsds\b|\baos\b|alpha olefin sulfonate|alkyl ether sulfate|alkyl sulfate surfactant|\bsoap\b/i.test(name);
     const isShortChainHydrotrope = /cumene|xylene|\bscs\b|\bsxs\b/.test(name);
-    if (!isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
+    const isBlockedIdentity = functionalRoute?.role === 'IDENTITY_UNRESOLVED';
+    const isPolymericDispersant = functionalRoute?.role === 'POLYMERIC_DISPERSANT';
+    if (!isBlockedIdentity && !isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
       hasAnionic = true;
       anionicPct += pct;
-      anionicIngs.push(ing.name);
+      anionicChargeIngs.push(ing.name);
+      if (!isPolymericDispersant) {
+        hasAnionicSurfactant = true;
+        anionicSurfactantPct += pct;
+        anionicIngs.push(ing.name);
+      }
     }
 
     // Cationic
@@ -365,6 +385,45 @@ export function calculateFormulationCompatibility(
   const alerts: ExtendedCompatibilityAlert[] = [];
   let penaltySum = 0;
 
+  if (identityBlockedIngs.length > 0) {
+    penaltySum += 40;
+    alerts.push({
+      id: 'identity-unresolved-compatibility-block',
+      title: 'Unresolved Ingredient Identity — Compatibility Blocked',
+      severity: 'Critical',
+      mechanism: 'PHASE_STABILITY',
+      message: `Compatibility cannot be evaluated for unresolved catalog identity: ${identityBlockedIngs.join(', ')}. Do not infer charge, polymer role or compatibility from display names.`,
+      recommendation: 'Resolve exact manufacturer product code, INCI/CAS identity and composition before formula recommendation.',
+      affectedIngredients: identityBlockedIngs
+    });
+  }
+
+  const matrixTestPairs: string[] = [];
+  for (let i = 0; i < safeIngs.length; i++) {
+    for (let j = i + 1; j < safeIngs.length; j++) {
+      const a = safeIngs[i], b = safeIngs[j];
+      const decision = resolveFunctionalCompatibilityMatrixPair(
+        String((a as any)?.canonicalIngredientId || (a as any)?.ingredientId || a?.id || ''),
+        String(a?.category || a?.role || ''),
+        String((b as any)?.canonicalIngredientId || (b as any)?.ingredientId || b?.id || ''),
+        String(b?.category || b?.role || '')
+      );
+      if (decision?.status === 'REQUIRES_COMPATIBILITY_TEST') matrixTestPairs.push(`${a.name} + ${b.name}: ${decision.note || 'Grade-specific compatibility test required.'}`);
+    }
+  }
+  if (matrixTestPairs.length > 0) {
+    penaltySum += 10;
+    alerts.push({
+      id: 'amine-oxide-ph-dependent-compatibility-test',
+      title: 'pH-Dependent Amine Oxide — Compatibility Test Required',
+      severity: 'Medium',
+      mechanism: 'IONIC',
+      message: matrixTestPairs.join(' | '),
+      recommendation: 'Evaluate the exact commercial grades at target pH, electrolyte level, temperature and storage conditions; do not infer fixed zwitterionic behaviour.',
+      affectedIngredients: [...amineOxideIngs]
+    });
+  }
+
   // ============================================================================
   // MECHANISM 1: IONIC INCOMPATIBILITY & CHARGE CLASHES
   // ============================================================================
@@ -377,8 +436,8 @@ export function calculateFormulationCompatibility(
       severity: 'Critical',
       message: 'Opposite-charge surfactant systems (anionic and cationic) form insoluble ion-pair coacervation complexes resulting in precipitation, turbidity, loss of detergency, or loss of softening power.',
       recommendation: 'Verify phase stability or replace cationic component with amphoteric or nonionic co-surfactants.',
-      affectedIngredients: [...anionicIngs, ...cationicIngs],
-      condition: `Anionic active (${anionicPct.toFixed(1)}%) + Cationic active (${cationicPct.toFixed(1)}%)`
+      affectedIngredients: [...anionicChargeIngs, ...cationicIngs],
+      condition: `Anionic charged species (${anionicPct.toFixed(1)}%) + Cationic active (${cationicPct.toFixed(1)}%)`
     });
   }
 
@@ -709,7 +768,7 @@ export function calculateFormulationCompatibility(
   }
 
   // Enforce the canonical product profile's surfactant permissions for every category.
-  if (calculationPolicy?.allowAnionicSurfactants === false && hasAnionic && anionicPct > 0) {
+  if (calculationPolicy?.allowAnionicSurfactants === false && hasAnionicSurfactant && anionicSurfactantPct > 0) {
     penaltySum += 40;
     const isAutomaticDishwash = canonicalCategory === 'DISHWASH_AUTOMATIC';
     alerts.push({
@@ -719,10 +778,10 @@ export function calculateFormulationCompatibility(
       severity: 'Critical',
       message: isAutomaticDishwash
         ? `Automatic dishwash requires low/zero-foam chemistry; anionic surfactants (${anionicIngs.join(', ')}) violate the category profile and create foam-overflow risk.`
-        : `The canonical ${categoryProfile?.label || canonicalCategory} profile disallows anionic surfactants. Detected: ${anionicIngs.join(', ')} (${anionicPct.toFixed(2)}% formula).`,
+        : `The canonical ${categoryProfile?.label || canonicalCategory} profile disallows anionic surfactants. Detected: ${anionicIngs.join(', ')} (${anionicSurfactantPct.toFixed(2)}% formula).`,
       recommendation: 'Remove the prohibited anionic surfactant or select a product category whose profile permits it.',
       affectedIngredients: anionicIngs,
-      condition: `Anionic surfactant total = ${anionicPct.toFixed(2)}%`
+      condition: `Anionic surfactant total = ${anionicSurfactantPct.toFixed(2)}%`
     });
   }
 
@@ -763,7 +822,7 @@ export function calculateFormulationCompatibility(
     : Number.NaN;
 
   const hasCriticalOrHigh = alerts.some(a => a.severity === 'Critical' || a.severity === 'High');
-  const compatible = hasFormulaData && !hasCriticalOrHigh && !invalidSubProfile;
+  const compatible = hasFormulaData && !hasCriticalOrHigh && !invalidSubProfile && identityBlockedIngs.length === 0;
   const warnings = alerts.map(a => a.message);
   if (!pHAvailable) warnings.push('pH is unavailable or invalid; pH-dependent compatibility rules were not evaluated.');
   if (invalidSubProfile) warnings.push('The supplied product sub-profile does not belong to the selected canonical category; category-specific compatibility cannot be evaluated.');
@@ -838,7 +897,7 @@ export function calculateFormulationCompatibility(
     return name.includes('unknown') || name.includes('uncharacterized') || (cat.includes('unknown') && !name.includes('water'));
   });
 
-  if (safeIngs.length === 0 || invalidSubProfile) {
+  if (safeIngs.length === 0 || invalidSubProfile || identityBlockedIngs.length > 0) {
     compatibilityStatusSemantic = 'INSUFFICIENT_DATA';
     evidenceStatus = 'INSUFFICIENT_DATA';
   } else if (alerts.some(a => a.severity === 'Critical')) {
