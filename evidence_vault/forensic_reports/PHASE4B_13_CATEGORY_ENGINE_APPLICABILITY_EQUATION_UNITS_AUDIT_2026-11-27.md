@@ -38,9 +38,9 @@
 
 ### Category-specific constraints recorded in taxonomy/profile
 
-- **Laundry liquid:** enzyme stability above pH 9.5, hard-water protection, liquid rheology; taxonomy text says 600–1200 cP while profile targetViscosityCP says 500–1500 cP. This disagreement remains open rather than silently reconciled.
+- **Laundry liquid:** enzyme stability above pH 9.5, hard-water protection, liquid rheology; the taxonomy descriptive band and executable profile constraint are reconciled to 500–1500 cP in this branch. This is an internal engineering target, not a universal standard or lab-validated release limit.
 - **Laundry powder:** moisture below 5%, anticaking control, bulk density 0.45–0.85 g/cm³; powder engine only.
-- **Manual dishwash:** mildness/CAPB, high foam, taxonomy viscosity text 1500–2500 cP while profile targetViscosityCP says 1200–3000 cP. Keep open pending a formally chosen product specification.
+- **Manual dishwash:** mildness/CAPB, high foam; the taxonomy descriptive band and executable profile constraint are reconciled to 1200–3000 cP in this branch. This is an internal engineering target, not a universal standard or lab-validated release limit.
 - **Automatic dishwash:** strict low/zero foam, glass protection and enzyme stability; nonionic low-foam preference; anionic and cationic surfactants disallowed by profile policy.
 - **Floor cleaner:** low residue, fast drying and substrate-sensitive pH (marble/granite neutrality).
 - **Multipurpose cleaner:** trigger-spray compatibility, mild nonionic degreasing and low fumes.
@@ -220,7 +220,7 @@ Rules applied:
 | KITCHEN_DEGREASER | 8 / 16 | 8 / 18 / 16 |
 | CAR_SHAMPOO | 8 / 15 | 8 / 18 / 15 |
 
-External evidence gap retained: all category targets remain UNVERIFIED_ENGINEERING_TARGETS. Product-specific customer brief, benchmark standard, finished-formula lab data and independent human sign-off are required before calling them validated specifications.
+External evidence gap retained: all category targets remain UNVERIFIED_ENGINEERING_TARGETS. Product-specific customer brief, benchmark standard, finished-formula laboratory data and a defined test method/results are required before calling them validated specifications. The project review route is AI-only dual-pass source review; no human review or approval is claimed.
 
 ## Corrections applied in this branch
 
@@ -247,4 +247,4 @@ External evidence gap retained: all category targets remain UNVERIFIED_ENGINEERI
 4. HLB/CPI/viscosity/CMC remain model/screening outputs; no engine is promoted to LAB_VALIDATED by this source audit.
 5. Static import/call-site analysis cannot prove all dynamic runtime behavior. Full deployment telemetry and matched finished-formula laboratory observations remain outside this audit.
 
-**Disposition:** Category-registry corrections and fail-closed regression coverage are implemented and CI-verified. Internal target conflicts are reconciled; external product-specification evidence and laboratory validation remain OPEN. AI source review completed and disclosed; no human review was performed or represented. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+**Disposition:** Category-registry corrections and fail-closed regression coverage are implemented and CI-verified. Internal target conflicts are reconciled; external product-specification evidence and finished-formula laboratory validation remain OPEN. AI review is the project's authorized review method; no human review or approval is claimed. Phase 4B remains OPEN; Phase 5 remains LOCKED.
