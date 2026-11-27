@@ -28,7 +28,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
   const [importedNotification, setImportedNotification] = useState<string | null>(null);
   const [liveSync, setLiveSync] = useState<boolean>(false);
 
-  // Standalone CMC Surfactant Options
+  // Illustrative CMC screening defaults only; not grade-specific or lab-measured data.
   const STANDALONE_CMC_OPTIONS = [
     { name: "SLES (Sodium Lauryl Ether Sulfate)", cmcMolar: 0.30, cmcPpm: 114 },
     { name: "LABSA (Acid Slurry / Dodecylbenzene Sulfonate)", cmcMolar: 1.20, cmcPpm: 384 },
@@ -63,7 +63,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
     alkaliType
   } as any);
 
-  // Standard HLB Surfactant Database from IngredientIdentitySSOT
+  // HLB reference values are screening inputs; they are not supplier-grade certificates or formula measurements.
   const STANDARD_HLB_OPTIONS = IngredientIdentitySSOT.getHLBBenchmarks();
 
   // Standard Active Matter Surfactant Database from IngredientIdentitySSOT
@@ -509,9 +509,9 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
           {activeCalcTab === "hlb" && (
             <div className="space-y-4 animate-fade-in" id="hlb-calculator">
               <div className="border-b border-slate-800 pb-2">
-                <h3 className="text-sm font-bold text-white">Hydrophilic-Lipophilic Balance (HLB) Calculator</h3>
+                <h3 className="text-sm font-bold text-white">Hydrophilic-Lipophilic Balance (HLB) Screening Calculator</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Calculate weighted average HLB index for surfactant mixtures. Standard values: Emulsifiers (4-6), Wetting Agents (7-9), Detergents (10-15), Solubilizers (15-18).
+                  Calculate a weighted-average HLB screening index from selected reference or user-entered values. Values are not verified for a specific supplier grade, temperature, or finished formula.
                 </p>
               </div>
 
@@ -1028,15 +1028,15 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
             <div className="space-y-4 animate-fade-in text-left" id="cmc-calculator">
               <div className="border-b border-slate-800 pb-2">
                 <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  🌀 Clint's Mixed Critical Micelle Concentration (CMC) Lab
+                  🌀 Ideal Clint Mixed-CMC Screening Calculator
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Calculate Clint's thermodynamic mixed critical micelle concentration of surfactant blends. Below this value, surfactants exist as single molecules; above it, they organize into soap micelles.
+                  Applies the ideal Clint mixing equation to user-entered or illustrative pure-component CMC inputs. This is a model estimate, not a laboratory measurement, supplier-grade value, or finished-formula validation.
                 </p>
               </div>
 
               <div className="bg-purple-950/40 p-3 rounded-lg border border-purple-500/30 text-xs text-purple-200 leading-relaxed">
-                💡 <strong className="text-purple-100">Cleansing Science:</strong> For high-efficiency detergent formulas, the working active surfactant level must reside significantly above the mixed CMC. Formulating a synergistic blend lowers the overall CMC, reducing raw material costs while increasing cleansing speed!
+                <strong className="text-purple-100">Scientific limitation:</strong> The ideal Clint equation assumes ideal mixing and does not prove synergistic cleaning, foam, or cost improvement. Real mixed systems can deviate substantially; validate with surface-tension measurements under defined temperature, pH, electrolyte, and matrix conditions.
               </div>
 
               <div className="space-y-3">
