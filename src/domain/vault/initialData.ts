@@ -1906,8 +1906,8 @@ export const INITIAL_VAULT_STATE: VaultState = {
         { name: 'mol_fraction_B', unit: 'mole fraction', missingCount: 0, isExperimental: false },
         { name: 'logCMC', unit: 'log10(micromolar)', missingCount: 0, isExperimental: true }
       ],
-      experimentalVsImputedNotes: '979 compiled binary mixture records. Each row is a reported composition/system point, not necessarily an independent experiment; repeated source systems and conditions must retain grouping lineage. Hash is line-ending-normalized as documented by open_reference_benchmarks/data-manifest.json.',
-      duplicateOverlapCheck: 'Do not treat all rows as independent; source-level study, pair, and condition grouping is required for split design and uncertainty estimates.',
+      experimentalVsImputedNotes: '979 compiled binary mixture records. The added row-level grouping audit assigns 522 unordered SMILES-pair groups and 959 canonical pair/composition groups; 20 pair/composition groups repeat (20 extra rows). All rows are retained. These are reported composition/system points, not necessarily independent experiments. Hash is line-ending-normalized as documented by open_reference_benchmarks/data-manifest.json.',
+      duplicateOverlapCheck: 'Source-lineage-preserving pair grouping audit: 979 source rows, 522 unordered SMILES pair groups, 959 canonical pair/composition groups, 20 repeated pair/composition groups (20 extra rows retained, not deduplicated). 440 pair groups have one row; 82 have more than one. Source-study/temperature/method grouping remains unavailable for all rows and must be established before leakage-safe train/test splitting.',
       designation: 'BENCHMARK',
       originalSourceMapping: 'P2SURF upstream commit 8aa90b9a9d1b2c51df5ce5ed1e863f81eff3f0e8; related paper DOI 10.1186/s13321-025-01112-2; MIT license text pinned in repository.',
       applicableEngineIds: ['ENG-002'],
