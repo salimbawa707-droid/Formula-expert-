@@ -85,6 +85,37 @@ function importedNames(clause) {
   if (namespace) names.push('* as ' + namespace[1]);
   return [...new Set(names)];
 }
+function moduleStatements(source) {
+  const lines = source.split(/\r?\n/);
+  const statements = [];
+  for (let i = 0; i < lines.length; i++) {
+    const first = lines[i].trim();
+    const isImport = /^import\s/.test(first) && !/^import\s*\(/.test(first);
+    const isReExport = /^export\s+(?:\*|\{)/.test(first);
+    if (!isImport && !isReExport) continue;
+    let statement = first;
+    if (isImport) {
+      const sideEffect = statement.match(/^import\s*(['"])([^'"]+)\1/);
+      if (sideEffect) {
+        statements.push({ kind: 'import', clause: '', specifier: sideEffect[2] });
+        continue;
+      }
+    }
+    while (!/\bfrom\s*(['"])[^'"]+\1/.test(statement) && i + 1 < lines.length) {
+      const next = lines[i + 1].trim();
+      if (/^(?:import|export)\s/.test(next)) break;
+      statement += ' ' + next;
+      i++;
+    }
+    const match = statement.match(/\bfrom\s*(['"])([^'"]+)\1/);
+    if (match) {
+      const clause = statement.slice(0, statement.indexOf('from')).replace(/^(?:import|export)\s+/, '').trim();
+      statements.push({ kind: isReExport ? 'export' : 'import', clause, specifier: match[2] });
+    }
+  }
+  return statements;
+}
+
 function resolveRelative(importer, specifier, candidateByStem) {
   if (!specifier.startsWith('.')) {
     if (specifier.startsWith('@/')) {
@@ -125,18 +156,17 @@ const unresolvedCandidateLikeImports = [];
 
 for (const importer of sourceFiles) {
   const source = sourceByPath.get(importer);
-  const importRe = /\b(import|export)\s+([\s\S]*?)\s+from\s*(['"])([^'"]+)\3\s*;?/g;
-  for (const match of source.matchAll(importRe)) {
-    const target = resolveRelative(path.join(ROOT, importer), match[4], candidateByStem);
+  for (const statement of moduleStatements(source)) {
+    const target = resolveRelative(path.join(ROOT, importer), statement.specifier, candidateByStem);
     if (!target) {
-      if (CANDIDATE_PATH_RE.test(match[4])) unresolvedCandidateLikeImports.push({ importer, specifier: match[4] });
+      if (CANDIDATE_PATH_RE.test(statement.specifier)) unresolvedCandidateLikeImports.push({ importer, specifier: statement.specifier });
       continue;
     }
     const edge = {
       importer,
       target,
-      edgeType: match[1] === 'export' ? 'RE_EXPORT' : 'STATIC_IMPORT',
-      importedNames: importedNames(match[2])
+      edgeType: statement.kind === 'export' ? 'RE_EXPORT' : 'STATIC_IMPORT',
+      importedNames: importedNames(statement.clause)
     };
     edges.push(edge);
     modules.get(target).incomingStaticImporters.push(edge);
