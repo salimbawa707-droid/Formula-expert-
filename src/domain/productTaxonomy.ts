@@ -87,7 +87,7 @@ export interface CategoryMetricApplicability {
 }
 
 export interface ProductCategoryDefinition {
-  /** Category targets remain screening-only until source evidence is attached and independently reviewed. */
+  /** Category targets remain screening-only until source evidence and matched validation results are attached and pass the project's documented AI dual-pass review. */
   specificationEvidenceStatus?: 'SOURCE_VERIFIED' | 'UNVERIFIED_ENGINEERING_TARGETS';
   specificationEvidenceNote?: string;
   id: ProductCategoryId;
@@ -124,7 +124,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
     primaryFunction: 'Removal of particulate soil, sebum, and greasy stains from fabrics',
     keyConstraints: [
       'Prevent enzyme denaturation above pH 9.5',
-      'Keep viscosity between 600-1200 cP',
+      'Keep viscosity between 500-1500 cP',
       'Maintain hard water chelation'
     ],
     defaultFormulaId: 'hd-liquid-laundry',
@@ -183,7 +183,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
     keyConstraints: [
       'Skin compatibility pH range 6.0-7.5',
       'Require amphoteric CAPB for mildness',
-      'High viscosity (1500-2500 cP)'
+      'High viscosity (1200-3000 cP)'
     ],
     defaultFormulaId: 'manual-dishwash-gel',
     defaultFormulaStatus: 'AVAILABLE',
@@ -351,7 +351,7 @@ export const PRODUCT_TAXONOMY_MAP: Record<ProductCategoryId, ProductCategoryDefi
     targetPHMax: 10.5,
     defaultPH: 9.5,
     activeMatterMinPct: 1,
-    activeMatterTargetPct: 3,
+    activeMatterTargetPct: 1.2,
     foamExpectation: 'Streak-Free Zero Suds',
     primaryFunction: 'Fast-evaporating streak-free removal of fingerprints and smudges from glass & mirrors',
     keyConstraints: [

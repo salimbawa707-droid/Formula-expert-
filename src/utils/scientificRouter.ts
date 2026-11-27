@@ -180,7 +180,7 @@ export function shouldEnforceLowFoam(category?: string): boolean {
  */
 export function shouldAllowCationicSurfactants(category?: string): boolean {
   const profile = tryGetScientificProductProfile(category);
-  return profile ? profile.calculationPolicy.allowCationicSurfactants : true;
+  return profile ? profile.calculationPolicy.allowCationicSurfactants : false;
 }
 
 /**
@@ -188,31 +188,31 @@ export function shouldAllowCationicSurfactants(category?: string): boolean {
  */
 export function shouldAllowAnionicSurfactants(category?: string): boolean {
   const profile = tryGetScientificProductProfile(category);
-  return profile ? profile.calculationPolicy.allowAnionicSurfactants : true;
+  return profile ? profile.calculationPolicy.allowAnionicSurfactants : false;
 }
 
 /**
  * Gets surfactant type preference for the category.
  */
-export function getCategoryExpectedSurfactantType(category?: string): SurfactantTypePreference {
+export function getCategoryExpectedSurfactantType(category?: string): SurfactantTypePreference | null {
   const profile = tryGetScientificProductProfile(category);
-  return profile ? profile.calculationPolicy.surfactantPreference : 'ANIONIC_DOMINANT';
+  return profile ? profile.calculationPolicy.surfactantPreference : null;
 }
 
 /**
  * Gets the pH limits configured for the category.
  */
-export function getCategoryPHLimits(category?: string): { min: number; max: number; optimal: number } {
+export function getCategoryPHLimits(category?: string): { min: number; max: number; optimal: number } | null {
   const profile = tryGetScientificProductProfile(category);
-  return profile ? profile.calculationPolicy.targetPHRange : { min: 6.0, max: 10.0, optimal: 8.0 };
+  return profile ? profile.calculationPolicy.targetPHRange : null;
 }
 
 /**
  * Gets active surfactant range configured for the category.
  */
-export function getCategoryActiveSurfactantLimits(category?: string): { min: number; max: number; optimal: number } {
+export function getCategoryActiveSurfactantLimits(category?: string): { min: number; max: number; optimal: number } | null {
   const profile = tryGetScientificProductProfile(category);
-  return profile ? profile.calculationPolicy.activeSurfactantRange : { min: 5.0, max: 25.0, optimal: 15.0 };
+  return profile ? profile.calculationPolicy.activeSurfactantRange : null;
 }
 
 /**

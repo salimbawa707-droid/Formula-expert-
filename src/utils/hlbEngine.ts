@@ -36,7 +36,8 @@ const HLB_EXACT_CANONICAL_ALIASES: Record<string, string> = {
  *    - Basis: Active Surfactant Mass Fraction (Weighted by active matter % * dosage %)
  *      HLB_blend = Σ(HLB_i * W_active_i) / Σ(W_active_i)
  *      where W_active_i = (percentage_i * activeMatter_i) / 100
- *    - Fallback: If active matter is unavailable, weights by gross dosage percentage W_i
+ *    - Requires explicit active-matter assay (0–100% w/w) for every contributing surfactant;
+ *      missing or invalid assay is reported as a limitation and excluded from a valid blend.
  *    - Division-by-Zero / Empty Guard: Returns 0 with hasSurfactants=false and clean diagnostic metadata
  * 
  * 3. Scope & Physical Emulsification Region Mapping:
