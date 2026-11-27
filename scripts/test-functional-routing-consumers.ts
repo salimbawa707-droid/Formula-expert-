@@ -68,6 +68,10 @@ const intelligenceClash = traceCompatibilityReasoning([
   { name:'Esterquat 90%', category:'Cationic Surfactant', percentage:5 } as any
 ], 'FABRIC_SOFTENER');
 assert(intelligenceClash.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), 'ingredient intelligence compatibility must consume governed anionic identity routing');
+const intelligenceBlocked = traceCompatibilityReasoning([
+  { id:'tallow-amine-oxide', name:'Tallow Amine Oxide Acid Thickener', category:'Polymer & Thickener', percentage:2 } as any
+], 'LAUNDRY_LIQUID');
+assert(intelligenceBlocked.some(f => f.findingCode === 'ERR_INGREDIENT_IDENTITY_UNRESOLVED' && f.severity === 'FATAL'), 'ingredient intelligence must block unresolved identity instead of trusting its display label');
 
 const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
 assert(analysisWorkflowSource.includes('resolveFunctionalRoutingForIngredient'), 'analysis workflow charge breakdown must resolve governed functional identity');
@@ -79,6 +83,10 @@ assert(smartAnalyzerSource.includes('hasConditionalAmineOxide'), 'formula finger
 const cleaningPerformanceSource = readFileSync('src/utils/cleaningPerformanceEngine.ts', 'utf8');
 assert(cleaningPerformanceSource.includes('resolveFunctionalRoutingForIngredient'), 'cleaning performance charge distribution must consume governed identity');
 assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'ZWITTERIONIC'"), 'cleaning performance must separate zwitterionic betaine from amine oxide');
+assert(cleaningPerformanceSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'cleaning performance must not count anionic polymeric dispersant as primary surfactant active');
+assert(analysisWorkflowSource.includes('isPolymericDispersant'), 'staged workflow must exclude polymeric dispersant from primary surfactant charge totals');
+assert(dagSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'scientific DAG must exclude polymeric dispersant from primary surfactant charge totals');
+assert(qualityGateSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'safety quality gates must not apply primary-surfactant policy to polymeric dispersant');
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
 const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
