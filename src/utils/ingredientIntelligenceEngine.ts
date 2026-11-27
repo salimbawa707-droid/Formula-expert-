@@ -1080,6 +1080,32 @@ export function traceCompatibilityReasoning(
   }
   const normCat: ProductCategoryId = normCatRaw;
 
+  // Unresolved governed identities block a clean compatibility verdict. Do not let
+  // a display-name/category heuristic silently replace the missing identity evidence.
+  ingredients.forEach((ingredient, index) => {
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ingredient as any).id,
+      canonicalIngredientId: (ingredient as any).canonicalIngredientId,
+      ingredientId: (ingredient as any).ingredientId,
+      name: ingredient.name
+    });
+    if (route?.role === 'IDENTITY_UNRESOLVED') {
+      findings.push({
+        id: `compat-identity-unresolved-${index}-${Date.now()}`,
+        findingCode: 'ERR_INGREDIENT_IDENTITY_UNRESOLVED',
+        severity: 'FATAL',
+        title: 'Ingredient Identity Unresolved',
+        message: `Ingredient '${ingredient.name}' has a governed identity conflict; compatibility and property-model routing are blocked until exact identity and composition are established.`,
+        ingredientsInvolved: [ingredient.name],
+        relationship: 'Unresolved Ingredient Identity',
+        categoryContext: normCat,
+        activationCondition: 'Catalog identity route is BLOCKED',
+        downstreamPropertyAffected: 'Compatibility, charge classification and formula validity',
+        provenance: 'PREDICTED_INTERACTION'
+      });
+    }
+  });
+
   // A. Surfactant-Surfactant Compatibility Review
   const hasAnionic = ingredients.some(i => {
     const c = (i.category || i.role || '').toUpperCase();
