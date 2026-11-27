@@ -70,6 +70,7 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
 
   const globalOnlyIdentity = IngredientIdentitySSOT.resolveRegulatoryStatus('citric_acid', 'IN');
   const globalOnlyCategory = IngredientIdentitySSOT.resolveRegulatoryStatus('citric_acid', 'GLOBAL', 'LAUNDRY_LIQUID');
+  const unsupportedEuApproval = IngredientIdentitySSOT.resolveRegulatoryStatus('sodium_hydroxide', 'EU');
   assert(
     'Ingredient identity SSOT: GLOBAL listing cannot be promoted to India-specific regulatory approval',
     globalOnlyIdentity.status === 'UNKNOWN',
@@ -79,6 +80,11 @@ export function runP2Phase14RegulatoryComplianceTestSuite(): { total: number; pa
     'Ingredient identity SSOT: product-category approval requires explicit category scope',
     globalOnlyCategory.status === 'UNKNOWN',
     'A substance-level GLOBAL listing without productCategoryScope cannot approve a detergent category'
+  );
+  assert(
+    'Ingredient identity SSOT: unsubstantiated generic regulatory records remain UNKNOWN',
+    unsupportedEuApproval.status === 'UNKNOWN',
+    'Generic dossier labels without an exact legal instrument, scope and auditable source must not claim APPROVED'
   );
 
   // --------------------------------------------------------------------------
