@@ -94,7 +94,10 @@ export function assessAiScientificValidation(
       disposition: 'CALCULATION_FAILED',
       maximumScore: null,
       score: null,
+      endpointBenchmarkQualified: false,
+      supplierLotVerified: false,
       labProximityEligible: false,
+      scoreSemantics: 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY',
       userLabel: 'Calculation failed — scientific gate blocked',
       reasons,
       requiredDisclosure: DISCLOSURE
@@ -106,7 +109,10 @@ export function assessAiScientificValidation(
       disposition: 'INSUFFICIENT_EVIDENCE',
       maximumScore: null,
       score: null,
+      endpointBenchmarkQualified: false,
+      supplierLotVerified: false,
       labProximityEligible: false,
+      scoreSemantics: 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY',
       userLabel: 'Insufficient evidence',
       reasons: ['An unresolved critical evidence gap blocks a composite score.'],
       requiredDisclosure: DISCLOSURE
