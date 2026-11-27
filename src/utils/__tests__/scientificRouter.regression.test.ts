@@ -349,14 +349,26 @@ export function runScientificRouterTestSuite(): { passed: number; failed: number
     }
   }
   for (const engineId of allEngineIds) {
+    const applicable = isEngineApplicable('ALIEN_ROCKET_CLEANER', engineId);
     assert(
       `Unknown category rejects engine: ${engineId}`,
-      isEngineApplicable('ALIEN_ROCKET_CLEANER', engineId) === false &&
-      getApplicableEnginesForCategory('ALIEN_ROCKET_CLEANER').length === 0,
-      { applicable: isEngineApplicable('ALIEN_ROCKET_CLEANER', engineId), registered: getApplicableEnginesForCategory('ALIEN_ROCKET_CLEANER') },
-      { applicable: false, registered: [] }
+      applicable === false,
+      applicable,
+      false
     );
   }
+  let unknownEngineListThrows = false;
+  try {
+    getApplicableEnginesForCategory('ALIEN_ROCKET_CLEANER');
+  } catch {
+    unknownEngineListThrows = true;
+  }
+  assert(
+    'Unknown category engine-list lookup throws explicit category error',
+    unknownEngineListThrows,
+    unknownEngineListThrows,
+    true
+  );
 
   // Automatic dishwasher already declares HLB as applicable and required; the engine registry must agree.
   const automaticDishwash = getScientificProductProfile('DISHWASH_AUTOMATIC');
