@@ -336,3 +336,22 @@ Phase 4B remains OPEN. Phase 5 remains LOCKED pending complete source reconcilia
 ### HLB regression correction — screening vs supplier-grade evidence
 
 Run #1380 exposed that the first adapter pass suppressed HLB values too broadly, which incorrectly removed SLES Davies-scale and APG catalog screening contributions. Corrected the boundary: SLS/SLES and APG catalog HLB values may be used as screening estimates (`dataSource: estimated`), while amine oxide, lignosulfonate and unresolved tallow remain blocked from HLB transfer. This preserves the HLB calculation method without promoting catalog estimates to supplier-grade evidence. Regression tests now assert both the numeric screening value and the `estimated` provenance.
+
+
+### Additional identity tranche — Sodium C14-16 Olefin Sulfonate / AOS (2026-11-27)
+
+Catalog IDs `aos-38` and `aos-92` were reconciled against:
+- Health Canada screening assessment: CAS 68439-57-6 is a UVCB mixture of C14-16 alkene sulfonates and hydroxyalkane sulfonates, explicitly in the anionic surfactant group. 
+- FDA SRS UNII O9W3D3YF5U maps Sodium C14-16 Olefin Sulfonate and CAS 68439-57-6.
+- ECHA substance infocard lists the corresponding C14-16 hydroxyalkane/alkene sodium salts.
+- Colonial Chemical's named AOS-40 SDS confirms INCI/CAS for that comparator grade, not for the catalog 38% or 92% product lots.
+
+Disposition: AOS is routed as ANIONIC primary surfactant family; 38% liquid and 92% powder remain distinct commercial grades. Catalog activeDefault values remain screening defaults only. HLB 12.0 and pure-component CMC are blocked: the substance is a UVCB distribution and no defensible single-molecule transfer or grade-specific HLB evidence is supplied.
+
+Sources:
+- Health Canada UVCB identity and anionic surfactant assessment: https://www.canada.ca/en/environment-climate-change/services/evaluating-existing-substances/screening-assessment-alkyl-sulfatesa-olefin-sulfonate-group-chemical-abstracts-service-registry-numbers-139.html
+- FDA SRS UNII: https://precision.fda.gov/uniisearch/srs/unii/O9W3D3YF5U
+- ECHA substance infocard: https://echa.europa.eu/es/substance-information/-/substanceinfo/100.158.197
+- Colonial Chemical AOS-40 SDS (comparator only): https://colonialchem.me/wp-content/uploads/2020/10/Colonial-AOS-40-SDS-EU-English-1-Nov-2019.pdf
+
+Regression expanded to nine routed identity groups; AOS 38/92 are checked for category/INCI integrity, anionic classification, HLB block and CMC block.
