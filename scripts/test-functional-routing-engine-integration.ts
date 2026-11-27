@@ -16,6 +16,9 @@ const tallow = ingredient('tallow-amine-oxide','Tallow Amine Oxide Acid Thickene
 const aosActive = ActiveMatterEngine.resolveIngredientActive(aos);
 assert.equal(aosActive.isSurfactant, true);
 assert.equal(aosActive.surfactantType, 'anionic');
+const aosHlb = HLBEngine.resolveIngredientHLB(aos);
+assert.equal(aosHlb.hlb, null, 'AOS UVCB has no transferable single-component HLB');
+assert.equal(aosHlb.activeMatterPct, 38, 'HLB block must not erase separately available active-matter screening input');
 const slsActive = ActiveMatterEngine.resolveIngredientActive(sls);
 assert.equal(slsActive.isSurfactant, true);
 assert.equal(slsActive.surfactantType, 'anionic');
