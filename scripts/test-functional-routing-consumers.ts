@@ -41,7 +41,7 @@ const ldaoFormula = calculateFormulationCompatibility([
   { name:'Lauryl Amine Oxide 30% (LDAO)', category:'Nonionic Surfactant', percentage:5 } as any,
   { name:'SLES 70% (Sodium Lauryl Ether Sulfate)', category:'Anionic Surfactant', percentage:10 } as any
 ], 7, 'LAUNDRY_LIQUID');
-assert(ldaoFormula.alerts.some(a => a.id === 'amine-oxide-ph-dependent-compatibility-test'));
+assert(ldaoFormula.alerts.some(a => a.id === 'ph-dependent-surfactant-compatibility-test'));
 assert(!ldaoFormula.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), 'amine oxide must not be treated as fixed cationic/anionic charge');
 
 const blockedFormula = calculateFormulationCompatibility([
