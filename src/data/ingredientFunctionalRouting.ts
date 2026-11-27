@@ -164,8 +164,16 @@ const DECISIONS: FunctionalRoutingDecision[] = [
 export function getFunctionalRoutingDecisions(): FunctionalRoutingDecision[] {
   return DECISIONS.map(item => ({ ...item, ingredientIds: [...item.ingredientIds], sourceUrls: [...item.sourceUrls], caveats: [...item.caveats] }));
 }
+const ROUTE_FAMILY_ALIASES: Record<string, string> = {
+  labsa: 'labsa-90',
+  sles: 'sles-70',
+  aos: 'aos-38',
+  capb: 'capb-30-uni'
+};
+
 export function resolveFunctionalRouting(ingredientId: string): FunctionalRoutingDecision | null {
-  const found = DECISIONS.find(item => item.ingredientIds.includes(ingredientId));
+  const found = DECISIONS.find(item => item.ingredientIds.includes(ingredientId))
+    ?? DECISIONS.find(item => item.ingredientIds.includes(ROUTE_FAMILY_ALIASES[ingredientId] || ''));
   return found ? { ...found, ingredientIds: [...found.ingredientIds], sourceUrls: [...found.sourceUrls], caveats: [...found.caveats] } : null;
 }
 export function resolveFunctionalRoutingForIngredient(input: { id?: unknown; canonicalIngredientId?: unknown; ingredientId?: unknown; name?: unknown }): FunctionalRoutingDecision | null {
