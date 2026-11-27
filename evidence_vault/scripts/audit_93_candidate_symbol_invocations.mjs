@@ -37,7 +37,8 @@ function add(sf,node,b,name,kind,srcText,imp){
  records.push({target:b.target,importer:rel(sf.fileName),importerKind:test(rel(sf.fileName))?'TEST':'PRODUCTION_SOURCE',importedSymbol:name,importSpecifier:b.spec,invocationKind:kind,line,column:p.character+1,expression:imp.slice(0,180),source:srcText.split(/\r?\n/)[line-1]?.trim().slice(0,240)||''});
 }
 for(const file of sources){
- const text=fs.readFileSync(file,'utf8'), sf=ts.createSourceFile(file,text,ts.ScriptTarget.Latest,true,file.endsWith('.tsx')||file.endsWith('.jsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS);
+ const text=fs.readFileSync(file,'utf8'), sf=program.getSourceFile(file);
+ if(!sf) throw new Error('TypeScript Program did not load source file: '+file);
  const bindings=new Map();
  for(const st of sf.statements){
   if(!ts.isImportDeclaration(st)||!ts.isStringLiteral(st.moduleSpecifier))continue;
