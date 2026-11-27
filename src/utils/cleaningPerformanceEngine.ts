@@ -219,7 +219,9 @@ export function calculateCleaningPerformance(
       missingSurfactantActiveMatter = true;
       continue;
     }
-    if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+    if (route?.role === 'POLYMERIC_DISPERSANT') {
+      // Anionic polymer charge is relevant to compatibility, not primary surfactant synergy.
+    } else if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
       // Do not silently fold pH-dependent amine oxide into fixed amphoteric/nonionic totals.
       // Its contribution remains outside fixed-charge synergy until pH/speciation is modeled.
     } else if (route?.routingClass === 'ANIONIC' || (!route && (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos') || name.includes('sulphonate') || name.includes('sulfate')))) {
