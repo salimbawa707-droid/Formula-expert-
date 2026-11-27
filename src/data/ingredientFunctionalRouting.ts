@@ -112,6 +112,16 @@ export function resolveFunctionalRouting(ingredientId: string): FunctionalRoutin
   const found = DECISIONS.find(item => item.ingredientIds.includes(ingredientId));
   return found ? { ...found, ingredientIds: [...found.ingredientIds], sourceUrls: [...found.sourceUrls], caveats: [...found.caveats] } : null;
 }
+export function resolveFunctionalRoutingForIngredient(input: { id?: unknown; canonicalIngredientId?: unknown; ingredientId?: unknown; name?: unknown }): FunctionalRoutingDecision | null {
+  const suppliedId = String(input.canonicalIngredientId || input.ingredientId || input.id || '').trim();
+  const byId = suppliedId ? resolveFunctionalRouting(suppliedId) : null;
+  if (byId) return byId;
+  const suppliedName = String(input.name || '').trim().toLowerCase();
+  if (!suppliedName) return null;
+  const exactCatalogRecord = UNIVERSAL_INGREDIENTS.find(item => item.name.trim().toLowerCase() === suppliedName);
+  return exactCatalogRecord ? resolveFunctionalRouting(exactCatalogRecord.id) : null;
+}
+
 export function resolveFormulaIntelligenceRouting(ingredientId: string) {
   const route = resolveFunctionalRouting(ingredientId);
   if (!route) return null;
