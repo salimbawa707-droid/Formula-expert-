@@ -173,8 +173,6 @@ export function calculateFormulationCompatibility(
     const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
     const routeId = String((ing as any)?.canonicalIngredientId || (ing as any)?.ingredientId || ing?.id || '');
     const functionalRoute = routeId ? resolveFunctionalRouting(routeId) : null;
-    if (functionalRoute?.role === 'IDENTITY_UNRESOLVED') identityBlockedIngs.push(ing.name || routeId || 'Unknown ingredient');
-    if (functionalRoute?.role === 'AMINE_OXIDE_SURFACTANT') amineOxideIngs.push(ing.name || routeId);
     const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent;
     const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
       ? Number.NaN
@@ -185,6 +183,8 @@ export function calculateFormulationCompatibility(
       continue;
     }
     if (pct === 0) continue; // Explicit zero percentage ingredients are physically absent
+    if (functionalRoute?.role === 'IDENTITY_UNRESOLVED') identityBlockedIngs.push(ing.name || routeId || 'Unknown ingredient');
+    if (functionalRoute?.role === 'AMINE_OXIDE_SURFACTANT') amineOxideIngs.push(ing.name || routeId);
 
     // Water
     if (name.includes('water') || name.includes('aqua') || (cat.includes('solvent') && name.includes('water'))) {
@@ -402,6 +402,9 @@ export function calculateFormulationCompatibility(
   for (let i = 0; i < safeIngs.length; i++) {
     for (let j = i + 1; j < safeIngs.length; j++) {
       const a = safeIngs[i], b = safeIngs[j];
+      const aPct = Number(a?.percentage ?? (a as any)?.percent ?? 0);
+      const bPct = Number(b?.percentage ?? (b as any)?.percent ?? 0);
+      if (!(aPct > 0) || !(bPct > 0)) continue;
       const decision = resolveFunctionalCompatibilityMatrixPair(
         String((a as any)?.canonicalIngredientId || (a as any)?.ingredientId || a?.id || ''),
         String(a?.category || a?.role || ''),
