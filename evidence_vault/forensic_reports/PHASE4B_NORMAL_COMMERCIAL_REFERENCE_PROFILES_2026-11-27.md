@@ -30,6 +30,20 @@ The dataset is intentionally separate from the existing formula calculation defa
 
 The source links are embedded in the code dataset. Grade variants are not silently collapsed: the sodium sulfate source publishes multiple grades; the selected grade remains unknown. Metasilicate pentahydrate data is not reused for anhydrous metasilicate. AOS sources also show pH differences between neutral and alkaline grades; the selected grade must be preserved.
 
+| `lae-7` | C12-15 alcohol ethoxylate 7EO | Active 100%; cloud point 50°C (1% aqueous); HLB 12.2; density 0.96 g/mL | Stepan BIO-SOFT N25-7 |
+| `lae-9` | Alcohol ethoxylate product benchmark | Cloud point 64°C (10% actives); HLB 12.5; pH 6.2 (1% aqueous) | Dow ECOSURF EH-9 TDS |
+| `glda-47` | GLDA-Na4 47% solution | Assay ≥47.4%; density approx. 1.40 g/cm³; pH 11.0–11.8 at 1% w/v; NTA ≤0.10%; theoretical calcium binding 55 mg Ca/g | Nouryon Dissolvine GL-47-S |
+| `mgda-40` | MGDA-Na3 liquid | Concentration 39–41%; density 1.29–1.33 g/cm³; pH approx. 11 at 1%; chelation 160 mg CaCO3/g by BASF method | BASF Trilon M Liquid T |
+| `sodium-citrate-uni` | Trisodium citrate dihydrate | Assay 99.0–100.5%; water 10–13%; pH 7.5–9 at 5% solution | Pangs TDS; USP/FCC/E331 column-specific limits |
+| `edta-4na-39-liquid` | Tetrasodium EDTA liquid benchmark | Approx. 40%; pH approx. 11.5 at 1%; density approx. 1.28 g/cm³ | BASF Home Care range card |
+| `protease-liquid` | Liquid laundry protease product example | Product-specific activity 150,000 KIPU-A/g; liquid; intended for liquid laundry | Novonesis Progress Go 100 L product information |
+| `amylase-liquid`, `lipase-liquid`, `cellulase-liquid`, `mannanase-liquid` | Enzyme activity reference rule | No universal transferable activity number; require supplier's named assay unit, method, substrate and activity/g or mL | Novonesis liquid detergent formulation whitepaper and enzyme documentation |
+| `carbomer-940` | Carbomer 940 NF benchmark | Acid assay 56–68%; viscosity 40,000–60,000 cP at specified 0.5% neutralized test; loss on drying ≤2% | Lubrizol Carbopol 940 NF specification |
+| `bit-20` | BIT aqueous-glycolic preservative product | Manufacturer confirms BIT solution for cleaners/detergents; exact assay specification not fully published in retrieved page | LANXESS PREVENTOL BIT 20 N |
+| `phenoxyethanol-99` | Phenoxyethanol preservative grade | Purity ≥99% by GC; moisture ≤0.2%; specific gravity 1.105–1.110 at 20°C; pH 5.5–7.0 at 1% | Elchemy supplier TDS |
+| `kathon-cg` | CMIT/MIT 1.5% commercial benchmark | Total active 1.5%; published application guidance pH <8.5 and typical use range 0.025–0.1% product; ratio/carrier not inferred | LANXESS home-care portfolio application table |
+| `perfume-compound` | Fragrance mixture framework | IFRA Category 10A applies to laundry detergents, hand dishwashing detergents and hard-surface cleaners; no universal composition/active/dose | IFRA-RIFM Guidance for the Use of IFRA Standards |
+
 ## Deliberately not inferred
 
 - Supplier/manufacturer of the user's stock.
@@ -41,7 +55,7 @@ The source links are embedded in the code dataset. Grade variants are not silent
 
 ## Next implementation tranches
 
-Continue the same source-first process across the remaining 83 unique MICG candidate groups and their catalog IDs. Prioritize:
+Continue the same source-first process across the remaining unique MICG candidate groups and their catalog IDs. Profiles are added only where an exact catalog ID and a defensible grade/source mapping exist; unresolved catalog items stay explicitly without a numerical default. Prioritize:
 1. Primary surfactants and nonionics (SLES 28/70, SLS, AOS powder, SAS, APGs, betaines, amine oxides, ethoxylates).
 2. Builders, chelators and salts (carbonate, citrate, STPP, GLDA/MGDA, EDTA, gluconate, silicates, chloride, bicarbonate).
 3. Enzymes (activity units and assay method, not mass percentage alone).
@@ -52,7 +66,7 @@ A candidate receives a public reference profile only when an identifiable source
 
 ## Gate status
 
-- Public commercial reference profiles implemented in this tranche: 11.
+- Public commercial reference profiles implemented in this tranche: 23.
 - Supplier grade verified by these references: 0.
 - Lot CoA verified by these references: 0.
 - Formula applicability approvals created by these references: 0.
