@@ -70,9 +70,9 @@ import { LabAlignmentTrendGraph } from "./aiformulator/LabAlignmentTrendGraph";
 import { FORMULAS } from "../data/formulas";
 
 // Critical Micelle Concentration estimation helper (backwards-compatible alias)
-export const getIngredientCmc = (name: string): { cmcMolar: number; cmcPpm: number } | null => {
-  const data = getIngredientCmcData(name);
-  return data ? { cmcMolar: data.cmcMolar, cmcPpm: data.cmcPpm } : null;
+export const getIngredientCmc = (name: string): ReturnType<typeof getIngredientCmcData> => {
+  // Preserve dataProvenance so UI callers cannot accidentally strip the screening/reference boundary.
+  return getIngredientCmcData(name);
 };
 
 
