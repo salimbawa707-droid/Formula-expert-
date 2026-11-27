@@ -13,6 +13,18 @@ assert.equal(summary.exactCasInciSsotMatches + summary.ambiguousOrConflicting + 
 assert.equal(summary.catalogProvenanceRecords, 3, 'catalog provenance metadata count must be reconciled');
 assert.equal(summary.catalogProvenanceUrlRecords, 1, 'catalog provenance URL count must be reconciled');
 assert.equal(summary.gradeSpecificEvidenceRecords, 0, 'identity SSOT cannot be promoted into supplier-grade evidence');
+assert.deepEqual(summary.missingFieldCounts, {
+  identityType: 423,
+  casStatus: 423,
+  manufacturer: 427,
+  productName: 427,
+  supplierAssay: 430,
+  verifiedPHBounds: 430,
+  structuredProvenance: 427,
+  provenanceUrl: 429
+}, 'catalog grade/provenance gaps must be reproducible');
+assert.equal(summary.activeDefaultPresentButSupplierAssayMissing, 430, 'activeDefault is not a substitute for supplier assay');
+assert(MASTER_INGREDIENT_IDENTITY_COVERAGE.every(row => row.activeDefaultPresentButSupplierAssayMissing));
 assert(MASTER_INGREDIENT_IDENTITY_COVERAGE.every(row => row.gradeSpecificEvidenceStatus === 'NOT_ESTABLISHED_BY_IDENTITY_SSOT'));
 assert(MASTER_INGREDIENT_IDENTITY_COVERAGE.every(row => row.unresolvedReason && row.unresolvedReason.length > 20));
 const proprietary = MASTER_INGREDIENT_IDENTITY_COVERAGE.find(row => row.ingredientId === 'aristo-9');
