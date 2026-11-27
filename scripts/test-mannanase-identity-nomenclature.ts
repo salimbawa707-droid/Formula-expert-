@@ -24,7 +24,7 @@ assert.deepEqual(
 for (const row of rows) {
   assert.equal(
     row.inciName,
-    "Mannanase (Mannan endo-1,4-beta-mannosidase)",
+    "Mannanase",
     `${row.id} must use the accepted enzyme identity, not the erroneous endoperoxidase label`,
   );
   assert.match(row.name, /Mannanase/i);
