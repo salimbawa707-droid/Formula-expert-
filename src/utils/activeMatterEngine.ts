@@ -205,7 +205,7 @@ export class ActiveMatterEngine {
     const routed = canonicalIngredientId ? resolveFunctionalRouting(canonicalIngredientId) : null;
     if (routed?.role === 'IDENTITY_UNRESOLVED') return { isSurfactant: false, surfactantType: 'none' };
     if (routed?.role === 'POLYMERIC_DISPERSANT') return { isSurfactant: false, surfactantType: 'none' };
-    if (routed?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return { isSurfactant: true, surfactantType: 'conditional' };
+    if (routed?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE' || routed?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return { isSurfactant: true, surfactantType: 'conditional' };
     if (routed?.routingClass === 'ANIONIC') return { isSurfactant: true, surfactantType: 'anionic' };
     if (routed?.routingClass === 'AMPHOTERIC') return { isSurfactant: true, surfactantType: 'amphoteric' };
     const cat = (category || '').toLowerCase();
