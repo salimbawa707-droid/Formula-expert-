@@ -174,6 +174,7 @@ export function resolveFormulaIntelligenceRouting(ingredientId: string) {
   if (!route) return null;
   const chargeLabel = route.role === 'IDENTITY_UNRESOLVED' ? 'Unresolved — blocked'
     : route.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE' ? 'Amine Oxide (pH-dependent)'
+    : route.chargeBehavior === 'PH_DEPENDENT_ANIONIC' ? 'Anionic (pH-dependent)'
     : route.routingClass === 'ANIONIC' ? 'Anionic'
     : route.routingClass === 'AMPHOTERIC' ? 'Amphoteric'
     : route.routingClass === 'NONIONIC' ? 'Nonionic' : 'Unresolved — blocked';
