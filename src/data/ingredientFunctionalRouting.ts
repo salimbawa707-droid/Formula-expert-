@@ -147,7 +147,7 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'PH_DEPENDENT_ANIONIC',
     activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
     identityScope: 'Exact catalog CAS 27176-87-0 and INCI Dodecylbenzene Sulfonic Acid crosswalk to the SSOT LABSA identity. The acid precursor is neutralized in use; ionic surfactant state is therefore pH/speciation dependent.',
-    sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/27176-87-0'],
+    sourceUrls: ['https://echa.europa.eu/substance-information/-/substanceinfo/100.043.885','https://pubchem.ncbi.nlm.nih.gov/compound/27176-87-0'],
     caveats: ['LABSA 90% and 96% are separate commercial grade labels; neither is supplier/lot verified by this identity route.', 'Active-matter input must come from the actual grade assay; this route does not certify the catalog default.', 'Do not assign pure-component CMC or supplier-grade HLB from this identity mapping.', 'Use formula pH/neutralization state for charge-dependent compatibility; do not treat acid-form LABSA as invariant fixed anionic species.']
   },
   {
