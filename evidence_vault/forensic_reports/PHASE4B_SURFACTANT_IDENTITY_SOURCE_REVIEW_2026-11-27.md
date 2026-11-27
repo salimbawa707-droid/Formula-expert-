@@ -97,3 +97,25 @@ This continuation expands the source screen. These are source-backed identity ca
 - New explicit CAS/identity holds: 3 (Sodium Methyl Cocoyl Taurate identifier priority; C12-15 Pareth shared-CAS cluster; Nonoxynol shared-CAS cluster).
 - SSOT promotions: 0.
 - Supplier-grade evidence established: 0.
+
+
+## Follow-up source review — remaining individually sourced candidates
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-011 | Lauryl Glucoside | 110615-47-9 | PubChem CID 10893439 lists Lauryl Glucoside and CAS 110615-47-9, but also lists 27836-64-2 as another CAS identifier for the record. A separate PubChem vendor substance record lists 110615-47-9. | Source-supported identity candidate with CAS-scope caveat. Keep alternate CAS and exact glucoside/alkyl distribution traceable; do not infer a supplier grade. |
+| MICG-033 | Behentrimonium Chloride | 17301-53-0 | PubChem CID 3014969 identifies docosyltrimethylammonium chloride, CAS 17301-53-0, formula C25H54ClN and UNII X7GNG3S47T. | Strong chemical identity candidate. Catalog classification is cationic surfactant; commercial grade and assay still unverified. |
+| MICG-099 | Sodium Lignosulfonate | 8061-51-6 | PubChem CID 44135711 identifies sodium lignosulfonate/lignosulfonic acid sodium salt and lists CAS 8061-51-6. | Identity candidate supported, but **catalog functional class requires review**: do not automatically accept the current “Anionic Surfactant” class as equivalent to a conventional low-molecular-weight surfactant. Review dispersant/polymeric functionality separately. |
+
+### Additional sources
+
+- PubChem, Lauryl Glucoside, CID 10893439: https://pubchem.ncbi.nlm.nih.gov/compound/10893439
+- PubChem, Lauryl Glucoside vendor-substance record: https://pubchem.ncbi.nlm.nih.gov/substance/254763565
+- PubChem, Behentrimonium Chloride, CID 3014969: https://pubchem.ncbi.nlm.nih.gov/compound/3014969
+- PubChem, Sodium Lignosulfonate, CID 44135711: https://pubchem.ncbi.nlm.nih.gov/compound/44135711
+
+### Current surfactant-family backlog disposition
+
+This audit now includes 29 catalog candidate groups/issues examined across the three source-review tranches. It has identified source-backed identity candidates and several explicit identity/CAS/category holds. This is not a count of 29 supplier-grade verified records: all commercial-grade assays, manufacturer identity, lot CoA/TDS/SDS, purity/solids and grade-specific composition remain unestablished.
+
+Still requiring source-specific review before any identity SSOT promotion include: sodium C14-17 secondary alkyl sulfonate; sodium cocoamphoacetate; PEG-40 hydrogenated castor oil; Poloxamer 184; benzalkonium chloride; and remaining surfactant-class candidates not yet covered. No candidate is promoted merely because a CAS/name pair appears in a secondary index.
