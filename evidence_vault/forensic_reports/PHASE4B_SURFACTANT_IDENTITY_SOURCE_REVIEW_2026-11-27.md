@@ -92,8 +92,8 @@ This continuation expands the source screen. These are source-backed identity ca
 
 ### New material findings
 
-- Additional groups reviewed in this tranche: 14 (MICG-063, 066, 074, 076, 078, 075, 086, 088, 085, 111, 112, 079–082, 116–118; group count is 14 when the Pareth and Nonoxynol collisions are each counted as one grouped issue).
-- New source-supported identity candidates: 11.
+- Additional candidate groups/issues reviewed in this tranche: 18 (11 individual groups plus four Pareth groups and three Nonoxynol groups).
+- New source-supported identity candidates: 10.
 - New explicit CAS/identity holds: 3 (Sodium Methyl Cocoyl Taurate identifier priority; C12-15 Pareth shared-CAS cluster; Nonoxynol shared-CAS cluster).
 - SSOT promotions: 0.
 - Supplier-grade evidence established: 0.
