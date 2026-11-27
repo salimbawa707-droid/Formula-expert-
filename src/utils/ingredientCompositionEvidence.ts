@@ -1,4 +1,5 @@
 import { ProductCategoryId, normalizeProductCategory } from '../domain/productTaxonomy';
+import { getRegisteredInstruments } from '../domain/lims/instrument';
 
 export type CompositionMeasurementBasis = 'W_W';
 export type CompositionMeasurementMethod = 'GRAVIMETRIC_MASS_BALANCE' | 'VALIDATED_ASSAY' | 'OTHER_VALIDATED_METHOD';
@@ -55,6 +56,18 @@ export function validateIngredientCompositionEvidence(
   if (!input.compositionMethodDetails?.trim()) errors.push('Measurement method details/reference are required.');
   if (!input.instrumentId?.trim()) errors.push('Instrument identity is required.');
   if (!input.instrumentCalibrationReference?.trim()) errors.push('Current instrument calibration reference is required.');
+  const registeredInstrument = input.instrumentId
+    ? getRegisteredInstruments().find(instrument => instrument.instrumentId === input.instrumentId)
+    : undefined;
+  if (!registeredInstrument) errors.push('Instrument ID is not present in the authoritative instrument registry.');
+  else {
+    if (registeredInstrument.classification !== 'USER_REGISTERED' || !registeredInstrument.isActive) {
+      errors.push('Only active user-registered laboratory instruments are eligible; reference/demo fixtures are blocked.');
+    }
+    if (registeredInstrument.calibrationCertificateReference !== input.instrumentCalibrationReference) {
+      errors.push('Calibration certificate reference does not match the registered instrument record.');
+    }
+  }
   if (!input.sourceDocumentReference?.trim()) errors.push('Original laboratory record/source document reference is required.');
   if (!input.formulaCompositionReference?.trim()) errors.push('Exact formula composition snapshot/reference is required.');
   if (!Number.isInteger(input.replicateNumber) || Number(input.replicateNumber) < 1) errors.push('Replicate number must be a positive integer.');
