@@ -68,6 +68,9 @@ function exportedSymbols(source) {
   if (/\bexport\s+default\b/.test(source)) names.add('default');
   return [...names].sort();
 }
+function isTestFile(file) {
+  return file.split('/').includes('__tests__') || /\.(test|spec)\.(ts|tsx|js|jsx)$/i.test(file);
+}
 function importedNames(clause) {
   const names = [];
   const named = clause.match(/\{([^}]+)\}/);
@@ -149,7 +152,7 @@ const modules = new Map(candidateFiles.map(file => [file, {
   role: classify(file, sourceByPath.get(file)),
   exports: exportedSymbols(sourceByPath.get(file)),
   outgoingCandidateDependencies: [],
-  incomingStaticImporters: []
+  incomingImporters: []
 }]));
 const edges = [];
 const unresolvedCandidateLikeImports = [];
@@ -169,7 +172,7 @@ for (const importer of sourceFiles) {
       importedNames: importedNames(statement.clause)
     };
     edges.push(edge);
-    modules.get(target).incomingStaticImporters.push(edge);
+    modules.get(target).incomingImporters.push(edge);
     if (modules.has(importer)) modules.get(importer).outgoingCandidateDependencies.push(target);
   }
 
@@ -179,21 +182,21 @@ for (const importer of sourceFiles) {
     if (!target) continue;
     const edge = { importer, target, edgeType: 'DYNAMIC_IMPORT', importedNames: [] };
     edges.push(edge);
-    modules.get(target).incomingStaticImporters.push(edge);
+    modules.get(target).incomingImporters.push(edge);
     if (modules.has(importer)) modules.get(importer).outgoingCandidateDependencies.push(target);
   }
 }
 
 for (const module of modules.values()) {
   module.outgoingCandidateDependencies = [...new Set(module.outgoingCandidateDependencies)].sort();
-  module.incomingStaticImporters.sort((a, b) => a.importer.localeCompare(b.importer));
-  module.directProductionImporters = [...new Set(module.incomingStaticImporters
-    .filter(edge => !edge.importer.split('/').includes('__tests__'))
+  module.incomingImporters.sort((a, b) => a.importer.localeCompare(b.importer));
+  module.directProductionImporters = [...new Set(module.incomingImporters
+    .filter(edge => !isTestFile(edge.importer))
     .map(edge => edge.importer))].sort();
-  module.directTestImporters = [...new Set(module.incomingStaticImporters
-    .filter(edge => edge.importer.split('/').includes('__tests__'))
+  module.directTestImporters = [...new Set(module.incomingImporters
+    .filter(edge => isTestFile(edge.importer))
     .map(edge => edge.importer))].sort();
-  module.productionReachable = module.directProductionImporters.length > 0;
+  module.hasDirectProductionImporter = module.directProductionImporters.length > 0;
 }
 const graph = {
   audit: 'Phase 4B broad candidate export and static call-site graph',
@@ -234,10 +237,10 @@ for (const module of graph.modules) {
   lines.push('- **Candidate dependencies:** ' + (module.outgoingCandidateDependencies.join(', ') || 'None detected.'));
   lines.push('- **Direct production importers:** ' + (module.directProductionImporters.join(', ') || 'None detected.'));
   lines.push('- **Direct test importers:** ' + (module.directTestImporters.join(', ') || 'None detected.'));
-  lines.push('- **Production reachable by static imports:** ' + (module.productionReachable ? 'YES' : 'NO / UNRESOLVED'));
+  lines.push('- **Has direct non-test source importer:** ' + (module.hasDirectProductionImporter ? 'YES' : 'NO / UNRESOLVED'));
   lines.push('- **Direct importers/call-site files:**');
-  if (module.incomingStaticImporters.length === 0) lines.push('  - None found by static import scan (may be dynamically wired, indirectly re-exported, or unused).');
-  else for (const edge of module.incomingStaticImporters) lines.push('  - `' + edge.importer + '` — ' + edge.edgeType + (edge.importedNames.length ? ': ' + edge.importedNames.join(', ') : ''));
+  if (module.incomingImporters.length === 0) lines.push('  - None found by static import scan (may be dynamically wired, indirectly re-exported, or unused).');
+  else for (const edge of module.incomingImporters) lines.push('  - `' + edge.importer + '` — ' + edge.edgeType + (edge.importedNames.length ? ': ' + edge.importedNames.join(', ') : ''));
   lines.push('');
 }
 lines.push('## Interpretation and limits');
@@ -254,6 +257,10 @@ console.log(JSON.stringify({
   edgeCount: graph.edgeCount,
   unresolvedCandidateLikeImports: graph.unresolvedCandidateLikeImports.length,
   unresolvedImports: graph.unresolvedCandidateLikeImports,
+  directNonTestImportedCandidates: [...modules.values()].filter(module => module.hasDirectProductionImporter).length,
+  noDirectNonTestImporterCandidates: [...modules.values()].filter(module => !module.hasDirectProductionImporter).map(module => module.path),
+  zeroExportCandidates: [...modules.values()].filter(module => module.exports.length === 0).map(module => module.path),
+  roleCounts: Object.fromEntries([...modules.values()].reduce((counts, module) => counts.set(module.role, (counts.get(module.role) || 0) + 1), new Map())),
   markdown: rel(OUT_MD),
   json: rel(OUT_JSON)
 }, null, 2));
