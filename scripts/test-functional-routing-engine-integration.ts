@@ -26,7 +26,10 @@ assert.equal(tallowActive.activeMatterPct, null);
 assert.equal(tallowActive.isSurfactant, false);
 assert.match(tallowActive.conflict?.message || '', /identity is unresolved/i);
 
-for (const material of [sls, ldao, ligno]) {
+const slsHlb = HLBEngine.resolveIngredientHLB(sls);
+assert.equal(slsHlb.hlb, 40);
+assert.equal(slsHlb.dataSource, 'estimated');
+for (const material of [ldao, ligno]) {
   const result = HLBEngine.resolveIngredientHLB(material);
   assert.equal(result.hlb, null, material.id + ' must not receive an unsupported HLB');
 }
