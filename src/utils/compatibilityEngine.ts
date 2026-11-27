@@ -203,8 +203,12 @@ export function calculateFormulationCompatibility(
     const isBlockedIdentity = functionalRoute?.role === 'IDENTITY_UNRESOLVED';
     const isPolymericDispersant = functionalRoute?.role === 'POLYMERIC_DISPERSANT';
     const isPHDependentAnionic = functionalRoute?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
+    // A measured/calculated final-formula pH >= 6 establishes predominantly
+    // anionic speciation for the audited sulfonate/sarcosinate route. Without
+    // usable pH, retain the conditional state and never assert a fixed clash.
+    const isPHDependentAnionicResolved = isPHDependentAnionic && pHAvailable && phVal >= 6.0;
     if (!isBlockedIdentity && !isShortChainHydrotrope && (hasExplicitAnionicRole || hasKnownAnionicSurfactantIdentity)) {
-      if (!isPHDependentAnionic) {
+      if (!isPHDependentAnionic || isPHDependentAnionicResolved) {
         hasAnionic = true;
         anionicPct += pct;
         anionicChargeIngs.push(ing.name);
@@ -419,7 +423,16 @@ export function calculateFormulationCompatibility(
         a?.name,
         b?.name
       );
-      if (decision?.status === 'REQUIRES_COMPATIBILITY_TEST') matrixTestPairs.push(`${a.name} + ${b.name}: ${decision.note || 'Grade-specific compatibility test required.'}`);
+      const routeA = resolveFunctionalRoutingForIngredient({ id: String((a as any)?.canonicalIngredientId || (a as any)?.ingredientId || a?.id || ''), name: a?.name });
+      const routeB = resolveFunctionalRoutingForIngredient({ id: String((b as any)?.canonicalIngredientId || (b as any)?.ingredientId || b?.id || ''), name: b?.name });
+      const resolvedAnionicPair = pHAvailable && phVal >= 6.0 && (
+        routeA?.chargeBehavior === 'PH_DEPENDENT_ANIONIC' || routeB?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'
+      ) && (
+        String(a?.category || a?.role || '').toLowerCase().includes('cationic') ||
+        String(b?.category || b?.role || '').toLowerCase().includes('cationic') ||
+        routeA?.routingClass === 'CATIONIC' || routeB?.routingClass === 'CATIONIC'
+      );
+      if (decision?.status === 'REQUIRES_COMPATIBILITY_TEST' && !resolvedAnionicPair) matrixTestPairs.push(`${a.name} + ${b.name}: ${decision.note || 'Grade-specific compatibility test required.'}`);
     }
   }
   if (matrixTestPairs.length > 0) {
