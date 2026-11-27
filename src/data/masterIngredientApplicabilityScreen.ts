@@ -22,8 +22,6 @@ export interface MasterIngredientApplicabilityScreenRow {
 
 function screenOne(ingredient: UniversalIngredient, category: ProductCategoryId): Omit<MasterIngredientApplicabilityScreenRow, 'ingredientId' | 'ingredientName' | 'catalogClass' | 'productCategory' | 'evidenceState'> {
   const c = ingredient.category.toLowerCase();
-  const name = ingredient.name.toLowerCase();
-  const role = (ingredient.role || ingredient.function || '').toLowerCase();
   const proprietary = ingredient.identityType === 'PROPRIETARY_BLEND' || ingredient.casStatus === 'PROPRIETARY' || (!ingredient.casNumber && ingredient.identityType !== 'MULTI_COMPONENT_MIXTURE');
   const unknowns = [
     ...(proprietary ? ['Full composition / identity disclosure'] : []),
