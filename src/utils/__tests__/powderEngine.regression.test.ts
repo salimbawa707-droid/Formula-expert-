@@ -484,6 +484,7 @@ export function runPowderEngineTestSuite(): {
     'Phase 4B Input Integrity',
     'Invalid mass-balance input cannot create a 100% balanced strength',
     reportInvalidMass.massBalance.status === 'INVALID_INPUT' &&
+      reportInvalidMass.massBalance.source === 'INSUFFICIENT_DATA' &&
       reportInvalidMass.verdict.overallStatus === 'INSUFFICIENT_DATA' &&
       !reportInvalidMass.verdict.strengths.some(s => s.title.includes('100.00% Formula Mass Balance')),
     { massBalance: reportInvalidMass.massBalance.status, verdict: reportInvalidMass.verdict.overallStatus, strengths: reportInvalidMass.verdict.strengths },
@@ -697,6 +698,44 @@ export function runPowderEngineTestSuite(): {
       reportInvalidPSDRange.particleSize.status === 'INSUFFICIENT_DATA',
     reportInvalidPSDRange.particleSize,
     'INSUFFICIENT_DATA'
+  );
+
+  const reportOverflowDensity = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: {
+      measuredSampleMassG: Number.MAX_VALUE,
+      measuredLooseVolumeMl: Number.MIN_VALUE
+    }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Finite mass and volume that overflow density arithmetic are rejected',
+    reportOverflowDensity.density.source === 'INSUFFICIENT_DATA' &&
+      reportOverflowDensity.density.densityType === 'NOT_MEASURED',
+    reportOverflowDensity.density,
+    'INSUFFICIENT_DATA / NOT_MEASURED'
+  );
+
+  const reportInvalidPHMeasurement = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measured1PctAqueousPH: 15 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Out-of-range measured pH is not silently replaced by a calculated value',
+    reportInvalidPHMeasurement.powderPH.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidPHMeasurement.powderPH.measuredPH === undefined &&
+      reportInvalidPHMeasurement.powderPH.statusMessage.includes('INVALID_INPUT'),
+    reportInvalidPHMeasurement.powderPH,
+    'INSUFFICIENT_DATA / invalid measurement disclosed'
   );
 
   const passedCount = results.filter(r => r.passed).length;
