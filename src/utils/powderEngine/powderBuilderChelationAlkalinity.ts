@@ -100,7 +100,7 @@ export function calculatePowderChelationSystem(
       const validActivePct =
         typeof rawActivePct === 'number' &&
         Number.isFinite(rawActivePct) &&
-        rawActivePct >= 0 &&
+        rawActivePct > 0 &&
         rawActivePct <= 100
           ? rawActivePct
           : null;
@@ -135,8 +135,11 @@ export function calculatePowderChelationSystem(
         capacityMgPerGram = rawCapacity;
         capacityStatus = `Traceable capacity evidence (${evidenceId}): ${rawCapacity} mg CaCO₃/g (${capacityBasis})`;
         const rawIngredientGrams = typeof washDoseG === 'number' ? washDoseG * (ing.inputPercentage / 100) : 0;
+        // Database lookup capacities are already expressed per gram of the
+        // commercial product grade. Apply an assay multiplier only when the
+        // caller explicitly declares a per-gram-active-material capacity.
         const capacityBasisGrams =
-          capacityBasis === 'ACTIVE_MATERIAL' || ing.activeMatterPct !== undefined
+          capacityBasis === 'ACTIVE_MATERIAL'
             ? rawIngredientGrams * (validActivePct / 100)
             : rawIngredientGrams;
         totalCaCapacityMg += capacityBasisGrams * rawCapacity;
