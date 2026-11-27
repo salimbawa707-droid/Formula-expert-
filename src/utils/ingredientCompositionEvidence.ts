@@ -2,7 +2,7 @@ import { ProductCategoryId, normalizeProductCategory } from '../domain/productTa
 import { getRegisteredInstruments } from '../domain/lims/instrument';
 
 export type CompositionMeasurementBasis = 'W_W';
-export type CompositionMeasurementMethod = 'GRAVIMETRIC_MASS_BALANCE' | 'VALIDATED_ASSAY' | 'OTHER_VALIDATED_METHOD';
+export type CompositionMeasurementMethod = 'GRAVIMETRIC_ASSAY' | 'VALIDATED_ASSAY' | 'OTHER_VALIDATED_METHOD';
 
 export interface IngredientCompositionEvidence {
   evidenceKind: 'INGREDIENT_COMPOSITION';
@@ -30,6 +30,7 @@ export interface IngredientCompositionEvidenceInput extends IngredientCompositio
   sourceType: string;
   qualityStatus: string;
   operator: string;
+  testMethod: string;
 }
 
 /**
@@ -54,6 +55,7 @@ export function validateIngredientCompositionEvidence(
     errors.push('A supported measurement method is required.');
   }
   if (!input.compositionMethodDetails?.trim()) errors.push('Measurement method details/reference are required.');
+  if (!input.testMethod?.trim()) errors.push('A named laboratory test method is required.');
   if (!input.instrumentId?.trim()) errors.push('Instrument identity is required.');
   if (!input.instrumentCalibrationReference?.trim()) errors.push('Current instrument calibration reference is required.');
   const registeredInstrument = input.instrumentId
