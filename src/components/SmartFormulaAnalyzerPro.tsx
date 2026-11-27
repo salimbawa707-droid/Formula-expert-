@@ -686,6 +686,8 @@ function SmartFormulaAnalyzerProInner({
       );
       const hasCriticalScientificBlocker = (orchestratorReport.blockingIssues || [])
         .some((issue: any) => issue.severity === 'FATAL');
+      const pHDomainWarning = (orchestratorReport.pHResult?.warnings || [])
+        .some((warning: string) => /out of domain|outside (?:the )?(?:supported )?range|outside model domain/i.test(warning));
       const aiScientificValidation = assessAiScientificValidation({
         evidenceRoute: 'MISSING',
         exactIdentityAndGrade: false,
@@ -704,7 +706,7 @@ function SmartFormulaAnalyzerProInner({
         massBalancePassed: formulaMassBalancePassed,
         chargeBalancePassed: chargeBalanceSolverPassed,
         unitsResolved: formulaUnitsResolved,
-        outOfDomain: false,
+        outOfDomain: pHDomainWarning,
         unresolvedCriticalGap: hasCriticalScientificBlocker
       }, healthScoreBreakdown.finalScore);
       const aiGradeResult = orchestratorReport.aiGrade;
