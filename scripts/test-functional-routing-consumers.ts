@@ -80,10 +80,7 @@ const sarcosinateHighPHPerformance = calculateCleaningPerformance([
   { name:'Water', category:'Solvent', percentage:95, activeMatterPct:0 } as any
 ], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm:100, washVolumeL:10, washDoseGrams:50, batchSizeKg:100 });
 assert(sarcosinateHighPHPerformance.surfactantSynergy > 0, 'high-pH sarcosinate may enter the anionic synergy screening bucket');
-assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'cleaning performance must honor pH-dependent sarcosinate charge routing');
-assert(analysisWorkflowSource.includes('sarcosinateChargeResolved'), 'staged workflow must resolve conditional sarcosinate only after pH stage');
-assert(analysisWorkflowSource.includes("chargeResolutionBasis = 'CONVERGED_FORMULA_PH_GE_6'"), 'staged workflow must record the resolved charge basis');
-assert(analysisWorkflowSource.includes("chargeResolutionBasis = 'CONDITIONAL_PH_MISSING_OR_BELOW_6'"), 'staged workflow must preserve conditional state when pH is not qualified');
+
 
 
 const sarcosinateHighPH = calculateFormulationCompatibility([
@@ -156,6 +153,10 @@ const smartAnalyzerSource = readFileSync('src/components/SmartFormulaAnalyzerPro
 assert(smartAnalyzerSource.includes('hasConditionalAmineOxide'), 'formula fingerprint must label pH-dependent amine oxide separately');
 const cleaningPerformanceSource = readFileSync('src/utils/cleaningPerformanceEngine.ts', 'utf8');
 assert(cleaningPerformanceSource.includes('resolveFunctionalRoutingForIngredient'), 'cleaning performance charge distribution must consume governed identity');
+assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'cleaning performance must honor pH-dependent sarcosinate charge routing');
+assert(analysisWorkflowSource.includes('sarcosinateChargeResolved'), 'staged workflow must resolve conditional sarcosinate only after pH stage');
+assert(analysisWorkflowSource.includes("chargeResolutionBasis = 'CONVERGED_FORMULA_PH_GE_6'"), 'staged workflow must record the resolved charge basis');
+assert(analysisWorkflowSource.includes("chargeResolutionBasis = 'CONDITIONAL_PH_MISSING_OR_BELOW_6'"), 'staged workflow must preserve conditional state when pH is not qualified');
 assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'ZWITTERIONIC'"), 'cleaning performance must separate zwitterionic betaine from amine oxide');
 assert(cleaningPerformanceSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'cleaning performance must not count anionic polymeric dispersant as primary surfactant active');
 assert(analysisWorkflowSource.includes('isPolymericDispersant'), 'staged workflow must exclude polymeric dispersant from primary surfactant charge totals');
