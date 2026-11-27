@@ -63,19 +63,19 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
       case 'CONFIRMED':
         return (
           <span className="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
-            VERIFIED: Independent Confirmed
+            AI DUAL-PASS REVIEW: CONFIRMED
           </span>
         );
       case 'UNESTABLISHED':
         return (
           <span className="text-[11px] font-mono text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
-            UNVERIFIED: Independent Check Unestablished
+            AI REVIEW: NOT YET COMPLETE
           </span>
         );
       case 'REJECTED':
         return (
           <span className="text-[11px] font-mono text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-800">
-            AUDIT DECISION: Rejected / Incomplete
+            AI REVIEW: REWORK REQUIRED
           </span>
         );
       default:
@@ -94,7 +94,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
               <span>Scientific Remediation Phase Roadmap</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-400">
-              Structured sequence of scientific remediation phases, gate requirements, and audit verification states.
+              Structured sequence of scientific remediation phases, AI dual-pass review states, and evidence-validation gates.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
             <span className="font-semibold text-red-300">Phase 5 Mandatory Gate Condition:</span>
             <p className="text-slate-300">
               Phase 5 (Numerical Validation &amp; Calibration) is strictly LOCKED. It cannot begin until
-              Phase 4B has been independently reviewed and explicitly approved. Current Gate Status:{' '}
+              Phase 4B has completed its documented AI dual-pass review and all evidence gates have been satisfied. AI review does not establish laboratory validation. Current Gate Status:{' '}
               <span className="font-mono text-red-300 font-semibold">{phase5Check.reason}</span>
             </p>
           </div>
@@ -311,7 +311,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                       </strong>
                     </span>
                     <span>
-                      Independent Reviewer Status:{' '}
+                      AI Dual-Pass Review Status:{' '}
                       <strong className="text-slate-300">{phase.independentVerificationStatus}</strong>
                     </span>
                   </div>
