@@ -21,7 +21,10 @@ const options=ts.parseJsonConfigFileContent(config.config,ts.sys,root).options;
 const sources=walk(src).map(canon).sort();
 const candidates=sources.filter(f=>!test(rel(f))&&candidateRe.test(rel(f)));
 if(candidates.length!==93) throw new Error('Expected 93 candidates, found '+candidates.length);
-const byAbs=new Map(candidates.map(f=>[f,rel(f)])), records=[], unresolved=[];\nconst program=ts.createProgram({rootNames:sources,options});\nconst checker=program.getTypeChecker();\nfunction originOf(node){const symbol=checker.getSymbolAtLocation(node);if(!symbol)return null;let resolved=symbol;if(symbol.flags & ts.SymbolFlags.Alias){try{resolved=checker.getAliasedSymbol(symbol);}catch{return null;}}for(const decl of resolved.getDeclarations?.()||[]){const target=byAbs.get(canon(decl.getSourceFile().fileName));if(target)return target;}return null;}
+const byAbs=new Map(candidates.map(f=>[f,rel(f)])), records=[], unresolved=[];
+const program=ts.createProgram({rootNames:sources,options});
+const checker=program.getTypeChecker();
+function originOf(node){const symbol=checker.getSymbolAtLocation(node);if(!symbol)return null;let resolved=symbol;if(symbol.flags & ts.SymbolFlags.Alias){try{resolved=checker.getAliasedSymbol(symbol);}catch{return null;}}for(const decl of resolved.getDeclarations?.()||[]){const target=byAbs.get(canon(decl.getSourceFile().fileName));if(target)return target;}return null;}
 function resolve(spec,from){const f=ts.resolveModuleName(spec,from,options,ts.sys).resolvedModule?.resolvedFileName;return f?byAbs.get(canon(f))||null:null;}
 function importedTarget(expr,bindings){
  while(ts.isParenthesizedExpression(expr)||ts.isAsExpression(expr)||ts.isTypeAssertionExpression(expr)||ts.isNonNullExpression(expr)) expr=expr.expression;
