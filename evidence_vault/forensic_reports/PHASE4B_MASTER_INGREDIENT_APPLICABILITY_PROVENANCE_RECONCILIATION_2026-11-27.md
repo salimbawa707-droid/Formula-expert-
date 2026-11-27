@@ -16,6 +16,9 @@ The authoritative source is `src/data/universalIngredientLibrary.ts` (`UNIVERSAL
 - Structured `provenance` metadata exists on **3/430** records; only **1/430** has a URL in the provenance object.
 - No catalog ingredient has populated `phMin` or `phMax`.
 - No exact grade-specific supplier TDS/SDS/CoA/lot assay is attached to the 430 master records.
+- `identityType` and `casStatus` are absent on 423/430 records; manufacturer and productName are absent on 427/430 records.
+- All 430 records lack explicit `activeMatter`, `surfactantActiveMatterPct`, `purityPct` and `solidsPct` assay fields, despite all 430 having an `activeDefault` value. The default is not an assay.
+- All 430 records lack ingredient pH bounds. HLB is present for surfactant classes but is absent for many non-surfactant classes; those missing values are not treated as universal blockers.
 - The catalog's `activeDefault`, HLB and descriptions are not automatically supplier assay values or measured grade properties.
 
 ### Catalog class distribution
@@ -72,7 +75,7 @@ Thus **33/430** master records have an exact CAS+INCI crosswalk to the current i
 
 Added:
 - `src/data/masterIngredientIdentityCoverage.ts`
-- `scripts/test-master-ingredient-identity-coverage.ts`
+- `scripts/test-master-ingredient-identity-coverage.ts` (also locks the missing identity, supplier assay and provenance field counts)
 
 The crosswalk accepts only an exact CAS+INCI match to the same SSOT identity. A CAS-only or INCI-only match is not silently promoted. It explicitly labels every mapped row `NOT_ESTABLISHED_BY_IDENTITY_SSOT` for grade-specific evidence. The SSOT's generic source labels are retained as identity-level source metadata, not treated as attached source documents or supplier CoAs.
 
@@ -81,6 +84,10 @@ The crosswalk accepts only an exact CAS+INCI match to the same SSOT identity. A 
 Current counts:
 - Catalog provenance objects: **3/430**.
 - Catalog provenance URLs: **1/430**.
+- Explicit identity type missing: **423/430**; CAS status missing: **423/430**.
+- Manufacturer and product name missing: **427/430** each.
+- Supplier active/purity/solids assay fields missing: **430/430**; explicit pH bounds missing: **430/430**.
+- All 430 have an `activeDefault` field, but **0/430** have an explicit supplier-grade assay field. The active default is not a supplier CoA.
 - Exact identity SSOT CAS+INCI matches: **33/430**.
 - No exact identity SSOT match: **397/430**.
 - Exact supplier-grade TDS/SDS/CoA/lot assay attached to master records: **0/430**.
