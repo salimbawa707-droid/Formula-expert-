@@ -18,7 +18,7 @@ import { ScientificBadge } from "./scientific/ScientificComponents";
 import { Chemical, Formulation, FormulationIngredient } from "../types";
 import { CHEMICALS } from "../data/chemicals";
 import { getAllUniversalIngredients } from "../data/universalIngredientLibrary";
-import { resolveFormulaIntelligenceRouting, resolveFunctionalRoutingForIngredient } from "../data/ingredientFunctionalRouting";
+import { resolveFormulaIntelligenceRouting, resolveFunctionalRoutingForIngredient, isIngredientSurfactantByRouting } from "../data/ingredientFunctionalRouting";
 import { normalizeProductCategory, ProductCategoryId } from "../domain/productTaxonomy";
 import { apiFetch } from "../services/apiBase";
 import {
@@ -60,12 +60,13 @@ const getFunctionalRouteForFormulaIngredient = (ing: any) => resolveFunctionalRo
 /** Route-first surfactant predicate shared by analyzer KPIs and eco screening.
  * A governed BLOCKED/non-surfactant route overrides legacy role/HLB heuristics.
  */
-export const isFormulaIngredientSurfactant = (ing: any): boolean => {
-  const route = getFunctionalRouteForFormulaIngredient(ing);
-  if (route) return Boolean(route.activeMatterEligible) && route.role !== "POLYMERIC_DISPERSANT" && route.role !== "IDENTITY_UNRESOLVED";
-  const role = String(ing?.role || ing?.category || "").toLowerCase();
-  return role.includes("surfactant") || role.includes("detergent") || (ing?.hlbValue !== undefined && ing?.hlbValue !== null);
-};
+export const isFormulaIngredientSurfactant = (ing: any): boolean =>
+  isIngredientSurfactantByRouting({
+    id: ing?.id,
+    canonicalIngredientId: ing?.canonicalIngredientId,
+    ingredientId: ing?.ingredientId,
+    name: ing?.name
+  }, ing?.role || ing?.category, ing?.hlbValue);
 
 // Modular sub-components
 import { ActiveFingerprintCard } from "./analyzer/ActiveFingerprintCard";
