@@ -205,19 +205,20 @@ export function runVaultLogicTestSuite() {
   assert(ds005?.numericalValidationReadiness === 'DEFICIENT', 'Dataset Inspection', 'DS-005 is not formula-validation-ready');
   assert(Boolean(ds005?.sha256Hash?.startsWith('3665c4386fbf7553')), 'Dataset Inspection', 'DS-005 verified source SHA-256 is recorded');
   assert(Boolean(ds005?.inspectionNotes?.includes('Unit/variable conflicts')), 'Dataset Inspection', 'DS-005 records the unresolved source unit conflict');
-  for (const ds of INITIAL_VAULT_STATE.datasets.filter(ds => !['DS-001', 'DS-002', 'DS-004', 'DS-005'].includes(ds.id))) {
-    assert(ds.actualRowCount === null, 'Dataset Inspection', `Dataset ${ds.id} rowCount remains null until row-level reconciliation`);
+  for (const ds of INITIAL_VAULT_STATE.datasets) {
+    assert(ds.inspectionStatus === 'NUMERICALLY_INSPECTED' && Number.isInteger(ds.actualRowCount) && (ds.actualRowCount ?? 0) > 0,
+      'Dataset Inspection', `Dataset ${ds.id} has an explicit numerical inspection status and positive parsed row count`);
   }
 
   const datasetInspectionSummary = getDatasetInspectionSummary(INITIAL_VAULT_STATE.datasets);
   assert(datasetInspectionSummary.totalCount === INITIAL_VAULT_STATE.datasets.length, 'Dataset Inspection Summary', 'Summary counts every registered dataset');
-  assert(datasetInspectionSummary.inspectedCount === 4, 'Dataset Inspection Summary', 'Current vault reports four numerically inspected datasets');
+  assert(datasetInspectionSummary.inspectedCount === INITIAL_VAULT_STATE.datasets.length, 'Dataset Inspection Summary', 'All eight registered datasets have numerical/structural inspection records');
   assert(datasetInspectionSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'No registered dataset is falsely listed as uninspected');
   const partiallyInspectedDatasets = INITIAL_VAULT_STATE.datasets.map((dataset, index) =>
     index === 0 ? { ...dataset, inspectionStatus: 'UNINSPECTED' as const, actualRowCount: null } : dataset
   );
   const partialSummary = getDatasetInspectionSummary(partiallyInspectedDatasets);
-  assert(partialSummary.inspectedCount === 3, 'Dataset Inspection Summary', 'A dataset without explicit inspection and positive rows is excluded');
+  assert(partialSummary.inspectedCount === INITIAL_VAULT_STATE.datasets.length - 1, 'Dataset Inspection Summary', 'A dataset without explicit inspection and positive rows is excluded');
   assert(partialSummary.uninspectedDatasets[0]?.id === INITIAL_VAULT_STATE.datasets[0]?.id, 'Dataset Inspection Summary', 'Uninspected dataset identity is retained');
   const emptyDatasetSummary = getDatasetInspectionSummary([]);
   assert(emptyDatasetSummary.totalCount === 0 && emptyDatasetSummary.inspectedCount === 0 && emptyDatasetSummary.uninspectedDatasets.length === 0, 'Dataset Inspection Summary', 'Empty dataset inventory remains explicitly zero rather than implying evidence coverage');
