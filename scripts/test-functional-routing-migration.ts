@@ -3,10 +3,17 @@ import { getFunctionalRoutingDecisions, resolveFunctionalRouting, validateFuncti
 
 assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), []);
 const decisions = getFunctionalRoutingDecisions();
-assert.equal(decisions.length, 4);
+assert.equal(decisions.length, 8);
 assert.equal(resolveFunctionalRouting('sls-needles')?.routingClass, 'ANIONIC');
 assert.equal(resolveFunctionalRouting('sls-30')?.pureComponentCmcEligible, true);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.routingClass, 'AMPHOTERIC');
+assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.chargeBehavior, 'PH_DEPENDENT_AMINE_OXIDE');
+assert.equal(resolveFunctionalRouting('sles-70')?.routingClass, 'ANIONIC');
+assert.equal(resolveFunctionalRouting('sles-28')?.pureComponentCmcEligible, false);
+assert.equal(resolveFunctionalRouting('capb-30-uni')?.chargeBehavior, 'ZWITTERIONIC');
+assert.equal(resolveFunctionalRouting('capb-45')?.routingClass, 'AMPHOTERIC');
+assert.equal(resolveFunctionalRouting('apg-0810')?.routingClass, 'NONIONIC');
+assert.equal(resolveFunctionalRouting('apg-1214')?.hlbEligible, false);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.hlbEligible, false);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.pureComponentCmcEligible, false);
 assert.equal(resolveFunctionalRouting('lignosulfonate-na')?.role, 'POLYMERIC_DISPERSANT');
