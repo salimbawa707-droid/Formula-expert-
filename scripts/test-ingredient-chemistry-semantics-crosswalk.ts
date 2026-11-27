@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { getIngredientChemistryCrosswalk, resolveIngredientChemistrySemantics, validateIngredientChemistryCrosswalk } from '../src/domain/ingredients/ingredientChemistrySemantics';
-import { getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
+import { evaluateIngredientSubstitution, getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
 import { getIngredientCmcData } from '../src/utils/calculators';
 
 const rows = getIngredientChemistryCrosswalk();
@@ -16,6 +16,8 @@ assert.equal(resolveIngredientChemistrySemantics('labsa')?.surfactantFunctionalC
 assert.equal(resolveIngredientChemistrySemantics('citric-acid')?.acidBaseBehavior, 'WEAK_ACID', 'static intelligence canonical alias must resolve through SSOT semantics');
 assert.equal(resolveIngredientChemistrySemantics('unknown-id'), null);
 assert.equal(getIngredientIntelligence('labsa')?.chemistrySemantics?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT', 'intelligence consumer must expose separate SSOT chemistry semantics');
+assert.equal(evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID').tier, 'INSUFFICIENT_DATA', 'acid-form LABSA must not inherit a fixed charge comparison without formula pH/speciation');
+assert.equal(evaluateIngredientSubstitution('sles', 'aos', 'LAUNDRY_LIQUID').tier, 'FUNCTIONAL_ALTERNATIVE', 'two explicitly routed fixed-anionic families may be compared, while performance equivalence remains unclaimed');
 assert(Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).every(def => Object.values(def.grades).every(grade => grade.provenance !== 'VERIFIED_COMMERCIAL_GRADE')), 'no static grade may claim verified commercial-grade status without linked grade evidence');
 assert.equal(getIngredientIntelligenceCoverageReport().verifiedOrCommercialGrade, 0, 'source-backed metadata alone must not inflate verified grade count');
 assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'synergy-anionic-amphoteric')?.provenance, 'PREDICTED_INTERACTION', 'generic literature citation must not be represented as a pair-specific measurement');
