@@ -291,8 +291,8 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
     { name: 'Cetrimonium Chloride', percentage: 5, role: 'Cationic Surfactant' }
   ]);
   const hasUnresolvedPHFixedChargeClash = compClash.alerts.some(a => a.id === 'anionic-cationic-incompatibility');
-  assert('6. Compatibility', '6.1 LABSA without a resolvable final-formula pH is not promoted to a fixed-charge clash', !hasUnresolvedPHFixedChargeClash, hasUnresolvedPHFixedChargeClash, false);
-  assert('6. Compatibility', '6.1 missing pH keeps LABSA/cationic evidence insufficient', compClash.evidenceStatus === 'INSUFFICIENT_DATA', compClash.evidenceStatus, 'INSUFFICIENT_DATA');
+  assert('6. Compatibility', '6.1 Strong-acid LABSA is fixed-anionic and flags a cationic clash without formula pH', hasUnresolvedPHFixedChargeClash, hasUnresolvedPHFixedChargeClash, true);
+  assert('6. Compatibility', '6.1 fixed-anionic LABSA/cationic pair is known incompatible without pH-dependent charge uncertainty', compClash.evidenceStatus === 'KNOWN_INCOMPATIBLE', compClash.evidenceStatus, 'KNOWN_INCOMPATIBLE');
 
   // 6.2 Acid + Bleach hazardous gas clash
   const compBleachAcid = calculateFormulationCompatibility([
