@@ -1,17 +1,17 @@
 # Phase 4B — 13-Category Scientific Applicability, Equations, Units and Isolation Audit
 
 **Audit date:** 2026-11-27  
-**Audited source base:** \`efcb7fe003152e776cc0199288a5677d063fb93e\` (main after PR #122)  
-**Implementation branch:** \`audit/phase4b-six-candidate-runtime-dataflow-2026-11-27\`  
+**Audited source base:** `efcb7fe003152e776cc0199288a5677d063fb93e` (main after PR #122)  
+**Implementation branch:** `audit/phase4b-six-candidate-runtime-dataflow-2026-11-27`  
 **Scope:** All 13 canonical product categories; taxonomy/profile/engine/UI applicability; equation and input-unit contracts; category-specific policy; unknown-category and cross-category isolation.  
-**Method:** Source-level review of \`productTaxonomy.ts\`, \`scientificProductProfiles.ts\`, \`scientificRouter.ts\`, \`hlbEngine.ts\`, \`calculators.ts\`, \`viscosityEngine.ts\`, \`cleaningPerformanceEngine.ts\`, \`chelatorEngine.ts\`, existing regression suites, and production call-site search. Static review does not establish dynamic runtime execution in every deployment path.
+**Method:** Source-level review of `productTaxonomy.ts`, `scientificProductProfiles.ts`, `scientificRouter.ts`, `hlbEngine.ts`, `calculators.ts`, `viscosityEngine.ts`, `cleaningPerformanceEngine.ts`, `chelatorEngine.ts`, existing regression suites, and production call-site search. Static review does not establish dynamic runtime execution in every deployment path.
 
 ## Executive findings
 
-1. **Confirmed HLB wiring mismatch:** \`DISHWASH_AUTOMATIC\` had taxonomy \`categoryApplicability.hlb=true\` and \`requiresHLBAnalysis=true\`, but its \`applicableEngines\` omitted \`HLB_ENGINE\`. The correction adds the missing engine registration. The existing low-foam nonionic policy remains unchanged; this only makes the already-declared HLB analysis reachable through the scientific engine registry.
-2. **Confirmed unknown-category fail-open behavior:** \`isMetricApplicable\` returned true for unknown categories; surfactant-permission helpers also allowed both ionic classes by default, and category helper functions supplied generic anionic/pH/active-matter defaults. Corrections now deny unknown metric/ionic permissions and return \`null\` for unknown category preference, pH range, and active-surfactant range.
+1. **Confirmed HLB wiring mismatch:** `DISHWASH_AUTOMATIC` had taxonomy `categoryApplicability.hlb=true` and `requiresHLBAnalysis=true`, but its `applicableEngines` omitted `HLB_ENGINE`. The correction adds the missing engine registration. The existing low-foam nonionic policy remains unchanged; this only makes the already-declared HLB analysis reachable through the scientific engine registry.
+2. **Confirmed unknown-category fail-open behavior:** `isMetricApplicable` returned true for unknown categories; surfactant-permission helpers also allowed both ionic classes by default, and category helper functions supplied generic anionic/pH/active-matter defaults. Corrections now deny unknown metric/ionic permissions and return `null` for unknown category preference, pH range, and active-surfactant range.
 3. **13-category matrix:** HLB, viscosity, cleaning-performance and chelator/builder applicability are regression-checked against taxonomy flags and scientific profile engine registry. pH min/max/optimal values are checked against taxonomy for every category. Powder engine and powder calculation policy are checked against physical form.
-4. **CMC and foam are not registered ScientificEngineId values:** taxonomy exposes CMC/foam metric visibility flags, but the scientific profile engine enum has no \`CMC_ENGINE\` or \`FOAM_ENGINE\`. CMC is a narrow utility calculation in \`calculators.ts\` (Clint ideal mixed-micelle model); foam diagnostics live in separate utilities. These flags must not be misrepresented as proof of an independently routed scientific engine.
+4. **CMC and foam are not registered ScientificEngineId values:** taxonomy exposes CMC/foam metric visibility flags, but the scientific profile engine enum has no `CMC_ENGINE` or `FOAM_ENGINE`. CMC is a narrow utility calculation in `calculators.ts` (Clint ideal mixed-micelle model); foam diagnostics live in separate utilities. These flags must not be misrepresented as proof of an independently routed scientific engine.
 5. **Category constraints are not all laboratory specifications:** profile pH and active-surfactant ranges are software screening targets, not validated product release limits. No category target is promoted to laboratory-validated specification.
 
 ## Category applicability and profile matrix
@@ -34,7 +34,7 @@
 | KITCHEN_DEGREASER | 11.0–13.8 (12.5) | 8–18 (14) | Nonionic dominant | Yes | Yes | Yes | Yes | No |
 | CAR_SHAMPOO | 6.5–8.0 (7.2) | 8–18 (14) | Anionic dominant | Yes | Yes | Yes | Yes | No |
 
-\* HLB registration was missing despite taxonomy and calculation policy requiring it; implementation adds \`HLB_ENGINE\`.
+\* HLB registration was missing despite taxonomy and calculation policy requiring it; implementation adds `HLB_ENGINE`.
 
 ### Category-specific constraints recorded in taxonomy/profile
 
@@ -58,9 +58,9 @@
 
 Implemented active-mass weighting:
 
-\`W_i = (dose_i [% w/w] × active_i [% w/w])/100\`
+`W_i = (dose_i [% w/w] × active_i [% w/w])/100`
 
-\`HLB_blend = Σ(HLB_i × W_i)/Σ(W_i)\`
+`HLB_blend = Σ(HLB_i × W_i)/Σ(W_i)`
 
 - Ingredient dose and explicit active-matter assay are each percentages by mass, bounded 0–100.
 - Current implementation requires explicit valid active matter for each contributing surfactant; it does not safely infer supplier assay from a grade name.
@@ -71,7 +71,7 @@ Implemented active-mass weighting:
 
 Implemented ideal Clint mixed-micelle rule:
 
-\`1/CMC_mix = Σ(x_i/CMC_i)\`
+`1/CMC_mix = Σ(x_i/CMC_i)`
 
 - Surfactant as-supplied dose: % w/w; explicit active assay: % w/w.
 - Active mass is converted to mole amount using molecular weight in g/mol; mole fractions are dimensionless.
@@ -96,11 +96,11 @@ Implemented ideal Clint mixed-micelle rule:
 
 ### 5. Chelation / hardness capacity
 
-\`HardnessLoad_mgCaCO3 = hardness_ppm_(mg/L) × washVolume_L\`
+`HardnessLoad_mgCaCO3 = hardness_ppm_(mg/L) × washVolume_L`
 
-\`RequiredCapacity = HardnessLoad × (1 + safetyMarginPct/100)\`
+`RequiredCapacity = HardnessLoad × (1 + safetyMarginPct/100)`
 
-\`AdditionalChelatorDosePct = (capacityDeficit_mg / capacity_mgCaCO3_per_g) / washDose_g × 100\`
+`AdditionalChelatorDosePct = (capacityDeficit_mg / capacity_mgCaCO3_per_g) / washDose_g × 100`
 
 - Hardness: ppm as CaCO3; wash volume: L; dose: g; capacity: mg CaCO3-equivalent per g commercial chelator; batch mass: kg where batch scaling is reported.
 - This is stoichiometric capacity arithmetic/screening, not a complete conditional Ca/Mg speciation model: pH, competing ligands, ionic strength, precipitation kinetics and ligand protonation can change real free-ion concentrations.
@@ -108,19 +108,19 @@ Implemented ideal Clint mixed-micelle rule:
 
 ## Corrections applied in this branch
 
-1. Added \`HLB_ENGINE\` to \`DISHWASH_AUTOMATIC.applicableEngines\`, aligning it with the existing taxonomy flag and \`requiresHLBAnalysis=true\`.
+1. Added `HLB_ENGINE` to `DISHWASH_AUTOMATIC.applicableEngines`, aligning it with the existing taxonomy flag and `requiresHLBAnalysis=true`.
 2. Changed unknown-category metric applicability to false, including the defensive missing-key fallback.
 3. Changed unknown-category anionic/cationic permissions to false.
-4. Changed unknown-category surfactant preference, pH range and active-surfactant range helpers to return \`null\` instead of borrowing generic defaults. The known production caller of category pH limits already handles null.
+4. Changed unknown-category surfactant preference, pH range and active-surfactant range helpers to return `null` instead of borrowing generic defaults. The known production caller of category pH limits already handles null.
 5. Corrected stale HLB documentation that contradicted the code's explicit-active-assay requirement.
 6. Added regression assertions for all 13 category mappings, pH parity, powder physical-form routing, automatic-dish HLB wiring, unknown metric/ionic defaults and unknown-category CPI suppression.
 
 ## Reproducible verification
 
-- New category matrix assertions are part of \`runScientificRouterTestSuite\`, already imported by \`src/utils/test-calculations.ts\` and included in \`bun run test:all\`.
-- Unknown-category CPI assertions are added to \`runCleaningPerformanceTestSuite\`, also included in the same test runner.
+- New category matrix assertions are part of `runScientificRouterTestSuite`, already imported by `src/utils/test-calculations.ts` and included in `bun run test:all`.
+- Unknown-category CPI assertions are added to `runCleaningPerformanceTestSuite`, also included in the same test runner.
 - Existing HLB, viscosity, cleaning-performance and chelator suites remain in the full regression harness.
-- Required CI commands: \`bun run lint\`, \`bun run test:all\`, \`bun run build\`, and repository Release Quality Gates workflow.
+- Required CI commands: `bun run lint`, `bun run test:all`, `bun run build`, and repository Release Quality Gates workflow.
 - **Execution status at report authoring:** source changes and regression assertions are prepared in the PR branch; no test pass is claimed until GitHub Actions completes against the resulting commit.
 
 ## Explicitly unresolved / not promoted
