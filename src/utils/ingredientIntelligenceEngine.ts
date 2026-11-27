@@ -1161,7 +1161,7 @@ export function traceCompatibilityReasoning(
       findingCode: 'ERR_PH_DEPENDENT_CHARGE_UNRESOLVED',
       severity: 'MAJOR',
       title: 'pH-Dependent Anionic Speciation Unresolved',
-      message: 'A pH-dependent anionic surfactant and cationic active are present, but no valid final-formula pH was supplied. The engine cannot assert a fixed-charge precipitation event or declare compatibility.',
+      message: 'A pH-dependent sarcosinate and cationic active are present, but final-formula pH is missing or below the conservative pH >= 6 screening threshold. The engine cannot assert a fixed-charge precipitation event or declare compatibility.',
       ingredientsInvolved: ['pH-dependent anionic surfactant', 'Cationic surfactant'],
       relationship: 'Unresolved acid-base speciation',
       categoryContext: normCat,
