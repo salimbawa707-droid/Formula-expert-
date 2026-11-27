@@ -218,6 +218,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   let anionicActivePct = 0;
   let fixedAnionicActivePct = 0;
   let conditionalAnionicActivePct = 0;
+  let conditionalAmineOxideActivePct = 0;
   let nonionicActivePct = 0;
   let amphotericActivePct = 0;
   let cationicActivePct = 0;
@@ -258,20 +259,49 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
       ingredientIds.push(canonId);
     }
 
-    if (role.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos')) {
-      anionicActivePct += activePct;
-      if (isPHDependentAnionic && !(hasExplicitFormulaPH && input.calculatedPH! >= 6.0)) conditionalAnionicActivePct += activePct;
-      else fixedAnionicActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
-    } else if (role.includes('nonionic') || n.includes('lae') || n.includes('ethoxylate') || n.includes('glucoside') || n.includes('apg')) {
-      nonionicActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
-    } else if (role.includes('amphoteric') || n.includes('capb') || n.includes('betaine')) {
-      amphotericActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
-    } else if (role.includes('cationic') || n.includes('esterquat') || n.includes('bkc') || n.includes('ctac')) {
-      cationicActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
+    // Route governed identities before any legacy category/name fallback.
+    // The central ActiveMatterEngine remains the fallback authority for ingredients
+    // outside the currently audited identity map.
+    let surfactantType = activeRes.surfactantType;
+    if (route) {
+      if (route.role === 'IDENTITY_UNRESOLVED' || route.role === 'POLYMERIC_DISPERSANT' || !route.activeMatterEligible) {
+        surfactantType = 'none';
+      } else if (route.chargeBehavior === 'PH_DEPENDENT_ANIONIC') {
+        surfactantType = hasExplicitFormulaPH && input.calculatedPH! >= 6.0 ? 'anionic' : 'conditional';
+      } else if (route.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+        // No universal pH cutoff is asserted without grade-specific pKa/speciation evidence.
+        surfactantType = 'conditional';
+      } else if (route.routingClass === 'ANIONIC') {
+        surfactantType = 'anionic';
+      } else if (route.routingClass === 'AMPHOTERIC') {
+        surfactantType = 'amphoteric';
+      } else if (route.routingClass === 'NONIONIC') {
+        surfactantType = 'nonionic';
+      }
+    }
+
+    if (activeRes.isSurfactant && Number.isFinite(activePct)) {
+      if (surfactantType === 'anionic') {
+        anionicActivePct += activePct;
+        fixedAnionicActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'conditional') {
+        if (isPHDependentAnionic && !(hasExplicitFormulaPH && input.calculatedPH! >= 6.0)) {
+          conditionalAnionicActivePct += activePct;
+        } else if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+          conditionalAmineOxideActivePct += activePct;
+        }
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'nonionic') {
+        nonionicActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'amphoteric') {
+        amphotericActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'cationic') {
+        cationicActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      }
     }
 
     if (n.includes('sodium chloride') || n.includes('salt') || n.includes('vacuum salt')) {
@@ -327,12 +357,24 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
         formulaVersion: '1.0.0',
         ingredientIds,
         relevantEngines: ['CompatibilityEngine'],
-        inputData: { fixedAnionicActivePct, conditionalAnionicActivePct, cationicActivePct },
+        inputData: { fixedAnionicActivePct, conditionalAnionicActivePct, conditionalAmineOxideActivePct, cationicActivePct },
         scientificOutputs: { compatibilityScore: 0, status: 'INCOMPATIBLE' },
         evidenceProvenance: 'THEORETICAL_PHYSICAL_CHEMISTRY',
         rulesTriggered: ['ANIONIC_CATIONIC_CHARGE_PAIR_COACERVATION'],
         uncertainty: 'HIGH_CONFIDENCE'
       }
+    });
+  }
+
+  if (conditionalAmineOxideActivePct > 0.1 && cationicActivePct > 0.1) {
+    issues.push({
+      id: 'ph-dependent-amine-oxide-cationic-conditional',
+      issue: 'Conditional Amine-Oxide / Cationic Compatibility Risk',
+      whyItMatters: 'Amine oxide charge state depends on pH and exact material composition. Without grade-specific pKa/speciation evidence, it must not be treated as a fixed nonionic or fixed cationic species for compatibility conclusions.',
+      scientificBasis: 'pH-dependent amine-oxide protonation and possible electrostatic interaction with cationic actives.',
+      scientificType: 'PREDICTIVE',
+      severity: 'High',
+      whatToCheck: 'Resolve exact amine-oxide grade and composition, establish formula pH/speciation with suitable evidence, and test the finished formulation for phase stability.'
     });
   }
 
