@@ -13,10 +13,12 @@ assert(analyzer.includes('exactIdentityAndGrade: false'), 'Analyzer must not inf
 assert(analyzer.includes('matchedBenchmarkAvailable: false'), 'Analyzer must not fabricate a held-out endpoint benchmark.');
 assert(analyzer.includes('orchestratorReport.massBalance?.isBalanced === true'), 'Analyzer must bind the mass-balance gate to the authoritative orchestrator result.');
 assert(analyzer.includes('orchestratorReport.pHResult?.solverConverged === true'), 'Analyzer must bind the charge-balance gate to the pH solver convergence result.');
+assert(analyzer.includes('outOfDomain: pHDomainWarning'), 'Explicit pH model-domain warnings must block the scientific assessment.');
 assert(analyzer.includes('data-testid="ai-scientific-validation-panel"'), 'The evidence-gated assessment must be visible in the production analyzer UI.');
 assert(analyzer.includes('requiredDisclosure'), 'The production analyzer must display the mandatory scientific disclosure.');
 assert(analyzer.includes('aiScientificValidation?.userLabel'), 'The PDF export must include the evidence-gate disposition.');
+assert(!analyzer.includes('Export Laboratory PDF Report') && !analyzer.includes('Chemical Laboratory Diagnostic R&D Report'), 'PDF export must not imply a laboratory report or test.');
 assert(policy.includes('EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY'), 'Policy must explicitly prohibit interpreting the composite score as accuracy.');
 assert(policy.includes('endpointBenchmarkQualified') && policy.includes('supplierLotVerified'), 'Policy must keep endpoint benchmark qualification separate from supplier-lot verification.');
 
-console.log('AI scientific validation analyzer integration: 11/11 assertions passed.');
+console.log('AI scientific validation analyzer integration: 13/13 assertions passed.');
