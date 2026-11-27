@@ -5,6 +5,7 @@ import { getCategorySpecificIngredients } from '../src/components/CategoryIngred
 import { resolveFormulaIntelligenceRouting, resolveFunctionalRouting } from '../src/data/ingredientFunctionalRouting';
 import { traceCompatibilityReasoning } from '../src/utils/ingredientIntelligenceEngine';
 import { RAW_MATERIAL_CATEGORIES } from '../src/data/rawMaterialCategories';
+import { classifyPowderIngredient } from '../src/utils/powderEngine/powderIngredientClassification';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
@@ -71,6 +72,13 @@ const qualityGateSource = readFileSync('src/utils/scientificQualityGateEngine.ts
 assert(qualityGateSource.includes('resolveFunctionalRoutingForIngredient'), 'safety quality gates must consume governed functional identity');
 const smartAnalyzerSource = readFileSync('src/components/SmartFormulaAnalyzerPro.tsx', 'utf8');
 assert(smartAnalyzerSource.includes('hasConditionalAmineOxide'), 'formula fingerprint must label pH-dependent amine oxide separately');
+const cleaningPerformanceSource = readFileSync('src/utils/cleaningPerformanceEngine.ts', 'utf8');
+assert(cleaningPerformanceSource.includes('resolveFunctionalRoutingForIngredient'), 'cleaning performance charge distribution must consume governed identity');
+assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'ZWITTERIONIC'"), 'cleaning performance must separate zwitterionic betaine from amine oxide');
+const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
+assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
+const powderSource = readFileSync('src/utils/powderEngine/powderIngredientClassification.ts', 'utf8');
+assert(powderSource.includes("functionalRoute?.role === 'IDENTITY_UNRESOLVED'"), 'powder classifier must fail closed on unresolved identity');
 assert(blockedFormula.alerts.some(a => a.id === 'identity-unresolved-compatibility-block'));
 
 const lignoSoftener = calculateFormulationCompatibility([
@@ -80,6 +88,11 @@ const lignoSoftener = calculateFormulationCompatibility([
 assert(lignoSoftener.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), 'anionic polymeric dispersant must remain visible to ionic clash screening');
 assert(!lignoSoftener.alerts.some(a => a.id === 'softener-anionic-contamination'), 'polymeric dispersant must not be counted as primary anionic surfactant for category policy');
 assert.equal(resolveFunctionalRouting('lignosulfonate-na')?.role, 'POLYMERIC_DISPERSANT');
+const powderAmineOxide = classifyPowderIngredient({ id:'lauryl-amine-oxide', name:'Lauryl Amine Oxide 30% (LDAO)', category:'Nonionic Surfactant', percentage:2 } as any);
+assert.equal(powderAmineOxide.functionalClass, 'Amphoteric Surfactant', 'powder route retains broad ionic-family classification for amine oxide');
+const powderBlocked = classifyPowderIngredient({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide Acid Thickener', category:'Polymer & Thickener', percentage:2 } as any);
+assert.equal(powderBlocked.functionalClass, 'Unclassified Surfactant', 'powder classifier must not trust conflicting tallow-amine display name');
+assert.equal(powderBlocked.activeMatterPct, undefined, 'blocked powder identity cannot inherit active-matter default');
 const ldaoNameOnlyCmc = resolveEng002PureComponent({ name:'Lauryl Amine Oxide 30% (LDAO)', casNumber:'1643-20-5', identityType:'SINGLE_SUBSTANCE' } as any);
 assert.equal(ldaoNameOnlyCmc.supported, false, 'name-only commercial amine oxide must not inherit pure C12 DDAO CMC');
 const lignoNameOnlyCmc = resolveEng002PureComponent({ name:'Sodium Lignosulfonate', casNumber:'8061-51-6', identityType:'SINGLE_SUBSTANCE' } as any);
