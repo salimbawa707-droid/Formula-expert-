@@ -1194,32 +1194,32 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`• Total Active Surfactant Matter: ${analysisResult.totalActiveMatter}%`, 14, 118);
       doc.text(`• Estimated pH: ${analysisResult.estpH} (Advanced pHEngine Solver)`, 14, 124);
       doc.text(`• Hydrophilic-Lipophilic Balance (Griffin HLB): ${analysisResult.estHlb !== null ? analysisResult.estHlb : "N/A"}`, 14, 130);
-      doc.text(`• Biodegradability Score (OECD 301): ${analysisResult.ecoMetrics.biodegradabilityPct}%`, 14, 124);
-      doc.text(`• Bio-Based Plant-Sourced Carbon: ${analysisResult.ecoMetrics.plantBasedPct}%`, 14, 130);
+      doc.text(`• Biodegradability Score (OECD 301): ${analysisResult.ecoMetrics.biodegradabilityPct}%`, 14, 136);
+      doc.text(`• Bio-Based Plant-Sourced Carbon: ${analysisResult.ecoMetrics.plantBasedPct}%`, 14, 142);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("3. Financial Analysis & Pricing Matrix", 14, 142);
+      doc.text("3. Financial Analysis & Pricing Matrix", 14, 154);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`• Raw Material Cost/kg: INR ${safeNum(analysisResult?.costing?.rawMaterialCost, 2)}`, 14, 150);
-      doc.text(`• Factory Overhead Cost/kg (${overheadPct}%): INR ${safeNum(analysisResult?.costing?.manufacturingCost, 2)}`, 14, 156);
-      doc.text(`• Suggest Wholesale Price: INR ${safeNum(analysisResult?.costing?.suggestedWholesale, 2)}`, 14, 162);
-      doc.text(`• Suggest Distributor Price: INR ${safeNum(analysisResult?.costing?.suggestedDistributor, 2)}`, 14, 168);
-      doc.text(`• Suggest Retail Price: INR ${safeNum(analysisResult?.costing?.suggestedRetail, 2)}`, 14, 174);
-      doc.text(`• Suggest MRP (incl. 18% GST): INR ${safeNum(analysisResult?.costing?.suggestedMRP, 2)}`, 14, 180);
+      doc.text(`• Raw Material Cost/kg: INR ${safeNum(analysisResult?.costing?.rawMaterialCost, 2)}`, 14, 162);
+      doc.text(`• Factory Overhead Cost/kg (${overheadPct}%): INR ${safeNum(analysisResult?.costing?.manufacturingCost, 2)}`, 14, 168);
+      doc.text(`• Suggest Wholesale Price: INR ${safeNum(analysisResult?.costing?.suggestedWholesale, 2)}`, 14, 174);
+      doc.text(`• Suggest Distributor Price: INR ${safeNum(analysisResult?.costing?.suggestedDistributor, 2)}`, 14, 180);
+      doc.text(`• Suggest Retail Price: INR ${safeNum(analysisResult?.costing?.suggestedRetail, 2)}`, 14, 186);
+      doc.text(`• Suggest MRP (incl. 18% GST): INR ${safeNum(analysisResult?.costing?.suggestedMRP, 2)}`, 14, 192);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("4. Formulation Pairwise Compatibility Alerts", 14, 192);
+      doc.text("4. Formulation Pairwise Compatibility Alerts", 14, 204);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       if (analysisResult.compatibilityAlerts.length === 0) {
-        doc.text("✓ Complete chemical compatibility verified. No warning flags raised.", 14, 200);
+        doc.text("✓ No compatibility warning flags raised; this is screening, not complete verification.", 14, 212);
       } else {
-        let y = 200;
+        let y = 212;
         analysisResult.compatibilityAlerts.slice(0, 3).forEach((alert: any) => {
           doc.text(`[${alert.severity}] ${alert.description} - Reason: ${alert.reason.slice(0, 60)}...`, 14, y);
           y += 6;
