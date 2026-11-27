@@ -34,7 +34,7 @@ const weightedEco = calculateComplexEcoScore([
   { name: 'Citric Acid', percentage: 50 } as any,
   { name: 'SLES', percentage: 50 } as any
 ]);
-assert.equal(weightedEco.plantBasedOverallPct, 92, 'plant-derived contribution must be mass-weighted once, not double-counted by a threshold bonus');
+assert.equal(weightedEco.plantBasedOverallPct, 65, 'plant-derived contribution must be mass-weighted once (50% × 100% + 50% × 30%), not double-counted by a threshold bonus');
 assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
 assert.equal(rows.find(row => row.ingredientId === 'labsa')?.functionalRouteStatus, 'ROUTED', 'LABSA exact CAS+INCI identity must map to both commercial catalog grade IDs');
 assert(rows.filter(row => row.semantics.surfactantFunctionalClass === 'NOT_SURFACTANT').every(row => row.functionalRouteStatus === 'NOT_IN_SURFACTANT_ROUTER'), 'builders, acids, buffers and polymers outside the surfactant router must not be reported as missing surfactant routes');
