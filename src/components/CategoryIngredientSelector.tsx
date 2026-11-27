@@ -45,13 +45,15 @@ export function getCategorySpecificIngredients(category: string): UniversalIngre
   const catLower = category.toLowerCase();
   const filtered = all.filter(i => {
     const route = resolveFunctionalRouting(i.id);
-    if (catLower.includes('amphoteric') || catLower.includes('ionic')) {
-      if (route?.routingClass === 'AMPHOTERIC') return catLower.includes('amphoteric') || catLower.includes('ionic');
-      if (route?.routingClass === 'ANIONIC') return catLower.includes('anionic') || catLower.includes('ionic');
-      if (route?.routingClass === 'NONIONIC' || route?.routingClass === 'BLOCKED') return false;
+    if (route) {
+      if (catLower.includes('amphoteric')) return route.routingClass === 'AMPHOTERIC';
+      if (catLower.includes('anionic')) return route.routingClass === 'ANIONIC';
+      if (catLower.includes('nonionic') || catLower.includes('non-ionic')) return route.routingClass === 'NONIONIC';
+      if (catLower.includes('ionic') && !catLower.includes('nonionic') && !catLower.includes('non-ionic')) {
+        return route.routingClass === 'ANIONIC' || route.routingClass === 'AMPHOTERIC';
+      }
+      if (route.routingClass === 'BLOCKED') return false;
     }
-    if (catLower.includes('nonionic') && route?.routingClass === 'AMPHOTERIC') return false;
-    if (catLower.includes('nonionic') && route?.routingClass === 'NONIONIC') return true;
     const itemCat = (i?.category || '').toLowerCase();
     const itemSub = (i?.subCategory || '').toLowerCase();
     const itemFn = (i?.function || '').toLowerCase();
