@@ -79,7 +79,7 @@ assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'ZWITTERION
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
 const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
-assert(activeMatterSource.includes("surf actantType: 'conditional'".replace(' ','')) || activeMatterSource.includes("surf actantType: 'conditional'".replace(' ','')), 'active matter engine must expose a separate conditional charge class');
+assert(activeMatterSource.includes("surfactantType: 'conditional'"), 'active matter engine must expose a separate conditional charge class');
 assert(activeMatterSource.includes('conditionalActivePct'), 'active matter report must expose conditional amine oxide active matter separately');
 const powderSource = readFileSync('src/utils/powderEngine/powderIngredientClassification.ts', 'utf8');
 assert(powderSource.includes("functionalRoute?.role === 'IDENTITY_UNRESOLVED'"), 'powder classifier must fail closed on unresolved identity');
