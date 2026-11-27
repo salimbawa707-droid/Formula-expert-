@@ -40,6 +40,9 @@ const ecoCardSource = readFileSync('src/components/analyzer/EcoImpactAssessmentC
 assert(ecoCardSource.includes('Eco-label screening (not certification)'), 'eco UI must not present heuristic screening as certification assessment');
 assert(ecoCardSource.includes('Potential — screening only'), 'positive eco screening must not be displayed as actual certification eligibility');
 assert(ecoCardSource.includes('cert.disclaimer'), 'eco UI must render each certification limitation');
+const rcCalculatorSource = readFileSync('src/components/RCCalculators.tsx', 'utf8');
+assert(rcCalculatorSource.includes('Active Matter Screening Calculator'), 'standalone active matter calculator must be labelled as screening');
+assert(rcCalculatorSource.includes('catalog defaults and user-entered purity are not supplier CoA or lot verification'), 'active matter UI must disclose that entered/catalog purity is not a supplier assay');
 assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
 assert.equal(rows.find(row => row.ingredientId === 'labsa')?.functionalRouteStatus, 'ROUTED', 'LABSA exact CAS+INCI identity must map to both commercial catalog grade IDs');
 assert(rows.filter(row => row.semantics.surfactantFunctionalClass === 'NOT_SURFACTANT').every(row => row.functionalRouteStatus === 'NOT_IN_SURFACTANT_ROUTER'), 'builders, acids, buffers and polymers outside the surfactant router must not be reported as missing surfactant routes');
