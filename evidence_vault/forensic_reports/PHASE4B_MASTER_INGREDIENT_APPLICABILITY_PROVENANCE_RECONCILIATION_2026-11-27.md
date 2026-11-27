@@ -355,3 +355,24 @@ Sources:
 - Colonial Chemical AOS-40 SDS (comparator only): https://colonialchem.me/wp-content/uploads/2020/10/Colonial-AOS-40-SDS-EU-English-1-Nov-2019.pdf
 
 Regression expanded to nine routed identity groups; AOS 38/92 are checked for category/INCI integrity, anionic classification, HLB block and CMC block.
+
+
+### Additional identity tranche — SAS 60, Cocamide DEA and Cocamide MEA (2026-11-27)
+
+**SAS 60** (`sas-60`, CAS 68037-49-0, INCI Sodium C14-17 Sec-Alkyl Sulfonate): ECHA lists the broader sodium C10-18 alkane sulfonate family; the Korean Cosmetic Ingredient Dictionary lists Sodium C14-17 Alkyl Sec Sulfonate with CAS 68037-49-0 and describes secondary sulfonated C14-17 alkane sodium salts. Route as anionic secondary alkane sulfonate. Catalog 60% active and HLB 13.0 remain unverified; HLB and pure CMC blocked.
+
+**Cocamide DEA** (`cdea-85`, CAS 68603-42-9): Health Canada NHPID confirms Cocamide DEA identity and roles as foam booster/aqueous viscosity increasing agent. It carries specific restrictions related to N-nitrosating systems, nitrosamine and secondary amine content. Route as nonionic alkanolamide/foam booster. Catalog 85% is not supplier assay.
+
+**Cocamide MEA** (`cmea-90`, CAS 68140-00-1): Health Canada NHPID confirms Cocamide MEA and foam-booster/viscosity functions; the Canadian assessment describes the substance as coconut acid monoethanolamide, UVCB C8-18. Route as nonionic alkanolamide. Catalog 90% is not supplier assay.
+
+Public references:
+- ECHA SAS identity: https://echa.europa.eu/substance-information/-/substanceinfo/100.061.994
+- Korean Cosmetic Ingredient Dictionary SAS entry: https://kcia.or.kr/cid/search/ingd_view.php?no=18412
+- Australian IMAP SAS assessment: https://www.industrialchemicals.gov.au/sites/default/files/Secondary%20alkane%20sulfonates%20%28SAS%29_Human%20health%20tier%20II%20assessment.pdf
+- Health Canada Cocamide DEA: https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=3341&wbdisable=true
+- Australian Cocamide DEA identity: https://www.industrialchemicals.gov.au/sites/default/files/Common%20skin%20sensitisers.pdf
+- Health Canada Cocamide MEA: https://webprod.hc-sc.gc.ca/nhpid-bdipsn/ingredReq?id=3342
+- Canada Alkanolamines and Fatty Alkanolamides assessment: https://www.canada.ca/en/environment-climate-change/services/evaluating-existing-substances/assessment-alkanolamines-fatty-alkanolamides-group.html
+- CIR Ethanolamides assessment: https://journals.sagepub.com/doi/abs/10.1177/1091581815586599
+
+These sources establish family identity and general functional role only. They do not verify catalog 60/85/90% assay, free amine, nitrosamine, moisture, salt, or lot release. Supplier TDS and CoA remain mandatory for grade-specific approval.
