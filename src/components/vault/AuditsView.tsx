@@ -126,7 +126,7 @@ export const AuditsView: React.FC<AuditsViewProps> = ({
             <p>
               Findings are categorized strictly: <strong className="text-emerald-400">Verified Fact</strong> requires
               reproducible test output or confirmed git diff. Findings marked{' '}
-              <strong className="text-amber-400">AI Claim Only</strong> have not been verified independently.
+              <strong className="text-amber-400">AI Claim Only</strong> have not yet been corroborated by reproducible source evidence.
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@ export const AuditsView: React.FC<AuditsViewProps> = ({
                 <strong>Evidence:</strong> {audit.reproducibleEvidence}
               </div>
               <div className="text-cyan-400 font-medium">
-                Reviewer Decision: {audit.independentReviewerDecision} &rarr;
+                AI Review Decision: {audit.independentReviewerDecision} &rarr;
               </div>
             </div>
           </div>
