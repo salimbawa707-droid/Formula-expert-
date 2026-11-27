@@ -131,8 +131,10 @@ export class RefinementEngine {
         versions.set(versionKey, version);
       }
 
-      const replicateKey = record.sampleId && record.replicateNumber !== undefined
-        ? `sample:${record.sampleId.trim()}::replicate:${record.replicateNumber}`
+      const replicateKey = record.sampleId
+        ? record.replicateNumber !== undefined
+          ? `sample:${record.sampleId.trim()}::replicate:${record.replicateNumber}`
+          : `sample:${record.sampleId.trim()}::replicate:UNSPECIFIED`
         : `measurement:${record.measurementId.trim()}`;
       const previous = version.replicates.get(replicateKey);
       if (previous === undefined) {
