@@ -36,6 +36,9 @@ function classify(file, source) {
   const p = file.toLowerCase();
   if (p.startsWith('src/components/')) return 'UI_PRESENTATION';
   if (p.includes('cmcpredictor')) return 'FAIL_CLOSED_CMC_MODEL_ADAPTER';
+  if (p.includes('calibrationengine')) return 'CALIBRATION_PROPOSAL_WORKFLOW';
+  if (p.includes('cleaningperformance')) return 'RULE_BASED_CLEANING_PERFORMANCE_SCORING';
+  if (p.includes('labhealth')) return 'LAB_READINESS_AND_HEALTH_SCORING';
   if (p.endsWith('/calculators.ts')) return 'LEGACY_CALCULATION_FACADE';
   if (p.includes('ingredientintelligence')) return 'INGREDIENT_KNOWLEDGE_AND_RULE_REGISTRY';
   if (p.includes('dilution')) return 'ARITHMETIC_DILUTION_AND_UNIT_CONVERSION';
@@ -275,6 +278,7 @@ console.log(JSON.stringify({
   directNonTestImportedCandidates: [...modules.values()].filter(module => module.hasDirectProductionImporter).length,
   noDirectNonTestImporterCandidates: [...modules.values()].filter(module => !module.hasDirectProductionImporter).map(module => module.path),
   zeroExportCandidates: [...modules.values()].filter(module => module.exports.length === 0).map(module => module.path),
+  mixedSemanticPaths: [...modules.values()].filter(module => module.role === 'MIXED_OR_REQUIRES_MANUAL_SEMANTIC_REVIEW').map(module => module.path),
   roleCounts: Object.fromEntries([...modules.values()].reduce((counts, module) => counts.set(module.role, (counts.get(module.role) || 0) + 1), new Map())),
   markdown: rel(OUT_MD),
   json: rel(OUT_JSON)
