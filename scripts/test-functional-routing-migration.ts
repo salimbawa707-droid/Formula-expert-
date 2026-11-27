@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { getFunctionalRoutingDecisions, resolveFunctionalRouting, validateFunctionalRoutingAgainstCatalog } from '../src/data/ingredientFunctionalRouting';
+import { getFunctionalRoutingDecisions, resolveFunctionalRouting, resolveFunctionalRoutingForIngredient, validateFunctionalRoutingAgainstCatalog } from '../src/data/ingredientFunctionalRouting';
 
 assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), []);
 const decisions = getFunctionalRoutingDecisions();
@@ -13,6 +13,8 @@ assert.equal(resolveFunctionalRouting('labsa')?.chargeBehavior, 'PH_DEPENDENT_AN
 assert.equal(resolveFunctionalRouting('sles')?.chargeBehavior, 'FIXED_ANIONIC', 'static SLES family identity must resolve to the fixed-anionic grade route');
 assert.equal(resolveFunctionalRouting('aos')?.chargeBehavior, 'FIXED_ANIONIC');
 assert.equal(resolveFunctionalRouting('capb')?.chargeBehavior, 'ZWITTERIONIC');
+assert.equal(resolveFunctionalRoutingForIngredient({ name: 'LABSA (Acid Slurry 90%)' })?.chargeBehavior, 'PH_DEPENDENT_ANIONIC', 'name-only LABSA aliases must resolve to the pH-dependent route');
+assert.equal(resolveFunctionalRoutingForIngredient({ name: 'LABSA 96%' })?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
 assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
 assert.equal(resolveFunctionalRouting('labsa-90')?.hlbEligible, false);
 assert.equal(resolveFunctionalRouting('sles-70')?.routingClass, 'ANIONIC');
