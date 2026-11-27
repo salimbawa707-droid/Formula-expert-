@@ -1394,11 +1394,9 @@ export function calculateComplexEcoScore(ingredients: FormulationIngredient[]): 
     if (pct <= 0) return;
 
     const eco = getIngredientEcoMetrics(name);
+    // Weighted plant-derived fraction is counted once. A threshold bonus here
+    // would double-count high plantBasedPct ingredients and can exceed formula mass.
     totalPlantPct += (pct * eco.plantBasedPct) / 100;
-
-    if (eco.plantBasedPct >= 80) {
-      totalPlantPct += pct;
-    }
 
     if (cat.includes('enzyme') || name.includes('protease') || name.includes('amylase') || name.includes('lipase')) {
       hasEnzyme = true;
