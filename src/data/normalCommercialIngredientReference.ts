@@ -317,7 +317,7 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     applicabilityNote: 'This is a named commercial protease example, not a universal protease activity value. KIPU-A is product/method specific and cannot be converted to KNPU-S, BPU or another unit without validated method correlation. Catalog activeDefault=100% must not be interpreted as enzyme activity.'
   },
   {
-    catalogIngredientIds: ['amylase-liquid', 'lipase-liquid', 'cellulase-liquid', 'mannanase-liquid'],
+    catalogIngredientIds: ['amylase-liquid', 'amylase-liquid-tech', 'amylase-liquid-pure', 'amylase-liquid-sol', 'lipase-liquid', 'lipase-liquid-tech', 'lipase-liquid-pure', 'lipase-liquid-sol', 'cellulase-liquid', 'cellulase-liquid-tech', 'cellulase-liquid-pure', 'cellulase-liquid-sol', 'mannanase-liquid', 'mannanase-liquid-tech', 'mannanase-liquid-pure', 'mannanase-liquid-sol'],
     displayName: 'Detergent enzyme preparations — activity-unit reference rule',
     referenceGrade: 'Commercial detergent enzyme preparations; supplier-labelled activity',
     evidenceClass: 'INDUSTRY_REFERENCE',
@@ -455,6 +455,127 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     sourceName: 'KEMICAS Potassium Sorbate ACS/Ph. Eur. Technical Data Sheet',
     applicabilityNote: 'This is a laboratory/food-additive grade specification, not proof of suitability as a preservative in alkaline detergent. Sorbate efficacy is strongly pH-dependent; finished-product challenge testing and legal-use review are separate requirements.'
   },
+
+  {
+    catalogIngredientIds: ['apg-0810', 'apg-0810-tech', 'apg-0810-pure', 'apg-0810-sol'],
+    displayName: 'Alkyl polyglucoside C8–10 / APG 0810',
+    referenceGrade: 'Commercial APG 0810 ≥50% active published specification example',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      activeMatterMin: { value: 50, unit: '%', basis: 'supplier published minimum; product variant dependent' },
+      chemicalClass: { value: 'C8–10 alkyl polyglucoside', unit: 'identity' },
+      pH: { value: '11.5–12.5', unit: 'pH', conditions: '10% aqueous solution; grade-specific published range' }
+    },
+    sourceUrl: 'https://www.intersurfchem.net/surfactants/alkyl-polyglucoside-apg-0810/',
+    sourceName: 'InterSurfChem APG 0810 published product specification',
+    applicabilityNote: 'Supplier-published reference example, not a verified manufacturer identity for the catalog grade. APG chain distribution, solids/active definition and pH method vary by grade. Do not transfer this minimum assay to APG-1214 or assume every APG-0810 lot is ≥50%.'
+  },
+  {
+    catalogIngredientIds: ['apg-1214', 'apg-1214-tech', 'apg-1214-pure', 'apg-1214-sol'],
+    displayName: 'Lauryl/Myristyl glucoside APG',
+    referenceGrade: 'BASF Glucopon 600 UP commercial APG benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      activeMatter: { value: 50, unit: '%', basis: 'BASF product range card' },
+      chemicalNature: { value: 'Lauryl/Myristyl Glucoside', unit: 'composition description' },
+      physicalForm: { value: 'liquid', unit: 'form' },
+      foamHeight: { value: '135 / 135', unit: 'mm', conditions: 'Ross-Miles 0.1 wt%, 25°C, 0/5 min' }
+    },
+    sourceUrl: 'https://www.basf.com/dam/jcr:cb247fec-3a83-3099-80b6-025f50eb881e/basf/www/mx/documents/2024%20HII%20Product%20Range%20Card.pdf',
+    sourceName: 'BASF Home Care & I&I Product Range Card — Glucopon 600 UP',
+    applicabilityNote: 'BASF grade is a lauryl/myristyl glucoside blend, not proof of pure lauryl glucoside or equivalence to every APG-1214 supplier grade. 50% is the named product range-card value; lot CoA remains required.'
+  },
+  {
+    catalogIngredientIds: ['lauryl-amine-oxide', 'lauryl-amine-oxide-tech', 'lauryl-amine-oxide-pure', 'lauryl-amine-oxide-sol'],
+    displayName: 'Lauramine Oxide',
+    referenceGrade: 'Stepan AMMONYX LO commercial 30% active',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      activeMatter: { value: 30, unit: '%', basis: 'as supplied; amine oxide' },
+      freeAmineMax: { value: 1, unit: '%', basis: 'product bulletin typical specification' },
+      pH: { value: 8, unit: 'pH', conditions: '10% aqueous' },
+      cloudPoint: { value: -1, unit: '°C', conditions: 'as supplied' },
+      density: { value: 0.968, unit: 'g/mL', conditions: '25°C' },
+      viscosity: { value: 18, unit: 'cP', conditions: '25°C' }
+    },
+    sourceUrl: 'https://www.stepan.com/content/dam/stepan-dot-com/webdam/website-product-documents/product-bulletins/surfactants/AMMONYXLO.pdf',
+    sourceName: 'Stepan AMMONYX LO Product Bulletin',
+    applicabilityNote: 'Exact chemical identity/CAS 1643-20-5 matches lauramine oxide. Catalog activeDefault 30 is consistent with this named product benchmark, but supplier, region, test method and lot assay still require verification. Amine oxides are amphoteric, not nonionic surfactants.'
+  },
+  {
+    catalogIngredientIds: ['lae-3', 'lae-3-tech', 'lae-3-pure', 'lae-3-sol'],
+    displayName: 'Low-EO alcohol ethoxylate benchmark',
+    referenceGrade: 'BASF Lutensol AO 3 adjacent C13–C15 oxo-alcohol 3EO benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      chemicalNature: { value: 'C13–C15 oxo alcohol + 3 EO', unit: 'composition description' },
+      hlb: { value: 8, unit: 'dimensionless', basis: 'BASF product range card' },
+      physicalForm: { value: 'liquid', unit: 'form' }
+    },
+    sourceUrl: 'https://www.basf.com/dam/jcr:cb247fec-3a83-3099-80b6-025f50eb881e/basf/www/mx/documents/2024%20HII%20Product%20Range%20Card.pdf',
+    sourceName: 'BASF Home Care & I&I Product Range Card — Lutensol AO 3',
+    applicabilityNote: 'Adjacent low-EO alcohol ethoxylate benchmark only: C13–C15 oxo-alcohol is not identical to catalog C12–15 Pareth-3. Do not copy exact HLB or physical properties into runtime assumptions without exact-chain supplier confirmation.'
+  },
+  {
+    catalogIngredientIds: ['lae-12', 'lae-12-tech', 'lae-12-pure', 'lae-12-sol'],
+    displayName: 'High-EO alcohol ethoxylate benchmark',
+    referenceGrade: 'BASF Lutensol A 12 N C12–C14 fatty alcohol 12EO benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      chemicalNature: { value: 'C12–C14 fatty alcohol + 12 EO', unit: 'composition description' },
+      cloudPoint: { value: '>100', unit: '°C', conditions: 'BASF Cloud Point Method A' },
+      hlb: { value: 14.3, unit: 'dimensionless' },
+      physicalForm: { value: 'waxy solid', unit: 'form' }
+    },
+    sourceUrl: 'https://www.basf.com/dam/jcr:cb247fec-3a83-3099-80b6-025f50eb881e/basf/www/mx/documents/2024%20HII%20Product%20Range%20Card.pdf',
+    sourceName: 'BASF Home Care & I&I Product Range Card — Lutensol A 12 N',
+    applicabilityNote: 'Adjacent C12–C14 12EO benchmark, not exact C12–15 Pareth-12. Cloud point method is 1 g active surfactant + 100 g water. The catalog default must not inherit these values without exact supplier grade verification.'
+  },
+  {
+    catalogIngredientIds: ['pvp-k30', 'pvp-k30-tech', 'pvp-k30-pure', 'pvp-k30-sol'],
+    displayName: 'Polyvinylpyrrolidone K30',
+    referenceGrade: 'BASF Luviskol K 30 Powder commercial polymer benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      kValue: { value: '27–33', unit: 'K-value', conditions: '1% m/V in water' },
+      solids: { value: '95–100', unit: '%', conditions: '140°C, vacuum, 60 min' },
+      molecularWeight: { value: 'about 45,000 ± 5,000', unit: 'g/mol', conditions: 'BASF GPC method' },
+      pH: { value: '3–7', unit: 'pH', conditions: '10% aqueous' },
+      residualNVPMax: { value: 100, unit: 'ppm' }
+    },
+    sourceUrl: 'https://promo.basf.com/campaign/Projetos/CaringForYou/Documentos/Geral/Luviskol%C2%AE%20K30%20Powder.pdf',
+    sourceName: 'BASF Luviskol K 30 Powder Technical Information',
+    applicabilityNote: 'Named BASF PVP K30 benchmark. The cited document describes cosmetic application; it is a polymer grade reference, not detergent dye-transfer performance proof. The custom solution variant is not 100% powder and must not inherit the powder solids value.'
+  },
+  {
+    catalogIngredientIds: ['peg-4000', 'peg-4000-tech', 'peg-4000-pure', 'peg-4000-sol'],
+    displayName: 'Polyethylene Glycol 4000',
+    referenceGrade: 'Industry reference framework for PEG 4000 molecular-weight grade',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      gradeIdentity: { value: 'PEG average molecular weight grade 4000', unit: 'nominal grade designation' },
+      assay: { value: 'supplier- and pharmacopeia-grade specific; no universal numeric value assigned', unit: 'rule' },
+      molecularWeightDistribution: { value: 'requires supplier specification / CoA', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.usp.org/',
+    sourceName: 'USP compendial reference framework (grade-specific monograph required)',
+    applicabilityNote: 'No exact commercial PEG 4000 supplier TDS was validated in this mapping tranche. Do not convert nominal PEG grade number into a measured molecular weight or assume 100% assay; obtain PEG 4000 TDS/CoA and melting/solidification range.'
+  },
+  {
+    catalogIngredientIds: ['ase-polymer-33', 'ase-polymer-33-tech', 'ase-polymer-33-pure', 'ase-polymer-33-sol'],
+    displayName: 'Alkali-swellable emulsion (ASE) thickener',
+    referenceGrade: 'Industry reference framework; exact Acrysol 33 grade TDS required',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      polymerClass: { value: 'acidic alkali-swellable acrylic emulsion', unit: 'class' },
+      neutralizationResponse: { value: 'viscosity development depends on neutralization, pH, electrolyte and surfactant matrix', unit: 'rule' },
+      polymerSolids: { value: 'not assigned without exact grade TDS/CoA', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.dow.com/en-us/market/mkt-home-care/sub-home-care-thickeners.html',
+    sourceName: 'Dow Home Care Thickeners application reference',
+    applicabilityNote: 'Acrysol 33 is a trade/grade identity and cannot be inferred from generic CAS 25212-88-8 alone. Do not equate ASE with Sokalan dispersant copolymers or assign 30% polymer solids as verified. Exact product bulletin, neutralization curve and lot CoA are required.'
+  },
+
 ];
 
 export function getNormalCommercialIngredientReference(catalogIngredientId: string) {
