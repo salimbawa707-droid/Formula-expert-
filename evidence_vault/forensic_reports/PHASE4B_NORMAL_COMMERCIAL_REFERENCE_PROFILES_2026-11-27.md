@@ -66,7 +66,7 @@ A candidate receives a public reference profile only when an identifiable source
 
 ## Gate status
 
-- Public commercial reference profiles implemented in this tranche: 23.
+- Public commercial reference profiles implemented in this tranche: 24.
 - Supplier grade verified by these references: 0.
 - Lot CoA verified by these references: 0.
 - Formula applicability approvals created by these references: 0.
