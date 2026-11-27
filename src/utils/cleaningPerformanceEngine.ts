@@ -1,4 +1,5 @@
 import { FormulationIngredient } from '../types';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { calculateActiveSurfactants, calculateActiveMatter } from './activeMatterEngine';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
 import { globalGovernanceRegistry } from './scientificGovernanceEngine';
@@ -207,17 +208,30 @@ export function calculateCleaningPerformance(
     const active = activeIsValid ? resolvedActive / 100 : Number.NaN;
     const activePct = pct * active;
 
-    // Ionic classification
-    if (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos') || name.includes('sulphonate') || name.includes('sulfate')) {
+    // Governed identity routes override legacy category/name heuristics.
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ing as any)?.id,
+      canonicalIngredientId: (ing as any)?.canonicalIngredientId,
+      ingredientId: (ing as any)?.ingredientId,
+      name: ing?.name
+    });
+    if (route?.role === 'IDENTITY_UNRESOLVED') {
+      missingSurfactantActiveMatter = true;
+      continue;
+    }
+    if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+      // Do not silently fold pH-dependent amine oxide into fixed amphoteric/nonionic totals.
+      // Its contribution remains outside fixed-charge synergy until pH/speciation is modeled.
+    } else if (route?.routingClass === 'ANIONIC' || (!route && (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos') || name.includes('sulphonate') || name.includes('sulfate')))) {
       hasAnionic = true;
       anionicActive += activePct;
-    } else if (cat.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside') || name.includes('cdea') || name.includes('cocomide') || name.includes('cocoamide')) {
+    } else if (route?.routingClass === 'NONIONIC' || (!route && (cat.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside') || name.includes('cdea') || name.includes('cocomide') || name.includes('cocoamide')))) {
       hasNonionic = true;
       nonionicActive += activePct;
-    } else if (cat.includes('amphoteric') || name.includes('capb') || name.includes('betaine') || name.includes('amine oxide') || name.includes('ampho')) {
+    } else if (route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (cat.includes('amphoteric') || name.includes('capb') || name.includes('betaine') || name.includes('ampho')))) {
       hasAmphoteric = true;
       amphotericActive += activePct;
-    } else if (cat.includes('cationic') || name.includes('esterquat') || name.includes('quat') || name.includes('bkc') || name.includes('cetrimonium') || name.includes('dhtdmac')) {
+    } else if (!route && (cat.includes('cationic') || name.includes('esterquat') || name.includes('quat') || name.includes('bkc') || name.includes('cetrimonium') || name.includes('dhtdmac'))) {
       hasCationic = true;
       cationicActive += activePct;
       if (name.includes('esterquat') || name.includes('dhtdmac') || name.includes('softener')) {
