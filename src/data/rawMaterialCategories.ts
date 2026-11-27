@@ -79,10 +79,12 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
       const c = (i.category || '').toLowerCase();
       const n = (i.name || '').toLowerCase();
       const route = resolveFunctionalRouting(i.id);
-      const isIonic = route?.routingClass === 'ANIONIC' || route?.routingClass === 'AMPHOTERIC' || c.includes('anionic') || c.includes('cationic') || c.includes('amphoteric') ||
-        n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') ||
-        n.includes('betaine') || n.includes('capb') || n.includes('bkc') || n.includes('quat') ||
-        n.includes('sulfate') || n.includes('sulphonate') || n.includes('amine oxide') || n.includes('cetrimonium');
+      const isIonic = route
+        ? route.routingClass === 'ANIONIC' || route.routingClass === 'AMPHOTERIC'
+        : c.includes('anionic') || c.includes('cationic') || c.includes('amphoteric') ||
+          n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') ||
+          n.includes('betaine') || n.includes('capb') || n.includes('bkc') || n.includes('quat') ||
+          n.includes('sulfate') || n.includes('sulphonate') || n.includes('amine oxide') || n.includes('cetrimonium');
       if (!isIonic) return false;
       if (!subcat || subcat === 'all') return true;
       if (subcat === 'anionic') {
