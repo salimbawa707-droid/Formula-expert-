@@ -64,8 +64,11 @@ function record(input: {
   };
 }
 
-function proposal(records: DetailedLabEvidenceRecord[]) {
-  return RefinementEngine.proposeAdjustments(ingredient as any, records, category)[0];
+function proposal(
+  records: DetailedLabEvidenceRecord[],
+  activeIngredients: Array<{ id?: string; canonicalIngredientId?: string; name: string; percentage: number }> = ingredient
+) {
+  return RefinementEngine.proposeAdjustments(activeIngredients as any, records, category)[0];
 }
 
 const results: Array<{ name: string; passed: boolean; actual: unknown; expected: unknown }> = [];
@@ -233,6 +236,40 @@ const wrongIngredientIdentity = proposal([
   record({ id: 'id3', formulaId: 'ID3', value: 30 })
 ]);
 check('canonical ingredient identity mismatch excluded', wrongIngredientIdentity === undefined, wrongIngredientIdentity, undefined);
+
+check('canonical ingredient ID takes precedence over database row ID', (() => {
+  const canonicalIdentityProposal = proposal([
+    record({ id: 'canonical-id-1', formulaId: 'CAN1', value: 10 }),
+    record({ id: 'canonical-id-2', formulaId: 'CAN2', value: 20 }),
+    record({ id: 'canonical-id-3', formulaId: 'CAN3', value: 30 })
+  ], [{
+    id: 'ui-row-uuid-7f3a',
+    canonicalIngredientId: 'SLES',
+    name: 'SLES',
+    percentage: 15
+  }]);
+  return canonicalIdentityProposal?.proposedPercentage === 20;
+})(), 'canonical ID used', 20);
+
+check('canonical IDs with underscores are preserved', (() => {
+  const customRecords = [
+    record({ id: 'underscore-1', formulaId: 'UND1', value: 10 }),
+    record({ id: 'underscore-2', formulaId: 'UND2', value: 20 }),
+    record({ id: 'underscore-3', formulaId: 'UND3', value: 30 })
+  ].map(item => ({
+    ...item,
+    parameterKey: 'ingredient:sles:percentage',
+    ingredientCanonicalId: 'SODIUM_HYDROXIDE',
+    ingredientName: 'SLES'
+  }));
+  const canonicalIdentityProposal = proposal(customRecords, [{
+    canonicalIngredientId: 'sodium_hydroxide',
+    name: 'SLES',
+    percentage: 15
+  }]);
+  return canonicalIdentityProposal?.proposedPercentage === 20;
+})(), 'underscore canonical ID preserved', 20);
+
 
 resetUserInstrumentsForTest();
 

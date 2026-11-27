@@ -67,7 +67,12 @@ export class RefinementEngine {
         continue;
       }
 
-      const ingredientCanonicalId = String((ingredient as any).id || ingredientName).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      // Prefer the authoritative canonical ingredient identity over a UI/database row ID.
+      // Canonical IDs may intentionally contain underscores (for example, sodium_hydroxide),
+      // so preserve their identity token rather than converting it to a display-name slug.
+      const ingredientCanonicalId = String(
+        ingredient.canonicalIngredientId || ingredient.id || ingredientName
+      ).trim().toLowerCase();
       const aggregate = this.getValidatedAverage(ingredientName, ingredientCanonicalId, categoryRecords, canonicalTarget);
       if (!aggregate || Math.abs(aggregate.mean - currentPercentage) <= 0.5) continue;
 
@@ -123,7 +128,7 @@ export class RefinementEngine {
         normalizeProductCategory(record.categoryId) === targetCategory &&
         acceptedKeys.has(key) &&
         record.evidenceKind === 'INGREDIENT_COMPOSITION' &&
-        record.ingredientCanonicalId === ingredientCanonicalId &&
+        String(record.ingredientCanonicalId || '').trim().toLowerCase() === ingredientCanonicalId &&
         record.ingredientName?.trim().toLowerCase() === normalizedName &&
         compositionGate.isValid &&
         canPromoteToLabValidated(record).allowed &&
