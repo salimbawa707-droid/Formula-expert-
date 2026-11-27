@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { getIngredientChemistryCrosswalk, resolveIngredientChemistrySemantics, validateIngredientChemistryCrosswalk } from '../src/domain/ingredients/ingredientChemistrySemantics';
 import { resolveFunctionalRouting, validateFunctionalRoutingAgainstCatalog } from '../src/data/ingredientFunctionalRouting';
 import { evaluateIngredientSubstitution, getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
-import { getIngredientCmcData } from '../src/utils/calculators';
+import { calculateComplexEcoScore, getIngredientCmcData } from '../src/utils/calculators';
 
 const rows = getIngredientChemistryCrosswalk();
 assert.equal(rows.length, 7, 'crosswalk must cover every current SSOT identity record');
@@ -30,6 +30,11 @@ assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 's
 assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'acid-hypochlorite-chlorine-gas')?.provenance, 'PREDICTED_INTERACTION', 'rule-based hazard must not be labelled as in-app measured interaction');
 assert.equal(getIngredientCmcData('SLES')?.dataProvenance, 'HEURISTIC_SCREENING', 'legacy SLES CMC alias must remain explicitly heuristic');
 assert.equal(getIngredientCmcData('SLS')?.dataProvenance, 'SOURCE_BACKED', 'curated SLS CMC source record must retain source-backed status');
+const weightedEco = calculateComplexEcoScore([
+  { name: 'Citric Acid', percentage: 50 } as any,
+  { name: 'SLES', percentage: 50 } as any
+]);
+assert.equal(weightedEco.plantBasedOverallPct, 92, 'plant-derived contribution must be mass-weighted once, not double-counted by a threshold bonus');
 assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
 assert.equal(rows.find(row => row.ingredientId === 'labsa')?.functionalRouteStatus, 'ROUTED', 'LABSA exact CAS+INCI identity must map to both commercial catalog grade IDs');
 assert(rows.filter(row => row.semantics.surfactantFunctionalClass === 'NOT_SURFACTANT').every(row => row.functionalRouteStatus === 'NOT_IN_SURFACTANT_ROUTER'), 'builders, acids, buffers and polymers outside the surfactant router must not be reported as missing surfactant routes');
