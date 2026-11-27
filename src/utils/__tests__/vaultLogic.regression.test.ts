@@ -283,7 +283,18 @@ export function runVaultLogicTestSuite() {
   // 7. Scientific Status Rules: Engine cannot be marked ready without inspected dataset
   const engine = INITIAL_VAULT_STATE.engines[0];
   const promoteCheck = canPromoteEngineToValidation(engine, INITIAL_VAULT_STATE.datasets);
-  assert(promoteCheck.allowed === false, 'Scientific Status', 'Engine promotion blocked without inspected dataset');
+  assert(promoteCheck.allowed === false, 'Scientific Status', 'Structurally inspected but DEFICIENT benchmark datasets cannot promote an engine');
+  assert(/READY eligibility/i.test(promoteCheck.reason), 'Scientific Status', 'Promotion failure explains the missing validation eligibility gate');
+  const eligibleValidationDataset = {
+    ...INITIAL_VAULT_STATE.datasets[0],
+    applicableEngineIds: [engine.id],
+    inspectionStatus: 'NUMERICALLY_INSPECTED' as const,
+    actualRowCount: 10,
+    numericalValidationReadiness: 'READY' as const,
+    designation: 'VALIDATION' as const,
+  };
+  const eligiblePromotion = canPromoteEngineToValidation(engine, [eligibleValidationDataset]);
+  assert(eligiblePromotion.allowed === true, 'Scientific Status', 'Only a READY inspected dataset explicitly designated VALIDATION may satisfy engine promotion');
 
   // 8. JSON export and import validator
   const exported = JSON.stringify(INITIAL_VAULT_STATE, null, 2);
