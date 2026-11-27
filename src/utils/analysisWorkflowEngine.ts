@@ -631,6 +631,7 @@ export async function executeStagedScientificAnalysis(
   let amphotericPct = 0;
   let cationicPct = 0;
   let conditionalAmineOxidePct = 0;
+  let conditionalPHDependentAnionicPct = 0;
   let chargeDataComplete = true;
 
   for (const ing of immutableSnapshot.ingredients) {
@@ -647,6 +648,7 @@ export async function executeStagedScientificAnalysis(
     const isBlocked = route?.role === 'IDENTITY_UNRESOLVED';
     const isPolymericDispersant = route?.role === 'POLYMERIC_DISPERSANT';
     const isAmineOxide = route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE';
+    const isPHDependentAnionic = route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
     const isAnionic = !route && (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap'));
     const isNonionic = route?.routingClass === 'NONIONIC' || (!route && (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside')));
     const isAmphoteric = route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine')));
@@ -656,7 +658,7 @@ export async function executeStagedScientificAnalysis(
       continue;
     }
     if (isPolymericDispersant) continue;
-    if (isAnionic || isNonionic || isAmphoteric || isCationic || isAmineOxide) {
+    if (isAnionic || isNonionic || isAmphoteric || isCationic || isAmineOxide || isPHDependentAnionic) {
       const pct = Number(ing.percentage);
       const assay = ing.activeMatterPct === undefined || ing.activeMatterPct === null ? Number.NaN : Number(ing.activeMatterPct);
       if (!Number.isFinite(pct) || !Number.isFinite(assay) || assay < 0 || assay > 100) {
@@ -665,6 +667,7 @@ export async function executeStagedScientificAnalysis(
       }
       const act = pct * (assay / 100);
       if (isAmineOxide) conditionalAmineOxidePct += act;
+      else if (isPHDependentAnionic) conditionalPHDependentAnionicPct += act;
       else if (isAnionic || route?.routingClass === 'ANIONIC') anionicPct += act;
       else if (isNonionic) nonionicPct += act;
       else if (isAmphoteric) amphotericPct += act;
@@ -681,6 +684,7 @@ export async function executeStagedScientificAnalysis(
     amphotericPct: chargeDataComplete ? Number(amphotericPct.toFixed(2)) : Number.NaN,
     cationicPct: chargeDataComplete ? Number(cationicPct.toFixed(2)) : Number.NaN,
     conditionalAmineOxidePct: chargeDataComplete ? Number(conditionalAmineOxidePct.toFixed(2)) : Number.NaN,
+    conditionalPHDependentAnionicPct: chargeDataComplete ? Number(conditionalPHDependentAnionicPct.toFixed(2)) : Number.NaN,
     hlb: hlbResult.blendedHLB,
     hlbStatus: hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE'
   };
