@@ -138,6 +138,7 @@ export function assessAiScientificValidation(
 
   const coaProvenanceComplete =
     evidence.evidenceRoute === 'SUPPLIER_LOT_COA' &&
+    evidence.exactIdentityAndGrade &&
     Boolean(evidence.supplierName?.trim()) &&
     Boolean(evidence.manufacturerName?.trim()) &&
     Boolean(evidence.supplierProductName?.trim()) &&
