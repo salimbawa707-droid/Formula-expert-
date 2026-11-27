@@ -1646,7 +1646,6 @@ export const INITIAL_VAULT_STATE: VaultState = {
       fileName: 'CMC_Compounds.csv; NIST_Table_of_Critical_Micelle_Concentration_Values.csv',
       fileFormat: 'CSV',
       sizeBytes: 761433,
-      sha256Hash: 'd1e11f175f345311f1c9bfddf389a6e5dbf9ada14e073eff78defc5b6f533717',
       accessStatus: 'DOWNLOADED',
       downloadStatus: 'DOWNLOADED',
       numericalInspectionStatus: 'NUMERICALLY_INSPECTED',
@@ -1871,7 +1870,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       evidenceId: 'EVD-024',
       originalDatasetUrl: 'https://resources.psdi.ac.uk/data/a7c82670-d2e2-46c6-920a-74294289aa34',
       localFileReference: 'evidence_vault/datasets/psdi_cmc/ (measurement CSV, compound CSV, codebook, structural audit, identity review and curated reference slices)',
-      sha256Hash: 'd1e11f175f345311f1c9bfddf389a6e5dbf9ada14e073eff78defc5b6f533717',
+
       actualRowCount: 4990,
       actualColumnCount: 18,
       columns: [
