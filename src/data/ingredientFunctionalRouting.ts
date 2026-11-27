@@ -57,8 +57,8 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'PH_DEPENDENT_ANIONIC',
     activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
     identityScope: 'CAS 137-16-6 and PubChem identity support sodium N-lauroylsarcosinate. The catalog 30% liquid remains a commercial solution, not pure sodium lauroylsarcosinate.',
-    sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/23668817','https://pubchem.ncbi.nlm.nih.gov/substance/134973572'],
-    caveats: ['Sarcosinate ionization is pH-dependent; anionic routing is the standard alkaline/neutral detergent-family classification, not a claim of invariant charge at all pH.', 'Catalog 30% activeDefault is not supplier assay or lot CoA.', 'Do not transfer pure-component CMC or catalog HLB without validated method and exact grade evidence.', 'CIR cautions against nitrosating systems for cosmetic-use contexts; review applicable home-care regulatory requirements separately.']
+    sourceUrls: ['https://pubchem.ncbi.nlm.nih.gov/compound/23668817','https://pubchem.ncbi.nlm.nih.gov/substance/134973572','https://academic.oup.com/chromsci/article/63/7/bmaf044/8219104'],
+    caveats: ['The N-lauroylsarcosinate carboxylate has a reported pKa of about 3.6; literature describes it as negatively charged above about pH 5.5. The current pH >= 6.0 routing threshold is a conservative screening boundary, not a continuous speciation calculation.', 'Catalog 30% activeDefault is not supplier assay or lot CoA.', 'Do not transfer pure-component CMC or catalog HLB without validated method and exact grade evidence.', 'CIR cautions against nitrosating systems for cosmetic-use contexts; review applicable home-care regulatory requirements separately.']
   },
   {
     ingredientIds: ['sas-60'],
@@ -144,11 +144,11 @@ const DECISIONS: FunctionalRoutingDecision[] = [
   {
     ingredientIds: ['labsa-90', 'labsa-96'],
     expectedCategory: 'Anionic Surfactant', expectedInci: 'Dodecylbenzene Sulfonic Acid',
-    routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'PH_DEPENDENT_ANIONIC',
+    routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'FIXED_ANIONIC',
     activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
-    identityScope: 'Exact catalog CAS 27176-87-0 and INCI Dodecylbenzene Sulfonic Acid crosswalk to the SSOT LABSA identity. The acid precursor is neutralized in use; ionic surfactant state is therefore pH/speciation dependent.',
-    sourceUrls: ['https://echa.europa.eu/substance-information/-/substanceinfo/100.043.885','https://pubchem.ncbi.nlm.nih.gov/compound/27176-87-0'],
-    caveats: ['LABSA 90% and 96% are separate commercial grade labels; neither is supplier/lot verified by this identity route.', 'Active-matter input must come from the actual grade assay; this route does not certify the catalog default.', 'Do not assign pure-component CMC or supplier-grade HLB from this identity mapping.', 'Use formula pH/neutralization state for charge-dependent compatibility; do not treat acid-form LABSA as invariant fixed anionic species.']
+    identityScope: 'Exact catalog CAS 27176-87-0 and INCI Dodecylbenzene Sulfonic Acid crosswalk to the SSOT LABSA identity. The sulfonic-acid group is a strong acid (read-across pKa about -1.34); in aqueous formulation conditions the LAS species is effectively ionized. Acid-form LABSA still contributes acid load and requires neutralization stoichiometry/pH control, but its surfactant charge must not be gated by an arbitrary pH >= 6 threshold.',
+    sourceUrls: ['https://echa.europa.eu/substance-information/-/substanceinfo/100.043.885','https://pubchem.ncbi.nlm.nih.gov/compound/27176-87-0','https://www.industrialchemicals.gov.au/sites/default/files/2022-01/EVA00065%20-%20Evaluation%20statement%20-%2014%20January%202022%20%5B1803%20KB%5D.pdf','https://downloads.regulations.gov/EPA-HQ-OPP-2013-0097-0005/content.pdf'],
+    caveats: ['LABSA 90% and 96% are separate commercial grade labels; neither is supplier/lot verified by this identity route.', 'Active-matter input must come from the actual grade assay; this route does not certify the catalog default.', 'Do not assign pure-component CMC or supplier-grade HLB from this identity mapping.', 'The acid precursor still requires neutralization-equivalent and finished-formula pH control; strong-acid dissociation does not certify final-product compatibility or performance.']
   },
   {
     ingredientIds: ['tallow-amine-oxide'],
