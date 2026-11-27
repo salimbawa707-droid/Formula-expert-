@@ -4,6 +4,7 @@ import { getIngredientsByMajorCategory } from '../src/data/rawMaterialCategories
 import { getCategorySpecificIngredients } from '../src/components/CategoryIngredientSelector';
 import { resolveFormulaIntelligenceRouting, resolveFunctionalRouting } from '../src/data/ingredientFunctionalRouting';
 import { traceCompatibilityReasoning } from '../src/utils/ingredientIntelligenceEngine';
+import { evaluateExpertReasoning } from '../src/utils/expertReasoningEngine';
 import { RAW_MATERIAL_CATEGORIES } from '../src/data/rawMaterialCategories';
 import { classifyPowderIngredient } from '../src/utils/powderEngine/powderIngredientClassification';
 import { ActiveMatterEngine } from '../src/utils/activeMatterEngine';
@@ -76,6 +77,15 @@ const intelligenceBlocked = traceCompatibilityReasoning([
   { id:'tallow-amine-oxide', name:'Tallow Amine Oxide Acid Thickener', category:'Polymer & Thickener', percentage:2 } as any
 ], 'LAUNDRY_LIQUID');
 assert(intelligenceBlocked.some(f => f.findingCode === 'ERR_INGREDIENT_IDENTITY_UNRESOLVED' && f.severity === 'FATAL'), 'ingredient intelligence must block unresolved identity instead of trusting its display label');
+const labsaCationicExpertReview = evaluateExpertReasoning({
+  ingredients: [
+    { name:'LABSA (Acid Slurry 90%)', category:'Anionic Surfactant', role:'Anionic Surfactant', percentage:5, activeMatterPct:90 } as any,
+    { name:'Esterquat 90%', category:'Cationic Surfactant', role:'Cationic Surfactant', percentage:5, activeMatterPct:90 } as any
+  ],
+  productCategory:'FABRIC_SOFTENER'
+});
+assert(labsaCationicExpertReview.issues.some(issue => issue.id === 'ph-dependent-anionic-cationic-conditional'), 'expert reasoning must report conditional pH-dependent LABSA/cationic risk');
+assert(!labsaCationicExpertReview.issues.some(issue => issue.id === 'anionic-cationic-conflict'), 'expert reasoning must not claim a fixed-charge precipitation event for acid-form LABSA without pH/speciation');
 
 const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
