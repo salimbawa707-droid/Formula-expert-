@@ -2,7 +2,7 @@ import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
 import { validateActiveMatterInput } from './activeMatterInputGuard';
 import { ActiveMatterResultObject } from './activeMatterValidation';
-import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 
 /**
  * ============================================================================
@@ -397,7 +397,12 @@ export class ActiveMatterEngine {
 
     const resolvedCategory = canonicalMatch?.category || rawCategory || (isWater ? 'Solvent / Carrier' : isSolvent ? 'Solvent' : 'Additive');
     const routeId = canonicalMatch?.id || ing?.canonicalIngredientId || ing?.id;
-    const routed = routeId ? resolveFunctionalRouting(routeId) : null;
+    const routed = resolveFunctionalRoutingForIngredient({
+      id: routeId,
+      canonicalIngredientId: ing?.canonicalIngredientId,
+      ingredientId: ing?.ingredientId,
+      name: rawName
+    });
     const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName, routeId);
 
     if (routed?.role === 'IDENTITY_UNRESOLVED') {
