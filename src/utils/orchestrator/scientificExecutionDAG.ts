@@ -553,7 +553,7 @@ export class ScientificExecutionDAG {
           const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
           // Unknown assay and unresolved identity are not assigned to a charge subtotal.
           // pH-dependent amine oxide is deliberately excluded from fixed amphoteric totals.
-          if (route?.role === 'IDENTITY_UNRESOLVED') return;
+          if (route?.role === 'IDENTITY_UNRESOLVED' || route?.role === 'POLYMERIC_DISPERSANT') return;
           if (typeof resolvedActive === 'number' && Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100) {
             const activePct = ing.percentage * (resolvedActive / 100);
             if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return;
