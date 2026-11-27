@@ -681,8 +681,8 @@ function SmartFormulaAnalyzerProInner({
         orchestratorReport.pHResult?.solverConverged === true &&
         Number.isFinite(orchestratorReport.pHResult?.ph);
       const formulaUnitsResolved = analyzedIngredients.every((ing: any) =>
-        Number.isFinite(Number(ing.percentage)) && Number(ing.percentage) >= 0 &&
-        Number(ing.percentage) <= 100
+        typeof ing.percentage === 'number' && Number.isFinite(ing.percentage) &&
+        ing.percentage >= 0 && ing.percentage <= 100
       );
       const hasCriticalScientificBlocker = (orchestratorReport.blockingIssues || [])
         .some((issue: any) => issue.severity === 'FATAL');
