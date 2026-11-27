@@ -63,7 +63,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
       case 'CONFIRMED':
         return (
           <span className="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
-            AI DUAL-PASS REVIEW: CONFIRMED
+            AI REVIEW: CONFIRMED
           </span>
         );
       case 'UNESTABLISHED':
@@ -311,7 +311,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                       </strong>
                     </span>
                     <span>
-                      AI Dual-Pass Review Status:{' '}
+                      AI Review Status:{' '}
                       <strong className="text-slate-300">{phase.independentVerificationStatus}</strong>
                     </span>
                   </div>
