@@ -74,6 +74,7 @@ const intelligenceBlocked = traceCompatibilityReasoning([
 assert(intelligenceBlocked.some(f => f.findingCode === 'ERR_INGREDIENT_IDENTITY_UNRESOLVED' && f.severity === 'FATAL'), 'ingredient intelligence must block unresolved identity instead of trusting its display label');
 
 const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts', 'utf8');
+const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(analysisWorkflowSource.includes('resolveFunctionalRoutingForIngredient'), 'analysis workflow charge breakdown must resolve governed functional identity');
 assert(analysisWorkflowSource.includes('conditionalAmineOxidePct'), 'analysis workflow must expose pH-dependent amine oxide separately from fixed amphoteric totals');
 const qualityGateSource = readFileSync('src/utils/scientificQualityGateEngine.ts', 'utf8');
@@ -87,7 +88,6 @@ assert(cleaningPerformanceSource.includes("route?.role === 'POLYMERIC_DISPERSANT
 assert(analysisWorkflowSource.includes('isPolymericDispersant'), 'staged workflow must exclude polymeric dispersant from primary surfactant charge totals');
 assert(dagSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'scientific DAG must exclude polymeric dispersant from primary surfactant charge totals');
 assert(qualityGateSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'safety quality gates must not apply primary-surfactant policy to polymeric dispersant');
-const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
 const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
 assert(activeMatterSource.includes("surfactantType: 'conditional'"), 'active matter engine must expose a separate conditional charge class');
