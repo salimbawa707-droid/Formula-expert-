@@ -2,6 +2,7 @@ import { FormulationIngredient } from '../types';
 import { ProductCategoryId, normalizeProductCategory } from '../domain/productTaxonomy';
 import { DetailedLabEvidenceRecord } from './labEvidenceEngine';
 import { validateIngredientCompositionEvidence } from './ingredientCompositionEvidence';
+import { canPromoteToLabValidated } from './lims/limsEvidencePromotionEngine';
 
 export interface RefinementProposal {
   id: string;
@@ -125,6 +126,7 @@ export class RefinementEngine {
         record.ingredientCanonicalId === ingredientCanonicalId &&
         record.ingredientName?.trim().toLowerCase() === normalizedName &&
         compositionGate.isValid &&
+        canPromoteToLabValidated(record).allowed &&
         (unit === '%' || unit === 'percent' || unit === 'wt%') &&
         Number.isFinite(record.value) &&
         record.value >= 0 &&
