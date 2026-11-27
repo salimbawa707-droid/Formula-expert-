@@ -262,6 +262,25 @@ export default function LabNotebook(_props?: any) {
 
   // Calculations for Predictions-vs-Measured Table
   const parsedRecordsWithPredictions = evidenceRecords.map(rec => {
+    if (rec.evidenceKind === 'INGREDIENT_COMPOSITION') {
+      const comparability = {
+        isComparable: false,
+        reason: 'Ingredient composition is not a finished-product KPI and must not be compared with a cleaning/pH/viscosity prediction.',
+        matchedFormula: false,
+        matchedVersion: false,
+        matchedCategory: false,
+        matchedKPI: false,
+        matchedUnit: false,
+        conditionsComparable: false,
+        conditionWarnings: ['Composition evidence is routed only to ingredient refinement.']
+      };
+      return {
+        ...rec,
+        predictedValue: Number.NaN,
+        comparability,
+        errorAnalysis: calculatePredictionError(Number.NaN, rec.value, rec.unit, comparability)
+      };
+    }
     // Determine target formula ingredients
     // Only an exact formula identity may supply a reference composition.
     // Category similarity is not formula identity and must not borrow a golden formula.
@@ -319,7 +338,7 @@ export default function LabNotebook(_props?: any) {
 
   // Category Model Validation Metrics Aggregator
   const activeCategoryObservations = parsedRecordsWithPredictions
-    .filter(r => r.categoryId === selectedCategory)
+    .filter(r => r.categoryId === selectedCategory && r.evidenceKind !== 'INGREDIENT_COMPOSITION')
     .map(r => ({
       kpiId: r.kpiId || 'cleaningScore',
       predicted: r.predictedValue,
@@ -601,7 +620,7 @@ export default function LabNotebook(_props?: any) {
                                 {rec.sampleId || 'NO_SAMPLE_ID'}
                               </span>
                               <h4 className="font-black text-white text-sm sm:text-base">
-                                {rec.formulaId === 'golden-hd-laundry' ? 'Golden Heavy Duty Laundry Liquid' : 'Custom Formulation Reference'}
+                                {rec.evidenceKind === 'INGREDIENT_COMPOSITION' ? `${rec.ingredientName} composition` : rec.formulaId === 'golden-hd-laundry' ? 'Golden Heavy Duty Laundry Liquid' : 'Custom Formulation Reference'}
                               </h4>
                               <span className="text-xs text-slate-400">v{rec.formulaVersion}</span>
                             </div>
@@ -626,8 +645,8 @@ export default function LabNotebook(_props?: any) {
                           {/* Pred-vs-measured numbers */}
                           <div className="md:col-span-2 grid grid-cols-2 gap-3">
                             <div className="bg-[#121c33]/80 p-3 rounded-xl border border-slate-800/80">
-                              <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider">Model Prediction:</span>
-                              <span className="font-mono text-base font-black text-cyan-300">{rec.predictedValue.toFixed(1)}{rec.unit}</span>
+                              <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider">{rec.evidenceKind === 'INGREDIENT_COMPOSITION' ? 'Prediction:' : 'Model Prediction:'}</span>
+                              <span className="font-mono text-base font-black text-cyan-300">{Number.isFinite(rec.predictedValue) ? rec.predictedValue.toFixed(1) : 'NOT COMPARABLE'}{rec.unit}</span>
                             </div>
                             <div className="bg-[#1a2035]/80 p-3 rounded-xl border border-slate-800/80">
                               <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider">Measured Value:</span>
