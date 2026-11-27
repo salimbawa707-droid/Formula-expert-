@@ -207,6 +207,7 @@ export interface ProjectPhase {
   status: PhaseStatus;
   closureReportDate?: string;
   reportedClosed: boolean;
+  /** AI dual-pass audit state for the complete phase scope; CONFIRMED is not human approval or laboratory validation. */
   independentVerificationStatus: 'UNESTABLISHED' | 'CONFIRMED' | 'REJECTED';
   blockers: string[];
   description: string;
