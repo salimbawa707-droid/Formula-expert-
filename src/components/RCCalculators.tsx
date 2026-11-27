@@ -1248,7 +1248,7 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
                     <div className="bg-[#131d35] border border-purple-500/30 text-white rounded-xl p-4 mt-4 space-y-3">
                       <div className="flex justify-between items-center border-b border-purple-800 pb-2">
                         <span className="font-bold uppercase tracking-wider text-[10px] text-purple-300">
-                          Thermodynamic Ideal Mixed CMC Result
+                          Ideal Clint Mixed-CMC Model Estimate
                         </span>
                         <span className="bg-purple-900/60 text-purple-200 border border-purple-600/40 text-[10px] font-mono px-2 py-0.5 rounded font-bold">
                           Clint's Model
@@ -1257,13 +1257,13 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                         <div className="bg-[#0b1020] p-3 rounded-lg border border-purple-500/20">
-                          <span className="text-[9px] text-purple-300 block uppercase font-bold">Mixed CMC (Molar)</span>
+                          <span className="text-[9px] text-purple-300 block uppercase font-bold">Ideal-model CMC estimate (mM)</span>
                           <span className="text-2xl font-black text-white font-mono block mt-1">
                             {mixedCmcMolar.toFixed(4)} <span className="text-sm font-normal text-slate-300">mM</span>
                           </span>
                         </div>
                         <div className="bg-[#0b1020] p-3 rounded-lg border border-purple-500/20">
-                          <span className="text-[9px] text-purple-300 block uppercase font-bold">Mixed CMC (Parts Per Million)</span>
+                          <span className="text-[9px] text-purple-300 block uppercase font-bold">Ideal-model CMC estimate (ppm)</span>
                           <span className="text-2xl font-black text-emerald-400 font-mono block mt-1">
                             {mixedCmcPpm.toFixed(1)} <span className="text-sm font-normal text-white">ppm</span>
                           </span>
