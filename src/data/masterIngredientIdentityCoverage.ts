@@ -21,6 +21,8 @@ export interface IngredientIdentityCoverageRow {
   catalogProvenanceStatus: 'PRESENT' | 'MISSING';
   catalogProvenanceUrlStatus: 'URL_PRESENT' | 'URL_MISSING';
   unresolvedReason: string | null;
+  missingCatalogFields: string[];
+  activeDefaultPresentButSupplierAssayMissing: boolean;
 }
 
 /**
@@ -70,6 +72,23 @@ export const MASTER_INGREDIENT_IDENTITY_COVERAGE: IngredientIdentityCoverageRow[
       gradeSpecificEvidenceStatus: 'NOT_ESTABLISHED_BY_IDENTITY_SSOT',
       catalogProvenanceStatus: ingredient.provenance ? 'PRESENT' : 'MISSING',
       catalogProvenanceUrlStatus: ingredient.provenance?.sourceUrl ? 'URL_PRESENT' : 'URL_MISSING',
+      missingCatalogFields: [
+        ...(ingredient.casNumber == null ? ['CAS number'] : []),
+        ...(ingredient.identityType == null ? ['identityType'] : []),
+        ...(ingredient.casStatus == null ? ['casStatus'] : []),
+        ...(ingredient.manufacturer == null ? ['manufacturer'] : []),
+        ...(ingredient.productName == null ? ['productName'] : []),
+        ...(ingredient.activeMatter == null && ingredient.surfactantActiveMatterPct == null && ingredient.purityPct == null && ingredient.solidsPct == null ? ['supplier active/purity/solids assay'] : []),
+        ...(ingredient.phMin == null || ingredient.phMax == null ? ['verified pH stability bounds'] : []),
+        ...(!ingredient.provenance ? ['structured catalog provenance'] : []),
+        ...(!ingredient.provenance?.sourceUrl ? ['catalog provenance URL'] : [])
+      ],
+      activeDefaultPresentButSupplierAssayMissing:
+        ingredient.activeDefault != null &&
+        ingredient.activeMatter == null &&
+        ingredient.surfactantActiveMatterPct == null &&
+        ingredient.purityPct == null &&
+        ingredient.solidsPct == null,
       unresolvedReason: exact
         ? 'Identity-level CAS/INCI crosswalk only; exact commercial grade, manufacturer, assay, impurity profile and CoA/TDS/SDS remain unverified.'
         : ambiguous
@@ -94,6 +113,17 @@ export function getMasterIngredientIdentityCoverageSummary() {
     catalogProvenanceRecords: rows.filter(row => row.catalogProvenanceStatus === 'PRESENT').length,
     catalogProvenanceUrlRecords: rows.filter(row => row.catalogProvenanceUrlStatus === 'URL_PRESENT').length,
     gradeSpecificEvidenceRecords: rows.filter(row => row.gradeSpecificEvidenceStatus !== 'NOT_ESTABLISHED_BY_IDENTITY_SSOT').length,
+    missingFieldCounts: {
+      identityType: rows.filter(row => row.missingCatalogFields.includes('identityType')).length,
+      casStatus: rows.filter(row => row.missingCatalogFields.includes('casStatus')).length,
+      manufacturer: rows.filter(row => row.missingCatalogFields.includes('manufacturer')).length,
+      productName: rows.filter(row => row.missingCatalogFields.includes('productName')).length,
+      supplierAssay: rows.filter(row => row.missingCatalogFields.includes('supplier active/purity/solids assay')).length,
+      verifiedPHBounds: rows.filter(row => row.missingCatalogFields.includes('verified pH stability bounds')).length,
+      structuredProvenance: rows.filter(row => row.missingCatalogFields.includes('structured catalog provenance')).length,
+      provenanceUrl: rows.filter(row => row.missingCatalogFields.includes('catalog provenance URL')).length,
+    },
+    activeDefaultPresentButSupplierAssayMissing: rows.filter(row => row.activeDefaultPresentButSupplierAssayMissing).length,
     exactIdentityMatchesBySsotId: Object.fromEntries(
       [...new Set(rows.map(row => row.ssotIdentityId).filter((id): id is string => Boolean(id)))]
         .map(id => [id, rows.filter(row => row.ssotIdentityId === id).length])
