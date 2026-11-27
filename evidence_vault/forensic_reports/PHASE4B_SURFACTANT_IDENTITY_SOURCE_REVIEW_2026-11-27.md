@@ -179,3 +179,47 @@ The Stepan bulletin is useful primary manufacturer evidence, but it is evidence 
 - Formula applicability approvals: 0.
 
 The fourth tranche reduces the *review backlog* but does not reduce the 397 unmapped identity count in the executable crosswalk. No catalog identity was rewritten, no CAS was silently substituted, no supplier assay was inferred, and all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Cross-category identity source review — builders and neutralizer (fifth tranche)
+
+This tranche begins the category-wise review beyond surfactants. These are identity-level source checks only; they do not establish the four catalog grade variants or any supplier assay.
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-005 | Calcium Chloride | 10043-52-4 | PubChem CID 5284359 identifies calcium chloride / calcium dichloride, formula CaCl2, and lists CAS 10043-52-4 across multiple government and registry sources. | Source-supported identity candidate. Hydrate state and catalog commercial grade must still be specified; the CAS match alone does not establish the grade variants. |
+| MICG-006 | Triethanolamine | 102-71-6 | PubChem CID 7618 identifies triethanolamine / 2,2',2''-nitrilotriethanol, formula C6H15NO3, CAS 102-71-6, and UNII 9O3K93S3TK. | Source-supported identity candidate. The separate related CAS 64114-46-1 is associated with triethanolamine polymer and must not be conflated with the monomer. Supplier purity/free-DEA assay remains absent. |
+| MICG-050 | Sodium Carbonate | 497-19-8 | Fisher Scientific's product listing identifies anhydrous sodium carbonate / soda ash, CAS 497-19-8, formula Na2CO3, PubChem CID 10340 and ChEBI CHEBI:29377. | Source-supported identity candidate for anhydrous sodium carbonate. Keep sodium carbonate monohydrate and sodium carbonate decahydrate distinct; no catalog grade assay is established. |
+| MICG-052 | Tetrasodium Glutamate Diacetate (GLDA) | 51981-21-6 | PubChem SID 135258214 (ChemIDplus source) and CID 44630158 identify tetrasodium glutamate diacetate, CAS 51981-21-6, UNII 5EHL50I4MY and EC 257-573-7. PubChem synonyms include ca. 40% aqueous GLDA products, but these are depositor-supplied synonyms, not an assay certificate for this catalog. | Source-supported identity candidate. The catalog's GLDA-47 active/solids claim still requires manufacturer TDS/CoA; do not convert synonym text into a supplier assay. |
+
+### Fifth-tranche sources
+
+- PubChem, Calcium Chloride, CID 5284359: https://pubchem.ncbi.nlm.nih.gov/compound/Calcium-dichloride
+- PubChem, Triethanolamine, CID 7618: https://pubchem.ncbi.nlm.nih.gov/compound/triethanolamine
+- Fisher Scientific, anhydrous Sodium Carbonate listing (CAS 497-19-8; PubChem CID 10340; ChEBI CHEBI:29377): https://www.fishersci.com/us/en/browse/80013494/Salts%20and%20Inorganics?categoryKey=80013494&page=2241
+- PubChem SID 135258214, Tetrasodium Glutamate Diacetate (ChemIDplus): https://pubchem.ncbi.nlm.nih.gov/substance/135258214
+- PubChem CID 44630158, Tetrasodium Glutamate Diacetate: https://pubchem.ncbi.nlm.nih.gov/compound/44630158
+
+### Fifth-tranche disposition
+
+- Additional candidate groups examined: 4.
+- Additional source-supported identity candidates: 4.
+- Identity SSOT promotions: 0.
+- Supplier-grade evidence established for catalog records: 0.
+- Formula applicability approvals: 0.
+
+No catalog record or executable crosswalk was altered. These four identity candidates remain outside the seven-entry exact identity SSOT until a deliberate source-backed SSOT change and regression are performed.
+
+
+## Updated aggregate reconciliation (five tranches)
+
+- Candidate groups/issues examined: 43.
+- Source-backed identity candidates (official registry, government, or manufacturer corroboration; not supplier-grade validation): 26.
+- Explicit CAS/identity conflict or scope holds: 6.
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class review flags: 1 (Sodium Lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The fifth tranche covers four builder/neutralizer candidate groups. The 397 unmapped identity crosswalk rows remain unchanged because source review notes are not SSOT records. All 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
