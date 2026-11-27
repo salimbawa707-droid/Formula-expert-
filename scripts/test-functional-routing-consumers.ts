@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { getIngredientsByMajorCategory } from '../src/data/rawMaterialCategories';
+import { getCategorySpecificIngredients } from '../src/components/CategoryIngredientSelector';
 import { resolveFormulaIntelligenceRouting, resolveFunctionalRouting } from '../src/data/ingredientFunctionalRouting';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
@@ -12,6 +13,10 @@ assert(ionicAmphoteric.some(i => i.id === 'capb-30-uni'), 'CAPB must remain in a
 assert(!nonionic.some(i => i.id === 'lauryl-amine-oxide'), 'pH-dependent amine oxide must not be duplicated as generic nonionic');
 assert(nonionic.some(i => i.id === 'apg-0810'), 'APG must remain nonionic');
 assert(ionicAnionic.some(i => i.id === 'sles-70'), 'SLES must remain anionic');
+const amphotericQuickFilter = getCategorySpecificIngredients('Amphoteric Surfactant');
+const nonionicQuickFilter = getCategorySpecificIngredients('Nonionic Surfactant');
+assert(amphotericQuickFilter.some(i => i.id === 'lauryl-amine-oxide'), 'quick selector must route amine oxide into pH-dependent ionic family');
+assert(!nonionicQuickFilter.some(i => i.id === 'lauryl-amine-oxide'), 'quick selector must not duplicate amine oxide in generic nonionic category');
 
 const ldaoIntelligence = resolveFormulaIntelligenceRouting('lauryl-amine-oxide');
 assert.equal(ldaoIntelligence?.chargeLabel, 'Amine Oxide (pH-dependent)');
