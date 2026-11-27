@@ -22,13 +22,6 @@ interface VersionEvidence {
   conflictingReplicateIds: Set<string>;
 }
 
-interface FormulaEvidence {
-  formulaId: string;
-  versionMeans: number[];
-  versionCount: number;
-  replicateCount: number;
-}
-
 /**
  * RefinementEngine
  *
@@ -48,7 +41,7 @@ export class RefinementEngine {
   public static proposeAdjustments(
     activeIngredients: FormulationIngredient[],
     labEvidence: DetailedLabEvidenceRecord[],
-    targetCategory: ProductCategoryId | string
+    targetCategory: string
   ): RefinementProposal[] {
     const canonicalTarget = normalizeProductCategory(targetCategory);
     if (canonicalTarget === 'UNKNOWN_PRODUCT_CATEGORY' || !Array.isArray(activeIngredients) || !Array.isArray(labEvidence)) {
