@@ -100,6 +100,17 @@ For each genuine predictive capability, require a capability ID, model/version h
 - This is an AI code/scientific architecture review, not a test execution report.
 - No local TypeScript build, regression suite or runtime integration test was executed during this review.
 - Exact-head CI remains a separate required gate. No claim is made here that tests passed or that PR #118 is merged.
-- The original 93-candidate discovery set was defined by broad path/name matching. The semantic classifications above cover inspected high-impact modules and implementation families; a mechanically generated export/call-site graph for every one of the 93 candidates remains a follow-on completeness gate.
+- The original 93-candidate discovery set was defined by broad path/name matching. A reproducible repository-local graph generator now enumerates all 93 candidates, extracts exported symbols, resolves direct relative import/re-export/dynamic-import edges across all source files, and separates test importers from non-test importers. The generated graph is attached to the exact-head CI workflow as the `phase4b-93-candidate-export-callsite-graph` artifact. This completes the static export/importer mapping gate, not runtime call execution tracing.
 
 **Final disposition:** canonical semantic role separation established for the reviewed core modules; unsafe epistemic conflation and the refinement evidence-comparability gap documented. This is not Phase 4B closure. Phase 4B = OPEN; Phase 5 = LOCKED.
+
+
+## 7. Complete 93-candidate static export/call-site mapping
+
+- Added generator: `evidence_vault/scripts/audit_93_candidate_capability_graph.mjs`.
+- CI workflow step: `Generate 93-candidate export and call-site graph`.
+- The generator enforces exactly 93 non-test source candidates using the reconciled broad path rule: engine, calculator, optimizer, optimization, formulation, workflow, predictor or router.
+- It scans all source files under `src/` (including tests as callers), extracts named exports, maps direct import/re-export/dynamic-import edges, lists direct production and test importers separately, and records candidate-to-candidate dependencies.
+- On the successful CI run for the reviewed implementation, the graph contained 93 candidates, 444 source files scanned, 599 import edges, and zero unresolved candidate-like imports after test paths were correctly excluded from candidate resolution.
+- The generated Markdown and JSON are retained as the `phase4b-93-candidate-export-callsite-graph` workflow artifact. The graph is a static source-dependency map; it does not prove that every imported symbol executes at runtime or resolve computed dynamic imports/reflection.
+- No scientific capability is promoted to LAB_VALIDATED by this graph. Scientific applicability, model equations, uncertainty, and matched empirical validation remain separate requirements.
