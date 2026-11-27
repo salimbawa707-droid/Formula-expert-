@@ -142,6 +142,7 @@ import { runSecurityFixesTestSuite } from './__tests__/securityFixes.regression.
 import { runVaultLogicTestSuite } from './__tests__/vaultLogic.regression.test';
 import { runEvidenceVaultIntegrityTestSuite } from './__tests__/evidenceVaultIntegrity.regression.test';
 import { runP0MasterRemediationTestSuite } from './__tests__/p0_master_remediation.regression.test';
+import { runRefinementEngineRegressionTestSuite } from './__tests__/refinementEngine.regression.test';
 import { finalizeMasterTestRun } from './masterTestFinalizer';
 
 const phSummary = runRegressionTestSuite();
@@ -444,7 +445,10 @@ const manufacturingAssaySummary = runManufacturingAssayTestSuite();
 const powderChelationSummary = runPowderChelationTestSuite();
 
 // Build execution map capturing actual execution of every registered test module
+const refinementEngineSummary = runRefinementEngineRegressionTestSuite();
+
 const executionMap: TestExecutionRecord[] = [
+  { file: 'refinementEngine.regression.test.ts', moduleName: 'runRefinementEngineRegressionTestSuite', executed: true, passedAssertions: refinementEngineSummary.passed, failedAssertions: refinementEngineSummary.failed, totalAssertions: refinementEngineSummary.total, skipped: false },
   { file: 'p0_remediation_integrity.test.ts', moduleName: 'runP0RemediationIntegrityTestSuite', executed: true, passedAssertions: p0IntegritySummary.passed, failedAssertions: p0IntegritySummary.failed, totalAssertions: p0IntegritySummary.total, skipped: false },
   { file: 'activeMatterIntegrity.test.ts', moduleName: 'runActiveMatterIntegrityTestSuite', executed: true, passedAssertions: amIntegritySummary.passed, failedAssertions: amIntegritySummary.failed, totalAssertions: amIntegritySummary.total, skipped: false },
   { file: 'phInputGuard.test.ts', moduleName: 'runPHInputGuardTestSuite', executed: true, passedAssertions: phGuardSummary.passed, failedAssertions: phGuardSummary.failed, totalAssertions: phGuardSummary.total, skipped: false },
