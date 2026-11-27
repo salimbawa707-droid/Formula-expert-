@@ -11,6 +11,7 @@ import { ActiveMatterEngine } from '../src/utils/activeMatterEngine';
 import { calculateMixedCMC } from '../src/utils/calculators';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
+import { calculateCleaningPerformance } from '../src/utils/cleaningPerformanceEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
 import { isIngredientSurfactantByRouting } from '../src/data/ingredientFunctionalRouting';
 
@@ -69,6 +70,18 @@ const sarcosinateLowPH = calculateFormulationCompatibility([
 ], 3.5, 'FABRIC_SOFTENER');
 assert(sarcosinateLowPH.alerts.some(a => a.id === 'ph-dependent-surfactant-compatibility-test'));
 assert(!sarcosinateLowPH.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), 'sarcosinate below pH threshold must not be forced into fixed anionic clash');
+const sarcosinateLowPHPerformance = calculateCleaningPerformance([
+  { id:'sarcosinate-30', canonicalIngredientId:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', category:'Anionic Surfactant', percentage:5, activeMatterPct:30 } as any,
+  { name:'Water', category:'Solvent', percentage:95, activeMatterPct:0 } as any
+], 3.5, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm:100, washVolumeL:10, washDoseGrams:50, batchSizeKg:100 });
+assert.equal(sarcosinateLowPHPerformance.surfactantSynergy, 0, 'low-pH sarcosinate must not contribute to fixed-anionic synergy');
+const sarcosinateHighPHPerformance = calculateCleaningPerformance([
+  { id:'sarcosinate-30', canonicalIngredientId:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', category:'Anionic Surfactant', percentage:5, activeMatterPct:30 } as any,
+  { name:'Water', category:'Solvent', percentage:95, activeMatterPct:0 } as any
+], 7.0, 'LAUNDRY_LIQUID', undefined, { waterHardnessPpm:100, washVolumeL:10, washDoseGrams:50, batchSizeKg:100 });
+assert(sarcosinateHighPHPerformance.surfactantSynergy > 0, 'high-pH sarcosinate may enter the anionic synergy screening bucket');
+assert(cleaningPerformanceSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'cleaning performance must honor pH-dependent sarcosinate charge routing');
+
 const sarcosinateHighPH = calculateFormulationCompatibility([
   { id:'sarcosinate-30', canonicalIngredientId:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', category:'Anionic Surfactant', percentage:5, activeMatterPct:30 } as any,
   { id:'esterquat-90', name:'Esterquat 90%', category:'Cationic Surfactant', percentage:5, activeMatterPct:90 } as any

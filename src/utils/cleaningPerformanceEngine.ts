@@ -149,6 +149,7 @@ export function calculateCleaningPerformance(
 
   // Surfactant Ionic Distribution Breakdown & Component Classification
   let anionicActive = 0;
+  let conditionalPHDependentAnionicActive = 0;
   let nonionicActive = 0;
   let amphotericActive = 0;
   let cationicActive = 0;
@@ -224,6 +225,15 @@ export function calculateCleaningPerformance(
     } else if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
       // Do not silently fold pH-dependent amine oxide into fixed amphoteric/nonionic totals.
       // Its contribution remains outside fixed-charge synergy until pH/speciation is modeled.
+    } else if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') {
+      // Sodium lauroyl sarcosinate has a reported carboxylate pKa ~3.6.
+      // Keep it out of fixed-anionic synergy below the conservative pH >= 6 screening threshold.
+      if (Number.isFinite(phVal) && phVal >= 6.0) {
+        hasAnionic = true;
+        anionicActive += activePct;
+      } else if (Number.isFinite(activePct)) {
+        conditionalPHDependentAnionicActive += activePct;
+      }
     } else if (route?.routingClass === 'ANIONIC' || (!route && (cat.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos') || name.includes('sulphonate') || name.includes('sulfate')))) {
       hasAnionic = true;
       anionicActive += activePct;
@@ -412,6 +422,9 @@ export function calculateCleaningPerformance(
   let secondaryPerformanceDomain = '';
   const keyPositiveFactors: string[] = [];
   const keyNegativeFactors: string[] = [];
+  if (conditionalPHDependentAnionicActive > 0) {
+    keyNegativeFactors.push(`Sarcosinate active (${conditionalPHDependentAnionicActive.toFixed(2)}%) is kept outside fixed-anionic synergy because formula pH is missing or below the conservative pH >= 6 screening threshold.`);
+  }
 
   switch (category) {
     // ------------------------------------------------------------------------
