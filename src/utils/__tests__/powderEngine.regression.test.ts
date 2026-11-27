@@ -469,6 +469,91 @@ export function runPowderEngineTestSuite(): {
     'INSUFFICIENT_DATA'
   );
 
+  // =========================================================================
+  // Phase 4B AI audit regressions: fail-closed input integrity
+  // =========================================================================
+  const reportInvalidMass = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 'not-a-number' as any, activeMatterPct: 90 },
+      { name: 'Sodium Sulphate', percentage: 100, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Invalid mass-balance input cannot create a 100% balanced strength',
+    reportInvalidMass.massBalance.status === 'INVALID_INPUT' &&
+      reportInvalidMass.verdict.overallStatus === 'INSUFFICIENT_DATA' &&
+      !reportInvalidMass.verdict.strengths.some(s => s.title.includes('100.00% Formula Mass Balance')),
+    { massBalance: reportInvalidMass.massBalance.status, verdict: reportInvalidMass.verdict.overallStatus, strengths: reportInvalidMass.verdict.strengths },
+    'INVALID_INPUT / INSUFFICIENT_DATA / no balanced strength'
+  );
+
+  const reportUnknownSurfactant = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Mystery Specialty Surfactant', percentage: 10, activeMatterPct: 50 },
+      { name: 'Sodium Sulphate', percentage: 90, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  const unknownSurf = reportUnknownSurfactant.classification.ingredients.find(i => i.name === 'Mystery Specialty Surfactant');
+  assert(
+    'Phase 4B Input Integrity',
+    'Generic unknown surfactant is not silently classified as anionic',
+    unknownSurf?.functionalClass === 'Unclassified Surfactant' && unknownSurf.isSurfactant === true,
+    { functionalClass: unknownSurf?.functionalClass, isSurfactant: unknownSurf?.isSurfactant },
+    { functionalClass: 'Unclassified Surfactant', isSurfactant: true }
+  );
+  assert(
+    'Phase 4B Input Integrity',
+    'Unknown surfactant class blocks active-matter calculation',
+    reportUnknownSurfactant.activeMatter.hasInsufficientData &&
+      reportUnknownSurfactant.activeMatter.unresolvedIngredients.includes('Mystery Specialty Surfactant'),
+    reportUnknownSurfactant.activeMatter,
+    'INSUFFICIENT_DATA with unknown surfactant named'
+  );
+
+  const reportOverActive = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 10, activeMatterPct: 125 },
+      { name: 'Sodium Sulphate', percentage: 90, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Active-matter assay above 100% is rejected as unresolved',
+    reportOverActive.activeMatter.hasInsufficientData &&
+      reportOverActive.activeMatter.unresolvedIngredients.includes('LABSA 90%'),
+    reportOverActive.activeMatter,
+    'Invalid >100% assay unresolved'
+  );
+
+  const reportNegativeCost = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 10, activeMatterPct: 90, costPerKg: -1 },
+      { name: 'Soda Ash Dense', percentage: 40, activeMatterPct: 100, costPerKg: 0.35 },
+      { name: 'Sodium Sulphate', percentage: 50, activeMatterPct: 100, costPerKg: 0.12 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100,
+    washDoseG: 50
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Negative raw-material cost cannot produce an apparently valid cost',
+    reportNegativeCost.costing.source === 'INSUFFICIENT_DATA' &&
+      reportNegativeCost.costing.costPerKg === null &&
+      reportNegativeCost.costing.totalBatchCost === null &&
+      reportNegativeCost.costing.costPerWashDose === null &&
+      reportNegativeCost.costing.invalidCostIngredients?.includes('LABSA 90%') === true,
+    reportNegativeCost.costing,
+    'INSUFFICIENT_DATA with null totals and named invalid cost'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
   const totalCount = results.length;
