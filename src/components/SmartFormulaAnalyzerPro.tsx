@@ -18,7 +18,7 @@ import { ScientificBadge } from "./scientific/ScientificComponents";
 import { Chemical, Formulation, FormulationIngredient } from "../types";
 import { CHEMICALS } from "../data/chemicals";
 import { getAllUniversalIngredients } from "../data/universalIngredientLibrary";
-import { resolveFormulaIntelligenceRouting } from "../data/ingredientFunctionalRouting";
+import { resolveFormulaIntelligenceRouting, resolveFunctionalRoutingForIngredient } from "../data/ingredientFunctionalRouting";
 import { normalizeProductCategory, ProductCategoryId } from "../domain/productTaxonomy";
 import { apiFetch } from "../services/apiBase";
 import {
@@ -434,7 +434,8 @@ function SmartFormulaAnalyzerProInner({
         if (!dbChem || !dbChem.molecularWeight) missingFields.push("Molecular Weight");
 
         const routeId = (ing as any).canonicalIngredientId || ing.id || dbChem?.id;
-        const functionalRoute = routeId ? resolveFormulaIntelligenceRouting(routeId) : null;
+        const resolvedRoute = resolveFunctionalRoutingForIngredient({ id: routeId, name: ing.name });
+        const functionalRoute = resolvedRoute ? resolveFormulaIntelligenceRouting(resolvedRoute.ingredientIds[0]) : null;
         const chargeType = functionalRoute?.chargeLabel || (dbChem
           ? dbChem.category.toLowerCase().includes("anionic") ? "Anionic"
             : dbChem.category.toLowerCase().includes("cationic") ? "Cationic"
