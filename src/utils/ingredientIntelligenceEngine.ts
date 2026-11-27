@@ -1103,7 +1103,7 @@ export function traceCompatibilityReasoning(
       ingredientId: (i as any).ingredientId,
       name: i.name
     });
-    if (route) return route.routingClass === 'BLOCKED' ? false : route.routingClass === 'CATIONIC';
+    if (route) return false; // Current governed overlay contains no cationic identities; never infer cationic from a routed non-cationic record.
     return c.includes('CATIONIC') || i.name.toLowerCase().includes('soft') || i.name.toLowerCase().includes('quat') || i.name.toLowerCase().includes('esterquat');
   });
 
