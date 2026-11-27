@@ -12,13 +12,13 @@ import { calculateMixedCMC } from '../src/utils/calculators';
 import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals';
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
-import { isFormulaIngredientSurfactant } from '../src/components/SmartFormulaAnalyzerPro';
+import { isIngredientSurfactantByRouting } from '../src/data/ingredientFunctionalRouting';
 
 const ionicAll = getIngredientsByMajorCategory('ionic','all');
 assert(!ionicAll.some(i => i.id === 'tallow-amine-oxide'), 'blocked identity must not leak into the all-ionic category');
-assert(isFormulaIngredientSurfactant({ name:'LABSA 90%', role:'Anionic Surfactant' }), 'governed LABSA route must remain a surfactant for analyzer KPI calculations');
-assert(!isFormulaIngredientSurfactant({ id:'lignosulfonate-na', name:'Sodium Lignosulfonate', role:'Anionic Surfactant' }), 'polymeric dispersant must not be counted as primary surfactant in analyzer KPIs');
-assert(!isFormulaIngredientSurfactant({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide', role:'Surfactant' }), 'blocked identity route must override a legacy surfactant role');
+assert(isIngredientSurfactantByRouting({ name:'LABSA 90%' }, 'Anionic Surfactant'), 'governed LABSA route must remain a surfactant for analyzer KPI calculations');
+assert(!isIngredientSurfactantByRouting({ id:'lignosulfonate-na', name:'Sodium Lignosulfonate' }, 'Anionic Surfactant'), 'polymeric dispersant must not be counted as primary surfactant in analyzer KPIs');
+assert(!isIngredientSurfactantByRouting({ id:'tallow-amine-oxide', name:'Tallow Amine Oxide' }, 'Surfactant'), 'blocked identity route must override a legacy surfactant role');
 
 const ionicAmphoteric = getIngredientsByMajorCategory('ionic','amphoteric');
 const ionicAnionic = getIngredientsByMajorCategory('ionic','anionic');
