@@ -678,6 +678,7 @@ export async function executeStagedScientificAnalysis(
     nonionicPct: chargeDataComplete ? Number(nonionicPct.toFixed(2)) : Number.NaN,
     amphotericPct: chargeDataComplete ? Number(amphotericPct.toFixed(2)) : Number.NaN,
     cationicPct: chargeDataComplete ? Number(cationicPct.toFixed(2)) : Number.NaN,
+    conditionalAmineOxidePct: chargeDataComplete ? Number(conditionalAmineOxidePct.toFixed(2)) : Number.NaN,
     hlb: hlbResult.blendedHLB,
     hlbStatus: hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE'
   };
