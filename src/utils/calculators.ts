@@ -2,6 +2,7 @@ import { FormulationIngredient } from '../types';
 import { calculateFormulaCost as calcFormulaCostAuthoritative } from './costingEngine';
 import { resolveEng002PureComponent, type Eng002PureComponentReference, type ActiveMatterInputSource } from './eng002InputProvenance';
 import { getProductCategory } from '../domain/productTaxonomy';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference, OPEN_BENCHMARK_IDEAL_MIXING_BIAS } from '../data/experimentalReferenceData';
 import { calculatePHAdvanced, calculateNeutralization as calcNeutAuthoritative } from './pHEngine';
 import { resolveScientificAcidBaseProfile, calculateReactiveEquivalents } from '../domain/ph/acidBaseDataModel';
@@ -884,7 +885,20 @@ export function calculateMixedCMC(ingredients: FormulationIngredient[]): MixedCm
     const name = String(ingredient?.name ?? '').trim();
     const category = String(ingredient?.category ?? '');
     const role = String(ingredient?.role ?? ingredient?.function ?? '');
-    const { isSurfactant } = ActiveMatterEngine.classifySurfactantCharge(category, role, name);
+    const functionalRoute = resolveFunctionalRoutingForIngredient({
+      id: (ingredient as any)?.id,
+      canonicalIngredientId: (ingredient as any)?.canonicalIngredientId,
+      ingredientId: (ingredient as any)?.ingredientId,
+      name
+    });
+    if (functionalRoute?.role === 'IDENTITY_UNRESOLVED') {
+      reasons.push(`${name || 'Unnamed ingredient'}: exact ingredient identity is unresolved; mixed-CMC classification is blocked.`);
+      continue;
+    }
+    const { isSurfactant } = ActiveMatterEngine.classifySurfactantCharge(
+      category, role, name,
+      String((ingredient as any)?.canonicalIngredientId ?? (ingredient as any)?.id ?? (ingredient as any)?.ingredientId ?? '')
+    );
     const rawPctValue: unknown = ingredient?.percentage ?? ingredient?.percent ?? ingredient?.percentageInFormula;
     const rawPct = rawPctValue === undefined || rawPctValue === null || rawPctValue === '' ? NaN : Number(rawPctValue);
 
@@ -1380,11 +1394,9 @@ export function calculateComplexEcoScore(ingredients: FormulationIngredient[]): 
     if (pct <= 0) return;
 
     const eco = getIngredientEcoMetrics(name);
+    // Weighted plant-derived fraction is counted once. A threshold bonus here
+    // would double-count high plantBasedPct ingredients and can exceed formula mass.
     totalPlantPct += (pct * eco.plantBasedPct) / 100;
-
-    if (eco.plantBasedPct >= 80) {
-      totalPlantPct += pct;
-    }
 
     if (cat.includes('enzyme') || name.includes('protease') || name.includes('amylase') || name.includes('lipase')) {
       hasEnzyme = true;

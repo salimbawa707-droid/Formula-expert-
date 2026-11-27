@@ -4,6 +4,7 @@ import { ActiveMatterEngine } from './activeMatterEngine';
 import { getProductCategory, normalizeProductCategory } from '../domain/productTaxonomy';
 import { calculateDynamicChelatorRequirement } from './chelatorEngine';
 import { INGREDIENT_INTELLIGENCE_REGISTRY } from './ingredientIntelligenceEngine';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 
 // =============================================================================
 // ENUMS & TYPES
@@ -215,6 +216,9 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   let totalPct = 0;
   let totalActiveSurfactantPct = 0;
   let anionicActivePct = 0;
+  let fixedAnionicActivePct = 0;
+  let conditionalAnionicActivePct = 0;
+  let conditionalAmineOxideActivePct = 0;
   let nonionicActivePct = 0;
   let amphotericActivePct = 0;
   let cationicActivePct = 0;
@@ -226,16 +230,49 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   let hasPreservative = false;
 
   const ingredientIds: string[] = [];
+  const hasExplicitFormulaPH = typeof input.calculatedPH === 'number' && Number.isFinite(input.calculatedPH) && input.calculatedPH >= 0 && input.calculatedPH <= 14;
 
   // Parse and audit ingredients cleanly
   for (const ing of ingredients) {
     const rawPct = Number(ing.percentage ?? (ing as any).percent ?? 0);
     const activeRes = ActiveMatterEngine.resolveIngredientActive(ing);
     const activePurity = activeRes.activeMatterPct;
-    const activePct = (rawPct * activePurity) / 100;
+    const activePct = Number.isFinite(rawPct) && Number.isFinite(activePurity)
+      ? (rawPct * activePurity) / 100
+      : Number.NaN;
     const name = (ing.name || '').trim();
     const n = name.toLowerCase();
     const role = (ing.role || (ing as any).category || activeRes.category || getAuditedIngredientCategory(name)).toLowerCase();
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ing as any).id,
+      canonicalIngredientId: (ing as any).canonicalIngredientId,
+      ingredientId: (ing as any).ingredientId,
+      name
+    });
+    const isPHDependentAnionic = route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
+
+    if (activeRes.isSurfactant && Number.isFinite(rawPct) && rawPct > 0 && !Number.isFinite(activePurity)) {
+      issues.push({
+        id: 'surfactant-active-assay-missing',
+        issue: `Surfactant Active-Matter Assay Missing: ${name || 'Unnamed ingredient'}`,
+        whyItMatters: 'An unresolved surfactant active-matter input cannot be silently converted to zero; that would understate the active dose and distort category performance reasoning.',
+        scientificBasis: 'Active surfactant mass fraction requires a valid grade-specific assay or an explicitly labelled reference estimate.',
+        scientificType: 'CALCULATED',
+        severity: 'High',
+        whatToCheck: 'Attach the exact commercial-grade supplier TDS/lot CoA or enter a clearly labelled non-verified estimate; do not treat missing assay as 0%.'
+      });
+      recommendations.push({
+        id: 'rec-surfactant-active-assay-' + (ing.id || name || 'unknown'),
+        problem: 'Surfactant active-matter assay is unavailable.',
+        why: 'The active surfactant dose cannot be calculated reliably without a valid active-matter input.',
+        recommendedAction: 'Obtain a matching supplier-grade specification or lot CoA and rerun the formula analysis.',
+        expectedEffect: 'Prevents undercounting active surfactant and misleading category-performance conclusions.',
+        tradeOff: 'Until evidence is attached, active-matter-dependent conclusions remain limited.',
+        confidence: 'HIGH',
+        recommendationType: 'RUN_LAB_TEST',
+        authority: 'LAB_EVIDENCE'
+      });
+    }
 
     totalPct += rawPct;
 
@@ -247,18 +284,49 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
       ingredientIds.push(canonId);
     }
 
-    if (role.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos')) {
-      anionicActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
-    } else if (role.includes('nonionic') || n.includes('lae') || n.includes('ethoxylate') || n.includes('glucoside') || n.includes('apg')) {
-      nonionicActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
-    } else if (role.includes('amphoteric') || n.includes('capb') || n.includes('betaine')) {
-      amphotericActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
-    } else if (role.includes('cationic') || n.includes('esterquat') || n.includes('bkc') || n.includes('ctac')) {
-      cationicActivePct += activePct;
-      totalActiveSurfactantPct += activePct;
+    // Route governed identities before any legacy category/name fallback.
+    // The central ActiveMatterEngine remains the fallback authority for ingredients
+    // outside the currently audited identity map.
+    let surfactantType = activeRes.surfactantType;
+    if (route) {
+      if (route.role === 'IDENTITY_UNRESOLVED' || route.role === 'POLYMERIC_DISPERSANT' || !route.activeMatterEligible) {
+        surfactantType = 'none';
+      } else if (route.chargeBehavior === 'PH_DEPENDENT_ANIONIC') {
+        surfactantType = hasExplicitFormulaPH && input.calculatedPH! >= 6.0 ? 'anionic' : 'conditional';
+      } else if (route.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+        // No universal pH cutoff is asserted without grade-specific pKa/speciation evidence.
+        surfactantType = 'conditional';
+      } else if (route.routingClass === 'ANIONIC') {
+        surfactantType = 'anionic';
+      } else if (route.routingClass === 'AMPHOTERIC') {
+        surfactantType = 'amphoteric';
+      } else if (route.routingClass === 'NONIONIC') {
+        surfactantType = 'nonionic';
+      }
+    }
+
+    if (activeRes.isSurfactant && Number.isFinite(activePct)) {
+      if (surfactantType === 'anionic') {
+        anionicActivePct += activePct;
+        fixedAnionicActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'conditional') {
+        if (isPHDependentAnionic && !(hasExplicitFormulaPH && input.calculatedPH! >= 6.0)) {
+          conditionalAnionicActivePct += activePct;
+        } else if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+          conditionalAmineOxideActivePct += activePct;
+        }
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'nonionic') {
+        nonionicActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'amphoteric') {
+        amphotericActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      } else if (surfactantType === 'cationic') {
+        cationicActivePct += activePct;
+        totalActiveSurfactantPct += activePct;
+      }
     }
 
     if (n.includes('sodium chloride') || n.includes('salt') || n.includes('vacuum salt')) {
@@ -287,7 +355,7 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   // =============================================================================
 
   // 1. Ionic Charge Conflict Check (Critical)
-  if (anionicActivePct > 0.1 && cationicActivePct > 0.1) {
+  if (fixedAnionicActivePct > 0.1 && cationicActivePct > 0.1) {
     issues.push({
       id: 'anionic-cationic-conflict',
       issue: 'Critical Ionic Precipitation Hazard (Anionic + Cationic Co-formulation)',
@@ -314,12 +382,36 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
         formulaVersion: '1.0.0',
         ingredientIds,
         relevantEngines: ['CompatibilityEngine'],
-        inputData: { anionicActivePct, cationicActivePct },
+        inputData: { fixedAnionicActivePct, conditionalAnionicActivePct, conditionalAmineOxideActivePct, cationicActivePct },
         scientificOutputs: { compatibilityScore: 0, status: 'INCOMPATIBLE' },
         evidenceProvenance: 'THEORETICAL_PHYSICAL_CHEMISTRY',
         rulesTriggered: ['ANIONIC_CATIONIC_CHARGE_PAIR_COACERVATION'],
         uncertainty: 'HIGH_CONFIDENCE'
       }
+    });
+  }
+
+  if (conditionalAmineOxideActivePct > 0.1 && cationicActivePct > 0.1) {
+    issues.push({
+      id: 'ph-dependent-amine-oxide-cationic-conditional',
+      issue: 'Conditional Amine-Oxide / Cationic Compatibility Risk',
+      whyItMatters: 'Amine oxide charge state depends on pH and exact material composition. Without grade-specific pKa/speciation evidence, it must not be treated as a fixed nonionic or fixed cationic species for compatibility conclusions.',
+      scientificBasis: 'pH-dependent amine-oxide protonation and possible electrostatic interaction with cationic actives.',
+      scientificType: 'PREDICTIVE',
+      severity: 'High',
+      whatToCheck: 'Resolve exact amine-oxide grade and composition, establish formula pH/speciation with suitable evidence, and test the finished formulation for phase stability.'
+    });
+  }
+
+  if (conditionalAnionicActivePct > 0.1 && cationicActivePct > 0.1) {
+    issues.push({
+      id: 'ph-dependent-anionic-cationic-conditional',
+      issue: 'Conditional Ionic Compatibility Risk (pH-Dependent Sarcosinate + Cationic Active)',
+      whyItMatters: 'The sarcosinate carboxylate is pH-dependent (reported pKa about 3.6). Below the conservative pH screening boundary, its anionic fraction and solubility cannot be treated as equivalent to the fully ionized sodium salt; a fixed-charge precipitation verdict would overstate certainty.',
+      scientificBasis: 'Henderson–Hasselbalch carboxylate speciation followed by possible electrostatic interaction with cationic actives; the current pH >= 6 boundary is a conservative screening rule, not a continuous speciation solver.',
+      scientificType: 'PREDICTIVE',
+      severity: 'High',
+      whatToCheck: 'Verify the finished-formula pH and exact sarcosinate grade, then run a compatibility/precipitation test on the exact formula and grade.'
     });
   }
 

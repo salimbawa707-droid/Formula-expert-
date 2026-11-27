@@ -269,6 +269,9 @@ export function runFormulaTemplateRevalidationTestSuite(): {
     `Total: ${allRevalidation.summary.totalTemplates}`
   );
 
+  const failedDetails = results.filter(result => !result.passed);
+  if (failedDetails.length > 0) console.error('[TEMPLATE REVALIDATION FAILED DETAILS] ' + JSON.stringify(failedDetails));
+
   const passed = results.filter(r => r.passed).length;
   const failed = results.length - passed;
 

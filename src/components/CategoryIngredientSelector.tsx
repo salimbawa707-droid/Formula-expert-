@@ -37,12 +37,23 @@ import {
   getCategoryDefinition
 } from '../data/rawMaterialCategories';
 import { researchIngredientForFormula } from '../services/ingredientResearchController';
+import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
 
 export function getCategorySpecificIngredients(category: string): UniversalIngredient[] {
   const all = getAllUniversalIngredients();
   if (!category || category === 'All' || category === 'All Categories' || category.includes('Uncategorized')) return all;
   const catLower = category.toLowerCase();
   const filtered = all.filter(i => {
+    const route = resolveFunctionalRouting(i.id);
+    if (route) {
+      if (catLower.includes('amphoteric')) return route.routingClass === 'AMPHOTERIC';
+      if (catLower.includes('anionic')) return route.routingClass === 'ANIONIC';
+      if (catLower.includes('nonionic') || catLower.includes('non-ionic')) return route.routingClass === 'NONIONIC';
+      if (catLower.includes('ionic') && !catLower.includes('nonionic') && !catLower.includes('non-ionic')) {
+        return route.routingClass === 'ANIONIC' || route.routingClass === 'AMPHOTERIC';
+      }
+      if (route.routingClass === 'BLOCKED') return false;
+    }
     const itemCat = (i?.category || '').toLowerCase();
     const itemSub = (i?.subCategory || '').toLowerCase();
     const itemFn = (i?.function || '').toLowerCase();

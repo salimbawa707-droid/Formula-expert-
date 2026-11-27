@@ -1,5 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
+import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
 
 // Exact, grade-specific aliases only. Avoid fuzzy substring identity matching.
 const HLB_EXACT_CANONICAL_ALIASES: Record<string, string> = {
@@ -184,6 +185,26 @@ export class HLBEngine {
     }
 
     const resolvedCategory = canonicalMatch?.category || ing?.category || '';
+    const routeId = canonicalMatch?.id || ing?.canonicalIngredientId || ing?.id;
+    const functionalRoute = routeId ? resolveFunctionalRouting(routeId) : null;
+    if (functionalRoute && !functionalRoute.hlbEligible) {
+      const screenedActiveMatterPct = explicitActive !== undefined && explicitActive !== null &&
+        Number.isFinite(Number(explicitActive)) && Number(explicitActive) >= 0 && Number(explicitActive) <= 100
+        ? Number(explicitActive)
+        : canonicalMatch?.activeDefault !== undefined && canonicalMatch?.activeDefault !== null &&
+          !canonicalMatch.unknownProperties?.includes('activeMatter')
+          ? Number(canonicalMatch.activeDefault)
+          : null;
+      return {
+        hlb: null,
+        dataSource: 'missing',
+        // HLB ineligibility must not erase an independently supplied/catalog-screening active assay.
+        activeMatterPct: screenedActiveMatterPct,
+        category: functionalRoute.routingClass === 'AMPHOTERIC' ? 'Amphoteric Surfactant' : resolvedCategory,
+        isSurfactant: functionalRoute.routingClass !== 'BLOCKED',
+        isIonic: functionalRoute.routingClass === 'ANIONIC' || functionalRoute.routingClass === 'AMPHOTERIC'
+      };
+    }
     const catLower = resolvedCategory.toLowerCase();
     const isSurfactantCategory = catLower.includes('surfactant') || 
                                  catLower.includes('betaine') || 
@@ -233,7 +254,8 @@ export class HLBEngine {
     ) {
       return {
         hlb: Number(canonicalMatch.hlb),
-        dataSource: 'authoritative',
+        // Functional-route catalog values are screening references until supplier-grade evidence is attached.
+        dataSource: functionalRoute ? 'estimated' : 'authoritative',
         activeMatterPct,
         category: resolvedCategory,
         isSurfactant: true,

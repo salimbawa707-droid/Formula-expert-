@@ -112,6 +112,42 @@ export function runFormulaScientificOrchestratorTestSuite() {
 
   assert(
     'Group A: Orchestrator Pipeline',
+    'LABSA remains anionic in aqueous formulation even when raw material is acid-form',
+    evalResult.pHResult.ph >= 6.0 &&
+      evalResult.activeMatterResult.surfactantBreakdown.anionic > 0 &&
+      evalResult.activeMatterResult.surfactantBreakdown.conditionalPHDependentAnionic === 0,
+    evalResult.activeMatterResult.surfactantBreakdown,
+    'anionic > 0; conditionalPHDependentAnionic = 0'
+  );
+
+  const acidFormLabsaFormula: CanonicalFormulaInput = {
+    formulaId: 'F-LABSA-ACID-FORM-001',
+    formulaName: 'Acid Form LABSA Screening Case',
+    formulaVersion: '1.0.0',
+    productCategory: 'LAUNDRY_LIQUID',
+    ingredients: [
+      { name: 'Water', percentage: 92.0, activeMatterPct: 0, role: 'Solvent' },
+      { name: 'LABSA 90%', percentage: 8.0, activeMatterPct: 90, role: 'Anionic Surfactant' }
+    ],
+    batchSizeKg: 100,
+    waterHardnessPpm: 100
+  };
+  const acidFormLabsaResult = FormulaScientificOrchestrator.evaluate(acidFormLabsaFormula);
+  assert(
+    'Group A: Orchestrator Pipeline',
+    'Acid-form LABSA remains in the anionic bucket when the resolved pH is below 6',
+    acidFormLabsaResult.pHResult.ph < 6.0 &&
+      acidFormLabsaResult.activeMatterResult.surfactantBreakdown.anionic > 0 &&
+      acidFormLabsaResult.activeMatterResult.surfactantBreakdown.conditionalPHDependentAnionic === 0,
+    {
+      ph: acidFormLabsaResult.pHResult.ph,
+      breakdown: acidFormLabsaResult.activeMatterResult.surfactantBreakdown
+    },
+    'pH < 6; fixed anionic > 0; conditional pH-dependent anionic = 0'
+  );
+
+  assert(
+    'Group A: Orchestrator Pipeline',
     'Hardness & Chelation engine reports sufficiency for 150 ppm water load',
     evalResult.hardnessResult.waterHardnessPpm === 150 && evalResult.chelationResult.chelatorActivePct > 0,
     evalResult.chelationResult.chelatorActivePct,

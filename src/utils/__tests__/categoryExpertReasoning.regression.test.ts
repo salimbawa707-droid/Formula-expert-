@@ -86,6 +86,103 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
   });
   assert(carShampooResult.issues.some((i) => i.id === 'carwash-wax-strip'), 'Test 5: Car shampoo flags alkaline wax stripping risk');
 
+  // Test 6: LABSA sulfonic acid is effectively ionized in aqueous formula conditions.
+  const labsa: FormulationIngredient = {
+    id: 'labsa-90',
+    canonicalIngredientId: 'labsa-90',
+    name: 'LABSA 90%',
+    category: 'Anionic Surfactant',
+    percent: 8,
+    activePercent: 90,
+    costPerKg: 1.5,
+  };
+  const acidicLabsaQuat = evaluateExpertReasoning({
+    ingredients: [labsa, cationicEsterquat],
+    productCategory: 'Laundry Detergent Powder',
+    calculatedPH: 3.5,
+  });
+  assert(
+    acidicLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict') &&
+      !acidicLabsaQuat.issues.some((i) => i.id === 'ph-dependent-anionic-cationic-conditional'),
+    'Test 6: Acid-form LABSA is treated as aqueous anionic species; low formula pH does not suppress the charge classification'
+  );
+
+  const neutralizedLabsaQuat = evaluateExpertReasoning({
+    ingredients: [labsa, cationicEsterquat],
+    productCategory: 'Laundry Detergent Powder',
+    calculatedPH: 8.5,
+  });
+  assert(
+    neutralizedLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 7: Neutralized LABSA remains anionic for ionic compatibility screening'
+  );
+
+  // Test 8: Sarcosinate carboxylate speciation is pH-dependent (reported pKa ~3.6).
+  const sarcosinate: FormulationIngredient = {
+    id: 'sarcosinate-30',
+    canonicalIngredientId: 'sarcosinate-30',
+    name: 'Sodium Lauroyl Sarcosinate 30%',
+    category: 'Anionic Surfactant',
+    percent: 8,
+    activePercent: 30,
+    costPerKg: 2.4,
+  };
+  const acidicSarcosinateQuat = evaluateExpertReasoning({
+    ingredients: [sarcosinate, cationicEsterquat],
+    productCategory: 'Laundry Detergent Liquid',
+    calculatedPH: 3.5,
+  });
+  assert(
+    acidicSarcosinateQuat.issues.some((i) => i.id === 'ph-dependent-anionic-cationic-conditional') &&
+      !acidicSarcosinateQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 8: Sarcosinate below the conservative pH threshold remains conditional for cationic compatibility'
+  );
+  const neutralSarcosinateQuat = evaluateExpertReasoning({
+    ingredients: [sarcosinate, cationicEsterquat],
+    productCategory: 'Laundry Detergent Liquid',
+    calculatedPH: 7.0,
+  });
+  assert(
+    neutralSarcosinateQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 9: Sarcosinate above the conservative pH threshold routes as anionic for compatibility screening'
+  );
+
+  // Test 8: Amine oxide is pH-dependent, not a fixed nonionic or zwitterionic species.
+  const amineOxide: FormulationIngredient = {
+    id: 'lauryl-amine-oxide',
+    canonicalIngredientId: 'lauryl-amine-oxide',
+    name: 'Lauryl Amine Oxide 30%',
+    category: 'Nonionic Surfactant',
+    percent: 4,
+    activePercent: 30,
+    costPerKg: 2.1,
+  };
+  const amineOxideQuat = evaluateExpertReasoning({
+    ingredients: [amineOxide, cationicEsterquat],
+    productCategory: 'Laundry Detergent Liquid',
+    calculatedPH: 7.5,
+  });
+  assert(
+    amineOxideQuat.issues.some((i) => i.id === 'ph-dependent-amine-oxide-cationic-conditional') &&
+      !amineOxideQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 10: Amine oxide remains a conditional charge species and triggers a compatibility review, not a false fixed-charge verdict'
+  );
+
+  const unknownAssaySurfactant = evaluateExpertReasoning({
+    ingredients: [{
+      id: 'unverified-surfactant-grade',
+      name: 'Unlisted Anionic Surfactant Grade',
+      category: 'Anionic Surfactant',
+      percent: 10,
+    } as FormulationIngredient],
+    productCategory: 'Laundry Detergent Powder',
+    calculatedPH: 8.5,
+  });
+  assert(
+    unknownAssaySurfactant.issues.some((i) => i.id === 'surfactant-active-assay-missing' && i.severity === 'High'),
+    'Test 11: Missing surfactant active assay is a high-severity blocker, never silently treated as zero'
+  );
+
   console.log('----------------------------------------------------');
   console.log(`TOTAL CATEGORY REASONING TESTS : ${totalTests}`);
   console.log(`PASSED                         : ${passedTests}`);

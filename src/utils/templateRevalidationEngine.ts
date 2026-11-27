@@ -304,11 +304,11 @@ export function revalidateFormulaTemplate(formula: FormulaItem): TemplateRevalid
   const activeWithinTarget = activeMatterAvailable && totalSurfactantActive >= targetActiveMin && totalSurfactantActive <= targetActiveMax;
 
   const activeMatterReport: TemplateActiveMatterReport = {
-    totalSurfactantActivePct: Number.isFinite(totalSurfactantActive) ? totalSurfactantActive : Number.NaN,
-    anionicActivePct: Number.isFinite(activeReport.surfactants.anionicActivePct) ? activeReport.surfactants.anionicActivePct : Number.NaN,
-    nonionicActivePct: Number.isFinite(activeReport.surfactants.nonionicActivePct) ? activeReport.surfactants.nonionicActivePct : Number.NaN,
-    amphotericActivePct: Number.isFinite(activeReport.surfactants.amphotericActivePct) ? activeReport.surfactants.amphotericActivePct : Number.NaN,
-    cationicActivePct: Number.isFinite(activeReport.surfactants.cationicActivePct) ? activeReport.surfactants.cationicActivePct : Number.NaN,
+    totalSurfactantActivePct: activeMatterAvailable && Number.isFinite(totalSurfactantActive) ? totalSurfactantActive : Number.NaN,
+    anionicActivePct: activeMatterAvailable && Number.isFinite(activeReport.surfactants.anionicActivePct) ? activeReport.surfactants.anionicActivePct : Number.NaN,
+    nonionicActivePct: activeMatterAvailable && Number.isFinite(activeReport.surfactants.nonionicActivePct) ? activeReport.surfactants.nonionicActivePct : Number.NaN,
+    amphotericActivePct: activeMatterAvailable && Number.isFinite(activeReport.surfactants.amphotericActivePct) ? activeReport.surfactants.amphotericActivePct : Number.NaN,
+    cationicActivePct: activeMatterAvailable && Number.isFinite(activeReport.surfactants.cationicActivePct) ? activeReport.surfactants.cationicActivePct : Number.NaN,
     targetMin: targetActiveMin,
     targetMax: targetActiveMax,
     targetOptimal: targetActiveOptimal,

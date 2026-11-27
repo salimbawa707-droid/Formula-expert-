@@ -1,4 +1,5 @@
 import { ChemicalItem } from '../types';
+import { resolveFunctionalRoutingForIngredient } from './ingredientFunctionalRouting';
 
 /**
  * ============================================================================
@@ -79,7 +80,10 @@ export const CHEMICALS: ChemicalItem[] = [
   }
 ];
 
-export const COMPATIBILITY_MATRIX: Record<string, Record<string, { compatible: boolean; note?: string }>> = {
+export type CompatibilityMatrixStatus = 'RULE' | 'REQUIRES_COMPATIBILITY_TEST' | 'INSUFFICIENT_DATA';
+export interface CompatibilityMatrixDecision { compatible: boolean; note?: string; status?: CompatibilityMatrixStatus; }
+
+export const COMPATIBILITY_MATRIX: Record<string, Record<string, CompatibilityMatrixDecision>> = {
   'Anionic Surfactant': {
     'Anionic Surfactant': { compatible: true },
     'Nonionic Surfactant': { compatible: true, note: 'Synergistic cleaning performance' },
@@ -90,5 +94,49 @@ export const COMPATIBILITY_MATRIX: Record<string, Record<string, { compatible: b
     'Anionic Surfactant': { compatible: false, note: 'Precipitation hazard!' },
     'Nonionic Surfactant': { compatible: true },
     'Amphoteric Surfactant': { compatible: true }
+  },
+  'Amphoteric Surfactant': {
+    'Anionic Surfactant': { compatible: true, note: 'Screening rule only; verify exact formulation.' },
+    'Cationic Surfactant': { compatible: true, note: 'Screening rule only; verify exact formulation.' }
+  },
+  'Anionic (pH-dependent)': {
+    'Cationic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Sarcosinate ionization depends on pH; do not assert a fixed anionic/cationic clash without target-pH testing.' },
+    'Amphoteric Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Test the exact sarcosinate grade at target pH and electrolyte conditions.' }
+  },
+  'Amine Oxide (pH-dependent)': {
+    'Anionic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Amine oxide speciation depends on pH; no universal compatibility claim is made.' },
+    'Cationic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Amine oxide speciation depends on pH; no universal compatibility claim is made.' },
+    'Amphoteric Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Test the exact grade, pH and electrolyte conditions.' },
+    'Nonionic Surfactant': { compatible: false, status: 'REQUIRES_COMPATIBILITY_TEST', note: 'Test the exact grade, pH and electrolyte conditions.' }
   }
 };
+
+function matrixClass(ingredientId: string, fallbackCategory: string, ingredientName?: string): string {
+  const route = resolveFunctionalRoutingForIngredient({ id: ingredientId, name: ingredientName });
+  if (route?.role === 'IDENTITY_UNRESOLVED') return 'UNRESOLVED';
+  if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return 'Amine Oxide (pH-dependent)';
+  if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return 'Anionic (pH-dependent)';
+  if (route?.routingClass === 'ANIONIC') return 'Anionic Surfactant';
+  if (route?.routingClass === 'AMPHOTERIC') return 'Amphoteric Surfactant';
+  if (route?.routingClass === 'NONIONIC') return 'Nonionic Surfactant';
+  const value = (fallbackCategory || '').toLowerCase();
+  if (value.includes('anionic')) return 'Anionic Surfactant';
+  if (value.includes('cationic')) return 'Cationic Surfactant';
+  if (value.includes('amphoteric') || value.includes('betaine')) return 'Amphoteric Surfactant';
+  if (value.includes('nonionic') || value.includes('non-ionic')) return 'Nonionic Surfactant';
+  return 'UNMAPPED';
+}
+
+export function resolveFunctionalCompatibilityMatrixPair(
+  ingredientAId: string, ingredientACategory: string,
+  ingredientBId: string, ingredientBCategory: string,
+  ingredientAName?: string, ingredientBName?: string
+): CompatibilityMatrixDecision | null {
+  const a = matrixClass(ingredientAId, ingredientACategory, ingredientAName);
+  const b = matrixClass(ingredientBId, ingredientBCategory, ingredientBName);
+  if (a === 'UNRESOLVED' || b === 'UNRESOLVED') return { compatible: false, status: 'INSUFFICIENT_DATA', note: 'At least one ingredient identity is unresolved; compatibility is blocked.' };
+  const direct = COMPATIBILITY_MATRIX[a]?.[b];
+  const reverse = COMPATIBILITY_MATRIX[b]?.[a];
+  const result = direct || reverse;
+  return result ? { ...result, status: result.status || 'RULE' } : null;
+}

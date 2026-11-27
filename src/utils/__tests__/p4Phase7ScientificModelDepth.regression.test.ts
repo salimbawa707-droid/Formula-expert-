@@ -287,11 +287,12 @@ export function runP4Phase7ScientificModelDepthTestSuite(): {
   // =========================================================================
   // 6.1 Anionic + Cationic precipitation conflict
   const compClash = calculateFormulationCompatibility([
-    { name: 'LABSA 96%', percentage: 10, role: 'Anionic Surfactant' },
+    { id: 'labsa-96', name: 'LABSA 96%', percentage: 10, role: 'Anionic Surfactant' },
     { name: 'Cetrimonium Chloride', percentage: 5, role: 'Cationic Surfactant' }
   ]);
-  assert('6. Compatibility', '6.1 Anionic + Cationic conflict detects severe clash', compClash.compatible === false && compClash.compatibilityStatusSemantic === 'INCOMPATIBLE', true, true);
-  assert('6. Compatibility', '6.1 evidenceStatus reports KNOWN_INCOMPATIBLE', compClash.evidenceStatus === 'KNOWN_INCOMPATIBLE', compClash.evidenceStatus, 'KNOWN_INCOMPATIBLE');
+  const hasFixedAnionicCationicClash = compClash.alerts.some(a => a.id === 'anionic-cationic-incompatibility');
+  assert('6. Compatibility', '6.1 Strong-acid LABSA is fixed-anionic and flags a cationic clash without formula pH', hasFixedAnionicCationicClash, hasFixedAnionicCationicClash, true);
+  assert('6. Compatibility', '6.1 fixed-anionic LABSA/cationic pair is known incompatible without pH-dependent charge uncertainty', compClash.evidenceStatus === 'KNOWN_INCOMPATIBLE', compClash.evidenceStatus, 'KNOWN_INCOMPATIBLE');
 
   // 6.2 Acid + Bleach hazardous gas clash
   const compBleachAcid = calculateFormulationCompatibility([

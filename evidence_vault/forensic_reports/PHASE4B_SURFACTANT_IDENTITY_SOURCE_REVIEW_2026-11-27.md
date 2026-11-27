@@ -1,0 +1,491 @@
+# Phase 4B — Surfactant identity source review (2026-11-27)
+
+## Scope and decision rule
+
+This is the first source-backed tranche of the 397-row identity backlog. It reviews surfactant-family candidate groups in `evidence_vault/datasets/master_ingredient_identity_candidate_groups_2026-11-27.csv`. It does **not** certify commercial grade, active matter, purity, manufacturer, product identity, safety, regulatory status, or formulation suitability.
+
+A PubChem record can corroborate a chemical-name/CAS candidate and expose synonym/structure issues. It is not, by itself, an authoritative INCI dictionary entry or a supplier-grade TDS/SDS/CoA. Therefore no record below is promoted into `IngredientIdentitySSOT` as VERIFIED, and no ingredient row is given grade approval. The existing `NOT_ESTABLISHED_BY_IDENTITY_SSOT` and `NOT_APPROVED` controls remain unchanged.
+
+## Reviewed candidate groups
+
+| Group | Catalog identity | CAS candidate | Catalog IDs | Source observation | Disposition |
+|---|---|---|---|---|---|
+| MICG-014 | Cetrimonium Chloride | 112-02-7 | ctac-29 (+ grade variants) | PubChem CID 8154 identifies hexadecyltrimethylammonium chloride and lists cetrimonium chloride as a synonym; formula C19H42ClN. | Source-supported chemical identity candidate. Confirm INCI nomenclature and grade/solution composition before SSOT merge. |
+| MICG-025 | Sodium Lauroyl Sarcosinate | 137-16-6 | sarcosinate-30 (+ grade variants) | PubChem CID 23668817 lists sodium lauroylsarcosinate, N-lauroylsarcosine sodium salt and CAS 137-16-6. | Source-supported chemical identity candidate. Supplier active matter and commercial grade remain unverified. |
+| MICG-029 | Sodium Lauryl Sulfate | 151-21-3 | sls-needles, sls-30 (+ grade variants) | PubChem CID 3423265 identifies sodium dodecyl sulfate/sodium lauryl sulfate; CAS 151-21-3 is listed. PubChem also shows a separate CAS entry 8012-56-4, so retain source-specific CAS context. | Source-supported identity candidate. Do not merge physical forms or concentrations as separate chemical identities; preserve grade records. |
+| MICG-031 | Lauramine Oxide | 1643-20-5 | lauryl-amine-oxide (+ grade variants) | PubChem CID 15433 identifies dodecyldimethylamine oxide and lists Lauramine oxide and CAS 1643-20-5 as synonyms/identifiers. | Source-supported identity candidate. Keep amine-oxide classification distinct from a generic nonionic label pending taxonomy review. |
+| MICG-064 | Cocamidopropyl Betaine | 61789-40-0 | capb-30-uni, capb-45 (+ grade variants) | PubChem ChEBI-deposited substance record lists CAS 61789-40-0 and cocamidopropyl betaine/CAPB synonyms. PubChem vendor substance record links the CAS to a lauramidopropylbetaine component record. | Source-supported candidate with UVCB/composition caveat. Do not infer exact fatty-chain distribution or active matter from CAS alone. |
+| MICG-083 | Sodium C14-16 Olefin Sulfonate | 68439-57-6 | aos-38, aos-92 (+ grade variants) | PubChem ChemIDplus substance record lists Sodium C14-16 olefin sulfonate and CAS 68439-57-6; it explicitly identifies the substance as a TSCA UVCB. | Source-supported UVCB identity candidate. Exact composition/profile and grade assay require supplier evidence. |
+| MICG-084 | Caprylyl/Capryl Glucoside | 68515-73-1 | apg-0810 (+ grade variants) | PubChem FDA GSRS depositor record lists CAPRYLYL/CAPRYL OLIGOGLUCOSIDE and CAS 68515-73-1; PubChem compound record identifies the substance as oligomeric decyl/octyl glycosides and UVCB. | Source-supported UVCB identity candidate. Preserve oligomer/alkyl distribution uncertainty; grade evidence required. |
+| MICG-048 | Disodium Laureth Sulfosuccinate | 39354-45-5 | sulfosuccinate-40 (+ grade variants) | PubChem record lists CAS 39354-45-5 from ECHA and also 58450-52-5 from CAS Common Chemistry/NZ EPA for the same named reference record. | **Identity/CAS conflict hold.** Do not assign a single exact CAS/INCI pair until the catalog composition/ethoxylation definition is reconciled against the supplier specification and primary registry records. |
+
+## Deliberate non-promotions
+
+1. The source records above support identity candidates only; they do not establish the catalog's INCI field as a formally verified INCI dictionary entry.
+2. UVCB substances (notably AOS, CAPB and alkyl glucosides) require composition/profile evidence; a single CAS is not a complete grade identity.
+3. MICG-048 is explicitly held because two CAS identifiers are reported for the named reference record. Do not silently choose one.
+4. The catalog's technical/pure/solution suffixes are internal grade labels, not proof of purity, concentration, physical form or supplier identity.
+5. No `activeDefault`, surfactant active matter, solids, purity, pH range, HLB, CMC or compatibility field is validated by this review.
+6. Existing identity SSOT entries are not changed in this tranche. This avoids converting secondary-source matches into falsely VERIFIED identity records.
+
+## Source register
+
+- PubChem, Sodium Lauryl Sulfate, CID 3423265: https://pubchem.ncbi.nlm.nih.gov/compound/3423265
+- PubChem, Sodium Lauroyl Sarcosinate, CID 23668817: https://pubchem.ncbi.nlm.nih.gov/compound/23668817
+- PubChem, Dodecyldimethylamine oxide, CID 15433: https://pubchem.ncbi.nlm.nih.gov/compound/15433
+- PubChem, Cocamidopropyl betaine ChEBI substance record: https://pubchem.ncbi.nlm.nih.gov/substance/135610782
+- PubChem, Sodium C14-16 olefin sulfonate ChemIDplus substance record: https://pubchem.ncbi.nlm.nih.gov/substance/135286651
+- PubChem, Cetrimonium chloride, CID 8154: https://pubchem.ncbi.nlm.nih.gov/compound/8154
+- PubChem, Caprylyl/Capryl oligoglucoside FDA GSRS substance record: https://pubchem.ncbi.nlm.nih.gov/substance/472402409
+- PubChem, Disodium Laureth Sulfosuccinate reference record: https://pubchem.ncbi.nlm.nih.gov/compound/Disodium-laureth-sulfosuccinate
+
+## Result
+
+- Candidate groups reviewed in this tranche: 8.
+- Source-supported chemical identity candidates: 7.
+- Explicit identity/CAS conflict holds: 1.
+- Supplier-grade evidence established: 0.
+- New VERIFIED identity SSOT entries: 0.
+- Applicability approvals: 0.
+- Phase 4B closure: **NOT MET**.
+- Phase 5: **LOCKED**.
+
+Next tranche: remaining anionic, nonionic and amphoteric surfactant groups, followed by builders/chelators, polymers, enzymes, additives, solvents and proprietary mixtures. Every source claim must be checked against the exact chemical scope; no automatic CAS-only promotion is permitted.
+
+
+## Follow-up source review — additional surfactant groups
+
+This continuation expands the source screen. These are source-backed identity candidates or explicit holds, not automatic SSOT promotions.
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-063 | Sodium Cocoyl Isethionate | 61789-32-0 | FDA GSRS record in PubChem identifies Sodium Cocoyl Isethionate, lists CAS 61789-32-0 and explicitly classifies the substance as a mixture. | Source-supported mixture identity candidate; grade fatty-acid distribution and assay remain unverified. |
+| MICG-066 | Sodium Methyl Cocoyl Taurate | 61791-42-2 | PubChem lists 12765-39-8 as the primary CAS from multiple registries and 61791-42-2 as a secondary/deprecated identifier in FDA GSRS context. | **CAS correction hold.** Catalog CAS must not be treated as primary without reconciling the exact source and identity scope. Keep both identifiers and their source roles in the audit trail. |
+| MICG-074 | Cocamidopropyl Hydroxysultaine | 68139-30-0 | FDA GSRS record in PubChem identifies the named substance, CAS 68139-30-0, UNII 62V75NI93W and substance class mixture. | Source-supported mixture identity candidate; no grade or active matter inferred. |
+| MICG-076 | Lauryl Betaine | 683-10-3 | PubChem CID 4292413 identifies Lauryldimethylbetaine, lists Lauryl betaine and CAS 683-10-3; FDA UNII record Y4P927Q133 independently names Lauryl Betaine and provides the same formula/InChIKey. | Stronger cross-source identity candidate. Preserve the separate CAS 85736-48-7 also listed in PubChem as an alternate scope/registry identifier pending exact scope check. |
+| MICG-078 | Coco-Betaine | 68424-94-2 | FDA GSRS record identifies COCO-BETAINE and CAS 68424-94-2; record includes mixture validation warnings for component betaines not yet registered. | Source-supported mixture candidate; do not collapse into Lauryl Betaine. |
+| MICG-075 | Cocamide MEA | 68140-00-1 | PubChem identifies “Amides, coco, N-(hydroxyethyl)” as UVCB and lists CAS 68140-00-1. | Source-supported UVCB identity candidate; not interchangeable with Cocamide DEA. |
+| MICG-086 | Cocamide DEA | 68603-42-9 | PubChem ChemIDplus record identifies Coconut diethanolamide and lists CAS 68603-42-9. | Source-supported UVCB identity candidate; exact fatty-acid distribution/grade remains unknown. |
+| MICG-088 | Disodium Cocoamphodiacetate | 68650-39-5 | FDA GSRS record in PubChem identifies the substance, CAS 68650-39-5 and mixture class. | Source-supported mixture identity candidate. |
+| MICG-085 | Sodium Laureth Sulfate | 68585-34-2 | ECHA Substance Information identifies “Alcohols, C10-16, ethoxylated, sulfates, sodium salts” with CAS 68585-34-2 and EC 500-223-8. | Source-supported substance-family identity; catalog grade labels SLES 28/70 remain supplier-grade claims requiring TDS/CoA. |
+| MICG-111 | Polysorbate 20 | 9005-64-5 | PubChem record identifies Polyoxyethylene Sorbitan Monolaurate / Polysorbate 20 and CAS 9005-64-5; WHO/JECFA independently describes it as a distribution mixture of sorbitol/sorbitan partial esters and lauric-acid moieties. | Source-supported mixture identity candidate; do not imply a single discrete molecular structure. |
+| MICG-112 | Polysorbate 80 | 9005-65-6 | PubChem identifies polyoxyethylene sorbitan monooleate / Polysorbate 80 and CAS 9005-65-6. | Source-supported mixture identity candidate; grade distribution remains unspecified. |
+| MICG-079–082 | C12-15 Pareth-12 / -3 / -7 / -9 | 68439-50-9 (shared) | Four different ethoxylation labels share one catalog CAS. Current evidence retrieved here does not prove that each ethoxylate distribution is uniquely represented by that single CAS. | **CAS collision hold.** Keep all four identities separate; require supplier specification with alcohol chain distribution and average EO number before exact CAS/INCI mapping. |
+| MICG-116–118 | Nonoxynol-10 / -6 / -9 | 9016-45-9 (shared) | PubChem exposes 9016-45-9 alongside a discrete nonylphenol ethoxylate record and also lists other CAS values for related scopes. That does not establish the three catalog ethoxylate-number grades as one identical chemical. | **CAS collision hold.** Do not merge N-6/N-9/N-10. Resolve each ethoxylation distribution and registry scope independently. |
+
+### Follow-up sources
+
+- FDA GSRS / PubChem, Sodium Cocoyl Isethionate: https://pubchem.ncbi.nlm.nih.gov/substance/375083712
+- PubChem, Sodium Methyl Cocoyl Taurate: https://pubchem.ncbi.nlm.nih.gov/compound/Sodium-Methyl-Cocoyl-Taurate
+- FDA GSRS / PubChem, Cocamidopropyl Hydroxysultaine: https://pubchem.ncbi.nlm.nih.gov/substance/175271429
+- PubChem, Lauryldimethylbetaine: https://pubchem.ncbi.nlm.nih.gov/compound/4292413
+- FDA SRS, Lauryl Betaine UNII Y4P927Q133: https://precision.fda.gov/uniisearch/srs/unii/Y4P927Q133
+- FDA GSRS, Coco-Betaine: https://gsrs.ncats.nih.gov/ginas/app/ui/substances/9ba23b3e-e43e-4773-ac14-2b2fffe6e0d7
+- PubChem, Cocamide MEA / Amides, coco, N-(hydroxyethyl): https://pubchem.ncbi.nlm.nih.gov/compound/Amides%2C%20coco%2C%20N-%28hydroxyethyl%29
+- PubChem, Cocamide DEA / Coconut diethanolamide: https://pubchem.ncbi.nlm.nih.gov/substance/135323658
+- FDA GSRS / PubChem, Disodium Cocoamphodiacetate: https://pubchem.ncbi.nlm.nih.gov/substance/375085028
+- ECHA, Alcohols C10-16 ethoxylated sulfates sodium salts: https://echa.europa.eu/substance-information/-/substanceinfo/100.105.713
+- PubChem, Polysorbate 20: https://pubchem.ncbi.nlm.nih.gov/compound/Polyoxyethylene%20Sorbitan%20Monolaurate
+- WHO/JECFA, Polysorbate 20: https://apps.who.int/food-additives-contaminants-jecfa-database/Home/Chemical/1139
+- PubChem, Polysorbate 80: https://pubchem.ncbi.nlm.nih.gov/compound/polysorbate%2080
+- PubChem, Nonoxynol-2 / shared CAS scope caution: https://pubchem.ncbi.nlm.nih.gov/compound/24773
+
+### New material findings
+
+- Additional candidate groups/issues reviewed in this tranche: 18 (11 individual groups plus four Pareth groups and three Nonoxynol groups).
+- New source-supported identity candidates: 10.
+- New explicit CAS/identity holds: 3 (Sodium Methyl Cocoyl Taurate identifier priority; C12-15 Pareth shared-CAS cluster; Nonoxynol shared-CAS cluster).
+- SSOT promotions: 0.
+- Supplier-grade evidence established: 0.
+
+
+## Follow-up source review — remaining individually sourced candidates
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-011 | Lauryl Glucoside | 110615-47-9 | PubChem CID 10893439 lists Lauryl Glucoside and CAS 110615-47-9, but also lists 27836-64-2 as another CAS identifier for the record. A separate PubChem vendor substance record lists 110615-47-9. | Source-supported identity candidate with CAS-scope caveat. Keep alternate CAS and exact glucoside/alkyl distribution traceable; do not infer a supplier grade. |
+| MICG-033 | Behentrimonium Chloride | 17301-53-0 | PubChem CID 3014969 identifies docosyltrimethylammonium chloride, CAS 17301-53-0, formula C25H54ClN and UNII X7GNG3S47T. | Strong chemical identity candidate. Catalog classification is cationic surfactant; commercial grade and assay still unverified. |
+| MICG-099 | Sodium Lignosulfonate | 8061-51-6 | PubChem CID 44135711 identifies sodium lignosulfonate/lignosulfonic acid sodium salt and lists CAS 8061-51-6. | Identity candidate supported, but **catalog functional class requires review**: do not automatically accept the current “Anionic Surfactant” class as equivalent to a conventional low-molecular-weight surfactant. Review dispersant/polymeric functionality separately. |
+
+### Additional sources
+
+- PubChem, Lauryl Glucoside, CID 10893439: https://pubchem.ncbi.nlm.nih.gov/compound/10893439
+- PubChem, Lauryl Glucoside vendor-substance record: https://pubchem.ncbi.nlm.nih.gov/substance/254763565
+- PubChem, Behentrimonium Chloride, CID 3014969: https://pubchem.ncbi.nlm.nih.gov/compound/3014969
+- PubChem, Sodium Lignosulfonate, CID 44135711: https://pubchem.ncbi.nlm.nih.gov/compound/44135711
+
+### Current surfactant-family backlog disposition
+
+This audit now includes 29 catalog candidate groups/issues examined across the three source-review tranches. It has identified source-backed identity candidates and several explicit identity/CAS/category holds. This is not a count of 29 supplier-grade verified records: all commercial-grade assays, manufacturer identity, lot CoA/TDS/SDS, purity/solids and grade-specific composition remain unestablished.
+
+Still requiring source-specific review before any identity SSOT promotion include: sodium C14-17 secondary alkyl sulfonate; sodium cocoamphoacetate; PEG-40 hydrogenated castor oil; Poloxamer 184; benzalkonium chloride; and remaining surfactant-class candidates not yet covered. No candidate is promoted merely because a CAS/name pair appears in a secondary index.
+
+
+## Aggregate reconciliation of this surfactant source-review work
+
+Across the three tranches above:
+- Candidate groups/issues examined: 29.
+- Source-backed identity candidates (secondary/official registry corroboration only): 20.
+- Explicit CAS/identity conflict holds: 4.
+- Functional-class review flags: 1 (sodium lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established: 0.
+- Formula applicability approvals: 0.
+
+These figures count review outcomes, not fully resolved master rows. The source-backed candidates still need primary nomenclature/identity scope review where relevant and supplier-grade TDS/SDS/CoA evidence. The 397-record backlog is not closed by this tranche.
+
+
+## Follow-up source review — remaining surfactant candidates (fourth tranche)
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-062 | PEG-40 Hydrogenated Castor Oil | 61788-85-0 | PubChem SID 135283603, sourced from ChemIDplus, lists Polyoxyl 40 Hydrogenated Castor Oil [NF], CAS 61788-85-0, and related PEG hydrogenated-castor-oil synonyms across multiple ethoxylation numbers. A European Commission JRC report independently lists PEG-40 Hydrogenated Castor Oil with CAS 61788-85-0. | Source-supported identity candidate with mixture/ethoxylate-scope caveat. The generic synonym family does not prove the catalog's four commercial-grade records or their exact EO distribution. |
+| MICG-087 | Sodium Cocoamphoacetate | 68604-71-7 (catalog) | Stepan's AMPHOSOL 1C manufacturer product bulletin identifies Sodium Cocoamphoacetate with CAS 68608-65-1, not the catalog CAS 68604-71-7. It reports a specific commercial product at 36.5% actives and 44% solids. | **CAS discrepancy hold.** The manufacturer bulletin confirms the INCI for CAS 68608-65-1 but does not support the catalog's CAS 68604-71-7. Do not silently replace the catalog CAS; require authoritative registry resolution and the actual supplier specification. |
+| MICG-069 | Benzalkonium Chloride | 63449-41-2 | EU Cosmetics Regulation Annex V lists benzalkonium chloride against multiple CAS numbers: 63449-41-2, 68391-01-5, 68424-85-1 and 85409-22-9. | Identity-family candidate supported, but CAS denotes a family/composition scope. Preserve the multiple CAS scope and require alkyl-chain distribution and supplier-grade specification before exact commercial identity mapping. |
+| MICG-107 | Poloxamer 184 | 9003-11-6 | The Cosmetic Ingredient Review literature describes 9003-11-6 as a generic CAS associated with the poloxamer group, while noting that related PEG/PPG copolymer mixtures may not have a unique CAS. The evidence retrieved does not establish Poloxamer 184 as a distinct grade under this generic number. | **Grade/identity scope hold.** Do not treat generic poloxamer CAS as sufficient proof of Poloxamer 184 block composition or molecular-weight distribution. Obtain supplier TDS/SDS and a specific identity source. |
+| MICG-073 | Sodium C14-17 Sec-Alkyl Sulfonate | 68037-49-0 | The source search did not return a sufficiently authoritative record tying this exact catalog name and CAS together. Similar alkyl sulfonate records are not interchangeable evidence. | **Unresolved source hold.** No identity promotion; require a registry record or supplier SDS that explicitly binds this exact CAS, INCI/name and chain distribution. |
+
+### Fourth-tranche sources
+
+- Stepan, AMPHOSOL 1C Product Bulletin (manufacturer primary source; Sodium Cocoamphoacetate CAS 68608-65-1, INCI and grade properties): https://www.stepan.com/content/dam/stepan-dot-com/webdam/website-product-documents/product-bulletins/surfactants/AMPHOSOL1C.pdf
+- PubChem SID 135283603 / ChemIDplus, Polyoxyl 40 Hydrogenated Castor Oil [NF], CAS 61788-85-0: https://pubchem.ncbi.nlm.nih.gov/substance/135283603
+- European Commission JRC report listing PEG-40 Hydrogenated Castor Oil and CAS 61788-85-0: https://susproc.jrc.ec.europa.eu/product-bureau/sites/default/files/contentype/product_group_documents/1581684261/Preliminary_Report_EUEcolabel_Cosmetics.pdf
+- EU Cosmetics Regulation 1223/2009, Annex V, Benzalkonium chloride multiple CAS identifiers: https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=celex:32009R1223
+- Cosmetic Ingredient Review, Safety Evaluation of PEG Compounds for Cosmetic Use (generic poloxamer CAS context): https://pmc.ncbi.nlm.nih.gov/articles/4505343/
+
+### Fourth-tranche disposition
+
+- Additional candidate groups/issues examined: 5.
+- Additional source-supported identity-family candidates: 2 (PEG-40 Hydrogenated Castor Oil; Benzalkonium Chloride).
+- Additional explicit CAS discrepancy: 1 (Sodium Cocoamphoacetate; catalog CAS differs from manufacturer bulletin).
+- Additional generic-CAS / identity-scope hold: 1 (Poloxamer 184).
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- SSOT promotions: 0.
+- Supplier-grade evidence established for catalog records: 0.
+- Formula applicability approvals: 0.
+
+The Stepan bulletin is useful primary manufacturer evidence, but it is evidence for CAS 68608-65-1 / AMPHOSOL 1C, not for the catalog's CAS 68604-71-7. This conflict must remain visible rather than being "corrected" by assumption.
+
+
+## Updated aggregate reconciliation (four tranches)
+
+- Candidate groups/issues examined: 34.
+- Source-backed identity candidates (official registry, government, or manufacturer corroboration; not supplier-grade validation): 22.
+- Explicit CAS/identity conflict or scope holds: 6 (includes the new Sodium Cocoamphoacetate CAS discrepancy and Poloxamer 184 generic-CAS scope hold).
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class review flags: 1 (Sodium Lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The fourth tranche reduces the *review backlog* but does not reduce the 397 unmapped identity count in the executable crosswalk. No catalog identity was rewritten, no CAS was silently substituted, no supplier assay was inferred, and all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Cross-category identity source review — builders and neutralizer (fifth tranche)
+
+This tranche begins the category-wise review beyond surfactants. These are identity-level source checks only; they do not establish the four catalog grade variants or any supplier assay.
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-005 | Calcium Chloride | 10043-52-4 | PubChem CID 5284359 identifies calcium chloride / calcium dichloride, formula CaCl2, and lists CAS 10043-52-4 across multiple government and registry sources. | Source-supported identity candidate. Hydrate state and catalog commercial grade must still be specified; the CAS match alone does not establish the grade variants. |
+| MICG-006 | Triethanolamine | 102-71-6 | PubChem CID 7618 identifies triethanolamine / 2,2',2''-nitrilotriethanol, formula C6H15NO3, CAS 102-71-6, and UNII 9O3K93S3TK. | Source-supported identity candidate. The separate related CAS 64114-46-1 is associated with triethanolamine polymer and must not be conflated with the monomer. Supplier purity/free-DEA assay remains absent. |
+| MICG-050 | Sodium Carbonate | 497-19-8 | Fisher Scientific's product listing identifies anhydrous sodium carbonate / soda ash, CAS 497-19-8, formula Na2CO3, PubChem CID 10340 and ChEBI CHEBI:29377. | Source-supported identity candidate for anhydrous sodium carbonate. Keep sodium carbonate monohydrate and sodium carbonate decahydrate distinct; no catalog grade assay is established. |
+| MICG-052 | Tetrasodium Glutamate Diacetate (GLDA) | 51981-21-6 | PubChem SID 135258214 (ChemIDplus source) and CID 44630158 identify tetrasodium glutamate diacetate, CAS 51981-21-6, UNII 5EHL50I4MY and EC 257-573-7. PubChem synonyms include ca. 40% aqueous GLDA products, but these are depositor-supplied synonyms, not an assay certificate for this catalog. | Source-supported identity candidate. The catalog's GLDA-47 active/solids claim still requires manufacturer TDS/CoA; do not convert synonym text into a supplier assay. |
+
+### Fifth-tranche sources
+
+- PubChem, Calcium Chloride, CID 5284359: https://pubchem.ncbi.nlm.nih.gov/compound/Calcium-dichloride
+- PubChem, Triethanolamine, CID 7618: https://pubchem.ncbi.nlm.nih.gov/compound/triethanolamine
+- Fisher Scientific, anhydrous Sodium Carbonate listing (CAS 497-19-8; PubChem CID 10340; ChEBI CHEBI:29377): https://www.fishersci.com/us/en/browse/80013494/Salts%20and%20Inorganics?categoryKey=80013494&page=2241
+- PubChem SID 135258214, Tetrasodium Glutamate Diacetate (ChemIDplus): https://pubchem.ncbi.nlm.nih.gov/substance/135258214
+- PubChem CID 44630158, Tetrasodium Glutamate Diacetate: https://pubchem.ncbi.nlm.nih.gov/compound/44630158
+
+### Fifth-tranche disposition
+
+- Additional candidate groups examined: 4.
+- Additional source-supported identity candidates: 4.
+- Identity SSOT promotions: 0.
+- Supplier-grade evidence established for catalog records: 0.
+- Formula applicability approvals: 0.
+
+No catalog record or executable crosswalk was altered. These four identity candidates remain outside the seven-entry exact identity SSOT until a deliberate source-backed SSOT change and regression are performed.
+
+
+## Updated aggregate reconciliation (five tranches)
+
+- Candidate groups/issues examined: 38.
+- Source-backed identity candidates (official registry, government, or manufacturer corroboration; not supplier-grade validation): 26.
+- Explicit CAS/identity conflict or scope holds: 6.
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class review flags: 1 (Sodium Lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The fifth tranche covers four builder/neutralizer candidate groups. The 397 unmapped identity crosswalk rows remain unchanged because source review notes are not SSOT records. All 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Cross-category identity source review — builders, chelators and enzymes (sixth tranche)
+
+The review below covers 15 candidate groups from the existing 119-row candidate-group inventory. A source-backed identity means that a public registry, government/standards source or authoritative enzyme nomenclature source supports the broad name/CAS association. It does not mean that any of the four catalog grade variants has been verified.
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-007 | Sodium Metasilicate Pentahydrate | 10213-79-3 | PubChem CID 61495 identifies disodium metasilicate pentahydrate, formula Na2SiO3·5H2O, and lists CAS 10213-79-3. OECD SIDS separately identifies pentahydrate vs anhydrous vs nonahydrate forms. | Source-supported exact hydrate identity candidate. Do not collapse into anhydrous MICG-077. |
+| MICG-022 | Zeolite 4A | 1318-02-1 | PubChem's ECHA-sourced record identifies CAS 1318-02-1 as synthetic, cuboidal, crystalline, non-fibrous zeolite; the retrieved record does not establish the specific 4A framework/grade. | **Grade/specificity hold.** CAS supports a synthetic zeolite family, not a conclusive Zeolite 4A assignment. Require supplier specification including framework/type and exchange form. |
+| MICG-024 | Sodium Silicate | 1344-09-8 | PubChem and OECD/industry silicate references associate CAS 1344-09-8 with soluble sodium silicates. PubChem/HSDB notes commercial sodium silicates may be mixtures of molecular species with variable composition and SiO2:Na2O ratio. | Source-supported family identity candidate; exact commercial grade remains unresolved until modulus, solids, density and product specification are known. |
+| MICG-026 | Disodium EDTA | 139-33-3 | PubChem CID 57339238 identifies disodium EDTA, CAS 139-33-3, and separately distinguishes deprecated identifiers. | Source-supported identity candidate. Anhydrous vs hydrate state and assay remain grade-specific. |
+| MICG-032 | Trisodium Dicarboxymethyl Alaninate (MGDA) | 164462-16-2 | PubChem CID 11021984 identifies trisodium dicarboxymethyl alaninate, formula C7H8NNa3O6, CAS 164462-16-2. | Source-supported identity candidate. Commercial aqueous concentration/active assay and stereochemical/grade details remain unverified. |
+| MICG-042 | Etidronic Acid (HEDP) | 2809-21-4 | PubChem CID 3305 identifies etidronic acid, CAS 2809-21-4, also called HEDP, and describes chelating function. | Source-supported identity candidate. Catalog liquid/solids grade and neutralization state require supplier evidence. |
+| MICG-046 | Mannan Endoperoxidase | 37288-54-3 | FDA GRAS notice, EFSA assessment and IUBMB EC 3.2.1.78 identify CAS 37288-54-3 as mannan endo-1,4-beta-mannosidase / endo-beta-1,4-mannanase (mannanase), not “mannan endoperoxidase.” | **Nomenclature correction required.** CAS and intended mannanase family are supported, but catalog INCI/name is materially wrong. Do not silently edit; create a controlled alias/canonical-name correction with source and regression. |
+| MICG-053 | Sodium Gluconate | 527-07-1 | PubChem CID 23672301 identifies sodium gluconate, CAS 527-07-1, and ChEBI describes its chelating role. | Source-supported identity candidate. Hydrate/assay and supplier grade remain unverified. |
+| MICG-061 | Sodium Citrate | 6132-04-3 | PubChem CID 71474 identifies trisodium citrate dihydrate, CAS 6132-04-3, formula C6H5Na3O7·2H2O. | Source-supported dihydrate identity candidate. Do not treat anhydrous trisodium citrate as mass-equivalent; hydrate basis must be explicit. |
+| MICG-077 | Sodium Metasilicate Anhydrous | 6834-92-0 | PubChem, IPCS and OECD SIDS identify CAS 6834-92-0 as anhydrous sodium metasilicate; IPCS distinguishes pentahydrate CAS 10213-79-3 and nonahydrate CAS 13517-24-3. | Source-supported exact anhydrous identity candidate. Keep distinct from MICG-007 pentahydrate. |
+| MICG-095 | Sodium Triphosphate / STPP | 7758-29-4 | PubChem CID 24455 and ECHA identify pentasodium triphosphate / sodium tripolyphosphate, CAS 7758-29-4, formula Na5P3O10. Sigma-Aldrich lists technical grade 85% with this CAS. | Source-supported identity candidate. Vendor technical-grade listing is not the user's supplier CoA; do not apply 85% to the catalog. |
+| MICG-103 | Alpha-Amylase | 9000-90-2 | ECHA's 2025 enzyme RMOA lists alpha-amylase CAS 9000-90-2 as an enzyme identity. | Source-supported enzyme-family candidate. Enzyme source organism, activity units (e.g. U/g), formulation and stabilizers require supplier documentation. |
+| MICG-104 | Triacylglycerol Lipase | 9001-62-1 | ECHA's 2025 enzyme RMOA lists lipase CAS 9001-62-1. | Source-supported enzyme-family candidate. The broad CAS does not identify microbial source, lipase subtype, activity or liquid carrier. |
+| MICG-114 | Cellulase | 9012-54-8 | ECHA's 2025 enzyme RMOA and PubChem identify cellulase CAS 9012-54-8; PubChem also lists other cellulase-related CAS records, including 9041-92-3. | Source-supported enzyme-family candidate. Do not infer enzyme subtype, organism, activity or preparation from CAS alone. |
+| MICG-115 | Subtilisin | 9014-01-1 | ECHA's 2025 enzyme RMOA lists subtilisin CAS 9014-01-1. | Source-supported enzyme-family candidate. Protease subtype, source strain, activity units, stabilization and sensitization controls require supplier SDS/TDS/CoA. |
+
+### Sixth-tranche sources
+
+- PubChem, Sodium Metasilicate Pentahydrate, CID 61495: https://pubchem.ncbi.nlm.nih.gov/compound/Sodium%20metasilicate%20pentahydrate
+- OECD SIDS, Silicic Acid, Disodium Salt (anhydrous/pentahydrate/nonahydrate forms): https://hpvchemicals.oecd.org/ui/handler.axd?id=3cb4f34b-2afa-4004-b447-521188909235
+- PubChem, synthetic zeolite CAS 1318-02-1 (ECHA-sourced record): https://pubchem.ncbi.nlm.nih.gov/substance/505900759
+- PubChem, Sodium Silicate, CID 23266: https://pubchem.ncbi.nlm.nih.gov/compound/1344-09-8
+- PubChem, Disodium EDTA, CID 57339238: https://pubchem.ncbi.nlm.nih.gov/compound/Disodium-EDTA
+- PubChem, Trisodium Dicarboxymethyl Alaninate / MGDA, CID 11021984: https://pubchem.ncbi.nlm.nih.gov/compound/164462-16-2
+- PubChem, Etidronic Acid / HEDP, CID 3305: https://pubchem.ncbi.nlm.nih.gov/compound/Etidronic-acid
+- PubChem, Sodium Gluconate, CID 23672301: https://pubchem.ncbi.nlm.nih.gov/compound/527-07-1
+- PubChem, Sodium Citrate Dihydrate, CID 71474: https://pubchem.ncbi.nlm.nih.gov/compound/Trisodium-Citrate-Dihydrate
+- IPCS Poisons Information Monograph 500, Sodium Metasilicate hydrate forms: https://inchem.org/documents/pims/chemical/pim500.htm
+- PubChem, Sodium Tripolyphosphate, CID 24455: https://pubchem.ncbi.nlm.nih.gov/compound/7758-29-4
+- ECHA, 2025 RMOA Conclusion Document — Enzymes (alpha-amylase, lipase, cellulase, subtilisin CAS): https://echa.europa.eu/documents/10162/db990d02-d051-16ab-2068-0ca3f4bd8bbb
+- EFSA, Mannan endo-1,4-beta-mannosidase assessment (EC 3.2.1.78; CAS 37288-54-3): https://efsa.onlinelibrary.wiley.com/doi/10.2903/j.efsa.2022.7264
+- IUBMB EC 3.2.1.78 accepted enzyme name and reaction: https://iubmb.qmul.ac.uk/enzyme/EC3/2/1/78.html
+- FDA GRAS Notice 000739, mannanase enzyme identity: https://www.fda.gov/media/113323/download
+- Sigma-Aldrich, Sodium Tripolyphosphate technical grade 85% (CAS 7758-29-4): https://www.sigmaaldrich.com/IN/en/product/sigald/238503
+
+### Sixth-tranche disposition
+
+- Additional candidate groups/issues examined: 15.
+- Additional source-supported identity candidates: 14 (including source-supported family identities where commercial grade remains unresolved).
+- Additional grade/specificity hold: 1 (Zeolite 4A).
+- Additional nomenclature correction required: 1 (MICG-046; CAS identifies mannanase, not endoperoxidase).
+- Identity SSOT promotions: 0.
+- Supplier-grade evidence records established for catalog records: 0.
+- Formula applicability approvals: 0.
+
+The enzyme nomenclature finding was a real catalog defect. It has now been remediated in a controlled change: all four MICG-046 commercial catalog variants retain CAS 37288-54-3 and their stable IDs, while the erroneous `Mannan Endoperoxidase` label is replaced with the accepted ingredient name `Mannanase`. The canonical enzyme name is mannan endo-1,4-beta-mannosidase (EC 3.2.1.78). A dedicated regression test asserts the four rows, IDs, CAS and corrected name; it is wired into `bun run test:all`. This does not establish enzyme source organism, activity units, formulation, stabilizers or supplier grade. Likewise, zeolite-family identity is not sufficient proof of Zeolite 4A.
+
+
+
+## Updated aggregate reconciliation (six tranches)
+
+- Candidate groups/issues examined: 53.
+- Source-backed identity candidates (official registry, government, standards, manufacturer or authoritative nomenclature corroboration; not supplier-grade validation): 40.
+- Explicit CAS/identity conflict or grade/specificity holds: 7.
+- Catalog nomenclature correction implemented: 1 group / 4 commercial variants (MICG-046 mannanase).
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class review flags: 1 (Sodium Lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+No ingredient identity SSOT, catalog record, formula, or applicability decision was modified in this tranche. The 397 unmapped identity crosswalk rows remain unchanged; all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+
+
+## Post-review controlled remediation — MICG-046 mannanase nomenclature
+
+Following the sixth-tranche source review, the catalog defect was corrected directly on the PR branch.
+
+- Updated all four existing variants: `mannanase-liquid`, `mannanase-liquid-tech`, `mannanase-liquid-pure`, and `mannanase-liquid-sol`.
+- Preserved all four stable ingredient IDs and CAS 37288-54-3.
+- Replaced the incorrect `Mannan Endoperoxidase` ingredient label with `Mannanase`.
+- Added `scripts/test-mannanase-identity-nomenclature.ts`, asserting exactly four rows, expected IDs, unchanged CAS, canonical name and no regression to the erroneous label.
+- Added this regression to `package.json` `test:all`.
+
+Source basis: EFSA identifies CAS 37288-54-3 as mannan endo-1,4-beta-mannosidase (EC 3.2.1.78), and IUBMB lists the accepted name and reaction. The catalog correction is a nomenclature correction only; it does not certify enzyme activity, production organism, formulation, safety handling, supplier identity or grade assay.
+
+Commits:
+- Catalog nomenclature: `476d3e701518c37bc68f13a1ff2fdac28976fb51` and final canonical-label refinement `68b105dcd2d231208221e9d573c39be31cb03be5`.
+- Regression test: `06dcee79c2c934744f3217c69052a5a5d23a4f92` and final assertion refinement `3f0ddfdd0fe180768754ce25800a285fcca5a9b3`.
+- Test suite wiring: `80038e2c498c7f599876f3b622632c082b038fa0`.
+
+The 397 unmapped identity rows and all 5,590 NOT_APPROVED applicability rows are unchanged. No supplier-grade assay has been inferred.
+
+
+## Cross-category identity source review — polymers and thickeners (seventh tranche)
+
+Scope: all 12 candidate groups classified as `Polymer & Thickener` in the current candidate-group inventory (MICG-013, 035–037, 039, 065, 101, 105–110). The review distinguishes (a) polymer family identity, (b) grade/property claims, and (c) supplier/batch provenance. A public CAS or generic manufacturer document is not a substitute for the catalog supplier's current TDS, SDS and lot-specific CoA.
+
+| Group | Catalog identity / CAS | Evidence and provenance finding | Disposition |
+|---|---|---|---|
+| MICG-013 | Xanthan Gum; 11138-66-2; catalog says 200 mesh | FDA GSRS/PubChem supports xanthan gum identity and CAS. A separate CAG Hydrocolloids product data sheet identifies a 200-mesh food-grade product, but it does not establish that the catalog's supplier/product is that grade. Mesh, viscosity, moisture, ash, microbial limits and application-grade suitability need the actual supplier TDS/CoA. | Source-supported identity; 200-mesh and performance claims remain supplier-grade unverified. |
+| MICG-035 | Acrylates Copolymer; 25085-34-1 | PubChem/CAS Common Chemistry and Japan NITE identify 25085-34-1 as styrene-acrylic acid copolymer (acrylic acid-styrene polymer), not a generic Acrylates Copolymer identity. | **CAS/INCI identity conflict hold.** Do not silently change CAS or INCI; require the intended polymer composition and manufacturer identity document. |
+| MICG-036 | Acrylates Copolymer; 25212-88-8; catalog trade label “Acrysol 33 (ASE Polymer 30%)” | Sigma-Aldrich maps 25212-88-8 to methacrylic acid-ethyl acrylate copolymer / dispersion products (including Kollicoat MAE 30 DP). The catalog's generic Acrylates Copolymer + ASE/Acrysol 33 claim is not established by that evidence; the CAS is not sufficient to prove the exact commercial ASE product or its 30% solids. | **CAS/identity/grade hold.** Obtain manufacturer product code, exact INCI/chemical description, solids, neutralization and viscosity data. Do not substitute a related acrylic copolymer. |
+| MICG-037 | PEG-90 / PEG 4000; 25322-68-3 | Clariant Polyglykol 4000 product sheet and PCC POLIkol 4000 literature both identify PEG-90, CAS 25322-68-3, with mean molecular mass about 4,000. This supports the catalog's PEG-90 naming for PEG 4000. | Source-supported identity and grade-family nomenclature. Supplier-specific molecular-weight distribution, hydroxyl value, moisture and batch conformity remain unverified. |
+| MICG-039 | Polyvinylpyridine N-Oxide (PVNO); 26715-00-4; 40% liquid | PubChem identifies the vinylpyridine N-oxide repeat-unit precursor and CAS association; polymer reference literature identifies poly(4-vinylpyridine-N-oxide)/PVNO and its use as a laundry dye-transfer inhibitor. CAS/name support the polymer family, but the public evidence reviewed does not establish the catalog's 40% commercial liquid concentration or molecular-weight/viscosity grade. | Source-supported polymer-family identity; 40% active, molecular weight and supplier provenance unverified. |
+| MICG-065 | PEG-2 Tallow Amine; 61791-26-2; catalog ID `tallow-amine-oxide` | FDA food-contact inventory identifies CAS 61791-26-2 as PEG tallow amine / ethoxylated tallow alkylamines. The CIR review describes PEG-2 tallow amine. The CAS does not identify an amine oxide. The current catalog ID and product/function wording “amine oxide acid thickener” therefore overstate or conflate distinct chemical classes. | Source-supported PEG-2 tallow amine identity; **functional/nomenclature review flag**. Do not treat it as a proven amine oxide or assume acid-thickening performance without the manufacturer's TDS and compatibility data. |
+| MICG-101 | PEG-120 Methyl Glucose Dioleate; 86893-19-8 | Samyang KCI product data sheet identifies INCI, CAS and 100% composition, and provides product-specific specification/application information for Methyl Gluceth DOE 120KC. A separate supplier sheet also confirms PEG-120 Methyl Glucose Dioleate identity and thickening use. This supports the chemical identity, not the specific catalog lot or supplier. | Source-supported identity; supplier/lot provenance, assay and catalog-specific grade remain unverified. |
+| MICG-105 | Carbomer 940; 9003-01-4 | PubChem/HSDB identifies carbomer as high-molecular-weight crosslinked acrylic-acid polymer and explains that commercial carbomer grades differ in crosslinking and rheology. Acros COA and Spectrum specification examples identify Carbopol 940 at CAS 9003-01-4 and report 0.5% neutralized-solution viscosity ranges. This supports Carbomer 940 as a recognized grade designation, not the catalog supplier's grade. | Source-supported identity and grade family; actual viscosity, residual solvent, moisture, neutralization response and lot provenance unverified. |
+| MICG-106 | Polyquaternium-37; catalog CAS 9003-05-8; cationic emulsion, 30% active | PubChem, Sigma-Aldrich and a manufacturer/supplier identity listing identify CAS 9003-05-8 as polyacrylamide. ISF CHEM identifies Polyquaternium-37 as CAS 26161-33-1. The catalog's INCI and CAS were materially inconsistent. | **Catalog identity defect corrected:** CAS changed to 26161-33-1 while retaining the stable ingredient ID and Polyquaternium-37 INCI. The 30% active claim and emulsion carrier remain unverified pending supplier TDS/CoA. |
+| MICG-108 | PVP K30; 9003-39-8 | Supplier technical sheets identify PVP K30 at CAS 9003-39-8 and define K-value ranges around 27–32/33, with moisture and residual limits. This supports PVP family and K30 grade nomenclature, but not any current catalog supplier or batch. | Source-supported identity and grade designation; K-value, assay, residual monomer, moisture and lot provenance unverified. |
+| MICG-109 | Cellulose Gum / CMC; 9004-32-4 | PubChem identifies sodium carboxymethyl cellulose at CAS 9004-32-4. Macklin's current specification illustrates why grade must be explicit: degree of substitution 0.65–0.85 and viscosity 400–800 mPa·s at 2%, 25°C. Catalog's “technical” label does not specify DS or viscosity. | Source-supported identity; grade specification/DS/viscosity and supplier lot remain unverified. |
+| MICG-110 | Hydroxypropyl Methylcellulose (HPMC); 9004-65-3; 100K | PubChem supports the HPMC identity and CAS. Manufacturer data demonstrate that HPMC grades differ by methoxy/hydroxypropoxy substitution, viscosity and gel temperature, with viscosity classes ranging from low to very high. The catalog's “100K” label lacks a stated test concentration, temperature, method and substitution type. | Source-supported identity; 100K grade claim is not sufficiently specified or supplier-verified. Require substitution type and viscosity method/value. |
+
+### Seventh-tranche sources
+
+- FDA GSRS/PubChem, Xanthan Gum, CAS 11138-66-2: https://pubchem.ncbi.nlm.nih.gov/substance/472397308
+- CAG Hydrocolloids, Xanthan Gum Food Grade 200 Mesh PDS (2025): https://www.cagcolloids.com/es/download/Xanthan-Gum-Food-Grade-200-Mesh-PDS.pdf
+- PubChem, Styrene acrylic acid copolymer, CAS 25085-34-1: https://pubchem.ncbi.nlm.nih.gov/compound/22481611
+- Japan NITE J-CHECK, CAS 25085-34-1 substance identity: https://www.nite.go.jp/chem/jcheck/detail.action?cno=25085-34-1&mno=6-0140&request_locale=en
+- Sigma-Aldrich, CAS 25212-88-8 products / methacrylic acid-ethyl acrylate copolymer: https://www.sigmaaldrich.com/LI/en/search/25212-88-8?focus=products&page=1&perpage=30&sort=relevance&term=25212-88-8&type=cas_number
+- Clariant, Polyglykol 4000 FL/S/P/PF/PS/PSK product sheet (PEG-90, CAS 25322-68-3): https://media.knowde.com/image/upload/v1572023580/production/Collateral/25244/137358/TDS_Polyglykol_4000_PF_English.pdf
+- PCC Exol, POLIkol 4000 product brochure (PEG-90, approx. MW 4000): https://www.products.pcc.eu/wp-content/uploads/import/product/broszura/60707507-ceb5-4c0f-9d4b-0762c9cc9880/polikol-4000_broszura_en.pdf
+- PubChem, PVNO / 4-vinylpyridine 1-oxide identity: https://pubchem.ncbi.nlm.nih.gov/compound/3084465
+- DrugFuture, PVNO polymer identity and detergent dye-transfer-inhibitor literature: https://www.drugfuture.com/chemdata/PVNO.html
+- FDA food-contact inventory, PEG tallow amine CAS 61791-26-2: https://www.hfpappexternal.fda.gov/scripts/fdcc/index.cfm?id=PEGTALLOWAMINE&set=IndirectAdditives
+- CIR safety review of PEG compounds, PEG-2 tallow amine: https://pmc.ncbi.nlm.nih.gov/articles/PMC4505343/
+- Samyang KCI, Methyl Gluceth DOE 120KC TDS (INCI/CAS/composition/specification): https://www.specialchem.com/media/tds-documents/methyl-gluceth-doe-120kc_tds_250401.pdf
+- PubChem, Carbomer CAS 9003-01-4 and grade variability: https://pubchem.ncbi.nlm.nih.gov/compound/9003-01-4
+- Acros Organics, Carbopol 940 Certificate of Analysis: https://assets.thermofisher.com/TFS-Assets/GC/Acros-Organics/certificate/Certificates-of-Analysis/GEEL_27838_A0359196.pdf
+- Spectrum Chemical, Carbomer 940 NF specification: https://mtc-product-specification-store-production.s3.amazonaws.com/1711492059560_C1477-ProductSpecification.pdf
+- ISF CHEM, Polyquaternium-37 identity, CAS 26161-33-1: https://www.isfchem.com/en/products/polyquaternium-37/
+- PubChem, Polyacrylamide, CAS 9003-05-8: https://pubchem.ncbi.nlm.nih.gov/compound/Polyacrylamide
+- Scientific Polymer Products, Polyacrylamide TDS, CAS 9003-05-8: https://scipoly.com/wp-content/uploads/2020/09/001-tds.pdf
+- Unilong, PVP K30 TDS, CAS 9003-39-8 and K-value: https://unilongindustry.com/wp-content/uploads/2022/03/TDS-Polyvinylpyrrolidone-PVPK30-9003-39-8-1.pdf
+- Macklin, Sodium Carboxymethyl Cellulose specification, CAS 9004-32-4: https://api.macklin.cn/api/specification/download?item_code=S787399&lang=cn
+- PubChem, HPMC identity, CAS 9004-65-3: https://pubchem.ncbi.nlm.nih.gov/compound/137698383
+- Watson International, HPMC substitution and viscosity grade specifications: https://www.watson-int.com/hpmc-hydroxypropyl-methyl-cellulose-cas-9004-65-3/
+
+### Seventh-tranche disposition
+
+- Additional candidate groups examined: 12 (all candidate groups in the Polymer & Thickener class inventory).
+- Additional source-supported identity candidates: 9 (broad identity/grade-family support only; supplier grade and batch provenance remain separate).
+- Additional CAS/identity conflict holds: 2 (MICG-035, MICG-036).
+- Additional catalog identity correction implemented: 1 (MICG-106 Polyquaternium-37 CAS).
+- Additional functional/nomenclature review flags: 1 (MICG-065 PEG-2 Tallow Amine / “amine oxide” catalog wording).
+- Identity SSOT promotions to VERIFIED: 0.
+- Supplier-grade/lot-specific provenance records established: 0.
+- Formula applicability approvals: 0.
+
+### Controlled remediation — MICG-106 Polyquaternium-37
+
+A direct catalog correction was made on the PR branch after the source comparison showed that the prior CAS was polyacrylamide, not Polyquaternium-37.
+
+- Retained stable ingredient ID: `cationic-polymer-emulsion`.
+- Retained INCI: `Polyquaternium-37`.
+- Corrected CAS from `9003-05-8` (polyacrylamide) to `26161-33-1` (Polyquaternium-37).
+- Renamed the display label to “Polyquaternium-37 Cationic Polymer Emulsion”.
+- Added `scripts/test-polyquaternium37-identity.ts` and wired it into `test:all`.
+- Regression asserts the stable ID, INCI, corrected CAS, and absence of the old Polyacrylamide CAS pairing.
+
+Commits:
+- Catalog correction: `6a53ce2280a1f0b8727eb7077b84a6ca9d5ecf6f`.
+- Regression test: `5d245457c1418568e4ee142824c27e199ef6d400`.
+- Test suite wiring: `aed65b3f95023e6ff9a9d06b918e38f3a62e1fdc`.
+
+This correction fixes identity only. It does not validate the claimed 30% active concentration, polymer molecular weight, carrier composition, compatibility, performance or supplier batch.
+
+## Updated aggregate reconciliation (seven tranches)
+
+- Candidate groups/issues examined: 65.
+- Source-backed identity candidates: 49.
+- Explicit CAS/identity conflict or grade/specificity holds: 9.
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class / nomenclature review flags: 2 (Sodium Lignosulfonate; MICG-065 PEG-2 Tallow Amine catalog wording).
+- Catalog nomenclature/identity corrections implemented: 2 groups (MICG-046 mannanase; MICG-106 Polyquaternium-37).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade/lot-specific evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The category review is complete against the current 12-group Polymer & Thickener candidate inventory. “Complete” here means all available candidate groups were assessed and dispositioned; it does not mean every grade or supplier provenance is verified. The 397 unmapped identity crosswalk rows remain unchanged, and all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED. The new Polyquaternium-37 regression is wired into `test:all` but has not yet been executed in this environment; no CI PASS is claimed.
+
+
+## Cross-category identity source review — Additives & Performance and Preservatives & Biocides (eighth tranche)
+
+Scope: all 19 candidate groups in the current inventory classified as either `Additive & Performance` (13 groups) or `Preservative & Biocide` (6 groups). This is a source-based identity and catalog-claim audit, not supplier-lot verification or product regulatory approval. For polymeric substances, emulsions and proprietary blends, a single CAS does not identify the full commercial mixture or its active fraction.
+
+### Additive & Performance — 13 groups
+
+| Group | Catalog identity / CAS | Identity, grade and provenance review | Disposition |
+|---|---|---|---|
+| MICG-003 | Parfum; no CAS | Fragrance is a multi-component mixture; no single CAS is appropriate. Catalog's 100% active default is not an assay of a fragrance compound. IFRA says the fragrance-mixture manufacturer issues a conformity certificate for the specified intended use; it does not replace safety assessment. Need fragrance house product code, composition disclosure as appropriate, SDS, IFRA conformity certificate for intended detergent use, allergen/restricted-material declaration and batch CoA. | Correctly modeled as mixture/no single CAS; identity and supplier provenance **unresolved** until the actual fragrance supplier documents are linked. |
+| MICG-004 | Aristo 9; proprietary blend; no CAS | Catalog itself describes a proprietary enzyme/thickener blend with unspecified composition and active matter and marks source verification as needed. A manufacturer website/product description is not enough to establish exact composition, activity, carrier, preservatives or lot. | Correctly modeled as proprietary blend/no single CAS. **Provenance and quantitative properties unresolved**; keep active matter and unknown properties unknown. Require current manufacturer TDS/SDS and lot CoA or written composition/assay statement. |
+| MICG-005 | Calcium Chloride; CAS 10043-52-4; catalog says 74% flakes | PubChem and Sigma identify CAS 10043-52-4 as calcium chloride/anhydrous identity. Industrial calcium chloride flakes can be hydrated material with a declared CaCl2 assay around 77–80%; Thermo Fisher's 2026 specification lists dihydrate flakes at 77–80% CaCl2 and both hydrate/anhydrous CAS references. Catalog's “74% flakes” is not supported by those cited examples and hydration state is not explicit. | CAS supports calcium chloride family; **74% grade/hydrate state hold**. Do not silently convert to 77/80%; supplier TDS/CoA must state hydrate, assay basis and impurities. |
+| MICG-009 | Propargyl Alcohol; CAS 107-19-7; display label “Acid Corrosion Inhibitor (Propargyl Alcohol Derivative)” | BASF identifies propargyl alcohol CAS 107-19-7, min. 99.3% grade, and describes its use as a corrosion-inhibitor component in mineral acids/oil-well stimulation. The catalog INCI/CAS says propargyl alcohol itself, while display label says “derivative”; no derivative identity or supplier product is specified. | CAS identity supported; **display-name/chemical-identity mismatch flag**. Keep exact compound name separate from a claimed formulated inhibitor product. Need supplier product code and inhibitor formulation TDS/SDS before claiming a derivative or corrosion-inhibitor blend. |
+| MICG-019 | Zinc Ricinoleate; CAS 13040-19-2; 100% / solution variants | PubChem identifies zinc ricinoleate and CAS 13040-19-2, with alternative CAS 93028-47-8 also appearing in regulatory/registry sources. This supports the chemical identity but not 100% assay, crystal/powder grade, odor-control performance in the intended detergent matrix or the catalog's 50% solution carrier. | Source-supported identity candidate; note CAS alias/scope and **assay/form/solution grade unverified**. Need supplier specification and lot CoA. |
+| MICG-067 | Glycol Distearate; CAS 627-83-8 | PubChem identifies ethylene glycol distearate/glycol distearate, CAS 627-83-8. The catalog's “EGDS pearlizer” function is consistent with a common use, but the exact flake/pastille grade, ester composition, free stearic acid, melting range and particle form are not established by identity registry evidence. | Source-supported identity; grade and supplier provenance unverified. |
+| MICG-068 | Dimethicone; CAS 63148-62-9; “Silicone Antifoam Emulsion 30%” | CAS supports a polydimethylsiloxane/dimethicone material family, not a complete aqueous antifoam emulsion. A Dow XIAMETER AFE-1410 commercial antifoam example is 10% active and is used in laundry detergent; another silicone antifoam SDS describes a mixture of water, dimethylpolysiloxane, emulsifiers and stabilizers. These examples show why emulsion composition and active matter must be product-specific. | Source-supported silicone identity family; **30% emulsion claim and exact emulsifier/carrier system unverified**. Do not infer that any Dimethicone CAS record validates 30% active. |
+| MICG-089 | Amodimethicone; CAS 71750-79-3; 35% emulsion | Supplier/product reference identifies Amodimethicone with CAS 71750-79-3. That establishes the ingredient family, not the catalog's 35% active emulsion, particle size, emulsifier, amino content, charge density or textile deposition behavior. | Source-supported identity candidate; **35% grade and emulsion provenance unverified**. Require actual supplier TDS/CoA and composition. |
+| MICG-091 | Sodium Chloride; CAS 7647-14-5; “Vacuum Salt” | Sodium chloride identity/CAS is well-established. “Vacuum salt” is a production/process and commercial grade claim, not proved by CAS. Moisture, insolubles, calcium/magnesium, iron, particle size and crystal form determine whether a grade is suitable for a given detergent/liquid viscosity application. | Source-supported identity; vacuum-salt grade and supplier assay/impurity profile unverified. |
+| MICG-094 | Sodium Sulfate; CAS 7757-82-6; anhydrous | CAS/name support sodium sulfate. The catalog specifically says anhydrous; identity CAS alone does not prove anhydrous state, residual moisture, insolubles, chloride, iron or particle-size specification. | Source-supported identity; anhydrous grade and supplier lot provenance unverified. |
+| MICG-098 | Copernicia Cerifera Cera / Carnauba Wax; CAS 8015-86-9; 20% microemulsion | PubChem/ECHA/FDA-derived synonyms support carnauba wax identity and CAS 8015-86-9. The CAS identifies the wax material, not a 20% microemulsion; emulsion carrier, surfactants, particle size, pH and solids require product documentation. | Source-supported wax identity; **20% emulsion grade and supplier provenance unverified**. |
+| MICG-100 | Panthenol / D-Panthenol; CAS 81-13-0; 99% | DSM/Tri-K and Thermo Fisher product specifications identify D-panthenol, INCI Panthenol, CAS 81-13-0, and assay specifications around 98–102% / 99–102% depending product. This supports D-panthenol identity and the plausibility of a high-assay grade, but not the exact catalog source or batch. The catalog's hand-skin conditioning claim needs a formulation/use-case assessment; it is not established by identity alone. | Source-supported D-panthenol identity and high-assay grade family; exact supplier/lot and finished-product benefit unverified. |
+| MICG-113 | Styrene/Acrylates Copolymer; CAS 9010-92-8; 30% opacifier emulsion | INCI reference identifies Styrene/Acrylates Copolymer with CAS 9010-92-8 and use as an opacifying/film-forming polymer. A generic INCI/CAS match does not establish a specific commercial opacifier, solids, particle size, surfactant package, pH or compatibility. | Source-supported identity candidate; **30% emulsion grade and supplier provenance unverified**. |
+
+### Preservative & Biocide — 6 groups
+
+| Group | Catalog identity / CAS | Identity, grade and provenance review | Disposition |
+|---|---|---|---|
+| MICG-016 | Phenoxyethanol; CAS 122-99-6; 99% | EU detergent criteria and public chemical product records identify phenoxyethanol/CAS 122-99-6. Supplier catalogs show commercial high-purity grades around 99.5%, but this does not prove the catalog's 99% source or lot. EU CLP classification includes hazard statements; the catalog's “mild” adjective is not a safety conclusion. | Source-supported identity; 99% assay and lot provenance unverified. Safety classification and jurisdiction/use restrictions must be represented separately from preservative efficacy. |
+| MICG-034 | Potassium Sorbate; CAS 24634-61-5; 99% | Potassium sorbate identity/CAS is supported by authoritative chemical and detergent patent references. Sorbate efficacy is pH-dependent; detergent patent literature describes sorbate systems in formulations at pH ≥6.5, but efficacy is formulation-dependent and cannot be inferred from identity alone. Catalog's “active in acidic media” is directionally correct but insufficient as a performance guarantee. | Source-supported identity; 99% grade and lot provenance unverified. Require pH-specific preservative efficacy/challenge testing for finished formula. |
+| MICG-038 | Benzisothiazolinone (BIT); CAS 2634-33-5; 20% / “Proxel GXL” | CAS 2634-33-5 identifies BIT. Arch/Proxel GXL technical literature identifies a 20% w/w BIT solution in dipropylene glycol and water, with alkaline pH and broad industrial aqueous-product preservation use. Thus 20% is a real commercial grade family, but catalog has not supplied evidence that its material is genuine Proxel GXL or an equivalent formulation. “Proxel GXL” is a trade product name and should not be treated as generic INCI. | Source-supported identity and 20% commercial grade example; exact brand/equivalence, solvent system and lot provenance unverified. Keep trade-name and generic ingredient identity distinct. |
+| MICG-054 | Sodium Benzoate; CAS 532-32-1; 99% | Sodium benzoate identity/CAS is supported by detergent patent and chemical references. Its antimicrobial efficacy is pH-dependent (benzoic-acid equilibrium), so a generic preservative label does not establish protection in alkaline detergent. “Food grade” and 99% require supplier grade documentation and are not proved by CAS. | Source-supported identity; 99%/food-grade and lot provenance unverified. High-pH detergent efficacy must not be assumed. |
+| MICG-057 | CMIT/MIT; CAS 55965-84-9; “Kathon CG 1.5%” | CAS 55965-84-9 identifies the 3:1 CMIT:MIT reaction mixture. Supplier references distinguish cosmetic Kathon CG at about 1.5% active from industrial CMIT/MIT solutions commonly around 14%. The catalog's 1.5% product identity is plausible, but supplier, exact component ratio, magnesium salts/carrier, active assay and lot are not verified. A catalog “custom concentrated solution” variant declares activeDefault 10 despite describing a solution of the 1.5% Kathon CG product; this is internally inconsistent unless the field means something other than active fraction. | Source-supported mixture identity; exact Kathon CG grade/provenance unverified. **10% active variant is held for data-definition/active-matter reconciliation**; do not use as a formulation input until resolved. |
+| MICG-102 | Chloroxylenol / PCMX; CAS 88-04-0; 99% | EPA, Sigma/EDQM and manufacturer product specifications identify chloroxylenol as 4-chloro-3,5-dimethylphenol, CAS 88-04-0. Manufacturer TDS examples specify ≥98.5–99% assay, supporting the plausibility of a 99% commercial grade but not the catalog supplier/lot. This is an antimicrobial active with jurisdiction-specific regulatory implications; it should not be treated as a generic in-can preservative without confirming intended product category and applicable authorization/label claims. | Source-supported identity and grade-family plausibility; supplier/lot provenance and regulatory authorization for the intended detergent/disinfectant use unverified. |
+
+### Eighth-tranche source register
+
+- PubChem, Calcium Chloride CAS 10043-52-4: https://pubchem.ncbi.nlm.nih.gov/compound/DTXSID5020235
+- Sigma-Aldrich, Calcium Chloride ≥97% product grade: https://www.sigmaaldrich.com/IN/en/product/sigald/21074
+- Thermo Fisher, calcium chloride dihydrate flakes 77–80% specification (CAS references 10043-52-4 / 10035-04-8): https://assets.thermofisher.com/chem-specs-pdf/retrievePdf?countryCode=kr&erp_type=KR_E1_LCD&rootSku=12335&sku=123350100
+- BASF, Propargyl Alcohol CAS 107-19-7 and industrial corrosion-inhibitor component use: https://products.basf.com/global/en/ci/propargyl-alcohol
+- PubChem, Zinc Ricinoleate CAS identity and alternate registry CAS records: https://pubchem.ncbi.nlm.nih.gov/compound/ZINC-ricinoleate
+- PubChem, Glycol Distearate CAS 627-83-8: https://pubchem.ncbi.nlm.nih.gov/compound/627-83-8
+- Univar/Dow, XIAMETER AFE-1410 10% active laundry antifoam: https://www.univarsolutions.com/xiameter-afe-1410-3311098?v=20196
+- ZeraChem, Antifoam I30 mixture SDS (water, dimethylpolysiloxane, emulsifiers): https://zerachem.com/wp/wp-content/uploads/2022/05/D.S.S-ANTIFOAM-I30.pdf
+- Ele Corporation, Amodimethicone CAS 71750-79-3: https://elecorporation.com/new_product/pel-sil-amod/
+- PubChem, Carnauba Wax CAS 8015-86-9: https://pubchem.ncbi.nlm.nih.gov/compound/Carnauba-Wax
+- Tri-K, D-Panthenol INCI/CAS and assay specification: https://static1.squarespace.com/static/631f395dfc9c7a6d7a736c10/t/66ead08619ce56262808d9ca/1726664838669/D-Panthenol%2B-%2BSpecifications%2B-%2Bv4.pdf
+- Thermo Fisher, D-Panthenol 98+% specification: https://assets.thermofisher.com/chem-specs-pdf/retrievePdf?rootSku=A18499&sku=A18499.22
+- SpecialChem, Styrene/Acrylates Copolymer INCI/CAS 9010-92-8: https://www.specialchem.com/cosmetics/inci-ingredients/styrene-acrylates-copolymer
+- European Commission JRC, detergent restricted-substance/isothiazolinone/phenoxyethanol classification table: https://susproc.jrc.ec.europa.eu/product-bureau/sites/default/files/2024-03/AHWG1%20detergents_1213_032024.pdf
+- Lithionyx, CMIT/MIT CAS 55965-84-9, typical 1.5% personal-care vs 14% industrial solution, supplier documentation: https://lithionyx.com/products/cmit-mit
+- Univar/LANXESS Kathon CG, 1.50% active (CMIT 1.13%, MIT 0.37%): https://www.univarsolutions.com/kathon-cg-preservative-cosmetic-823195
+- Cayman Chemical, CMIT/MIT mixture CAS 55965-84-9 and 14% aqueous product with batch CoA: https://cdn.caymanchem.com/cdn/insert/27470.pdf
+- Arch/Proxel GXL technical bulletin, BIT 20% w/w in dipropylene glycol/water: https://www.excelind.co.in/Excel_Chemical/download/Proxel_GXL_literature.pdf
+- Arch wet-state preservation brochure, Proxel GXL 19.3% BIT / Proxel DL 9%: https://www.pcimag.com/ext/resources/PCI/Home/Files/PDFs/Virtual_Supplier_Brochures/Arch.pdf
+- IFRA, fragrance mixture supplier certificate requirements and limitations: https://ifrafragrance.org/understanding-standards
+- EPA, chloroxylenol/PCMX CAS 88-04-0 and registered antimicrobial use context: https://downloads.regulations.gov/EPA-HQ-OPP-2009-0010-0004/content.pdf
+- Manufacturer PCMX TDS example, CAS 88-04-0 and ≥98.5% assay: https://imrorwxholqklp5p.leadongcdn.com/TDS-22104-PCMX-aidlrBpqKoqloSRnlqmrromim.pdf
+
+### Eighth-tranche disposition
+
+- Candidate groups examined: 19 (all 13 Additive & Performance and all 6 Preservative & Biocide groups in the current candidate inventory).
+- CAS/identity source-supported chemical candidates: 17.
+- Multi-component/proprietary blends requiring composition-specific identity/provenance rather than a single CAS: 2 (MICG-003 Parfum; MICG-004 Aristo 9).
+- New catalog nomenclature/identity flag: 1 (MICG-009 Propargyl Alcohol vs “derivative” display label).
+- New active-matter reconciliation flag: 1 (MICG-057 Kathon CG custom solution variant).
+- Supplier-specific grade/lot provenance established for these catalog records: 0.
+- Identity SSOT promotions to VERIFIED: 0.
+- Formula applicability approvals: 0.
+
+### Updated aggregate reconciliation (eight tranches)
+
+- Candidate groups/issues examined: 84.
+- Source-backed chemical identity candidates: 66.
+- Explicit CAS/identity conflict or grade/specificity holds from earlier tranches: 9.
+- Additional unresolved exact-source hold from earlier tranche: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Multi-component/proprietary no-single-CAS records requiring full composition evidence: 2 (MICG-003; MICG-004).
+- Functional-class / nomenclature review flags: 3 (Sodium Lignosulfonate; MICG-065 PEG-2 Tallow Amine; MICG-009 Propargyl Alcohol display label).
+- Active-matter data reconciliation flags: 1 (MICG-057 Kathon CG variant).
+- Catalog identity/nomenclature corrections implemented in prior tranches: 2 groups (MICG-046 mannanase; MICG-106 Polyquaternium-37).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade/lot-specific evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The Additives & Performance and Preservatives & Biocides category review is complete against the current 19-group candidate inventory. Completion means all candidate groups were assessed and dispositioned; it does not mean that supplier grade, batch assay, finished-formula preservation efficacy or regulatory suitability has been verified. In particular, preservative efficacy must be tested in the actual finished formulation at its actual pH and packaging conditions; a registry match or supplier brochure is not a preservative challenge test. The fragrance and Aristo 9 records remain composition/provenance unresolved. The Kathon CG 10% active variant remains held pending field semantics and source reconciliation.
+
+The 397 unmapped identity crosswalk rows remain unchanged; all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED. No new catalog code changes or test results are claimed in this tranche.

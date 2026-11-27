@@ -1,4 +1,5 @@
 import { getAllUniversalIngredients, UniversalIngredient } from './universalIngredientLibrary';
+import { resolveFunctionalRouting } from './ingredientFunctionalRouting';
 
 export interface RawMaterialSubcategory {
   id: string;
@@ -46,6 +47,8 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
         matches: (i) => {
           const c = (i.category || '').toLowerCase();
           const n = (i.name || '').toLowerCase();
+          const route = resolveFunctionalRouting(i.id);
+          if (route) return route.routingClass === 'ANIONIC';
           return c.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') || n.includes('sulfate') || n.includes('sulphonate') || n.includes('soap');
         }
       },
@@ -56,6 +59,8 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
         matches: (i) => {
           const c = (i.category || '').toLowerCase();
           const n = (i.name || '').toLowerCase();
+          const route = resolveFunctionalRouting(i.id);
+          if (route) return route.routingClass === 'AMPHOTERIC';
           return c.includes('amphoteric') || n.includes('betaine') || n.includes('capb') || n.includes('amine oxide');
         }
       },
@@ -73,16 +78,21 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
     matches: (i, subcat) => {
       const c = (i.category || '').toLowerCase();
       const n = (i.name || '').toLowerCase();
-      const isIonic = c.includes('anionic') || c.includes('cationic') || c.includes('amphoteric') ||
-        n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') ||
-        n.includes('betaine') || n.includes('capb') || n.includes('bkc') || n.includes('quat') ||
-        n.includes('sulfate') || n.includes('sulphonate') || n.includes('amine oxide') || n.includes('cetrimonium');
+      const route = resolveFunctionalRouting(i.id);
+      const isIonic = route
+        ? route.routingClass === 'ANIONIC' || route.routingClass === 'AMPHOTERIC'
+        : c.includes('anionic') || c.includes('cationic') || c.includes('amphoteric') ||
+          n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') ||
+          n.includes('betaine') || n.includes('capb') || n.includes('bkc') || n.includes('quat') ||
+          n.includes('sulfate') || n.includes('sulphonate') || n.includes('amine oxide') || n.includes('cetrimonium');
       if (!isIonic) return false;
       if (!subcat || subcat === 'all') return true;
       if (subcat === 'anionic') {
+        if (route) return route.routingClass === 'ANIONIC';
         return c.includes('anionic') || n.includes('labsa') || n.includes('sles') || n.includes('sls') || n.includes('aos') || n.includes('sulfate') || n.includes('sulphonate');
       }
       if (subcat === 'amphoteric') {
+        if (route) return route.routingClass === 'AMPHOTERIC';
         return c.includes('amphoteric') || n.includes('betaine') || n.includes('capb') || n.includes('amine oxide');
       }
       if (subcat === 'cationic') {
@@ -104,6 +114,9 @@ export const RAW_MATERIAL_CATEGORIES: RawMaterialCategoryDef[] = [
     matches: (i) => {
       const c = (i.category || '').toLowerCase();
       const n = (i.name || '').toLowerCase();
+      const route = resolveFunctionalRouting(i.id);
+      if (route?.routingClass === 'AMPHOTERIC' || route?.routingClass === 'BLOCKED') return false;
+      if (route?.routingClass === 'NONIONIC') return true;
       return c.includes('nonionic') || n.includes('ethoxylate') || n.includes('apg') || n.includes('glucoside') || n.includes('cocamide') || n.includes('poloxamer') || n.includes('pluronic') || n.includes('tween') || n.includes('lae');
     }
   },

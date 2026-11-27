@@ -67,3 +67,27 @@ These are review environments derived from taxonomy descriptions and are not sup
 - `NOT_REVIEWED`: no ingredient-specific review has yet been completed.
 
 A commercial `activeDefault` is not a supplier assay; it must not be used as a maximum use level. A category's target pH is not proof that an ingredient is stable throughout that range. Each final decision requires a cited supplier TDS/SDS or authoritative technical source and, where necessary, bench compatibility/performance testing.
+
+
+## 2026-11-27 source re-audit correction and current implementation
+
+The prior Stage 2 paragraph stated that `src/data/ingredientApplicabilityReviewMatrix.ts` had been added and that its rows began as `NOT_REVIEWED`. A direct read of the current `main` tree on 2026-11-27 returned 404 for both that matrix path and the named test path. Therefore that earlier implementation claim is not accepted as current source-level proof.
+
+The current canonical source scan found 430 records, 430 unique IDs, 15 catalog classes, 3 structured provenance objects (1 with a source URL), and no populated ingredient pH min/max fields. The 13 canonical product categories are distinct from the 15 ingredient catalog classes.
+
+The replacement implementation is `src/data/masterIngredientApplicabilityScreen.ts`, which generates all 430 × 13 = 5,590 ingredient/category rows from the canonical source. This is explicitly a preliminary AI chemistry-risk screen only. Every row is `finalApplicability: NOT_APPROVED`; no row receives a final scientific suitability approval or invented use range. Its regression is `scripts/test-master-ingredient-applicability-screen.ts` and is wired into `test:all`.
+
+The current evidence-vault reconciliation is recorded in `evidence_vault/forensic_reports/PHASE4B_MASTER_INGREDIENT_APPLICABILITY_PROVENANCE_RECONCILIATION_2026-11-27.md`. It finds 21 evidence records with structured rights status, 28 source-register rows, and four inspected datasets that all remain validation-deficient. This is not Phase 4B closure: per-grade ingredient provenance, source archival, dataset semantic gaps and zero eligible matched formula prediction/observation pairs remain open.
+
+
+## 2026-11-27 identity SSOT and dataset ledger reconciliation addendum
+
+The current master ingredient catalog contains 430 records. The identity SSOT contains seven identity entries. Exact CAS+INCI matching maps 33 catalog commercial-grade rows to those seven identity records; 397 catalog rows have no exact match. This is identity crosswalk coverage only: no supplier-grade TDS/SDS/CoA/lot assay is established by the identity SSOT. The current master has three structured provenance objects, one provenance URL, and no populated ingredient pH min/max fields.
+
+Added `src/data/masterIngredientIdentityCoverage.ts` and `scripts/test-master-ingredient-identity-coverage.ts`. Every exact match is explicitly marked as identity-level only and every catalog row retains grade-specific evidence status `NOT_ESTABLISHED_BY_IDENTITY_SSOT`.
+
+The canonical vault dataset inventory was expanded from four to eight records by registering EVD-023–EVD-026 and DS-006–DS-009: RepOD cationic CMC (202 rows), PSDI/NIST historical CMC (4,990 measurement rows plus a separate 719-row compound table), P2SURF binary mixture CMC (979 rows), and IUPAC pH reference standards (20 rows). These were already archived/source-registered reference artifacts, but were not represented as DatasetRecord entries. All eight datasets remain `DEFICIENT` for finished-formula/model validation readiness.
+
+P2SURF source rows were additionally grouped without deduplication: 979 source rows map to 522 unordered SMILES pair groups and 959 canonical pair/composition groups. Twenty pair/composition groups repeat (20 extra rows retained). The 522 pair groups are not 522 independent studies; source-study/temperature/method grouping remains incomplete. See `evidence_vault/datasets/p2surf_pair_grouping_audit.csv` and `scripts/test-p2surf-pair-grouping-audit.ts`.
+
+Added `scripts/test-phase4b-dataset-ledger-reconciliation.ts` and wired all new gates into `test:all`. Phase 4B remains OPEN; Phase 5 remains LOCKED. The 397 unmatched identities, 427 missing catalog provenance objects, absence of exact supplier-grade documents, unresolved dataset metadata and zero eligible matched finished-formula prediction/observation pairs remain open.

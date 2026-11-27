@@ -2,6 +2,7 @@ import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
 import { validateActiveMatterInput } from './activeMatterInputGuard';
 import { ActiveMatterResultObject } from './activeMatterValidation';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 
 /**
  * ============================================================================
@@ -54,7 +55,7 @@ function normalizeActiveMatterInputValue(value: unknown): unknown {
 
 export type ActiveMatterProvenance = 'authoritative' | 'canonical_library_default' | 'reference_default' | 'explicit_override' | 'derived_from_name' | 'missing';
 
-export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
+export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'conditional' | 'none';
 
 export interface IngredientActiveResolution {
   activeMatterPct: number | null;
@@ -93,12 +94,14 @@ export interface SurfactantActiveBreakdown {
   nonionicActivePct: number;
   amphotericActivePct: number;
   cationicActivePct: number;
+  conditionalActivePct: number;
   totalActiveSurfactants: number;
   totalRawSurfactants: number;
   anionicRatio: number;
   nonionicRatio: number;
   amphotericRatio: number;
   cationicRatio: number;
+  conditionalRatio: number;
 }
 
 export interface WaterBalanceBreakdown {
@@ -198,7 +201,13 @@ export class ActiveMatterEngine {
   /**
    * Helper: classify surfactant charge type based on category, role, and name keywords
    */
-  public static classifySurfactantCharge(category: string, role: string, name: string): { isSurfactant: boolean; surfactantType: SurfactantChargeClass } {
+  public static classifySurfactantCharge(category: string, role: string, name: string, canonicalIngredientId?: string): { isSurfactant: boolean; surfactantType: SurfactantChargeClass } {
+    const routed = resolveFunctionalRoutingForIngredient({ canonicalIngredientId, name });
+    if (routed?.role === 'IDENTITY_UNRESOLVED') return { isSurfactant: false, surfactantType: 'none' };
+    if (routed?.role === 'POLYMERIC_DISPERSANT') return { isSurfactant: false, surfactantType: 'none' };
+    if (routed?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE' || routed?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return { isSurfactant: true, surfactantType: 'conditional' };
+    if (routed?.routingClass === 'ANIONIC') return { isSurfactant: true, surfactantType: 'anionic' };
+    if (routed?.routingClass === 'AMPHOTERIC') return { isSurfactant: true, surfactantType: 'amphoteric' };
     const cat = (category || '').toLowerCase();
     const r = (role || '').toLowerCase();
     const n = (name || '').toLowerCase();
@@ -387,7 +396,27 @@ export class ActiveMatterEngine {
     }
 
     const resolvedCategory = canonicalMatch?.category || rawCategory || (isWater ? 'Solvent / Carrier' : isSolvent ? 'Solvent' : 'Additive');
-    const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName);
+    const routeId = canonicalMatch?.id || ing?.canonicalIngredientId || ing?.id;
+    const routed = resolveFunctionalRoutingForIngredient({
+      id: routeId,
+      canonicalIngredientId: ing?.canonicalIngredientId,
+      name: rawName
+    });
+    const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName, routeId);
+
+    if (routed?.role === 'IDENTITY_UNRESOLVED') {
+      return {
+        activeMatterPct: null,
+        dataSource: 'missing',
+        category: resolvedCategory,
+        isSurfactant: false,
+        surfactantType: 'none',
+        isWater,
+        isSolvent,
+        canonicalMatch,
+        conflict: { message: 'Ingredient identity is unresolved; active-matter and functional-class routing are blocked pending exact supplier identity and composition.' }
+      };
+    }
 
     // Water is strictly 0% active solids
     if (isWater) {
@@ -573,6 +602,7 @@ export class ActiveMatterEngine {
     let nonionicActivePct = 0;
     let amphotericActivePct = 0;
     let cationicActivePct = 0;
+    let conditionalActivePct = 0;
     let totalActiveSurfactants = 0;
     let totalRawSurfactants = 0;
 
@@ -604,9 +634,18 @@ export class ActiveMatterEngine {
       totalRawMatter += rawPct;
 
       const resolution = this.resolveIngredientActive(ing);
+      const gradeAssay = resolution.canonicalMatch?.activeMatterGradeAssayEvidence;
       const canonicalSourceVerified = Boolean(
-        resolution.canonicalMatch?.provenance?.verificationStatus === 'VERIFIED' &&
-        resolution.canonicalMatch?.provenance?.source?.trim()
+        gradeAssay &&
+        gradeAssay.verificationStatus === 'VERIFIED' &&
+        gradeAssay.evidenceId.trim() &&
+        /^https:\/\/[^\s]+$/i.test(gradeAssay.sourceUrl) &&
+        ['MANUFACTURER_TDS', 'MANUFACTURER_SPECIFICATION', 'LAB_COA'].includes(gradeAssay.sourceType) &&
+        gradeAssay.grade.trim() &&
+        gradeAssay.valuePct === resolution.activeMatterPct &&
+        ['AS_SUPPLIED', 'AS_RECEIVED'].includes(gradeAssay.basis) &&
+        gradeAssay.method.trim() &&
+        gradeAssay.conditions.trim()
       );
       const hasNonAuthoritativeResolution =
         resolution.dataSource === 'reference_default' ||
@@ -666,6 +705,9 @@ export class ActiveMatterEngine {
             case 'cationic':
               cationicActivePct += activePct;
               break;
+            case 'conditional':
+              conditionalActivePct += activePct;
+              break;
           }
         }
       }
@@ -704,6 +746,7 @@ export class ActiveMatterEngine {
     const nonionicRatio = totalActiveSurfactants > 0 ? (nonionicActivePct / totalActiveSurfactants) * 100 : 0;
     const amphotericRatio = totalActiveSurfactants > 0 ? (amphotericActivePct / totalActiveSurfactants) * 100 : 0;
     const cationicRatio = totalActiveSurfactants > 0 ? (cationicActivePct / totalActiveSurfactants) * 100 : 0;
+    const conditionalRatio = totalActiveSurfactants > 0 ? (conditionalActivePct / totalActiveSurfactants) * 100 : 0;
 
     // Integrity warnings
     if (Math.abs(totalRawMatter - 100) > 0.5 && safeIngs.length > 0) {
@@ -727,12 +770,14 @@ export class ActiveMatterEngine {
         nonionicActivePct: Number(nonionicActivePct.toFixed(2)),
         amphotericActivePct: Number(amphotericActivePct.toFixed(2)),
         cationicActivePct: Number(cationicActivePct.toFixed(2)),
+        conditionalActivePct: Number(conditionalActivePct.toFixed(2)),
         totalActiveSurfactants: Number(totalActiveSurfactants.toFixed(2)),
         totalRawSurfactants: Number(totalRawSurfactants.toFixed(2)),
         anionicRatio: Number(anionicRatio.toFixed(1)),
         nonionicRatio: Number(nonionicRatio.toFixed(1)),
         amphotericRatio: Number(amphotericRatio.toFixed(1)),
-        cationicRatio: Number(cationicRatio.toFixed(1))
+        cationicRatio: Number(cationicRatio.toFixed(1)),
+        conditionalRatio: Number(conditionalRatio.toFixed(1))
       },
       waterBalance: {
         freeAddedWaterPct: Number(totalFreeWaterPct.toFixed(2)),

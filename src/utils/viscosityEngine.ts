@@ -470,23 +470,30 @@ export class ViscosityEngine {
         ? 0
         : (rawPct * resolution.activeMatterPct) / 100;
 
+      // Resolve pH-dependent surfactant species only from a valid formula pH.
+      // Acid-form LABSA/sarcosinate remains conditional when pH is unavailable;
+      // at pH >= 6 the audited sulfonate/carboxylate headgroups are predominantly anionic.
+      const effectiveSurfactantType = resolution.surfactantType === 'conditional'
+        ? (estimatedPH !== null && estimatedPH >= 6.0 ? 'anionic' : 'conditional')
+        : resolution.surfactantType;
+
       // Classify Surfactants
       if (resolution.isSurfactant) {
-        if (resolution.surfactantType === 'anionic') {
+        if (effectiveSurfactantType === 'anionic') {
           activeAnionicPct += activePct;
           if (name.includes('sles') || name.includes('laureth sulfate')) {
             activeSlesPct += activePct;
           } else if (name.includes('labsa') || name.includes('sulfonic') || name.includes('dodecylbenzene')) {
             activeLabsaPct += activePct;
           }
-        } else if (resolution.surfactantType === 'amphoteric') {
+        } else if (effectiveSurfactantType === 'amphoteric') {
           activeAmphotericPct += activePct;
-        } else if (resolution.surfactantType === 'nonionic') {
+        } else if (effectiveSurfactantType === 'nonionic') {
           activeNonionicPct += activePct;
           if (name.includes('cdea') || name.includes('cmea') || name.includes('cocamide') || name.includes('alkanolamide')) {
             alkanolamideActivePct += activePct;
           }
-        } else if (resolution.surfactantType === 'cationic') {
+        } else if (effectiveSurfactantType === 'cationic') {
           activeCationicPct += activePct;
         }
       }

@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { getIngredientChemistryCrosswalk, resolveIngredientChemistrySemantics, validateIngredientChemistryCrosswalk } from '../src/domain/ingredients/ingredientChemistrySemantics';
+import { resolveFunctionalRouting, validateFunctionalRoutingAgainstCatalog } from '../src/data/ingredientFunctionalRouting';
+import { evaluateIngredientSubstitution, getIngredientIntelligence, getIngredientIntelligenceCoverageReport, INGREDIENT_INTELLIGENCE_REGISTRY, INGREDIENT_INTERACTION_RULES } from '../src/utils/ingredientIntelligenceEngine';
+import { calculateComplexEcoScore, getIngredientCmcData } from '../src/utils/calculators';
+
+const rows = getIngredientChemistryCrosswalk();
+assert.equal(rows.length, 7, 'crosswalk must cover every current SSOT identity record');
+assert.deepEqual(validateIngredientChemistryCrosswalk(), []);
+assert.equal(resolveIngredientChemistrySemantics('sodium_hydroxide')?.acidBaseBehavior, 'STRONG_BASE');
+assert.equal(resolveIngredientChemistrySemantics('sodium_hydroxide')?.surfactantFunctionalClass, 'NOT_SURFACTANT');
+assert.equal(resolveIngredientChemistrySemantics('potassium_xylene_sulfonate')?.ionicSpeciesClass, 'ANIONIC');
+assert.equal(resolveIngredientChemistrySemantics('potassium_xylene_sulfonate')?.surfactantFunctionalClass, 'NOT_SURFACTANT');
+assert.equal(resolveIngredientChemistrySemantics('citric_acid')?.acidBaseBehavior, 'WEAK_ACID');
+assert.equal(resolveIngredientChemistrySemantics('sodium_bicarbonate')?.acidBaseBehavior, 'AMPHIPROTIC_BUFFER');
+assert.equal(resolveIngredientChemistrySemantics('labsa')?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT');
+assert.equal(resolveIngredientChemistrySemantics('labsa-90')?.ingredientId, 'labsa', 'commercial LABSA catalog IDs must resolve to the exact SSOT acid identity');
+assert.equal(resolveIngredientChemistrySemantics('labsa-96')?.ingredientId, 'labsa', 'commercial LABSA catalog IDs must resolve to the exact SSOT acid identity');
+assert.equal(resolveFunctionalRouting('labsa-90')?.chargeBehavior, 'FIXED_ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'FIXED_ANIONIC');
+assert.equal(resolveFunctionalRouting('sarcosinate-30')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC', 'sarcosinate retains carboxylate pH-dependent speciation');
+assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), [], 'all functional route IDs must resolve to catalog records with exact category and INCI');
+assert.equal(resolveIngredientChemistrySemantics('citric-acid')?.acidBaseBehavior, 'WEAK_ACID', 'static intelligence canonical alias must resolve through SSOT semantics');
+assert.equal(resolveIngredientChemistrySemantics('unknown-id'), null);
+assert.equal(getIngredientIntelligence('labsa')?.chemistrySemantics?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT', 'intelligence consumer must expose separate SSOT chemistry semantics');
+const labsaSlesSubstitution = evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID');
+assert.equal(labsaSlesSubstitution.tier, 'FUNCTIONAL_ALTERNATIVE', 'same resolved anionic family may be surfaced as a screening alternative, not as a drop-in equivalent');
+assert.notEqual(labsaSlesSubstitution.tier, 'DIRECT_EQUIVALENT', 'different LABSA and SLES chemical families must never be called direct equivalents');
+assert.match(labsaSlesSubstitution.reasoning, /formula validation remains separate|functional performance still requires formula validation/i, 'functional alternative must explicitly require formula-level validation');
+assert(Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).every(def => Object.values(def.grades).every(grade => grade.provenance !== 'VERIFIED_COMMERCIAL_GRADE')), 'no static grade may claim verified commercial-grade status without linked grade evidence');
+assert.equal(getIngredientIntelligenceCoverageReport().verifiedOrCommercialGrade, 0, 'source-backed metadata alone must not inflate verified grade count');
+assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'synergy-anionic-amphoteric')?.provenance, 'PREDICTED_INTERACTION', 'generic literature citation must not be represented as a pair-specific measurement');
+assert.equal(INGREDIENT_INTERACTION_RULES.find(rule => rule.interactionId === 'acid-hypochlorite-chlorine-gas')?.provenance, 'PREDICTED_INTERACTION', 'rule-based hazard must not be labelled as in-app measured interaction');
+assert.equal(getIngredientCmcData('SLES')?.dataProvenance, 'HEURISTIC_SCREENING', 'legacy SLES CMC alias must remain explicitly heuristic');
+assert.equal(getIngredientCmcData('SLS')?.dataProvenance, 'SOURCE_BACKED', 'curated SLS CMC source record must retain source-backed status');
+const weightedEco = calculateComplexEcoScore([
+  { name: 'Citric Acid', percentage: 50 } as any,
+  { name: 'SLES', percentage: 50 } as any
+]);
+assert.equal(weightedEco.plantBasedOverallPct, 65, 'plant-derived contribution must be mass-weighted once (50% × 100% + 50% × 30%), not double-counted by a threshold bonus');
+const ecoCardSource = readFileSync('src/components/analyzer/EcoImpactAssessmentCard.tsx', 'utf8');
+assert(ecoCardSource.includes('Eco-label screening (not certification)'), 'eco UI must not present heuristic screening as certification assessment');
+assert(ecoCardSource.includes('Potential — screening only'), 'positive eco screening must not be displayed as actual certification eligibility');
+assert(ecoCardSource.includes('cert.disclaimer'), 'eco UI must render each certification limitation');
+const rcCalculatorSource = readFileSync('src/components/RCCalculators.tsx', 'utf8');
+assert(rcCalculatorSource.includes('Active Matter Screening Calculator'), 'standalone active matter calculator must be labelled as screening');
+assert(rcCalculatorSource.includes('catalog defaults and user-entered purity are not supplier CoA or lot verification'), 'active matter UI must disclose that entered/catalog purity is not a supplier assay');
+assert.deepEqual(rows.filter(row => row.status === 'LEGACY_CHARGE_OVERLOADED').map(row => row.ingredientId).sort(), ['potassium_xylene_sulfonate','sodium_hydroxide']);
+assert.equal(rows.find(row => row.ingredientId === 'labsa')?.functionalRouteStatus, 'ROUTED', 'LABSA exact CAS+INCI identity must map to both commercial catalog grade IDs');
+assert(rows.filter(row => row.semantics.surfactantFunctionalClass === 'NOT_SURFACTANT').every(row => row.functionalRouteStatus === 'NOT_IN_SURFACTANT_ROUTER'), 'builders, acids, buffers and polymers outside the surfactant router must not be reported as missing surfactant routes');
+assert.equal(rows.filter(row => row.functionalRouteStatus === 'UNMAPPED').length, 0, 'no current SSOT surfactant identity should remain silently unmapped');
+console.log('INGREDIENT CHEMISTRY SEMANTICS CROSSWALK PASS');
+console.log(JSON.stringify(rows.map(row => ({ ingredientId: row.ingredientId, legacyChargeClass: row.legacyChargeClass, ionicSpeciesClass: row.semantics.ionicSpeciesClass, acidBaseBehavior: row.semantics.acidBaseBehavior, surfactantFunctionalClass: row.semantics.surfactantFunctionalClass, functionalRouteStatus: row.functionalRouteStatus, status: row.status })), null, 2));

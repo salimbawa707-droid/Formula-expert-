@@ -18,6 +18,7 @@ import { ScientificBadge } from "./scientific/ScientificComponents";
 import { Chemical, Formulation, FormulationIngredient } from "../types";
 import { CHEMICALS } from "../data/chemicals";
 import { getAllUniversalIngredients } from "../data/universalIngredientLibrary";
+import { resolveFormulaIntelligenceRouting, resolveFunctionalRoutingForIngredient, isIngredientSurfactantByRouting } from "../data/ingredientFunctionalRouting";
 import { normalizeProductCategory, ProductCategoryId } from "../domain/productTaxonomy";
 import { apiFetch } from "../services/apiBase";
 import {
@@ -47,7 +48,26 @@ import { HardnessResultOutput, CleaningResultOutput } from "../utils/orchestrato
 import { jsPDF } from "jspdf";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { isFeatureAllowed } from "../utils/featureGating";
+import { assessAiScientificValidation } from "../utils/aiScientificValidationPolicy";
 import SubscriptionPaywallModal from "./SubscriptionPaywallModal";
+
+const getFunctionalRouteForFormulaIngredient = (ing: any) => resolveFunctionalRoutingForIngredient({
+  id: ing?.id,
+  canonicalIngredientId: ing?.canonicalIngredientId,
+  ingredientId: ing?.ingredientId,
+  name: ing?.name
+});
+
+/** Route-first surfactant predicate shared by analyzer KPIs and eco screening.
+ * A governed BLOCKED/non-surfactant route overrides legacy role/HLB heuristics.
+ */
+export const isFormulaIngredientSurfactant = (ing: any): boolean =>
+  isIngredientSurfactantByRouting({
+    id: ing?.id,
+    canonicalIngredientId: ing?.canonicalIngredientId,
+    ingredientId: ing?.ingredientId,
+    name: ing?.name
+  }, ing?.role || ing?.category, ing?.hlbValue);
 
 // Modular sub-components
 import { ActiveFingerprintCard } from "./analyzer/ActiveFingerprintCard";
@@ -162,7 +182,7 @@ export const calculateFormulaHealthScore = (ph: number, analyzedIngs: any[], raw
   if (ph < 4 || ph > 12) phScore = 0;
 
   let balScore = 20;
-  const totalSurfactant = analyzedIngs.filter(i => i.role?.toLowerCase().includes("surfactant")).reduce((s, i) => s + i.percentage, 0);
+  const totalSurfactant = analyzedIngs.filter(isFormulaIngredientSurfactant).reduce((s, i) => s + i.percentage, 0);
   if (totalSurfactant > 30) balScore = 12;
   if (totalSurfactant < 3) balScore = 8;
 
@@ -421,7 +441,7 @@ function SmartFormulaAnalyzerProInner({
 
         const missingFields: string[] = [];
         if (!ing.hlbValue && (!dbChem || !dbChem.physicalProperties?.viscosity)) {
-          if (ing.role?.toLowerCase().includes("surfactant") && ing.hlbValue === undefined) {
+          if (isFormulaIngredientSurfactant(ing) && ing.hlbValue === undefined) {
             missingFields.push("HLB");
           }
         }
@@ -432,20 +452,23 @@ function SmartFormulaAnalyzerProInner({
         if (!dbChem || !dbChem.casNumber) missingFields.push("CAS Number");
         if (!dbChem || !dbChem.molecularWeight) missingFields.push("Molecular Weight");
 
-        const chargeType = dbChem 
+        const routeId = (ing as any).canonicalIngredientId || ing.id || dbChem?.id;
+        const resolvedRoute = resolveFunctionalRoutingForIngredient({ id: routeId, name: ing.name });
+        const functionalRoute = resolvedRoute ? resolveFormulaIntelligenceRouting(resolvedRoute.ingredientIds[0]) : null;
+        const chargeType = functionalRoute?.chargeLabel || (dbChem
           ? dbChem.category.toLowerCase().includes("anionic") ? "Anionic"
             : dbChem.category.toLowerCase().includes("cationic") ? "Cationic"
             : dbChem.category.toLowerCase().includes("amphoteric") || dbChem.category.toLowerCase().includes("betaine") ? "Amphoteric"
             : dbChem.category.toLowerCase().includes("non-ionic") || dbChem.category.toLowerCase().includes("nonionic") ? "Nonionic"
             : "Neutral / Auxiliary"
-          : "Neutral / Auxiliary";
+          : "Neutral / Auxiliary");
 
-        const chemicalFamily = dbChem
-          ? dbChem.category
-          : ing.role || "Auxiliary Component";
+        const chemicalFamily = functionalRoute?.familyLabel || (dbChem ? dbChem.category : ing.role || "Auxiliary Component");
 
         const fallbackHlb = dbChem?.hlb ? parseFloat(String(dbChem.hlb)) : undefined;
-        const finalHlbValue = (ing.hlbValue !== undefined && ing.hlbValue !== null) ? ing.hlbValue : fallbackHlb;
+        const finalHlbValue = functionalRoute && !functionalRoute.hlbEligible
+          ? undefined
+          : (ing.hlbValue !== undefined && ing.hlbValue !== null) ? ing.hlbValue : fallbackHlb;
 
         return {
           ...ing,
@@ -536,7 +559,11 @@ function SmartFormulaAnalyzerProInner({
         const cat = getAuditedIngredientCategory(ing.name);
         const freePct = freePercentages[ing.name] !== undefined ? freePercentages[ing.name] : (ing.percentage ?? 0);
 
-        if (cat.startsWith("Surfactants")) {
+        const routedForCategory = getFunctionalRouteForFormulaIngredient(ing);
+        const isSurfactantCategory = routedForCategory
+          ? isFormulaIngredientSurfactant(ing)
+          : cat.startsWith("Surfactants");
+        if (isSurfactantCategory) {
           surfactantPct += (ing.percentage ?? 0);
         } else if (cat === "Builders & Chelators") {
           if (freePercentages[ing.name] !== undefined) {
@@ -609,9 +636,7 @@ function SmartFormulaAnalyzerProInner({
 
       const ecoMetrics = calculateFormulationEcoMetrics(ingredients);
       const hasNonBiodegradableSurfactant = analyzedIngredients.some(ing => {
-        const isSurfactant = ing.role?.toLowerCase().includes("surfactant") || 
-                             ing.role?.toLowerCase().includes("detergent") || 
-                             ing.hlbValue !== null;
+        const isSurfactant = isFormulaIngredientSurfactant(ing);
         const metrics = getIngredientEcoMetrics(ing?.name || "");
         return isSurfactant && (ing.percentage ?? 0) > 0 && metrics.biodegradabilityPct < 60;
       });
@@ -646,6 +671,44 @@ function SmartFormulaAnalyzerProInner({
       const greenChelatorAnalysis = evaluateFormulationGreenChelators(analyzedIngredients);
 
       const healthScoreBreakdown = calculateLabHealthScore(analyzedIngredients as any);
+
+      // Evidence-gated scientific assessment. The analyzer has no attached supplier-lot
+      // COAs or matched held-out endpoint benchmark registry, so those claims stay false.
+      // Solver convergence is used only as the available charge-balance solver gate;
+      // it is not represented as laboratory measurement or supplier verification.
+      const formulaMassBalancePassed = orchestratorReport.massBalance?.isBalanced === true;
+      const chargeBalanceSolverPassed =
+        orchestratorReport.pHResult?.solverConverged === true &&
+        Number.isFinite(orchestratorReport.pHResult?.ph);
+      const formulaUnitsResolved = analyzedIngredients.every((ing: any) =>
+        typeof ing.percentage === 'number' && Number.isFinite(ing.percentage) &&
+        ing.percentage >= 0 && ing.percentage <= 100
+      );
+      const hasCriticalScientificBlocker = (orchestratorReport.blockingIssues || [])
+        .some((issue: any) => issue.severity === 'FATAL');
+      const pHDomainWarning = (orchestratorReport.pHResult?.warnings || [])
+        .some((warning: string) => /out of domain|outside (?:the )?(?:supported )?range|outside model domain/i.test(warning));
+      const aiScientificValidation = assessAiScientificValidation({
+        evidenceRoute: 'MISSING',
+        exactIdentityAndGrade: false,
+        matchedBenchmarkAvailable: false,
+        heldOutEvaluation: false,
+        sampleCount: 0,
+        benchmarkEndpointId: '',
+        benchmarkDomainId: '',
+        minimumSampleCount: 1,
+        maximumMae: 0,
+        maximumRmse: 0,
+        confidenceIntervalAvailable: false,
+        calibrationDemonstrated: false,
+        modelVersion: 'UNBENCHMARKED',
+        evaluationDate: '',
+        massBalancePassed: formulaMassBalancePassed,
+        chargeBalancePassed: chargeBalanceSolverPassed,
+        unitsResolved: formulaUnitsResolved,
+        outOfDomain: pHDomainWarning,
+        unresolvedCriticalGap: hasCriticalScientificBlocker
+      }, healthScoreBreakdown.finalScore);
       const aiGradeResult = orchestratorReport.aiGrade;
       const riskAnalysisWarnings = generateFormulationWarnings(analyzedIngredients as any);
 
@@ -708,6 +771,7 @@ function SmartFormulaAnalyzerProInner({
         compatibilityAlerts,
         mixingInstructions,
         healthScoreBreakdown,
+        aiScientificValidation,
         riskAnalysisWarnings,
         fingerprint,
         orchestratorReport
@@ -738,7 +802,10 @@ function SmartFormulaAnalyzerProInner({
     const hasSles = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("sles") && ing.percentage > 2);
     const hasLabsa = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("labsa") && ing.percentage > 2);
     const hasDefoamer = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("silicone") || (ing?.name || "").toLowerCase().includes("antifoam") || (ing?.name || "").toLowerCase().includes("defoamer"));
-    const hasNonionic = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("ethoxylate") || (ing?.name || "").toLowerCase().includes("lae") || (ing?.name || "").toLowerCase().includes("glucoside"));
+    const hasNonionic = analyzedIngs.some(ing => {
+      const route = getFunctionalRouteForFormulaIngredient(ing);
+      return route ? route.routingClass === "NONIONIC" : ((ing?.name || "").toLowerCase().includes("ethoxylate") || (ing?.name || "").toLowerCase().includes("lae") || (ing?.name || "").toLowerCase().includes("glucoside"));
+    });
     const hasPreservative = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("formalin") || (ing?.name || "").toLowerCase().includes("kathon") || (ing?.name || "").toLowerCase().includes("preservative"));
 
     if (hasDefoamer) foamHeight = "Zero";
@@ -794,10 +861,15 @@ function SmartFormulaAnalyzerProInner({
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
 
     let surfactantSystem = "Anionic Base";
-    const hasAmphoteric = surfPct > 0 && safeIngs.some(i => (i?.name || "").toLowerCase().includes("capb"));
-    const hasNonionic = surfPct > 0 && safeIngs.some(i => (i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+    const hasAmphoteric = surfPct > 0 && safeIngs.some(i => getFunctionalRouteForFormulaIngredient(i)?.chargeBehavior === "ZWITTERIONIC");
+    const hasConditionalAmineOxide = surfPct > 0 && safeIngs.some(i => getFunctionalRouteForFormulaIngredient(i)?.chargeBehavior === "PH_DEPENDENT_AMINE_OXIDE");
+    const hasNonionic = surfPct > 0 && safeIngs.some(i => {
+      const route = getFunctionalRouteForFormulaIngredient(i);
+      return route ? route.routingClass === "NONIONIC" : ((i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+    });
     if (hasAmphoteric && hasNonionic) surfactantSystem = "Triple Synergy (Anionic + Amphoteric + Nonionic)";
     else if (hasAmphoteric) surfactantSystem = "Mild Blend (Anionic + Amphoteric)";
+    if (hasConditionalAmineOxide) surfactantSystem += " + pH-dependent amine oxide";
 
     let builderSystem = "Mineral Builders";
     const hasOrganicChelator = safeIngs.some(i => (i?.name || "").toLowerCase().includes("gluconate") || (i?.name || "").toLowerCase().includes("citrate") || (i?.name || "").toLowerCase().includes("glda"));
@@ -805,17 +877,13 @@ function SmartFormulaAnalyzerProInner({
 
     let ecoLevel = "Standard Chemical";
     const hasNonBiodegradableSurfactant = safeIngs.some(ing => {
-      const isSurfactant = (ing?.role || "").toLowerCase().includes("surfactant") || 
-                           (ing?.role || "").toLowerCase().includes("detergent") || 
-                           (ing?.hlbValue !== undefined && ing?.hlbValue !== null);
+      const isSurfactant = isFormulaIngredientSurfactant(ing);
       const metrics = getIngredientEcoMetrics(ing?.name || "");
       return isSurfactant && (ing?.percentage || 0) > 0 && metrics.biodegradabilityPct < 60;
     });
 
     const activeSurfactants = safeIngs.filter(ing => {
-      const isSurfactant = (ing?.role || "").toLowerCase().includes("surfactant") || 
-                           (ing?.role || "").toLowerCase().includes("detergent") || 
-                           (ing?.hlbValue !== undefined && ing?.hlbValue !== null);
+      const isSurfactant = isFormulaIngredientSurfactant(ing);
       return isSurfactant && (ing?.percentage || 0) > 0;
     });
 
@@ -904,15 +972,22 @@ function SmartFormulaAnalyzerProInner({
         content = "Analyzes the combined classes of surfactants used in the formulation. Synergistic blending of different charge groups reduces skin irritation, improves cleansing capability, and stabilizes micro-emulsions.";
         formulaUsed = "Classification Logic:\n• Triple Synergy: Contains Anionic + Amphoteric + Nonionic surfactants.\n• Mild Blend: Contains Anionic + Amphoteric surfactants.\n• Anionic Base: Only Anionic surfactants detected.";
         if (analysisResult) {
-          const hasAmphoteric = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => (i?.name || "").toLowerCase().includes("capb"));
-          const hasNonionic = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => (i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+          const hasAmphoteric = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => getFunctionalRouteForFormulaIngredient(i)?.chargeBehavior === "ZWITTERIONIC");
+          const hasNonionic = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => {
+            const route = getFunctionalRouteForFormulaIngredient(i);
+            return route ? route.routingClass === "NONIONIC" : ((i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+          });
           
           const list: string[] = [];
           analysisResult.ingredients.forEach((i: any) => {
             const role = i.role || "";
-            const isSurfactant = role.toLowerCase().includes("surfactant") || role.toLowerCase().includes("detergent") || (i.hlbValue !== undefined && i.hlbValue !== null);
+            const route = getFunctionalRouteForFormulaIngredient(i);
+            const isSurfactant = route
+              ? route.role !== "IDENTITY_UNRESOLVED" && route.role !== "POLYMERIC_DISPERSANT"
+              : role.toLowerCase().includes("surfactant") || role.toLowerCase().includes("detergent") || (i.hlbValue !== undefined && i.hlbValue !== null);
             if (isSurfactant && (i.percentage || 0) > 0) {
-              const charge = (i as any).chargeType || "Non-ionic/Unknown";
+              const routeLabel = route ? resolveFormulaIntelligenceRouting(route.ingredientIds[0])?.chargeLabel : undefined;
+              const charge = routeLabel || (i as any).chargeType || "Non-ionic/Unknown";
               list.push(`• ${i.name || "Unknown Component"} (${i.percentage}%): ${charge}`);
             }
           });
@@ -955,9 +1030,12 @@ function SmartFormulaAnalyzerProInner({
           analysisResult.ingredients.forEach((ing: any) => {
             if ((ing.percentage || 0) <= 0) return;
             const metrics = getIngredientEcoMetrics(ing.name || "");
-            const isSurfactant = ing.role?.toLowerCase().includes("surfactant") || 
-                                 ing.role?.toLowerCase().includes("detergent") || 
-                                 (ing.hlbValue !== undefined && ing.hlbValue !== null);
+            const route = getFunctionalRouteForFormulaIngredient(ing);
+            const isSurfactant = route
+              ? route.role !== "IDENTITY_UNRESOLVED" && route.role !== "POLYMERIC_DISPERSANT"
+              : ing.role?.toLowerCase().includes("surfactant") ||
+                ing.role?.toLowerCase().includes("detergent") ||
+                (ing.hlbValue !== undefined && ing.hlbValue !== null);
             
             if (metrics.biodegradabilityPct < 60 && !metrics.isMineralOrWater) {
               if (isSurfactant) {
@@ -1086,7 +1164,7 @@ function SmartFormulaAnalyzerProInner({
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
-      doc.text(`Chemical Laboratory Diagnostic R&D Report`, 14, 28);
+      doc.text(`AI Scientific Screening & R&D Report`, 14, 28);
       doc.text(`Formula Name: ${formulaName || "Custom Sandbox"} | Product: ${productType} | Grade: ${grade}`, 14, 35);
       
       doc.setFontSize(8);
@@ -1105,42 +1183,45 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`• Surfactant System: ${analysisResult.fingerprint.surfactantSystem}`, 14, 75);
       doc.text(`• Builder System: ${analysisResult.fingerprint.builderSystem}`, 14, 81);
       doc.text(`• Eco/Carbon Level: ${analysisResult.fingerprint.ecoLevel} (Carbon: ${analysisResult.carbonFootprint})`, 14, 87);
+      doc.text(`• AI evidence gate: ${analysisResult.aiScientificValidation?.userLabel || "Not assessed"} | Score: ${analysisResult.aiScientificValidation?.score ?? "BLOCKED"}`, 14, 93);
+      doc.setFontSize(7);
+      doc.text("AI-based scientific validation; not a laboratory test or supplier lot certificate. Confirm critical properties on the actual raw-material lot and finished formula.", 14, 98, { maxWidth: 180 });
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("2. Scientific Calculations Summary", 14, 98);
+      doc.text("2. Scientific Calculations Summary", 14, 110);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`• Total Active Surfactant Matter: ${analysisResult.totalActiveMatter}%`, 14, 106);
-      doc.text(`• Estimated pH: ${analysisResult.estpH} (Advanced pHEngine Solver)`, 14, 112);
-      doc.text(`• Hydrophilic-Lipophilic Balance (Griffin HLB): ${analysisResult.estHlb !== null ? analysisResult.estHlb : "N/A"}`, 14, 118);
-      doc.text(`• Biodegradability Score (OECD 301): ${analysisResult.ecoMetrics.biodegradabilityPct}%`, 14, 124);
-      doc.text(`• Bio-Based Plant-Sourced Carbon: ${analysisResult.ecoMetrics.plantBasedPct}%`, 14, 130);
+      doc.text(`• Total Active Surfactant Matter: ${analysisResult.totalActiveMatter}%`, 14, 118);
+      doc.text(`• Estimated pH: ${analysisResult.estpH} (Advanced pHEngine Solver)`, 14, 124);
+      doc.text(`• Hydrophilic-Lipophilic Balance (Griffin HLB): ${analysisResult.estHlb !== null ? analysisResult.estHlb : "N/A"}`, 14, 130);
+      doc.text(`• Biodegradability Score (OECD 301): ${analysisResult.ecoMetrics.biodegradabilityPct}%`, 14, 136);
+      doc.text(`• Bio-Based Plant-Sourced Carbon: ${analysisResult.ecoMetrics.plantBasedPct}%`, 14, 142);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("3. Financial Analysis & Pricing Matrix", 14, 142);
+      doc.text("3. Financial Analysis & Pricing Matrix", 14, 154);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`• Raw Material Cost/kg: INR ${safeNum(analysisResult?.costing?.rawMaterialCost, 2)}`, 14, 150);
-      doc.text(`• Factory Overhead Cost/kg (${overheadPct}%): INR ${safeNum(analysisResult?.costing?.manufacturingCost, 2)}`, 14, 156);
-      doc.text(`• Suggest Wholesale Price: INR ${safeNum(analysisResult?.costing?.suggestedWholesale, 2)}`, 14, 162);
-      doc.text(`• Suggest Distributor Price: INR ${safeNum(analysisResult?.costing?.suggestedDistributor, 2)}`, 14, 168);
-      doc.text(`• Suggest Retail Price: INR ${safeNum(analysisResult?.costing?.suggestedRetail, 2)}`, 14, 174);
-      doc.text(`• Suggest MRP (incl. 18% GST): INR ${safeNum(analysisResult?.costing?.suggestedMRP, 2)}`, 14, 180);
+      doc.text(`• Raw Material Cost/kg: INR ${safeNum(analysisResult?.costing?.rawMaterialCost, 2)}`, 14, 162);
+      doc.text(`• Factory Overhead Cost/kg (${overheadPct}%): INR ${safeNum(analysisResult?.costing?.manufacturingCost, 2)}`, 14, 168);
+      doc.text(`• Suggest Wholesale Price: INR ${safeNum(analysisResult?.costing?.suggestedWholesale, 2)}`, 14, 174);
+      doc.text(`• Suggest Distributor Price: INR ${safeNum(analysisResult?.costing?.suggestedDistributor, 2)}`, 14, 180);
+      doc.text(`• Suggest Retail Price: INR ${safeNum(analysisResult?.costing?.suggestedRetail, 2)}`, 14, 186);
+      doc.text(`• Suggest MRP (incl. 18% GST): INR ${safeNum(analysisResult?.costing?.suggestedMRP, 2)}`, 14, 192);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("4. Formulation Pairwise Compatibility Alerts", 14, 192);
+      doc.text("4. Formulation Pairwise Compatibility Alerts", 14, 204);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       if (analysisResult.compatibilityAlerts.length === 0) {
-        doc.text("✓ Complete chemical compatibility verified. No warning flags raised.", 14, 200);
+        doc.text("✓ No compatibility warning flags raised; this is screening, not complete verification.", 14, 212);
       } else {
-        let y = 200;
+        let y = 212;
         analysisResult.compatibilityAlerts.slice(0, 3).forEach((alert: any) => {
           doc.text(`[${alert.severity}] ${alert.description} - Reason: ${alert.reason.slice(0, 60)}...`, 14, y);
           y += 6;
@@ -1152,7 +1233,7 @@ function SmartFormulaAnalyzerProInner({
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      doc.text("VALIDATED SCIENTIFIC LITERATURE REFERENCES:", 14, 268);
+      doc.text("REFERENCE & METHOD NOTES — NOT LOT OR LAB VALIDATION:", 14, 268);
       doc.setFont("helvetica", "normal");
       doc.text("• Surfactant HLB Blend: Griffin W.C. Calculation Method (1949/1954). Journal of the Society of Cosmetic Chemists.", 14, 274);
       doc.text("• Biodegradability: OECD 301 Protocols for Aerobic Aqueous Chemical Decomposition Standard.", 14, 280);
@@ -1403,6 +1484,46 @@ function SmartFormulaAnalyzerProInner({
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.completenessScore}/10</span>
           </div>
         </div>
+      </div>
+
+      {/* AI SCIENTIFIC VALIDATION — evidence-gated production assessment */}
+      <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm space-y-3" data-testid="ai-scientific-validation-panel">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <ShieldAlert size={14} className="text-amber-600" /> AI Scientific Validation & Evidence Gate
+          </h4>
+          <span className="text-[10px] font-bold rounded-full px-2 py-1 bg-amber-50 text-amber-800">
+            {analysisResult.aiScientificValidation?.userLabel || "Assessment unavailable"}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="text-[10px] uppercase text-slate-500 font-bold">Evidence-gated screening score</div>
+            <div className="text-xl font-black text-slate-900 mt-1">
+              {analysisResult.aiScientificValidation?.score ?? "BLOCKED"}
+              {analysisResult.aiScientificValidation?.score !== null && analysisResult.aiScientificValidation?.score !== undefined ? "/100 max" : ""}
+            </div>
+            <div className="text-[10px] text-slate-500 mt-1">Evidence cap: {analysisResult.aiScientificValidation?.maximumScore ?? "Blocked"} / 100; not accuracy</div>
+          </div>
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="text-[10px] uppercase text-slate-500 font-bold">Endpoint benchmark</div>
+            <div className="font-bold mt-1">{analysisResult.aiScientificValidation?.endpointBenchmarkQualified ? "Qualified" : "Not established"}</div>
+            <div className="text-[10px] text-slate-500 mt-1">Matched held-out benchmark evidence</div>
+          </div>
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="text-[10px] uppercase text-slate-500 font-bold">Supplier lot verification</div>
+            <div className="font-bold mt-1">{analysisResult.aiScientificValidation?.supplierLotVerified ? "Verified by COA" : "Not verified"}</div>
+            <div className="text-[10px] text-slate-500 mt-1">Exact lot-specific supplier evidence</div>
+          </div>
+        </div>
+        <p className="text-[11px] text-slate-700">{analysisResult.aiScientificValidation?.requiredDisclosure}</p>
+        {(analysisResult.aiScientificValidation?.reasons || []).length > 0 && (
+          <ul className="list-disc pl-5 space-y-1 text-[10px] text-slate-600">
+            {analysisResult.aiScientificValidation.reasons.map((reason: string, index: number) => (
+              <li key={index}>{reason}</li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* MISSING DATA DETECTOR */}
@@ -1686,14 +1807,14 @@ function SmartFormulaAnalyzerProInner({
       {/* EXPORT CENTER & BIBLIOGRAPHY */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-          <FileText size={14} className="text-teal-600" /> Professional Laboratory Export Center & References
+          <FileText size={14} className="text-teal-600" /> Scientific Screening Export & References
         </h4>
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={triggerPdfExport}
             className="bg-[#0f766e] hover:bg-[#0d645c] text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Download size={13} /> Export Laboratory PDF Report
+            <Download size={13} /> Export Scientific Screening PDF
           </button>
           <button
             onClick={triggerCsvExport}

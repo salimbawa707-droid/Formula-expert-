@@ -128,6 +128,15 @@ export function runP1Phase8IngredientIntelligenceTestSuite(): { total: number; p
   ];
   const clashFindings = traceCompatibilityReasoning(clashFormula, 'LAUNDRY_LIQUID');
   assert('10. Detects opposite-charge anionic-cationic compatibility conflict', clashFindings.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), true, true);
+  const labsaCationicFormula: FormulationIngredient[] = [
+    { name: 'LABSA 96%', activeMatterPct: 96, category: 'Anionic Surfactant', percentage: 10 },
+    { name: 'Quaternized Softener Active', activeMatterPct: 80, category: 'Cationic Surfactant', percentage: 5 }
+  ];
+  const labsaNoPHFindings = traceCompatibilityReasoning(labsaCationicFormula, 'LAUNDRY_LIQUID');
+  assert('10a. Strong-acid LABSA is fixed-anionic and flags a cationic clash without needing formula pH', labsaNoPHFindings.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), true, true);
+  assert('10b. Strong-acid LABSA does not emit a pH-dependent speciation warning', !labsaNoPHFindings.some(f => f.findingCode === 'ERR_PH_DEPENDENT_CHARGE_UNRESOLVED'), true, true);
+  const labsaPH7Findings = traceCompatibilityReasoning(labsaCationicFormula, 'LAUNDRY_LIQUID', 7.0);
+  assert('10c. LABSA at measured pH 7 resolves as anionic for charge-clash screening', labsaPH7Findings.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), true, true);
 
   const acidBleachFormula: FormulationIngredient[] = [
     { name: 'Hydrochloric Acid 35%', category: 'Acid Slurry', percentage: 15 },
@@ -154,7 +163,7 @@ export function runP1Phase8IngredientIntelligenceTestSuite(): { total: number; p
   assert('15. SLES substituting SLES classified as DIRECT_EQUIVALENT with >90 score', directSub.tier === 'DIRECT_EQUIVALENT' && directSub.matchScore >= 90, true, true);
 
   const functionalSub = evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID');
-  assert('16. LABSA substituting SLES classified as FUNCTIONAL_ALTERNATIVE with high score', functionalSub.tier === 'FUNCTIONAL_ALTERNATIVE' && functionalSub.matchScore >= 70, true, true);
+  assert('16. LABSA and SLES are functional alternatives, not direct equivalents; formula validation remains required', functionalSub.tier === 'FUNCTIONAL_ALTERNATIVE' && functionalSub.matchScore === 75 && functionalSub.reasoning.includes('functional performance still requires formula validation'), true, true);
 
   const badSub = evaluateIngredientSubstitution('labsa', 'labsa', 'FABRIC_SOFTENER');
   assert('17. LABSA substituted into FABRIC_SOFTENER flagged as NOT_SCIENTIFICALLY_EQUIVALENT', badSub.tier === 'NOT_SCIENTIFICALLY_EQUIVALENT' && badSub.matchScore <= 15, true, true);

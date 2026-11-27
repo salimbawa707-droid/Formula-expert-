@@ -141,6 +141,9 @@ export function runCompatibilityTestSuite(): { passed: number; failed: number; r
   assertNear('Ionic Incompatibility', 'Anionic + Cationic interaction penalty (-30)', resIncompatible.compatibilityScore, 70);
   assertEqual('Ionic Incompatibility', 'Incompatible status flag', resIncompatible.compatible, false);
   assertEqual('Ionic Incompatibility', 'Interaction hazard alert present', resIncompatible.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), true);
+  const resIncompatibleNoPH = calculateFormulationCompatibility(formulaIncompatible as any);
+  assertEqual('Ionic Incompatibility', 'Strong-acid LABSA remains fixed-anionic without a formula-pH input', resIncompatibleNoPH.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), true);
+  assertEqual('Ionic Incompatibility', 'Fixed-anionic LABSA plus cationic active is classified as known incompatible without requiring pH to establish charge', resIncompatibleNoPH.evidenceStatus, 'KNOWN_INCOMPATIBLE');
 
   // 5. Zero-Percent Cationic Surfactant Safety
   const formulaZeroCationic = [

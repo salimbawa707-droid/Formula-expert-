@@ -17,6 +17,8 @@
 
 import { ProductCategoryId, normalizeProductCategory, getProductCategoryLabel } from '../domain/productTaxonomy';
 import { FormulationIngredient } from '../types';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
+import { resolveIngredientChemistrySemantics, type IngredientChemistrySemantics } from '../domain/ingredients/ingredientChemistrySemantics';
 
 // =============================================================================
 // TYPINGS & STRUCTS
@@ -188,6 +190,8 @@ export interface IngredientDefinition {
   primaryFunctionalRole: string;
   supportedRoles: string[];
   chargeProfile: IngredientChargeProfile;
+  /** Explicit chemistry semantics from identity SSOT; separate from legacy chargeProfile. */
+  chemistrySemantics?: IngredientChemistrySemantics;
   grades: Record<string, IngredientGradeProfile>;
   categoryApplicability: Record<ProductCategoryId, {
     status: ApplicabilityStatus;
@@ -302,7 +306,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'SLURRY',
         densityGmL: 1.06,
         hydrationState: 'PURE_CHEMICAL',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -315,7 +319,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'SLURRY',
         densityGmL: 1.05,
         hydrationState: 'PURE_CHEMICAL',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -382,7 +386,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'PASTE',
         densityGmL: 1.11,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -395,7 +399,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.04,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -462,7 +466,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.05,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -528,7 +532,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.05,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -541,7 +545,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'POWDER',
         densityGmL: 0.55,
         hydrationState: 'ANHYDROUS',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -606,7 +610,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.30,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -619,7 +623,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'POWDER',
         densityGmL: 0.75,
         hydrationState: 'ANHYDROUS',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -683,7 +687,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'GRANULAR',
         densityGmL: 1.54,
         hydrationState: 'HYDRATED',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -747,7 +751,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'GRANULAR',
         densityGmL: 1.0,
         hydrationState: 'ANHYDROUS',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -812,7 +816,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'PASTE',
         densityGmL: 0.96,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -910,8 +914,8 @@ export const INGREDIENT_INTERACTION_RULES: InteractionRule[] = [
     relationship: 'Mixed Micellar Synergy',
     expectedEffects: ['Viscosity Build', 'Reduced Critical Micelle Concentration (CMC)', 'Enhanced Foam Persistence'],
     severity: 'INFO',
-    provenance: 'MEASURED_INTERACTION',
-    sourceReference: 'Schramm: Surfactant Applications (2000)'
+    provenance: 'PREDICTED_INTERACTION',
+    sourceReference: 'Schramm: Surfactant Applications (2000) — qualitative literature context; pair-specific measurement not established'
   },
   {
     interactionId: 'acid-carbonate-hazard',
@@ -920,7 +924,8 @@ export const INGREDIENT_INTERACTION_RULES: InteractionRule[] = [
     relationship: 'Rapid Neutralization',
     expectedEffects: ['Extreme Exothermic Reaction', 'CO2 Gas Release / Foaming'],
     severity: 'MAJOR',
-    provenance: 'MEASURED_INTERACTION'
+    provenance: 'PREDICTED_INTERACTION',
+    sourceReference: 'Established acid-carbonate neutralization chemistry; formula-specific kinetics not measured'
   },
   {
     interactionId: 'acid-hypochlorite-chlorine-gas',
@@ -929,8 +934,8 @@ export const INGREDIENT_INTERACTION_RULES: InteractionRule[] = [
     relationship: 'Acidic Oxidation Mismatch',
     expectedEffects: ['Rapid Liberation of Lethal Chlorine Gas (Cl2)'],
     severity: 'FATAL',
-    provenance: 'MEASURED_INTERACTION',
-    sourceReference: 'OSHA / NIOSH Hazard Communication (Chemical Incompatibility)'
+    provenance: 'PREDICTED_INTERACTION',
+    sourceReference: 'OSHA / NIOSH hazard guidance — established incompatibility; no in-app experiment claimed'
   }
 ];
 
@@ -948,11 +953,13 @@ export function getIngredientIntelligence(query: string): IngredientDefinition |
 
   // 1. Direct key match
   if (INGREDIENT_INTELLIGENCE_REGISTRY[q]) {
-    return INGREDIENT_INTELLIGENCE_REGISTRY[q];
+    const definition = INGREDIENT_INTELLIGENCE_REGISTRY[q];
+    const chemistrySemantics = resolveIngredientChemistrySemantics(definition.canonicalId);
+    return chemistrySemantics ? { ...definition, chemistrySemantics } : definition;
   }
 
   // 2. Canonical / Alias / Display match
-  return Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).find(def => {
+  const match = Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).find(def => {
     if (def.canonicalId.toLowerCase() === q) return true;
     if (def.displayName.toLowerCase() === q) return true;
     if (def.inciName && def.inciName.toLowerCase() === q) return true;
@@ -966,6 +973,9 @@ export function getIngredientIntelligence(query: string): IngredientDefinition |
 
     return false;
   });
+  if (!match) return undefined;
+  const chemistrySemantics = resolveIngredientChemistrySemantics(match.canonicalId);
+  return chemistrySemantics ? { ...match, chemistrySemantics } : match;
 }
 
 /**
@@ -975,9 +985,10 @@ export function getIngredientIntelligenceCoverageReport() {
   const allRecords = Object.values(INGREDIENT_INTELLIGENCE_REGISTRY);
   const total = allRecords.length;
 
-  const verifiedCount = allRecords.filter(r => 
-    r.provenanceStatus === 'VERIFIED' || 
-    r.provenanceStatus === 'SOURCE_BACKED' || 
+  // Source metadata is not equivalent to verification. Keep the counts separate:
+  // a generic source-backed profile does not establish a particular supplier grade or lot.
+  const verifiedCount = allRecords.filter(r =>
+    r.provenanceStatus === 'VERIFIED' ||
     Object.values(r.grades).some(g => g.provenance === 'VERIFIED_COMMERCIAL_GRADE')
   ).length;
 
@@ -1057,8 +1068,10 @@ export function evaluateIngredientDataQuality(ing: FormulationIngredient): {
  */
 export function traceCompatibilityReasoning(
   ingredients: FormulationIngredient[],
-  category: ProductCategoryId
+  category: ProductCategoryId,
+  estimatedPH?: number
 ): TraceableCompatibilityFinding[] {
+  const hasResolvedAnionicPH = typeof estimatedPH === 'number' && Number.isFinite(estimatedPH) && estimatedPH >= 6.0 && estimatedPH <= 14;
   const findings: TraceableCompatibilityFinding[] = [];
   const normCatRaw = normalizeProductCategory(category);
   if (normCatRaw === 'UNKNOWN_PRODUCT_CATEGORY') {
@@ -1079,16 +1092,84 @@ export function traceCompatibilityReasoning(
   }
   const normCat: ProductCategoryId = normCatRaw;
 
+  // Unresolved governed identities block a clean compatibility verdict. Do not let
+  // a display-name/category heuristic silently replace the missing identity evidence.
+  ingredients.forEach((ingredient, index) => {
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ingredient as any).id,
+      canonicalIngredientId: (ingredient as any).canonicalIngredientId,
+      ingredientId: (ingredient as any).ingredientId,
+      name: ingredient.name
+    });
+    if (route?.role === 'IDENTITY_UNRESOLVED') {
+      findings.push({
+        id: `compat-identity-unresolved-${index}-${Date.now()}`,
+        findingCode: 'ERR_INGREDIENT_IDENTITY_UNRESOLVED',
+        severity: 'FATAL',
+        title: 'Ingredient Identity Unresolved',
+        message: `Ingredient '${ingredient.name}' has a governed identity conflict; compatibility and property-model routing are blocked until exact identity and composition are established.`,
+        ingredientsInvolved: [ingredient.name],
+        relationship: 'Unresolved Ingredient Identity',
+        categoryContext: normCat,
+        activationCondition: 'Catalog identity route is BLOCKED',
+        downstreamPropertyAffected: 'Compatibility, charge classification and formula validity',
+        provenance: 'PREDICTED_INTERACTION'
+      });
+    }
+  });
+
   // A. Surfactant-Surfactant Compatibility Review
   const hasAnionic = ingredients.some(i => {
     const c = (i.category || i.role || '').toUpperCase();
-    return c.includes('ANIONIC') || i.name.toLowerCase().includes('labsa') || i.name.toLowerCase().includes('sles') || i.name.toLowerCase().includes('aos');
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (i as any).id,
+      canonicalIngredientId: (i as any).canonicalIngredientId,
+      ingredientId: (i as any).ingredientId,
+      name: i.name
+    });
+    if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+    if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return hasResolvedAnionicPH;
+    return route
+      ? route.routingClass === 'ANIONIC'
+      : c.includes('ANIONIC') || i.name.toLowerCase().includes('sles') || i.name.toLowerCase().includes('aos');
   });
 
   const hasCationic = ingredients.some(i => {
     const c = (i.category || i.role || '').toUpperCase();
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (i as any).id,
+      canonicalIngredientId: (i as any).canonicalIngredientId,
+      ingredientId: (i as any).ingredientId,
+      name: i.name
+    });
+    if (route) return false; // Current governed overlay contains no cationic identities; never infer cationic from a routed non-cationic record.
     return c.includes('CATIONIC') || i.name.toLowerCase().includes('soft') || i.name.toLowerCase().includes('quat') || i.name.toLowerCase().includes('esterquat');
   });
+
+  const hasUnresolvedPHDependentAnionic = !hasResolvedAnionicPH && ingredients.some(i => {
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (i as any).id,
+      canonicalIngredientId: (i as any).canonicalIngredientId,
+      ingredientId: (i as any).ingredientId,
+      name: i.name
+    });
+    return route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
+  });
+  if (hasUnresolvedPHDependentAnionic && hasCationic) {
+    findings.push({
+      id: `compat-ph-dependent-anionic-unresolved-${normCat}-${Date.now()}`,
+      findingCode: 'ERR_PH_DEPENDENT_CHARGE_UNRESOLVED',
+      severity: 'MAJOR',
+      title: 'pH-Dependent Anionic Speciation Unresolved',
+      message: 'A pH-dependent sarcosinate and cationic active are present, but final-formula pH is missing or below the conservative pH >= 6 screening threshold. The engine cannot assert a fixed-charge precipitation event or declare compatibility.',
+      ingredientsInvolved: ['pH-dependent anionic surfactant', 'Cationic surfactant'],
+      relationship: 'Unresolved acid-base speciation',
+      categoryContext: normCat,
+      activationCondition: 'Supply measured or validated final-formula pH and verify exact-grade compatibility.',
+      downstreamPropertyAffected: 'Ionic compatibility and phase stability',
+      provenance: 'PREDICTED_INTERACTION'
+    });
+  }
 
   if (hasAnionic && hasCationic) {
     findings.push({
@@ -1127,7 +1208,7 @@ export function traceCompatibilityReasoning(
       categoryContext: normCat,
       activationCondition: 'Formulation pH drops below 5.0 in the presence of hypochlorite',
       downstreamPropertyAffected: 'Laboratory occupant safety and chemical stability',
-      provenance: 'MEASURED_INTERACTION'
+      provenance: 'PREDICTED_INTERACTION'
     });
   }
 
@@ -1206,7 +1287,31 @@ export function evaluateIngredientSubstitution(
   }
 
   const isSameFamily = source.chemicalFamily === target.chemicalFamily;
-  const isSameCharge = source.chargeProfile.chargeClass === target.chargeProfile.chargeClass;
+  const resolveComparableCharge = (definition: IngredientDefinition): string | null => {
+    const route = resolveFunctionalRoutingForIngredient({
+      canonicalIngredientId: definition.canonicalId,
+      name: definition.displayName
+    });
+    if (route?.routingClass === 'BLOCKED' || route?.chargeBehavior === 'UNRESOLVED') return null;
+    if (route?.chargeBehavior === 'FIXED_ANIONIC') return 'ANIONIC';
+    if (route?.chargeBehavior === 'ZWITTERIONIC') return 'ZWITTERIONIC';
+    if (route?.chargeBehavior === 'NEUTRAL_NONIONIC') return 'NONIONIC';
+    // pH-dependent families cannot be reduced to one fixed charge without formula pH/speciation.
+    if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC' || route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return null;
+
+    const semantics = definition.chemistrySemantics;
+    if (!semantics) return null;
+    if (semantics.surfactantFunctionalClass === 'UNRESOLVED') return null;
+    if (semantics.ionicSpeciesClass === 'ANIONIC' || semantics.ionicSpeciesClass === 'CATIONIC' ||
+        semantics.ionicSpeciesClass === 'NONIONIC' || semantics.ionicSpeciesClass === 'ZWITTERIONIC') {
+      return semantics.ionicSpeciesClass;
+    }
+    return null;
+  };
+  const sourceCharge = resolveComparableCharge(source);
+  const targetCharge = resolveComparableCharge(target);
+  const isSameCharge = sourceCharge !== null && targetCharge !== null && sourceCharge === targetCharge;
+  const chargeComparisonAvailable = sourceCharge !== null && targetCharge !== null;
   const targetAppStatus = target.categoryApplicability[normCat]?.status || 'UNKNOWN';
 
   let tier: SubstitutionTier = 'NOT_SCIENTIFICALLY_EQUIVALENT';
@@ -1217,18 +1322,22 @@ export function evaluateIngredientSubstitution(
     tier = 'NOT_SCIENTIFICALLY_EQUIVALENT';
     matchScore = 10;
     reasoning = `Substitution is highly discouraged. Target ingredient '${target.displayName}' is explicitly flagged as NOT_APPLICABLE for category ${getProductCategoryLabel(normCat)}.`;
+  } else if (!chargeComparisonAvailable) {
+    tier = 'INSUFFICIENT_DATA';
+    matchScore = 0;
+    reasoning = `Substitution charge/functional-class comparison is unavailable for '${source.displayName}' or '${target.displayName}'. Legacy chargeProfile labels are not used as a fallback because they may conflate ionic species, acid/base behaviour and surfactant function. Resolve exact identity, route or formula-pH-dependent speciation before ranking this substitution.`;
   } else if (isSameFamily && isSameCharge) {
     tier = 'DIRECT_EQUIVALENT';
     matchScore = 95;
-    reasoning = `Target ingredient '${target.displayName}' is a direct chemical family equivalent of '${source.displayName}' with identical charge and role compatibility.`;
+    reasoning = `Target ingredient '${target.displayName}' is a direct chemical family equivalent of '${source.displayName}' with matching resolved charge behaviour; grade and formula validation remain separate.`;
   } else if (isSameCharge) {
     tier = 'FUNCTIONAL_ALTERNATIVE';
     matchScore = 75;
-    reasoning = `Target '${target.displayName}' shares the same charge class and can perform a similar surfactant/builder role, but is from a different chemical family (${target.chemicalFamily} vs ${source.chemicalFamily}).`;
+    reasoning = `Target '${target.displayName}' shares resolved charge behaviour with '${source.displayName}' but is from a different chemical family (${target.chemicalFamily} vs ${source.chemicalFamily}); functional performance still requires formula validation.`;
   } else {
     tier = 'CONDITIONAL_ALTERNATIVE';
     matchScore = 40;
-    reasoning = `Target belongs to a different charge class and chemical family. Substitution requires restructuring the entire formula buffer and compatibility pairs.`;
+    reasoning = `Target has a different resolved charge behaviour or chemical family. Substitution requires full formula buffer and compatibility-pair reassessment.`;
   }
 
   const sGrade = Object.values(source.grades)[0];

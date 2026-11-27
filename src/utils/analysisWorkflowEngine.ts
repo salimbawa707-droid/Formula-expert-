@@ -17,6 +17,7 @@
  */
 
 import { FormulationIngredient } from '../types';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { normalizeProductCategory, getProductCategory } from '../domain/productTaxonomy';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
@@ -629,16 +630,35 @@ export async function executeStagedScientificAnalysis(
   let nonionicPct = 0;
   let amphotericPct = 0;
   let cationicPct = 0;
+  let conditionalAmineOxidePct = 0;
+  let conditionalPHDependentAnionicPct = 0;
   let chargeDataComplete = true;
 
   for (const ing of immutableSnapshot.ingredients) {
     const role = (ing.role || ing.category || '').toLowerCase();
     const name = (ing.name || '').toLowerCase();
-    const isAnionic = role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap');
-    const isNonionic = role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside');
-    const isAmphoteric = role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine') || name.includes('amine oxide');
-    const isCationic = role.includes('cationic') || name.includes('esterquat');
-    if (isAnionic || isNonionic || isAmphoteric || isCationic) {
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ing as any).id,
+      canonicalIngredientId: (ing as any).canonicalIngredientId,
+      ingredientId: (ing as any).ingredientId,
+      name: ing.name
+    });
+    // A governed route takes precedence over legacy text heuristics. In particular,
+    // amine oxide is pH-dependent and must not be silently counted as fixed amphoteric.
+    const isBlocked = route?.role === 'IDENTITY_UNRESOLVED';
+    const isPolymericDispersant = route?.role === 'POLYMERIC_DISPERSANT';
+    const isAmineOxide = route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE';
+    const isPHDependentAnionic = route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
+    const isAnionic = !route && (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap'));
+    const isNonionic = route?.routingClass === 'NONIONIC' || (!route && (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside')));
+    const isAmphoteric = route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine')));
+    const isCationic = route?.routingClass === 'BLOCKED' ? false : (!route && (role.includes('cationic') || name.includes('esterquat')));
+    if (isBlocked) {
+      chargeDataComplete = false;
+      continue;
+    }
+    if (isPolymericDispersant) continue;
+    if (isAnionic || isNonionic || isAmphoteric || isCationic || isAmineOxide || isPHDependentAnionic) {
       const pct = Number(ing.percentage);
       const assay = ing.activeMatterPct === undefined || ing.activeMatterPct === null ? Number.NaN : Number(ing.activeMatterPct);
       if (!Number.isFinite(pct) || !Number.isFinite(assay) || assay < 0 || assay > 100) {
@@ -646,7 +666,9 @@ export async function executeStagedScientificAnalysis(
         continue;
       }
       const act = pct * (assay / 100);
-      if (isAnionic) anionicPct += act;
+      if (isAmineOxide) conditionalAmineOxidePct += act;
+      else if (isPHDependentAnionic) conditionalPHDependentAnionicPct += act;
+      else if (isAnionic || route?.routingClass === 'ANIONIC') anionicPct += act;
       else if (isNonionic) nonionicPct += act;
       else if (isAmphoteric) amphotericPct += act;
       else if (isCationic) cationicPct += act;
@@ -661,6 +683,8 @@ export async function executeStagedScientificAnalysis(
     nonionicPct: chargeDataComplete ? Number(nonionicPct.toFixed(2)) : Number.NaN,
     amphotericPct: chargeDataComplete ? Number(amphotericPct.toFixed(2)) : Number.NaN,
     cationicPct: chargeDataComplete ? Number(cationicPct.toFixed(2)) : Number.NaN,
+    conditionalAmineOxidePct: chargeDataComplete ? Number(conditionalAmineOxidePct.toFixed(2)) : Number.NaN,
+    conditionalPHDependentAnionicPct: chargeDataComplete ? Number(conditionalPHDependentAnionicPct.toFixed(2)) : Number.NaN,
     hlb: hlbResult.blendedHLB,
     hlbStatus: hlbResult.hasSurfactants ? 'VALID' : 'NOT_APPLICABLE'
   };
@@ -719,6 +743,25 @@ export async function executeStagedScientificAnalysis(
     warnings: phWarnings,
     intermediate: phIntermediate
   });
+
+  // Resolve the Stage-3 conditional sarcosinate bucket only after PHEngineV2
+  // returns a converged in-domain formula pH. Missing/failed/low pH stays conditional.
+  const sarcosinateChargeResolved =
+    advancedPH.solverConverged &&
+    typeof advancedPH.pH === 'number' &&
+    Number.isFinite(advancedPH.pH) &&
+    advancedPH.pH >= 6.0;
+  if (sarcosinateChargeResolved && conditionalPHDependentAnionicPct > 0) {
+    anionicPct += conditionalPHDependentAnionicPct;
+    conditionalPHDependentAnionicPct = 0;
+    surfactantIntermediate.anionicPct = Number(anionicPct.toFixed(2));
+    surfactantIntermediate.conditionalPHDependentAnionicPct = 0;
+    (surfactantIntermediate as any).chargeResolutionBasis = 'CONVERGED_FORMULA_PH_GE_6';
+    intermediateResults.SURFACTANT_SCIENCE = surfactantIntermediate;
+  } else if (conditionalPHDependentAnionicPct > 0) {
+    (surfactantIntermediate as any).chargeResolutionBasis = 'CONDITIONAL_PH_MISSING_OR_BELOW_6';
+    intermediateResults.SURFACTANT_SCIENCE = surfactantIntermediate;
+  }
 
   // =========================================================================
   // STAGE 5: WATER HARDNESS TOLERANCE & CHELATION CAPACITY

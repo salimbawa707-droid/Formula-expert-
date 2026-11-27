@@ -20,6 +20,19 @@
  * ============================================================================
  */
 
+export interface ActiveMatterGradeAssayEvidence {
+  evidenceId: string;
+  sourceUrl: string;
+  sourceType: 'MANUFACTURER_TDS' | 'MANUFACTURER_SPECIFICATION' | 'LAB_COA';
+  grade: string;
+  valuePct: number;
+  basis: 'AS_SUPPLIED' | 'AS_RECEIVED';
+  method: string;
+  conditions: string;
+  verificationStatus: 'VERIFIED' | 'NEEDS_VERIFICATION' | 'UNVERIFIED';
+  verifiedAt?: string;
+}
+
 export interface UniversalIngredient {
   id: string;
   name: string;
@@ -49,6 +62,7 @@ export interface UniversalIngredient {
   sustainability?: any;
   manufacturer?: string;
   productName?: string;
+  activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;
   provenance?: {
     sourceType: 'OFFICIAL_MANUFACTURER' | 'STANDARD_CHEMICAL' | 'ACADEMIC_LITERATURE' | 'USER_ENTERED';
     source: string;
@@ -935,7 +949,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "name": "Mannanase Liquid (Mannaway)",
     "category": "Enzymes",
     "casNumber": "37288-54-3",
-    "inciName": "Mannan Endoperoxidase",
+    "inciName": "Mannanase",
     "function": "Guar & Food Gum Stain Enzyme",
     "activeDefault": 100,
     "costPerKg": null,
@@ -3769,7 +3783,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "name": "Mannanase Liquid (Mannaway) (Technical Grade)",
     "category": "Enzymes",
     "casNumber": "37288-54-3",
-    "inciName": "Mannan Endoperoxidase",
+    "inciName": "Mannanase",
     "function": "Guar & Food Gum Stain Enzyme - Industrial Tech Grade",
     "activeDefault": 100,
     "costPerKg": null,
@@ -3781,7 +3795,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "name": "Mannanase Liquid (Mannaway) (High Purity / R&D Grade)",
     "category": "Enzymes",
     "casNumber": "37288-54-3",
-    "inciName": "Mannan Endoperoxidase",
+    "inciName": "Mannanase",
     "function": "Guar & Food Gum Stain Enzyme - High Purity Grade",
     "activeDefault": 100,
     "costPerKg": null,
@@ -3793,7 +3807,7 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "name": "Mannanase Liquid (Mannaway) (Custom Concentrated Solution)",
     "category": "Enzymes",
     "casNumber": "37288-54-3",
-    "inciName": "Mannan Endoperoxidase",
+    "inciName": "Mannanase",
     "function": "Guar & Food Gum Stain Enzyme - Ready Blend Solution",
     "activeDefault": 50,
     "costPerKg": null,
@@ -5228,9 +5242,9 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
   },
   {
     "id": "cationic-polymer-emulsion",
-    "name": "Cationic Polymer Thickening Emulsion",
+    "name": "Polyquaternium-37 Cationic Polymer Emulsion",
     "category": "Polymer & Thickener",
-    "casNumber": "9003-05-8",
+    "casNumber": "26161-33-1",
     "inciName": "Polyquaternium-37",
     "function": "Cationic Fabric Softener Viscosity Builder",
     "activeDefault": 30,
