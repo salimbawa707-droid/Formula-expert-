@@ -29,7 +29,7 @@ export interface MasterIngredientSupplierEvidenceGateRow {
   formulaApplicabilityState: NamedFormulaApplicabilityState;
   namedFormulaId: string | null;
   blockers: string[];
-  releaseDecision: 'BLOCKED';
+  releaseDecision: 'BLOCKED' | 'APPROVED_FOR_NAMED_FORMULA';
 }
 
 function requiredFamilyEvidence(name: string, category: string, role: string | null): string[] {
