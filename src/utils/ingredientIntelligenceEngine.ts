@@ -1259,7 +1259,31 @@ export function evaluateIngredientSubstitution(
   }
 
   const isSameFamily = source.chemicalFamily === target.chemicalFamily;
-  const isSameCharge = source.chargeProfile.chargeClass === target.chargeProfile.chargeClass;
+  const resolveComparableCharge = (definition: IngredientDefinition): string | null => {
+    const route = resolveFunctionalRoutingForIngredient({
+      canonicalIngredientId: definition.canonicalId,
+      name: definition.displayName
+    });
+    if (route?.routingClass === 'BLOCKED' || route?.chargeBehavior === 'UNRESOLVED') return null;
+    if (route?.chargeBehavior === 'FIXED_ANIONIC') return 'ANIONIC';
+    if (route?.chargeBehavior === 'ZWITTERIONIC') return 'ZWITTERIONIC';
+    if (route?.chargeBehavior === 'NEUTRAL_NONIONIC') return 'NONIONIC';
+    // pH-dependent families cannot be reduced to one fixed charge without formula pH/speciation.
+    if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC' || route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return null;
+
+    const semantics = definition.chemistrySemantics;
+    if (!semantics) return null;
+    if (semantics.surfactantFunctionalClass === 'UNRESOLVED') return null;
+    if (semantics.ionicSpeciesClass === 'ANIONIC' || semantics.ionicSpeciesClass === 'CATIONIC' ||
+        semantics.ionicSpeciesClass === 'NONIONIC' || semantics.ionicSpeciesClass === 'ZWITTERIONIC') {
+      return semantics.ionicSpeciesClass;
+    }
+    return null;
+  };
+  const sourceCharge = resolveComparableCharge(source);
+  const targetCharge = resolveComparableCharge(target);
+  const isSameCharge = sourceCharge !== null && targetCharge !== null && sourceCharge === targetCharge;
+  const chargeComparisonAvailable = sourceCharge !== null && targetCharge !== null;
   const targetAppStatus = target.categoryApplicability[normCat]?.status || 'UNKNOWN';
 
   let tier: SubstitutionTier = 'NOT_SCIENTIFICALLY_EQUIVALENT';
@@ -1270,18 +1294,22 @@ export function evaluateIngredientSubstitution(
     tier = 'NOT_SCIENTIFICALLY_EQUIVALENT';
     matchScore = 10;
     reasoning = `Substitution is highly discouraged. Target ingredient '${target.displayName}' is explicitly flagged as NOT_APPLICABLE for category ${getProductCategoryLabel(normCat)}.`;
+  } else if (!chargeComparisonAvailable) {
+    tier = 'INSUFFICIENT_DATA';
+    matchScore = 0;
+    reasoning = `Substitution charge/functional-class comparison is unavailable for '${source.displayName}' or '${target.displayName}'. Legacy chargeProfile labels are not used as a fallback because they may conflate ionic species, acid/base behaviour and surfactant function. Resolve exact identity, route or formula-pH-dependent speciation before ranking this substitution.`;
   } else if (isSameFamily && isSameCharge) {
     tier = 'DIRECT_EQUIVALENT';
     matchScore = 95;
-    reasoning = `Target ingredient '${target.displayName}' is a direct chemical family equivalent of '${source.displayName}' with identical charge and role compatibility.`;
+    reasoning = `Target ingredient '${target.displayName}' is a direct chemical family equivalent of '${source.displayName}' with matching resolved charge behaviour; grade and formula validation remain separate.`;
   } else if (isSameCharge) {
     tier = 'FUNCTIONAL_ALTERNATIVE';
     matchScore = 75;
-    reasoning = `Target '${target.displayName}' shares the same charge class and can perform a similar surfactant/builder role, but is from a different chemical family (${target.chemicalFamily} vs ${source.chemicalFamily}).`;
+    reasoning = `Target '${target.displayName}' shares resolved charge behaviour with '${source.displayName}' but is from a different chemical family (${target.chemicalFamily} vs ${source.chemicalFamily}); functional performance still requires formula validation.`;
   } else {
     tier = 'CONDITIONAL_ALTERNATIVE';
     matchScore = 40;
-    reasoning = `Target belongs to a different charge class and chemical family. Substitution requires restructuring the entire formula buffer and compatibility pairs.`;
+    reasoning = `Target has a different resolved charge behaviour or chemical family. Substitution requires full formula buffer and compatibility-pair reassessment.`;
   }
 
   const sGrade = Object.values(source.grades)[0];
