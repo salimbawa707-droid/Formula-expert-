@@ -143,7 +143,7 @@ export function runVaultLogicTestSuite() {
   assert(evd018?.supportedEngineIds.length === 0, 'Evidence Mapping', 'EVD-018 does not validate an existing engine');
   const evd019 = INITIAL_VAULT_STATE.evidence.find(e => e.id === 'EVD-019');
   assert(evd019?.doi === '10.3139/113.110145', 'Evidence Identity', 'EVD-019 identifies the LAS/AE interaction study');
-  assert(evd019?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Evidence Inspection', 'EVD-019 Tables 1 and 2 are visually transcribed; independent human review remains pending');
+  assert(evd019?.numericalInspectionStatus === 'NUMERICALLY_INSPECTED', 'Evidence Inspection', 'EVD-019 Tables 1 and 2 have AI transcription and text/arithmetic cross-check; direct PDF-image second-pass review remains incomplete');
   assert(evd019?.licenseReviewStatus === 'REVIEW_PENDING', 'Evidence Rights', 'EVD-019 numerical reuse remains rights-pending');
   assert(evd019?.supportedEngineIds.includes('ENG-002'), 'Evidence Mapping', 'EVD-019 is a bounded CMC interaction reference');
   assert(evd019?.applicabilityMismatches.some(item => item.includes('Gibbs adsorption n-factor')), 'Evidence Scope', 'EVD-019 source-level Gibbs adsorption n-factor ambiguity remains explicitly flagged');
