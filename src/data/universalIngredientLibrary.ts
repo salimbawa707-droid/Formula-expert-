@@ -20,6 +20,19 @@
  * ============================================================================
  */
 
+export interface ActiveMatterGradeAssayEvidence {
+  evidenceId: string;
+  sourceUrl: string;
+  sourceType: 'MANUFACTURER_TDS' | 'MANUFACTURER_SPECIFICATION' | 'LAB_COA';
+  grade: string;
+  valuePct: number;
+  basis: 'AS_SUPPLIED' | 'AS_RECEIVED';
+  method: string;
+  conditions: string;
+  verificationStatus: 'VERIFIED' | 'NEEDS_VERIFICATION' | 'UNVERIFIED';
+  verifiedAt?: string;
+}
+
 export interface UniversalIngredient {
   id: string;
   name: string;
@@ -49,6 +62,7 @@ export interface UniversalIngredient {
   sustainability?: any;
   manufacturer?: string;
   productName?: string;
+  activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;
   provenance?: {
     sourceType: 'OFFICIAL_MANUFACTURER' | 'STANDARD_CHEMICAL' | 'ACADEMIC_LITERATURE' | 'USER_ENTERED';
     source: string;
