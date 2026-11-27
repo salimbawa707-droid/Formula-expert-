@@ -52,7 +52,7 @@ check('cross-category evidence excluded', categoryScoped?.proposedPercentage ===
 // Missing category cannot be treated as a wildcard.
 const missingCategory = proposal([
   record({ id: 'm1', formulaId: 'M1', value: 10, categoryId: null }),
-  record({ id: 'm2', formulaId: 'M2', value: 20, categoryId: undefined }),
+  record({ id: 'm2', formulaId: 'M2', value: 20, categoryId: null }),
   record({ id: 'm3', formulaId: 'M3', value: 30, categoryId: undefined })
 ]);
 check('missing category fails closed', missingCategory === undefined, missingCategory, undefined);
