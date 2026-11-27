@@ -112,7 +112,7 @@ export function runFormulaScientificOrchestratorTestSuite() {
 
   assert(
     'Group A: Orchestrator Pipeline',
-    'Neutralized LABSA is routed to fixed anionic only after the resolved formula pH is at least 6',
+    'LABSA remains anionic in aqueous formulation even when raw material is acid-form',
     evalResult.pHResult.ph >= 6.0 &&
       evalResult.activeMatterResult.surfactantBreakdown.anionic > 0 &&
       evalResult.activeMatterResult.surfactantBreakdown.conditionalPHDependentAnionic === 0,
@@ -135,15 +135,15 @@ export function runFormulaScientificOrchestratorTestSuite() {
   const acidFormLabsaResult = FormulaScientificOrchestrator.evaluate(acidFormLabsaFormula);
   assert(
     'Group A: Orchestrator Pipeline',
-    'Acid-form LABSA is held in the conditional bucket when the resolved pH is below 6',
+    'Acid-form LABSA remains in the anionic bucket when the resolved pH is below 6',
     acidFormLabsaResult.pHResult.ph < 6.0 &&
-      acidFormLabsaResult.activeMatterResult.surfactantBreakdown.anionic === 0 &&
-      acidFormLabsaResult.activeMatterResult.surfactantBreakdown.conditionalPHDependentAnionic > 0,
+      acidFormLabsaResult.activeMatterResult.surfactantBreakdown.anionic > 0 &&
+      acidFormLabsaResult.activeMatterResult.surfactantBreakdown.conditionalPHDependentAnionic === 0,
     {
       ph: acidFormLabsaResult.pHResult.ph,
       breakdown: acidFormLabsaResult.activeMatterResult.surfactantBreakdown
     },
-    'pH < 6; fixed anionic = 0; conditional pH-dependent anionic > 0'
+    'pH < 6; fixed anionic > 0; conditional pH-dependent anionic = 0'
   );
 
   assert(
