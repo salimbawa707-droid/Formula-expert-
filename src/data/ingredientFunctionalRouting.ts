@@ -176,12 +176,29 @@ export function resolveFunctionalRouting(ingredientId: string): FunctionalRoutin
     ?? DECISIONS.find(item => item.ingredientIds.includes(ROUTE_FAMILY_ALIASES[ingredientId] || ''));
   return found ? { ...found, ingredientIds: [...found.ingredientIds], sourceUrls: [...found.sourceUrls], caveats: [...found.caveats] } : null;
 }
+const ROUTE_NAME_ALIASES: Record<string, string> = {
+  'labsa 90%': 'labsa-90',
+  'labsa (90%)': 'labsa-90',
+  'labsa (acid slurry 90%)': 'labsa-90',
+  'labsa 90% (acid slurry)': 'labsa-90',
+  'labsa 96%': 'labsa-96',
+  'labsa (96%)': 'labsa-96',
+  'labsa (acid slurry 96%)': 'labsa-96',
+  'labsa 96% (acid slurry)': 'labsa-96',
+  'linear alkylbenzene sulfonic acid': 'labsa-90',
+  'dodecylbenzene sulfonic acid': 'labsa-90'
+};
+
 export function resolveFunctionalRoutingForIngredient(input: { id?: unknown; canonicalIngredientId?: unknown; ingredientId?: unknown; name?: unknown }): FunctionalRoutingDecision | null {
   const suppliedId = String(input.canonicalIngredientId || input.ingredientId || input.id || '').trim();
   const byId = suppliedId ? resolveFunctionalRouting(suppliedId) : null;
   if (byId) return byId;
   const suppliedName = String(input.name || '').trim().toLowerCase();
   if (!suppliedName) return null;
+  const aliasId = ROUTE_NAME_ALIASES[suppliedName];
+  if (aliasId) return resolveFunctionalRouting(aliasId);
+  const familyAlias = resolveFunctionalRouting(suppliedName);
+  if (familyAlias) return familyAlias;
   const exactCatalogRecord = UNIVERSAL_INGREDIENTS.find(item => item.name.trim().toLowerCase() === suppliedName);
   return exactCatalogRecord ? resolveFunctionalRouting(exactCatalogRecord.id) : null;
 }
