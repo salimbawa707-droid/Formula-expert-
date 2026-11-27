@@ -17,6 +17,7 @@
  */
 
 import { FormulationIngredient } from '../types';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { normalizeProductCategory, getProductCategory } from '../domain/productTaxonomy';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
 import { calculatePHAdvanced } from './pHEngine';
