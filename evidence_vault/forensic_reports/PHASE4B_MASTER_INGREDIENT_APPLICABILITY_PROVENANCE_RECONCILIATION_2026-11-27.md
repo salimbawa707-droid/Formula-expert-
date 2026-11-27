@@ -206,3 +206,28 @@ Added regression: `scripts/test-phase4b-dataset-ledger-reconciliation.ts`. It ch
   - `bun run scripts/test-master-ingredient-identity-coverage.ts`
   - `bun run scripts/test-phase4b-dataset-ledger-reconciliation.ts`
   - `bun run test:all`
+
+## 10. Functional-class and identity-conflict safeguards — 2026-11-27
+
+A focused audit overlay was added for three catalog records whose broad class/function labels can misroute chemistry logic:
+
+| Ingredient | Finding | Control |
+|---|---|---|
+| Sodium lignosulfonate (lignosulfonate-na) | Anionic lignin-based polymeric dispersant/binder; surface activity does not make performance interchangeable with conventional detergent surfactants. | Keep existing broad category for compatibility, require a functional subclass, and block unsupported HLB/active-matter/cleaning inferences. |
+| Lauramine oxide (lauryl-amine-oxide) | Amine-oxide surfactant; commercial taxonomy often places the family with amphoteric surfactants, so the current Nonionic label needs cross-engine review. | Do not silently change canonical category; flag ionic-class routing for deliberate migration and tests. |
+| Tallow amine record (tallow-amine-oxide) | Display name/function claim an amine oxide, while INCI is PEG-2 Tallow Amine and catalog category is Polymer & Thickener. | Identity conflict remains blocked; no amine-oxide or polymer promotion pending exact supplier identity. |
+
+The overlay validates that each audit row still matches the live catalog identity/category and always remains NOT_APPROVED. It does not change formula recommendations or canonical categories. A category migration must include a complete downstream consumer audit, not a local string edit.
+
+Source scope:
+- PubChem / EPA functional-use data identifies lauramine oxide (CAS 1643-20-5) as a surfactant: https://pubchem.ncbi.nlm.nih.gov/compound/15433
+- New Zealand EPA CCID corroborates lauramine oxide substance identity and CAS: https://www.epa.govt.nz/database-search/chemical-classification-and-information-database-ccid/view/4870BB95-03BD-402C-AF97-A674F93F773A/
+- The 1996 EU ingredient inventory lists Lauramine Oxide as surfactant/viscosity-controlling/cleansing/foam-boosting: https://www.legislation.gov.uk/eudn/1996/335/pdfs/eudn_19960335_2006-02-09_en.pdf
+- Public industrial sodium lignosulfonate references describe dispersant, binder, water-reducer and high-molecular-weight lignin-based functions; generic TDS values are not assigned to this catalog record: https://www.lignincorp.com/products/sodium-lignosulfonate/
+
+Added:
+- src/data/ingredientFunctionalClassAudit.ts
+- scripts/test-ingredient-functional-class-audit.ts
+- Test wired into test:all.
+
+The audit adds zero supplier-grade verifications and zero applicability approvals. Phase 4B remains OPEN; Phase 5 remains LOCKED.
