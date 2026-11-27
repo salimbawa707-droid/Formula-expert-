@@ -6,27 +6,22 @@ import {
   calculatePHAdvanced as calculatePHAdvancedV2,
   calculatePHSimple as calculatePHSimpleV2
 } from './pHEngine';
-import { classifyChemicalSpecies } from '../domain/ph/chemicalSpeciesRegistry';
 
 export { INGREDIENT_DATABASE };
 
 /**
- * Filters formulation ingredients to those with registered acid/base/buffer/solvent/electrolyte chemistry.
- * Non-reactive excipients (fragrance, dyes, preservatives, etc.) are excluded from the ionic speciation solver
- * so that the solver converges on the true thermodynamic equilibrium while implicit water mass covers the balance.
+ * Preserves every formulation ingredient at the pH-engine boundary.
+ * The authoritative pH engine must see the complete mass balance and decide
+ * whether unknown species make the equilibrium result insufficiently identified.
+ * Register known neutral excipients explicitly instead of dropping them here.
  */
 export function getSolverReadyIngredients(rawIngredients: IngredientInput[]): IngredientInput[] {
-  if (!Array.isArray(rawIngredients) || rawIngredients.length === 0) return [];
-
-  const recognized = rawIngredients.filter(ing => {
-    if (!ing || !ing.name) return false;
-    const name = ing.name.trim();
-    if (INGREDIENT_DATABASE[name]) return true;
-    const species = classifyChemicalSpecies(name);
-    return species !== null;
-  });
-
-  return recognized.length > 0 ? recognized : rawIngredients;
+  // Preserve the complete formulation mass. Filtering unknown/inert-looking
+  // ingredients here would let the pH solver calculate from a partial formula
+  // and bypass PHEngineV2's fail-closed unrecognized-mass guard.
+  // Known neutral species should be explicitly registered as neutral in the
+  // chemical species registry; they must not be silently dropped by this adapter.
+  return Array.isArray(rawIngredients) ? [...rawIngredients] : [];
 }
 
 /**

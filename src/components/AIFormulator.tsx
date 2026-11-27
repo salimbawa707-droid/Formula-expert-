@@ -64,7 +64,7 @@ import { RefinementProposalModal } from "./RefinementProposalModal";
 import { RefinementEngine, RefinementProposal } from "../utils/refinementEngine";
 import { Bot, LineChart, Layout, Award } from "lucide-react";
 import { COAAndBatchSheetModal } from "./COAAndBatchSheetModal";
-import { calculateLabAlignmentScore } from "../utils/labEvidenceEngine";
+import { calculateLabAlignmentScore, DetailedLabEvidenceRecord } from "../utils/labEvidenceEngine";
 import { FormulaComparisonView } from "./FormulaComparisonView";
 import { LabAlignmentTrendGraph } from "./aiformulator/LabAlignmentTrendGraph";
 import { FORMULAS } from "../data/formulas";
@@ -1414,7 +1414,20 @@ export default function FormulaExpert({
             <Sliders className="w-3.5 h-3.5" /> Calibrations
           </button>
           <button onClick={() => {
-              const proposals = RefinementEngine.proposeAdjustments(ingredients, []); // Need real evidence
+              let labEvidence: DetailedLabEvidenceRecord[] = [];
+              try {
+                const savedEvidence = localStorage.getItem('rnd_lab_evidence');
+                const parsedEvidence = savedEvidence ? JSON.parse(savedEvidence) : [];
+                if (Array.isArray(parsedEvidence)) labEvidence = parsedEvidence as DetailedLabEvidenceRecord[];
+              } catch {
+                // Corrupt or unavailable local evidence must fail closed.
+                labEvidence = [];
+              }
+              const proposals = RefinementEngine.proposeAdjustments(
+                ingredients,
+                labEvidence,
+                normalizeProductCategory(productCategory)
+              );
               setRefinementProposals(proposals);
               setIsRefinementModalOpen(true);
           }} className="px-3.5 py-2 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-xs font-bold text-indigo-200 hover:bg-indigo-900 transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95">
@@ -2406,10 +2419,6 @@ export default function FormulaExpert({
         isOpen={isRefinementModalOpen}
         onClose={() => setIsRefinementModalOpen(false)}
         proposals={refinementProposals}
-        onApply={(p) => {
-          console.log('Applying refinement', p);
-          setIsRefinementModalOpen(false);
-        }}
       />
 
       {/* Chemical Label & COA Multimodal AI Vision Scanner */}

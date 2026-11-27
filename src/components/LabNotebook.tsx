@@ -39,6 +39,7 @@ import {
 import { calculateCleaningPerformance } from '../utils/cleaningPerformanceEngine';
 import { StandardUnit } from '../utils/specificationEngine/types';
 import { canPromoteToLabValidated } from '../utils/lims/limsEvidencePromotionEngine';
+import { validateIngredientCompositionEvidence, CompositionMeasurementMethod } from '../utils/ingredientCompositionEvidence';
 
 export default function LabNotebook(_props?: any) {
   // Navigation
@@ -100,6 +101,17 @@ export default function LabNotebook(_props?: any) {
   const [newFormulaVersion, setNewFormulaVersion] = useState('1.0.0');
   const [newCategory, setNewCategory] = useState<ProductCategoryId>('LAUNDRY_LIQUID');
   const [newKPI, setNewKPI] = useState('cleaningScore');
+  const [evidenceKind, setEvidenceKind] = useState<'KPI' | 'INGREDIENT_COMPOSITION'>('KPI');
+  const [newIngredientId, setNewIngredientId] = useState('');
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [newReplicateNumber, setNewReplicateNumber] = useState('1');
+  const [newBatchId, setNewBatchId] = useState('');
+  const [newCompositionMethod, setNewCompositionMethod] = useState<CompositionMeasurementMethod>('GRAVIMETRIC_ASSAY');
+  const [newCompositionMethodDetails, setNewCompositionMethodDetails] = useState('');
+  const [newInstrumentId, setNewInstrumentId] = useState('');
+  const [newCalibrationReference, setNewCalibrationReference] = useState('');
+  const [newSourceDocumentReference, setNewSourceDocumentReference] = useState('');
+  const [newFormulaCompositionReference, setNewFormulaCompositionReference] = useState('');
   const [newValue, setNewValue] = useState<number | ''>('');
   const [newUnit, setNewUnit] = useState<StandardUnit>('%');
   const [newMethod, setNewMethod] = useState('');
@@ -150,17 +162,20 @@ export default function LabNotebook(_props?: any) {
       return;
     }
 
+    const compositionMode = evidenceKind === 'INGREDIENT_COMPOSITION';
+    const ingredientSlug = newIngredientId.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const ingredientNameSlug = newIngredientName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const newRecord: DetailedLabEvidenceRecord = {
       measurementId: 'rec-' + Date.now(),
       formulaId: newFormulaId || undefined,
       formulaVersion: newFormulaVersion,
       categoryId: newCategory,
-      kpiId: newKPI,
-      parameterKey: newKPI,
+      kpiId: compositionMode ? undefined : newKPI,
+      parameterKey: compositionMode ? `ingredient:${ingredientNameSlug}:percentage` : newKPI,
       value: valNum,
-      unit: newUnit,
+      unit: compositionMode ? '%' : newUnit,
       provenance: 'MEASURED',
-      testMethod: newMethod,
+      testMethod: compositionMode ? newCompositionMethodDetails : newMethod,
       testDate: new Date().toISOString().split('T')[0],
       operator: newOperator,
       sampleId: newSampleId || undefined,
@@ -168,8 +183,60 @@ export default function LabNotebook(_props?: any) {
         temperatureC: newTemp ? Number(newTemp) : undefined,
         waterHardnessPpm: newHardness ? Number(newHardness) : undefined,
         substrate: newSubstrate || undefined
-      }
+      },
+      ...(compositionMode ? {
+        evidenceKind: 'INGREDIENT_COMPOSITION' as const,
+        ingredientCanonicalId: ingredientSlug,
+        ingredientName: newIngredientName.trim(),
+        compositionBasis: 'W_W' as const,
+        compositionMethod: newCompositionMethod,
+        compositionMethodDetails: newCompositionMethodDetails.trim(),
+        instrumentId: newInstrumentId.trim(),
+        instrument: newInstrumentId.trim(),
+        instrumentCalibrationReference: newCalibrationReference.trim(),
+        sourceDocumentReference: newSourceDocumentReference.trim(),
+        evidenceRef: newSourceDocumentReference.trim(),
+        formulaCompositionReference: newFormulaCompositionReference.trim(),
+        batchId: newBatchId.trim(),
+        replicateNumber: Number(newReplicateNumber),
+        sourceType: 'LAB_MEASURED' as const,
+        qualityStatus: 'ACCEPTED' as const,
+      } : {})
     };
+
+    if (compositionMode) {
+      const compositionValidation = validateIngredientCompositionEvidence({
+        ...(newRecord as any),
+        categoryId: newCategory,
+        formulaId: newFormulaId,
+        formulaVersion: newFormulaVersion,
+        sampleId: newSampleId,
+        value: valNum,
+        unit: '%'
+      });
+      if (!compositionValidation.isValid) {
+        setFormErrors(compositionValidation.errors);
+        return;
+      }
+      const promotionGate = canPromoteToLabValidated(newRecord);
+      if (!promotionGate.allowed) {
+        setFormErrors(promotionGate.reasons);
+        return;
+      }
+      const duplicateIdentity = evidenceRecords.find(existing =>
+        existing.evidenceKind === 'INGREDIENT_COMPOSITION' &&
+        existing.formulaId === newFormulaId &&
+        existing.formulaVersion === newFormulaVersion &&
+        existing.categoryId === newCategory &&
+        existing.ingredientCanonicalId === ingredientSlug &&
+        existing.sampleId?.trim() === newSampleId.trim() &&
+        existing.replicateNumber === Number(newReplicateNumber)
+      );
+      if (duplicateIdentity) {
+        setFormErrors(['This formula/version/category/ingredient/sample/replicate identity already exists. Review the original record; do not create a duplicate row.']);
+        return;
+      }
+    }
 
     // Strict physical validation gates
     const validationResult = validateMeasurementRecord(newRecord);
@@ -181,6 +248,11 @@ export default function LabNotebook(_props?: any) {
     setEvidenceRecords([newRecord, ...evidenceRecords]);
     setNewValue('');
     setShowAddRecordModal(false);
+    setEvidenceKind('KPI');
+    setNewIngredientId('');
+    setNewIngredientName('');
+    setNewReplicateNumber('1');
+    setNewBatchId('');
   };
 
   const deleteEvidenceRecord = (id: string) => {
@@ -189,6 +261,25 @@ export default function LabNotebook(_props?: any) {
 
   // Calculations for Predictions-vs-Measured Table
   const parsedRecordsWithPredictions = evidenceRecords.map(rec => {
+    if (rec.evidenceKind === 'INGREDIENT_COMPOSITION') {
+      const comparability = {
+        isComparable: false,
+        reason: 'Ingredient composition is not a finished-product KPI and must not be compared with a cleaning/pH/viscosity prediction.',
+        matchedFormula: false,
+        matchedVersion: false,
+        matchedCategory: false,
+        matchedKPI: false,
+        matchedUnit: false,
+        conditionsComparable: false,
+        conditionWarnings: ['Composition evidence is routed only to ingredient refinement.']
+      };
+      return {
+        ...rec,
+        predictedValue: Number.NaN,
+        comparability,
+        errorAnalysis: calculatePredictionError(Number.NaN, rec.value, rec.unit, comparability)
+      };
+    }
     // Determine target formula ingredients
     // Only an exact formula identity may supply a reference composition.
     // Category similarity is not formula identity and must not borrow a golden formula.
@@ -246,7 +337,7 @@ export default function LabNotebook(_props?: any) {
 
   // Category Model Validation Metrics Aggregator
   const activeCategoryObservations = parsedRecordsWithPredictions
-    .filter(r => r.categoryId === selectedCategory)
+    .filter(r => r.categoryId === selectedCategory && r.evidenceKind !== 'INGREDIENT_COMPOSITION')
     .map(r => ({
       kpiId: r.kpiId || 'cleaningScore',
       predicted: r.predictedValue,
@@ -528,7 +619,7 @@ export default function LabNotebook(_props?: any) {
                                 {rec.sampleId || 'NO_SAMPLE_ID'}
                               </span>
                               <h4 className="font-black text-white text-sm sm:text-base">
-                                {rec.formulaId === 'golden-hd-laundry' ? 'Golden Heavy Duty Laundry Liquid' : 'Custom Formulation Reference'}
+                                {rec.evidenceKind === 'INGREDIENT_COMPOSITION' ? `${rec.ingredientName} composition` : rec.formulaId === 'golden-hd-laundry' ? 'Golden Heavy Duty Laundry Liquid' : 'Custom Formulation Reference'}
                               </h4>
                               <span className="text-xs text-slate-400">v{rec.formulaVersion}</span>
                             </div>
@@ -553,8 +644,8 @@ export default function LabNotebook(_props?: any) {
                           {/* Pred-vs-measured numbers */}
                           <div className="md:col-span-2 grid grid-cols-2 gap-3">
                             <div className="bg-[#121c33]/80 p-3 rounded-xl border border-slate-800/80">
-                              <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider">Model Prediction:</span>
-                              <span className="font-mono text-base font-black text-cyan-300">{rec.predictedValue.toFixed(1)}{rec.unit}</span>
+                              <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider">{rec.evidenceKind === 'INGREDIENT_COMPOSITION' ? 'Prediction:' : 'Model Prediction:'}</span>
+                              <span className="font-mono text-base font-black text-cyan-300">{Number.isFinite(rec.predictedValue) ? rec.predictedValue.toFixed(1) : 'NOT COMPARABLE'}{rec.unit}</span>
                             </div>
                             <div className="bg-[#1a2035]/80 p-3 rounded-xl border border-slate-800/80">
                               <span className="block text-[10px] text-slate-400 uppercase font-black tracking-wider">Measured Value:</span>
@@ -1445,6 +1536,28 @@ export default function LabNotebook(_props?: any) {
             )}
 
             <form onSubmit={handleAddLabRecord} className="space-y-4">
+              <div>
+                <label className="block text-[10px] text-slate-400 uppercase font-black tracking-wider mb-1">Evidence Type:</label>
+                <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value as 'KPI' | 'INGREDIENT_COMPOSITION')} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white">
+                  <option value="KPI">Finished-product KPI measurement</option>
+                  <option value="INGREDIENT_COMPOSITION">Ingredient composition — measured wt%</option>
+                </select>
+                {evidenceKind === 'INGREDIENT_COMPOSITION' && <p className="text-[10px] text-amber-300 mt-1">Strict evidence gate: canonical ingredient, exact formula snapshot, batch/sample/replicate, calibrated instrument, method and original source reference are mandatory. Typed-only values are rejected.</p>}
+              </div>
+              {evidenceKind === 'INGREDIENT_COMPOSITION' && (
+                <div className="grid grid-cols-2 gap-3 bg-[#111827] p-3 rounded-xl border border-amber-500/20">
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Canonical Ingredient ID</label><input value={newIngredientId} onChange={e => setNewIngredientId(e.target.value)} placeholder="e.g. sles-70" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Ingredient Name</label><input value={newIngredientName} onChange={e => setNewIngredientName(e.target.value)} placeholder="Exact ingredient name" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Batch ID</label><input value={newBatchId} onChange={e => setNewBatchId(e.target.value)} placeholder="Batch reference" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Replicate Number</label><input type="number" min="1" step="1" value={newReplicateNumber} onChange={e => setNewReplicateNumber(e.target.value)} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Composition Method</label><select value={newCompositionMethod} onChange={e => setNewCompositionMethod(e.target.value as CompositionMeasurementMethod)} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white"><option value="GRAVIMETRIC_ASSAY">Gravimetric assay</option><option value="VALIDATED_ASSAY">Validated assay</option><option value="OTHER_VALIDATED_METHOD">Other validated method</option></select></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Instrument ID</label><input value={newInstrumentId} onChange={e => setNewInstrumentId(e.target.value)} placeholder="Balance / instrument ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div className="col-span-2"><label className="block text-[10px] text-slate-400 mb-1">Method details / SOP reference</label><input value={newCompositionMethodDetails} onChange={e => setNewCompositionMethodDetails(e.target.value)} placeholder="SOP, preparation and calculation basis" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Instrument calibration certificate reference (operator-attested)</label><input value={newCalibrationReference} onChange={e => setNewCalibrationReference(e.target.value)} placeholder="Calibration certificate ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Original lab document reference</label><input value={newSourceDocumentReference} onChange={e => setNewSourceDocumentReference(e.target.value)} placeholder="Notebook/page/file ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div className="col-span-2"><label className="block text-[10px] text-slate-400 mb-1">Exact formula composition snapshot reference</label><input value={newFormulaCompositionReference} onChange={e => setNewFormulaCompositionReference(e.target.value)} placeholder="Immutable formula snapshot/version record ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] text-slate-400 uppercase font-black tracking-wider mb-1">Recipe Basis:</label>
@@ -1487,6 +1600,7 @@ export default function LabNotebook(_props?: any) {
                 <div>
                   <label className="block text-[10px] text-slate-400 uppercase font-black tracking-wider mb-1">Test Parameter / KPI:</label>
                   <select
+                    disabled={evidenceKind === 'INGREDIENT_COMPOSITION'}
                     value={newKPI}
                     onChange={(e) => setNewKPI(e.target.value)}
                     className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
@@ -1503,6 +1617,8 @@ export default function LabNotebook(_props?: any) {
                   <label className="block text-[10px] text-slate-400 uppercase font-black tracking-wider mb-1">Measured Value:</label>
                   <input
                     type="number"
+                    min={evidenceKind === 'INGREDIENT_COMPOSITION' ? 0 : undefined}
+                    max={evidenceKind === 'INGREDIENT_COMPOSITION' ? 100 : undefined}
                     step="any"
                     value={newValue}
                     onChange={(e) => setNewValue(e.target.value !== '' ? parseFloat(e.target.value) : '')}
@@ -1514,6 +1630,7 @@ export default function LabNotebook(_props?: any) {
                 <div>
                   <label className="block text-[10px] text-slate-400 uppercase font-black tracking-wider mb-1">Unit of Measure:</label>
                   <select
+                    disabled={evidenceKind === 'INGREDIENT_COMPOSITION'}
                     value={newUnit}
                     onChange={(e) => setNewUnit(e.target.value as StandardUnit)}
                     className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
@@ -1541,6 +1658,7 @@ export default function LabNotebook(_props?: any) {
                   <input
                     type="text"
                     value={newOperator}
+                    required={evidenceKind === 'INGREDIENT_COMPOSITION'}
                     onChange={(e) => setNewOperator(e.target.value)}
                     className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
                   />
@@ -1585,6 +1703,7 @@ export default function LabNotebook(_props?: any) {
                 <input
                   type="text"
                   value={newSampleId}
+                  required={evidenceKind === 'INGREDIENT_COMPOSITION'}
                   onChange={(e) => setNewSampleId(e.target.value)}
                   className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-400 font-mono"
                   placeholder="BATCH-2026-09X"
