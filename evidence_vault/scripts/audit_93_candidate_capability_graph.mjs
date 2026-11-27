@@ -35,6 +35,19 @@ function normalizeModulePath(file) {
 function classify(file, source) {
   const p = file.toLowerCase();
   if (p.startsWith('src/components/')) return 'UI_PRESENTATION';
+  if (p.includes('cmcpredictor')) return 'FAIL_CLOSED_CMC_MODEL_ADAPTER';
+  if (p.endsWith('/calculators.ts')) return 'LEGACY_CALCULATION_FACADE';
+  if (p.includes('ingredientintelligence')) return 'INGREDIENT_KNOWLEDGE_AND_RULE_REGISTRY';
+  if (p.includes('dilution')) return 'ARITHMETIC_DILUTION_AND_UNIT_CONVERSION';
+  if (p.includes('expertreasoning')) return 'RULE_BASED_EXPERT_REASONING';
+  if (p.includes('gradeengine')) return 'RULE_BASED_FORMULA_SCORING';
+  if (p.includes('inventoryengine')) return 'INVENTORY_OPERATIONAL_LOGIC';
+  if (p.includes('liquidnvr')) return 'NONVOLATILE_RESIDUE_CALCULATION';
+  if (p.includes('scientificlearning')) return 'EVIDENCE_GOVERNED_LEARNING_WORKFLOW';
+  if (p.includes('substitutionengine')) return 'RULE_BASED_INGREDIENT_SUBSTITUTION';
+  if (p.includes('templaterevalidation')) return 'FORMULA_TEMPLATE_REVALIDATION';
+  if (p.includes('climateengine')) return 'ENVIRONMENTAL_PRESET_RULES';
+  if (p.includes('foamkinetics')) return 'MEASURED_FOAM_SERIES_ANALYSIS_ONLY';
   if (p.includes('/__tests__/')) return 'TEST_ONLY';
   if (p.includes('/spectroscopy/')) return 'SPECTRAL_SIGNAL_PROCESSING_OR_EVIDENCE';
   if (p.includes('/labautomation/')) return 'LAB_AUTOMATION_CONSTRAINTS';
@@ -58,6 +71,8 @@ function exportedSymbols(source) {
   const names = new Set();
   const declaration = /\bexport\s+(?:declare\s+)?(?:default\s+)?(?:async\s+)?(?:abstract\s+)?(?:class|function|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g;
   for (const m of source.matchAll(declaration)) names.add(m[1]);
+  const wildcardReexport = /\bexport\s+\*\s+from\s+['"]([^'"]+)['"]/g;
+  for (const m of source.matchAll(wildcardReexport)) names.add('* from ' + m[1]);
   const named = /\bexport\s*\{([^}]+)\}/g;
   for (const m of source.matchAll(named)) {
     for (const part of m[1].split(',')) {
