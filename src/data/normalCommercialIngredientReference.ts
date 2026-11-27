@@ -75,7 +75,7 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     applicabilityNote: 'AOS 38 grade table gives 37–39% active. Other suppliers publish neutral and alkaline grades with different pH windows; preserve the grade distinction and do not treat pH as universal.'
   },
   {
-    catalogIngredientIds: ['sodium-carbonate-light', 'soda-ash-light'],
+    catalogIngredientIds: ['soda-ash-uni', 'soda-ash-light', 'soda-ash-uni-tech', 'soda-ash-uni-pure', 'soda-ash-uni-sol', 'soda-ash-light-tech', 'soda-ash-light-pure', 'soda-ash-light-sol'],
     displayName: 'Sodium Carbonate Anhydrous',
     referenceGrade: 'Light soda ash, published manufacturer grade',
     evidenceClass: 'MANUFACTURER_TDS',
@@ -110,7 +110,7 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     applicabilityNote: 'Pentahydrate only. Do not reuse for anhydrous sodium metasilicate or infer a 100% active basis from dry matter. The TDS reports Na2O and SiO2 separately.'
   },
   {
-    catalogIngredientIds: ['sodium-sulfate-anhydrous', 'sodium-sulfate-anhydrous-tech', 'sodium-sulfate-anhydrous-pure', 'sodium-sulfate-anhydrous-sol'],
+    catalogIngredientIds: ['sodium-sulfate-uni', 'sodium-sulfate-uni-tech', 'sodium-sulfate-uni-pure', 'sodium-sulfate-uni-sol'],
     displayName: 'Sodium Sulphate Anhydrous',
     referenceGrade: 'Anhydrous detergent-industry commercial specification',
     evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
