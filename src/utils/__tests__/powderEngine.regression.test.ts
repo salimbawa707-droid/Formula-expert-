@@ -648,6 +648,57 @@ export function runPowderEngineTestSuite(): {
     'INSUFFICIENT_DATA'
   );
 
+  const reportEqualDensity = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measuredBulkDensityGPerL: 700, measuredTappedDensityGPerL: 700 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Equal valid bulk/tapped density yields Carr 0 and Hausner 1',
+    reportEqualDensity.flowability.carrIndexPct === 0 &&
+      reportEqualDensity.flowability.hausnerRatio === 1,
+    reportEqualDensity.flowability,
+    'Carr 0%, Hausner 1.00'
+  );
+
+  const reportInconsistentDensity = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measuredBulkDensityGPerL: 700, measuredTappedDensityGPerL: 650 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Tapped density below loose bulk density is rejected',
+    reportInconsistentDensity.density.source === 'INSUFFICIENT_DATA' &&
+      reportInconsistentDensity.flowability.source === 'INSUFFICIENT_DATA',
+    { density: reportInconsistentDensity.density, flowability: reportInconsistentDensity.flowability },
+    'Inconsistent density pair rejected'
+  );
+
+  const reportInvalidPSDRange = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    labMeasurements: { measuredD50Um: 500, measuredFinesPct: 70, measuredCoarsePct: 40 }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'PSD fines and coarse fractions cannot exceed 100% combined',
+    reportInvalidPSDRange.particleSize.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidPSDRange.particleSize.status === 'INSUFFICIENT_DATA',
+    reportInvalidPSDRange.particleSize,
+    'INSUFFICIENT_DATA'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
   const totalCount = results.length;
