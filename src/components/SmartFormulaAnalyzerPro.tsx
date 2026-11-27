@@ -57,6 +57,16 @@ const getFunctionalRouteForFormulaIngredient = (ing: any) => resolveFunctionalRo
   name: ing?.name
 });
 
+/** Route-first surfactant predicate shared by analyzer KPIs and eco screening.
+ * A governed BLOCKED/non-surfactant route overrides legacy role/HLB heuristics.
+ */
+export const isFormulaIngredientSurfactant = (ing: any): boolean => {
+  const route = getFunctionalRouteForFormulaIngredient(ing);
+  if (route) return Boolean(route.activeMatterEligible) && route.role !== "POLYMERIC_DISPERSANT" && route.role !== "IDENTITY_UNRESOLVED";
+  const role = String(ing?.role || ing?.category || "").toLowerCase();
+  return role.includes("surfactant") || role.includes("detergent") || (ing?.hlbValue !== undefined && ing?.hlbValue !== null);
+};
+
 // Modular sub-components
 import { ActiveFingerprintCard } from "./analyzer/ActiveFingerprintCard";
 import { EcoImpactAssessmentCard } from "./analyzer/EcoImpactAssessmentCard";
@@ -170,7 +180,7 @@ export const calculateFormulaHealthScore = (ph: number, analyzedIngs: any[], raw
   if (ph < 4 || ph > 12) phScore = 0;
 
   let balScore = 20;
-  const totalSurfactant = analyzedIngs.filter(i => i.role?.toLowerCase().includes("surfactant")).reduce((s, i) => s + i.percentage, 0);
+  const totalSurfactant = analyzedIngs.filter(isFormulaIngredientSurfactant).reduce((s, i) => s + i.percentage, 0);
   if (totalSurfactant > 30) balScore = 12;
   if (totalSurfactant < 3) balScore = 8;
 
@@ -429,7 +439,7 @@ function SmartFormulaAnalyzerProInner({
 
         const missingFields: string[] = [];
         if (!ing.hlbValue && (!dbChem || !dbChem.physicalProperties?.viscosity)) {
-          if (ing.role?.toLowerCase().includes("surfactant") && ing.hlbValue === undefined) {
+          if (isFormulaIngredientSurfactant(ing) && ing.hlbValue === undefined) {
             missingFields.push("HLB");
           }
         }
@@ -547,7 +557,7 @@ function SmartFormulaAnalyzerProInner({
         const cat = getAuditedIngredientCategory(ing.name);
         const freePct = freePercentages[ing.name] !== undefined ? freePercentages[ing.name] : (ing.percentage ?? 0);
 
-        if (cat.startsWith("Surfactants")) {
+        if (isFormulaIngredientSurfactant(ing) || cat.startsWith("Surfactants")) {
           surfactantPct += (ing.percentage ?? 0);
         } else if (cat === "Builders & Chelators") {
           if (freePercentages[ing.name] !== undefined) {
@@ -620,9 +630,7 @@ function SmartFormulaAnalyzerProInner({
 
       const ecoMetrics = calculateFormulationEcoMetrics(ingredients);
       const hasNonBiodegradableSurfactant = analyzedIngredients.some(ing => {
-        const isSurfactant = ing.role?.toLowerCase().includes("surfactant") || 
-                             ing.role?.toLowerCase().includes("detergent") || 
-                             ing.hlbValue !== null;
+        const isSurfactant = isFormulaIngredientSurfactant(ing);
         const metrics = getIngredientEcoMetrics(ing?.name || "");
         return isSurfactant && (ing.percentage ?? 0) > 0 && metrics.biodegradabilityPct < 60;
       });
@@ -824,9 +832,7 @@ function SmartFormulaAnalyzerProInner({
 
     let ecoLevel = "Standard Chemical";
     const hasNonBiodegradableSurfactant = safeIngs.some(ing => {
-      const isSurfactant = (ing?.role || "").toLowerCase().includes("surfactant") || 
-                           (ing?.role || "").toLowerCase().includes("detergent") || 
-                           (ing?.hlbValue !== undefined && ing?.hlbValue !== null);
+      const isSurfactant = isFormulaIngredientSurfactant(ing);
       const metrics = getIngredientEcoMetrics(ing?.name || "");
       return isSurfactant && (ing?.percentage || 0) > 0 && metrics.biodegradabilityPct < 60;
     });
