@@ -554,6 +554,25 @@ export function runPowderEngineTestSuite(): {
     'INSUFFICIENT_DATA with null totals and named invalid cost'
   );
 
+  const reportMissingCost = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'LABSA 90%', percentage: 10, activeMatterPct: 90, costPerKg: undefined as any },
+      { name: 'Soda Ash Dense', percentage: 40, activeMatterPct: 100, costPerKg: 0.35 },
+      { name: 'Sodium Sulphate', percentage: 50, activeMatterPct: 100, costPerKg: 0.12 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100
+  });
+  assert(
+    'Phase 4B Input Integrity',
+    'Missing raw-material price is not treated as a genuine zero-price quote',
+    reportMissingCost.costing.source === 'INSUFFICIENT_DATA' &&
+      reportMissingCost.costing.costPerKg === null &&
+      reportMissingCost.costing.missingCostIngredients?.includes('LABSA 90%') === true,
+    reportMissingCost.costing,
+    'INSUFFICIENT_DATA with missing cost ingredient named'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
   const totalCount = results.length;
