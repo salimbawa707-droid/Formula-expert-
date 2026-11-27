@@ -24,7 +24,7 @@ export interface MasterIngredientApplicabilityScreenRow {
   productName: string | undefined;
   provenanceSource: string | undefined;
   provenanceUrl: string | undefined;
-  provenanceVerificationStatus: UniversalIngredient['provenance'] extends infer P ? P extends { verificationStatus: infer S } ? S : never : never;
+  provenanceVerificationStatus: 'VERIFIED' | 'NEEDS_VERIFICATION' | 'UNVERIFIED' | undefined;
   preliminaryDisposition: PreliminaryDisposition;
   rationale: string;
   criticalUnknowns: string[];
