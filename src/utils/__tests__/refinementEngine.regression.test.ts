@@ -1,5 +1,6 @@
 import { RefinementEngine } from '../refinementEngine';
 import { DetailedLabEvidenceRecord } from '../labEvidenceEngine';
+import { validateIngredientCompositionEvidence } from '../ingredientCompositionEvidence';
 
 export function runRefinementEngineRegressionTestSuite() {
 const category = 'LAUNDRY_LIQUID' as const;
@@ -144,6 +145,62 @@ const invalidEvidence = proposal([
   { ...record({ id: 'i5', formulaId: 'I5', value: 50 }), unit: 'ppm' as any }
 ]);
 check('calculated, warning and incompatible-unit records are rejected', invalidEvidence === undefined, invalidEvidence, undefined);
+
+// Ingredient-composition evidence contract: valid traceability is required end-to-end.
+const validCompositionRecord = record({ id: 'contract-valid', formulaId: 'C1', value: 22 });
+const validContract = validateIngredientCompositionEvidence({
+  ...(validCompositionRecord as any),
+  categoryId: category,
+  formulaId: 'C1',
+  formulaVersion: '1.0',
+  sampleId: 'S-contract',
+  value: 22,
+  unit: '%'
+});
+check('complete source-backed composition contract accepted', validContract.isValid, validContract.errors, []);
+
+const missingSourceContract = validateIngredientCompositionEvidence({
+  ...(validCompositionRecord as any),
+  sourceDocumentReference: '',
+  categoryId: category,
+  formulaId: 'C1',
+  formulaVersion: '1.0',
+  sampleId: 'S-contract',
+  value: 22,
+  unit: '%'
+});
+check('missing original source document rejected', !missingSourceContract.isValid, missingSourceContract.isValid, false);
+
+const invalidReplicateContract = validateIngredientCompositionEvidence({
+  ...(validCompositionRecord as any),
+  replicateNumber: 0,
+  categoryId: category,
+  formulaId: 'C1',
+  formulaVersion: '1.0',
+  sampleId: 'S-contract',
+  value: 22,
+  unit: '%'
+});
+check('zero replicate number rejected', !invalidReplicateContract.isValid, invalidReplicateContract.isValid, false);
+
+const invalidBasisContract = validateIngredientCompositionEvidence({
+  ...(validCompositionRecord as any),
+  compositionBasis: undefined,
+  categoryId: category,
+  formulaId: 'C1',
+  formulaVersion: '1.0',
+  sampleId: 'S-contract',
+  value: 22,
+  unit: '%'
+});
+check('unspecified composition basis rejected', !invalidBasisContract.isValid, invalidBasisContract.isValid, false);
+
+const wrongIngredientIdentity = proposal([
+  { ...record({ id: 'id1', formulaId: 'ID1', value: 10 }), ingredientCanonicalId: 'different-ingredient' },
+  record({ id: 'id2', formulaId: 'ID2', value: 20 }),
+  record({ id: 'id3', formulaId: 'ID3', value: 30 })
+]);
+check('canonical ingredient identity mismatch excluded', wrongIngredientIdentity === undefined, wrongIngredientIdentity, undefined);
 
 const failed = results.filter(result => !result.passed);
 for (const result of results) {
