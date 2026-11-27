@@ -55,7 +55,7 @@ function normalizeActiveMatterInputValue(value: unknown): unknown {
 
 export type ActiveMatterProvenance = 'authoritative' | 'canonical_library_default' | 'reference_default' | 'explicit_override' | 'derived_from_name' | 'missing';
 
-export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'none';
+export type SurfactantChargeClass = 'anionic' | 'nonionic' | 'amphoteric' | 'cationic' | 'conditional' | 'none';
 
 export interface IngredientActiveResolution {
   activeMatterPct: number | null;
@@ -94,12 +94,14 @@ export interface SurfactantActiveBreakdown {
   nonionicActivePct: number;
   amphotericActivePct: number;
   cationicActivePct: number;
+  conditionalActivePct: number;
   totalActiveSurfactants: number;
   totalRawSurfactants: number;
   anionicRatio: number;
   nonionicRatio: number;
   amphotericRatio: number;
   cationicRatio: number;
+  conditionalRatio: number;
 }
 
 export interface WaterBalanceBreakdown {
@@ -203,6 +205,7 @@ export class ActiveMatterEngine {
     const routed = canonicalIngredientId ? resolveFunctionalRouting(canonicalIngredientId) : null;
     if (routed?.role === 'IDENTITY_UNRESOLVED') return { isSurfactant: false, surfactantType: 'none' };
     if (routed?.role === 'POLYMERIC_DISPERSANT') return { isSurfactant: false, surfactantType: 'none' };
+    if (routed?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return { isSurfactant: true, surfactantType: 'conditional' };
     if (routed?.routingClass === 'ANIONIC') return { isSurfactant: true, surfactantType: 'anionic' };
     if (routed?.routingClass === 'AMPHOTERIC') return { isSurfactant: true, surfactantType: 'amphoteric' };
     const cat = (category || '').toLowerCase();
@@ -595,6 +598,7 @@ export class ActiveMatterEngine {
     let nonionicActivePct = 0;
     let amphotericActivePct = 0;
     let cationicActivePct = 0;
+    let conditionalActivePct = 0;
     let totalActiveSurfactants = 0;
     let totalRawSurfactants = 0;
 
@@ -697,6 +701,9 @@ export class ActiveMatterEngine {
             case 'cationic':
               cationicActivePct += activePct;
               break;
+            case 'conditional':
+              conditionalActivePct += activePct;
+              break;
           }
         }
       }
@@ -735,6 +742,7 @@ export class ActiveMatterEngine {
     const nonionicRatio = totalActiveSurfactants > 0 ? (nonionicActivePct / totalActiveSurfactants) * 100 : 0;
     const amphotericRatio = totalActiveSurfactants > 0 ? (amphotericActivePct / totalActiveSurfactants) * 100 : 0;
     const cationicRatio = totalActiveSurfactants > 0 ? (cationicActivePct / totalActiveSurfactants) * 100 : 0;
+    const conditionalRatio = totalActiveSurfactants > 0 ? (conditionalActivePct / totalActiveSurfactants) * 100 : 0;
 
     // Integrity warnings
     if (Math.abs(totalRawMatter - 100) > 0.5 && safeIngs.length > 0) {
@@ -758,12 +766,14 @@ export class ActiveMatterEngine {
         nonionicActivePct: Number(nonionicActivePct.toFixed(2)),
         amphotericActivePct: Number(amphotericActivePct.toFixed(2)),
         cationicActivePct: Number(cationicActivePct.toFixed(2)),
+        conditionalActivePct: Number(conditionalActivePct.toFixed(2)),
         totalActiveSurfactants: Number(totalActiveSurfactants.toFixed(2)),
         totalRawSurfactants: Number(totalRawSurfactants.toFixed(2)),
         anionicRatio: Number(anionicRatio.toFixed(1)),
         nonionicRatio: Number(nonionicRatio.toFixed(1)),
         amphotericRatio: Number(amphotericRatio.toFixed(1)),
-        cationicRatio: Number(cationicRatio.toFixed(1))
+        cationicRatio: Number(cationicRatio.toFixed(1)),
+        conditionalRatio: Number(conditionalRatio.toFixed(1))
       },
       waterBalance: {
         freeAddedWaterPct: Number(totalFreeWaterPct.toFixed(2)),
