@@ -558,15 +558,20 @@ export class ScientificExecutionDAG {
             const activePct = ing.percentage * (resolvedActive / 100);
             if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return;
 
-            if (route?.routingClass === 'ANIONIC' || (!route && (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')))) {
-              anionic += activePct;
-            } else if (route?.routingClass === 'NONIONIC' || (!route && (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside')))) {
-              nonionic += activePct;
-            } else if (route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb')))) {
-              amphoteric += activePct;
-            } else if (!route && (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat'))) {
-              cationic += activePct;
-            }
+            const isAnionic = route
+              ? route.routingClass === 'ANIONIC'
+              : role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos');
+            const isNonionic = route
+              ? route.routingClass === 'NONIONIC'
+              : role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside');
+            const isZwitterionic = route
+              ? route.chargeBehavior === 'ZWITTERIONIC'
+              : role.includes('amphoteric') || name.includes('betaine') || name.includes('capb');
+            const isCationic = !route && (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat'));
+            if (isAnionic) anionic += activePct;
+            else if (isNonionic) nonionic += activePct;
+            else if (isZwitterionic) amphoteric += activePct;
+            else if (isCationic) cationic += activePct;
           }
         });
 
