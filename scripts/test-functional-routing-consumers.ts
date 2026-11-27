@@ -11,6 +11,8 @@ import { resolveFunctionalCompatibilityMatrixPair } from '../src/data/chemicals'
 import { calculateFormulationCompatibility } from '../src/utils/compatibilityEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
 
+const ionicAll = getIngredientsByMajorCategory('ionic','all');
+assert(!ionicAll.some(i => i.id === 'tallow-amine-oxide'), 'blocked identity must not leak into the all-ionic category');
 const ionicAmphoteric = getIngredientsByMajorCategory('ionic','amphoteric');
 const ionicAnionic = getIngredientsByMajorCategory('ionic','anionic');
 const nonionic = getIngredientsByMajorCategory('nonionic');
