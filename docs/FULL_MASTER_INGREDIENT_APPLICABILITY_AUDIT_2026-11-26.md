@@ -67,3 +67,14 @@ These are review environments derived from taxonomy descriptions and are not sup
 - `NOT_REVIEWED`: no ingredient-specific review has yet been completed.
 
 A commercial `activeDefault` is not a supplier assay; it must not be used as a maximum use level. A category's target pH is not proof that an ingredient is stable throughout that range. Each final decision requires a cited supplier TDS/SDS or authoritative technical source and, where necessary, bench compatibility/performance testing.
+
+
+## 2026-11-27 source re-audit correction and current implementation
+
+The prior Stage 2 paragraph stated that `src/data/ingredientApplicabilityReviewMatrix.ts` had been added and that its rows began as `NOT_REVIEWED`. A direct read of the current `main` tree on 2026-11-27 returned 404 for both that matrix path and the named test path. Therefore that earlier implementation claim is not accepted as current source-level proof.
+
+The current canonical source scan found 430 records, 430 unique IDs, 15 catalog classes, 3 structured provenance objects (1 with a source URL), and no populated ingredient pH min/max fields. The 13 canonical product categories are distinct from the 15 ingredient catalog classes.
+
+The replacement implementation is `src/data/masterIngredientApplicabilityScreen.ts`, which generates all 430 × 13 = 5,590 ingredient/category rows from the canonical source. This is explicitly a preliminary AI chemistry-risk screen only. Every row is `finalApplicability: NOT_APPROVED`; no row receives a final scientific suitability approval or invented use range. Its regression is `scripts/test-master-ingredient-applicability-screen.ts` and is wired into `test:all`.
+
+The current evidence-vault reconciliation is recorded in `evidence_vault/forensic_reports/PHASE4B_MASTER_INGREDIENT_APPLICABILITY_PROVENANCE_RECONCILIATION_2026-11-27.md`. It finds 21 evidence records with structured rights status, 28 source-register rows, and four inspected datasets that all remain validation-deficient. This is not Phase 4B closure: per-grade ingredient provenance, source archival, dataset semantic gaps and zero eligible matched formula prediction/observation pairs remain open.
