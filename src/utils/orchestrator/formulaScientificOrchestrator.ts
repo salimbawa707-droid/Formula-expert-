@@ -159,7 +159,7 @@ export class FormulaScientificOrchestrator {
           rawSurfactantsTotal: null as any
         },
         pHResult: { ph: null, isMeasured: false, provenance: 'INSUFFICIENT_DATA', bufferCapacity: null, ionicStrength: null, confidence: 'No calculation', solverConverged: false, warnings: ['Calculation skipped after input validation failure.'], slurryBasis: undefined, measuredPH: null, predictionError: null, details: {} },
-        activeMatterResult: { totalSurfactantActivePct: null as any, totalActiveMatterPct: null as any, meetsCategoryMin: null as any, categoryMinPct: null as any, status: 'INSUFFICIENT_DATA', surfactantBreakdown: { anionic: null as any, nonionic: null as any, amphoteric: null as any, cationic: null as any, total: null as any } },
+        activeMatterResult: { totalSurfactantActivePct: null as any, totalActiveMatterPct: null as any, meetsCategoryMin: null as any, categoryMinPct: null as any, status: 'INSUFFICIENT_DATA', surfactantBreakdown: { anionic: null as any, conditionalPHDependentAnionic: null as any, conditionalAmineOxide: null as any, nonionic: null as any, amphoteric: null as any, cationic: null as any, total: null as any } },
         hlbResult: {
           blendedHLB: null,
           hasSurfactants: false,
@@ -561,10 +561,12 @@ export class FormulaScientificOrchestrator {
 
     const finiteSurfactantTotal =
       Number.isFinite(state.anionicPct) &&
+      Number.isFinite(state.conditionalPHDependentAnionicPct) &&
+      Number.isFinite(state.conditionalAmineOxidePct) &&
       Number.isFinite(state.nonionicPct) &&
       Number.isFinite(state.amphotericPct) &&
       Number.isFinite(state.cationicPct)
-        ? Number((state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct).toFixed(2))
+        ? Number((state.anionicPct + state.conditionalPHDependentAnionicPct + state.conditionalAmineOxidePct + state.nonionicPct + state.amphotericPct + state.cationicPct).toFixed(2))
         : null;
 
     return {
@@ -608,6 +610,8 @@ export class FormulaScientificOrchestrator {
         categoryMinPct: categoryDef ? categoryDef.activeMatterMinPct : 0,
         surfactantBreakdown: {
           anionic: safeFixed(state.anionicPct, 2) as any,
+          conditionalPHDependentAnionic: safeFixed(state.conditionalPHDependentAnionicPct, 2) as any,
+          conditionalAmineOxide: safeFixed(state.conditionalAmineOxidePct, 2) as any,
           nonionic: safeFixed(state.nonionicPct, 2) as any,
           amphoteric: safeFixed(state.amphotericPct, 2) as any,
           cationic: safeFixed(state.cationicPct, 2) as any,
