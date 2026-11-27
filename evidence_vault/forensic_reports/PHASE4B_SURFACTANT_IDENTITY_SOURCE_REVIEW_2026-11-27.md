@@ -119,3 +119,17 @@ This continuation expands the source screen. These are source-backed identity ca
 This audit now includes 29 catalog candidate groups/issues examined across the three source-review tranches. It has identified source-backed identity candidates and several explicit identity/CAS/category holds. This is not a count of 29 supplier-grade verified records: all commercial-grade assays, manufacturer identity, lot CoA/TDS/SDS, purity/solids and grade-specific composition remain unestablished.
 
 Still requiring source-specific review before any identity SSOT promotion include: sodium C14-17 secondary alkyl sulfonate; sodium cocoamphoacetate; PEG-40 hydrogenated castor oil; Poloxamer 184; benzalkonium chloride; and remaining surfactant-class candidates not yet covered. No candidate is promoted merely because a CAS/name pair appears in a secondary index.
+
+
+## Aggregate reconciliation of this surfactant source-review work
+
+Across the three tranches above:
+- Candidate groups/issues examined: 29.
+- Source-backed identity candidates (secondary/official registry corroboration only): 20.
+- Explicit CAS/identity conflict holds: 4.
+- Functional-class review flags: 1 (sodium lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established: 0.
+- Formula applicability approvals: 0.
+
+These figures count review outcomes, not fully resolved master rows. The source-backed candidates still need primary nomenclature/identity scope review where relevant and supplier-grade TDS/SDS/CoA evidence. The 397-record backlog is not closed by this tranche.
