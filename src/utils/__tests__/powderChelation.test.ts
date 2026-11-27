@@ -63,11 +63,26 @@ export function runPowderChelationTestSuite(): {
   assert('Valid 47% hasValidatedData is true', res6.hasValidatedData === true);
   assert('Valid 47% calciumCapacityMgPerDose is defined', res6.calciumCapacityMgPerDose !== undefined);
 
-  // 0% active matter as valid numeric 0
+  // Zero active matter cannot support a positive chelation-capacity claim.
   const res7 = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 0 }], 50, 10);
-  assert('0% active matter source is CALCULATED', res7.source === 'CALCULATED');
-  assert('0% active matter hasValidatedData is true', res7.hasValidatedData === true);
-  assert('0% active matter calciumCapacityMgPerDose is 0', res7.calciumCapacityMgPerDose === 0);
+  assert('0% active matter source is INSUFFICIENT_DATA', res7.source === 'INSUFFICIENT_DATA');
+  assert('0% active matter hasValidatedData is false', res7.hasValidatedData === false);
+  assert('0% active matter calciumCapacityMgPerDose is unavailable', res7.calciumCapacityMgPerDose === undefined);
+
+  // GLDA-47 lookup capacity is already on a commercial-product basis: 10% of a 50g dose = 5g; 5g × 137mg/g = 685mg.
+  const commercialBasis = calculatePowderChelationSystem([{ ...chelator, activeMatterPct: 47 }], 50, 10);
+  assert('Commercial-grade capacity is not double-discounted by assay', commercialBasis.calciumCapacityMgPerDose === 685);
+
+  // Explicit active-material basis is scaled once by the commercial assay.
+  const activeBasis = calculatePowderChelationSystem([{
+    ...chelator,
+    name: 'Custom GLDA grade',
+    activeMatterPct: 50,
+    chelatingCapacityMgPerGram: 100,
+    chelatingCapacityEvidenceId: 'TEST-CAPACITY-EVIDENCE',
+    chelatingCapacityBasis: 'ACTIVE_MATERIAL'
+  }], 50, 10);
+  assert('Explicit active-material capacity is assay-scaled exactly once', activeBasis.calciumCapacityMgPerDose === 250);
 
   return {
     total: passed + failed,
