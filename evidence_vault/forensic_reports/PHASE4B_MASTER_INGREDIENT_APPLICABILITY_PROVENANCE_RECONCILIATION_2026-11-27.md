@@ -280,7 +280,7 @@ The functional routing adapter is now consumed by three existing engines, rather
    - Sodium lignosulfonate is excluded from the surfactant-active breakdown while remaining a separately classified anionic polymeric dispersant.
    - The PEG-2 Tallow Amine identity-conflict record returns missing active matter, no surfactant class, and an explicit conflict.
 2. `HLBEngine`
-   - Functional routes with no defensible HLB basis return `hlb: null`, including SLS, amine oxide, lignosulfonate and blocked identity rows; explicit HLB input does not bypass this identity-specific guard.
+   - Routes without a defensible HLB basis return `hlb: null` (amine oxide, lignosulfonate and blocked identity rows). SLS/SLES use Davies-scale catalog screening values and APGs use catalog screening values only; these are marked `estimated`, not supplier-grade authoritative.
 3. `resolveEng002PureComponent`
    - Pure-component CMC transfer is denied for commercial amine oxide, lignosulfonate and blocked tallow-amine identity; the curated SLS pure-component reference remains available subject to the existing exact CAS / blend checks.
 
@@ -300,7 +300,7 @@ No source evidence in this addendum verifies supplier grade, lot assay, actual a
 | SLES 70 / SLES 28 (`sles-70`, `sles-28`) | Health Canada NHPID identifies Sodium Laureth Sulfate and lists CAS 68585-34-2 among accepted registry numbers; PubChem's sodium laureth sulfate entry includes multiple CAS/ethoxylate aliases. | Route as ANIONIC primary surfactant; keep 70% and 28% as distinct commercial grades. | EO distribution, active matter, free oil, 1,4-dioxane, salt, pH, supplier TDS and lot CoA remain unverified. Public source does not establish either catalog grade. |
 | CAPB 30 / 45 (`capb-30-uni`, `capb-45`) | CIR's CAPB safety assessment defines the coconut-fatty-acyl betaine family and lists multiple related CAS numbers; PubChem ChEBI depositor record corroborates CAS 61789-40-0. | Route as zwitterionic amphoteric betaine. | 30/45% values remain catalog labels until supplier/lot assay; fatty-acyl distribution, free amidoamine/DMAPA, salt and impurity limits remain grade-specific. |
 | Lauramine Oxide (`lauryl-amine-oxide` family) | PubChem identity is supported; Kao OXIDET DM-20 TDS explicitly describes Lauramine Oxide as nonionic/cationic depending on pH and specifies 29–31% active matter for that named Kao grade. | Keep separate `AMINE_OXIDE_SURFACTANT` role and `PH_DEPENDENT_AMINE_OXIDE` charge behaviour. Do not equate it with a classic zwitterionic betaine. | Kao TDS is a comparator only; it does not establish the user's supplier or lot. Do not copy its 29–31% assay. Exact pH/speciation and grade composition remain open. |
-| APG 0810 (`apg-0810`) | FDA GSRS/PubChem record for CAS 68515-73-1 identifies caprylyl/capryl oligoglucoside and explicitly labels the substance class as mixture; Health Canada registry lists matching INCI/CAS. | Route as NONIONIC APG; disable unsupported pure-component CMC and grade HLB transfer. | Catalog 50% value and HLB are not supplier assay/property evidence. |
+| APG 0810 (`apg-0810`) | FDA GSRS/PubChem record for CAS 68515-73-1 identifies caprylyl/capryl oligoglucoside and explicitly labels the substance class as mixture; Health Canada registry lists matching INCI/CAS. | Route as NONIONIC APG; disable unsupported pure-component CMC and treat catalog HLB only as a screening estimate, not grade-verified HLB. | Catalog 50% value and HLB are not supplier assay/property evidence. |
 | APG 1214 (`apg-1214`) | PubChem Lauryl Glucoside record aggregates CAS 27836-64-2 and 110615-47-9 among multiple identifiers. | Nonionic functional family is supported by INCI; exact CAS-to-commercial-grade mapping remains ambiguous. | Keep exact identity crosswalk unresolved; no pure C12 glucoside CMC/HLB transfer to commercial APG mixture. |
 
 Public references:
@@ -319,7 +319,7 @@ Public references:
 - `CategoryIngredientSelector.tsx`: quick category filtering now consults the same route and prevents the amine-oxide record from appearing as a generic nonionic ingredient.
 - `chemicals.ts`: compatibility matrix has a dedicated pH-dependent amine oxide state. Its pair result is `REQUIRES_COMPATIBILITY_TEST`, not an invented unconditional compatible/incompatible result. Unresolved identity yields `INSUFFICIENT_DATA`.
 - `compatibilityEngine.ts`: matrix pair decisions are consumed at runtime. Amine oxide + ionic/cationic pairings trigger grade/pH/electrolyte-specific test guidance; unresolved tallow identity blocks compatibility evaluation. Sodium lignosulfonate remains visible to anionic-charge/cationic interaction screening but is excluded from primary anionic surfactant category-policy totals.
-- `SmartFormulaAnalyzerPro.tsx`: charge/family labels and HLB fallback are now derived from the functional route. Amine oxide is labelled pH-dependent and catalog HLB fallback is suppressed; unresolved identity is visibly blocked.
+- `SmartFormulaAnalyzerPro.tsx`: charge/family labels and HLB fallback are now derived from the functional route. Amine oxide is labelled pH-dependent and catalog HLB fallback is suppressed; SLS/SLES/APG catalog HLB values are allowed only as screening references; unresolved identity is visibly blocked.
 - `ingredientFunctionalRouting.ts`: expanded route table now covers SLES 70/28, CAPB 30/45, Lauramine Oxide, APG 0810/1214, SLS, lignosulfonate and the blocked tallow-amine record.
 
 Regression:
@@ -331,3 +331,8 @@ Regression:
 This is a source-backed identity-family and consumer migration tranche, not closure of the 397-record exact identity gap. The 430 supplier-grade evidence gaps remain; the 5,590 ingredient/category applicability pairs remain NOT_APPROVED. Public reference sources are not substitutes for the user's manufacturer TDS, matching lot CoA or formulation trials.
 
 Phase 4B remains OPEN. Phase 5 remains LOCKED pending complete source reconciliation, remaining call-site migration and actual supplier/lot/applicability evidence.
+
+
+### HLB regression correction — screening vs supplier-grade evidence
+
+Run #1380 exposed that the first adapter pass suppressed HLB values too broadly, which incorrectly removed SLES Davies-scale and APG catalog screening contributions. Corrected the boundary: SLS/SLES and APG catalog HLB values may be used as screening estimates (`dataSource: estimated`), while amine oxide, lignosulfonate and unresolved tallow remain blocked from HLB transfer. This preserves the HLB calculation method without promoting catalog estimates to supplier-grade evidence. Regression tests now assert both the numeric screening value and the `estimated` provenance.
