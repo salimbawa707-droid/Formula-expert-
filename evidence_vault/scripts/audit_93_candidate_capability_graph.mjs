@@ -36,7 +36,8 @@ function classify(file, source) {
   const p = file.toLowerCase();
   if (p.startsWith('src/components/')) return 'UI_PRESENTATION';
   if (p.includes('cmcpredictor')) return 'FAIL_CLOSED_CMC_MODEL_ADAPTER';
-  if (p.includes('calibrationengine')) return 'CALIBRATION_PROPOSAL_WORKFLOW';
+  if (p.includes('refinementengine')) return 'EVIDENCE_GATED_REFINEMENT_PROPOSALS_NOT_OPTIMIZER';
+  if (p.endsWith('/calibrationengine.ts')) return 'CALIBRATION_PROPOSAL_WORKFLOW';
   if (p.includes('cleaningperformance')) return 'RULE_BASED_CLEANING_PERFORMANCE_SCORING';
   if (p.includes('labhealth')) return 'LAB_READINESS_AND_HEALTH_SCORING';
   if (p.endsWith('/calculators.ts')) return 'LEGACY_CALCULATION_FACADE';
