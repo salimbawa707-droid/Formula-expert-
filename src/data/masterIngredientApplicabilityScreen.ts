@@ -32,7 +32,7 @@ export interface MasterIngredientApplicabilityScreenRow {
   evidenceState: 'CATALOG_METADATA_ONLY' | 'PROVENANCE_METADATA_PRESENT';
 }
 
-function screenOne(ingredient: UniversalIngredient, category: ProductCategoryId): Omit<MasterIngredientApplicabilityScreenRow, 'ingredientId' | 'ingredientName' | 'catalogClass' | 'productCategory' | 'evidenceState'> {
+function screenOne(ingredient: UniversalIngredient, category: ProductCategoryId): Pick<MasterIngredientApplicabilityScreenRow, 'preliminaryDisposition' | 'rationale' | 'criticalUnknowns' | 'finalApplicability'> {
   const c = ingredient.category.toLowerCase();
   const proprietary = ingredient.identityType === 'PROPRIETARY_BLEND' || ingredient.casStatus === 'PROPRIETARY' || (!ingredient.casNumber && ingredient.identityType !== 'MULTI_COMPONENT_MIXTURE');
   const unknowns = [
