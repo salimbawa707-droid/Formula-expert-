@@ -1,5 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS, UniversalIngredient } from '../data/universalIngredientLibrary';
+import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
 
 // Exact, grade-specific aliases only. Avoid fuzzy substring identity matching.
 const HLB_EXACT_CANONICAL_ALIASES: Record<string, string> = {
@@ -184,6 +185,18 @@ export class HLBEngine {
     }
 
     const resolvedCategory = canonicalMatch?.category || ing?.category || '';
+    const routeId = canonicalMatch?.id || ing?.canonicalIngredientId || ing?.id;
+    const functionalRoute = routeId ? resolveFunctionalRouting(routeId) : null;
+    if (functionalRoute && !functionalRoute.hlbEligible) {
+      return {
+        hlb: null,
+        dataSource: 'missing',
+        activeMatterPct: null,
+        category: functionalRoute.routingClass === 'AMPHOTERIC' ? 'Amphoteric Surfactant' : resolvedCategory,
+        isSurfactant: functionalRoute.routingClass !== 'BLOCKED',
+        isIonic: functionalRoute.routingClass === 'ANIONIC' || functionalRoute.routingClass === 'AMPHOTERIC'
+      };
+    }
     const catLower = resolvedCategory.toLowerCase();
     const isSurfactantCategory = catLower.includes('surfactant') || 
                                  catLower.includes('betaine') || 
