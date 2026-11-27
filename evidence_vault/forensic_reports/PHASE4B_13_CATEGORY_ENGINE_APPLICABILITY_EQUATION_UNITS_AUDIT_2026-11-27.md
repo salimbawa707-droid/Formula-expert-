@@ -46,30 +46,15 @@
 - **Multipurpose cleaner:** trigger-spray compatibility, mild nonionic degreasing and low fumes.
 - **Toilet cleaner:** strongly acidic descaling, vertical cling and corrosion inhibition; chelator/builder engine is not enabled.
 - **Bathroom cleaner:** organic-acid descaling/chelating, grout protection and cling time.
-- **Glass cleaner:** active matter below 3%, solvent/hydrotrope coupling and flash drying; chelator and HLB engines are not enabled.
+- **Glass cleaner:** active matter target 1.2% with profile maximum 2.5% and strict-under-3% taxonomy constraint; solvent/hydrotrope coupling and flash drying; chelator and HLB engines are not enabled.
 - **Fabric softener:** cationic-only medium, no anionic surfactant, acidic esterquat stability; cleaning score is not applicable.
 - **Hand wash:** skin mildness, physiological pH and dispensing rheology.
 - **Kitchen degreaser:** alkaline reserve, solvent/terpene grease penetration and PPE.
 - **Car shampoo:** near-neutral pH, paint lubricity and free rinsing/no spotting.
 
-### Active-surfactant target divergence
+### Active-surfactant target reconciliation
 
-The taxonomy `activeMatterMinPct/activeMatterTargetPct` and profile `activeSurfactantRange` are not identical in 10 categories. The taxonomy target is within the profile's min/max envelope in 12 categories; **GLASS_CLEANER is the exception**: taxonomy says min 1%, target 3%, while profile says min 0.5%, max 2.5%, optimal 1.2%. The taxonomy's separate constraint says active matter must remain strictly below 3%, making its 3% target a boundary conflict. This is left OPEN for product-specification governance rather than inventing a preferred value.
-
-| Category | Taxonomy min / target % | Profile min / max / optimal % |
-|---|---:|---:|
-| DISHWASH_AUTOMATIC | 4 / 8 | 2 / 10 / 6 |
-| FLOOR_CLEANER | 3 / 6 | 3 / 8 / 5 |
-| MULTIPURPOSE_CLEANER | 4 / 8 | 4 / 10 / 6 |
-| TOILET_CLEANER | 2 / 5 | 2 / 6 / 3.5 |
-| BATHROOM_CLEANER | 3 / 7 | 3 / 8 / 5 |
-| GLASS_CLEANER | 1 / 3 | 0.5 / 2.5 / 1.2 |
-| FABRIC_SOFTENER | 4 / 12 | 4 / 15 / 8 |
-| HAND_WASH | 8 / 14 | 8 / 16 / 12 |
-| KITCHEN_DEGREASER | 8 / 16 | 8 / 18 / 14 |
-| CAR_SHAMPOO | 8 / 15 | 8 / 18 / 14 |
-
-The other three categories (LAUNDRY_LIQUID, LAUNDRY_POWDER and DISHWASH_MANUAL) have taxonomy min/target equal to profile min/optimal. No active-matter range was silently rewritten in this pass.
+Taxonomy minimum/target values are retained as the canonical screening target, and executable profile minimum/optimal values now match exactly for all 13 categories. The profile maximum remains the existing upper screening bound. GLASS_CLEANER uses 1.2% target and 2.5% profile maximum, consistent with its strict-under-3% constraint. These remain unverified engineering targets, not lab specifications.
 
 ## Complete scientific profile engine applicability matrix
 
@@ -206,6 +191,34 @@ pH is defined from hydrogen-ion activity, `pH = -log10(a_H+)`. Polyprotic specie
 - **Cleaning/CPI:** category-specific rule branches and weighted heuristic KPIs; the inventory labels this heuristic screening, not measured detergency.
 - **Foam kinetics:** no executable formula predictor is registered as a profile engine; the separately implemented foam-decay utility analyses measured time-series data only.
 
+## Evidence-based specification reconciliation (follow-up revision)
+
+Repository evidence hierarchy:
+- Product taxonomy contains canonical category active-matter minimum and target; existing P1 master regressions explicitly pin LAUNDRY_LIQUID at 10/16% and DISHWASH_AUTOMATIC at 4/8%.
+- Scientific product profile calculationPolicy is consumed by formulationConstraintEngine.ts to construct HARD active-matter and viscosity constraints.
+- Taxonomy explicitly labels category pH/active-matter values UNVERIFIED_ENGINEERING_TARGETS. No category-specific external product specification or lab dossier is attached. This reconciliation establishes internal software consistency, not empirical or regulatory validation.
+
+Rules applied:
+1. Taxonomy minimum/target is the canonical engineering screening target; profile minimum/optimal now match it exactly. Existing profile maximum remains the upper screening bound.
+2. GLASS_CLEANER taxonomy target was 3%, contradicting its own strict-under-3% constraint; the profile already had 2.5% maximum and 1.2% optimum. Taxonomy target is corrected to 1.2%, and profile minimum is aligned to taxonomy minimum 1%.
+3. Viscosity hard constraints are sourced from profile targetViscosityCP. Taxonomy descriptive bands now mirror the executable profile ranges: LAUNDRY_LIQUID 500–1500 cP; DISHWASH_MANUAL 1200–3000 cP. These are not universal industry standards.
+4. Regression coverage requires exact taxonomy minimum/profile minimum and taxonomy target/profile optimal equality for all 13 categories.
+
+| Category | Taxonomy min / target % | Profile min / max / optimal % |
+|---|---:|---:|
+| DISHWASH_AUTOMATIC | 4 / 8 | 4 / 10 / 8 |
+| FLOOR_CLEANER | 3 / 6 | 3 / 8 / 6 |
+| MULTIPURPOSE_CLEANER | 4 / 8 | 4 / 10 / 8 |
+| TOILET_CLEANER | 2 / 5 | 2 / 6 / 5 |
+| BATHROOM_CLEANER | 3 / 7 | 3 / 8 / 7 |
+| GLASS_CLEANER | 1 / 1.2 | 1 / 2.5 / 1.2 |
+| FABRIC_SOFTENER | 4 / 12 | 4 / 15 / 12 |
+| HAND_WASH | 8 / 14 | 8 / 16 / 14 |
+| KITCHEN_DEGREASER | 8 / 16 | 8 / 18 / 16 |
+| CAR_SHAMPOO | 8 / 15 | 8 / 18 / 15 |
+
+External evidence gap retained: all category targets remain UNVERIFIED_ENGINEERING_TARGETS. Product-specific customer brief, benchmark standard, finished-formula lab data and independent human sign-off are required before calling them validated specifications.
+
 ## Corrections applied in this branch
 
 1. Added `HLB_ENGINE` to `DISHWASH_AUTOMATIC.applicableEngines`, aligning it with the existing taxonomy flag and `requiresHLBAnalysis=true`.
@@ -225,10 +238,10 @@ pH is defined from hydrogen-ion activity, `pH = -log10(a_H+)`. Polyprotic specie
 
 ## Explicitly unresolved / not promoted
 
-1. Laundry-liquid viscosity target conflict: taxonomy text 600–1200 cP vs profile target 500–1500 cP.
-2. Manual-dish viscosity target conflict: taxonomy text 1500–2500 cP vs profile target 1200–3000 cP.
+1. Category pH and active-matter values remain unverified engineering screening targets; no category-specific evidence dossier or independent approval is attached.
+2. Internal taxonomy/profile viscosity and active-matter conflicts are reconciled in this revision; laboratory validity is not established.
 3. CMC and foam have taxonomy metric flags but no distinct ScientificEngineId; their separate utility paths remain labeled as utilities, not profile-routed engines.
 4. HLB/CPI/viscosity/CMC remain model/screening outputs; no engine is promoted to LAB_VALIDATED by this source audit.
 5. Static import/call-site analysis cannot prove all dynamic runtime behavior. Full deployment telemetry and matched finished-formula laboratory observations remain outside this audit.
 
-**Disposition:** Category-registry corrections and fail-closed regression coverage prepared. Two conflicting viscosity target statements remain OPEN pending product-specification governance. Phase 4B remains OPEN; Phase 5 remains LOCKED.
+**Disposition:** Category-registry corrections and fail-closed regression coverage prepared. Internal target conflicts are reconciled; external product-specification evidence and independent human review remain OPEN. Phase 4B remains OPEN; Phase 5 remains LOCKED.

@@ -313,29 +313,12 @@ export function runScientificRouterTestSuite(): { passed: number; failed: number
       'identical min/max/optimal pH'
     );
     const profileActiveRange = profile.calculationPolicy.activeSurfactantRange;
-    const taxonomyActiveRangeOverlapsProfile =
-      definition!.activeMatterMinPct <= profileActiveRange.max &&
-      profileActiveRange.min <= definition!.activeMatterTargetPct;
     assert(
-      `13-category isolation: ${categoryId} taxonomy/profile active-matter envelopes overlap`,
-      taxonomyActiveRangeOverlapsProfile,
+      `13-category isolation: ${categoryId} taxonomy/profile active-matter minimum and target agree`,
+      definition!.activeMatterMinPct === profileActiveRange.min &&
+      definition!.activeMatterTargetPct === profileActiveRange.optimal,
       { taxonomyMin: definition!.activeMatterMinPct, taxonomyTarget: definition!.activeMatterTargetPct, profile: profileActiveRange },
-      'overlapping category/profile active-matter ranges'
-    );
-    const taxonomyTargetWithinProfile =
-      definition!.activeMatterTargetPct >= profileActiveRange.min &&
-      definition!.activeMatterTargetPct <= profileActiveRange.max;
-    const knownGlassTargetConflict = categoryId === 'GLASS_CLEANER' &&
-      definition!.activeMatterMinPct === 1 &&
-      definition!.activeMatterTargetPct === 3 &&
-      profileActiveRange.min === 0.5 &&
-      profileActiveRange.max === 2.5 &&
-      profileActiveRange.optimal === 1.2;
-    assert(
-      `13-category isolation: ${categoryId} active target is within profile or recorded exception`,
-      taxonomyTargetWithinProfile || knownGlassTargetConflict,
-      { taxonomyTarget: definition!.activeMatterTargetPct, profile: profileActiveRange, knownGlassTargetConflict },
-      'target within profile range or explicit GLASS_CLEANER governance exception'
+      'taxonomy min/target exactly match profile min/optimal'
     );
     assert(
       `13-category isolation: ${categoryId} powder engine matches physical form`,
