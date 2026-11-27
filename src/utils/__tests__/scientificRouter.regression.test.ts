@@ -1,6 +1,8 @@
 import {
   CANONICAL_PRODUCT_CATEGORY_IDS,
+  getProductCategory,
 } from '../../domain/productTaxonomy';
+import { isMetricApplicable } from '../../components/aiformulator/constants';
 import {
   SCIENTIFIC_PRODUCT_PROFILES,
   getScientificProductProfile,
@@ -14,6 +16,9 @@ import {
   shouldEnforceLowFoam,
   shouldAllowCationicSurfactants,
   shouldAllowAnionicSurfactants,
+  getCategoryExpectedSurfactantType,
+  getCategoryPHLimits,
+  getCategoryActiveSurfactantLimits,
 } from '../scientificRouter';
 
 export interface TestResult {
@@ -238,6 +243,64 @@ export function runScientificRouterTestSuite(): { passed: number; failed: number
   assert('Unknown category string fails safely and explicitly without fallback to LAUNDRY_LIQUID', unknownFailed, true, true);
 
   // 12. Engine applicability helpers return expected boolean flags
+  // 12A. Category applicability is a single contract across taxonomy, profile, policy and UI metric gates.
+  for (const categoryId of CANONICAL_PRODUCT_CATEGORY_IDS) {
+    const definition = getProductCategory(categoryId);
+    const profile = getScientificProductProfile(categoryId);
+    const mappings = [
+      ['hlb', 'HLB_ENGINE', definition?.categoryApplicability.hlb],
+      ['viscosity', 'VISCOSITY_ENGINE', definition?.categoryApplicability.viscosity],
+      ['cleaningScore', 'CLEANING_PERFORMANCE_ENGINE', definition?.categoryApplicability.cleaningScore],
+      ['builder', 'CHELATOR_ENGINE', definition?.categoryApplicability.builder]
+    ] as const;
+    for (const [metric, engineId, taxonomyFlag] of mappings) {
+      const engineFlag = profile.applicableEngines.includes(engineId);
+      assert(
+        `13-category isolation: ${categoryId} ${metric} taxonomy/profile/UI agree`,
+        taxonomyFlag === engineFlag && isMetricApplicable(categoryId, metric) === taxonomyFlag,
+        { taxonomy: taxonomyFlag, engine: engineFlag, ui: isMetricApplicable(categoryId, metric) },
+        { taxonomy: engineFlag, engine: engineFlag, ui: engineFlag }
+      );
+    }
+    assert(
+      `13-category isolation: ${categoryId} pH target agrees with taxonomy`,
+      definition?.targetPHMin === profile.calculationPolicy.targetPHRange.min &&
+      definition?.targetPHMax === profile.calculationPolicy.targetPHRange.max &&
+      definition?.defaultPH === profile.calculationPolicy.targetPHRange.optimal,
+      { taxonomy: [definition?.targetPHMin, definition?.targetPHMax, definition?.defaultPH], profile: profile.calculationPolicy.targetPHRange },
+      'identical min/max/optimal pH'
+    );
+    assert(
+      `13-category isolation: ${categoryId} powder engine matches physical form`,
+      profile.applicableEngines.includes('POWDER_ENGINE') === (profile.physicalForm === 'POWDER') &&
+      profile.calculationPolicy.requiresPowderCalculations === (profile.physicalForm === 'POWDER'),
+      { physicalForm: profile.physicalForm, engine: profile.applicableEngines.includes('POWDER_ENGINE'), required: profile.calculationPolicy.requiresPowderCalculations },
+      'POWDER_ENGINE and powder calculations only for POWDER'
+    );
+  }
+
+  // Automatic dishwasher already declares HLB as applicable and required; the engine registry must agree.
+  const automaticDishwash = getScientificProductProfile('DISHWASH_AUTOMATIC');
+  assert(
+    'Automatic dishwash HLB requirement is wired to the HLB engine',
+    automaticDishwash.calculationPolicy.requiresHLBAnalysis === true &&
+    automaticDishwash.applicableEngines.includes('HLB_ENGINE') &&
+    getProductCategory('DISHWASH_AUTOMATIC')?.categoryApplicability.hlb === true,
+    { required: automaticDishwash.calculationPolicy.requiresHLBAnalysis, engine: automaticDishwash.applicableEngines.includes('HLB_ENGINE'), taxonomy: getProductCategory('DISHWASH_AUTOMATIC')?.categoryApplicability.hlb },
+    { required: true, engine: true, taxonomy: true }
+  );
+
+  // Unknown categories fail closed: no metrics, ionic permission, pH range, or active range.
+  for (const metric of ['hlb', 'cmc', 'viscosity', 'cleaningScore', 'foam', 'builder'] as const) {
+    assert(`Unknown category denies ${metric} metric`, isMetricApplicable('Alien Rocket Cleaner', metric) === false, false, false);
+  }
+  assert('Unknown category denies anionic surfactant permission', shouldAllowAnionicSurfactants('Alien Rocket Cleaner') === false, false, false);
+  assert('Unknown category denies cationic surfactant permission', shouldAllowCationicSurfactants('Alien Rocket Cleaner') === false, false, false);
+  assert('Unknown category has no surfactant preference default', getCategoryExpectedSurfactantType('Alien Rocket Cleaner') === null, null, null);
+  assert('Unknown category has no pH target default', getCategoryPHLimits('Alien Rocket Cleaner') === null, null, null);
+  assert('Unknown category has no active-surfactant range default', getCategoryActiveSurfactantLimits('Alien Rocket Cleaner') === null, null, null);
+
+
   assert('Powder engine is applicable to LAUNDRY_POWDER', isEngineApplicable('LAUNDRY_POWDER', 'POWDER_ENGINE') === true, true, true);
   assert('Viscosity engine is NOT applicable to LAUNDRY_POWDER', isEngineApplicable('LAUNDRY_POWDER', 'VISCOSITY_ENGINE') === false, false, false);
   assert('Viscosity engine is applicable to LAUNDRY_LIQUID', isEngineApplicable('LAUNDRY_LIQUID', 'VISCOSITY_ENGINE') === true, true, true);

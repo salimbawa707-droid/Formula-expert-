@@ -294,6 +294,7 @@ export const SCIENTIFIC_PRODUCT_PROFILES: Record<ProductCategoryId, ScientificPr
     physicalForm: 'LIQUID',
     applicableEngines: [
       'PH_ENGINE',
+      'HLB_ENGINE',
       'ACTIVE_MATTER_ENGINE',
       'VISCOSITY_ENGINE',
       'CLEANING_PERFORMANCE_ENGINE',

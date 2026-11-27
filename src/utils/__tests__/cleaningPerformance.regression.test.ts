@@ -154,6 +154,17 @@ export function runCleaningPerformanceTestSuite(): { passed: number; failed: num
   );
   assertEqual('Fail-Closed Inputs', 'Unbalanced formula blocks cleaning performance', unbalancedPerformance.provenance, 'INSUFFICIENT_DATA');
 
+  const unknownCategoryPerformance = calculateCleaningPerformance(
+    formula1 as any,
+    8.0,
+    'Alien Rocket Cleaner',
+    undefined,
+    { waterHardnessPpm: 150, washVolumeL: 10, washDoseGrams: 50, batchSizeKg: 100 }
+  );
+  assertEqual('Category Isolation', 'Unknown category emits no CPI', unknownCategoryPerformance.cpi, null);
+  assertEqual('Category Isolation', 'Unknown category emits no cleaning score', unknownCategoryPerformance.cleaningScore, null);
+  assertEqual('Category Isolation', 'Unknown category emits no category KPIs', unknownCategoryPerformance.categoryKPIs.length, 0);
+
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
   return { passed, failed, results };
