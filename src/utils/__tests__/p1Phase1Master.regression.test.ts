@@ -116,8 +116,8 @@ export function runP1Phase1MasterTestSuite() {
   assertNear('Active Matter', 'Concentrated Surfactant Carried Water %', concReport.waterBalance.carriedWaterPct, 3.00);
 
   // Mixed Surfactant System:
-  // - LABSA 96% @ 8% -> 7.68% active anionic
-  // - SLES 70% @ 10% -> 7.00% active anionic
+  // - LABSA 96% acid form @ 8% -> 7.68% conditional pH-dependent anionic active
+  // - SLES 70% @ 10% -> 7.00% fixed anionic active
   // - CAPB 30% @ 5% -> 1.50% active amphoteric
   // - LAE-9 100% @ 2% -> 2.00% active nonionic
   // - Sodium Citrate @ 2% (100% active builder, 0% surfactant)
@@ -133,7 +133,8 @@ export function runP1Phase1MasterTestSuite() {
   const mixedReport = ActiveMatterEngine.calculateActiveMatterReport(mixedFormula, 100);
   assertNear('Active Matter', 'Mixed Total Raw Surfactant % (8+10+5+2)', mixedReport.surfactants.totalRawSurfactants, 25.00);
   assertNear('Active Matter', 'Mixed Total Active Surfactant % (7.68+7.00+1.50+2.00)', mixedReport.surfactants.totalActiveSurfactants, 18.18);
-  assertNear('Active Matter', 'Mixed Anionic Active % (7.68+7.00)', mixedReport.surfactants.anionicActivePct, 14.68);
+  assertNear('Active Matter', 'Mixed Fixed Anionic Active % (SLES 7.00)', mixedReport.surfactants.anionicActivePct, 7.00);
+  assertNear('Active Matter', 'Mixed Conditional pH-Dependent Anionic Active % (LABSA 7.68)', mixedReport.surfactants.conditionalActivePct, 7.68);
   assertNear('Active Matter', 'Mixed Amphoteric Active %', mixedReport.surfactants.amphotericActivePct, 1.50);
   assertNear('Active Matter', 'Mixed Nonionic Active %', mixedReport.surfactants.nonionicActivePct, 2.00);
   assertNear('Active Matter', 'Mixed Total Active Matter % (includes 2% builder)', mixedReport.totalActiveMatter, 20.18);
