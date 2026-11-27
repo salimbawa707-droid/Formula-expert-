@@ -36,6 +36,7 @@ import { evaluatePowderFormulation } from '../powderEngine';
 import { evaluateAIGrade } from '../gradeEngine';
 import { UNIVERSAL_INGREDIENTS } from '../../data/universalIngredientLibrary';
 import { getIngredientIntelligence } from '../ingredientIntelligenceEngine';
+import { resolveFunctionalRoutingForIngredient } from '../../data/ingredientFunctionalRouting';
 import { computeFormulaFingerprint } from '../provenanceEngine';
 import { getPreservativeWarning } from '../calculators';
 import { calculateLabHealthScore } from '../labHealthEngine';
@@ -541,21 +542,29 @@ export class ScientificExecutionDAG {
         state.resolvedIngredients.forEach((ing) => {
           const name = ing.name.toLowerCase();
           const role = (ing.role || '').toLowerCase();
-          
+          const route = resolveFunctionalRoutingForIngredient({
+            id: (ing as any).id,
+            canonicalIngredientId: (ing as any).canonicalIngredientId,
+            ingredientId: (ing as any).ingredientId,
+            name: ing.name
+          });
+
           const validation = validateActiveMatterInput(ing.activeMatterPct);
           const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
-          // Unknown assay is not zero. Keep the contribution out of the numeric
-          // breakdown and preserve INSUFFICIENT_DATA from the authoritative report.
+          // Unknown assay and unresolved identity are not assigned to a charge subtotal.
+          // pH-dependent amine oxide is deliberately excluded from fixed amphoteric totals.
+          if (route?.role === 'IDENTITY_UNRESOLVED') return;
           if (typeof resolvedActive === 'number' && Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100) {
             const activePct = ing.percentage * (resolvedActive / 100);
+            if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return;
 
-            if (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos')) {
+            if (route?.routingClass === 'ANIONIC' || (!route && (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('aos'))) {
               anionic += activePct;
-            } else if (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside')) {
+            } else if (route?.routingClass === 'NONIONIC' || (!route && (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('lae') || name.includes('apg') || name.includes('glucoside'))) {
               nonionic += activePct;
-            } else if (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb') || name.includes('amine oxide')) {
+            } else if (route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (role.includes('amphoteric') || name.includes('betaine') || name.includes('capb'))) {
               amphoteric += activePct;
-            } else if (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat')) {
+            } else if (!route && (role.includes('cationic') || name.includes('quat') || name.includes('bkc') || name.includes('esterquat'))) {
               cationic += activePct;
             }
           }
