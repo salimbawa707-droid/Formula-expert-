@@ -22,6 +22,7 @@ assert(ionicAmphoteric.some(i => i.id === 'capb-30-uni'), 'CAPB must remain in a
 assert(!nonionic.some(i => i.id === 'lauryl-amine-oxide'), 'pH-dependent amine oxide must not be duplicated as generic nonionic');
 assert(nonionic.some(i => i.id === 'apg-0810'), 'APG must remain nonionic');
 assert(ionicAnionic.some(i => i.id === 'sles-70'), 'SLES must remain anionic');
+assert(ionicAnionic.some(i => i.id === 'labsa-90') && ionicAnionic.some(i => i.id === 'labsa-96'), 'LABSA commercial acid grades must route by exact CAS+INCI identity while retaining pH-dependent charge semantics');
 assert(ionicAnionic.some(i => i.id === 'aos-38') && ionicAnionic.some(i => i.id === 'aos-92'), 'AOS liquid and powder must route as anionic UVCB surfactant grades');
 assert(ionicAnionic.some(i => i.id === 'sas-60'), 'SAS 60 must route as anionic secondary alkane sulfonate');
 assert(ionicAnionic.some(i => i.id === 'sarcosinate-30'), 'sodium lauroyl sarcosinate must route as pH-dependent anionic surfactant');
@@ -77,6 +78,7 @@ const analysisWorkflowSource = readFileSync('src/utils/analysisWorkflowEngine.ts
 const dagSource = readFileSync('src/utils/orchestrator/scientificExecutionDAG.ts', 'utf8');
 assert(analysisWorkflowSource.includes('resolveFunctionalRoutingForIngredient'), 'analysis workflow charge breakdown must resolve governed functional identity');
 assert(analysisWorkflowSource.includes('conditionalAmineOxidePct'), 'analysis workflow must expose pH-dependent amine oxide separately from fixed amphoteric totals');
+assert(analysisWorkflowSource.includes('conditionalPHDependentAnionicPct'), 'analysis workflow must expose acid-form LABSA separately from fixed anionic totals');
 const qualityGateSource = readFileSync('src/utils/scientificQualityGateEngine.ts', 'utf8');
 assert(qualityGateSource.includes('resolveFunctionalRoutingForIngredient'), 'safety quality gates must consume governed functional identity');
 const smartAnalyzerSource = readFileSync('src/components/SmartFormulaAnalyzerPro.tsx', 'utf8');
@@ -91,7 +93,8 @@ assert(qualityGateSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'sa
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
 const activeMatterSource = readFileSync('src/utils/activeMatterEngine.ts', 'utf8');
 assert(activeMatterSource.includes("surfactantType: 'conditional'"), 'active matter engine must expose a separate conditional charge class');
-assert(activeMatterSource.includes('conditionalActivePct'), 'active matter report must expose conditional amine oxide active matter separately');
+assert(activeMatterSource.includes('conditionalActivePct'), 'active matter report must expose pH-dependent surfactant active matter separately');
+assert(activeMatterSource.includes("routed?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'LABSA acid-form charge must not be assumed fixed anionic before neutralization/speciation');
 const powderSource = readFileSync('src/utils/powderEngine/powderIngredientClassification.ts', 'utf8');
 assert(powderSource.includes("functionalRoute?.role === 'IDENTITY_UNRESOLVED'"), 'powder classifier must fail closed on unresolved identity');
 assert(blockedFormula.alerts.some(a => a.id === 'identity-unresolved-compatibility-block'));
@@ -115,6 +118,8 @@ const ldaoActiveResolution = ActiveMatterEngine.resolveIngredientActive({
   activeMatterPct:30
 } as any);
 assert.equal(ldaoActiveResolution.surfactantType, 'conditional', 'amine oxide active matter must retain a separate pH-dependent charge bucket');
+const labsaActiveResolution = ActiveMatterEngine.resolveIngredientActive({ id:'labsa-90', name:'LABSA 90% (Acid Slurry)', percentage:2, activeMatterPct:90 } as any);
+assert.equal(labsaActiveResolution.surfactantType, 'conditional', 'acid-form LABSA must remain a surfactant but must not enter a fixed anionic charge bucket before neutralization/speciation');
 const ldaoActiveReport = ActiveMatterEngine.calculateActiveMatterReport([{
   id:'lauryl-amine-oxide',
   name:'Lauryl Amine Oxide 30% (LDAO)',
