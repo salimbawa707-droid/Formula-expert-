@@ -86,6 +86,58 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
   });
   assert(carShampooResult.issues.some((i) => i.id === 'carwash-wax-strip'), 'Test 5: Car shampoo flags alkaline wax stripping risk');
 
+  // Test 6: Route-first LABSA speciation — acid-form identity is conditional below neutralization pH.
+  const labsa: FormulationIngredient = {
+    id: 'labsa-90',
+    canonicalIngredientId: 'labsa-90',
+    name: 'LABSA 90%',
+    category: 'Anionic Surfactant',
+    percent: 8,
+    activePercent: 90,
+    costPerKg: 1.5,
+  };
+  const acidicLabsaQuat = evaluateExpertReasoning({
+    ingredients: [labsa, cationicEsterquat],
+    productCategory: 'Laundry Detergent Powder',
+    calculatedPH: 3.5,
+  });
+  assert(
+    acidicLabsaQuat.issues.some((i) => i.id === 'ph-dependent-anionic-cationic-conditional') &&
+      !acidicLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 6: Acid-form LABSA remains conditional below pH 6 and is not asserted as a fixed anionic clash'
+  );
+
+  const neutralizedLabsaQuat = evaluateExpertReasoning({
+    ingredients: [labsa, cationicEsterquat],
+    productCategory: 'Laundry Detergent Powder',
+    calculatedPH: 8.5,
+  });
+  assert(
+    neutralizedLabsaQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 7: Neutralized LABSA routes as anionic for ionic compatibility screening at pH >= 6'
+  );
+
+  // Test 8: Amine oxide is pH-dependent, not a fixed nonionic or zwitterionic species.
+  const amineOxide: FormulationIngredient = {
+    id: 'lauryl-amine-oxide',
+    canonicalIngredientId: 'lauryl-amine-oxide',
+    name: 'Lauryl Amine Oxide 30%',
+    category: 'Nonionic Surfactant',
+    percent: 4,
+    activePercent: 30,
+    costPerKg: 2.1,
+  };
+  const amineOxideQuat = evaluateExpertReasoning({
+    ingredients: [amineOxide, cationicEsterquat],
+    productCategory: 'Laundry Detergent Liquid',
+    calculatedPH: 7.5,
+  });
+  assert(
+    amineOxideQuat.issues.some((i) => i.id === 'ph-dependent-amine-oxide-cationic-conditional') &&
+      !amineOxideQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 8: Amine oxide remains a conditional charge species and triggers a compatibility review, not a false fixed-charge verdict'
+  );
+
   console.log('----------------------------------------------------');
   console.log(`TOTAL CATEGORY REASONING TESTS : ${totalTests}`);
   console.log(`PASSED                         : ${passedTests}`);
