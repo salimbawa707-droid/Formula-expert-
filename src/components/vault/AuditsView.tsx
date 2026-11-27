@@ -103,7 +103,7 @@ export const AuditsView: React.FC<AuditsViewProps> = ({
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Immutable audit records, code inspections, environment limitations, and independent reviewer decisions.
+              Immutable AI dual-pass audit records, code inspections, environment limitations, and separately tracked external evidence validation.
             </p>
           </div>
 
