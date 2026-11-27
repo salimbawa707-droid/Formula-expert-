@@ -21,12 +21,12 @@ const options=ts.parseJsonConfigFileContent(config.config,ts.sys,root).options;
 const sources=walk(src).map(canon).sort();
 const candidates=sources.filter(f=>!test(rel(f))&&candidateRe.test(rel(f)));
 if(candidates.length!==93) throw new Error('Expected 93 candidates, found '+candidates.length);
-const byAbs=new Map(candidates.map(f=>[f,rel(f)])), records=[], unresolved=[];
+const byAbs=new Map(candidates.map(f=>[f,rel(f)])), records=[], unresolved=[];\nconst program=ts.createProgram({rootNames:sources,options});\nconst checker=program.getTypeChecker();\nfunction originOf(node){const symbol=checker.getSymbolAtLocation(node);if(!symbol)return null;let resolved=symbol;if(symbol.flags & ts.SymbolFlags.Alias){try{resolved=checker.getAliasedSymbol(symbol);}catch{return null;}}for(const decl of resolved.getDeclarations?.()||[]){const target=byAbs.get(canon(decl.getSourceFile().fileName));if(target)return target;}return null;}
 function resolve(spec,from){const f=ts.resolveModuleName(spec,from,options,ts.sys).resolvedModule?.resolvedFileName;return f?byAbs.get(canon(f))||null:null;}
 function importedTarget(expr,bindings){
  while(ts.isParenthesizedExpression(expr)||ts.isAsExpression(expr)||ts.isTypeAssertionExpression(expr)||ts.isNonNullExpression(expr)) expr=expr.expression;
- if(ts.isIdentifier(expr)){const b=bindings.get(expr.text);if(b&&b.name!=='*')return {b,name:b.name};}
- if(ts.isPropertyAccessExpression(expr)&&ts.isIdentifier(expr.expression)){const b=bindings.get(expr.expression.text);if(b)return {b,name:b.name==='*'?expr.name.text:b.name+'.'+expr.name.text};}
+ if(ts.isIdentifier(expr)){const b=bindings.get(expr.text);if(b?.target)return {b,name:b.name};}
+ if(ts.isPropertyAccessExpression(expr)&&ts.isIdentifier(expr.expression)){const b=bindings.get(expr.expression.text);if(b){const target=originOf(expr.name)||b.target;if(target)return {b:{...b,target},name:b.name==='*'?expr.name.text:b.name+'.'+expr.name.text};}}
  return null;
 }
 function add(sf,node,b,name,kind,srcText,imp){
@@ -38,12 +38,14 @@ for(const file of sources){
  const bindings=new Map();
  for(const st of sf.statements){
   if(!ts.isImportDeclaration(st)||!ts.isStringLiteral(st.moduleSpecifier))continue;
-  const spec=st.moduleSpecifier.text,target=resolve(spec,file);
-  if(!target){if(candidateRe.test(spec)&&!spec.split('/').some(x=>x==='tests'||x==='__tests__'))unresolved.push({importer:rel(file),specifier:spec});continue;}
+  const spec=st.moduleSpecifier.text;
+  const resolvedPath=ts.resolveModuleName(spec,file,options,ts.sys).resolvedModule?.resolvedFileName;
+  const directTarget=resolvedPath?byAbs.get(canon(resolvedPath))||null:null;
+  if(!resolvedPath&&candidateRe.test(spec)&&!spec.split('/').some(x=>x==='tests'||x==='__tests__'))unresolved.push({importer:rel(file),specifier:spec});
   const c=st.importClause;if(!c||c.isTypeOnly)continue;
-  if(c.name)bindings.set(c.name.text,{target,name:'default',spec});
-  if(c.namedBindings&&ts.isNamespaceImport(c.namedBindings))bindings.set(c.namedBindings.name.text,{target,name:'*',spec});
-  else if(c.namedBindings&&ts.isNamedImports(c.namedBindings))for(const e of c.namedBindings.elements)if(!e.isTypeOnly)bindings.set(e.name.text,{target,name:(e.propertyName||e.name).text,spec});
+  if(c.name)bindings.set(c.name.text,{target:originOf(c.name)||directTarget,name:'default',spec});
+  if(c.namedBindings&&ts.isNamespaceImport(c.namedBindings))bindings.set(c.namedBindings.name.text,{target:directTarget,name:'*',spec});
+  else if(c.namedBindings&&ts.isNamedImports(c.namedBindings))for(const e of c.namedBindings.elements)if(!e.isTypeOnly)bindings.set(e.name.text,{target:originOf(e.name)||directTarget,name:(e.propertyName||e.name).text,spec});
  }
  function visit(n){
   if(ts.isCallExpression(n)&&n.expression.kind===ts.SyntaxKind.ImportKeyword){
@@ -52,8 +54,8 @@ for(const file of sources){
    const hit=importedTarget(n.expression,bindings);if(hit)add(sf,n,hit.b,hit.name,ts.isNewExpression(n)?'CONSTRUCTOR_CALL':'FUNCTION_OR_METHOD_CALL',text,n.expression.getText(sf));
   }else if(ts.isJsxOpeningElement(n)||ts.isJsxSelfClosingElement(n)){
    const tag=n.tagName;let hit=null;
-   if(ts.isIdentifier(tag)){const b=bindings.get(tag.text);if(b&&b.name!=='*')hit={b,name:b.name};}
-   else if(ts.isPropertyAccessExpression(tag)&&ts.isIdentifier(tag.expression)){const b=bindings.get(tag.expression.text);if(b?.name==='*')hit={b,name:tag.name.text};}
+   if(ts.isIdentifier(tag)){const b=bindings.get(tag.text);if(b?.target)hit={b,name:b.name};}
+   else if(ts.isPropertyAccessExpression(tag)&&ts.isIdentifier(tag.expression)){const b=bindings.get(tag.expression.text);if(b){const target=originOf(tag.name)||b.target;if(target)hit={b:{...b,target},name:b.name==='*'?tag.name.text:b.name+'.'+tag.name.text};}}
    if(hit)add(sf,n,hit.b,hit.name,'JSX_COMPONENT_RENDER',text,tag.getText(sf));
   }
   ts.forEachChild(n,visit);
