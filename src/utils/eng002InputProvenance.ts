@@ -1,7 +1,7 @@
 import { PURE_SURFACTANT_CMC_REFERENCES, PureSurfactantCmcReference } from '../data/experimentalReferenceData';
 import { FormulationIngredient } from '../types';
 import { UNIVERSAL_INGREDIENTS } from '../data/universalIngredientLibrary';
-import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 
 export type Eng002InputEligibility = 'FULLY_SUPPORTED' | 'PARTIALLY_SUPPORTED' | 'INSUFFICIENT_INPUTS';
 export type ActiveMatterInputSource = 'SOURCE_BACKED' | 'CATALOG_DEFAULT' | 'USER_ENTERED' | 'UNKNOWN';
@@ -85,7 +85,7 @@ function resolveSupportedReference(reference: Eng002PureComponentReference): Eng
 export function resolveEng002PureComponent(ingredient: FormulationIngredient): Eng002ReferenceResolution {
   const id = String(ingredient.canonicalIngredientId ?? ingredient.id ?? '').trim();
   const cas = normalizedCas(ingredient.casNumber);
-  const route = id ? resolveFunctionalRouting(id) : null;
+  const route = resolveFunctionalRoutingForIngredient({ id, name: ingredient.name });
   if (route && (!route.pureComponentCmcEligible || route.routingClass === 'BLOCKED')) {
     return { supported: false, reason: `Functional routing blocks pure-component CMC transfer for ${id}: commercial-grade identity/composition is outside the reference scope.` };
   }
