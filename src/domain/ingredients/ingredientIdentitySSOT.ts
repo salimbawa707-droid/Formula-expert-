@@ -110,16 +110,15 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'EU',
         authority: 'ECHA REACH',
-        status: 'APPROVED',
+        status: 'UNKNOWN',
         restrictions: ['Industrial and professional use neutralization required'],
-        effectiveFrom: '2010-01-01',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'ECHA REACH Dossier 27176-87-0',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
@@ -168,15 +167,14 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'EU',
         authority: 'ECHA REACH',
-        status: 'APPROVED',
-        effectiveFrom: '2010-01-01',
+        status: 'UNKNOWN',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'ECHA REACH Dossier 1310-73-2',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
@@ -216,15 +214,14 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'GLOBAL',
         authority: 'FDA / ECHA',
-        status: 'APPROVED',
-        effectiveFrom: '2010-01-01',
+        status: 'UNKNOWN',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'FDA GRAS & REACH Dossier 77-92-9',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
@@ -264,15 +261,14 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'GLOBAL',
         authority: 'FDA / ECHA REACH',
-        status: 'APPROVED',
-        effectiveFrom: '2010-01-01',
+        status: 'UNKNOWN',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'FDA GRAS 21 CFR 184.1736 & ECHA REACH Dossier 144-55-8',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
@@ -321,15 +317,14 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'GLOBAL',
         authority: 'ECHA REACH / EU Food Additive E500(iii)',
-        status: 'APPROVED',
-        effectiveFrom: '2010-01-01',
+        status: 'UNKNOWN',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'ECHA REACH Dossier 533-96-0',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
@@ -368,15 +363,14 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'GLOBAL',
         authority: 'ECHA / US EPA TSCA',
-        status: 'APPROVED',
-        effectiveFrom: '2010-01-01',
+        status: 'UNKNOWN',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'US EPA TSCA Inventory & ECHA List 607-969-9',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
@@ -416,15 +410,14 @@ const AUTHORITATIVE_IDENTITY_REGISTRY: Record<string, IngredientIdentityMetadata
       {
         jurisdiction: 'GLOBAL',
         authority: 'ECHA REACH / US EPA TSCA',
-        status: 'APPROVED',
-        effectiveFrom: '2010-01-01',
+        status: 'UNKNOWN',
         provenance: {
           property: 'regulatoryStatus',
           value: 'APPROVED',
           source: 'ECHA REACH Dossier 30346-73-7',
           sourceType: 'REGULATORY_GOVERNMENT_BODY',
           evidenceLevel: 3,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'UNKNOWN',
           verificationDate: '2026-01-01'
         }
       }
