@@ -1068,8 +1068,10 @@ export function evaluateIngredientDataQuality(ing: FormulationIngredient): {
  */
 export function traceCompatibilityReasoning(
   ingredients: FormulationIngredient[],
-  category: ProductCategoryId
+  category: ProductCategoryId,
+  estimatedPH?: number
 ): TraceableCompatibilityFinding[] {
+  const hasResolvedAnionicPH = typeof estimatedPH === 'number' && Number.isFinite(estimatedPH) && estimatedPH >= 6.0 && estimatedPH <= 14;
   const findings: TraceableCompatibilityFinding[] = [];
   const normCatRaw = normalizeProductCategory(category);
   if (normCatRaw === 'UNKNOWN_PRODUCT_CATEGORY') {
@@ -1126,9 +1128,10 @@ export function traceCompatibilityReasoning(
       name: i.name
     });
     if (route?.role === 'IDENTITY_UNRESOLVED') return false;
+    if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return hasResolvedAnionicPH;
     return route
       ? route.routingClass === 'ANIONIC'
-      : c.includes('ANIONIC') || i.name.toLowerCase().includes('labsa') || i.name.toLowerCase().includes('sles') || i.name.toLowerCase().includes('aos');
+      : c.includes('ANIONIC') || i.name.toLowerCase().includes('sles') || i.name.toLowerCase().includes('aos');
   });
 
   const hasCationic = ingredients.some(i => {
@@ -1142,6 +1145,31 @@ export function traceCompatibilityReasoning(
     if (route) return false; // Current governed overlay contains no cationic identities; never infer cationic from a routed non-cationic record.
     return c.includes('CATIONIC') || i.name.toLowerCase().includes('soft') || i.name.toLowerCase().includes('quat') || i.name.toLowerCase().includes('esterquat');
   });
+
+  const hasUnresolvedPHDependentAnionic = !hasResolvedAnionicPH && ingredients.some(i => {
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (i as any).id,
+      canonicalIngredientId: (i as any).canonicalIngredientId,
+      ingredientId: (i as any).ingredientId,
+      name: i.name
+    });
+    return route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC';
+  });
+  if (hasUnresolvedPHDependentAnionic && hasCationic) {
+    findings.push({
+      id: `compat-ph-dependent-anionic-unresolved-${normCat}-${Date.now()}`,
+      findingCode: 'ERR_PH_DEPENDENT_CHARGE_UNRESOLVED',
+      severity: 'HIGH',
+      title: 'pH-Dependent Anionic Speciation Unresolved',
+      message: 'A pH-dependent anionic surfactant and cationic active are present, but no valid final-formula pH was supplied. The engine cannot assert a fixed-charge precipitation event or declare compatibility.',
+      ingredientsInvolved: ['pH-dependent anionic surfactant', 'Cationic surfactant'],
+      relationship: 'Unresolved acid-base speciation',
+      categoryContext: normCat,
+      activationCondition: 'Supply measured or validated final-formula pH and verify exact-grade compatibility.',
+      downstreamPropertyAffected: 'Ionic compatibility and phase stability',
+      provenance: 'PREDICTED_INTERACTION'
+    });
+  }
 
   if (hasAnionic && hasCationic) {
     findings.push({
