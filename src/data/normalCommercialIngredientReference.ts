@@ -206,6 +206,204 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     sourceName: 'STPP Group Sodium Tripolyphosphate published technical specification',
     applicabilityNote: 'This is a phosphate builder reference and does not meet a phosphate-free product constraint. Phase/applicability gates remain separate.'
   },
+
+  {
+    catalogIngredientIds: ['lae-7'],
+    displayName: 'C12-15 Alcohol Ethoxylate 7EO',
+    referenceGrade: 'BIO-SOFT N25-7 representative C12-15 linear alcohol ethoxylate',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      activeMatter: { value: 100, unit: '%', basis: 'as supplied' },
+      cloudPoint: { value: 50, unit: '°C', conditions: '1% aqueous' },
+      hlb: { value: 12.2, unit: 'dimensionless' },
+      molesEO: { value: 7, unit: 'mol EO/mol alcohol' },
+      density: { value: 0.96, unit: 'g/mL', conditions: '25°C' }
+    },
+    sourceUrl: 'https://www.stepanbiosolutions.com/content/stepan-dot-com/en/products-markets/product/BIOSOFTN257.html',
+    sourceName: 'Stepan BIO-SOFT N25-7 product data',
+    applicabilityNote: 'Representative C12-15 linear alcohol ethoxylate 7EO product. Do not map these exact physical properties to every supplier C12-15 Pareth-7; chain distribution and EO distribution can vary.'
+  },
+  {
+    catalogIngredientIds: ['lae-9'],
+    displayName: 'C12-15 Alcohol Ethoxylate 9EO',
+    referenceGrade: 'BIO-SOFT EH-9 representative alcohol ethoxylate',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      cloudPoint: { value: 64, unit: '°C', conditions: '10 wt% actives aqueous solution' },
+      hlb: { value: 12.5, unit: 'dimensionless' },
+      pH: { value: 6.2, unit: 'pH', conditions: '1% aqueous solution' },
+      density: { value: 1.0069, unit: 'g/mL', conditions: '40°C' },
+      surfaceTension: { value: 31, unit: 'mN/m', conditions: '1% actives, 25°C' }
+    },
+    sourceUrl: 'https://media.knowde.com/image/upload/v1631685783/production/Collateral/273791/ECOSURF_EH_9_Surfactant_Technical_Data_Sheet.pdf',
+    sourceName: 'Dow ECOSURF EH-9 Technical Data Sheet',
+    applicabilityNote: 'A different supplier/product benchmark for an alcohol ethoxylate. The TDS cloud point method is 10% active solution; do not compare directly with values measured at 1% or assign to all C12-15 Pareth-9.'
+  },
+  {
+    catalogIngredientIds: ['glda-47'],
+    displayName: 'Tetrasodium Glutamate Diacetate',
+    referenceGrade: 'Dissolvine GL-47-S, 47% solution',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      assayAsGLDA_Na4Min: { value: 47.4, unit: '% w/w' },
+      density: { value: 1.4, unit: 'g/cm3', conditions: 'approximate' },
+      pH: { value: '11.0–11.8', unit: 'pH', conditions: '1% w/v dilution' },
+      colorMax: { value: 250, unit: 'APHA' },
+      NTA_Na3Max: { value: 0.1, unit: '%' },
+      calciumSequestering: { value: 55, unit: 'mg Ca/g', conditions: 'theoretical; pH 6–14' }
+    },
+    sourceUrl: 'https://www.nouryon.com/product/dissolvine-gl-47-s/',
+    sourceName: 'Nouryon Dissolvine GL-47-S product data',
+    applicabilityNote: 'Specific GL-47-S 47% solution reference. Chelation capacity is reported as mg elemental calcium/g, not mg CaCO3/g; do not interchange these units. Assay basis and product variants must be preserved.'
+  },
+  {
+    catalogIngredientIds: ['mgda-40'],
+    displayName: 'Trisodium Methylglycinediacetate',
+    referenceGrade: 'BASF Trilon M Liquid T, approx. 40% MGDA-Na3',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      concentrationAsMGDA_Na3: { value: '39–41', unit: '% w/w' },
+      density: { value: '1.29–1.33', unit: 'g/cm3', conditions: '20°C' },
+      pH: { value: 11, unit: 'pH', conditions: '1% in water, 23°C' },
+      chelationValue: { value: 160, unit: 'mg CaCO3/g', conditions: 'BASF method' },
+      ammoniaMax: { value: 80, unit: 'ppm' }
+    },
+    sourceUrl: 'https://assets-global.website-files.com/5fc9222730707183b6adc32a/60ad80c5be8a39221893c42a_Trilon-M-Liquid-T-30640650.pdf',
+    sourceName: 'BASF Trilon M Liquid T Technical Bulletin',
+    applicabilityNote: 'Liquid grade only. MGDA powder/granules have different concentrations and moisture. The chelation value is tied to the stated BASF method and is not a universal method-independent constant.'
+  },
+  {
+    catalogIngredientIds: ['sodium-citrate-uni'],
+    displayName: 'Trisodium Citrate Dihydrate',
+    referenceGrade: 'USP/FCC/E331 commercial dihydrate specification example',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      assay: { value: '99.0–100.5', unit: '%', basis: 'USP/FCC/E331 specification' },
+      water: { value: '10.0–13.0', unit: '%', basis: 'dihydrate' },
+      pH: { value: '7.5–9.0', unit: 'pH', conditions: '5% solution; E331 table' },
+      chlorideMax: { value: 50, unit: 'ppm', basis: 'USP/FCC table' },
+      oxalateMax: { value: 100, unit: 'ppm', basis: 'E331 table' }
+    },
+    sourceUrl: 'https://www.pangs.com.cn/EN/cms/lid/53/id/693.html',
+    sourceName: 'Pangs Trisodium Citrate Dihydrate TDS',
+    applicabilityNote: 'Published multi-standard specification; values vary by BP/USP/FCC/E331 column. Dihydrate only. Do not use for anhydrous trisodium citrate without recalculating hydration basis.'
+  },
+  {
+    catalogIngredientIds: ['edta-4na-39-liquid'],
+    displayName: 'Tetrasodium EDTA',
+    referenceGrade: 'BASF Trilon BX Liquid, approx. 40% reference',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      activeMatter: { value: 40, unit: '%', basis: 'approximate' },
+      pH: { value: 11.5, unit: 'pH', conditions: '1% in distilled water' },
+      density: { value: 1.28, unit: 'g/cm3', conditions: 'approximate' }
+    },
+    sourceUrl: 'https://assets.website-files.com/5fc922269c5ed09aea1f7c22/60d09bd501ec27f36d2c2f3a_Range%20Card%20Home%20Care_II_8.5%20x%2011_V23%20Web.pdf',
+    sourceName: 'BASF Home Care Product Range Card — Trilon BX Liquid',
+    applicabilityNote: 'This published reference is approximately 40% and does not establish the catalog's 39% exact grade. Use as a commercial reference band only; supplier assay and hydrate/speciation basis must be checked.'
+  },
+  {
+    catalogIngredientIds: ['protease-liquid'],
+    displayName: 'Detergent liquid protease preparation',
+    referenceGrade: 'Novonesis Progress Go 100 L product-specific activity benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      activity: { value: 150000, unit: 'KIPU-A/g', basis: 'specific commercial product as listed by distributor' },
+      physicalForm: { value: 'liquid', unit: 'form' },
+      intendedApplication: { value: 'liquid laundry detergent', unit: 'application' }
+    },
+    sourceUrl: 'https://www.novonesis.com/en/biosolutions/household-care/laundry/progress-go-100-l',
+    sourceName: 'Novonesis Progress Go 100 L product information',
+    applicabilityNote: 'This is a named commercial protease example, not a universal protease activity value. KIPU-A is product/method specific and cannot be converted to KNPU-S, BPU or another unit without validated method correlation. Catalog activeDefault=100% must not be interpreted as enzyme activity.'
+  },
+  {
+    catalogIngredientIds: ['amylase-liquid', 'lipase-liquid', 'cellulase-liquid', 'mannanase-liquid'],
+    displayName: 'Detergent enzyme preparations — activity-unit reference rule',
+    referenceGrade: 'Commercial detergent enzyme preparations; supplier-labelled activity',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      activityBasis: { value: 'activity units per gram or millilitre, with named assay method and substrate', unit: 'method-specific' },
+      massActiveMatter: { value: 'not a valid cross-enzyme potency metric', unit: 'rule' },
+      storageStability: { value: 'must be validated in the finished detergent matrix over time', unit: 'rule' }
+    },
+    sourceUrl: 'https://backend.novonesis.com/sites/default/files/document/2025-10/HHC_%20Whitepaper_final_enabling_greener_detergents_liquid_digital.pdf',
+    sourceName: 'Novonesis Household Care liquid detergent whitepaper',
+    applicabilityNote: 'No transferable universal activity value is published for the generic amylase/lipase/cellulase/mannanase catalog entries. Require the exact enzyme product, assay unit, substrate/method, activity per g or mL, recommended dose and stability data. Do not use activeDefault=100 as potency.'
+  },
+  {
+    catalogIngredientIds: ['carbomer-940'],
+    displayName: 'Carbomer 940 crosslinked polyacrylic acid',
+    referenceGrade: 'Lubrizol Carbopol 940 NF specification benchmark',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      carboxylicAcidAssay: { value: '56–68', unit: '%', basis: 'Lubrizol method' },
+      viscosity: { value: '40000–60000', unit: 'cP', conditions: '0.5 wt% mucilage; neutralized pH 7.3–7.8; Brookfield RVT 20 rpm, 25°C' },
+      lossOnDryingMax: { value: 2, unit: '%' },
+      clarityMin: { value: 85, unit: '% transmission', conditions: '0.5% neutralized dispersion, 420 nm' }
+    },
+    sourceUrl: 'https://www.lubrizol.com/-/media/Lubrizol/Health/Literature/SPEC_Carbopol_940_NF.pdf',
+    sourceName: 'Lubrizol Carbopol 940 NF Product Specification',
+    applicabilityNote: 'NF/pharmaceutical-grade reference, not proof that a generic industrial Carbomer 940 lot is equivalent or optimal in high-electrolyte detergent. Viscosity is highly dependent on neutralization, salts and test method.'
+  },
+  {
+    catalogIngredientIds: ['bit-20'],
+    displayName: '1,2-Benzisothiazolin-3-one',
+    referenceGrade: 'LANXESS PREVENTOL BIT 20 N aqueous-glycolic solution',
+    evidenceClass: 'MANUFACTURER_TDS',
+    referenceValues: {
+      activeMatter: { value: 20, unit: '%', basis: 'product grade designation; verify exact regional TDS/CoA' },
+      chemicalIdentity: { value: 'BIT', unit: 'active substance' },
+      application: { value: 'cleaners and detergents', unit: 'manufacturer-listed use' }
+    },
+    sourceUrl: 'https://lanxess.com/en-in/products/products/p/preventol--bit-20-n',
+    sourceName: 'LANXESS PREVENTOL BIT 20 N product page',
+    applicabilityNote: 'Manufacturer identifies aqueous-glycolic BIT solution for cleaners/detergents; product page does not provide a full assay specification in retrieved data. 20% is a product-grade designation and must be confirmed against the exact regional product TDS/CoA. Regulatory approval and permitted use vary by jurisdiction.'
+  },
+  {
+    catalogIngredientIds: ['phenoxyethanol-99'],
+    displayName: '2-Phenoxyethanol',
+    referenceGrade: 'High-purity phenoxyethanol commercial specification example',
+    evidenceClass: 'SUPPLIER_PUBLISHED_SPEC',
+    referenceValues: {
+      purityMin: { value: 99, unit: '% by GC' },
+      moistureMax: { value: 0.2, unit: '% by mass' },
+      specificGravity: { value: '1.105–1.110', unit: '20°C' },
+      pH: { value: '5.5–7.0', unit: 'pH', conditions: '1% aqueous solution' },
+      freePhenolMax: { value: 150, unit: 'ppm' }
+    },
+    sourceUrl: 'https://5.imimg.com/data5/SELLER/Doc/2023/12/370241864/AB/ZT/BD/153889755/phenoxyethanol-cas-122996.pdf',
+    sourceName: 'Elchemy Phenoxyethanol Preservative Grade TDS',
+    applicabilityNote: 'A published preservative-grade supplier specification, not a detergent preservation efficacy claim. Finished-product preservation requires compatibility, dose justification and challenge testing; pH and legal use limits must be checked for the intended market.'
+  },
+  {
+    catalogIngredientIds: ['kathon-cg'],
+    displayName: 'CMIT/MIT preservative blend',
+    referenceGrade: 'KATHON CG/ICP commercial 1.5% active reference',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      totalActiveMatter: { value: 1.5, unit: '%', basis: 'published commercial product benchmark' },
+      applicationPH: { value: '<8.5', unit: 'pH', conditions: 'published home-care application guidance' },
+      typicalUseLevel: { value: '0.025–0.1', unit: '% product', conditions: 'published application guidance; not a recommendation for this formula' }
+    },
+    sourceUrl: 'https://oqema.com/group/en/lanxess/lanxess-for-home-care',
+    sourceName: 'LANXESS Home Care portfolio application table via OQEMA',
+    applicabilityNote: 'A commercial KATHON CG/ICP benchmark only. Do not infer the CMIT:MIT ratio, solvent/carrier or regional legal status from total active alone. Exact grade, ratio, SDS and local biocide restrictions must be verified; preservation challenge testing remains mandatory.'
+  },
+  {
+    catalogIngredientIds: ['perfume-compound'],
+    displayName: 'Commercial fragrance mixture for laundry and cleaning products',
+    referenceGrade: 'Industry standard reference — IFRA product-category and supplier conformity framework',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      laundryDetergentCategory: { value: '10A', unit: 'IFRA category', conditions: 'hand wash and machine laundry detergents' },
+      handDishwashingCategory: { value: '10A', unit: 'IFRA category', conditions: 'hand dishwashing detergents' },
+      hardSurfaceCleanerCategory: { value: '10A', unit: 'IFRA category', conditions: 'hard surface cleaners' },
+      universalCompositionOrActive: { value: 'not defined; mixture-specific', unit: 'rule' }
+    },
+    sourceUrl: 'https://ifrafragrance.org/docs/default-source/51st-amendment/ifra-51st-amendment---guidance-for-the-use-of-ifra-standards.pdf',
+    sourceName: 'IFRA-RIFM Guidance for the Use of IFRA Standards',
+    applicabilityNote: 'Fragrance is a multi-component mixture; there is no universal active %, composition, density or safe dosage. Obtain the fragrance-mixture manufacturer's IFRA Standards Conformity Certificate for the exact intended use and amendment, plus SDS/allergen and restricted-material declarations. IFRA certificate does not replace a complete safety assessment.'
+  },
 ];
 
 export function getNormalCommercialIngredientReference(catalogIngredientId: string) {
