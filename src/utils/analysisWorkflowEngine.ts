@@ -645,6 +645,7 @@ export async function executeStagedScientificAnalysis(
     // A governed route takes precedence over legacy text heuristics. In particular,
     // amine oxide is pH-dependent and must not be silently counted as fixed amphoteric.
     const isBlocked = route?.role === 'IDENTITY_UNRESOLVED';
+    const isPolymericDispersant = route?.role === 'POLYMERIC_DISPERSANT';
     const isAmineOxide = route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE';
     const isAnionic = !route && (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap'));
     const isNonionic = route?.routingClass === 'NONIONIC' || (!route && (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside')));
