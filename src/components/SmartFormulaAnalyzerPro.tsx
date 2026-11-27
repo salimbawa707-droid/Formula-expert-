@@ -557,7 +557,11 @@ function SmartFormulaAnalyzerProInner({
         const cat = getAuditedIngredientCategory(ing.name);
         const freePct = freePercentages[ing.name] !== undefined ? freePercentages[ing.name] : (ing.percentage ?? 0);
 
-        if (isFormulaIngredientSurfactant(ing) || cat.startsWith("Surfactants")) {
+        const routedForCategory = getFunctionalRouteForFormulaIngredient(ing);
+        const isSurfactantCategory = routedForCategory
+          ? isFormulaIngredientSurfactant(ing)
+          : cat.startsWith("Surfactants");
+        if (isSurfactantCategory) {
           surfactantPct += (ing.percentage ?? 0);
         } else if (cat === "Builders & Chelators") {
           if (freePercentages[ing.name] !== undefined) {
@@ -838,9 +842,7 @@ function SmartFormulaAnalyzerProInner({
     });
 
     const activeSurfactants = safeIngs.filter(ing => {
-      const isSurfactant = (ing?.role || "").toLowerCase().includes("surfactant") || 
-                           (ing?.role || "").toLowerCase().includes("detergent") || 
-                           (ing?.hlbValue !== undefined && ing?.hlbValue !== null);
+      const isSurfactant = isFormulaIngredientSurfactant(ing);
       return isSurfactant && (ing?.percentage || 0) > 0;
     });
 
