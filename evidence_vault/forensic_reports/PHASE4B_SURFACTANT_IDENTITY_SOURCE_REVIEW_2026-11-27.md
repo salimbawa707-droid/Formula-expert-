@@ -213,7 +213,7 @@ No catalog record or executable crosswalk was altered. These four identity candi
 
 ## Updated aggregate reconciliation (five tranches)
 
-- Candidate groups/issues examined: 43.
+- Candidate groups/issues examined: 38.
 - Source-backed identity candidates (official registry, government, or manufacturer corroboration; not supplier-grade validation): 26.
 - Explicit CAS/identity conflict or scope holds: 6.
 - Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
