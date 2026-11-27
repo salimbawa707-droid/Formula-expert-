@@ -1179,7 +1179,7 @@ export function traceCompatibilityReasoning(
       categoryContext: normCat,
       activationCondition: 'Formulation pH drops below 5.0 in the presence of hypochlorite',
       downstreamPropertyAffected: 'Laboratory occupant safety and chemical stability',
-      provenance: 'MEASURED_INTERACTION'
+      provenance: 'PREDICTED_INTERACTION'
     });
   }
 
