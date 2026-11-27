@@ -48,6 +48,7 @@ import { HardnessResultOutput, CleaningResultOutput } from "../utils/orchestrato
 import { jsPDF } from "jspdf";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { isFeatureAllowed } from "../utils/featureGating";
+import { assessAiScientificValidation } from "../utils/aiScientificValidationPolicy";
 import SubscriptionPaywallModal from "./SubscriptionPaywallModal";
 
 const getFunctionalRouteForFormulaIngredient = (ing: any) => resolveFunctionalRoutingForIngredient({
@@ -670,6 +671,42 @@ function SmartFormulaAnalyzerProInner({
       const greenChelatorAnalysis = evaluateFormulationGreenChelators(analyzedIngredients);
 
       const healthScoreBreakdown = calculateLabHealthScore(analyzedIngredients as any);
+
+      // Evidence-gated scientific assessment. The analyzer has no attached supplier-lot
+      // COAs or matched held-out endpoint benchmark registry, so those claims stay false.
+      // Solver convergence is used only as the available charge-balance solver gate;
+      // it is not represented as laboratory measurement or supplier verification.
+      const formulaMassBalancePassed = orchestratorReport.massBalance?.isBalanced === true;
+      const chargeBalanceSolverPassed =
+        orchestratorReport.pHResult?.solverConverged === true &&
+        Number.isFinite(orchestratorReport.pHResult?.ph);
+      const formulaUnitsResolved = analyzedIngredients.every((ing: any) =>
+        Number.isFinite(Number(ing.percentage)) && Number(ing.percentage) >= 0 &&
+        Number(ing.percentage) <= 100
+      );
+      const hasCriticalScientificBlocker = (orchestratorReport.blockingIssues || [])
+        .some((issue: any) => issue.severity === 'FATAL');
+      const aiScientificValidation = assessAiScientificValidation({
+        evidenceRoute: 'MISSING',
+        exactIdentityAndGrade: false,
+        matchedBenchmarkAvailable: false,
+        heldOutEvaluation: false,
+        sampleCount: 0,
+        benchmarkEndpointId: '',
+        benchmarkDomainId: '',
+        minimumSampleCount: 1,
+        maximumMae: 0,
+        maximumRmse: 0,
+        confidenceIntervalAvailable: false,
+        calibrationDemonstrated: false,
+        modelVersion: 'UNBENCHMARKED',
+        evaluationDate: '',
+        massBalancePassed: formulaMassBalancePassed,
+        chargeBalancePassed: chargeBalanceSolverPassed,
+        unitsResolved: formulaUnitsResolved,
+        outOfDomain: false,
+        unresolvedCriticalGap: hasCriticalScientificBlocker
+      }, healthScoreBreakdown.finalScore);
       const aiGradeResult = orchestratorReport.aiGrade;
       const riskAnalysisWarnings = generateFormulationWarnings(analyzedIngredients as any);
 
@@ -732,6 +769,7 @@ function SmartFormulaAnalyzerProInner({
         compatibilityAlerts,
         mixingInstructions,
         healthScoreBreakdown,
+        aiScientificValidation,
         riskAnalysisWarnings,
         fingerprint,
         orchestratorReport
@@ -1143,6 +1181,9 @@ function SmartFormulaAnalyzerProInner({
       doc.text(`• Surfactant System: ${analysisResult.fingerprint.surfactantSystem}`, 14, 75);
       doc.text(`• Builder System: ${analysisResult.fingerprint.builderSystem}`, 14, 81);
       doc.text(`• Eco/Carbon Level: ${analysisResult.fingerprint.ecoLevel} (Carbon: ${analysisResult.carbonFootprint})`, 14, 87);
+      doc.text(`• AI evidence gate: ${analysisResult.aiScientificValidation?.userLabel || "Not assessed"} | Score: ${analysisResult.aiScientificValidation?.score ?? "BLOCKED"}`, 14, 93);
+      doc.setFontSize(7);
+      doc.text("AI-based scientific validation; not a laboratory test or supplier lot certificate. Confirm critical properties on the actual raw-material lot and finished formula.", 14, 98, { maxWidth: 180 });
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
@@ -1441,6 +1482,46 @@ function SmartFormulaAnalyzerProInner({
             <span className="text-base font-black text-gray-800 mt-1 block">{analysisResult.healthScoreBreakdown?.breakdown?.completenessScore}/10</span>
           </div>
         </div>
+      </div>
+
+      {/* AI SCIENTIFIC VALIDATION — evidence-gated production assessment */}
+      <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm space-y-3" data-testid="ai-scientific-validation-panel">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <ShieldAlert size={14} className="text-amber-600" /> AI Scientific Validation & Evidence Gate
+          </h4>
+          <span className="text-[10px] font-bold rounded-full px-2 py-1 bg-amber-50 text-amber-800">
+            {analysisResult.aiScientificValidation?.userLabel || "Assessment unavailable"}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="text-[10px] uppercase text-slate-500 font-bold">Evidence-gated screening score</div>
+            <div className="text-xl font-black text-slate-900 mt-1">
+              {analysisResult.aiScientificValidation?.score ?? "BLOCKED"}
+              {analysisResult.aiScientificValidation?.score !== null && analysisResult.aiScientificValidation?.score !== undefined ? "/100 max" : ""}
+            </div>
+            <div className="text-[10px] text-slate-500 mt-1">Not model accuracy or probability</div>
+          </div>
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="text-[10px] uppercase text-slate-500 font-bold">Endpoint benchmark</div>
+            <div className="font-bold mt-1">{analysisResult.aiScientificValidation?.endpointBenchmarkQualified ? "Qualified" : "Not established"}</div>
+            <div className="text-[10px] text-slate-500 mt-1">Matched held-out benchmark evidence</div>
+          </div>
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="text-[10px] uppercase text-slate-500 font-bold">Supplier lot verification</div>
+            <div className="font-bold mt-1">{analysisResult.aiScientificValidation?.supplierLotVerified ? "Verified by COA" : "Not verified"}</div>
+            <div className="text-[10px] text-slate-500 mt-1">Exact lot-specific supplier evidence</div>
+          </div>
+        </div>
+        <p className="text-[11px] text-slate-700">{analysisResult.aiScientificValidation?.requiredDisclosure}</p>
+        {(analysisResult.aiScientificValidation?.reasons || []).length > 0 && (
+          <ul className="list-disc pl-5 space-y-1 text-[10px] text-slate-600">
+            {analysisResult.aiScientificValidation.reasons.map((reason: string, index: number) => (
+              <li key={index}>{reason}</li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* MISSING DATA DETECTOR */}
