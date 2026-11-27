@@ -630,16 +630,31 @@ export async function executeStagedScientificAnalysis(
   let nonionicPct = 0;
   let amphotericPct = 0;
   let cationicPct = 0;
+  let conditionalAmineOxidePct = 0;
   let chargeDataComplete = true;
 
   for (const ing of immutableSnapshot.ingredients) {
     const role = (ing.role || ing.category || '').toLowerCase();
     const name = (ing.name || '').toLowerCase();
-    const isAnionic = role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap');
-    const isNonionic = role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside');
-    const isAmphoteric = role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine') || name.includes('amine oxide');
-    const isCationic = role.includes('cationic') || name.includes('esterquat');
-    if (isAnionic || isNonionic || isAmphoteric || isCationic) {
+    const route = resolveFunctionalRoutingForIngredient({
+      id: (ing as any).id,
+      canonicalIngredientId: (ing as any).canonicalIngredientId,
+      ingredientId: (ing as any).ingredientId,
+      name: ing.name
+    });
+    // A governed route takes precedence over legacy text heuristics. In particular,
+    // amine oxide is pH-dependent and must not be silently counted as fixed amphoteric.
+    const isBlocked = route?.role === 'IDENTITY_UNRESOLVED';
+    const isAmineOxide = route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE';
+    const isAnionic = !route && (role.includes('anionic') || name.includes('labsa') || name.includes('sles') || name.includes('sls') || name.includes('soap'));
+    const isNonionic = route?.routingClass === 'NONIONIC' || (!route && (role.includes('nonionic') || name.includes('ethoxylate') || name.includes('apg') || name.includes('glucoside')));
+    const isAmphoteric = route?.chargeBehavior === 'ZWITTERIONIC' || (!route && (role.includes('amphoteric') || role.includes('zwitterionic') || name.includes('betaine')));
+    const isCationic = route?.routingClass === 'BLOCKED' ? false : (!route && (role.includes('cationic') || name.includes('esterquat')));
+    if (isBlocked) {
+      chargeDataComplete = false;
+      continue;
+    }
+    if (isAnionic || isNonionic || isAmphoteric || isCationic || isAmineOxide) {
       const pct = Number(ing.percentage);
       const assay = ing.activeMatterPct === undefined || ing.activeMatterPct === null ? Number.NaN : Number(ing.activeMatterPct);
       if (!Number.isFinite(pct) || !Number.isFinite(assay) || assay < 0 || assay > 100) {
@@ -647,7 +662,8 @@ export async function executeStagedScientificAnalysis(
         continue;
       }
       const act = pct * (assay / 100);
-      if (isAnionic) anionicPct += act;
+      if (isAmineOxide) conditionalAmineOxidePct += act;
+      else if (isAnionic || route?.routingClass === 'ANIONIC') anionicPct += act;
       else if (isNonionic) nonionicPct += act;
       else if (isAmphoteric) amphotericPct += act;
       else if (isCationic) cationicPct += act;
