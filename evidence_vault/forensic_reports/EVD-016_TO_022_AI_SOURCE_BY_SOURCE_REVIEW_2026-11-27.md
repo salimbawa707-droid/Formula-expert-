@@ -26,9 +26,9 @@ No source in EVD-016–022 creates a matched finished-formula prediction/observa
 
 ### Scientific review
 
-The publisher abstract confirms manual-dishwashing comparisons of SLES/AOS with amphoteric CAB and nonionics including cocamide DEA, C12–C15 7EO, C10 7EO, C9–C11 7EO and lauramine oxide. Reported outcomes include CMC, surface tension, cleaning, foaming, biodegradability and irritancy at 17, 23 and 42 °C. The abstract reports improved CMC/surface tension, cleaning and foaming for selected mixtures relative to the binary SLES/AOS reference, with the C9–C11 7EO/AO mixture best among those examined.
+The publisher abstract and author-uploaded full-text text extract were inspected. The study compares SLES/AOS with amphoteric CAB and nonionics cocamide DEA, C12–C15 7EO, C10 7EO, C9–C11 7EO and lauramine oxide. Six mixtures use a 75:15:7:3 ratio for the four-component formulations (the binary reference differs); total surfactant concentration is 10 wt.%. The CMC/surface-tension table at 23 °C reports: SLES/AOS 0.321 g/L and 35.3 mN/m; SLES/AOS/CAB/AO 0.293 g/L and 29.2 mN/m; SLES/AOS/DEA/AO 0.257 g/L and 29.0 mN/m; SLES/AOS/C12–C15 7EO/AO 0.108 g/L and 23.2 mN/m; SLES/AOS/C10 7EO/AO 0.105 g/L and 23.0 mN/m; SLES/AOS/C9–C11 7EO/AO 0.101 g/L and 22.8 mN/m. These are formulation-level values for the reported materials and method, not pure-component CMCs.
 
-The existing vault record specifies six mixture systems, 10 wt.% total surfactant, CMC at 23 °C, a 0.4% free-flow foam test at 42 °C, and plate-count testing at 4 g/L in 16 ± 1 °dH water at 17 and 42 °C. Five plate-count experiments per formulation are reported as means. Raw replicate observations are not present in the reviewed record.
+At 42 °C, Table 3 reports washed-plate counts for normal / low-fat soil respectively: binary SLES/AOS 18/20; SLES/AOS/CAB/AO 20/23; SLES/AOS/DEA/AO 21/26; C12–C15 7EO/AO 22/27; C10 7EO/AO 23/28; C9–C11 7EO/AO 25/30. Five plate-count experiments per formulation are reported as means. The paper's foam-ability test is a 0.4% formulation free-flow test without soil (5 L, 1 m fall distance) at 42 °C. The foam-height results are presented in a figure rather than a numerical table; the text says formulation 6 produced 13% more foam than formulation 1, 8% more than formulation 2 and 5% more than formulation 3. This is foam height/ability under one apparatus, not time-resolved foam decay or half-life. Raw plate-count replicate values and machine-readable foam-height data are not supplied.
 
 **Use boundary:** manual dishwashing only. Plotted foam height is not a time-resolved foam decay series or half-life. No transfer to laundry powder/liquid or automatic dishwash. AE chain distribution and EO number are part of the grade identity.
 
@@ -41,11 +41,12 @@ National Diet Library metadata points to Wiley copyright/terms information. No C
 - [x] DOI, title, author and issue metadata reconciled to publisher record.
 - [x] Abstract-level scope and claims reviewed.
 - [x] Existing vault method/condition and limitation record cross-checked.
-- [ ] Full publisher PDF and table/figure image reinspection in this review.
+- [x] Author-uploaded full-text text extract inspected; Tables 2 and 3 transcribed with units and conditions.
+- [ ] Original publisher PDF page-image verification of figure-based foam heights and table typography.
 - [ ] Commercial reuse permission.
 - [ ] Raw replicate series and source bytes archived/hash-pinned.
 
-**Disposition:** AI scope review CLOSED at abstract/registry level; full-text numeric reinspection and rights remain OPEN. No model-validation credit.
+**Disposition:** AI scope review CLOSED for the accessible full-text text extract and tabulated values; original PDF figure/page-image verification and rights remain OPEN. No model-validation credit.
 
 ---
 
