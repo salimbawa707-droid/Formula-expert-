@@ -63,6 +63,18 @@ assert.equal(tallowSles?.status, 'INSUFFICIENT_DATA');
 const anionicCationic = resolveFunctionalCompatibilityMatrixPair('sles-70','Anionic Surfactant','esterquat-90','Cationic Surfactant');
 assert.equal(anionicCationic?.compatible, false);
 
+const sarcosinateLowPH = calculateFormulationCompatibility([
+  { id:'sarcosinate-30', canonicalIngredientId:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', category:'Anionic Surfactant', percentage:5, activeMatterPct:30 } as any,
+  { id:'esterquat-90', name:'Esterquat 90%', category:'Cationic Surfactant', percentage:5, activeMatterPct:90 } as any
+], 3.5, 'FABRIC_SOFTENER');
+assert(sarcosinateLowPH.alerts.some(a => a.id === 'ph-dependent-surfactant-compatibility-test'));
+assert(!sarcosinateLowPH.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), 'sarcosinate below pH threshold must not be forced into fixed anionic clash');
+const sarcosinateHighPH = calculateFormulationCompatibility([
+  { id:'sarcosinate-30', canonicalIngredientId:'sarcosinate-30', name:'Sodium Lauroyl Sarcosinate 30%', category:'Anionic Surfactant', percentage:5, activeMatterPct:30 } as any,
+  { id:'esterquat-90', name:'Esterquat 90%', category:'Cationic Surfactant', percentage:5, activeMatterPct:90 } as any
+], 7.0, 'FABRIC_SOFTENER');
+assert(sarcosinateHighPH.alerts.some(a => a.id === 'anionic-cationic-incompatibility'), 'sarcosinate above pH threshold must route into anionic ionic-clash screening');
+
 const ldaoFormula = calculateFormulationCompatibility([
   { name:'Lauryl Amine Oxide 30% (LDAO)', category:'Nonionic Surfactant', percentage:5 } as any,
   { name:'SLES 70% (Sodium Lauryl Ether Sulfate)', category:'Anionic Surfactant', percentage:10 } as any
@@ -132,6 +144,9 @@ assert(cleaningPerformanceSource.includes("route?.role === 'POLYMERIC_DISPERSANT
 assert(analysisWorkflowSource.includes('isPolymericDispersant'), 'staged workflow must exclude polymeric dispersant from primary surfactant charge totals');
 assert(dagSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'scientific DAG must exclude polymeric dispersant from primary surfactant charge totals');
 assert(qualityGateSource.includes("route?.role === 'POLYMERIC_DISPERSANT'"), 'safety quality gates must not apply primary-surfactant policy to polymeric dispersant');
+assert(qualityGateSource.includes("route.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'fabric-softener hard gate must honor pH-dependent sarcosinate speciation');
+assert(qualityGateSource.includes('compatibilityPHAvailable && Number(finalPH) >= 6.0'), 'fabric-softener hard gate must require resolved pH before treating sarcosinate as fixed anionic');
+
 assert(dagSource.includes('resolveFunctionalRoutingForIngredient'), 'scientific execution DAG must consume governed identity for charge totals');
 assert(dagSource.includes("route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC'"), 'scientific DAG must preserve a separate pH-dependent anionic bucket for sarcosinate');
 assert(dagSource.includes('conditionalPHDependentAnionicPct'), 'scientific DAG must expose pH-dependent anionic active separately');

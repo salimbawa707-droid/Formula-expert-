@@ -406,12 +406,12 @@ export function evaluateExpertReasoning(input: ExpertReasoningInput): ExpertReas
   if (conditionalAnionicActivePct > 0.1 && cationicActivePct > 0.1) {
     issues.push({
       id: 'ph-dependent-anionic-cationic-conditional',
-      issue: 'Conditional Ionic Compatibility Risk (pH-Dependent Anionic Acid + Cationic Active)',
+      issue: 'Conditional Ionic Compatibility Risk (pH-Dependent Sarcosinate + Cationic Active)',
       whyItMatters: 'The sarcosinate carboxylate is pH-dependent (reported pKa about 3.6). Below the conservative pH screening boundary, its anionic fraction and solubility cannot be treated as equivalent to the fully ionized sodium salt; a fixed-charge precipitation verdict would overstate certainty.',
       scientificBasis: 'Henderson–Hasselbalch carboxylate speciation followed by possible electrostatic interaction with cationic actives; the current pH >= 6 boundary is a conservative screening rule, not a continuous speciation solver.',
       scientificType: 'PREDICTIVE',
       severity: 'High',
-      whatToCheck: 'Verify neutralization equivalents and measured formula pH, then run a compatibility/precipitation test on the exact formula and grade.'
+      whatToCheck: 'Verify the finished-formula pH and exact sarcosinate grade, then run a compatibility/precipitation test on the exact formula and grade.'
     });
   }
 
