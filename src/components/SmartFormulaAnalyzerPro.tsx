@@ -433,7 +433,7 @@ function SmartFormulaAnalyzerProInner({
         if (!dbChem || !dbChem.casNumber) missingFields.push("CAS Number");
         if (!dbChem || !dbChem.molecularWeight) missingFields.push("Molecular Weight");
 
-        const routeId = ing.canonicalIngredientId || ing.id || dbChem?.id;
+        const routeId = (ing as any).canonicalIngredientId || ing.id || dbChem?.id;
         const functionalRoute = routeId ? resolveFormulaIntelligenceRouting(routeId) : null;
         const chargeType = functionalRoute?.chargeLabel || (dbChem
           ? dbChem.category.toLowerCase().includes("anionic") ? "Anionic"
