@@ -19,4 +19,4 @@ assert(analyzer.includes('aiScientificValidation?.userLabel'), 'The PDF export m
 assert(policy.includes('EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY'), 'Policy must explicitly prohibit interpreting the composite score as accuracy.');
 assert(policy.includes('endpointBenchmarkQualified') && policy.includes('supplierLotVerified'), 'Policy must keep endpoint benchmark qualification separate from supplier-lot verification.');
 
-console.log('AI scientific validation analyzer integration: 12/12 assertions passed.');
+console.log('AI scientific validation analyzer integration: 11/11 assertions passed.');
