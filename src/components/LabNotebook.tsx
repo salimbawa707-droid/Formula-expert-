@@ -219,6 +219,19 @@ export default function LabNotebook(_props?: any) {
         setFormErrors(compositionValidation.errors);
         return;
       }
+      const duplicateIdentity = evidenceRecords.find(existing =>
+        existing.evidenceKind === 'INGREDIENT_COMPOSITION' &&
+        existing.formulaId === newFormulaId &&
+        existing.formulaVersion === newFormulaVersion &&
+        existing.categoryId === newCategory &&
+        existing.ingredientCanonicalId === ingredientSlug &&
+        existing.sampleId?.trim() === newSampleId.trim() &&
+        existing.replicateNumber === Number(newReplicateNumber)
+      );
+      if (duplicateIdentity) {
+        setFormErrors(['This formula/version/category/ingredient/sample/replicate identity already exists. Review the original record; do not create a duplicate row.']);
+        return;
+      }
     }
 
     // Strict physical validation gates
@@ -1517,7 +1530,7 @@ export default function LabNotebook(_props?: any) {
                   <div><label className="block text-[10px] text-slate-400 mb-1">Composition Method</label><select value={newCompositionMethod} onChange={e => setNewCompositionMethod(e.target.value as CompositionMeasurementMethod)} className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white"><option value="GRAVIMETRIC_MASS_BALANCE">Gravimetric mass balance</option><option value="VALIDATED_ASSAY">Validated assay</option><option value="OTHER_VALIDATED_METHOD">Other validated method</option></select></div>
                   <div><label className="block text-[10px] text-slate-400 mb-1">Instrument ID</label><input value={newInstrumentId} onChange={e => setNewInstrumentId(e.target.value)} placeholder="Balance / instrument ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div className="col-span-2"><label className="block text-[10px] text-slate-400 mb-1">Method details / SOP reference</label><input value={newCompositionMethodDetails} onChange={e => setNewCompositionMethodDetails(e.target.value)} placeholder="SOP, preparation and calculation basis" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
-                  <div><label className="block text-[10px] text-slate-400 mb-1">Instrument calibration reference</label><input value={newCalibrationReference} onChange={e => setNewCalibrationReference(e.target.value)} placeholder="Calibration certificate ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
+                  <div><label className="block text-[10px] text-slate-400 mb-1">Instrument calibration certificate reference (operator-attested)</label><input value={newCalibrationReference} onChange={e => setNewCalibrationReference(e.target.value)} placeholder="Calibration certificate ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div><label className="block text-[10px] text-slate-400 mb-1">Original lab document reference</label><input value={newSourceDocumentReference} onChange={e => setNewSourceDocumentReference(e.target.value)} placeholder="Notebook/page/file ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                   <div className="col-span-2"><label className="block text-[10px] text-slate-400 mb-1">Exact formula composition snapshot reference</label><input value={newFormulaCompositionReference} onChange={e => setNewFormulaCompositionReference(e.target.value)} placeholder="Immutable formula snapshot/version record ID" className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded text-xs text-white" required /></div>
                 </div>
@@ -1666,6 +1679,7 @@ export default function LabNotebook(_props?: any) {
                 <input
                   type="text"
                   value={newSampleId}
+                  required={evidenceKind === 'INGREDIENT_COMPOSITION'}
                   onChange={(e) => setNewSampleId(e.target.value)}
                   className="w-full px-3 py-2 bg-[#131d35] border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-400 font-mono"
                   placeholder="BATCH-2026-09X"
