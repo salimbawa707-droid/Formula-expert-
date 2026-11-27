@@ -69,7 +69,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       closureReportDate: '2026-09-02',
       independentVerificationStatus: 'UNESTABLISHED',
       blockers: [],
-      description: 'Remediation of trade-name ambiguity and inconsistent CAS registry entries across detergent surfactants, builders, chelants, enzymes, and hydrotropes. Independent verification remains unestablished.',
+      description: 'Remediation of trade-name ambiguity and inconsistent CAS registry entries across detergent surfactants, builders, chelants, enzymes, and hydrotropes. AI dual-pass source verification remains unestablished; human review is not required.',
       keyDeliverables: [
         {
           title: 'Establish canonical chemical identifier dictionary (CAS & InChIKey)',
@@ -94,7 +94,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
       closureReportDate: '2026-09-28',
       independentVerificationStatus: 'UNESTABLISHED',
       blockers: [],
-      description: 'Remediation of three core scientific calculation flaws: F3-01 (Extended Debye-Hückel / Davies ionic activity coefficient correction), F3-02 (Mixed surfactant micellization non-linear interaction parameter), and F3-03 (Polycarboxylate & citrate chelation equilibria with Ca2+/Mg2+ hardness ions). Independent verification remains unestablished.',
+      description: 'Remediation of three core scientific calculation flaws: F3-01 (Extended Debye-Hückel / Davies ionic activity coefficient correction), F3-02 (Mixed surfactant micellization non-linear interaction parameter), and F3-03 (Polycarboxylate & citrate chelation equilibria with Ca2+/Mg2+ hardness ions). AI dual-pass source review of the complete phase remains unestablished; empirical laboratory validation is separately unestablished.',
       keyDeliverables: [
         {
           title: 'F3-01: Davies activity coefficient correction for ionic strength > 0.1M',
@@ -191,7 +191,7 @@ export const INITIAL_VAULT_STATE: VaultState = {
     {
       phaseId: 'phase-5',
       name: 'Phase 5 — Numerical Validation & Model Calibration',
-      subtitle: 'LOCKED — Strictly Gated Behind Phase 4B Formal Sign-Off',
+      subtitle: 'LOCKED — Strictly Gated Behind Phase 4B AI Review & Evidence Closure',
       status: 'LOCKED',
       reportedClosed: false,
       independentVerificationStatus: 'UNESTABLISHED',
