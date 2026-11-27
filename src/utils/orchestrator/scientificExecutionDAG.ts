@@ -108,6 +108,8 @@ export interface ScientificExecutionState {
   totalActiveMatterPct: number;
   rawSurfactantsTotal: number;
   anionicPct: number;
+  conditionalPHDependentAnionicPct: number;
+  conditionalAmineOxidePct: number;
   nonionicPct: number;
   amphotericPct: number;
   cationicPct: number;
@@ -519,7 +521,7 @@ export class ScientificExecutionDAG {
       nodeId: 'ACTIVE_MATTER',
       engineName: 'ActiveMatterEngine',
       disposition: 'DAG_NODE',
-      dependencies: ['IDENTITY_RESOLUTION'],
+      dependencies: ['IDENTITY_RESOLUTION', 'PH_EQUILIBRIUM'],
       execute: (state) => {
         state.activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(state.resolvedIngredients, state.batchSizeKg);
         state.totalSurfactantActivePct = calculateActiveSurfactants(state.resolvedIngredients);
@@ -535,6 +537,8 @@ export class ScientificExecutionDAG {
         state.rawSurfactantsTotal = calculateRawSurfactants(state.resolvedIngredients);
 
         let anionic = 0;
+        let conditionalPHDependentAnionic = 0;
+        let conditionalAmineOxide = 0;
         let nonionic = 0;
         let amphoteric = 0;
         let cationic = 0;
@@ -552,11 +556,22 @@ export class ScientificExecutionDAG {
           const validation = validateActiveMatterInput(ing.activeMatterPct);
           const resolvedActive = validation.status === 'VALID' ? validation.value : getDefaultActiveMatter(ing);
           // Unknown assay and unresolved identity are not assigned to a charge subtotal.
-          // pH-dependent amine oxide is deliberately excluded from fixed amphoteric totals.
+          // pH-dependent amine oxide and acid-form LABSA are exposed separately from fixed-charge totals.
           if (route?.role === 'IDENTITY_UNRESOLVED' || route?.role === 'POLYMERIC_DISPERSANT') return;
           if (typeof resolvedActive === 'number' && Number.isFinite(resolvedActive) && resolvedActive >= 0 && resolvedActive <= 100) {
             const activePct = ing.percentage * (resolvedActive / 100);
-            if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') return;
+            if (route?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE') {
+              conditionalAmineOxide += activePct;
+              return;
+            }
+            if (route?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') {
+              const hasResolvedFormulaPH =
+                (state.phStatus === 'VALID' || state.phStatus === 'SCREENING') &&
+                Number.isFinite(state.finalEquilibriumPH);
+              if (hasResolvedFormulaPH && Number(state.finalEquilibriumPH) >= 6.0) anionic += activePct;
+              else conditionalPHDependentAnionic += activePct;
+              return;
+            }
 
             const isAnionic = route
               ? route.routingClass === 'ANIONIC'
@@ -576,6 +591,8 @@ export class ScientificExecutionDAG {
         });
 
         state.anionicPct = anionic;
+        state.conditionalPHDependentAnionicPct = conditionalPHDependentAnionic;
+        state.conditionalAmineOxidePct = conditionalAmineOxide;
         state.nonionicPct = nonionic;
         state.amphotericPct = amphoteric;
         state.cationicPct = cationic;
@@ -1304,11 +1321,13 @@ export class ScientificExecutionDAG {
           status: state.activeMatterStatus,
           surfactantBreakdown: {
             anionic: state.anionicPct,
+            conditionalPHDependentAnionic: state.conditionalPHDependentAnionicPct,
+            conditionalAmineOxide: state.conditionalAmineOxidePct,
             nonionic: state.nonionicPct,
             amphoteric: state.amphotericPct,
             cationic: state.cationicPct,
-            total: [state.anionicPct, state.nonionicPct, state.amphotericPct, state.cationicPct].every(Number.isFinite)
-              ? state.anionicPct + state.nonionicPct + state.amphotericPct + state.cationicPct
+            total: [state.anionicPct, state.conditionalPHDependentAnionicPct, state.conditionalAmineOxidePct, state.nonionicPct, state.amphotericPct, state.cationicPct].every(Number.isFinite)
+              ? state.anionicPct + state.conditionalPHDependentAnionicPct + state.conditionalAmineOxidePct + state.nonionicPct + state.amphotericPct + state.cationicPct
               : null
           }
         };
@@ -1504,6 +1523,8 @@ export class ScientificExecutionDAG {
       totalActiveMatterPct: Number.NaN,
       rawSurfactantsTotal: Number.NaN,
       anionicPct: Number.NaN,
+      conditionalPHDependentAnionicPct: Number.NaN,
+      conditionalAmineOxidePct: Number.NaN,
       nonionicPct: Number.NaN,
       amphotericPct: Number.NaN,
       cationicPct: Number.NaN,
