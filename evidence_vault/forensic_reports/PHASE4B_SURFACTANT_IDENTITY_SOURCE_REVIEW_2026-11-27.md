@@ -133,3 +133,49 @@ Across the three tranches above:
 - Formula applicability approvals: 0.
 
 These figures count review outcomes, not fully resolved master rows. The source-backed candidates still need primary nomenclature/identity scope review where relevant and supplier-grade TDS/SDS/CoA evidence. The 397-record backlog is not closed by this tranche.
+
+
+## Follow-up source review — remaining surfactant candidates (fourth tranche)
+
+| Group | Catalog identity | Catalog CAS | Source finding | Disposition |
+|---|---|---:|---|---|
+| MICG-062 | PEG-40 Hydrogenated Castor Oil | 61788-85-0 | PubChem SID 135283603, sourced from ChemIDplus, lists Polyoxyl 40 Hydrogenated Castor Oil [NF], CAS 61788-85-0, and related PEG hydrogenated-castor-oil synonyms across multiple ethoxylation numbers. A European Commission JRC report independently lists PEG-40 Hydrogenated Castor Oil with CAS 61788-85-0. | Source-supported identity candidate with mixture/ethoxylate-scope caveat. The generic synonym family does not prove the catalog's four commercial-grade records or their exact EO distribution. |
+| MICG-087 | Sodium Cocoamphoacetate | 68604-71-7 (catalog) | Stepan's AMPHOSOL 1C manufacturer product bulletin identifies Sodium Cocoamphoacetate with CAS 68608-65-1, not the catalog CAS 68604-71-7. It reports a specific commercial product at 36.5% actives and 44% solids. | **CAS discrepancy hold.** The manufacturer bulletin confirms the INCI for CAS 68608-65-1 but does not support the catalog's CAS 68604-71-7. Do not silently replace the catalog CAS; require authoritative registry resolution and the actual supplier specification. |
+| MICG-069 | Benzalkonium Chloride | 63449-41-2 | EU Cosmetics Regulation Annex V lists benzalkonium chloride against multiple CAS numbers: 63449-41-2, 68391-01-5, 68424-85-1 and 85409-22-9. | Identity-family candidate supported, but CAS denotes a family/composition scope. Preserve the multiple CAS scope and require alkyl-chain distribution and supplier-grade specification before exact commercial identity mapping. |
+| MICG-107 | Poloxamer 184 | 9003-11-6 | The Cosmetic Ingredient Review literature describes 9003-11-6 as a generic CAS associated with the poloxamer group, while noting that related PEG/PPG copolymer mixtures may not have a unique CAS. The evidence retrieved does not establish Poloxamer 184 as a distinct grade under this generic number. | **Grade/identity scope hold.** Do not treat generic poloxamer CAS as sufficient proof of Poloxamer 184 block composition or molecular-weight distribution. Obtain supplier TDS/SDS and a specific identity source. |
+| MICG-073 | Sodium C14-17 Sec-Alkyl Sulfonate | 68037-49-0 | The source search did not return a sufficiently authoritative record tying this exact catalog name and CAS together. Similar alkyl sulfonate records are not interchangeable evidence. | **Unresolved source hold.** No identity promotion; require a registry record or supplier SDS that explicitly binds this exact CAS, INCI/name and chain distribution. |
+
+### Fourth-tranche sources
+
+- Stepan, AMPHOSOL 1C Product Bulletin (manufacturer primary source; Sodium Cocoamphoacetate CAS 68608-65-1, INCI and grade properties): https://www.stepan.com/content/dam/stepan-dot-com/webdam/website-product-documents/product-bulletins/surfactants/AMPHOSOL1C.pdf
+- PubChem SID 135283603 / ChemIDplus, Polyoxyl 40 Hydrogenated Castor Oil [NF], CAS 61788-85-0: https://pubchem.ncbi.nlm.nih.gov/substance/135283603
+- European Commission JRC report listing PEG-40 Hydrogenated Castor Oil and CAS 61788-85-0: https://susproc.jrc.ec.europa.eu/product-bureau/sites/default/files/contentype/product_group_documents/1581684261/Preliminary_Report_EUEcolabel_Cosmetics.pdf
+- EU Cosmetics Regulation 1223/2009, Annex V, Benzalkonium chloride multiple CAS identifiers: https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=celex:32009R1223
+- Cosmetic Ingredient Review, Safety Evaluation of PEG Compounds for Cosmetic Use (generic poloxamer CAS context): https://pmc.ncbi.nlm.nih.gov/articles/4505343/
+
+### Fourth-tranche disposition
+
+- Additional candidate groups/issues examined: 5.
+- Additional source-supported identity-family candidates: 2 (PEG-40 Hydrogenated Castor Oil; Benzalkonium Chloride).
+- Additional explicit CAS discrepancy: 1 (Sodium Cocoamphoacetate; catalog CAS differs from manufacturer bulletin).
+- Additional generic-CAS / identity-scope hold: 1 (Poloxamer 184).
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- SSOT promotions: 0.
+- Supplier-grade evidence established for catalog records: 0.
+- Formula applicability approvals: 0.
+
+The Stepan bulletin is useful primary manufacturer evidence, but it is evidence for CAS 68608-65-1 / AMPHOSOL 1C, not for the catalog's CAS 68604-71-7. This conflict must remain visible rather than being "corrected" by assumption.
+
+
+## Updated aggregate reconciliation (four tranches)
+
+- Candidate groups/issues examined: 34.
+- Source-backed identity candidates (official registry, government, or manufacturer corroboration; not supplier-grade validation): 22.
+- Explicit CAS/identity conflict or scope holds: 6 (includes the new Sodium Cocoamphoacetate CAS discrepancy and Poloxamer 184 generic-CAS scope hold).
+- Additional unresolved exact-source hold: 1 (Sodium C14-17 Sec-Alkyl Sulfonate).
+- Functional-class review flags: 1 (Sodium Lignosulfonate).
+- Identity SSOT entries promoted to VERIFIED: 0.
+- Supplier-grade evidence records established for the catalog: 0.
+- Formula applicability approvals: 0.
+
+The fourth tranche reduces the *review backlog* but does not reduce the 397 unmapped identity count in the executable crosswalk. No catalog identity was rewritten, no CAS was silently substituted, no supplier assay was inferred, and all 5,590 applicability rows remain NOT_APPROVED. Phase 4B remains OPEN; Phase 5 remains LOCKED.
