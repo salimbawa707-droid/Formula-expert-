@@ -66,7 +66,7 @@ export class RefinementEngine {
         continue;
       }
 
-      const ingredientCanonicalId = String((ingredient as any).id || ingredientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')).trim();
+      const ingredientCanonicalId = String((ingredient as any).id || ingredientName).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const aggregate = this.getValidatedAverage(ingredientName, ingredientCanonicalId, categoryRecords, canonicalTarget);
       if (!aggregate || Math.abs(aggregate.mean - currentPercentage) <= 0.5) continue;
 
