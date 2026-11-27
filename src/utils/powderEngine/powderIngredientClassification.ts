@@ -1,6 +1,7 @@
 import { FormulationIngredient } from '../../types';
 import { ClassifiedIngredient, FunctionalGroupSummary, PowderFunctionalClass } from './types';
 import { UNIVERSAL_INGREDIENTS } from '../../data/universalIngredientLibrary';
+import { resolveFunctionalRoutingForIngredient } from '../../data/ingredientFunctionalRouting';
 
 export function classifyPowderIngredient(ing: FormulationIngredient): ClassifiedIngredient {
   const name = (ing.name || '').trim();
@@ -13,11 +14,19 @@ export function classifyPowderIngredient(ing: FormulationIngredient): Classified
   const masterItem = UNIVERSAL_INGREDIENTS.find(
     u => u.name.toLowerCase() === lowerName || (ing.id && u.id === ing.id)
   );
+  const functionalRoute = resolveFunctionalRoutingForIngredient({
+    id: (ing as any).id,
+    canonicalIngredientId: (ing as any).canonicalIngredientId,
+    ingredientId: (ing as any).ingredientId,
+    name: ing.name
+  });
 
   let activeDefault: number | undefined;
   const rawActive = ing.activeMatterPct ?? ing.activePercent ?? (ing as any)?.activeMatter ?? (ing as any)?.purity;
   const hasExplicitActive = rawActive !== undefined && rawActive !== null && !(typeof rawActive === 'string' && rawActive.trim() === '');
-  if (hasExplicitActive) {
+  if (functionalRoute?.role === 'IDENTITY_UNRESOLVED') {
+    activeDefault = undefined;
+  } else if (hasExplicitActive) {
     const parsedActive = Number(rawActive);
     activeDefault = Number.isFinite(parsedActive) && parsedActive >= 0 && parsedActive <= 100
       ? parsedActive
@@ -51,8 +60,21 @@ export function classifyPowderIngredient(ing: FormulationIngredient): Classified
 
   let functionalClass: PowderFunctionalClass = 'Other';
 
-  // 1. Surfactants
-  if (
+  // Governed identity is evaluated before legacy name heuristics.
+  if (functionalRoute?.role === 'IDENTITY_UNRESOLVED') {
+    functionalClass = 'Unclassified Surfactant';
+  } else if (functionalRoute?.role === 'POLYMERIC_DISPERSANT') {
+    functionalClass = 'Anti-redeposition Polymer';
+  } else if (functionalRoute?.routingClass === 'ANIONIC') {
+    functionalClass = 'Anionic Surfactant';
+  } else if (functionalRoute?.routingClass === 'NONIONIC') {
+    functionalClass = 'Nonionic Surfactant';
+  } else if (functionalRoute?.role === 'ZWITTERIONIC_BETAINE') {
+    functionalClass = 'Amphoteric Surfactant';
+  } else if (functionalRoute?.role === 'AMINE_OXIDE_SURFACTANT') {
+    // Broad ionic family only; charge remains pH-dependent and is not fixed amphoteric.
+    functionalClass = 'Amphoteric Surfactant';
+  } else if (
     lowerName.includes('labsa') ||
     lowerName.includes('linear alkylbenzene sulfonic') ||
     lowerName.includes('acid slurry') ||
