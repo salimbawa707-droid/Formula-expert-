@@ -79,7 +79,7 @@ function importedNames(clause) {
       names.push(alias ? alias.trim() + ' (from ' + original.trim() + ')' : original.trim());
     }
   }
-  const defaultName = clause.trim().match(/^import\s+([A-Za-z_$][\w$]*)/);
+  const defaultName = clause.trim().match(/^([A-Za-z_$][\w$]*)/);
   if (defaultName && defaultName[1] !== 'type') names.push(defaultName[1] + ' (default)');
   const namespace = clause.match(/\*\s+as\s+([A-Za-z_$][\w$]*)/);
   if (namespace) names.push('* as ' + namespace[1]);
