@@ -1414,7 +1414,7 @@ export default function FormulaExpert({
             <Sliders className="w-3.5 h-3.5" /> Calibrations
           </button>
           <button onClick={() => {
-              const proposals = RefinementEngine.proposeAdjustments(ingredients, []); // Need real evidence
+              const proposals = RefinementEngine.proposeAdjustments(ingredients, [], normalizeProductCategory(productCategory) === 'UNKNOWN_PRODUCT_CATEGORY' ? '' : normalizeProductCategory(productCategory)); // No measured lab evidence is wired to this view yet; empty evidence intentionally yields no proposals.
               setRefinementProposals(proposals);
               setIsRefinementModalOpen(true);
           }} className="px-3.5 py-2 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-xs font-bold text-indigo-200 hover:bg-indigo-900 transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95">
