@@ -249,6 +249,19 @@ export function runVaultLogicTestSuite() {
   const gateCheck = canUnlockPhase5(INITIAL_VAULT_STATE);
   assert(gateCheck.allowed === false, 'Phase 5 Gate', 'Phase 5 unlock blocked on active 4B');
   assert(Boolean(/Phase 4B is still ACTIVE\/OPEN/i.test(gateCheck.reason)), 'Phase 5 Gate', 'Gate check gives reason');
+  const phase4BAIReviewPending = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
+  const pendingReviewPhase = phase4BAIReviewPending.phases.find((phase: any) => phase.phaseId === 'phase-4b');
+  pendingReviewPhase.status = 'CLOSED';
+  pendingReviewPhase.reportedClosed = true;
+  pendingReviewPhase.independentVerificationStatus = 'UNESTABLISHED';
+  const aiReviewGate = canUnlockPhase5(phase4BAIReviewPending);
+  assert(
+    aiReviewGate.allowed === false &&
+      /AI dual-pass review status is UNESTABLISHED or REJECTED/i.test(aiReviewGate.reason),
+    'Phase 5 AI Review Gate',
+    'Phase 5 requires the documented AI dual-pass review state, not a human-reviewer identity'
+  );
+
   const emptyInventoryState = JSON.parse(JSON.stringify(INITIAL_VAULT_STATE));
   const emptyInventoryPhase4B = emptyInventoryState.phases.find((phase: any) => phase.phaseId === 'phase-4b');
   emptyInventoryPhase4B.status = 'CLOSED';
