@@ -22,6 +22,12 @@ export interface AiValidationEvidence {
   matchedBenchmarkAvailable: boolean;
   heldOutEvaluation: boolean;
   sampleCount: number;
+  /** Endpoint/domain-specific acceptance contract; never use a universal sample threshold. */
+  benchmarkEndpointId: string;
+  benchmarkDomainId: string;
+  minimumSampleCount: number;
+  maximumMae: number;
+  maximumRmse: number;
   mae?: number;
   rmse?: number;
   confidenceIntervalAvailable: boolean;
@@ -39,7 +45,12 @@ export interface AiValidationAssessment {
   disposition: AiValidationDisposition;
   maximumScore: number | null;
   score: number | null;
+  /** Matched endpoint benchmark eligibility; independent of supplier-lot paperwork. */
+  endpointBenchmarkQualified: boolean;
+  /** True only when the evidence route is an exact supplier-lot COA. */
+  supplierLotVerified: boolean;
   labProximityEligible: boolean;
+  scoreSemantics: 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY';
   userLabel: string;
   reasons: string[];
   requiredDisclosure: string;
@@ -63,7 +74,10 @@ export function assessAiScientificValidation(
       disposition: 'CALCULATION_FAILED',
       maximumScore: null,
       score: null,
+      endpointBenchmarkQualified: false,
+      supplierLotVerified: false,
       labProximityEligible: false,
+      scoreSemantics: 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY',
       userLabel: 'Calculation failed',
       reasons: ['Raw score must be a finite value from 0 to 100.'],
       requiredDisclosure: DISCLOSURE
@@ -107,8 +121,14 @@ export function assessAiScientificValidation(
 
   const supplierLotVerified = evidence.evidenceRoute === 'SUPPLIER_LOT_COA';
   const benchmarkQualified = evidence.matchedBenchmarkAvailable &&
-    evidence.heldOutEvaluation && evidence.sampleCount > 0 &&
+    evidence.heldOutEvaluation &&
+    Number.isInteger(evidence.sampleCount) && Number.isInteger(evidence.minimumSampleCount) &&
+    evidence.minimumSampleCount > 0 && evidence.sampleCount >= evidence.minimumSampleCount &&
+    Boolean(evidence.benchmarkEndpointId.trim()) && Boolean(evidence.benchmarkDomainId.trim()) &&
     Number.isFinite(evidence.mae) && Number.isFinite(evidence.rmse) &&
+    Number.isFinite(evidence.maximumMae) && Number.isFinite(evidence.maximumRmse) &&
+    evidence.maximumMae >= 0 && evidence.maximumRmse >= 0 &&
+    (evidence.mae as number) <= evidence.maximumMae && (evidence.rmse as number) <= evidence.maximumRmse &&
     evidence.confidenceIntervalAvailable && evidence.calibrationDemonstrated &&
     Boolean(evidence.modelVersion.trim()) && Boolean(evidence.evaluationDate.trim());
 
@@ -130,8 +150,12 @@ export function assessAiScientificValidation(
   }
 
   const score = Math.min(rawScore, cap);
-  const labProximityEligible = benchmarkQualified && evidence.exactIdentityAndGrade && supplierLotVerified;
-  const disposition: AiValidationDisposition = labProximityEligible
+  // Model performance validation and supplier-lot verification are separate claims.
+  // A valid held-out endpoint benchmark can qualify the model even when input criteria
+  // come from standards/literature; that never verifies the current supplier lot.
+  const endpointBenchmarkQualified = benchmarkQualified && evidence.exactIdentityAndGrade;
+  const labProximityEligible = endpointBenchmarkQualified;
+  const disposition: AiValidationDisposition = endpointBenchmarkQualified
     ? 'BENCHMARKED_AI_ESTIMATE'
     : evidence.evidenceRoute === 'INTERNATIONAL_REFERENCE_SPECIFICATION' ||
       evidence.evidenceRoute === 'SECONDARY_LITERATURE_REFERENCE'
@@ -142,7 +166,10 @@ export function assessAiScientificValidation(
     disposition,
     maximumScore: cap,
     score,
+    endpointBenchmarkQualified,
+    supplierLotVerified,
     labProximityEligible,
+    scoreSemantics: 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY',
     userLabel: labProximityEligible ? 'Benchmarked AI estimate' :
       disposition === 'REFERENCE_BASED_AI_SCREENING' ? 'Reference-based AI screening' : 'AI screening only',
     reasons,
