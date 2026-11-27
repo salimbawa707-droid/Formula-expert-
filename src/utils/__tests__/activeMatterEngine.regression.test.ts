@@ -58,6 +58,16 @@ export function runActiveMatterRegressionTestSuite() {
   const referenceDefault = ActiveMatterEngine.resolveIngredientActive({ name: 'SLES 70%' });
   assert('Resolution', 'Commercial reference default is not labelled authoritative assay', referenceDefault.dataSource === 'reference_default', referenceDefault.dataSource, 'reference_default');
 
+  const labsaCatalogDefaultReport = evaluateAuthoritativeActiveMatter([
+    { canonicalIngredientId: 'labsa-96', name: 'LABSA 96% (Acid Slurry)', percentage: 10 } as any
+  ], 100);
+  assert('Provenance', 'Generic VERIFIED provenance label without property-level grade assay does not authorize catalog active default',
+    labsaCatalogDefaultReport.activeMatterStatus === 'COMPLETE' &&
+    labsaCatalogDefaultReport.isFullyAuthoritative === false &&
+    labsaCatalogDefaultReport.nonAuthoritativeCount === 1,
+    { status: labsaCatalogDefaultReport.activeMatterStatus, authoritative: labsaCatalogDefaultReport.isFullyAuthoritative, nonAuthoritativeCount: labsaCatalogDefaultReport.nonAuthoritativeCount },
+    { status: 'COMPLETE', authoritative: false, nonAuthoritativeCount: 1 });
+
   const proprietaryUnknown = ActiveMatterEngine.resolveIngredientActive({ canonicalIngredientId: 'aristo-9', name: 'Aristo 9' } as any);
   assert('Unknown Property Firewall', 'Aristo 9 explicit unknownProperties prevents activeDefault 0 being treated as a measured zero', proprietaryUnknown.activeMatterPct === null && proprietaryUnknown.dataSource === 'missing', { activeMatterPct: proprietaryUnknown.activeMatterPct, dataSource: proprietaryUnknown.dataSource }, { activeMatterPct: null, dataSource: 'missing' });
 
