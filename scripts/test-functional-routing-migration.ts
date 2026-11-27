@@ -9,6 +9,10 @@ assert.equal(resolveFunctionalRouting('sls-30')?.pureComponentCmcEligible, true)
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.routingClass, 'AMPHOTERIC');
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.chargeBehavior, 'PH_DEPENDENT_AMINE_OXIDE');
 assert.equal(resolveFunctionalRouting('labsa-90')?.routingClass, 'ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC', 'static LABSA family identity must resolve to its pH-dependent acid-form route');
+assert.equal(resolveFunctionalRouting('sles')?.chargeBehavior, 'FIXED_ANIONIC', 'static SLES family identity must resolve to the fixed-anionic grade route');
+assert.equal(resolveFunctionalRouting('aos')?.chargeBehavior, 'FIXED_ANIONIC');
+assert.equal(resolveFunctionalRouting('capb')?.chargeBehavior, 'ZWITTERIONIC');
 assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
 assert.equal(resolveFunctionalRouting('labsa-90')?.hlbEligible, false);
 assert.equal(resolveFunctionalRouting('sles-70')?.routingClass, 'ANIONIC');
