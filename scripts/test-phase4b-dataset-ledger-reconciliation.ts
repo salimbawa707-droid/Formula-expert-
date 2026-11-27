@@ -28,6 +28,8 @@ const sourceIds = new Set(sourceRows.map(row => row[0]));
 
 assert.equal(evidence.length, 25, 'vault evidence registry must include all 25 current records');
 assert.equal(new Set(evidence.map(item => item.id)).size, evidence.length, 'evidence IDs must be unique');
+assert.deepEqual(evidence.reduce((acc, item) => { const key = item.licenseReviewStatus || 'UNREVIEWED'; acc[key] = (acc[key] || 0) + 1; return acc; }, {} as Record<string, number>), { RESTRICTED: 2, UNKNOWN: 2, REVIEW_PENDING: 10, PERMITTED_FOR_COMMERCIAL_REUSE: 11 }, 'rights states must reconcile to the current evidence registry');
+assert.deepEqual(evidence.reduce((acc, item) => { acc[item.downloadStatus] = (acc[item.downloadStatus] || 0) + 1; return acc; }, {} as Record<string, number>), { NOT_DOWNLOADED: 15, DOWNLOADED: 8, BLOCKED: 2 }, 'download states must reconcile to the current evidence registry');
 assert.equal(datasets.length, 8, 'dataset ledger must include the four primary and four auxiliary reference datasets');
 assert.equal(datasetIds.size, datasets.length, 'dataset IDs must be unique');
 for (const dataset of datasets) {
