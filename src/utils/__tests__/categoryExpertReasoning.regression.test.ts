@@ -117,6 +117,36 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
     'Test 7: Neutralized LABSA remains anionic for ionic compatibility screening'
   );
 
+  // Test 8: Sarcosinate carboxylate speciation is pH-dependent (reported pKa ~3.6).
+  const sarcosinate: FormulationIngredient = {
+    id: 'sarcosinate-30',
+    canonicalIngredientId: 'sarcosinate-30',
+    name: 'Sodium Lauroyl Sarcosinate 30%',
+    category: 'Anionic Surfactant',
+    percent: 8,
+    activePercent: 30,
+    costPerKg: 2.4,
+  };
+  const acidicSarcosinateQuat = evaluateExpertReasoning({
+    ingredients: [sarcosinate, cationicEsterquat],
+    productCategory: 'Laundry Detergent Liquid',
+    calculatedPH: 3.5,
+  });
+  assert(
+    acidicSarcosinateQuat.issues.some((i) => i.id === 'ph-dependent-anionic-cationic-conditional') &&
+      !acidicSarcosinateQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 8: Sarcosinate below the conservative pH threshold remains conditional for cationic compatibility'
+  );
+  const neutralSarcosinateQuat = evaluateExpertReasoning({
+    ingredients: [sarcosinate, cationicEsterquat],
+    productCategory: 'Laundry Detergent Liquid',
+    calculatedPH: 7.0,
+  });
+  assert(
+    neutralSarcosinateQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
+    'Test 9: Sarcosinate above the conservative pH threshold routes as anionic for compatibility screening'
+  );
+
   // Test 8: Amine oxide is pH-dependent, not a fixed nonionic or zwitterionic species.
   const amineOxide: FormulationIngredient = {
     id: 'lauryl-amine-oxide',
@@ -135,7 +165,7 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
   assert(
     amineOxideQuat.issues.some((i) => i.id === 'ph-dependent-amine-oxide-cationic-conditional') &&
       !amineOxideQuat.issues.some((i) => i.id === 'anionic-cationic-conflict'),
-    'Test 8: Amine oxide remains a conditional charge species and triggers a compatibility review, not a false fixed-charge verdict'
+    'Test 10: Amine oxide remains a conditional charge species and triggers a compatibility review, not a false fixed-charge verdict'
   );
 
   const unknownAssaySurfactant = evaluateExpertReasoning({
@@ -150,7 +180,7 @@ export function runCategoryExpertReasoningTestSuite(): { total: number; passed: 
   });
   assert(
     unknownAssaySurfactant.issues.some((i) => i.id === 'surfactant-active-assay-missing' && i.severity === 'High'),
-    'Test 9: Missing surfactant active assay is a high-severity blocker, never silently treated as zero'
+    'Test 11: Missing surfactant active assay is a high-severity blocker, never silently treated as zero'
   );
 
   console.log('----------------------------------------------------');
