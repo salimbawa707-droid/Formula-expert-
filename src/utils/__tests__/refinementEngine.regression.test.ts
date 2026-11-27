@@ -56,7 +56,7 @@ function record(input: {
     ingredientCanonicalId: 'sles',
     ingredientName: 'SLES',
     compositionBasis: 'W_W',
-    compositionMethod: 'GRAVIMETRIC_MASS_BALANCE',
+    compositionMethod: 'GRAVIMETRIC_ASSAY',
     compositionMethodDetails: 'Validated gravimetric SOP-01; w/w calculation',
     instrumentCalibrationReference: 'CAL-RB-001',
     sourceDocumentReference: `LABBOOK-${input.id}`,
@@ -178,6 +178,18 @@ const validContract = validateIngredientCompositionEvidence({
   unit: '%'
 });
 check('complete source-backed composition contract accepted', validContract.isValid, validContract.errors, []);
+const mismatchedCalibrationContract = validateIngredientCompositionEvidence({
+  ...(validCompositionRecord as any),
+  instrumentCalibrationReference: 'UNMATCHED-CERTIFICATE',
+  categoryId: category,
+  formulaId: 'C1',
+  formulaVersion: '1.0',
+  sampleId: 'S-contract',
+  value: 22,
+  unit: '%'
+});
+check('unmatched instrument calibration certificate rejected', !mismatchedCalibrationContract.isValid, mismatchedCalibrationContract.isValid, false);
+
 
 const missingSourceContract = validateIngredientCompositionEvidence({
   ...(validCompositionRecord as any),
