@@ -340,6 +340,9 @@ jobs:
       - name: Generate 93-candidate export and call-site graph
         run: node evidence_vault/scripts/audit_93_candidate_capability_graph.mjs
 
+      - name: Generate AST-backed 93-candidate symbol invocation map
+        run: node evidence_vault/scripts/audit_93_candidate_symbol_invocations.mjs
+
       - name: Test Pušić extraction validator
         run: python evidence_vault/scripts/test_validate_pusic_2006_r460.py
 
@@ -410,4 +413,6 @@ jobs:
           path: |
             evidence_vault/forensic_reports/generated/PHASE4B_93_CANDIDATE_EXPORT_CALLSITE_GRAPH_2026-11-27.md
             evidence_vault/forensic_reports/generated/PHASE4B_93_CANDIDATE_EXPORT_CALLSITE_GRAPH_2026-11-27.json
+            evidence_vault/forensic_reports/generated/PHASE4B_93_CANDIDATE_SYMBOL_INVOCATIONS_2026-11-27.md
+            evidence_vault/forensic_reports/generated/PHASE4B_93_CANDIDATE_SYMBOL_INVOCATIONS_2026-11-27.json
           if-no-files-found: warn
