@@ -55,6 +55,12 @@ const routeOnlyCoa = assessAiScientificValidation({
   coaMeasuredProperties: undefined
 }, 94);
 assert(!routeOnlyCoa.supplierLotVerified && routeOnlyCoa.reasons.some(reason => reason.includes('Supplier COA route is incomplete')), 'A COA route label without traceable lot-specific document provenance must never verify a supplier lot.');
+
+const coaWithUnresolvedIdentity = assessAiScientificValidation({
+  ...base,
+  exactIdentityAndGrade: false
+}, 94);
+assert(!coaWithUnresolvedIdentity.supplierLotVerified && coaWithUnresolvedIdentity.score === 60, 'A lot COA must not verify an unresolved identity/grade, even when its document metadata is complete.');
 assert(qualified.scoreSemantics === 'EVIDENCE_GATED_COMPOSITE_SCREENING_SCORE_NOT_ACCURACY', 'Composite screening score must never be presented as model accuracy.');
 
 const noBenchmark = assessAiScientificValidation({ ...base, matchedBenchmarkAvailable: false }, 96);
@@ -98,4 +104,4 @@ assert(unresolvedUnits.score === null && unresolvedUnits.disposition === 'CALCUL
 const invalidScore = assessAiScientificValidation(base, Number.NaN);
 assert(invalidScore.disposition === 'CALCULATION_FAILED', 'Non-finite score must fail closed.');
 
-console.log('AI scientific validation policy: 13/13 assertions passed.');
+console.log('AI scientific validation policy: 14/14 assertions passed.');
