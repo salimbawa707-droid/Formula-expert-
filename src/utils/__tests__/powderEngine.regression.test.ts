@@ -573,6 +573,53 @@ export function runPowderEngineTestSuite(): {
     'INSUFFICIENT_DATA with missing cost ingredient named'
   );
 
+  const reportInvalidMeasurements = evaluatePowderFormulation({
+    ingredients: [
+      { name: 'Sodium Carbonate', percentage: 20, activeMatterPct: 100 },
+      { name: 'Sodium Sulphate', percentage: 80, activeMatterPct: 100 }
+    ],
+    productCategory: 'Laundry Powder',
+    batchSizeKg: 100,
+    labMeasurements: {
+      measuredReserveAlkalinityPctNa2O: Number.NaN,
+      measuredSoilRemovalPct: 125,
+      measuredDissolutionTimeSec: Number.POSITIVE_INFINITY,
+      measuredRossMilesInitialMm: Number.POSITIVE_INFINITY
+    }
+  });
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Non-finite measured reserve alkalinity is not labelled MEASURED',
+    reportInvalidMeasurements.alkalinity.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.alkalinity.measuredAlkalinityPctNa2O === undefined,
+    reportInvalidMeasurements.alkalinity,
+    'INSUFFICIENT_DATA with no measured value'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Soil-removal measurement above 100% is rejected',
+    reportInvalidMeasurements.cleaningPerformance.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.cleaningPerformance.measuredSoilRemovalPct === undefined,
+    reportInvalidMeasurements.cleaningPerformance,
+    'INSUFFICIENT_DATA with no measured value'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite dissolution time is rejected',
+    reportInvalidMeasurements.dissolutionDispersibility.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.dissolutionDispersibility.dissolutionStatus === 'NOT_MEASURED',
+    reportInvalidMeasurements.dissolutionDispersibility,
+    'INSUFFICIENT_DATA / NOT_MEASURED'
+  );
+  assert(
+    'Phase 4B Measurement Integrity',
+    'Infinite Ross-Miles foam height is rejected',
+    reportInvalidMeasurements.foam.source === 'INSUFFICIENT_DATA' &&
+      reportInvalidMeasurements.foam.measuredRossMilesInitialMm === undefined,
+    reportInvalidMeasurements.foam,
+    'INSUFFICIENT_DATA with no measured height'
+  );
+
   const passedCount = results.filter(r => r.passed).length;
   const failedCount = results.filter(r => !r.passed).length;
   const totalCount = results.length;
