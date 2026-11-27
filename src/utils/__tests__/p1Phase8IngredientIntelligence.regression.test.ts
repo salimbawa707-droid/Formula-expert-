@@ -128,6 +128,15 @@ export function runP1Phase8IngredientIntelligenceTestSuite(): { total: number; p
   ];
   const clashFindings = traceCompatibilityReasoning(clashFormula, 'LAUNDRY_LIQUID');
   assert('10. Detects opposite-charge anionic-cationic compatibility conflict', clashFindings.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), true, true);
+  const labsaCationicFormula: FormulationIngredient[] = [
+    { name: 'LABSA 96%', activeMatterPct: 96, category: 'Anionic Surfactant', percentage: 10 },
+    { name: 'Quaternized Softener Active', activeMatterPct: 80, category: 'Cationic Surfactant', percentage: 5 }
+  ];
+  const labsaNoPHFindings = traceCompatibilityReasoning(labsaCationicFormula, 'LAUNDRY_LIQUID');
+  assert('10a. LABSA without final pH is not promoted to a fixed ionic clash', !labsaNoPHFindings.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), true, true);
+  assert('10b. LABSA without final pH emits an unresolved speciation warning', labsaNoPHFindings.some(f => f.findingCode === 'ERR_PH_DEPENDENT_CHARGE_UNRESOLVED'), true, true);
+  const labsaPH7Findings = traceCompatibilityReasoning(labsaCationicFormula, 'LAUNDRY_LIQUID', 7.0);
+  assert('10c. LABSA at measured pH 7 resolves as anionic for charge-clash screening', labsaPH7Findings.some(f => f.findingCode === 'ERR_IONIC_CHARGE_INCOMPATIBILITY'), true, true);
 
   const acidBleachFormula: FormulationIngredient[] = [
     { name: 'Hydrochloric Acid 35%', category: 'Acid Slurry', percentage: 15 },
