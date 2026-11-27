@@ -13,7 +13,7 @@ assert.equal(resolveFunctionalRouting('sles-28')?.pureComponentCmcEligible, fals
 assert.equal(resolveFunctionalRouting('capb-30-uni')?.chargeBehavior, 'ZWITTERIONIC');
 assert.equal(resolveFunctionalRouting('capb-45')?.routingClass, 'AMPHOTERIC');
 assert.equal(resolveFunctionalRouting('apg-0810')?.routingClass, 'NONIONIC');
-assert.equal(resolveFunctionalRouting('apg-1214')?.hlbEligible, false);
+assert.equal(resolveFunctionalRouting('apg-1214')?.hlbEligible, true);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.hlbEligible, false);
 assert.equal(resolveFunctionalRouting('lauryl-amine-oxide')?.pureComponentCmcEligible, false);
 assert.equal(resolveFunctionalRouting('lignosulfonate-na')?.role, 'POLYMERIC_DISPERSANT');
