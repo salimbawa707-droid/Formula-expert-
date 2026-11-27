@@ -141,21 +141,26 @@ export function canPromoteEngineToValidation(
     };
   }
 
-  const inspected = linkedDatasets.some(
+  // Structural inspection is necessary but not sufficient for validation promotion.
+  // A parsed benchmark with unresolved units, identity, rights, or applicability must
+  // never be treated as an eligible validation dataset.
+  const eligibleValidationDataset = linkedDatasets.some(
     d =>
       d.inspectionStatus === 'NUMERICALLY_INSPECTED' &&
       d.actualRowCount !== null &&
-      d.actualRowCount > 0
+      d.actualRowCount > 0 &&
+      d.numericalValidationReadiness === 'READY' &&
+      (d.designation === 'VALIDATION' || d.designation === 'TEST')
   );
 
-  if (!inspected) {
+  if (!eligibleValidationDataset) {
     return {
       allowed: false,
-      reason: `Linked datasets for ${engine.name} remain UNINSPECTED (0 verified rows). Experimental inspection is mandatory.`,
+      reason: `No linked dataset for ${engine.name} satisfies all validation requirements: numerical inspection, positive source rows, READY eligibility, and VALIDATION/TEST designation.`,
     };
   }
 
-  return { allowed: true, reason: 'Valid numerical dataset inspected and attached.' };
+  return { allowed: true, reason: 'An eligible, inspected validation/test dataset is linked.' };
 }
 
 /**
