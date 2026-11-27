@@ -202,7 +202,7 @@ export class ActiveMatterEngine {
    * Helper: classify surfactant charge type based on category, role, and name keywords
    */
   public static classifySurfactantCharge(category: string, role: string, name: string, canonicalIngredientId?: string): { isSurfactant: boolean; surfactantType: SurfactantChargeClass } {
-    const routed = canonicalIngredientId ? resolveFunctionalRouting(canonicalIngredientId) : null;
+    const routed = resolveFunctionalRoutingForIngredient({ canonicalIngredientId, name });
     if (routed?.role === 'IDENTITY_UNRESOLVED') return { isSurfactant: false, surfactantType: 'none' };
     if (routed?.role === 'POLYMERIC_DISPERSANT') return { isSurfactant: false, surfactantType: 'none' };
     if (routed?.chargeBehavior === 'PH_DEPENDENT_AMINE_OXIDE' || routed?.chargeBehavior === 'PH_DEPENDENT_ANIONIC') return { isSurfactant: true, surfactantType: 'conditional' };
@@ -400,7 +400,6 @@ export class ActiveMatterEngine {
     const routed = resolveFunctionalRoutingForIngredient({
       id: routeId,
       canonicalIngredientId: ing?.canonicalIngredientId,
-      ingredientId: ing?.ingredientId,
       name: rawName
     });
     const { isSurfactant, surfactantType } = this.classifySurfactantCharge(resolvedCategory, rawRole, rawName, routeId);
