@@ -34,7 +34,7 @@ export function calculatePowderMassBalance(ingredients: FormulationIngredient[])
       missingPercentage: 0,
       excessPercentage: 0,
       statusMessage: 'INVALID INPUT: One or more formulation ingredients have missing, malformed, negative, or above-100% percentages. Missing values are not treated as zero; correct every ingredient entry before mass-balance evaluation.',
-      source: 'CALCULATED'
+      source: 'INSUFFICIENT_DATA'
     };
   }
   
