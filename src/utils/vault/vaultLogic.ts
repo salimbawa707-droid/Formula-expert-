@@ -229,7 +229,7 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
   if (phase4B.independentVerificationStatus !== 'CONFIRMED') {
     return {
       allowed: false,
-      reason: 'Phase 4B independent verification status is UNESTABLISHED or REJECTED.',
+      reason: 'Phase 4B AI dual-pass review status is UNESTABLISHED or REJECTED.',
     };
   }
 
@@ -299,7 +299,7 @@ export function canUnlockPhase5(state: VaultState): { allowed: boolean; reason: 
     };
   }
 
-  return { allowed: true, reason: 'Phase 4B acceptance criteria fully satisfied and independently verified.' };
+  return { allowed: true, reason: 'Phase 4B acceptance criteria fully satisfied and AI dual-pass reviewed; evidence and laboratory-validation gates remain separate.' };
 }
 
 /**
