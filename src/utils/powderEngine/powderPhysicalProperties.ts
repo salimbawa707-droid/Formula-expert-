@@ -69,6 +69,18 @@ export function calculatePowderDensity(
     measuredTappedGPerL = labInputs.measuredTappedDensityGPerL;
   }
 
+  if (
+    (measuredBulkGPerL !== undefined && !Number.isFinite(measuredBulkGPerL)) ||
+    (measuredTappedGPerL !== undefined && !Number.isFinite(measuredTappedGPerL))
+  ) {
+    return {
+      densityType: 'NOT_MEASURED',
+      displayRange: 'Density calculation overflow',
+      source: 'INSUFFICIENT_DATA',
+      notes: 'Finite input values produced a non-finite density result. Check the mass and volume units and magnitudes.'
+    };
+  }
+
   if (measuredBulkGPerL !== undefined && measuredTappedGPerL !== undefined && measuredTappedGPerL < measuredBulkGPerL) {
     return {
       densityType: 'NOT_MEASURED',
