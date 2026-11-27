@@ -29,7 +29,7 @@ function screenOne(ingredient: UniversalIngredient, category: ProductCategoryId)
     ...(ingredient.activeDefault == null ? ['As-supplied active matter / solids assay'] : ['Verification that catalog activeDefault matches the purchased grade']),
     ...(ingredient.phMin == null || ingredient.phMax == null ? ['Verified pH stability/use range'] : []),
     ...(['Anionic Surfactant','Nonionic Surfactant','Amphoteric Surfactant','Cationic Surfactant'].includes(ingredient.category) && ingredient.hlb == null ? ['Measured or source-supported surfactant property data where relevant'] : []),
-    ['Category-specific use level, process, compatibility and finished-formula test']
+    'Category-specific use level, process, compatibility and finished-formula test'
   ];
 
   if (proprietary) {
