@@ -18,6 +18,7 @@
 import { ProductCategoryId, normalizeProductCategory, getProductCategoryLabel } from '../domain/productTaxonomy';
 import { FormulationIngredient } from '../types';
 import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
+import { resolveIngredientChemistrySemantics, type IngredientChemistrySemantics } from '../domain/ingredients/ingredientChemistrySemantics';
 
 // =============================================================================
 // TYPINGS & STRUCTS
@@ -189,6 +190,8 @@ export interface IngredientDefinition {
   primaryFunctionalRole: string;
   supportedRoles: string[];
   chargeProfile: IngredientChargeProfile;
+  /** Explicit chemistry semantics from identity SSOT; separate from legacy chargeProfile. */
+  chemistrySemantics?: IngredientChemistrySemantics;
   grades: Record<string, IngredientGradeProfile>;
   categoryApplicability: Record<ProductCategoryId, {
     status: ApplicabilityStatus;
@@ -303,7 +306,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'SLURRY',
         densityGmL: 1.06,
         hydrationState: 'PURE_CHEMICAL',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -316,7 +319,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'SLURRY',
         densityGmL: 1.05,
         hydrationState: 'PURE_CHEMICAL',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -383,7 +386,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'PASTE',
         densityGmL: 1.11,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -396,7 +399,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.04,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -463,7 +466,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.05,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -529,7 +532,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.05,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -542,7 +545,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'POWDER',
         densityGmL: 0.55,
         hydrationState: 'ANHYDROUS',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -607,7 +610,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'LIQUID',
         densityGmL: 1.30,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       },
@@ -620,7 +623,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'POWDER',
         densityGmL: 0.75,
         hydrationState: 'ANHYDROUS',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -684,7 +687,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'GRANULAR',
         densityGmL: 1.54,
         hydrationState: 'HYDRATED',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -748,7 +751,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'GRANULAR',
         densityGmL: 1.0,
         hydrationState: 'ANHYDROUS',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -813,7 +816,7 @@ export const INGREDIENT_INTELLIGENCE_REGISTRY: Record<string, IngredientDefiniti
         physicalForm: 'PASTE',
         densityGmL: 0.96,
         hydrationState: 'AQUEOUS_SOLUTION',
-        provenance: 'VERIFIED_COMMERCIAL_GRADE',
+        provenance: 'ESTIMATED',
         version: '1.0.0',
         effectiveFrom: '2026-01-01T00:00:00Z'
       }
@@ -911,8 +914,8 @@ export const INGREDIENT_INTERACTION_RULES: InteractionRule[] = [
     relationship: 'Mixed Micellar Synergy',
     expectedEffects: ['Viscosity Build', 'Reduced Critical Micelle Concentration (CMC)', 'Enhanced Foam Persistence'],
     severity: 'INFO',
-    provenance: 'MEASURED_INTERACTION',
-    sourceReference: 'Schramm: Surfactant Applications (2000)'
+    provenance: 'PREDICTED_INTERACTION',
+    sourceReference: 'Schramm: Surfactant Applications (2000) — qualitative literature context; pair-specific measurement not established'
   },
   {
     interactionId: 'acid-carbonate-hazard',
@@ -921,7 +924,8 @@ export const INGREDIENT_INTERACTION_RULES: InteractionRule[] = [
     relationship: 'Rapid Neutralization',
     expectedEffects: ['Extreme Exothermic Reaction', 'CO2 Gas Release / Foaming'],
     severity: 'MAJOR',
-    provenance: 'MEASURED_INTERACTION'
+    provenance: 'PREDICTED_INTERACTION',
+    sourceReference: 'Established acid-carbonate neutralization chemistry; formula-specific kinetics not measured'
   },
   {
     interactionId: 'acid-hypochlorite-chlorine-gas',
@@ -930,8 +934,8 @@ export const INGREDIENT_INTERACTION_RULES: InteractionRule[] = [
     relationship: 'Acidic Oxidation Mismatch',
     expectedEffects: ['Rapid Liberation of Lethal Chlorine Gas (Cl2)'],
     severity: 'FATAL',
-    provenance: 'MEASURED_INTERACTION',
-    sourceReference: 'OSHA / NIOSH Hazard Communication (Chemical Incompatibility)'
+    provenance: 'PREDICTED_INTERACTION',
+    sourceReference: 'OSHA / NIOSH hazard guidance — established incompatibility; no in-app experiment claimed'
   }
 ];
 
@@ -949,11 +953,13 @@ export function getIngredientIntelligence(query: string): IngredientDefinition |
 
   // 1. Direct key match
   if (INGREDIENT_INTELLIGENCE_REGISTRY[q]) {
-    return INGREDIENT_INTELLIGENCE_REGISTRY[q];
+    const definition = INGREDIENT_INTELLIGENCE_REGISTRY[q];
+    const chemistrySemantics = resolveIngredientChemistrySemantics(definition.canonicalId);
+    return chemistrySemantics ? { ...definition, chemistrySemantics } : definition;
   }
 
   // 2. Canonical / Alias / Display match
-  return Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).find(def => {
+  const match = Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).find(def => {
     if (def.canonicalId.toLowerCase() === q) return true;
     if (def.displayName.toLowerCase() === q) return true;
     if (def.inciName && def.inciName.toLowerCase() === q) return true;
@@ -967,6 +973,9 @@ export function getIngredientIntelligence(query: string): IngredientDefinition |
 
     return false;
   });
+  if (!match) return undefined;
+  const chemistrySemantics = resolveIngredientChemistrySemantics(match.canonicalId);
+  return chemistrySemantics ? { ...match, chemistrySemantics } : match;
 }
 
 /**
