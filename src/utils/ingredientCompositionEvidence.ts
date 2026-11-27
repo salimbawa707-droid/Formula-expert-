@@ -51,7 +51,7 @@ export function validateIngredientCompositionEvidence(
   if (!input.ingredientCanonicalId?.trim()) errors.push('Canonical ingredient ID is required.');
   if (!input.ingredientName?.trim()) errors.push('Ingredient name is required.');
   if (input.compositionBasis !== 'W_W') errors.push('Only explicitly defined mass fraction (w/w) is currently supported.');
-  if (!['GRAVIMETRIC_MASS_BALANCE', 'VALIDATED_ASSAY', 'OTHER_VALIDATED_METHOD'].includes(String(input.compositionMethod))) {
+  if (!['GRAVIMETRIC_ASSAY', 'VALIDATED_ASSAY', 'OTHER_VALIDATED_METHOD'].includes(String(input.compositionMethod))) {
     errors.push('A supported measurement method is required.');
   }
   if (!input.compositionMethodDetails?.trim()) errors.push('Measurement method details/reference are required.');
