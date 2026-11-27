@@ -100,7 +100,7 @@ export function calculatePowderChelationSystem(
       const validActivePct =
         typeof rawActivePct === 'number' &&
         Number.isFinite(rawActivePct) &&
-        rawActivePct >= 0 &&
+        rawActivePct > 0 &&
         rawActivePct <= 100
           ? rawActivePct
           : null;
@@ -135,8 +135,11 @@ export function calculatePowderChelationSystem(
         capacityMgPerGram = rawCapacity;
         capacityStatus = `Traceable capacity evidence (${evidenceId}): ${rawCapacity} mg CaCO₃/g (${capacityBasis})`;
         const rawIngredientGrams = typeof washDoseG === 'number' ? washDoseG * (ing.inputPercentage / 100) : 0;
+        // Database lookup capacities are already expressed per gram of the
+        // commercial product grade. Apply an assay multiplier only when the
+        // caller explicitly declares a per-gram-active-material capacity.
         const capacityBasisGrams =
-          capacityBasis === 'ACTIVE_MATERIAL' || ing.activeMatterPct !== undefined
+          capacityBasis === 'ACTIVE_MATERIAL'
             ? rawIngredientGrams * (validActivePct / 100)
             : rawIngredientGrams;
         totalCaCapacityMg += capacityBasisGrams * rawCapacity;
@@ -260,11 +263,20 @@ export function calculatePowderAlkalinity(
   });
 
   const estimatedNa2OEquivalentPct = Number(estimatedNa2O.toFixed(2));
-  const measuredAlkalinity = labInputs?.measuredReserveAlkalinityPctNa2O;
+  const rawMeasuredAlkalinity = labInputs?.measuredReserveAlkalinityPctNa2O;
+  const hasMeasuredAlkalinityInput = rawMeasuredAlkalinity !== undefined && rawMeasuredAlkalinity !== null;
+  const measuredAlkalinityValid =
+    typeof rawMeasuredAlkalinity === 'number' &&
+    Number.isFinite(rawMeasuredAlkalinity) &&
+    rawMeasuredAlkalinity >= 0 &&
+    rawMeasuredAlkalinity <= 100;
+  const measuredAlkalinity = measuredAlkalinityValid ? rawMeasuredAlkalinity : undefined;
 
   let reserveStatus = '';
-  if (measuredAlkalinity !== undefined && measuredAlkalinity > 0) {
-    reserveStatus = `Measured laboratory reserve alkalinity is ${measuredAlkalinity.toFixed(2)}% Na₂O equivalent (Acidimetric titration to methyl orange / pH 4.0).`;
+  if (measuredAlkalinityValid) {
+    reserveStatus = `Measured laboratory reserve alkalinity is ${measuredAlkalinity!.toFixed(2)}% Na₂O equivalent (Acidimetric titration to methyl orange / pH 4.0).`;
+  } else if (hasMeasuredAlkalinityInput) {
+    reserveStatus = 'INSUFFICIENT_DATA: measured reserve alkalinity must be a finite value from 0 to 100% Na₂O equivalent.';
   } else if (totalAlkalinePct > 20) {
     reserveStatus = `High alkaline reserve (${estimatedNa2OEquivalentPct}% Na₂O equivalent). Saponifies fatty soils, neutralizes acidic dirt, and activates ionic builders.`;
   } else if (totalAlkalinePct > 5) {
@@ -280,6 +292,6 @@ export function calculatePowderAlkalinity(
     measuredAlkalinityPctNa2O: measuredAlkalinity,
     measuredAlkalinityMethod: measuredAlkalinity !== undefined ? 'Acidimetric Titration to Methyl Orange End-point (pH 4.0)' : undefined,
     alkalineReserveStatus: reserveStatus,
-    source: measuredAlkalinity !== undefined ? 'MEASURED' : alkalineIngredients.length > 0 ? 'CALCULATED' : 'NOT_APPLICABLE'
+    source: hasMeasuredAlkalinityInput && !measuredAlkalinityValid ? 'INSUFFICIENT_DATA' : measuredAlkalinityValid ? 'MEASURED' : alkalineIngredients.length > 0 ? 'CALCULATED' : 'NOT_APPLICABLE'
   };
 }
