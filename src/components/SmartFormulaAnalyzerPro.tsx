@@ -50,6 +50,13 @@ import { useSettingsStore } from "../stores/useSettingsStore";
 import { isFeatureAllowed } from "../utils/featureGating";
 import SubscriptionPaywallModal from "./SubscriptionPaywallModal";
 
+const getFunctionalRouteForFormulaIngredient = (ing: any) => resolveFunctionalRoutingForIngredient({
+  id: ing?.id,
+  canonicalIngredientId: ing?.canonicalIngredientId,
+  ingredientId: ing?.ingredientId,
+  name: ing?.name
+});
+
 // Modular sub-components
 import { ActiveFingerprintCard } from "./analyzer/ActiveFingerprintCard";
 import { EcoImpactAssessmentCard } from "./analyzer/EcoImpactAssessmentCard";
@@ -742,7 +749,10 @@ function SmartFormulaAnalyzerProInner({
     const hasSles = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("sles") && ing.percentage > 2);
     const hasLabsa = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("labsa") && ing.percentage > 2);
     const hasDefoamer = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("silicone") || (ing?.name || "").toLowerCase().includes("antifoam") || (ing?.name || "").toLowerCase().includes("defoamer"));
-    const hasNonionic = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("ethoxylate") || (ing?.name || "").toLowerCase().includes("lae") || (ing?.name || "").toLowerCase().includes("glucoside"));
+    const hasNonionic = analyzedIngs.some(ing => {
+      const route = getFunctionalRouteForFormulaIngredient(ing);
+      return route ? route.routingClass === "NONIONIC" : ((ing?.name || "").toLowerCase().includes("ethoxylate") || (ing?.name || "").toLowerCase().includes("lae") || (ing?.name || "").toLowerCase().includes("glucoside"));
+    });
     const hasPreservative = analyzedIngs.some(ing => (ing?.name || "").toLowerCase().includes("formalin") || (ing?.name || "").toLowerCase().includes("kathon") || (ing?.name || "").toLowerCase().includes("preservative"));
 
     if (hasDefoamer) foamHeight = "Zero";
@@ -798,16 +808,10 @@ function SmartFormulaAnalyzerProInner({
     const safeIngs = Array.isArray(ingredients) ? ingredients : [];
 
     let surfactantSystem = "Anionic Base";
-    const getRoute = (i: any) => resolveFunctionalRoutingForIngredient({
-      id: i?.id,
-      canonicalIngredientId: i?.canonicalIngredientId,
-      ingredientId: i?.ingredientId,
-      name: i?.name
-    });
-    const hasAmphoteric = surfPct > 0 && safeIngs.some(i => getRoute(i)?.chargeBehavior === "ZWITTERIONIC");
-    const hasConditionalAmineOxide = surfPct > 0 && safeIngs.some(i => getRoute(i)?.chargeBehavior === "PH_DEPENDENT_AMINE_OXIDE");
+    const hasAmphoteric = surfPct > 0 && safeIngs.some(i => getFunctionalRouteForFormulaIngredient(i)?.chargeBehavior === "ZWITTERIONIC");
+    const hasConditionalAmineOxide = surfPct > 0 && safeIngs.some(i => getFunctionalRouteForFormulaIngredient(i)?.chargeBehavior === "PH_DEPENDENT_AMINE_OXIDE");
     const hasNonionic = surfPct > 0 && safeIngs.some(i => {
-      const route = getRoute(i);
+      const route = getFunctionalRouteForFormulaIngredient(i);
       return route ? route.routingClass === "NONIONIC" : ((i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
     });
     if (hasAmphoteric && hasNonionic) surfactantSystem = "Triple Synergy (Anionic + Amphoteric + Nonionic)";
@@ -919,15 +923,22 @@ function SmartFormulaAnalyzerProInner({
         content = "Analyzes the combined classes of surfactants used in the formulation. Synergistic blending of different charge groups reduces skin irritation, improves cleansing capability, and stabilizes micro-emulsions.";
         formulaUsed = "Classification Logic:\n• Triple Synergy: Contains Anionic + Amphoteric + Nonionic surfactants.\n• Mild Blend: Contains Anionic + Amphoteric surfactants.\n• Anionic Base: Only Anionic surfactants detected.";
         if (analysisResult) {
-          const hasAmphoteric = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => (i?.name || "").toLowerCase().includes("capb"));
-          const hasNonionic = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => (i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+          const hasAmphoteric = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => getFunctionalRouteForFormulaIngredient(i)?.chargeBehavior === "ZWITTERIONIC");
+          const hasNonionic = analysisResult.surfactantPct > 0 && analysisResult.ingredients.some((i: any) => {
+            const route = getFunctionalRouteForFormulaIngredient(i);
+            return route ? route.routingClass === "NONIONIC" : ((i?.name || "").toLowerCase().includes("glucoside") || (i?.name || "").toLowerCase().includes("ethoxylate"));
+          });
           
           const list: string[] = [];
           analysisResult.ingredients.forEach((i: any) => {
             const role = i.role || "";
-            const isSurfactant = role.toLowerCase().includes("surfactant") || role.toLowerCase().includes("detergent") || (i.hlbValue !== undefined && i.hlbValue !== null);
+            const route = getFunctionalRouteForFormulaIngredient(i);
+            const isSurfactant = route
+              ? route.role !== "IDENTITY_UNRESOLVED" && route.role !== "POLYMERIC_DISPERSANT"
+              : role.toLowerCase().includes("surfactant") || role.toLowerCase().includes("detergent") || (i.hlbValue !== undefined && i.hlbValue !== null);
             if (isSurfactant && (i.percentage || 0) > 0) {
-              const charge = (i as any).chargeType || "Non-ionic/Unknown";
+              const routeLabel = route ? resolveFormulaIntelligenceRouting(route.ingredientIds[0])?.chargeLabel : undefined;
+              const charge = routeLabel || (i as any).chargeType || "Non-ionic/Unknown";
               list.push(`• ${i.name || "Unknown Component"} (${i.percentage}%): ${charge}`);
             }
           });
@@ -970,9 +981,12 @@ function SmartFormulaAnalyzerProInner({
           analysisResult.ingredients.forEach((ing: any) => {
             if ((ing.percentage || 0) <= 0) return;
             const metrics = getIngredientEcoMetrics(ing.name || "");
-            const isSurfactant = ing.role?.toLowerCase().includes("surfactant") || 
-                                 ing.role?.toLowerCase().includes("detergent") || 
-                                 (ing.hlbValue !== undefined && ing.hlbValue !== null);
+            const route = getFunctionalRouteForFormulaIngredient(ing);
+            const isSurfactant = route
+              ? route.role !== "IDENTITY_UNRESOLVED" && route.role !== "POLYMERIC_DISPERSANT"
+              : ing.role?.toLowerCase().includes("surfactant") ||
+                ing.role?.toLowerCase().includes("detergent") ||
+                (ing.hlbValue !== undefined && ing.hlbValue !== null);
             
             if (metrics.biodegradabilityPct < 60 && !metrics.isMineralOrWater) {
               if (isSurfactant) {
