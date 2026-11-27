@@ -269,3 +269,23 @@ The overlay is a safe first migration adapter, not proof that every legacy categ
 
 The 397-record identity crosswalk gap is not closed by these five bounded findings. Supplier-grade evidence remains absent; all applicability remains NOT_APPROVED. Phase 4B OPEN; Phase 5 LOCKED.
 
+
+### Runtime consumer integration — 2026-11-27
+
+The functional routing adapter is now consumed by three existing engines, rather than remaining a standalone audit-only registry:
+
+1. `ActiveMatterEngine`
+   - SLS catalog IDs resolve as anionic.
+   - Lauramine oxide catalog IDs resolve as amphoteric.
+   - Sodium lignosulfonate is excluded from the surfactant-active breakdown while remaining a separately classified anionic polymeric dispersant.
+   - The PEG-2 Tallow Amine identity-conflict record returns missing active matter, no surfactant class, and an explicit conflict.
+2. `HLBEngine`
+   - Functional routes with no defensible HLB basis return `hlb: null`, including SLS, amine oxide, lignosulfonate and blocked identity rows; explicit HLB input does not bypass this identity-specific guard.
+3. `resolveEng002PureComponent`
+   - Pure-component CMC transfer is denied for commercial amine oxide, lignosulfonate and blocked tallow-amine identity; the curated SLS pure-component reference remains available subject to the existing exact CAS / blend checks.
+
+Added `scripts/test-functional-routing-engine-integration.ts` and wired it into `test:all`. It tests the active-matter class, HLB suppression, pure-CMC scope and unresolved-identity block across these engines.
+
+This is a targeted migration for the four audited chemistry cases, not a claim that every one of the 430 catalog records or every legacy category consumer has been migrated. Legacy category fields remain unchanged to avoid broad unreviewed side effects. The remaining consumers (including general compatibility matrices, formula-intelligence applicability, selectors and other legacy calculators) still require a complete per-call-site migration inventory.
+
+No source evidence in this addendum verifies supplier grade, lot assay, actual active matter, HLB, or formulation performance. The 397 identity crosswalk gaps and 430 supplier-grade evidence gaps remain open.
