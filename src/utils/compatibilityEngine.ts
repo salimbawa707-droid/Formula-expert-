@@ -7,7 +7,7 @@ import { getCategoryPHLimits } from './scientificRouter';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
 import { tryGetScientificProductProfile } from '../domain/scientificProductProfiles';
 import { PHCalculationOptions } from '../domain/ph/types';
-import { resolveFunctionalRouting } from '../data/ingredientFunctionalRouting';
+import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { resolveFunctionalCompatibilityMatrixPair } from '../data/chemicals';
 
 // ============================================================================
@@ -172,7 +172,7 @@ export function calculateFormulationCompatibility(
     const name = (ing?.name || '').toLowerCase();
     const cat = (ing?.category || ing?.role || getAuditedIngredientCategory(ing?.name || '')).toLowerCase();
     const routeId = String((ing as any)?.canonicalIngredientId || (ing as any)?.ingredientId || ing?.id || '');
-    const functionalRoute = routeId ? resolveFunctionalRouting(routeId) : null;
+    const functionalRoute = resolveFunctionalRoutingForIngredient({ id: routeId, name: ing?.name });
     const rawPct = ing?.percentage ?? ing?.percent ?? ing?.percentageInFormula ?? (ing as any)?.rawPercent;
     const pct = rawPct === undefined || rawPct === null || (typeof rawPct === 'string' && rawPct.trim() === '')
       ? Number.NaN
@@ -409,7 +409,9 @@ export function calculateFormulationCompatibility(
         String((a as any)?.canonicalIngredientId || (a as any)?.ingredientId || a?.id || ''),
         String(a?.category || a?.role || ''),
         String((b as any)?.canonicalIngredientId || (b as any)?.ingredientId || b?.id || ''),
-        String(b?.category || b?.role || '')
+        String(b?.category || b?.role || ''),
+        a?.name,
+        b?.name
       );
       if (decision?.status === 'REQUIRES_COMPATIBILITY_TEST') matrixTestPairs.push(`${a.name} + ${b.name}: ${decision.note || 'Grade-specific compatibility test required.'}`);
     }
