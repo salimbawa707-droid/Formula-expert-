@@ -159,7 +159,7 @@ for (const importer of sourceFiles) {
   for (const statement of moduleStatements(source)) {
     const target = resolveRelative(path.join(ROOT, importer), statement.specifier, candidateByStem);
     if (!target) {
-      if (CANDIDATE_PATH_RE.test(statement.specifier)) unresolvedCandidateLikeImports.push({ importer, specifier: statement.specifier });
+      if (CANDIDATE_PATH_RE.test(statement.specifier) && !/(^|\\/)(__tests__|tests)(\\/|$)/i.test(statement.specifier)) unresolvedCandidateLikeImports.push({ importer, specifier: statement.specifier });
       continue;
     }
     const edge = {
@@ -187,6 +187,13 @@ for (const importer of sourceFiles) {
 for (const module of modules.values()) {
   module.outgoingCandidateDependencies = [...new Set(module.outgoingCandidateDependencies)].sort();
   module.incomingStaticImporters.sort((a, b) => a.importer.localeCompare(b.importer));
+  module.directProductionImporters = [...new Set(module.incomingStaticImporters
+    .filter(edge => !/(^|\\/)__tests__(\\/|$)/.test(edge.importer))
+    .map(edge => edge.importer))].sort();
+  module.directTestImporters = [...new Set(module.incomingStaticImporters
+    .filter(edge => /(^|\\/)__tests__(\\/|$)/.test(edge.importer))
+    .map(edge => edge.importer))].sort();
+  module.productionReachable = module.directProductionImporters.length > 0;
 }
 const graph = {
   audit: 'Phase 4B broad candidate export and static call-site graph',
@@ -225,6 +232,9 @@ for (const module of graph.modules) {
   lines.push('- **Role classification:** ' + module.role);
   lines.push('- **Exported symbols:** ' + (module.exports.join(', ') || 'No named declaration export detected; inspect default/barrel exports.'));
   lines.push('- **Candidate dependencies:** ' + (module.outgoingCandidateDependencies.join(', ') || 'None detected.'));
+  lines.push('- **Direct production importers:** ' + (module.directProductionImporters.join(', ') || 'None detected.'));
+  lines.push('- **Direct test importers:** ' + (module.directTestImporters.join(', ') || 'None detected.'));
+  lines.push('- **Production reachable by static imports:** ' + (module.productionReachable ? 'YES' : 'NO / UNRESOLVED'));
   lines.push('- **Direct importers/call-site files:**');
   if (module.incomingStaticImporters.length === 0) lines.push('  - None found by static import scan (may be dynamically wired, indirectly re-exported, or unused).');
   else for (const edge of module.incomingStaticImporters) lines.push('  - `' + edge.importer + '` — ' + edge.edgeType + (edge.importedNames.length ? ': ' + edge.importedNames.join(', ') : ''));
