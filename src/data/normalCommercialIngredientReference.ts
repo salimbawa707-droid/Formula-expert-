@@ -829,6 +829,22 @@ export const NORMAL_COMMERCIAL_INGREDIENT_REFERENCES: NormalCommercialIngredient
     applicabilityNote: 'CAS 9003-11-6 is broad for EO/PO block copolymers and does not specify block architecture or molecular weight. Do not assume PE 6400 equals Poloxamer 184 based on the generic CAS. Obtain exact manufacturer bulletin and identity/INCI confirmation.'
   },
 
+
+  {
+    catalogIngredientIds: ['carbomer-940-tech', 'carbomer-940-pure', 'carbomer-940-sol'],
+    displayName: 'Carbomer 940 catalog variants',
+    referenceGrade: 'Industry reference framework; Lubrizol Carbopol 940 NF is a separate named benchmark',
+    evidenceClass: 'INDUSTRY_REFERENCE',
+    referenceValues: {
+      polymerIdentity: { value: 'crosslinked polyacrylic acid / carbomer family', unit: 'identity' },
+      variantSpecification: { value: 'technical, high-purity and custom-solution variants require separate supplier TDS/CoA', unit: 'rule' },
+      viscosity: { value: 'cannot be inherited from Carbopol 940 NF without matching test basis and grade', unit: 'rule' }
+    },
+    sourceUrl: 'https://www.lubrizol.com/Personal-Care/Products/Carbopol-Polymers',
+    sourceName: 'Lubrizol Carbopol polymer family reference',
+    applicabilityNote: 'Catalog suffixes do not establish separate commercial grades. Do not copy Carbopol 940 NF specification to technical/pure/solution variants; verify polymer solids, crosslinker, neutralization response and electrolyte compatibility.'
+  },
+
 ];
 
 export function getNormalCommercialIngredientReference(catalogIngredientId: string) {
