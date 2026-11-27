@@ -985,9 +985,10 @@ export function getIngredientIntelligenceCoverageReport() {
   const allRecords = Object.values(INGREDIENT_INTELLIGENCE_REGISTRY);
   const total = allRecords.length;
 
-  const verifiedCount = allRecords.filter(r => 
-    r.provenanceStatus === 'VERIFIED' || 
-    r.provenanceStatus === 'SOURCE_BACKED' || 
+  // Source metadata is not equivalent to verification. Keep the counts separate:
+  // a generic source-backed profile does not establish a particular supplier grade or lot.
+  const verifiedCount = allRecords.filter(r =>
+    r.provenanceStatus === 'VERIFIED' ||
     Object.values(r.grades).some(g => g.provenance === 'VERIFIED_COMMERCIAL_GRADE')
   ).length;
 
