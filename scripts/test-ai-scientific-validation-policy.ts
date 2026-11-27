@@ -53,7 +53,24 @@ assert(failedBalance.disposition === 'CALCULATION_FAILED' && failedBalance.score
 const criticalGap = assessAiScientificValidation({ ...base, unresolvedCriticalGap: true }, 99);
 assert(criticalGap.disposition === 'INSUFFICIENT_EVIDENCE' && criticalGap.score === null, 'Critical evidence gap must block composite score.');
 
+const noSupplierOrBenchmarkEvidence = assessAiScientificValidation({
+  ...base,
+  evidenceRoute: 'MISSING',
+  exactIdentityAndGrade: false,
+  matchedBenchmarkAvailable: false,
+  heldOutEvaluation: false,
+  sampleCount: 0,
+  benchmarkEndpointId: '',
+  benchmarkDomainId: '',
+  confidenceIntervalAvailable: false,
+  calibrationDemonstrated: false
+}, 94);
+assert(noSupplierOrBenchmarkEvidence.score === 60 && !noSupplierOrBenchmarkEvidence.supplierLotVerified && !noSupplierOrBenchmarkEvidence.endpointBenchmarkQualified, 'Production-like missing evidence must cap the composite score and never claim lot or benchmark verification.');
+
+const unresolvedUnits = assessAiScientificValidation({ ...base, unitsResolved: false }, 94);
+assert(unresolvedUnits.score === null && unresolvedUnits.disposition === 'CALCULATION_FAILED', 'Unresolved units must block the scientific assessment.');
+
 const invalidScore = assessAiScientificValidation(base, Number.NaN);
 assert(invalidScore.disposition === 'CALCULATION_FAILED', 'Non-finite score must fail closed.');
 
-console.log('AI scientific validation policy: 10/10 assertions passed.');
+console.log('AI scientific validation policy: 12/12 assertions passed.');
