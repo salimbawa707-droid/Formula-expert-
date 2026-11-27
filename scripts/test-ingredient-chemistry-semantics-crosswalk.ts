@@ -17,13 +17,14 @@ assert.equal(resolveIngredientChemistrySemantics('sodium_bicarbonate')?.acidBase
 assert.equal(resolveIngredientChemistrySemantics('labsa')?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT');
 assert.equal(resolveIngredientChemistrySemantics('labsa-90')?.ingredientId, 'labsa', 'commercial LABSA catalog IDs must resolve to the exact SSOT acid identity');
 assert.equal(resolveIngredientChemistrySemantics('labsa-96')?.ingredientId, 'labsa', 'commercial LABSA catalog IDs must resolve to the exact SSOT acid identity');
-assert.equal(resolveFunctionalRouting('labsa-90')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
-assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa-90')?.chargeBehavior, 'FIXED_ANIONIC');
+assert.equal(resolveFunctionalRouting('labsa-96')?.chargeBehavior, 'FIXED_ANIONIC');
+assert.equal(resolveFunctionalRouting('sarcosinate-30')?.chargeBehavior, 'PH_DEPENDENT_ANIONIC', 'sarcosinate retains carboxylate pH-dependent speciation');
 assert.deepEqual(validateFunctionalRoutingAgainstCatalog(), [], 'all functional route IDs must resolve to catalog records with exact category and INCI');
 assert.equal(resolveIngredientChemistrySemantics('citric-acid')?.acidBaseBehavior, 'WEAK_ACID', 'static intelligence canonical alias must resolve through SSOT semantics');
 assert.equal(resolveIngredientChemistrySemantics('unknown-id'), null);
 assert.equal(getIngredientIntelligence('labsa')?.chemistrySemantics?.surfactantFunctionalClass, 'PRIMARY_ANIONIC_SURFACTANT', 'intelligence consumer must expose separate SSOT chemistry semantics');
-assert.equal(evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID').tier, 'INSUFFICIENT_DATA', 'acid-form LABSA must not inherit a fixed charge comparison without formula pH/speciation');
+assert.equal(evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID').tier, 'INSUFFICIENT_DATA', 'LABSA identity alone must not establish supplier-grade or finished-formula substitution equivalence');
 assert.equal(evaluateIngredientSubstitution('labsa', 'sles', 'LAUNDRY_LIQUID').tier, 'INSUFFICIENT_DATA', 'static family names without an exact route/grade crosswalk must not be ranked by legacy charge labels');
 assert(Object.values(INGREDIENT_INTELLIGENCE_REGISTRY).every(def => Object.values(def.grades).every(grade => grade.provenance !== 'VERIFIED_COMMERCIAL_GRADE')), 'no static grade may claim verified commercial-grade status without linked grade evidence');
 assert.equal(getIngredientIntelligenceCoverageReport().verifiedOrCommercialGrade, 0, 'source-backed metadata alone must not inflate verified grade count');
