@@ -129,3 +129,30 @@ Added `scripts/test-nonionic-polymer-commercial-reference-coverage.ts` and wired
 5. NP entries remain on regulatory hold and tallow/PVNO/Pluronic identity caveats remain explicit.
 
 **Execution status:** the test has been added to the repository and included in `test:all`, but it has not yet been executed in a live CI run. Do not report it as passed until the CI log confirms it.
+
+
+## Standardized supplier / lot / formulation evidence protocol — 2026-11-27
+
+### Why this is not fabricated evidence
+
+No actual supplier TDS, received-lot CoA, or laboratory formulation trial was present in the repository evidence reviewed for this work. A public manufacturer page or representative TDS cannot be relabelled as the user's supplier document; a generic specification cannot be relabelled as a batch CoA; and literature compatibility cannot be relabelled as validation in a specific formula. The system therefore standardizes the evidence dossier and incoming/bench-test protocol while keeping all three gates explicitly open.
+
+### Implemented
+
+- Added `src/data/commercialEvidenceProtocol.ts`.
+- Added `scripts/test-commercial-evidence-protocol.ts` and wired it as the first command in `bun run test:all`.
+- A protocol is generated for every nonionic surfactant and polymer/thickener catalog ID (coverage is derived from the canonical catalog, not a manually asserted count).
+- Every protocol defaults fail-closed: `supplierTdsState=NOT_PROVIDED`, `lotCoAState=NOT_PROVIDED`, `applicabilityState=NOT_TESTED`, and `dossierState=REFERENCE_ONLY_BLOCKED`.
+- Supplier TDS checklist standardizes manufacturer/site, exact trade name/code/grade, document revision, identity/composition, assay basis, methods, conditions, storage and SDS traceability.
+- Lot CoA checklist requires a unique lot, manufacture/retest dates, actual lot results (not copied specification limits), method IDs, assay/moisture, relevant impurity checks and authorized release traceability.
+- Chemistry-specific incoming checks distinguish alcohol ethoxylates (chain/EO distribution and cloud point), APGs, amides (free amine/nitrosamine controls), amine oxides, PEG/polysorbate materials, and polymer grades (solids, hydration and fully specified rheology conditions; CMC substitution; HPMC substitution; carbomer/ASE neutralization and electrolyte sensitivity).
+- Formula applicability requires exact-formula compatibility, controlled process and water conditions, predefined acceptance criteria, controls and at least three independently prepared replicates, stability/rheology checks and a defined cleaning/performance endpoint.
+- No universal numeric pass limits are invented. Acceptance limits must be selected before testing for the intended product and method. This prevents false precision and post-hoc pass criteria.
+
+### Release decision
+
+A catalog item remains reference-only and blocked until (1) exact supplier grade is matched to a current TDS, (2) the received lot is matched to its own CoA and incoming checks, and (3) the ingredient is tested and approved in the named formula/version. Even a TDS/CoA pair does not prove formulation applicability. Failed identity, missing method/basis, out-of-spec lot, incompatible matrix, or missing replicates keep the item blocked.
+
+### Regression status
+
+The new evidence-protocol regression test has been added to `test:all`. It must pass on a fresh CI run for the latest commit before being reported as executed. Previous CI success on the earlier commit does not certify this new code.
