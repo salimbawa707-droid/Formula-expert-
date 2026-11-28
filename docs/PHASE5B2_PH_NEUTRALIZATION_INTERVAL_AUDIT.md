@@ -105,8 +105,17 @@ This audit does not claim pH interval support is implemented, that the pH engine
 
 ## Implementation checkpoint — bounded arithmetic prototype
 
-A new additive module, `src/domain/ph/neutralizationIntervalEngine.ts`, now accepts explicitly bounded total acid/base reactive equivalents on a common batch basis and returns lower/nominal/upper reaction extent, residual equivalents, neutralization fraction and scenario classification. Water generation remains unavailable because aggregate equivalents do not establish reaction-product stoichiometry.
+A new additive module, `src/domain/ph/neutralizationIntervalCalculations.ts`, now accepts explicitly bounded total acid/base reactive equivalents on a common batch basis and returns lower/nominal/upper reaction extent, residual equivalents, neutralization fraction and scenario classification. Water generation remains unavailable because aggregate equivalents do not establish reaction-product stoichiometry.
 
 The module deliberately does **not** resolve ingredient names or derive assay/equivalent bounds. It rejects missing evidence references, mixed bases, invalid intervals, negative values and non-finite inputs. Unknown data returns null result intervals; it is never converted to zero. It is not yet wired to `StoichiometricNeutralizationEngine` or the DAG because the audited registry does not establish a defensible equivalent-capacity interval for every primary reactant (notably commercial LABSA's free-acid contribution).
 
 Regression coverage was added in `scripts/test-phase5b2-neutralization-interval.ts` and registered in `test:all`; the exact PR head passed the full Current Release Quality Gates workflow, including this regression, typecheck, production build/health and Android debug APK plus WebView instrumentation. A subsequent AI source review identified and removed an unsupported water-generation estimate: equivalents alone do not identify product stoichiometry. The evidence-preserving profile-to-equivalent adapter and pH scenario integration remain open. No production pH interval is exposed by this checkpoint.
+
+
+## Implementation checkpoint — strict profile-to-equivalent adapter
+
+Added `src/domain/ph/neutralizationProfileIntervalAdapter.ts`. It derives total-batch equivalent intervals only for source-verified, pure reference chemicals with explicit lower/nominal/upper assay bounds, defensible molecular weight, and explicitly mono-functional strong-acid or mono-equivalent strong-base chemistry. It uses the formula's explicit raw mass or percentage plus a positive batch size. The adapter preserves source identity, source type, evidence level and assay status.
+
+Fail-closed behavior is intentional: commercial LABSA (including the default 90% registry profile), weak/polyprotic acids, conditional builders, estimated assays, missing mass, unsupported functionality, or any other unsupported primary strong acid/base blocks the entire interval. No unsupported reactant is silently dropped or converted to zero. The currently supported chemistry is narrow and must not be generalized to the full detergent ingredient catalog.
+
+Regression coverage: `scripts/test-phase5b2-neutralization-profile-adapter.ts` is registered in `test:all`. It checks a hand-calculated pure LABSA reference / pure NaOH reference 1:1 equivalent case, commercial LABSA rejection, missing-mass rejection, and unsupported weak-acid rejection. The adapter returns an equivalent interval only; it is not connected to the production neutralization engine or DAG and does not calculate pH. Exact-head CI for the latest adapter commit is pending.
