@@ -99,7 +99,8 @@ export interface UniversalIngredient {
   sustainability?: any;
   manufacturer?: string;
   productName?: string;
-  activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;\n  engineeringReferenceProfileId?: string;
+  activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;
+  engineeringReferenceProfileId?: string;
   provenance?: {
     sourceType: 'OFFICIAL_MANUFACTURER' | 'STANDARD_CHEMICAL' | 'ACADEMIC_LITERATURE' | 'USER_ENTERED';
     source: string;
