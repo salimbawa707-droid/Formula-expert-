@@ -90,6 +90,7 @@ export interface ScientificExecutionState {
 
   // 3. Neutralization (StoichiometricNeutralizationEngine)
   neutralizationState: any;
+  neutralizationIntervalAssessment?: any;
   pHIntermediate: number | null; // intermediate stoichiometric pH
   neutralizationStatus: SemanticStatus;
 
@@ -406,6 +407,7 @@ export class ScientificExecutionDAG {
           state.batchSizeKg
         );
         state.neutralizationState = primaryNeutralizationResult.value;
+        state.neutralizationIntervalAssessment = primaryNeutralizationResult.value.boundedNeutralizationInterval ?? null;
 
         // Extract intermediate neutralization status and intermediate pH state
         if (primaryNeutralizationResult.value.status === 'FULLY_NEUTRALIZED') {
