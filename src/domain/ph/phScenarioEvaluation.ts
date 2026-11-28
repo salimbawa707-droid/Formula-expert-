@@ -193,13 +193,30 @@ export function evaluatePHScenarios(
   }
 
   const results: PHScenarioResult[] = scenarios.map(scenario => {
-    const runs = initialGuesses.map(initialGuess => {
-      const result = PHEngineV2.calculatePH(
-        scenario.ingredients.map(ingredient => ({ ...ingredient })),
-        scenario.totalMassKg,
-        { ...(scenario.options ?? {}), targetPH: initialGuess }
-      );
-      return summarizeRun(initialGuess, result);
+    const runs: PHScenarioRun[] = initialGuesses.map(initialGuess => {
+      try {
+        const result = PHEngineV2.calculatePH(
+          scenario.ingredients.map(ingredient => ({ ...ingredient })),
+          scenario.totalMassKg,
+          { ...(scenario.options ?? {}), targetPH: initialGuess }
+        );
+        return summarizeRun(initialGuess, result);
+      } catch (error) {
+        // Invalid categories and unexpected normalization/model exceptions must
+        // withhold the scenario envelope rather than escape this assessment API.
+        const reason = error instanceof Error ? error.message : String(error);
+        return {
+          initialGuess,
+          pH: null,
+          status: 'INVALID_FORMULA',
+          converged: false,
+          iterations: 0,
+          residual: null,
+          ionicStrength: null,
+          modelValidity: 'OUT_OF_RANGE',
+          warnings: [`PHEngineV2 rejected this scenario: ${reason}`]
+        };
+      }
     });
     const validRuns = runs.every(run =>
       run.converged && run.status === 'CONVERGED' &&
