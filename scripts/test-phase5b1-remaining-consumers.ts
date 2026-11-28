@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../src/utils/boundedFormulaAdapter';
 import { calculateActiveMatter, calculateBoundedActiveMatter, calculateBoundedFormulaCost, generateFormulationWarnings } from '../src/utils/calculators';
 import { ScientificExecutionDAG } from '../src/utils/orchestrator/scientificExecutionDAG';
+import { calculateFormulaFingerprint, executeStagedScientificAnalysis } from '../src/utils/analysisWorkflowEngine';
 
 const completeScenario = buildBoundedActiveMatterReport([
   { id: 'sles', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'CATALOG_DEFAULT' } as any,
@@ -91,5 +92,27 @@ const dagWithUnknownAssay = dag.executeDAG({
 assert.equal(dagWithUnknownAssay.state.activeMatterReport.boundedEvidence.status, 'INSUFFICIENT_DATA');
 assert.equal(dagWithUnknownAssay.state.activeMatterReport.unknownActiveRawMassPct, 10);
 assert.equal(dagWithUnknownAssay.state.activeMatterReport.releaseEligible, false);
+
+
+const stagedSnapshot = {
+  formulaName: 'Staged bounded evidence regression',
+  productCategory: 'LAUNDRY_LIQUID',
+  batchSizeKg: 100,
+  waterHardnessPpm: 100,
+  washVolumeL: 10,
+  washDoseGrams: 50,
+  ingredients: [
+    { id: 'water', name: 'Water', percentage: 90, activeMatterPct: 0, role: 'Solvent' },
+    { id: 'unverified', name: 'Unverified surfactant grade', percentage: 10, role: 'Anionic Surfactant' },
+  ],
+};
+const stagedAnalysis = await executeStagedScientificAnalysis({
+  snapshot: stagedSnapshot as any,
+  currentLiveFingerprint: calculateFormulaFingerprint(stagedSnapshot as any),
+});
+const stagedSurfactantEvidence = stagedAnalysis.intermediateResults.SURFACTANT_SCIENCE;
+assert.equal(stagedSurfactantEvidence.evidenceStatus, 'INSUFFICIENT_DATA');
+assert.equal(stagedSurfactantEvidence.unknownActiveRawMassPct, 10);
+assert.equal(stagedSurfactantEvidence.totalActiveMatterPct, null);
 
 console.log('PHASE 5B-1 REMAINING CONSUMER ADAPTER REGRESSIONS PASS');
