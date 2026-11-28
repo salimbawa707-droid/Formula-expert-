@@ -120,5 +120,6 @@ Remaining work includes migrating remaining calculator wrappers and DAG projecti
 - Added additive `calculateBoundedActiveMatter()` and `calculateBoundedFormulaCost()` wrappers in the public calculator module; legacy scalar APIs remain unchanged for compatibility.
 - The Scientific Execution DAG active-matter node now attaches the bounded report, evidence status, unknown raw mass, known nominal subtotal and an explicit non-release-eligible marker to its existing authoritative report.
 - The grade projection reuses the active-matter node's bounded report rather than recalculating it; existing costing-node bounded pricing projection remains intact.
-- Regression coverage verifies the public wrappers preserve unknown mass and incomplete pricing, keep reports non-release-eligible, and do not alter the legacy active-matter scalar result.
+- Formulation warnings now report incomplete/unknown active matter explicitly rather than silently skipping the low-active check.
+- Regression coverage verifies the public wrappers preserve unknown mass and incomplete pricing, keep reports non-release-eligible, preserve the legacy active-matter scalar result, and distinguish unknown active matter from a known low-active formula.
 - These changes do not migrate every legacy scalar consumer or establish supplier/lot assay evidence. Remaining AST-discovered consumer migration and solver-based interval work remain open.
