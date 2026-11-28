@@ -121,5 +121,6 @@ Remaining work includes migrating remaining calculator wrappers and DAG projecti
 - The Scientific Execution DAG active-matter node now attaches the bounded report, evidence status, unknown raw mass, known nominal subtotal and an explicit non-release-eligible marker to its existing authoritative report.
 - The grade projection reuses the active-matter node's bounded report rather than recalculating it; existing costing-node bounded pricing projection remains intact.
 - Formulation warnings now report incomplete/unknown active matter explicitly rather than silently skipping the low-active check.
+- Staged analysis now emits a numeric total active-matter value only when the bounded report is COMPLETE; incomplete evidence is represented as `null`, not `NaN`.
 - Regression coverage verifies the public wrappers preserve unknown mass and incomplete pricing, keep reports non-release-eligible, preserve the legacy active-matter scalar result, and distinguish unknown active matter from a known low-active formula.
 - These changes do not migrate every legacy scalar consumer or establish supplier/lot assay evidence. Remaining AST-discovered consumer migration and solver-based interval work remain open.
