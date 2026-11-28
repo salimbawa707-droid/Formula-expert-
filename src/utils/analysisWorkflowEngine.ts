@@ -27,7 +27,6 @@ import { HLBEngine } from './hlbEngine';
 import { validatePHInput } from './phInputGuard';
 import {
   calculateActiveSurfactants,
-  calculateActiveMatter,
   calculateRawSurfactants
 } from './activeMatterEngine';
 import { calculateWaterHardnessTolerance } from './chelatorEngine';
@@ -622,9 +621,10 @@ export async function executeStagedScientificAnalysis(
 
   const rawSurfactantsTotal = calculateRawSurfactants(immutableSnapshot.ingredients);
   const totalSurfactantActivePct = calculateActiveSurfactants(immutableSnapshot.ingredients);
-  const rawAm = calculateActiveMatter(immutableSnapshot.ingredients);
   const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(immutableSnapshot.ingredients);
-  const totalActiveMatterPct: number | null = typeof rawAm === 'number' ? rawAm : ((rawAm as any)?.value ?? null);
+  const totalActiveMatterPct: number | null = boundedActiveMatterEvidence.status === 'COMPLETE'
+    ? boundedActiveMatterEvidence.totalActiveNominalPct
+    : null;
   const hlbResult = HLBEngine.calculateBlendedHLB(immutableSnapshot.ingredients);
 
   // Calculate charge breakdowns
