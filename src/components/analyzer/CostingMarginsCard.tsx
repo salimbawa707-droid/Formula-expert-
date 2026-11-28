@@ -19,7 +19,7 @@ export function CostingMarginsCard({
 
   const safeNum = (val: any, digits: number = 1): string => {
     const num = Number(val);
-    return isNaN(num) ? (0).toFixed(digits) : num.toFixed(digits);
+    return Number.isFinite(num) ? num.toFixed(digits) : 'N/A';
   };
 
   const costing = analysisResult.costing;
@@ -65,37 +65,37 @@ export function CostingMarginsCard({
             {isPartial ? 'Raw Material (Partial)' : 'Raw Material'}
           </span>
           <span className="text-base font-black text-[#0f766e] mt-1 block">
-            {isUnpriced ? 'Unset' : `₹${safeNum(costing?.rawMaterialCost, 2)}`}
+            {isUnpriced ? 'Unset' : isPartial ? `Partial ₹${safeNum(costing?.rawMaterialCost, 2)}` : `₹${safeNum(costing?.rawMaterialCost, 2)}`}
           </span>
         </div>
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
           <span className="text-[9px] text-slate-800 font-black block uppercase">Mfg. Overhead</span>
           <span className="text-base font-black text-slate-900 mt-1 block">
-            {isUnpriced ? '—' : `₹${safeNum(costing?.manufacturingCost, 2)}`}
+            {isUnpriced || isPartial ? '—' : `₹${safeNum(costing?.manufacturingCost, 2)}`}
           </span>
         </div>
         <div className="bg-teal-50/70 p-3 rounded-xl border border-teal-200">
           <span className="text-[9px] text-teal-950 font-black block uppercase">Ex-Factory Cost</span>
           <span className="text-base font-black text-teal-800 mt-1 block">
-            {isUnpriced ? '—' : `₹${safeNum(costing?.finalExFactoryCost, 2)}`}
+            {isUnpriced || isPartial ? '—' : `₹${safeNum(costing?.finalExFactoryCost, 2)}`}
           </span>
         </div>
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
           <span className="text-[9px] text-slate-800 font-black block uppercase">Suggest Whols. (+20%)</span>
           <span className="text-base font-black text-slate-900 mt-1 block">
-            {isUnpriced ? '—' : `₹${safeNum(costing?.suggestedWholesale, 2)}`}
+            {isUnpriced || isPartial ? '—' : `₹${safeNum(costing?.suggestedWholesale, 2)}`}
           </span>
         </div>
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
           <span className="text-[9px] text-slate-800 font-black block uppercase">Distributor (+15%)</span>
           <span className="text-base font-black text-slate-900 mt-1 block">
-            {isUnpriced ? '—' : `₹${safeNum(costing?.suggestedDistributor, 2)}`}
+            {isUnpriced || isPartial ? '—' : `₹${safeNum(costing?.suggestedDistributor, 2)}`}
           </span>
         </div>
         <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200">
           <span className="text-[9px] text-emerald-950 font-black block uppercase">MRP (incl. 18% GST)</span>
           <span className="text-base font-black text-emerald-800 mt-1 block">
-            {isUnpriced ? '—' : `₹${safeNum(costing?.suggestedMRP, 2)}`}
+            {isUnpriced || isPartial ? '—' : `₹${safeNum(costing?.suggestedMRP, 2)}`}
           </span>
         </div>
       </div>
@@ -106,7 +106,7 @@ export function CostingMarginsCard({
         </p>
       ) : isPartial ? (
         <p className="text-[10px] text-amber-700 font-bold bg-amber-50/70 p-2.5 rounded-xl border border-amber-200 leading-relaxed text-center">
-          ⚠️ Partial Costing: Excludes {costing?.missingPriceCount || 'unpriced'} raw material(s). Commercial margin projections reflect partial inputs.
+          ⚠️ Partial Costing: Excludes {costing?.missingPriceCount || 'unpriced'} raw material(s). Only the known raw-material subtotal is shown; overhead, ex-factory, wholesale, distributor and MRP projections are withheld until pricing is complete.
         </p>
       ) : (
         <p className="text-[10px] text-amber-600 font-bold bg-amber-50/50 p-2.5 rounded-xl border border-amber-100 leading-relaxed text-center">
