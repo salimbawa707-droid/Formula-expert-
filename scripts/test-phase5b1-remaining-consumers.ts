@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../src/utils/boundedFormulaAdapter';
+import { calculateActiveMatter, calculateBoundedActiveMatter, calculateBoundedFormulaCost, generateFormulationWarnings } from '../src/utils/calculators';
+import { ScientificExecutionDAG } from '../src/utils/orchestrator/scientificExecutionDAG';
+import { calculateFormulaFingerprint, executeStagedScientificAnalysis } from '../src/utils/analysisWorkflowEngine';
 
 const completeScenario = buildBoundedActiveMatterReport([
   { id: 'sles', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'CATALOG_DEFAULT' } as any,
@@ -38,5 +41,78 @@ assert.equal(fullPrice.status, 'COMPLETE');
 assert.equal(fullPrice.totalCostNominalPerKg, 3);
 assert.equal(fullPrice.batchCostNominal, 60);
 assert.equal(fullPrice.releaseEligible, false);
+
+
+const calculatorBoundedActive = calculateBoundedActiveMatter([
+  { id: 'sles-28', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]);
+assert.equal(calculatorBoundedActive.status, 'COMPLETE');
+assert.equal(calculatorBoundedActive.totalActiveNominalPct, 2.8);
+assert.equal(calculatorBoundedActive.releaseEligible, false);
+assert.equal(calculateActiveMatter([
+  { id: 'sles-28', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]), 2.8);
+
+const calculatorBoundedCost = calculateBoundedFormulaCost([
+  { id: 'priced', name: 'Priced', percentage: 90, costPerKg: 2 } as any,
+  { id: 'unpriced', name: 'Unpriced', percentage: 10 } as any,
+], 10);
+assert.equal(calculatorBoundedCost.status, 'INSUFFICIENT_DATA');
+assert.equal(calculatorBoundedCost.unknownRawPercent, 10);
+assert.equal(calculatorBoundedCost.totalCostNominalPerKg, null);
+assert.equal(calculatorBoundedCost.releaseEligible, false);
+
+assert(generateFormulationWarnings([
+  { id: 'unknown', name: 'Unverified surfactant', percentage: 10 } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]).some(message => message.includes('incomplete or unknown')));
+assert.equal(generateFormulationWarnings([
+  { id: 'low', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]).some(message => message.includes('below 5%')), true);
+
+
+const dag = new ScientificExecutionDAG();
+const dagWithUnknownAssay = dag.executeDAG({
+  formulaId: 'PHASE5B1-BOUNDED-DAG-UNKNOWN',
+  formulaName: 'Bounded evidence DAG regression',
+  formulaVersion: '1.0.0',
+  productCategory: 'LAUNDRY_LIQUID',
+  batchSizeKg: 100,
+  waterHardnessPpm: 100,
+  washVolumeL: 10,
+  washDoseGrams: 50,
+  ingredients: [
+    { id: 'water', name: 'Water', percentage: 90, activeMatterPct: 0, role: 'Solvent' },
+    { id: 'unverified', name: 'Unverified surfactant grade', percentage: 10, role: 'Anionic Surfactant' },
+  ],
+} as any);
+assert.equal(dagWithUnknownAssay.state.activeMatterReport.boundedEvidence.status, 'INSUFFICIENT_DATA');
+assert.equal(dagWithUnknownAssay.state.activeMatterReport.unknownActiveRawMassPct, 10);
+assert.equal(dagWithUnknownAssay.state.activeMatterReport.releaseEligible, false);
+
+
+const stagedSnapshot = {
+  formulaName: 'Staged bounded evidence regression',
+  productCategory: 'LAUNDRY_LIQUID',
+  batchSizeKg: 100,
+  waterHardnessPpm: 100,
+  washVolumeL: 10,
+  washDoseGrams: 50,
+  ingredients: [
+    { id: 'water', name: 'Water', percentage: 90, activeMatterPct: 0, role: 'Solvent' },
+    { id: 'unverified', name: 'Unverified surfactant grade', percentage: 10, role: 'Anionic Surfactant' },
+  ],
+};
+const stagedAnalysis = await executeStagedScientificAnalysis({
+  snapshot: stagedSnapshot as any,
+  currentLiveFingerprint: calculateFormulaFingerprint(stagedSnapshot as any),
+});
+const stagedSurfactantEvidence = stagedAnalysis.intermediateResults.SURFACTANT_SCIENCE;
+assert.equal(stagedSurfactantEvidence.evidenceStatus, 'INSUFFICIENT_DATA');
+assert.equal(stagedSurfactantEvidence.unknownActiveRawMassPct, 10);
+assert.equal(stagedSurfactantEvidence.totalActiveMatterPct, null);
 
 console.log('PHASE 5B-1 REMAINING CONSUMER ADAPTER REGRESSIONS PASS');

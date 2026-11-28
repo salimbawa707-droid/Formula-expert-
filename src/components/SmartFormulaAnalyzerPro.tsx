@@ -35,6 +35,7 @@ import {
   calculateDetailedViscosity,
   calculateRawSurfactants,
   calculateActiveSurfactants,
+  calculateBoundedActiveMatter,
   calculateFormulationCompatibility,
   generateDynamicMixingInstructions,
   calculateCPI,
@@ -151,8 +152,9 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 const safeNumHelper = (val: any, digits: number = 1): string => {
+  if (val === null || val === undefined || val === '') return 'N/A';
   const num = Number(val);
-  return isNaN(num) ? (0).toFixed(digits) : num.toFixed(digits);
+  return Number.isFinite(num) ? num.toFixed(digits) : 'N/A';
 };
 
 // Exported helper functions
@@ -608,7 +610,10 @@ function SmartFormulaAnalyzerProInner({
       }
 
       const rawSurfactantPct = calculateRawSurfactants(analyzedIngredients as any);
-      const activeSurfactantPct = calculateActiveSurfactants(analyzedIngredients as any);
+      const boundedActiveMatter = calculateBoundedActiveMatter(analyzedIngredients as any);
+      const activeSurfactantPct = boundedActiveMatter.status === 'COMPLETE'
+        ? calculateActiveSurfactants(analyzedIngredients as any)
+        : Number.NaN;
 
       const hardnessCalc = orchestratorReport.hardnessResult;
       const performanceResult = {
@@ -655,14 +660,15 @@ function SmartFormulaAnalyzerProInner({
       else if (plantPct < 30) carbonFootprint = "High";
 
       const costReport = calculateFormulaCost(ingredients, 1);
-      const rawMaterialCost = costReport.costPerKg;
-      const manufacturingCost = rawMaterialCost * (1 + overheadPct / 100);
-      const finalExFactoryCost = manufacturingCost + packagingCost;
+      const pricingComplete = costReport.isComplete && Number.isFinite(costReport.costPerKg);
+      const rawMaterialCost = pricingComplete ? costReport.costPerKg : null;
+      const manufacturingCost = pricingComplete ? (rawMaterialCost as number) * (1 + overheadPct / 100) : null;
+      const finalExFactoryCost = pricingComplete ? (manufacturingCost as number) + packagingCost : null;
 
-      const suggestedDistributor = finalExFactoryCost * 1.15;
-      const suggestedWholesale = finalExFactoryCost * 1.20;
-      const suggestedRetail = finalExFactoryCost * 1.25;
-      const suggestedMRP = suggestedRetail * 1.18;
+      const suggestedDistributor = finalExFactoryCost === null ? null : finalExFactoryCost * 1.15;
+      const suggestedWholesale = finalExFactoryCost === null ? null : finalExFactoryCost * 1.20;
+      const suggestedRetail = finalExFactoryCost === null ? null : finalExFactoryCost * 1.25;
+      const suggestedMRP = suggestedRetail === null ? null : suggestedRetail * 1.18;
 
       const compResult = calculateFormulationCompatibility(analyzedIngredients, String(estpH));
       const compatibilityAlerts = compResult.alerts;
@@ -713,7 +719,7 @@ function SmartFormulaAnalyzerProInner({
       const aiGradeResult = orchestratorReport.aiGrade;
       const riskAnalysisWarnings = generateFormulationWarnings(analyzedIngredients as any);
 
-      const fingerprint = generateFormulaFingerprint(productType, activeSurfactantPct, builderPct, ecoMetrics, finalExFactoryCost);
+      const fingerprint = generateFormulaFingerprint(productType, activeSurfactantPct, builderPct, ecoMetrics, finalExFactoryCost ?? Number.NaN);
 
       setAnalysisResult({
         ingredients: analyzedIngredients,
@@ -1358,7 +1364,7 @@ function SmartFormulaAnalyzerProInner({
           </div>
           <div>
             <span className="text-3xl font-black text-gray-900 font-mono">
-              {safeNum(analysisResult?.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult?.ingredients), 1)}%
+              {calculateBoundedActiveMatter(analysisResult?.ingredients || ingredients).status === 'COMPLETE' && Number.isFinite(analysisResult?.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult?.ingredients || ingredients)) ? safeNum(analysisResult?.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult?.ingredients || ingredients), 1) + '%' : 'N/A — active-matter evidence incomplete'}
             </span>
             <div className="flex items-center gap-1.5 mt-2">
               <span className="text-[9px] bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded-md">
@@ -1370,7 +1376,7 @@ function SmartFormulaAnalyzerProInner({
             </div>
           </div>
           <div className="text-[10px] text-slate-600 font-medium">
-            Total Active Matter: <span className="text-teal-700 font-bold">{safeNum(analysisResult?.totalActiveMatter, 1)}%</span>
+            Total Active Matter: <span className="text-teal-700 font-bold">{calculateBoundedActiveMatter(analysisResult?.ingredients || ingredients).status === 'COMPLETE' ? safeNum(calculateBoundedActiveMatter(analysisResult?.ingredients || ingredients).totalActiveNominalPct, 1) + '%' : 'N/A'}</span>
           </div>
         </div>
 

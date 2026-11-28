@@ -12,12 +12,15 @@ export function PerformanceMetricsFractionsCard({
   if (!analysisResult) return null;
 
   const safeNum = (val: any, digits: number = 1): string => {
+    if (val === null || val === undefined || val === '') return 'N/A';
     const num = Number(val);
-    return isNaN(num) ? (0).toFixed(digits) : num.toFixed(digits);
+    return Number.isFinite(num) ? num.toFixed(digits) : 'N/A';
   };
 
-  const activeSurf = analysisResult.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult.ingredients || []);
   const boundedActiveEvidence = buildBoundedActiveMatterReport(analysisResult.ingredients || []);
+  const activeSurf = boundedActiveEvidence.status === 'COMPLETE'
+    ? (analysisResult.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult.ingredients || []))
+    : Number.NaN;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
