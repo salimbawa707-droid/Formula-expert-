@@ -44,6 +44,36 @@ assert(result.scenarios.every(s => s.status === 'CONVERGED' && s.seedSpreadPH !=
 assert.equal(result.releaseEligible, false);
 assert.equal(result.envelopeSemantics, 'SAMPLED_SCENARIO_ENVELOPE_NOT_GUARANTEED_BOUND');
 
+assert(result.scenarios.every(s => s.runs.every(r => r.pH !== null && Number.isFinite(r.pH))));
+assert(result.scenarios.every(s => s.seedSpreadPH !== null && s.seedSpreadPH <= 0.0001));
+
+// Mass-balance failures must be rejected before PHEngineV2 can silently enlarge
+// the effective batch mass or invent an implicit-water remainder.
+const underfilled = evaluatePHScenarios([
+  scenarios[0],
+  { ...scenarios[1], ingredients: [
+    { name: 'Water', rawPercent: 97.7, activePercent: 0 },
+    { name: 'Citric Acid Anhydrous', rawPercent: 0.3, activePercent: 100 },
+    { name: 'Sodium Citrate', rawPercent: 1.5, activePercent: 100 }
+  ] }
+]);
+assert.equal(underfilled.status, 'INVALID_INPUT');
+assert.equal(underfilled.envelope, null);
+assert(underfilled.warnings.some(w => /masses sum to 99.5 kg/.test(w)));
+
+const conflictingMassBasis = evaluatePHScenarios([
+  scenarios[0],
+  { ...scenarios[1], ingredients: [
+    { name: 'Water', rawPercent: 97.7, rawKg: 97.7, activePercent: 0 },
+    { name: 'Citric Acid Anhydrous', rawPercent: 0.3, activePercent: 100 },
+    { name: 'Sodium Citrate', rawPercent: 2, activePercent: 100 }
+  ] }
+]);
+assert.equal(conflictingMassBasis.status, 'INVALID_INPUT');
+assert(conflictingMassBasis.warnings.some(w => /exactly one mass basis/.test(w)));
+
+
+
 const unknown = evaluatePHScenarios([
   { ...common, scenarioId: 'known', label: 'Known buffer', ingredients: scenarios[0].ingredients },
   { ...common, scenarioId: 'unknown', label: 'Unknown material included', ingredients: [
