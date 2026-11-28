@@ -204,7 +204,7 @@ export function calculatePrimaryNeutralizationInterval(
     warnings: [
       'Arithmetic interval only: upstream chemistry must prove each equivalent bound and common batch basis.',
       'Classification envelope uses three paired endpoint scenarios; it is not a proof of all-domain monotonicity.',
-      'Water generation is unavailable: acid/base equivalents alone do not establish product stoichiometry.'
+      'Water generation is unavailable: acid/base equivalents alone do not establish product stoichiometry.',
       'This report is not a pH prediction, laboratory result, or formula release approval.'
     ],
     releaseEligible: false
