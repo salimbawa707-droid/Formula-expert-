@@ -77,7 +77,9 @@ assert(conflictingMassBasis.warnings.some(w => /exactly one mass basis/.test(w))
 const unknown = evaluatePHScenarios([
   { ...common, scenarioId: 'known', label: 'Known buffer', ingredients: scenarios[0].ingredients },
   { ...common, scenarioId: 'unknown', label: 'Unknown material included', ingredients: [
-    ...scenarios[1].ingredients,
+    ...scenarios[1].ingredients.map((ingredient, index) => index === 0
+      ? { ...ingredient, rawPercent: 97.6 }
+      : ingredient),
     { name: 'Unregistered proprietary additive', rawPercent: 0.1, activePercent: 100 }
   ] }
 ]);
