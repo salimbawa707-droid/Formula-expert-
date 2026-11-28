@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { ActiveMatterEngine } from '../src/utils/activeMatterEngine';
 import { HLBEngine } from '../src/utils/hlbEngine';
 import { resolveEng002PureComponent } from '../src/utils/eng002InputProvenance';
+import { isDeclaredChelatorIngredient } from '../src/utils/chelatorEngine';
+import { readFileSync } from 'node:fs';
 
 const ingredient = (id: string, name: string, category: string, casNumber: string, extra: Record<string, unknown> = {}) => ({
   id, canonicalIngredientId: id, name, category, casNumber, percentage: 5, ...extra
@@ -52,4 +54,30 @@ assert.equal(resolveEng002PureComponent(sls).supported, true);
 assert.equal(resolveEng002PureComponent(ldao).supported, false);
 assert.equal(resolveEng002PureComponent(ligno).supported, false);
 assert.equal(resolveEng002PureComponent(tallow).supported, false);
+
+
+// Phase 4B: every consumer must share the same declared-chelator detection.
+// Detection is a declaration only; it must never create an identity or capacity.
+assert.equal(
+  isDeclaredChelatorIngredient({ name: 'Uncharacterized Sequestering Agent', category: 'Additive' }),
+  true,
+  'ordinary sequestering wording must be detected'
+);
+assert.equal(
+  isDeclaredChelatorIngredient({ name: 'Sodium Gluconate', category: 'Builder' }),
+  true,
+  'registered gluconate builder/chelator must be detected'
+);
+assert.equal(
+  isDeclaredChelatorIngredient({ name: 'Sodium Sulphate', category: 'Filler' }),
+  false,
+  'unrelated matrix salts must not be classified as declared chelators'
+);
+const dagSource = readFileSync(new URL('../src/utils/orchestrator/scientificExecutionDAG.ts', import.meta.url), 'utf8');
+assert.match(
+  dagSource,
+  /isDeclaredChelatorIngredient\(/,
+  'scientific DAG must use the shared chelator declaration detector instead of a narrower local name heuristic'
+);
+
 console.log('FUNCTIONAL ROUTING ENGINE INTEGRATION PASS');
