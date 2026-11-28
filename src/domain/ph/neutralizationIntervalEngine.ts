@@ -167,11 +167,11 @@ export function calculatePrimaryNeutralizationInterval(
   };
 
   const fraction = {
-    lower: acid.upper <= epsilon ? 0 : Math.max(0, Math.min(1, extent.lower / acid.upper)),
-    nominal: acid.nominal <= epsilon ? 0 : Math.max(0, Math.min(1, extent.nominal / acid.nominal)),
+    lower: acid.upper <= epsilon ? 0 : Math.max(0, Math.min(1, base.lower / acid.upper)),
+    nominal: acid.nominal <= epsilon ? 0 : Math.max(0, Math.min(1, base.nominal / acid.nominal)),
     upper: acid.lower <= epsilon
-      ? (extent.upper > epsilon ? 1 : 0)
-      : Math.max(0, Math.min(1, extent.upper / acid.lower))
+      ? (base.upper > epsilon ? 1 : 0)
+      : Math.max(0, Math.min(1, base.upper / acid.lower))
   };
 
   // Scenario pairings: low acid with high base; nominal with nominal;
