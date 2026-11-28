@@ -1,5 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { calculateFormulaCost as calcFormulaCostAuthoritative } from './costingEngine';
+import { buildBoundedActiveMatterReport, buildBoundedCostReport } from './boundedFormulaAdapter';
 import { resolveEng002PureComponent, type Eng002PureComponentReference, type ActiveMatterInputSource } from './eng002InputProvenance';
 import { getProductCategory } from '../domain/productTaxonomy';
 import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
@@ -273,6 +274,16 @@ export function calculateBlendedHLB(ingredients: FormulationIngredient[]): numbe
 
 export function calculateActiveMatter(ingredients: FormulationIngredient[]): number {
   return calcActiveMatterAuthoritative(ingredients);
+}
+
+/** Additive preliminary report; never a release-grade or supplier-assay approval. */
+export function calculateBoundedActiveMatter(ingredients: FormulationIngredient[]) {
+  return buildBoundedActiveMatterReport(ingredients);
+}
+
+/** Additive preliminary price report; unknown price mass is preserved, never imputed. */
+export function calculateBoundedFormulaCost(ingredients: FormulationIngredient[], batchSizeKg?: number) {
+  return buildBoundedCostReport(ingredients, batchSizeKg);
 }
 
 export function calculateActiveSurfactants(ingredients: FormulationIngredient[]): number {
@@ -1109,8 +1120,14 @@ export const calculateMixedCmc = (ingredients: any[]) => {
 
 export function generateFormulationWarnings(ingredients: FormulationIngredient[]): string[] {
   const warnings: string[] = [];
-  const active = calculateActiveMatter(ingredients);
-  if (active < 5) warnings.push('Active matter is below 5%, product may have weak cleaning performance.');
+  const bounded = calculateBoundedActiveMatter(ingredients);
+  if (bounded.status !== 'COMPLETE' || bounded.totalActiveNominalPct === null) {
+    warnings.push('Active matter is incomplete or unknown; no low-active-matter conclusion is calculated.');
+    return warnings;
+  }
+  if (bounded.totalActiveNominalPct < 5) {
+    warnings.push('Active matter is below 5%, product may have weak cleaning performance.');
+  }
   return warnings;
 }
 
