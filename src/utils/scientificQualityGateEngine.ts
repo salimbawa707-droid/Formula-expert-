@@ -478,6 +478,26 @@ export function evaluateScientificQualityGate(
     });
   }
 
+  // Non-source-backed surfactant assays may be used for screening, never release approval.
+  const unverifiedActiveSurfactants = activeMatterAudit.contributions.filter(contribution =>
+    contribution.isSurfactant &&
+    contribution.rawPercentage > 0 &&
+    contribution.activeMatterPct !== null &&
+    contribution.dataSource !== 'authoritative'
+  );
+  if (unverifiedActiveSurfactants.length > 0) {
+    blockingIssues.push({
+      id: 'gate-active-matter-not-release-grade',
+      code: 'ERR_ACTIVE_MATTER_EVIDENCE_NOT_RELEASE_GRADE',
+      title: 'Surfactant Active Matter Is Not Release-Grade Evidence',
+      category: 'VALIDITY',
+      severity: 'FATAL',
+      message: 'Active-matter values for ' + unverifiedActiveSurfactants.map(item => item.name).join(', ') + ' are catalog defaults, name-derived values or user overrides rather than exact source-backed supplier evidence. These values may support preliminary screening only.',
+      recommendation: 'Attach verified manufacturer TDS/specification evidence for the exact commercial grade and lot-specific CoA/assay before any release approval. Do not promote estimates or catalog defaults to validated inputs.'
+    });
+    if (scientificValidity !== 'INVALID') scientificValidity = 'INSUFFICIENT_DATA';
+  }
+
   if (activeMatterAudit.activeMatterStatus !== 'COMPLETE') {
     if (scientificValidity !== 'INVALID') scientificValidity = 'INSUFFICIENT_DATA';
     const missingAssayNames = activeMatterAudit.contributions
