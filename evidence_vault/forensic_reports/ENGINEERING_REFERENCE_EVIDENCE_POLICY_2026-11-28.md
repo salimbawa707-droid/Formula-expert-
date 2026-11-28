@@ -30,7 +30,7 @@ A missing supplier document should not automatically prevent preliminary calcula
 - An engineering estimate may be used for scenario analysis but must never become lot-specific or qualify a batch.
 - If no defensible numeric value exists, the calculator should request a user-supplied measured value or show a clearly marked scenario input. It must not invent a narrow range just to make the warning disappear.
 
-The resolver in src/data/engineeringReferenceEvidence.ts deliberately returns values as preliminary-only and always sets lotReleaseEligible to false.
+The resolver in src/data/referenceEvidenceProfiles.ts deliberately returns values as preliminary-only and always sets lotReleaseEligible to false.
 
 ## 3. TDS / SDS / CoA / assay document handling
 
