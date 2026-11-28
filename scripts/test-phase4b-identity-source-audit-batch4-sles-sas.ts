@@ -18,8 +18,9 @@ assert(sas[5].includes('echa.europa.eu'));
 assert(sas[6].includes('chem.echa.europa.eu'));
 assert(sas[7].includes('clariant.com'));
 assert(sas[11].includes('AMBIGUOUS'));
-assert(sas[12].includes('DO_NOT_PROMOTE'));
-assert(sas[13].includes('NAMED_REFERENCE_ONLY'));
+assert(sas[12].includes('AMBIGUOUS_CAS'));
+assert(sas[13].includes('DO_NOT_PROMOTE'));
+assert(sas[14].includes('NAMED_REFERENCE_ONLY'));
 assert(sas[15].includes('applies only'));
 
 const sles = rows[1];
@@ -28,8 +29,9 @@ assert(sles[5].includes('echa.europa.eu'));
 assert(sles[6].includes('yeserchem.com'));
 assert(sles[7].includes('alliedinds.com'));
 assert(sles[11].includes('AUTHORITATIVE_FAMILY_IDENTITY_SUPPORTED'));
-assert(sles[12].includes('DO_NOT_PROMOTE'));
-assert(sles[13].includes('NOT_ESTABLISHED'));
+assert(sles[12].includes('GRADE_DISTRIBUTION'));
+assert(sles[13].includes('DO_NOT_PROMOTE'));
+assert(sles[14].includes('NOT_ESTABLISHED'));
 assert(sles[15].includes('Keep SLES-70 paste and SLES-28 liquid as distinct'));
 
 console.log('PHASE 4B IDENTITY SOURCE AUDIT BATCH 4 PASS');
