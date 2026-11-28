@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { calculatePrimaryNeutralizationInterval } from '../src/domain/ph/neutralizationIntervalEngine';
+import { calculatePrimaryNeutralizationInterval } from '../src/domain/ph/neutralizationIntervalCalculations';
 
 const acid = (lowerEq: number, nominalEq: number, upperEq: number) => ({
   id: 'acid-1', name: 'Reference acid', lowerEq, nominalEq, upperEq,
