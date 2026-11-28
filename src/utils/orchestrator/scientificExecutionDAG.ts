@@ -1065,7 +1065,6 @@ export class ScientificExecutionDAG {
       execute: (state) => {
         const formulaCost = calculateFormulaCost(state.resolvedIngredients, state.batchSizeKg);
         const boundedCostEvidence = buildBoundedCostReport(state.resolvedIngredients as any, state.batchSizeKg);
-        const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(state.resolvedIngredients as any);
         const overheadPct = state.rawInput.costContext?.overheadPct ?? 12;
         const packagingCostPerUnit = state.rawInput.costContext?.packagingCostPerUnit ?? 15;
         if (state.rawInput.costContext?.overheadPct === undefined) {
