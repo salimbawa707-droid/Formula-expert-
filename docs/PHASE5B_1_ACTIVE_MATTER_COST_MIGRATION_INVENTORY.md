@@ -122,5 +122,5 @@ Remaining work includes migrating remaining calculator wrappers and DAG projecti
 - The grade projection reuses the DAG node's bounded report rather than recalculating it; existing costing-node bounded pricing projection remains intact.
 - Formulation warnings now report incomplete/unknown active matter explicitly rather than silently skipping the low-active check.
 - Staged analysis now emits a numeric total active-matter value only when the bounded report is COMPLETE; incomplete evidence is represented as `null`, not `NaN`.
-- Regression coverage verifies public wrappers preserve unknown mass and incomplete pricing, keep reports non-release-eligible, preserve legacy scalar results, and distinguish unknown active matter from a known low-active formula.
+- Regression coverage verifies public wrappers preserve unknown mass and incomplete pricing, keep reports non-release-eligible, preserve legacy scalar results, distinguish unknown active matter from a known low-active formula, and assert the DAG node propagates the bounded report plus unknown raw mass.
 - These changes do not migrate every legacy scalar consumer or establish supplier/lot assay evidence. Remaining AST-discovered consumer migration and solver-based interval work remain open.
