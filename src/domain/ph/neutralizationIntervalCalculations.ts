@@ -166,8 +166,6 @@ export function calculatePrimaryNeutralizationInterval(
     upper: Math.max(0, base.upper - acid.lower)
   };
 
-  console.log('DEBUG residual operands', { acidNominal: acid.nominal, baseNominal: base.nominal, acidResidual, baseResidual });
-
   const fraction = {
     lower: acid.upper <= epsilon ? 0 : Math.max(0, Math.min(1, base.lower / acid.upper)),
     nominal: acid.nominal <= epsilon ? 0 : Math.max(0, Math.min(1, base.nominal / acid.nominal)),
