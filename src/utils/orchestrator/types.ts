@@ -178,7 +178,12 @@ export interface PHResultOutput {
   slurryBasis?: string;
   measuredPH?: number | null;
   predictionError?: number | null;
-  details?: any;
+  details?: {
+    primaryNeutralizationState?: any;
+    primaryNeutralizationResult?: { value: any };
+    neutralizationIntervalAssessment?: any;
+    [key: string]: any;
+  };
 }
 
 export interface ActiveMatterResultOutput {
