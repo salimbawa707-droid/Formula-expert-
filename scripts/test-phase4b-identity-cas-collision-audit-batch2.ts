@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const csvPath = fileURLToPath(new URL('../evidence_vault/datasets/phase4b_identity_cas_collision_audit_batch2_2026-11-28.csv', import.meta.url));
+const lines = readFileSync(csvPath, 'utf8').trim().split(/\r?\n/);
+const header = lines[0].split(',');
+assert.equal(header.length, 15, 'batch 2 CSV must retain its 15-field schema');
+const rows = lines.slice(1);
+assert.equal(rows.length, 4, 'batch 2 must cover four Pareth identity collision groups');
+const fields = rows.map(line => line.split(','));
+assert.deepEqual(fields.map(row => row[0]), ['MICG-079', 'MICG-080', 'MICG-081', 'MICG-082']);
+assert(fields.every(row => row.length === 15), 'every CSV row must have 15 fields');
+assert(fields.every(row => row[1] === '68439-50-9'));
+assert(fields.every(row => row[3] === '4'));
+assert.equal(fields.reduce((sum, row) => sum + Number(row[3]), 0), 16);
+assert(fields.every(row => row[5].startsWith('C12-14 Pareth-')));
+assert(fields.every(row => row[6] === '68439-50-9'));
+assert(fields.slice(0, 3).every(row => row[7].includes('eur-lex.europa.eu')));
+assert(fields.slice(0, 3).every(row => row[8].includes('cir-safety.org')));
+assert(fields[3][7].includes('cir-safety.org'));
+assert.equal(fields[3][8], '');
+assert(fields.every(row => row[11] === 'CAS_ASSOCIATION_CONFLICT_REQUIRES_SOURCE_RESOLUTION'));
+assert(fields.every(row => row[12] === 'DO_NOT_PROMOTE_OR_AUTO_CORRECT'));
+assert(fields.every(row => row[13] === 'NOT_ESTABLISHED'));
+console.log('PHASE 4B IDENTITY CAS COLLISION AUDIT BATCH 2 PASS');
+console.log(JSON.stringify({ candidateGroups: rows.length, catalogVariants: 16, conflictFlags: 4, automaticCorrections: 0, exactSsotPromotions: 0, gradeApprovals: 0 }, null, 2));
