@@ -21,7 +21,7 @@ import {
   ActiveMatterEngine,
   calculateActiveMatterResult
 } from '../activeMatterEngine';
-import { calculateWaterHardnessTolerance } from '../chelatorEngine';
+import { calculateWaterHardnessTolerance, isDeclaredChelatorIngredient } from '../chelatorEngine';
 import { calculateFormulationCompatibility } from '../compatibilityEngine';
 import { calculateCleaningPerformance } from '../cleaningPerformanceEngine';
 import { ViscosityEngine, calculateDetailedViscosity } from '../viscosityEngine';
@@ -712,9 +712,11 @@ export class ScientificExecutionDAG {
         const chelatorNames: string[] = [];
 
         state.resolvedIngredients.forEach((ing) => {
-          const name = String(ing.name || '').toLowerCase();
-          const role = String(ing.role || '').toLowerCase();
-          if (!(role.includes('chelator') || role.includes('builder') || name.includes('citrate') || name.includes('edta') || name.includes('glda') || name.includes('stpp') || name.includes('phosphonate') || name.includes('mgda') || name.includes('phosphate') || name.includes('zeolite'))) return;
+          if (!isDeclaredChelatorIngredient({
+            name: ing.name,
+            role: ing.role,
+            category: (ing as any).category
+          })) return;
 
           chelatorNames.push(ing.name);
           const activeRaw = ing.activeMatterPct ?? getDefaultActiveMatter(ing);
