@@ -36,13 +36,22 @@ const missingMass = adaptFormulaToPrimaryNeutralizationInterval([
 assert.equal(missingMass.status, 'INSUFFICIENT_DATA');
 assert.equal(missingMass.report, null);
 
-// Unsupported weak/multiprotic/conditional species cannot be coerced into a
-// strong-acid/strong-base equivalent calculation.
-const unsupported = adaptFormulaToPrimaryNeutralizationInterval([
+// Weak citric acid is secondary chemistry in the primary-neutralization model;
+// it must not be misclassified as a strong primary acid or counted as equivalents.
+const weakSecondary = adaptFormulaToPrimaryNeutralizationInterval([
   { name: 'Citric Acid', rawKg: 1 } as any,
   { name: 'NaOH 100% Reference', rawKg: 0.1 } as any
 ], 1);
-assert.equal(unsupported.status, 'INSUFFICIENT_DATA');
-assert.equal(unsupported.report, null);
+assert.equal(weakSecondary.status, 'READY_FOR_ARITHMETIC');
+assert.equal(weakSecondary.acidInputs.length, 0);
+assert.equal(weakSecondary.baseInputs.length, 1);
+assert.equal(weakSecondary.report?.classification, 'BASE_EXCESS');
+
+// A formula with only weak acid chemistry has no supported primary reactant.
+const weakOnly = adaptFormulaToPrimaryNeutralizationInterval([
+  { name: 'Citric Acid', rawKg: 1 } as any
+], 1);
+assert.equal(weakOnly.status, 'INSUFFICIENT_DATA');
+assert.equal(weakOnly.report, null);
 
 console.log('PHASE 5B-2 PROFILE-TO-EQUIVALENT ADAPTER REGRESSION PASS');
