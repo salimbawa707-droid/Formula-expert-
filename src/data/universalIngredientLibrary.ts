@@ -70,7 +70,7 @@ export interface EngineeringReferenceSource {
 export interface EngineeringReferenceProfile {
   profileId: string;
   profileVersion: string;
-  ingredientId: string;
+  ingredientIds: string[];
   scope: 'SUBSTANCE_IDENTITY_ONLY' | 'COMMERCIAL_GRADE_REFERENCE' | 'ENGINEERING_ESTIMATE';
   parameters: EngineeringReferenceParameter[];
   sourceReferences: EngineeringReferenceSource[];
