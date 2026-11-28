@@ -137,7 +137,14 @@ export function adaptFormulaToPrimaryNeutralizationInterval(
       blockedIngredients.push({ name: 'Unknown ingredient', reason: 'Ingredient identity is missing.' });
       continue;
     }
-    const resolvedProfile = resolveScientificAcidBaseProfile(ingredient);\n    // Name parsing may downgrade a clearly identified pure reference to an\n    // estimated assay. Rehydrate only the exact canonical registry identity;\n    // the registry record, not the parsed display name, remains authoritative.\n    const registryProfile = AUTHORITATIVE_ACID_BASE_REGISTRY[resolvedProfile.identity.ingredientId];\n    const profile = registryProfile\n      ? JSON.parse(JSON.stringify(registryProfile)) as ScientificAcidBaseProfile\n      : resolvedProfile;
+    const resolvedProfile = resolveScientificAcidBaseProfile(ingredient);
+    // Name parsing may downgrade a clearly identified pure reference to an
+    // estimated assay. Rehydrate only the exact canonical registry identity;
+    // the registry record, not the parsed display name, remains authoritative.
+    const registryProfile = AUTHORITATIVE_ACID_BASE_REGISTRY[resolvedProfile.identity.ingredientId];
+    const profile = registryProfile
+      ? JSON.parse(JSON.stringify(registryProfile)) as ScientificAcidBaseProfile
+      : resolvedProfile;
     const acid = profile.classification.acidBaseClass === 'STRONG_ACID';
     const base = profile.classification.acidBaseClass === 'STRONG_BASE';
     if (!acid && !base) continue;
