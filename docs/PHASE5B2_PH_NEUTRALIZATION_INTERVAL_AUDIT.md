@@ -1,8 +1,8 @@
 # Phase 5B-2 — pH and Primary Neutralization Interval Audit
 
-**Status:** SOURCE AUDIT COMPLETE; BOUNDED ARITHMETIC PROTOTYPE ADDED; CHEMISTRY ADAPTER AND PH SOLVER INTEGRATION OPEN  
+**Status:** SOURCE AUDIT COMPLETE; BOUNDED PRIMARY-NEUTRALIZATION ADAPTER INTEGRATED; EXPLICIT PHEngineV2 SCENARIO EVALUATOR ADDED; GUARANTEED pH INTERVAL AND EMPIRICAL VALIDATION STILL BLOCKED  
 **Base:** `main` at `e4948678d67d9246a897838fa5fdd4299097df08`  
-**Branch:** `phase5b2/ph-neutralization-interval-audit`  
+**Branch:** `phase5b2/neutralization-interval-v2`  
 **Scope:** pH equilibrium and primary stoichiometric neutralization only. This is a source-code audit, not empirical validation, laboratory validation, or release approval.
 
 ## Executive disposition
@@ -47,7 +47,7 @@ The existing `PHEngineV2.calculatePH` normalizes one composition and runs one nu
 
 **Prohibited shortcut:** do not linearly interpolate pH from assay bounds, neutralization percentage, or net equivalents. Do not call the point solver only at a low and high scalar pH seed and label those results chemical bounds.
 
-Required correction: add an additive scenario/interval adapter that constructs chemically coherent compositions from explicitly supplied bounds and calls the existing PHEngineV2 for each scenario. Each result must retain convergence, residual, activity model, temperature, dilution/slurry basis, input evidence and assumptions. An envelope from endpoint/corner scenarios may only be called a guaranteed interval if monotonicity or a valid interval method is established over the full domain. Otherwise label it a sampled scenario envelope, not a mathematical bound. A non-converged or chemically unidentifiable scenario invalidates a complete interval claim.
+Implemented checkpoint: src/domain/ph/phScenarioEvaluation.ts accepts complete, caller-supplied scenario compositions with evidence references and a shared batch/temperature/activity/slurry/solver basis. It calls PHEngineV2 for every scenario at initial guesses 3, 7 and 11, records convergence/residual/model diagnostics, and withholds the entire sampled envelope if any run is invalid, non-converged, or seed-sensitive. Its output is explicitly SAMPLED_SCENARIO_ENVELOPE_NOT_GUARANTEED_BOUND. It does not derive assay bounds from catalog profiles or from stoichiometric equivalents. A guaranteed pH interval remains blocked until supported input uncertainty, chemical scenario coverage and full-domain monotonicity/valid interval propagation are established.
 
 ### 4. DAG pH seed is a heuristic, not a measured or calculated pH
 
@@ -55,11 +55,11 @@ Source: `src/utils/orchestrator/scientificExecutionDAG.ts`
 
 The `NEUTRALIZATION` node assigns intermediate constants 7.0, 3.0, or 11.0 from the neutralization status and passes the result to `PHEngineV2` as `targetPH` / initial solver guess in `PH_EQUILIBRIUM`.
 
-The value is an initial guess, not a computed intermediate pH. The current code comments acknowledge this. Before interval work is exposed, add a regression proving that the final converged pH and diagnostics are invariant to these seed choices for representative in-domain formulas; if not, remove the heuristic seed or replace it with a numerically justified bracketing strategy. Never surface `pHIntermediate` as a pH measurement or prediction.
+The value is an initial guess, not a computed intermediate pH. The current code comments acknowledge this. The new scenario evaluator checks each supplied scenario at initial guesses 3, 7 and 11 and fails closed when the resulting pH spread exceeds 0.01 pH unit. This regression is limited to the explicit citrate/citrate-salt buffer fixtures; a wider formula-family seed-invariance audit remains required. Never surface `pHIntermediate` as a pH measurement or prediction.
 
 ### 5. DAG warning accumulation needs a regression
 
-In the pH node, a no-chemistry warning is appended to `phWarnings`, then `phWarnings` is reassigned from `advPH.warnings`. This can discard the locally added warning. Merge/deduplicate warning arrays instead of overwriting them, and add a test asserting that the no-identified-chemistry explanation survives the pH result projection.
+Fixed: src/domain/ph/phDiagnostics.ts provides mergePHWarnings, and the DAG merges local no-chemistry warnings with PHEngineV2 warnings using stable de-duplication. The regression verifies that both warning groups survive and duplicates are removed. This helper-level regression does not replace a future end-to-end DAG projection test.
 
 ### 6. Adapter and evidence preservation
 
@@ -107,9 +107,9 @@ This audit does not claim pH interval support is implemented, that the pH engine
 
 A new additive module, `src/domain/ph/neutralizationIntervalCalculations.ts`, now accepts explicitly bounded total acid/base reactive equivalents on a common batch basis and returns lower/nominal/upper reaction extent, residual equivalents, neutralization fraction and scenario classification. Water generation remains unavailable because aggregate equivalents do not establish reaction-product stoichiometry.
 
-The module deliberately does **not** resolve ingredient names or derive assay/equivalent bounds. It rejects missing evidence references, mixed bases, invalid intervals, negative values and non-finite inputs. Unknown data returns null result intervals; it is never converted to zero. It is not yet wired to `StoichiometricNeutralizationEngine` or the DAG because the audited registry does not establish a defensible equivalent-capacity interval for every primary reactant (notably commercial LABSA's free-acid contribution).
+The module deliberately does **not** resolve ingredient names or derive assay/equivalent bounds. It rejects missing evidence references, mixed bases, invalid intervals, negative values and non-finite inputs. Unknown data returns null result intervals; it is never converted to zero. The strict adapter and additive engine/DAG wiring are now present; the adapter still blocks commercial LABSA because active assay alone does not establish total titratable capacity or free-acid contribution.
 
-Regression coverage was added in `scripts/test-phase5b2-neutralization-interval.ts` and registered in `test:all`; the exact PR head passed the full Current Release Quality Gates workflow, including this regression, typecheck, production build/health and Android debug APK plus WebView instrumentation. A subsequent AI source review identified and removed an unsupported water-generation estimate: equivalents alone do not identify product stoichiometry. The evidence-preserving profile-to-equivalent adapter and pH scenario integration remain open. No production pH interval is exposed by this checkpoint.
+Regression coverage was added in `scripts/test-phase5b2-neutralization-interval.ts` and registered in `test:all`; the exact PR head passed the full Current Release Quality Gates workflow, including this regression, typecheck, production build/health and Android debug APK plus WebView instrumentation. A subsequent AI source review identified and removed an unsupported water-generation estimate: equivalents alone do not identify product stoichiometry. The evidence-preserving profile adapter and bounded neutralization assessment are now integrated additively into StoichiometricNeutralizationEngine; the scientific DAG exposes the assessment separately from its legacy nominal state. The pH scenario evaluator is implemented as a caller-supplied sampled-scenario tool, not a production lower/upper pH interval.
 
 
 ## Implementation checkpoint — strict profile-to-equivalent adapter
@@ -118,4 +118,23 @@ Added `src/domain/ph/neutralizationProfileIntervalAdapter.ts`. It derives total-
 
 Fail-closed behavior is intentional: commercial LABSA (including the default 90% registry profile), estimated assays, missing mass, unsupported functionality, or any unsupported primary strong acid/base blocks the entire interval. Weak acids such as citric acid remain secondary chemistry in this primary-neutralization model; they are not promoted to strong primary acids or counted as reactive equivalents here. Their aqueous equilibrium contribution remains the responsibility of PHEngineV2. No unsupported primary reactant is silently dropped or converted to zero. The currently supported chemistry is narrow and must not be generalized to the full detergent ingredient catalog.
 
-Regression coverage: `scripts/test-phase5b2-neutralization-profile-adapter.ts` is registered in `test:all`. It checks a hand-calculated pure LABSA reference / pure NaOH reference 1:1 equivalent case, commercial LABSA rejection, missing-mass rejection, and unsupported weak-acid rejection. The adapter returns an equivalent interval only; it is not connected to the production neutralization engine or DAG and does not calculate pH. Exact-head CI for the latest adapter commit is pending.
+Regression coverage: `scripts/test-phase5b2-neutralization-profile-adapter.ts` is registered in `test:all`. It checks a hand-calculated pure LABSA reference / pure NaOH reference 1:1 equivalent case, commercial LABSA rejection, missing-mass rejection, and unsupported weak-acid rejection. The adapter returns an equivalent interval only and is connected additively to the production neutralization state and DAG diagnostic field. It does not calculate pH. Commercial LABSA and unsupported primary reactants remain blocked. Exact-head CI is tracked on the PR workflow.
+
+
+## Implementation checkpoint — additive neutralization engine and DAG integration
+
+StoichiometricNeutralizationEngine now attaches the adapter result as boundedNeutralizationInterval on every return path without replacing the legacy nominal neutralization result. ScientificExecutionDAG exposes that same assessment as neutralizationIntervalAssessment. This is a diagnostic-only side channel; releaseEligible remains false. The adapter still rejects unsupported primary reactants as a whole rather than omitting them.
+
+## Implementation checkpoint — explicit PHEngineV2 scenario evaluation
+
+src/domain/ph/phScenarioEvaluation.ts now evaluates at least two explicit complete compositions with mandatory evidence references and a common mass, temperature, activity, product/slurry and solver basis. Each scenario is evaluated by the existing PHEngineV2 at three initial guesses (3, 7, 11 by default). The evaluator records pH, convergence, residual, iterations, ionic strength, model validity and warnings for each run. It emits a min/max sampled scenario envelope only if every scenario converges and the seed spread is no greater than 0.01 pH unit. It returns no envelope when any scenario is insufficient, invalid, non-converged or seed-sensitive.
+
+The scenario evaluator does not manufacture low/nominal/high inputs from catalog uncertainty or neutralization equivalents. The caller must provide complete scenario compositions and evidence references. Its output is not a guaranteed chemical bound, not a laboratory measurement, not an empirical accuracy claim, and cannot satisfy formula release gates.
+
+## Implementation checkpoint — DAG warning preservation
+
+mergePHWarnings now combines locally generated pH warnings with PHEngineV2 diagnostics and removes exact duplicates without dropping either group. The direct regression covers preservation and de-duplication. A broader end-to-end DAG warning projection test and wider family-specific initial-guess audit remain open.
+
+## Verification scope
+
+The prior integration head bd818422 passed all seven Current Release Quality Gates, including Android WebView instrumentation and APK artifact upload. The current scenario/warning implementation has its own exact-head workflow; do not reuse the earlier pass as evidence for the newer commit. Phase 4B remains OPEN and Phase 5 empirical validation/calibration remains LOCKED.
