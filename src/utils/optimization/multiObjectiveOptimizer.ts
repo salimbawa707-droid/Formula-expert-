@@ -406,13 +406,18 @@ export function evaluateCandidateFormulation(
   const constraintsSummary = evaluateFormulationConstraints(constraints, metrics);
 
   // Hard feasibility requires mass=100%, zero fatal incompatibility, and zero hard constraint violations
+  const hasUnverifiedActiveMatter = (qualityGateReport.blockingIssues || []).some(
+    issue => issue.code === 'ERR_ACTIVE_MATTER_EVIDENCE_NOT_RELEASE_GRADE'
+  );
   const qualityGateAllowsOptimization =
-    qualityGateStatus === 'VALID' ||
-    qualityGateStatus === 'VALID_WITH_WARNINGS' ||
-    qualityGateStatus === 'LAB_VALIDATION_REQUIRED';
+    !hasUnverifiedActiveMatter &&
+    (qualityGateStatus === 'VALID' ||
+      qualityGateStatus === 'VALID_WITH_WARNINGS' ||
+      qualityGateStatus === 'LAB_VALIDATION_REQUIRED');
   const isFeasible =
     constraintsSummary.isHardFeasible &&
     !hasFatalIncompatibility &&
+    !hasUnverifiedActiveMatter &&
     qualityGateAllowsOptimization;
 
   // 12. Objective Scores
