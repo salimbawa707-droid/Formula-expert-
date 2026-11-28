@@ -22,7 +22,7 @@ export function validateEngineeringReferenceProfile(
 ): EngineeringReferenceValidation {
   const errors: string[] = [];
   if (!profile.profileId.trim()) errors.push('profileId is required');
-  if (!profile.ingredientId.trim()) errors.push('ingredientId is required');
+  if (profile.ingredientIds.length === 0 || profile.ingredientIds.some((id) => !id.trim())) errors.push('ingredientIds are required');
   if (!profile.profileVersion.trim()) errors.push('profileVersion is required');
   if (profile.lotSpecific !== false) errors.push('engineering reference profiles cannot be lot-specific');
   if (profile.formulaApplicabilityApproved !== false) errors.push('engineering reference profiles cannot approve formula applicability');
@@ -91,7 +91,7 @@ export const ENGINEERING_REFERENCE_PROFILES: EngineeringReferenceProfile[] = [
   {
     profileId: 'ER-AOS-C14-16-001',
     profileVersion: '1.0.0',
-    ingredientId: 'aos-38',
+    ingredientIds: ['aos-38', 'aos-92'],
     scope: 'SUBSTANCE_IDENTITY_ONLY',
     parameters: [],
     sourceReferences: [
@@ -133,7 +133,7 @@ export const ENGINEERING_REFERENCE_PROFILES: EngineeringReferenceProfile[] = [
   {
     profileId: 'ER-APG-C8-10-001',
     profileVersion: '1.0.0',
-    ingredientId: 'apg-0810',
+    ingredientIds: ['apg-0810'],
     scope: 'SUBSTANCE_IDENTITY_ONLY',
     parameters: [],
     sourceReferences: [
