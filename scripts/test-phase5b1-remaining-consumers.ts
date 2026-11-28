@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../src/utils/boundedFormulaAdapter';
-import { calculateActiveMatter, calculateBoundedActiveMatter, calculateBoundedFormulaCost } from '../src/utils/calculators';
+import { calculateActiveMatter, calculateBoundedActiveMatter, calculateBoundedFormulaCost, generateFormulationWarnings } from '../src/utils/calculators';
 
 const completeScenario = buildBoundedActiveMatterReport([
   { id: 'sles', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'CATALOG_DEFAULT' } as any,
@@ -61,5 +61,15 @@ assert.equal(calculatorBoundedCost.status, 'INSUFFICIENT_DATA');
 assert.equal(calculatorBoundedCost.unknownRawPercent, 10);
 assert.equal(calculatorBoundedCost.totalCostNominalPerKg, null);
 assert.equal(calculatorBoundedCost.releaseEligible, false);
+
+
+assert(generateFormulationWarnings([
+  { id: 'unknown', name: 'Unverified surfactant', percentage: 10 } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]).some(message => message.includes('incomplete or unknown')));
+assert.equal(generateFormulationWarnings([
+  { id: 'low', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]).some(message => message.includes('below 5%')), true);
 
 console.log('PHASE 5B-1 REMAINING CONSUMER ADAPTER REGRESSIONS PASS');
