@@ -94,6 +94,16 @@ const mismatchedBasis = evaluatePHScenarios([
 assert.equal(mismatchedBasis.status, 'INVALID_INPUT');
 assert.equal(mismatchedBasis.envelope, null);
 
+
+const invalidCategory = evaluatePHScenarios([
+  { ...common, scenarioId: 'valid-category', label: 'Valid category', ingredients: scenarios[0].ingredients },
+  { ...common, scenarioId: 'invalid-category', label: 'Unknown category', options: { ...common.options, productCategory: 'NOT_A_REAL_PRODUCT_CATEGORY' }, ingredients: scenarios[1].ingredients }
+]);
+assert.equal(invalidCategory.status, 'INCOMPLETE_SCENARIOS');
+assert.equal(invalidCategory.envelope, null);
+assert.equal(invalidCategory.scenarios[1].status, 'INVALID_FORMULA');
+assert(invalidCategory.scenarios[1].warnings.some(w => /Unrecognized product category/.test(w)));
+
 const merged = mergePHWarnings(
   ['No identified acid/base or secondary buffer chemistry is present; solvent-water equilibrium is not accepted as a formulation pH result.'],
   ['PH_ACTIVE_SPECIES_UNAVAILABLE: No recognized acid/base/buffer contributor is present; neutral pH is not inferred.']
