@@ -261,7 +261,7 @@ export function runP1Phase2ChelationTestSuite() {
   assert(
     genericCitrate.status === 'INSUFFICIENT_DATA' &&
       genericCitrate.hasUnknownChelators === true &&
-      genericCitrate.totalSequestrationMg === 0,
+      Number.isNaN(genericCitrate.totalSequestrationMg),
     'Grade Identity',
     'Generic sodium citrate remains unresolved instead of silently becoming dihydrate'
   );
