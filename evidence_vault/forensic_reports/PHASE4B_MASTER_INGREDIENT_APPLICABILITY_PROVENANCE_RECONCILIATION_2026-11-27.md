@@ -389,3 +389,8 @@ Sources:
 - PubChem/ChemIDplus substance record: https://pubchem.ncbi.nlm.nih.gov/substance/134973572
 - CIR safety assessment summarized in PubChem: https://pubchem.ncbi.nlm.nih.gov/compound/23668817
 
+
+
+### Superseding SAS-60 identifier reconciliation addendum — Batch 4 (2026-11-28)
+
+The earlier preliminary statement above that the CAS 68037-49-0 / Sodium C14-17 Alkyl Sec Sulfonate pairing was supported is retained as a report of the KCIA dictionary evidence, but it is **not a final CAS resolution**. Batch 4 additionally found that FDA GSRS assigns CAS 97489-15-1 to a named Sodium C14-17 Alkyl Sec Sulfonate 30 / Hostapur SAS 30 mixture and the Australian Industrial Chemicals assessment cites a distinct C14-17-sec-alkane sodium-salts dossier under that CAS. The SAS-60 catalog pairing is therefore flagged as an alternate-identifier conflict requiring exact manufacturer/product-code evidence. No CAS is silently corrected; no SAS-60 supplier grade or lot is approved. See PHASE4B_IDENTITY_SOURCE_AUDIT_BATCH4_SLES_SAS_2026-11-28.md and its structured CSV.
