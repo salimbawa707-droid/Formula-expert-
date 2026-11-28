@@ -128,7 +128,7 @@ export function calculatePrimaryNeutralizationInterval(
     neutralizationFraction: null,
     waterGeneratedGrams: null,
     scenarioClassifications: [],
-    inputEvidence: all.map(x => ({ id: x.id, evidenceRef: x.evidenceRef || '', basis: x.basis || '' })),
+    inputEvidence: all.filter(Boolean).map(x => ({ id: x.id || '', evidenceRef: x.evidenceRef || '', basis: x.basis || '' })),
     missingInputs: [...missingInputs],
     warnings: [...errors],
     releaseEligible: false
