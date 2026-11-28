@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormulationIngredient } from '../types';
 import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../utils/boundedFormulaAdapter';
+export { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../utils/boundedFormulaAdapter';
 function formatRange(nominal: number | null, lower: number | null, upper: number | null, suffix: string): string {
   if (nominal === null) return 'Unavailable — unknown input';
   if (lower === null || upper === null) return nominal.toFixed(2) + suffix;
