@@ -1,6 +1,6 @@
 # Phase 5B-2 — pH and Primary Neutralization Interval Audit
 
-**Status:** AUDIT COMPLETE; IMPLEMENTATION NOT STARTED  
+**Status:** SOURCE AUDIT COMPLETE; BOUNDED ARITHMETIC PROTOTYPE ADDED; CHEMISTRY ADAPTER AND PH SOLVER INTEGRATION OPEN  
 **Base:** `main` at `e4948678d67d9246a897838fa5fdd4299097df08`  
 **Branch:** `phase5b2/ph-neutralization-interval-audit`  
 **Scope:** pH equilibrium and primary stoichiometric neutralization only. This is a source-code audit, not empirical validation, laboratory validation, or release approval.
@@ -102,3 +102,11 @@ The adapter maps application ingredients into the pH engine input. The bounded i
 ## Explicit non-claims
 
 This audit does not claim pH interval support is implemented, that the pH engine is empirically accurate, that any commercial raw-material assay is verified, or that a finished formula is lab-validated. Phase 4B remains OPEN and Phase 5 empirical validation/calibration remains LOCKED.
+
+## Implementation checkpoint — bounded arithmetic prototype
+
+A new additive module, `src/domain/ph/neutralizationIntervalEngine.ts`, now accepts explicitly bounded total acid/base reactive equivalents on a common batch basis and returns lower/nominal/upper reaction extent, residual equivalents, neutralization fraction, water generation and scenario classification.
+
+The module deliberately does **not** resolve ingredient names or derive assay/equivalent bounds. It rejects missing evidence references, mixed bases, invalid intervals, negative values and non-finite inputs. Unknown data returns null result intervals; it is never converted to zero. It is not yet wired to `StoichiometricNeutralizationEngine` or the DAG because the audited registry does not establish a defensible equivalent-capacity interval for every primary reactant (notably commercial LABSA's free-acid contribution).
+
+Regression coverage was added in `scripts/test-phase5b2-neutralization-interval.ts` and registered in `test:all`. The test has not yet been executed in a CI runner at this checkpoint. Next implementation work is the evidence-preserving profile-to-equivalent adapter, followed by pH scenario integration and exact-head CI. No production pH interval is exposed by this checkpoint.
