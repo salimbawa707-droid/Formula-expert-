@@ -18,7 +18,7 @@ assert.equal(exact.reactionExtent?.nominal, 2);
 assert.deepEqual(exact.neutralizationFraction, { lower: 1, nominal: 1, upper: 1 });
 assert.equal(exact.residualAcidEquivalents?.nominal, 0);
 assert.equal(exact.residualBaseEquivalents?.nominal, 0);
-assert.equal(exact.waterGeneratedGrams?.nominal, 36.03056);
+assert.equal(exact.waterGeneratedGrams, null);
 assert.equal(exact.releaseEligible, false);
 
 // Acid-limited and base-limited point scenarios.
