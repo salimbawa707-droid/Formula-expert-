@@ -1,3 +1,4 @@
+import { BoundedFormulaEvidencePanel } from "./BoundedFormulaEvidencePanel";
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
   FlaskConical,
@@ -2132,15 +2133,15 @@ export default function FormulaExpert({
           <div className="pt-2 border-t border-slate-700/80 flex flex-wrap items-center justify-between gap-3 bg-[#0e1629]/70 rounded-xl p-3 border border-slate-800">
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm">
               <div>
-                <span className="text-slate-400 text-xs font-semibold">Total Raw Material Cost:</span>
+                <span className="text-slate-400 text-xs font-semibold">{formulaCost.isComplete ? "Total Raw Material Cost:" : "Known-price subtotal only:"}</span>
                 <span className="font-mono font-extrabold text-white ml-1.5 text-sm sm:text-base">
-                  ₹{formulaCost.totalBatchCost.toFixed(2)}
+                  {Number.isFinite(formulaCost.totalBatchCost) ? `₹${formulaCost.totalBatchCost.toFixed(2)}` : "Unavailable"}
                 </span>
               </div>
               <div>
                 <span className="text-slate-400 text-xs font-semibold">Finished Formula Cost:</span>
                 <span className="font-mono font-extrabold text-emerald-400 ml-1.5 text-sm sm:text-base">
-                  ₹{formulaCost.costPerKg.toFixed(2)} / kg
+                  {formulaCost.isComplete && Number.isFinite(formulaCost.costPerKg) ? `₹${formulaCost.costPerKg.toFixed(2)} / kg` : "Unavailable — pricing incomplete"}
                 </span>
               </div>
             </div>
@@ -2159,6 +2160,8 @@ export default function FormulaExpert({
             </div>
           </div>
         </div>
+
+        <BoundedFormulaEvidencePanel ingredients={ingredients} batchSizeKg={batchSizeKg} />
 
         {/* SECTION 3.5 — DEDICATED COSTING / UNIT COSTING & COMMERCIAL PROJECTIONS */}
         <CostingProjectionsPanel
