@@ -1120,8 +1120,14 @@ export const calculateMixedCmc = (ingredients: any[]) => {
 
 export function generateFormulationWarnings(ingredients: FormulationIngredient[]): string[] {
   const warnings: string[] = [];
-  const active = calculateActiveMatter(ingredients);
-  if (active < 5) warnings.push('Active matter is below 5%, product may have weak cleaning performance.');
+  const bounded = calculateBoundedActiveMatter(ingredients);
+  if (bounded.status !== 'COMPLETE' || bounded.totalActiveNominalPct === null) {
+    warnings.push('Active matter is incomplete or unknown; no low-active-matter conclusion is calculated.');
+    return warnings;
+  }
+  if (bounded.totalActiveNominalPct < 5) {
+    warnings.push('Active matter is below 5%, product may have weak cleaning performance.');
+  }
   return warnings;
 }
 
