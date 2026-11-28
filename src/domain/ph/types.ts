@@ -197,6 +197,8 @@ export interface DetailedPHResult {
     ionicStrength: number | null;
     activityCoefficients?: Record<string, number>;
     chargeResidual: number | null;
+    /** Solver root at native numerical-solver precision (currently 4 decimal places), not display-rounded pH. */
+    solverPHUnrounded: number | null;
     normalizedComposition?: {
       totalMassKg: number;
       totalVolumeL: number;

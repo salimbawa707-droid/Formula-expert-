@@ -104,6 +104,24 @@ export function runFormulaScientificOrchestratorTestSuite() {
 
   assert(
     'Group A: Orchestrator Pipeline',
+    'Bounded neutralization assessment is preserved in the public orchestrator pH diagnostics',
+    Boolean(evalResult.pHResult.details?.neutralizationIntervalAssessment) &&
+      evalResult.pHResult.details.neutralizationIntervalAssessment.releaseEligible === false,
+    evalResult.pHResult.details?.neutralizationIntervalAssessment,
+    'diagnostic assessment present and releaseEligible=false'
+  );
+
+  assert(
+    'Group A: Orchestrator Pipeline',
+    'Commercial LABSA does not receive an inferred primary-equivalent interval',
+    evalResult.pHResult.details.neutralizationIntervalAssessment.status === 'INSUFFICIENT_DATA' &&
+      evalResult.pHResult.details.neutralizationIntervalAssessment.blockedIngredients.some((x: any) => /LABSA/i.test(x.name)),
+    evalResult.pHResult.details.neutralizationIntervalAssessment,
+    'INSUFFICIENT_DATA with LABSA explicitly blocked'
+  );
+
+  assert(
+    'Group A: Orchestrator Pipeline',
     'Active matter engine produces surfactant breakdown',
     evalResult.activeMatterResult.totalSurfactantActivePct > 10.0 && evalResult.activeMatterResult.surfactantBreakdown.anionic > 0,
     evalResult.activeMatterResult.totalSurfactantActivePct,
