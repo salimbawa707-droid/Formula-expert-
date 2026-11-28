@@ -246,7 +246,8 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "activeDefault": 38,
     "costPerKg": null,
     "hlb": 12.0,
-    "description": "Phosphate-free high foaming surfactant with acid/alkali stability."
+    "description": "Phosphate-free high foaming surfactant with acid/alkali stability.",
+    "engineeringReferenceProfileId": "ER-AOS-C14-16-001"
   },
   {
     "id": "aos-92",
@@ -426,7 +427,8 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "activeDefault": 50,
     "costPerKg": null,
     "hlb": 13.0,
-    "description": "Bio-based, plant-derived nonionic hydrotrope."
+    "description": "Bio-based, plant-derived nonionic hydrotrope.",
+    "engineeringReferenceProfileId": "ER-APG-C8-10-001"
   },
   {
     "id": "apg-1214",
