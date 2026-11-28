@@ -68,6 +68,9 @@ export function resolveBoundedInput(
   if (input.evidenceClass === 'ENGINEERING_ESTIMATE' && !input.uncertaintyNote?.trim()) {
     errors.push(`${label}: engineering estimates require an explicit uncertainty note.`);
   }
+  if (input.evidenceClass === 'MEASURED' && !input.sourceRef?.trim()) {
+    errors.push(`${label}: measured values require a measurement/evidence record reference.`);
+  }
   if (input.evidenceClass === 'PUBLISHED_REFERENCE' && !input.sourceRef?.trim()) {
     errors.push(`${label}: published references require a source reference.`);
   }
