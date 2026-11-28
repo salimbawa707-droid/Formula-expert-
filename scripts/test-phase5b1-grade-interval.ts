@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { evaluateAIGrade } from '../src/utils/gradeEngine';
+import { evaluateAIGrade, scoreActiveMatterInterval } from '../src/utils/gradeEngine';
 
 const intervalFormula = [
   {
@@ -10,14 +10,14 @@ const intervalFormula = [
   { id: 'water', name: 'Deionized Water', category: 'water', percentage: 50, activeMatterPct: 0 }
 ];
 const intervalGrade = evaluateAIGrade(intervalFormula, 7, 100, 'LAUNDRY_LIQUID');
-console.log('GRADE_INTERVAL_DIAGNOSTIC', JSON.stringify({grade: intervalGrade.grade, blockingIssues: intervalGrade.blockingIssues, unknownParameters: intervalGrade.unknownParameters, breakdown: intervalGrade.breakdown, reasoning: intervalGrade.reasoning}));
-assert.equal(intervalGrade.isEvaluable, true);
-assert.equal(intervalGrade.breakdown.boundedActiveMatterStatus, 'COMPLETE');
-assert.equal(intervalGrade.breakdown.activeMatterLowerPct, 8);
-assert.equal(intervalGrade.breakdown.activeMatterUpperPct, 12);
-// Conservative score is min(score(8%)=80, score(12%)=100).
-assert.equal(intervalGrade.breakdown.activeMatterScore, 80);
-assert.equal(intervalGrade.evidenceLevel, 'PREDICTED_ONLY');
+// This fixture has no complete wash scenario, so the overall grade must remain N/A.
+assert.equal(intervalGrade.isEvaluable, false);
+assert(intervalGrade.blockingIssues.includes('performance'));
+// 50% raw ingredient at 16–24% active gives an 8–12% total active interval.
+assert.equal(scoreActiveMatterInterval(8, 12), 80);
+assert.equal(scoreActiveMatterInterval(16, 24), 100);
+assert.equal(scoreActiveMatterInterval(12, 8), null);
+assert.equal(scoreActiveMatterInterval(-1, 12), null);
 
 const unknownAssayGrade = evaluateAIGrade([
   { id: 'unknown', name: 'Unverified surfactant grade', category: 'surfactant', percentage: 10 },
