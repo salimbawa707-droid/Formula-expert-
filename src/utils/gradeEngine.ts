@@ -23,6 +23,7 @@ import { ScientificValidityStatus, QualityGateEvidenceStatus } from './scientifi
 import { FormulationIngredient } from '../types';
 import { normalizeIngredientTaxonomy } from './calculators';
 import { calculateActiveMatter } from './activeMatterEngine';
+import { buildBoundedActiveMatterReport } from './boundedFormulaAdapter';
 import { calculateCleaningPerformance } from './cleaningPerformanceEngine';
 import { calculateFormulationCompatibility } from './compatibilityEngine';
 import { calculateLabHealthScore } from './labHealthEngine';
@@ -49,6 +50,9 @@ export interface AIGradeBreakdown {
   compatibilityScore: number | null;
   healthScore: number | null;
   activeMatterScore: number | null;
+  activeMatterLowerPct?: number | null;
+  activeMatterUpperPct?: number | null;
+  boundedActiveMatterStatus?: string;
   commercialScore: number | null;
   performanceScore?: number;
   rheologyScore?: number;
@@ -280,6 +284,23 @@ export const CATEGORY_GRADING_PROFILES: Record<ProductCategoryId, CategoryGradin
 /**
  * Authoritative Evaluation of AI Grade from Orchestrator Evaluation Context.
  */
+/**
+ * Conservative active-matter screening score over a closed interval.
+ * The scoring curve rises to a 10–35% plateau and declines above 35%;
+ * therefore its minimum over a valid interval occurs at an endpoint.
+ * This is a screening score only, not an empirical performance prediction.
+ */
+export function scoreActiveMatterInterval(lowerPct: number, upperPct: number): number | null {
+  if (!Number.isFinite(lowerPct) || !Number.isFinite(upperPct) ||
+      lowerPct < 0 || upperPct > 100 || lowerPct > upperPct) return null;
+  const scoreAt = (value: number): number => {
+    if (value < 10) return Math.min(100, Math.max(0, Math.round(value * 10)));
+    if (value > 35) return Math.max(50, Math.round(100 - (value - 35) * 2));
+    return 100;
+  };
+  return Math.min(scoreAt(lowerPct), scoreAt(upperPct));
+}
+
 export function evaluateAIGrade(
   input: any,
   phOverride?: number,
@@ -740,6 +761,21 @@ function evaluateAIGradeFromLegacyOrDraft(
   const amRes = calculateActiveMatter(ingredients);
   const activeMatterPct = typeof amRes === 'number' ? amRes : Number.NaN;
 
+  // Grade only from a complete bounded active-matter report. Missing assay mass is
+  // unknown, never silently treated as zero or as a grade-name-derived estimate.
+  const boundedActiveMatter = buildBoundedActiveMatterReport(rawIngredients as FormulationIngredient[]);
+  if (boundedActiveMatter.status !== 'COMPLETE' ||
+      boundedActiveMatter.totalActiveNominalPct === null ||
+      boundedActiveMatter.totalActiveLowerPct === null ||
+      boundedActiveMatter.totalActiveUpperPct === null) {
+    return buildNotEvaluableResult(
+      canonicalCategory,
+      'AI_GRADE_NOT_EVALUABLE',
+      'AI_GRADE_NOT_EVALUABLE: Bounded active-matter evidence is incomplete or invalid. Unknown raw mass is not imputed and no numeric grade is produced.',
+      ['BOUNDED_ACTIVE_MATTER_' + boundedActiveMatter.status, ...boundedActiveMatter.missingIngredientIds.map(id => 'ACTIVE_MATTER_ASSAY_MISSING:' + id)]
+    );
+  }
+
   if (
     canonicalCategory === 'UNKNOWN_PRODUCT_CATEGORY' ||
     phVal === undefined || !Number.isFinite(phVal) || phVal < 0 || phVal > 14 ||
@@ -833,12 +869,9 @@ function evaluateAIGradeFromLegacyOrDraft(
     }
   }
 
-  let activeMatterScore = 100;
-  if (activeMatterPct < 10) {
-    activeMatterScore = Math.min(100, Math.max(0, Math.round(activeMatterPct * 10)));
-  } else if (activeMatterPct > 35) {
-    activeMatterScore = Math.max(50, Math.round(100 - (activeMatterPct - 35) * 2));
-  }
+  const activeMatterLowerPct = boundedActiveMatter.totalActiveLowerPct;
+  const activeMatterUpperPct = boundedActiveMatter.totalActiveUpperPct;
+  const activeMatterScore = scoreActiveMatterInterval(activeMatterLowerPct, activeMatterUpperPct)!;
 
   // Weighted score calculation
   const profile = effectiveCategory ? CATEGORY_GRADING_PROFILES[effectiveCategory] : null;
@@ -940,6 +973,9 @@ function evaluateAIGradeFromLegacyOrDraft(
       compatibilityScore,
       healthScore,
       activeMatterScore,
+      activeMatterLowerPct,
+      activeMatterUpperPct,
+      boundedActiveMatterStatus: boundedActiveMatter.status,
       commercialScore
     },
     isEvaluable: true

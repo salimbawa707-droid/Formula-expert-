@@ -104,3 +104,12 @@ Regression coverage verifies:
 - An unknown surfactant assay retains 10% unknown raw mass, withholds CPI and returns INSUFFICIENT_DATA provenance.
 
 The full Grade Engine interval-aware score, supplier/lot interval population, and empirical performance calibration remain out of scope and blocked by missing source/lab evidence.
+
+
+## 8. Grade Engine bounded interval scoring — follow-up
+
+The legacy/draft Grade Engine path now requires a complete bounded active-matter report before returning a numeric screening grade. Missing assay mass or invalid bounds produce an N/A / not-evaluable result; unknown values are not imputed. When bounds are supplied, the active-matter pillar uses the conservative minimum score across the lower and upper endpoints of the interval and records both bounds plus report status in the breakdown. The score remains a screening pillar, not a measured performance result or release decision.
+
+Regression coverage verifies a 8–12% active-matter interval receives the conservative endpoint score (80/100), and an unknown surfactant assay fails closed. No supplier bounds are inferred; user-entered bounds remain assumptions and the report remains non-release-eligible.
+
+Remaining work includes migrating remaining calculator wrappers and DAG projections, interval propagation in other scientific pillars, and empirical calibration. Phase 4B remains OPEN; Phase 5 empirical validation/calibration remains LOCKED.
