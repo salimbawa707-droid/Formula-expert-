@@ -347,7 +347,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
               </span>
             </div>
             <span className="text-xs font-bold text-white block truncate">
-              {totals.activeSurfactants > 35 ? "High active surfactant concentration. Couple with hydrotrope." : "Standard micellar dispersion."}
+              {!Number.isFinite(totals.activeSurfactants) ? 'Active surfactant loading unavailable until bounded assay evidence is complete.' : totals.activeSurfactants > 35 ? "High active surfactant concentration. Couple with hydrotrope." : "Standard micellar dispersion."}
             </span>
             <p className="text-[11px] text-slate-400 leading-tight">
               Preservation: {scientificResults.preservativeWarning ? "⚠ Needs Preservative" : "Calculated / Formulation-Based (Lab Validation Required)"}
@@ -577,7 +577,7 @@ export const ScientificResultsPanel: React.FC<ScientificResultsPanelProps> = Rea
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-300 uppercase">6. Surfactant System</span>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border-purple-500/40">
-                {scientificResults.surfactantBreakdown.total}% Total Active
+                {Number.isFinite(scientificResults.surfactantBreakdown.total) ? `${scientificResults.surfactantBreakdown.total}%` : 'N/A'} Total Active
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 font-mono text-xs text-slate-300 pt-0.5">
