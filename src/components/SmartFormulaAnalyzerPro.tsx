@@ -1,3 +1,4 @@
+import { BoundedFormulaEvidencePanel } from "./BoundedFormulaEvidencePanel";
 import React, { useState, useEffect, Component } from "react";
 import {
   Sliders,
@@ -1525,6 +1526,8 @@ function SmartFormulaAnalyzerProInner({
           </ul>
         )}
       </div>
+
+      <BoundedFormulaEvidencePanel ingredients={ingredients} batchSizeKg={100} />
 
       {/* MISSING DATA DETECTOR */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-3">
