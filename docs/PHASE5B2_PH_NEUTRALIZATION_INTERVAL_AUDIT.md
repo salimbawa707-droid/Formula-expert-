@@ -138,3 +138,16 @@ mergePHWarnings now combines locally generated pH warnings with PHEngineV2 diagn
 ## Verification scope
 
 The prior integration head bd818422 passed all seven Current Release Quality Gates, including Android WebView instrumentation and APK artifact upload. The current scenario/warning implementation has its own exact-head workflow; do not reuse the earlier pass as evidence for the newer commit. Phase 4B remains OPEN and Phase 5 empirical validation/calibration remains LOCKED.
+
+
+## Edge-case audit checkpoint — explicit mass closure and solver precision
+
+The scenario evaluator now independently validates each composition's ingredient mass basis before invoking PHEngineV2:
+- every ingredient must specify exactly one of rawKg, weightKg or rawPercent;
+- each value must be finite and non-negative, with rawPercent constrained to 0–100%;
+- the summed ingredient mass must equal the declared batch mass within max(1e-6 kg, 1e-8 of batch mass);
+- conflicting mass bases and incomplete/overfilled batches are rejected before the normalizer can silently expand the effective batch mass or infer an implicit-water remainder.
+
+PHEngineV2 now preserves the numerical solver root in details.solverPHUnrounded (the numerical solver's native 4-decimal output), separately from the existing 2-decimal display pH. Scenario seed-sensitivity checks use this native solver value, and the default tolerance is 0.0001 pH. ModelValidity OUT_OF_RANGE also blocks a sampled envelope.
+
+Regression additions cover an underfilled 99.5 kg composition declared as 100 kg and an ingredient that supplies conflicting rawKg and rawPercent. These changes tighten scenario arithmetic only; they do not establish empirical accuracy, a guaranteed pH interval, or release eligibility. Exact-head CI is pending for these edge-case changes.
