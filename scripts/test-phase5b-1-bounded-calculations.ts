@@ -59,6 +59,15 @@ const estimateWithoutUncertainty = resolveBoundedInput({
 assert.equal(estimateWithoutUncertainty.valid, false);
 assert(estimateWithoutUncertainty.errors.some(x => x.includes('uncertainty note')));
 
+const invalidActiveFormula = calculateBoundedActiveMatter([
+  { id: 'bad', name: 'Bad assay', rawPercent: 100, activeMatter: { ...sles70, nominal: 105 } },
+]);
+assert.equal(invalidActiveFormula.status, 'INVALID_INPUT');
+assert.equal(invalidActiveFormula.totalActiveNominalPct, null);
+
+const emptyActive = calculateBoundedActiveMatter([]);
+assert.equal(emptyActive.status, 'INVALID_INPUT');
+
 const priceSles = {
   nominal: 110, lower: 105, upper: 115, unit: 'INR/kg',
   basis: 'user-supplied raw-material price scenario',
@@ -97,6 +106,15 @@ const unbalanced = calculateBoundedFormulaCost([
 assert.equal(unbalanced.status, 'PARTIAL');
 assert.equal(unbalanced.massBalanced, false);
 assert.equal(unbalanced.totalCostNominalPerKg, null);
+
+const wrongUnitCost = calculateBoundedFormulaCost([
+  { id: 'bad-unit', name: 'Bad unit', rawPercent: 100, pricePerKg: { ...priceWater, unit: 'USD/kg' } },
+]);
+assert.equal(wrongUnitCost.status, 'INVALID_INPUT');
+assert.equal(wrongUnitCost.totalCostNominalPerKg, null);
+
+const emptyCost = calculateBoundedFormulaCost([]);
+assert.equal(emptyCost.status, 'INVALID_INPUT');
 
 const badBatch = calculateBoundedFormulaCost([
   { id: 'all', name: 'All', rawPercent: 100, pricePerKg: priceWater },
