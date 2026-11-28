@@ -27,6 +27,10 @@ import {
   calculateReactiveEquivalents,
   ScientificAcidBaseProfile
 } from './acidBaseDataModel';
+import {
+  adaptFormulaToPrimaryNeutralizationInterval,
+  type NeutralizationProfileIntervalAdapterResult
+} from './neutralizationProfileIntervalAdapter';
 
 /** Centralized numerical tolerance for floating point mole/equivalent noise */
 export const STOICHIOMETRIC_EPSILON_EQ = 1e-6;
@@ -95,6 +99,8 @@ export interface PrimaryNeutralizationState {
   warnings: string[];
   assumptions: string[];
   limitations: string[];
+  /** Additive bounded assessment; never substitutes for the legacy nominal state or pH equilibrium. */
+  boundedNeutralizationInterval?: NeutralizationProfileIntervalAdapterResult;
 }
 
 export class StoichiometricNeutralizationEngine {
@@ -107,6 +113,7 @@ export class StoichiometricNeutralizationEngine {
   ): ScientificResult<PrimaryNeutralizationState> {
     const timestamp = new Date().toISOString();
     const warnings: string[] = [];
+    const boundedNeutralizationInterval = adaptFormulaToPrimaryNeutralizationInterval(ingredients, batchSizeKg);
     const assumptions: string[] = [
       'Primary stoichiometric neutralization operates on active proton-donor and proton-acceptor reactive equivalents.',
       'Primary reaction extent equals minimum(acidReactiveEquivalents, baseReactiveEquivalents) within numerical tolerance (1e-6 eq).',
@@ -148,7 +155,7 @@ export class StoichiometricNeutralizationEngine {
       };
 
       return {
-        value: emptyState,
+        value: { ...emptyState, boundedNeutralizationInterval },
         unit: 'PrimaryNeutralizationState',
         property: 'PRIMARY_STOICHIOMETRIC_NEUTRALIZATION',
         maturity: 'MODEL_PREDICTION' as ScientificMaturity,
@@ -264,7 +271,7 @@ export class StoichiometricNeutralizationEngine {
       };
 
       return {
-        value: stateInsufficient,
+        value: { ...stateInsufficient, boundedNeutralizationInterval },
         unit: 'PrimaryNeutralizationState',
         property: 'PRIMARY_STOICHIOMETRIC_NEUTRALIZATION',
         maturity: 'SOURCE_BACKED' as ScientificMaturity,
@@ -310,7 +317,7 @@ export class StoichiometricNeutralizationEngine {
       };
 
       return {
-        value: stateNoReaction,
+        value: { ...stateNoReaction, boundedNeutralizationInterval },
         unit: 'PrimaryNeutralizationState',
         property: 'PRIMARY_STOICHIOMETRIC_NEUTRALIZATION',
         maturity: 'MODEL_PREDICTION' as ScientificMaturity,
@@ -430,7 +437,7 @@ export class StoichiometricNeutralizationEngine {
     };
 
     return {
-      value: finalState,
+      value: { ...finalState, boundedNeutralizationInterval },
       unit: 'PrimaryNeutralizationState',
       property: 'PRIMARY_STOICHIOMETRIC_NEUTRALIZATION',
       maturity: 'MODEL_PREDICTION' as ScientificMaturity,
