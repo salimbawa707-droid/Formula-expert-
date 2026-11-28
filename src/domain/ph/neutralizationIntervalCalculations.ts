@@ -195,13 +195,16 @@ export function calculatePrimaryNeutralizationInterval(
     residualAcidEquivalents: intervalFrom(acidResidual.lower, acidResidual.nominal, acidResidual.upper),
     residualBaseEquivalents: intervalFrom(baseResidual.lower, baseResidual.nominal, baseResidual.upper),
     neutralizationFraction: intervalFrom(fraction.lower, fraction.nominal, fraction.upper),
-    waterGeneratedGrams: intervalFrom(extent.lower * 18.01528, extent.nominal * 18.01528, extent.upper * 18.01528),
+    // Equivalent totals alone do not identify reaction products or water stoichiometry.
+    // Keep this unavailable until a species-balanced reaction model supplies it.
+    waterGeneratedGrams: null,
     scenarioClassifications,
     inputEvidence: all.map(x => ({ id: x.id, evidenceRef: x.evidenceRef, basis: x.basis })),
     missingInputs: [],
     warnings: [
       'Arithmetic interval only: upstream chemistry must prove each equivalent bound and common batch basis.',
       'Classification envelope uses three paired endpoint scenarios; it is not a proof of all-domain monotonicity.',
+      'Water generation is unavailable: acid/base equivalents alone do not establish product stoichiometry.'
       'This report is not a pH prediction, laboratory result, or formula release approval.'
     ],
     releaseEligible: false
