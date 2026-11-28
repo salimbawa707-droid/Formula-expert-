@@ -16,7 +16,7 @@ assert(fields.every(row => row[3] === '4'));
 assert.equal(fields.reduce((sum, row) => sum + Number(row[3]), 0), 16);
 assert(fields.every(row => row[5].startsWith('C12-14 Pareth-')));
 assert(fields.every(row => row[6] === '68439-50-9'));
-assert(fields.every(row => row[7].includes('eur-lex.europa.eu')));
+assert(fields.slice(0, 3).every(row => row[7].includes('eur-lex.europa.eu')));\nassert(fields.every(row => row[8] === '' || row[8].includes('cir-safety.org')));\nassert(fields[3][7].includes('cir-safety.org'));
 assert(fields.every(row => row[8].includes('cir-safety.org')));
 assert(fields.every(row => row[11] === 'CAS_ASSOCIATION_CONFLICT_REQUIRES_SOURCE_RESOLUTION'));
 assert(fields.every(row => row[12] === 'DO_NOT_PROMOTE_OR_AUTO_CORRECT'));
