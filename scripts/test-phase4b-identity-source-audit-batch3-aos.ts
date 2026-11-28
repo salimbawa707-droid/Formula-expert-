@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const csvPath = fileURLToPath(new URL('../evidence_vault/datasets/phase4b_identity_source_audit_batch3_aos_2026-11-28.csv', import.meta.url));
+const lines = readFileSync(csvPath, 'utf8').trim().split(/\r?\n/);
+assert.equal(lines[0].split(',').length, 16, 'batch 3 CSV must retain its 16-field schema');
+assert.equal(lines.length, 2, 'batch 3 must contain exactly one audited candidate group');
+const row = lines[1];
+assert.match(row, /^MICG-083,68439-57-6,Sodium C14-16 Olefin Sulfonate,8,/);
+assert.match(row, /aos-38;aos-92;aos-38-tech;aos-38-pure;aos-38-sol;aos-92-tech;aos-92-pure;aos-92-sol/);
+assert.match(row, /precision\.fda\.gov/);
+assert.match(row, /echa\.europa\.eu/);
+assert.match(row, /canada\.ca/);
+assert.match(row, /stepan\.com/);
+assert.match(row, /AUTHORITATIVE_SUBSTANCE_IDENTITY_SUPPORTED/);
+assert.match(row, /DO_NOT_PROMOTE_TO_SUPPLIER_GRADE_OR_LOT_IDENTITY/);
+assert.match(row, /NOT_ESTABLISHED/);
+assert.match(row, /do not infer 92% active powder properties/);
+console.log('PHASE 4B IDENTITY SOURCE AUDIT BATCH 3 PASS');
+console.log(JSON.stringify({ candidateGroups: 1, catalogVariants: 8, substanceIdentitySupported: 1, supplierGradeApprovals: 0, lotAssaysVerified: 0 }, null, 2));
