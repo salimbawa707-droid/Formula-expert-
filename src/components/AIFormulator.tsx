@@ -24,6 +24,7 @@ import { collaborationManager } from "../services/collaborationService";
 import {
   calculateRawSurfactants,
   calculateActiveSurfactants,
+  calculateBoundedActiveMatter,
   calculateCommercialMarginChain,
   getAuditedIngredientCategory,
   getDefaultActiveMatter,
@@ -1082,7 +1083,10 @@ export default function FormulaExpert({
     const totalRaw = getFormulaMassBalance(ingredients);
     const compositionValid = Number.isFinite(totalRaw);
     const rawSurfactants = compositionValid ? calculateRawSurfactants(ingredients) : Number.NaN;
-    const activeSurfactants = compositionValid ? calculateActiveSurfactants(ingredients) : Number.NaN;
+    const boundedActiveMatter = calculateBoundedActiveMatter(ingredients);
+    const activeSurfactants = compositionValid && boundedActiveMatter.status === 'COMPLETE'
+      ? calculateActiveSurfactants(ingredients)
+      : Number.NaN;
 
     // Water % calculation: strictly 0 for powder unless user explicitly added water
     const waterIng = ingredients.find(
@@ -1093,7 +1097,7 @@ export default function FormulaExpert({
     return {
       totalRaw: Number(totalRaw.toFixed(2)),
       rawSurfactants: Number(rawSurfactants.toFixed(2)),
-      activeSurfactants: Number(activeSurfactants.toFixed(2)),
+      activeSurfactants: Number.isFinite(activeSurfactants) ? Number(activeSurfactants.toFixed(2)) : null,
       waterPct: Number(waterPct.toFixed(2)),
       missingPct: Number.isFinite(totalRaw) ? Math.max(0, Number((100 - totalRaw).toFixed(2))) : Number.NaN,
       costPerKg: formulaCost.costPerKg,
@@ -2326,7 +2330,7 @@ export default function FormulaExpert({
           costReport={calculateFormulaCost(deepAnalysisState.formulaSnapshot.ingredients, deepAnalysisState.formulaSnapshot.batchSizeKg)}
           liquidResults={!isPowderCategory(deepAnalysisState.formulaSnapshot.productCategory) ? {
             pH: scientificResults.pH,
-            activeSurfactants: calculateActiveSurfactants(deepAnalysisState.formulaSnapshot.ingredients),
+            activeSurfactants: calculateBoundedActiveMatter(deepAnalysisState.formulaSnapshot.ingredients).status === 'COMPLETE' ? calculateActiveSurfactants(deepAnalysisState.formulaSnapshot.ingredients) : Number.NaN,
             totalPercentage: getFormulaMassBalance(deepAnalysisState.formulaSnapshot.ingredients),
             viscosity: scientificResults.viscosity,
             viscosityCp: scientificResults.viscosityCp,
