@@ -10,6 +10,7 @@ const intervalFormula = [
   { id: 'water', name: 'Deionized Water', category: 'water', percentage: 50, activeMatterPct: 0 }
 ];
 const intervalGrade = evaluateAIGrade(intervalFormula, 7, 100, 'LAUNDRY_LIQUID');
+console.log('GRADE_INTERVAL_DIAGNOSTIC', JSON.stringify({grade: intervalGrade.grade, blockingIssues: intervalGrade.blockingIssues, unknownParameters: intervalGrade.unknownParameters, breakdown: intervalGrade.breakdown, reasoning: intervalGrade.reasoning}));
 assert.equal(intervalGrade.isEvaluable, true);
 assert.equal(intervalGrade.breakdown.boundedActiveMatterStatus, 'COMPLETE');
 assert.equal(intervalGrade.breakdown.activeMatterLowerPct, 8);
