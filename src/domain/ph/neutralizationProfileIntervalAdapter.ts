@@ -9,6 +9,7 @@
  */
 import type { IngredientInput, FormulationIngredient } from '../../types';
 import {
+  AUTHORITATIVE_ACID_BASE_REGISTRY,
   resolveScientificAcidBaseProfile,
   type ScientificAcidBaseProfile
 } from './acidBaseDataModel';
