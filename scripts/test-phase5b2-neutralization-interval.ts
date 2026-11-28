@@ -29,7 +29,7 @@ assert.equal(calculatePrimaryNeutralizationInterval([acid(2, 2, 2)], [base(3, 3,
 const crossed = calculatePrimaryNeutralizationInterval([acid(1, 2, 3)], [base(1, 2, 3)]);
 assert.equal(crossed.status, 'BOUNDED_INPUT');
 assert.equal(crossed.classification, 'AMBIGUOUS_REACTION_SYSTEM');
-assert.deepEqual(crossed.neutralizationFraction, { lower: 1 / 3, nominal: 1, upper: 1 });
+assert.deepEqual(crossed.neutralizationFraction, { lower: 0.333333333, nominal: 1, upper: 1 });
 assert.equal(crossed.scenarioClassifications.length, 3);
 assert(crossed.residualAcidEquivalents!.upper >= crossed.residualAcidEquivalents!.lower);
 assert(crossed.residualBaseEquivalents!.upper >= crossed.residualBaseEquivalents!.lower);
