@@ -531,7 +531,7 @@ export class ScientificExecutionDAG {
           boundedEvidence: boundedActiveMatterEvidence,
           boundedEvidenceStatus: boundedActiveMatterEvidence.status,
           unknownActiveRawMassPct: boundedActiveMatterEvidence.unknownRawPercent,
-          boundedKnownActiveNominalPct: boundedActiveMatterEvidence.knownSubtotalNominalPct,
+          boundedKnownActiveNominalPct: boundedActiveMatterEvidence.knownActiveNominalPct,
           releaseEligible: false
         };
         state.totalSurfactantActivePct = calculateActiveSurfactants(state.resolvedIngredients);
