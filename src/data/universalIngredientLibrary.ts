@@ -58,12 +58,21 @@ export interface EngineeringReferenceParameter {
   useForLotRelease: false;
 }
 
+export interface EngineeringReferenceSource {
+  sourceId: string;
+  evidenceClass: EngineeringEvidenceClass;
+  publisher: string;
+  sourceUrl: string;
+  supports: string[];
+  doesNotSupport: string[];
+}
+
 export interface EngineeringReferenceProfile {
   profileId: string;
   profileVersion: string;
   ingredientId: string;
   scope: 'SUBSTANCE_IDENTITY_ONLY' | 'COMMERCIAL_GRADE_REFERENCE' | 'ENGINEERING_ESTIMATE';
-  parameters: EngineeringReferenceParameter[];
+  parameters: EngineeringReferenceParameter[];\n  sourceReferences: EngineeringReferenceSource[];
   limitations: string[];
   supplierIdentityVerified: boolean;
   lotSpecific: false;
