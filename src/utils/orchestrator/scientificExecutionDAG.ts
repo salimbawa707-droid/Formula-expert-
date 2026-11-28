@@ -11,6 +11,7 @@ import { CanonicalFormulaInput, CanonicalIngredientInput } from './types';
 import { ProductCategoryId, PhysicalForm, normalizeProductCategory, getProductCategory } from '../../domain/productTaxonomy';
 import { mapFormulationIngredientsToPHEngineInput } from '../pHEngineAdapter';
 import { calculatePHAdvanced } from '../pHEngine';
+import { mergePHWarnings } from '../../domain/ph/phDiagnostics';
 import { StoichiometricNeutralizationEngine } from '../../domain/ph/stoichiometricNeutralizationEngine';
 import { HLBEngine } from '../hlbEngine';
 import {
@@ -473,7 +474,7 @@ export class ScientificExecutionDAG {
             }
             phBufferCapacity = advPH.bufferCapacity;
             phIonicStrength = advPH.ionicStrength;
-            phWarnings = advPH.warnings || [];
+            phWarnings = mergePHWarnings(phWarnings, advPH.warnings);
             phDetails = advPH.details;
             slurryBasis = advPH.details?.slurryBasisNotice || (isPowder ? '1.0% w/v Slurry Basis' : undefined);
           } catch (err: any) {
