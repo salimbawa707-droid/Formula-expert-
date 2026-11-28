@@ -121,8 +121,12 @@ export function runMasterScientificUnknownDataIntegrityTestSuite(): TestSuiteSum
   ], 20, 100);
   assert(
     '5. Chelation Engine Integrity',
-    '8. Unknown chelation is flagged as uncharacterized',
-    typeof chelationRes.totalSequestrationMg === 'number' && chelationRes.totalSequestrationMg >= 0
+    '8. Unknown chelation remains insufficient data, not a numeric zero',
+    chelationRes.status === 'INSUFFICIENT_DATA' &&
+      chelationRes.hasUnknownChelators === true &&
+      Number.isNaN(chelationRes.totalSequestrationMg) &&
+      Number.isNaN(chelationRes.details[1]?.bindingCapacityMgPerG) &&
+      Number.isNaN(chelationRes.details[1]?.boundCaCO3Mg)
   );
 
   // 9. UNKNOWN is distinct from ZERO

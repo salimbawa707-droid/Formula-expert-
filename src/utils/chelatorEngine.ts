@@ -65,6 +65,28 @@ export function validateChelatorCapacity(
   };
 }
 
+/**
+ * Shared declaration detector for the chelation engine and its consumers.
+ * This detects that an ingredient claims a chelation/builder/sequestration role;
+ * it does NOT resolve identity or assign a binding capacity.
+ */
+export function isDeclaredChelatorIngredient(input: {
+  name?: unknown;
+  role?: unknown;
+  category?: unknown;
+}): boolean {
+  const rawName = String(input.name ?? '').trim().toLowerCase();
+  const declaredRoles = [input.role, input.category]
+    .filter(value => value !== undefined && value !== null)
+    .map(value => String(value).trim().toLowerCase())
+    .join(' ');
+
+  return (
+    /chelat|builder|sequest/i.test(declaredRoles) ||
+    /chelat|sequest|citrate|glda|mgda|edta|dtpa|stpp|tripolyphosphate|phosphonate|hedp|zeolite|polyacrylate|polycarboxylate|phosphate|gluconate/i.test(rawName)
+  );
+}
+
 export function isValidChelationCapacity(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
@@ -886,8 +908,21 @@ export function calculateFormulationChelationCapacity(
     // Do not silently resolve an ambiguous citrate hydration grade as dihydrate.
     // getChelatorBindingCapacity is the single authority for grade identity and evidence.
     const capacityResult = getChelatorBindingCapacity(rawName, validation.status === 'VALID' ? validation.value! : undefined);
-    const bindingCapacityMgPerG = capacityResult.capacityMgCaCO3PerGram ?? 0;
-    
+    const isDeclaredChelator = isDeclaredChelatorIngredient({
+      name: rawName,
+      role: (ing as any)?.role,
+      category: (ing as any)?.category
+    });
+    const hasVerifiedCapacity =
+      capacityResult.status === 'VALID' &&
+      typeof capacityResult.capacityMgCaCO3PerGram === 'number' &&
+      Number.isFinite(capacityResult.capacityMgCaCO3PerGram);
+    // Zero is reserved for non-chelating matrix ingredients or a verified
+    // zero-active grade. An unresolved declared chelator is explicitly NaN.
+    const bindingCapacityMgPerG = hasVerifiedCapacity
+      ? capacityResult.capacityMgCaCO3PerGram!
+      : (isDeclaredChelator ? Number.NaN : 0);
+
     const boundCaCO3Mg = hasValidPct ? massGrams * bindingCapacityMgPerG : Number.NaN;
     const batchBoundCaCO3Grams = hasValidPct ? (batchMassGrams * bindingCapacityMgPerG) / 1000 : Number.NaN;
 
@@ -898,11 +933,7 @@ export function calculateFormulationChelationCapacity(
       ? AUTHORITATIVE_CHELATOR_DATABASE.find(s => s.evidenceId === capacityResult.evidenceId)
       : undefined;
 
-    const rawRole = ((ing as any)?.role || (ing as any)?.category || '').toLowerCase();
-    const isDeclaredChelator =
-      /chelat|builder|sequestr/i.test(rawRole) ||
-      /chelat|sequestr|citrate|glda|mgda|edta|dtpa|stpp|tripolyphosphate|phosphonate|hedp|zeolite|polyacrylate|polycarboxylate/i.test(rawName);
-    const isUnknownChelator = isDeclaredChelator && !matchedSpecies && bindingCapacityMgPerG === 0;
+    const isUnknownChelator = isDeclaredChelator && !hasVerifiedCapacity;
 
     if (isUnknownChelator) {
       unknownChelatorCount++;
