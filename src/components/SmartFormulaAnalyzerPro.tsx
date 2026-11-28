@@ -152,6 +152,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 const safeNumHelper = (val: any, digits: number = 1): string => {
+  if (val === null || val === undefined || val === '') return 'N/A';
   const num = Number(val);
   return Number.isFinite(num) ? num.toFixed(digits) : 'N/A';
 };
