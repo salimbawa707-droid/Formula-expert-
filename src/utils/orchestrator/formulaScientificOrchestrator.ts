@@ -600,7 +600,8 @@ export class FormulaScientificOrchestrator {
         predictionError: null,
         details: {
           primaryNeutralizationState: state.neutralizationState,
-          primaryNeutralizationResult: { value: state.neutralizationState }
+          primaryNeutralizationResult: { value: state.neutralizationState },
+          neutralizationIntervalAssessment: state.neutralizationIntervalAssessment ?? null
         }
       },
       activeMatterResult: {
