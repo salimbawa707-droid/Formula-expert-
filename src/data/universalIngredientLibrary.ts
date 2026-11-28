@@ -33,6 +33,53 @@ export interface ActiveMatterGradeAssayEvidence {
   verifiedAt?: string;
 }
 
+export type EngineeringEvidenceClass =
+  | 'PRIMARY_SUPPLIER_TDS'
+  | 'PRIMARY_SUPPLIER_SDS'
+  | 'BATCH_SPECIFIC_COA'
+  | 'PUBLISHED_STANDARD'
+  | 'PUBLISHED_LITERATURE'
+  | 'PUBLIC_REGULATORY_IDENTITY'
+  | 'CATALOG_ASSERTION'
+  | 'ENGINEERING_ESTIMATE';
+
+export interface EngineeringReferenceParameter {
+  parameter: string;
+  nominalValue?: number;
+  lowerBound?: number;
+  upperBound?: number;
+  unit: string;
+  basis: 'AS_SUPPLIED' | 'AS_RECEIVED' | 'ACTIVE_BASIS' | 'DRY_BASIS' | 'NEAT' | 'NOT_APPLICABLE' | 'UNKNOWN';
+  evidenceClass: EngineeringEvidenceClass;
+  sourceUrl?: string;
+  methodReference?: string;
+  uncertaintyNote: string;
+  useForPreliminaryCalculation: boolean;
+  useForLotRelease: false;
+}
+
+export interface EngineeringReferenceSource {
+  sourceId: string;
+  evidenceClass: EngineeringEvidenceClass;
+  publisher: string;
+  sourceUrl: string;
+  supports: string[];
+  doesNotSupport: string[];
+}
+
+export interface EngineeringReferenceProfile {
+  profileId: string;
+  profileVersion: string;
+  ingredientIds: string[];
+  scope: 'SUBSTANCE_IDENTITY_ONLY' | 'COMMERCIAL_GRADE_REFERENCE' | 'ENGINEERING_ESTIMATE';
+  parameters: EngineeringReferenceParameter[];
+  sourceReferences: EngineeringReferenceSource[];
+  limitations: string[];
+  supplierIdentityVerified: boolean;
+  lotSpecific: false;
+  formulaApplicabilityApproved: false;
+}
+
 export interface UniversalIngredient {
   id: string;
   name: string;
@@ -63,6 +110,7 @@ export interface UniversalIngredient {
   manufacturer?: string;
   productName?: string;
   activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;
+  engineeringReferenceProfileId?: string;
   provenance?: {
     sourceType: 'OFFICIAL_MANUFACTURER' | 'STANDARD_CHEMICAL' | 'ACADEMIC_LITERATURE' | 'USER_ENTERED';
     source: string;
@@ -198,7 +246,8 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "activeDefault": 38,
     "costPerKg": null,
     "hlb": 12.0,
-    "description": "Phosphate-free high foaming surfactant with acid/alkali stability."
+    "description": "Phosphate-free high foaming surfactant with acid/alkali stability.",
+    "engineeringReferenceProfileId": "ER-AOS-C14-16-001"
   },
   {
     "id": "aos-92",
@@ -378,7 +427,8 @@ export const UNIVERSAL_INGREDIENTS: UniversalIngredient[] = [
     "activeDefault": 50,
     "costPerKg": null,
     "hlb": 13.0,
-    "description": "Bio-based, plant-derived nonionic hydrotrope."
+    "description": "Bio-based, plant-derived nonionic hydrotrope.",
+    "engineeringReferenceProfileId": "ER-APG-C8-10-001"
   },
   {
     "id": "apg-1214",
