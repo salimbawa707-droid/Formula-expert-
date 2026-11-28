@@ -46,6 +46,7 @@ import { evaluateSpecifications, getSpecificationTemplateForCategory } from '../
 import { modelManufacturingProcess } from '../manufacturing/processModelingEngine';
 import { validateActiveMatterInput } from '../activeMatterInputGuard';
 import { validatePHInput } from '../phInputGuard';
+import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../boundedFormulaAdapter';
 import { isEngineApplicable } from '../../domain/scientificProductProfiles';
 
 // =============================================================================
@@ -1063,6 +1064,7 @@ export class ScientificExecutionDAG {
       dependencies: ['IDENTITY_RESOLUTION'],
       execute: (state) => {
         const formulaCost = calculateFormulaCost(state.resolvedIngredients, state.batchSizeKg);
+        const boundedCostEvidence = buildBoundedCostReport(state.resolvedIngredients as any, state.batchSizeKg);
         const overheadPct = state.rawInput.costContext?.overheadPct ?? 12;
         const packagingCostPerUnit = state.rawInput.costContext?.packagingCostPerUnit ?? 15;
         if (state.rawInput.costContext?.overheadPct === undefined) {
@@ -1081,6 +1083,10 @@ export class ScientificExecutionDAG {
 
         state.costResult = {
           ...formulaCost,
+          boundedEvidence: boundedCostEvidence,
+          boundedPricingStatus: boundedCostEvidence.status,
+          unpricedRawMassPct: boundedCostEvidence.unknownRawPercent,
+          boundedKnownSubtotalPerKg: boundedCostEvidence.knownSubtotalNominalPerKg,
           marginChain
         };
         state.costStatus = formulaCost.isComplete ? 'VALID' : 'INSUFFICIENT_DATA';
@@ -1310,6 +1316,7 @@ export class ScientificExecutionDAG {
           }
         }
 
+        const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(state.resolvedIngredients as any);
         const activeMatterOut = {
           totalSurfactantActivePct: state.totalSurfactantActivePct,
           totalActiveMatterPct: state.totalActiveMatterPct,
@@ -1318,6 +1325,9 @@ export class ScientificExecutionDAG {
             : null,
           categoryMinPct: getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? null,
           verified: state.activeMatterVerified === true,
+          boundedEvidence: boundedActiveMatterEvidence,
+          evidenceStatus: boundedActiveMatterEvidence.status,
+          unknownActiveRawMassPct: boundedActiveMatterEvidence.unknownRawPercent,
           status: state.activeMatterStatus,
           surfactantBreakdown: {
             anionic: state.anionicPct,
@@ -1366,6 +1376,10 @@ export class ScientificExecutionDAG {
           totalBatchCost: Number.isFinite(state.costResult?.totalBatchCost) ? state.costResult.totalBatchCost : null,
           isComplete: state.costResult?.isComplete === true,
           pricingStatus: state.costResult?.pricingStatus ?? 'UNKNOWN',
+          boundedEvidence: state.costResult?.boundedEvidence ?? null,
+          boundedPricingStatus: state.costResult?.boundedPricingStatus ?? 'UNKNOWN',
+          unpricedRawMassPct: state.costResult?.unpricedRawMassPct ?? null,
+          boundedKnownSubtotalPerKg: state.costResult?.boundedKnownSubtotalPerKg ?? null,
           isWithinTarget: Number.isFinite(state.costResult?.costPerKg) &&
             typeof state.rawInput.costContext?.targetCostPerKg === 'number' &&
             Number.isFinite(state.rawInput.costContext.targetCostPerKg)

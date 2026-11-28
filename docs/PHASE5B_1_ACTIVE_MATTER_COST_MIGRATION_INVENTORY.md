@@ -1,7 +1,7 @@
 # Phase 5B-1 — Active Matter and Cost Call-Site Inventory
 
 Date: 2026-11-28  
-Status: bounded preliminary calculation primitives implemented; production consumer migration is NOT COMPLETE.  
+Status: first production consumers migrated; remaining call-site migration is in progress and is NOT COMPLETE.  
 Boundary: preliminary scenario calculations only; no supplier/lot/formula release promotion.
 
 ## 1. Current implementation
@@ -71,3 +71,25 @@ This module is a new bounded-calculation path. It does not silently change the s
 - The new calculation primitives are not yet wired into production UI/orchestration consumers.
 - No supplier-specific price source is inferred; price scenarios must be explicitly entered.
 - This work does not close Phase 4B, unlock Phase 5 empirical validation, or establish lab accuracy.
+
+
+## 6. Follow-up migration — 2026-11-28
+
+The shared adapter is now in `src/utils/boundedFormulaAdapter.ts`; presentation no longer owns the calculation mapping.
+
+Migrated in this follow-up branch:
+- Staged analysis exposes bounded active-matter and bounded-cost reports, evidence status, unknown active raw mass, unpriced raw mass and known-price subtotal in the stage intermediate results.
+- Scientific Execution DAG carries bounded evidence through the active-matter and costing projections consumed by the grade projection.
+- Performance Metrics Fractions card displays bounded active-matter status and unknown raw mass alongside explicitly predicted performance metrics.
+- RC Active Matter calculator reports its inputs as user-entered point assumptions and displays unknown mass/evidence status.
+- Grade Engine refuses evaluability when a supplied bounded active-matter report is incomplete.
+- Added focused adapter regressions for catalog-default evidence, unknown active assay, incomplete pricing, and complete user-price scenarios.
+
+Still not claimed as migrated:
+- Remaining calculator wrappers and downstream consumers outside the touched RC Active Matter view.
+- Cleaning Performance Engine's internal scalar feature calculations.
+- Full Grade Engine interval-aware scoring (it currently fail-closes on incomplete bounded evidence; no interval-based grade scoring is claimed).
+- All AST-discovered DAG projections and every legacy scalar call site.
+- Supplier-grade numeric bounds remain absent unless explicitly provided with evidence; no bounds are inferred from grade names.
+
+Verification remains pending exact-head CI. Phase 4B remains OPEN; Phase 5 empirical validation/calibration remains LOCKED. AI-only review is not human approval or laboratory validation.

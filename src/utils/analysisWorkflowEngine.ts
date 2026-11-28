@@ -17,6 +17,7 @@
  */
 
 import { FormulationIngredient } from '../types';
+import { buildBoundedActiveMatterReport, buildBoundedCostReport } from './boundedFormulaAdapter';
 import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { normalizeProductCategory, getProductCategory } from '../domain/productTaxonomy';
 import { mapFormulationIngredientsToPHEngineInput } from './pHEngineAdapter';
@@ -622,6 +623,7 @@ export async function executeStagedScientificAnalysis(
   const rawSurfactantsTotal = calculateRawSurfactants(immutableSnapshot.ingredients);
   const totalSurfactantActivePct = calculateActiveSurfactants(immutableSnapshot.ingredients);
   const rawAm = calculateActiveMatter(immutableSnapshot.ingredients);
+  const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(immutableSnapshot.ingredients);
   const totalActiveMatterPct: number | null = typeof rawAm === 'number' ? rawAm : ((rawAm as any)?.value ?? null);
   const hlbResult = HLBEngine.calculateBlendedHLB(immutableSnapshot.ingredients);
 
@@ -679,6 +681,9 @@ export async function executeStagedScientificAnalysis(
     rawSurfactantsTotal: Number(rawSurfactantsTotal.toFixed(2)),
     totalSurfactantActivePct: Number(totalSurfactantActivePct.toFixed(2)),
     totalActiveMatterPct: totalActiveMatterPct !== null ? Number(totalActiveMatterPct.toFixed(2)) : null,
+    boundedEvidence: boundedActiveMatterEvidence,
+    evidenceStatus: boundedActiveMatterEvidence.status,
+    unknownActiveRawMassPct: boundedActiveMatterEvidence.unknownRawPercent,
     anionicPct: chargeDataComplete ? Number(anionicPct.toFixed(2)) : Number.NaN,
     nonionicPct: chargeDataComplete ? Number(nonionicPct.toFixed(2)) : Number.NaN,
     amphotericPct: chargeDataComplete ? Number(amphotericPct.toFixed(2)) : Number.NaN,
@@ -982,6 +987,8 @@ export async function executeStagedScientificAnalysis(
     immutableSnapshot.batchSizeKg
   );
 
+  const boundedCostEvidence = buildBoundedCostReport(immutableSnapshot.ingredients, immutableSnapshot.batchSizeKg);
+
   const marginChain = calculateCommercialMarginChain(
     immutableSnapshot.ingredients,
     immutableSnapshot.batchSizeKg,
@@ -1005,6 +1012,10 @@ export async function executeStagedScientificAnalysis(
     costPerKg: formulaCost.costPerKg,
     totalBatchCost: formulaCost.totalBatchCost,
     isCompletePricing: formulaCost.isComplete,
+    boundedEvidence: boundedCostEvidence,
+    boundedPricingStatus: boundedCostEvidence.status,
+    unpricedRawMassPct: boundedCostEvidence.unknownRawPercent,
+    boundedKnownSubtotalPerKg: boundedCostEvidence.knownSubtotalNominalPerKg,
     missingPriceCount: formulaCost.missingPriceCount,
     suggestedRetailPrice: marginChain.suggestedRetail,
     substitutionCount: substitutions.length,

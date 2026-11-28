@@ -1,5 +1,6 @@
 import { BarChart2, Layers } from "lucide-react";
 import { calculateActiveSurfactants } from "../../utils/calculators";
+import { buildBoundedActiveMatterReport } from "../../utils/boundedFormulaAdapter";
 
 interface PerformanceMetricsFractionsCardProps {
   analysisResult: any;
@@ -16,6 +17,7 @@ export function PerformanceMetricsFractionsCard({
   };
 
   const activeSurf = analysisResult.activeSurfactantPct ?? calculateActiveSurfactants(analysisResult.ingredients || []);
+  const boundedActiveEvidence = buildBoundedActiveMatterReport(analysisResult.ingredients || []);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -31,6 +33,12 @@ export function PerformanceMetricsFractionsCard({
           <p className="leading-tight font-medium">
             <strong>R&D Predictive Disclaimer:</strong> Performance metrics shown are model predictions based on formulation chemistry (surfactant loading, pH, builders, enzymes). Actual cleaning performance requires empirical laboratory testing (ASTM/AATCC standards).
           </p>
+        </div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-950 space-y-1" data-testid="performance-active-matter-evidence">
+          <div className="font-extrabold uppercase tracking-wide">Active matter evidence · preliminary only</div>
+          <div>Status: {boundedActiveEvidence.status} · Unknown raw mass: {boundedActiveEvidence.unknownRawPercent.toFixed(2)}%</div>
+          <div>{boundedActiveEvidence.status === "COMPLETE" ? `Bounded nominal: ${boundedActiveEvidence.totalActiveNominalPct?.toFixed(2)}% (${boundedActiveEvidence.totalActiveLowerPct?.toFixed(2)}–${boundedActiveEvidence.totalActiveUpperPct?.toFixed(2)}%)` : `${boundedActiveEvidence.knownActiveNominalPct.toFixed(2)}% known subtotal; formula total unavailable until missing assay inputs are resolved.`}</div>
+          <div>Catalog defaults and user overrides are screening assumptions, not supplier or lot assays. Performance KPIs remain model predictions.</div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           {/* Foam Height */}
