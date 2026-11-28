@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../src/utils/boundedFormulaAdapter';
 import { calculateActiveMatter, calculateBoundedActiveMatter, calculateBoundedFormulaCost, generateFormulationWarnings } from '../src/utils/calculators';
+import { ScientificExecutionDAG } from '../src/utils/orchestrator/scientificExecutionDAG';
 
 const completeScenario = buildBoundedActiveMatterReport([
   { id: 'sles', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'CATALOG_DEFAULT' } as any,
@@ -70,5 +71,25 @@ assert.equal(generateFormulationWarnings([
   { id: 'low', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
   { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
 ]).some(message => message.includes('below 5%')), true);
+
+
+const dag = new ScientificExecutionDAG();
+const dagWithUnknownAssay = dag.executeDAG({
+  formulaId: 'PHASE5B1-BOUNDED-DAG-UNKNOWN',
+  formulaName: 'Bounded evidence DAG regression',
+  formulaVersion: '1.0.0',
+  productCategory: 'LAUNDRY_LIQUID',
+  batchSizeKg: 100,
+  waterHardnessPpm: 100,
+  washVolumeL: 10,
+  washDoseGrams: 50,
+  ingredients: [
+    { id: 'water', name: 'Water', percentage: 90, activeMatterPct: 0, role: 'Solvent' },
+    { id: 'unverified', name: 'Unverified surfactant grade', percentage: 10, role: 'Anionic Surfactant' },
+  ],
+} as any);
+assert.equal(dagWithUnknownAssay.state.activeMatterReport.boundedEvidence.status, 'INSUFFICIENT_DATA');
+assert.equal(dagWithUnknownAssay.state.activeMatterReport.unknownActiveRawMassPct, 10);
+assert.equal(dagWithUnknownAssay.state.activeMatterReport.releaseEligible, false);
 
 console.log('PHASE 5B-1 REMAINING CONSUMER ADAPTER REGRESSIONS PASS');
