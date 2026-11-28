@@ -524,7 +524,16 @@ export class ScientificExecutionDAG {
       disposition: 'DAG_NODE',
       dependencies: ['IDENTITY_RESOLUTION', 'PH_EQUILIBRIUM'],
       execute: (state) => {
-        state.activeMatterReport = ActiveMatterEngine.calculateActiveMatterReport(state.resolvedIngredients, state.batchSizeKg);
+        const authoritativeActiveMatterReport = ActiveMatterEngine.calculateActiveMatterReport(state.resolvedIngredients, state.batchSizeKg);
+        const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(state.resolvedIngredients as any);
+        state.activeMatterReport = {
+          ...authoritativeActiveMatterReport,
+          boundedEvidence: boundedActiveMatterEvidence,
+          boundedEvidenceStatus: boundedActiveMatterEvidence.status,
+          unknownActiveRawMassPct: boundedActiveMatterEvidence.unknownRawPercent,
+          boundedKnownActiveNominalPct: boundedActiveMatterEvidence.knownActiveNominalPct,
+          releaseEligible: false
+        };
         state.totalSurfactantActivePct = calculateActiveSurfactants(state.resolvedIngredients);
         const amResult = calculateActiveMatterResult(state.resolvedIngredients);
         state.totalActiveMatterPct = amResult.value === null ? Number.NaN : amResult.value;
@@ -1316,7 +1325,7 @@ export class ScientificExecutionDAG {
           }
         }
 
-        const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(state.resolvedIngredients as any);
+        const boundedActiveMatterEvidence = state.activeMatterReport?.boundedEvidence ?? buildBoundedActiveMatterReport(state.resolvedIngredients as any);
         const activeMatterOut = {
           totalSurfactantActivePct: state.totalSurfactantActivePct,
           totalActiveMatterPct: state.totalActiveMatterPct,
