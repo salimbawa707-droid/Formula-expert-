@@ -1,6 +1,7 @@
 import { FormulationIngredient } from '../types';
 import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
 import { calculateActiveSurfactants, calculateActiveMatter } from './activeMatterEngine';
+import { buildBoundedActiveMatterReport } from './boundedFormulaAdapter';
 import { normalizeProductCategory, ProductCategoryId } from '../domain/productTaxonomy';
 import { globalGovernanceRegistry } from './scientificGovernanceEngine';
 import { calculateWaterHardnessTolerance } from './chelatorEngine';
@@ -77,6 +78,8 @@ export interface CategoryKPI {
 }
 
 export interface FormulationPerformanceResult {
+  /** Additive evidence trace; does not convert screening predictions into measured or release-grade results. */
+  boundedActiveMatterEvidence?: ReturnType<typeof buildBoundedActiveMatterReport>;
   productCategory: ProductCategoryId | 'UNKNOWN_PRODUCT_CATEGORY';
   cpi: number | null; // Category Performance Index (0-100), null when not evaluated
   overallScore: number | null; // Alias for CPI
@@ -129,6 +132,7 @@ export function calculateCleaningPerformance(
   options?: PerformanceEvaluationOptions
 ): FormulationPerformanceResult {
   const safeIngs = Array.isArray(ingredients) ? ingredients : [];
+  const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(safeIngs);
   const categoryInput = categoryOrId === undefined || categoryOrId === null || String(categoryOrId).trim() === ''
     ? 'UNKNOWN_PRODUCT_CATEGORY'
     : categoryOrId;
@@ -332,6 +336,7 @@ export function calculateCleaningPerformance(
     const cleaningApplicable = category !== 'FABRIC_SOFTENER' && category !== 'UNKNOWN_PRODUCT_CATEGORY';
     return {
       productCategory: category,
+      boundedActiveMatterEvidence,
       cpi: null as any,
       overallScore: null as any,
       rating: null as any,
@@ -1013,6 +1018,7 @@ export function calculateCleaningPerformance(
 
   return {
     productCategory: category,
+    boundedActiveMatterEvidence,
     cpi,
     overallScore: overallPerformance,
     rating: overallPerformance,

@@ -93,3 +93,14 @@ Still not claimed as migrated:
 - Supplier-grade numeric bounds remain absent unless explicitly provided with evidence; no bounds are inferred from grade names.
 
 Verification remains pending exact-head CI. Phase 4B remains OPEN; Phase 5 empirical validation/calibration remains LOCKED. AI-only review is not human approval or laboratory validation.
+
+
+## 7. Cleaning performance evidence projection — follow-up
+
+`calculateCleaningPerformance` now returns an additive `boundedActiveMatterEvidence` report for both evaluated and fail-closed results. The existing CPI/KPI calculation path and its legacy result fields are unchanged. This report exposes evidence classes, explicit bounds when available, unknown raw mass and the non-release-eligible boundary. It does not convert predicted cleaning scores into measured performance or use bounded estimates as empirical calibration.
+
+Regression coverage verifies:
+- A complete point-assumption case remains marked non-release-eligible and performance provenance remains PREDICTED.
+- An unknown surfactant assay retains 10% unknown raw mass, withholds CPI and returns INSUFFICIENT_DATA provenance.
+
+The full Grade Engine interval-aware score, supplier/lot interval population, and empirical performance calibration remain out of scope and blocked by missing source/lab evidence.
