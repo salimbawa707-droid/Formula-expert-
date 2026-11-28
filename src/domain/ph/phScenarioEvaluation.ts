@@ -62,7 +62,7 @@ export interface PHScenarioAssessment {
 }
 
 export const DEFAULT_PH_SCENARIO_SEEDS = [3, 7, 11] as const;
-export const DEFAULT_PH_SEED_INVARIANCE_TOLERANCE = 0.01;
+export const DEFAULT_PH_SEED_INVARIANCE_TOLERANCE = 0.0001;
 
 function optionSignature(options: PHCalculationOptions = {}): string {
   return JSON.stringify({
@@ -74,6 +74,40 @@ function optionSignature(options: PHCalculationOptions = {}): string {
     maxIterations: options.maxIterations ?? 60,
     tolerance: options.tolerance ?? 1e-8
   });
+}
+
+function validateScenarioMassBalance(scenario: PHScenarioDefinition): string | null {
+  let summedMassKg = 0;
+  for (const ingredient of scenario.ingredients) {
+    if (!ingredient || typeof ingredient.name !== 'string' || !ingredient.name.trim()) {
+      return 'Every ingredient must have a non-empty name before mass-balance validation.';
+    }
+    const raw = ingredient as IngredientInput & { rawKg?: number; weightKg?: number; rawPercent?: number };
+    const hasRawKg = raw.rawKg !== undefined && raw.rawKg !== null;
+    const hasWeightKg = raw.weightKg !== undefined && raw.weightKg !== null;
+    const hasRawPercent = raw.rawPercent !== undefined && raw.rawPercent !== null;
+    if (Number(hasRawKg) + Number(hasWeightKg) + Number(hasRawPercent) !== 1) {
+      return `Ingredient "${ingredient.name}" must specify exactly one mass basis: rawKg, weightKg, or rawPercent.`;
+    }
+    if (hasRawKg || hasWeightKg) {
+      const mass = Number(hasRawKg ? raw.rawKg : raw.weightKg);
+      if (!Number.isFinite(mass) || mass < 0) {
+        return `Ingredient "${ingredient.name}" has a negative or non-finite mass.`;
+      }
+      summedMassKg += mass;
+    } else {
+      const percent = Number(raw.rawPercent);
+      if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+        return `Ingredient "${ingredient.name}" has an invalid rawPercent (must be 0–100%).`;
+      }
+      summedMassKg += scenario.totalMassKg * percent / 100;
+    }
+  }
+  const toleranceKg = Math.max(1e-6, scenario.totalMassKg * 1e-8);
+  if (Math.abs(summedMassKg - scenario.totalMassKg) > toleranceKg) {
+    return `Ingredient masses sum to ${summedMassKg} kg, not declared batch mass ${scenario.totalMassKg} kg (tolerance ${toleranceKg} kg).`;
+  }
+  return null;
 }
 
 function invalidAssessment(message: string): PHScenarioAssessment {
@@ -93,7 +127,7 @@ function invalidAssessment(message: string): PHScenarioAssessment {
 function summarizeRun(initialGuess: number, result: DetailedPHResult): PHScenarioRun {
   return {
     initialGuess,
-    pH: result.pH,
+    pH: result.details.solverPHUnrounded ?? result.pH,
     status: result.status,
     converged: result.solverConverged && result.converged,
     iterations: result.solverIterations,
@@ -154,6 +188,8 @@ export function evaluatePHScenarios(
     if (optionSignature(scenario.options) !== sharedOptions) {
       return invalidAssessment('All scenarios must share temperature, activity model, product/slurry basis and solver tolerances.');
     }
+    const massBalanceError = validateScenarioMassBalance(scenario);
+    if (massBalanceError) return invalidAssessment(massBalanceError);
   }
 
   const results: PHScenarioResult[] = scenarios.map(scenario => {
@@ -169,6 +205,7 @@ export function evaluatePHScenarios(
       run.converged && run.status === 'CONVERGED' &&
       run.pH !== null && Number.isFinite(run.pH) &&
       run.pH >= 0 && run.pH <= 14 &&
+      run.modelValidity !== 'OUT_OF_RANGE' &&
       run.residual !== null && Number.isFinite(run.residual)
     );
     const phValues = runs.map(run => run.pH).filter((value): value is number => value !== null && Number.isFinite(value));
