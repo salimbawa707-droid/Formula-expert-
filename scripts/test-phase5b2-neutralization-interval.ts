@@ -12,6 +12,7 @@ const base = (lowerEq: number, nominalEq: number, upperEq: number) => ({
 
 // Exact stoichiometric equivalence.
 const exact = calculatePrimaryNeutralizationInterval([acid(2, 2, 2)], [base(2, 2, 2)]);
+console.log('DEBUG exact interval', JSON.stringify(exact));
 assert.equal(exact.status, 'BOUNDED_INPUT');
 assert.equal(exact.classification, 'FULLY_NEUTRALIZED');
 assert.equal(exact.reactionExtent?.nominal, 2);
