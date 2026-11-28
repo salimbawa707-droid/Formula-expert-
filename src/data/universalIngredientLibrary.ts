@@ -72,7 +72,8 @@ export interface EngineeringReferenceProfile {
   profileVersion: string;
   ingredientId: string;
   scope: 'SUBSTANCE_IDENTITY_ONLY' | 'COMMERCIAL_GRADE_REFERENCE' | 'ENGINEERING_ESTIMATE';
-  parameters: EngineeringReferenceParameter[];\n  sourceReferences: EngineeringReferenceSource[];
+  parameters: EngineeringReferenceParameter[];
+  sourceReferences: EngineeringReferenceSource[];
   limitations: string[];
   supplierIdentityVerified: boolean;
   lotSpecific: false;
