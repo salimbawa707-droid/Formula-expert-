@@ -113,3 +113,14 @@ The legacy/draft Grade Engine path now requires a complete bounded active-matter
 Regression coverage verifies a 8–12% active-matter interval receives the conservative endpoint score (80/100), and an unknown surfactant assay fails closed. No supplier bounds are inferred; user-entered bounds remain assumptions and the report remains non-release-eligible.
 
 Remaining work includes migrating remaining calculator wrappers and DAG projections, interval propagation in other scientific pillars, and empirical calibration. Phase 4B remains OPEN; Phase 5 empirical validation/calibration remains LOCKED.
+
+
+## 9. Public calculator wrappers and DAG evidence propagation — follow-up
+
+- Added additive `calculateBoundedActiveMatter()` and `calculateBoundedFormulaCost()` wrappers in the public calculator module; legacy scalar APIs remain unchanged for compatibility.
+- The Scientific Execution DAG active-matter node now attaches the bounded report, evidence status, unknown raw mass, known nominal subtotal and an explicit non-release-eligible marker to its existing authoritative report.
+- The grade projection reuses the DAG node's bounded report rather than recalculating it; existing costing-node bounded pricing projection remains intact.
+- Formulation warnings now report incomplete/unknown active matter explicitly rather than silently skipping the low-active check.
+- Staged analysis now emits a numeric total active-matter value only when the bounded report is COMPLETE; incomplete evidence is represented as `null`, not `NaN`.
+- Regression coverage verifies public wrappers preserve unknown mass and incomplete pricing, keep reports non-release-eligible, preserve legacy scalar results, and distinguish unknown active matter from a known low-active formula.
+- These changes do not migrate every legacy scalar consumer or establish supplier/lot assay evidence. Remaining AST-discovered consumer migration and solver-based interval work remain open.
