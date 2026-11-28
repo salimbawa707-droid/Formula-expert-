@@ -29,6 +29,9 @@ export function validateEngineeringReferenceProfile(
   if (profile.supplierIdentityVerified && profile.scope === 'ENGINEERING_ESTIMATE') {
     errors.push('an engineering estimate cannot verify supplier identity');
   }
+  if (profile.limitations.length === 0 || profile.limitations.some((item) => !item.trim())) {
+    errors.push('profile limitations are required');
+  }
   const seen = new Set<string>();
   for (const parameter of profile.parameters) {
     if (!parameter.parameter.trim()) errors.push('parameter name is required');
@@ -52,8 +55,19 @@ export function validateEngineeringReferenceProfile(
     if (parameter.evidenceClass === 'ENGINEERING_ESTIMATE' && !parameter.uncertaintyNote.trim()) {
       errors.push(`engineering estimate requires an uncertainty note for ${parameter.parameter}`);
     }
-    if (parameter.useForPreliminaryCalculation && parameter.nominalValue === undefined) {
-      errors.push(`preliminary calculation requires nominalValue for ${parameter.parameter}`);
+    if (parameter.useForPreliminaryCalculation) {
+      if (parameter.nominalValue === undefined) {
+        errors.push(`preliminary calculation requires nominalValue for ${parameter.parameter}`);
+      }
+      if (parameter.basis === 'UNKNOWN') {
+        errors.push(`preliminary calculation requires a known calculation basis for ${parameter.parameter}`);
+      }
+      if (!parameter.uncertaintyNote.trim()) {
+        errors.push(`preliminary calculation requires an uncertainty note for ${parameter.parameter}`);
+      }
+      if (!parameter.sourceUrl?.trim() && !parameter.methodReference?.trim() && profile.sourceReferences.length === 0) {
+        errors.push(`preliminary calculation requires a source reference or method basis for ${parameter.parameter}`);
+      }
     }
   }
   for (const source of profile.sourceReferences) {
