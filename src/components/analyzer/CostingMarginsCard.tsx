@@ -24,8 +24,8 @@ export function CostingMarginsCard({
   };
 
   const costing = analysisResult.costing;
-  const isUnpriced = costing?.pricingStatus === 'NO_PRICING' || (costing?.isComplete === false && (!costing?.rawMaterialCost || costing?.rawMaterialCost === 0));
-  const isPartial = costing?.pricingStatus === 'PARTIAL_PRICING';
+  const isPartial = costing?.pricingStatus === 'PARTIAL_PRICING' || (costing?.isComplete === false && (costing?.missingPriceCount ?? 0) > 0);
+  const isUnpriced = !isPartial && (costing?.pricingStatus === 'NO_PRICING' || (costing?.isComplete === false && (!Number.isFinite(costing?.rawMaterialCost) || costing?.rawMaterialCost === 0)));
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
