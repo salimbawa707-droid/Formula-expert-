@@ -65,9 +65,9 @@ const DECISIONS: FunctionalRoutingDecision[] = [
     expectedCategory: 'Anionic Surfactant', expectedInci: 'Sodium C14-17 Sec-Alkyl Sulfonate',
     routingClass: 'ANIONIC', role: 'PRIMARY_ANIONIC_SURFACTANT', chargeBehavior: 'FIXED_ANIONIC',
     activeMatterEligible: true, hlbEligible: false, pureComponentCmcEligible: false,
-    identityScope: 'CAS 68037-49-0 and INCI support a secondary C14-17 alkyl sulfonate family within the broader C10-18 alkane sodium sulfonate UVCB family.',
-    sourceUrls: ['https://echa.europa.eu/substance-information/-/substanceinfo/100.061.994','https://kcia.or.kr/cid/search/ingd_view.php?no=18412','https://www.industrialchemicals.gov.au/sites/default/files/Secondary%20alkane%20sulfonates%20%28SAS%29_Human%20health%20tier%20II%20assessment.pdf'],
-    caveats: ['The catalog 60% grade is not verified by supplier TDS or lot CoA.', 'CAS 68037-49-0 has broad C10-18 registry scope; do not infer exact C14-17 chain distribution from CAS alone.', 'Catalog HLB 13.0 and pure-component CMC are not supported for this UVCB mixture.']
+    identityScope: 'KCIA pairs the C14-17 secondary alkyl sulfonate INCI with CAS 68037-49-0; ECHA describes that CAS broadly as C10-18 alkane sodium salts. FDA GSRS separately maps the named C14-17 alkyl sec sulfonate 30 / Hostapur SAS 30 mixture to CAS 97489-15-1. The CAS assignment for the catalog SAS-60 variants therefore remains source-conflicted and unresolved.',
+    sourceUrls: ['https://echa.europa.eu/substance-information/-/substanceinfo/100.061.994','https://kcia.or.kr/cid/search/ingd_view.php?no=18412','https://www.industrialchemicals.gov.au/sites/default/files/Secondary%20alkane%20sulfonates%20%28SAS%29_Human%20health%20tier%20II%20assessment.pdf','https://precision.fda.gov/ginas/app/ui/substances/A14OB1S7O2'],
+    caveats: ['The catalog 60% grade is not verified by supplier TDS or lot CoA.', 'Do not silently replace CAS 68037-49-0 with 97489-15-1: KCIA supports the former for the INCI label while FDA GSRS supports the latter for a named 30% mixture and Hostapur SAS 30; exact SAS-60 product identity requires manufacturer documentation.', 'CAS 68037-49-0 has broad C10-18 registry scope; do not infer exact C14-17 chain distribution from CAS alone.', 'Catalog HLB 13.0 and pure-component CMC are not supported for this UVCB mixture.']
   },
   {
     ingredientIds: ['cdea-85'],
