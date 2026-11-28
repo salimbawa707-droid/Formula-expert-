@@ -73,6 +73,11 @@ assert.equal(
   false,
   'unrelated matrix salts must not be classified as declared chelators'
 );
+assert.equal(
+  isDeclaredChelatorIngredient({ name: 'Sodium Phosphate', category: 'Additive' }),
+  true,
+  'existing phosphate builder-name routing must remain covered'
+);
 const dagSource = readFileSync(new URL('../src/utils/orchestrator/scientificExecutionDAG.ts', import.meta.url), 'utf8');
 assert.match(
   dagSource,
