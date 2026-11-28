@@ -1,5 +1,6 @@
 import { FormulationIngredient } from '../types';
 import { calculateFormulaCost as calcFormulaCostAuthoritative } from './costingEngine';
+import { buildBoundedActiveMatterReport, buildBoundedCostReport } from './boundedFormulaAdapter';
 import { resolveEng002PureComponent, type Eng002PureComponentReference, type ActiveMatterInputSource } from './eng002InputProvenance';
 import { getProductCategory } from '../domain/productTaxonomy';
 import { resolveFunctionalRoutingForIngredient } from '../data/ingredientFunctionalRouting';
@@ -273,6 +274,16 @@ export function calculateBlendedHLB(ingredients: FormulationIngredient[]): numbe
 
 export function calculateActiveMatter(ingredients: FormulationIngredient[]): number {
   return calcActiveMatterAuthoritative(ingredients);
+}
+
+/** Additive preliminary report; never a release-grade or supplier-assay approval. */
+export function calculateBoundedActiveMatter(ingredients: FormulationIngredient[]) {
+  return buildBoundedActiveMatterReport(ingredients);
+}
+
+/** Additive preliminary price report; unknown price mass is preserved, never imputed. */
+export function calculateBoundedFormulaCost(ingredients: FormulationIngredient[], batchSizeKg?: number) {
+  return buildBoundedCostReport(ingredients, batchSizeKg);
 }
 
 export function calculateActiveSurfactants(ingredients: FormulationIngredient[]): number {
