@@ -13,6 +13,7 @@ import {
 import { HLBEngine } from "../utils/hlbEngine";
 import { AUTHORITATIVE_CHELATOR_DATABASE } from "../utils/chelatorEngine";
 import { ActiveMatterEngine } from "../utils/activeMatterEngine";
+import { buildBoundedActiveMatterReport } from "../utils/boundedFormulaAdapter";
 import { IngredientIdentitySSOT } from "../domain/ingredients/ingredientIdentitySSOT";
 import { Calculator, ArrowRight, ShieldAlert, Thermometer, RefreshCw, AlertCircle, Info, Beaker, Sparkles } from "lucide-react";
 import { ActiveFormulaState } from "../types";
@@ -119,6 +120,12 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
   const [newActivePurity, setNewActivePurity] = useState<number | string>(STANDARD_ACTIVE_OPTIONS[0].purity);
 
   const totalActiveMatter = calculateActiveMatter(activeList as any);
+  const boundedActiveEvidence = buildBoundedActiveMatterReport(activeList.map((item: any) => ({
+    ...item,
+    percentage: item.percentageInFormula,
+    activeMatterPct: item.activeMatterPurity,
+    activeMatterInputSource: "USER_ENTERED"
+  })) as any);
 
   const addActiveRow = () => {
     let name = newActiveName;
@@ -839,7 +846,8 @@ export default function RCCalculators({ lang, translations, activeFormula }: Pro
               {/* Total Active Matter Display */}
               <div className="bg-[#131d35] border border-cyan-500/30 rounded-xl p-4 text-center">
                 <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">Resulting Product Active Surfactant Matter</span>
-                <span className="text-3xl font-extrabold text-cyan-300 font-mono mt-1 block">{totalActiveMatter}%</span>
+                <span className="text-3xl font-extrabold text-cyan-300 font-mono mt-1 block">{boundedActiveEvidence.status === "COMPLETE" ? `${boundedActiveEvidence.totalActiveNominalPct?.toFixed(2)}%` : "Unavailable"}</span>
+                <p className="text-[10px] text-amber-300 mt-1">Scenario status: {boundedActiveEvidence.status} · Unknown raw mass: {boundedActiveEvidence.unknownRawPercent.toFixed(2)}% · User-entered point assumptions only; not supplier assays.</p>
                 <p className="text-xs text-slate-300 mt-1">
                   {totalActiveMatter >= 15
                     ? "Premium Industrial/Household Grade. Superb cleaning performance, heavy degreasing power, high foaming."
