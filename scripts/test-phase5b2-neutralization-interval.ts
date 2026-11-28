@@ -15,6 +15,7 @@ const exact = calculatePrimaryNeutralizationInterval([acid(2, 2, 2)], [base(2, 2
 assert.equal(exact.status, 'BOUNDED_INPUT');
 assert.equal(exact.classification, 'FULLY_NEUTRALIZED');
 assert.equal(exact.reactionExtent?.nominal, 2);
+assert.deepEqual(exact.neutralizationFraction, { lower: 1, nominal: 1, upper: 1 });
 assert.equal(exact.residualAcidEquivalents?.nominal, 0);
 assert.equal(exact.residualBaseEquivalents?.nominal, 0);
 assert.equal(exact.waterGeneratedGrams?.nominal, 36.03056);
@@ -28,6 +29,7 @@ assert.equal(calculatePrimaryNeutralizationInterval([acid(2, 2, 2)], [base(3, 3,
 const crossed = calculatePrimaryNeutralizationInterval([acid(1, 2, 3)], [base(1, 2, 3)]);
 assert.equal(crossed.status, 'BOUNDED_INPUT');
 assert.equal(crossed.classification, 'AMBIGUOUS_REACTION_SYSTEM');
+assert.deepEqual(crossed.neutralizationFraction, { lower: 1 / 3, nominal: 1, upper: 1 });
 assert.equal(crossed.scenarioClassifications.length, 3);
 assert(crossed.residualAcidEquivalents!.upper >= crossed.residualAcidEquivalents!.lower);
 assert(crossed.residualBaseEquivalents!.upper >= crossed.residualBaseEquivalents!.lower);
