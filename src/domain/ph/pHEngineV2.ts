@@ -119,7 +119,8 @@ export class PHEngineV2 {
           modelType: activityModel,
           speciation: [],
           ionicStrength: null,
-          chargeResidual: null
+          chargeResidual: null,
+          solverPHUnrounded: null
         }
       };
     }
@@ -311,6 +312,7 @@ export class PHEngineV2 {
         speciation: finalEquilibrium ? finalEquilibrium.speciation : [],
         ionicStrength,
         chargeResidual: isConverged ? solverRes.residual : null,
+        solverPHUnrounded: solvedPH,
         normalizedComposition: {
           totalMassKg: composition.totalMassKg,
           totalVolumeL: Number(composition.totalVolumeL.toFixed(3)),
