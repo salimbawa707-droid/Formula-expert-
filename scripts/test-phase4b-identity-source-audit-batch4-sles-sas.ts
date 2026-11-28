@@ -20,7 +20,7 @@ assert(sas[7].includes('clariant.com'));
 assert(sas[11].includes('AMBIGUOUS'));
 assert(sas[12].includes('DO_NOT_PROMOTE'));
 assert(sas[13].includes('NAMED_REFERENCE_ONLY'));
-assert(sas[15].includes('do not transfer') || sas[15].includes('not be transferred'));
+assert(sas[15].includes('applies only'));
 
 const sles = rows[1];
 assert.equal(sles[1], '68585-34-2');
