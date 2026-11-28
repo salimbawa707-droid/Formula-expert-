@@ -4,7 +4,7 @@ import { evaluateAIGrade } from '../src/utils/gradeEngine';
 const intervalFormula = [
   {
     id: 'sles-70', canonicalIngredientId: 'sles-70', name: 'SLES', category: 'anionic surfactant', percentage: 50,
-    activeMatterPct: 28, activeMatterLowerPct: 16, activeMatterUpperPct: 24,
+    activeMatterPct: 20, activeMatterLowerPct: 16, activeMatterUpperPct: 24,
     activeMatterInputSource: 'USER_ENTERED'
   },
   { id: 'water', name: 'Deionized Water', category: 'water', percentage: 50, activeMatterPct: 0 }
