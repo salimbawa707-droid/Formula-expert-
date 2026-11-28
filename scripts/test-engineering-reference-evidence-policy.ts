@@ -35,6 +35,7 @@ const estimated: EngineeringReferenceProfile = {
     basis: 'AS_SUPPLIED',
     evidenceClass: 'ENGINEERING_ESTIMATE',
     uncertaintyNote: 'Illustrative sensitivity interval only; not a supplier specification or measured assay.',
+    methodReference: 'Synthetic fixture for resolver policy test only.',
     useForPreliminaryCalculation: true,
     useForLotRelease: false,
   }],
@@ -45,6 +46,13 @@ const estimated: EngineeringReferenceProfile = {
   formulaApplicabilityApproved: false,
 };
 assert.equal(validateEngineeringReferenceProfile(estimated).valid, true);
+const missingBasis: EngineeringReferenceProfile = {
+  ...estimated,
+  profileId: 'TEST-MISSING-BASIS-003',
+  parameters: [{ ...estimated.parameters[0], methodReference: undefined, uncertaintyNote: '' }],
+};
+assert.equal(validateEngineeringReferenceProfile(missingBasis).valid, false);
+assert.equal(resolveEngineeringReferenceParameter(missingBasis, 'activeMatterPct'), null);
 const resolved = resolveEngineeringReferenceParameter(estimated, 'activeMatterPct');
 assert.equal(resolved?.nominalValue, 38);
 assert.equal(resolved?.lowerBound, 35);
