@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { evaluatePHScenarios } from '../src/domain/ph/phScenarioEngine';
+import { evaluatePHScenarios } from '../src/domain/ph/phScenarioEvaluation';
 import { mergePHWarnings } from '../src/domain/ph/phDiagnostics';
 
 const common = {
