@@ -1317,6 +1317,7 @@ export class ScientificExecutionDAG {
           }
         }
 
+        const boundedActiveMatterEvidence = buildBoundedActiveMatterReport(state.resolvedIngredients as any);
         const activeMatterOut = {
           totalSurfactantActivePct: state.totalSurfactantActivePct,
           totalActiveMatterPct: state.totalActiveMatterPct,
@@ -1325,7 +1326,7 @@ export class ScientificExecutionDAG {
             : null,
           categoryMinPct: getProductCategory(state.canonicalCategory)?.activeMatterMinPct ?? null,
           verified: state.activeMatterVerified === true,
-          boundedEvidence: buildBoundedActiveMatterReport(state.resolvedIngredients as any),
+          boundedEvidence: boundedActiveMatterEvidence,
           evidenceStatus: boundedActiveMatterEvidence.status,
           unknownActiveRawMassPct: boundedActiveMatterEvidence.unknownRawPercent,
           status: state.activeMatterStatus,
