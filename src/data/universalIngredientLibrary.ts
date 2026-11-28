@@ -33,6 +33,43 @@ export interface ActiveMatterGradeAssayEvidence {
   verifiedAt?: string;
 }
 
+export type EngineeringEvidenceClass =
+  | 'PRIMARY_SUPPLIER_TDS'
+  | 'PRIMARY_SUPPLIER_SDS'
+  | 'BATCH_SPECIFIC_COA'
+  | 'PUBLISHED_STANDARD'
+  | 'PUBLISHED_LITERATURE'
+  | 'PUBLIC_REGULATORY_IDENTITY'
+  | 'CATALOG_ASSERTION'
+  | 'ENGINEERING_ESTIMATE';
+
+export interface EngineeringReferenceParameter {
+  parameter: string;
+  nominalValue?: number;
+  lowerBound?: number;
+  upperBound?: number;
+  unit: string;
+  basis: 'AS_SUPPLIED' | 'AS_RECEIVED' | 'ACTIVE_BASIS' | 'DRY_BASIS' | 'NEAT' | 'NOT_APPLICABLE' | 'UNKNOWN';
+  evidenceClass: EngineeringEvidenceClass;
+  sourceUrl?: string;
+  methodReference?: string;
+  uncertaintyNote: string;
+  useForPreliminaryCalculation: boolean;
+  useForLotRelease: false;
+}
+
+export interface EngineeringReferenceProfile {
+  profileId: string;
+  profileVersion: string;
+  ingredientId: string;
+  scope: 'SUBSTANCE_IDENTITY_ONLY' | 'COMMERCIAL_GRADE_REFERENCE' | 'ENGINEERING_ESTIMATE';
+  parameters: EngineeringReferenceParameter[];
+  limitations: string[];
+  supplierIdentityVerified: boolean;
+  lotSpecific: false;
+  formulaApplicabilityApproved: false;
+}
+
 export interface UniversalIngredient {
   id: string;
   name: string;
@@ -62,7 +99,7 @@ export interface UniversalIngredient {
   sustainability?: any;
   manufacturer?: string;
   productName?: string;
-  activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;
+  activeMatterGradeAssayEvidence?: ActiveMatterGradeAssayEvidence;\n  engineeringReferenceProfileId?: string;
   provenance?: {
     sourceType: 'OFFICIAL_MANUFACTURER' | 'STANDARD_CHEMICAL' | 'ACADEMIC_LITERATURE' | 'USER_ENTERED';
     source: string;
