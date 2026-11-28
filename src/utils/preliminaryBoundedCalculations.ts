@@ -124,12 +124,14 @@ export function calculateBoundedActiveMatter(
   let knownLower = 0;
   let knownUpper = 0;
   let unknownRawPercent = 0;
+  let invalidInputCount = 0;
   const missingIngredientIds: string[] = [];
   const provenance: ActiveMatterBoundedReport['provenance'] = [];
   const warnings: string[] = [];
   const errors: string[] = [];
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
     errors.push('Formula ingredients are required.');
+    invalidInputCount++;
   }
   for (const ingredient of ingredients ?? []) {
     const raw = ingredient.rawPercent;
@@ -145,6 +147,7 @@ export function calculateBoundedActiveMatter(
       unknownRawPercent += raw;
       missingIngredientIds.push(ingredient.id);
       errors.push(...resolved.errors);
+      if (!resolved.errors.some(error => error.includes('UNKNOWN_INPUT'))) invalidInputCount++;
       continue;
     }
     knownNominal += raw * (resolved.nominal as number) / 100;
@@ -155,7 +158,7 @@ export function calculateBoundedActiveMatter(
   const massBalanced = errors.every(error => !error.includes('raw percentage')) &&
     Math.abs(formulaTotalPercent - 100) <= 0.05;
   if (!massBalanced && errors.length === 0) warnings.push(`Formula mass balance is ${formulaTotalPercent.toFixed(3)}%, not 100.000%.`);
-  const hasInvalid = errors.some(error => error.includes('raw percentage'));
+  const hasInvalid = invalidInputCount > 0 || errors.some(error => error.includes('raw percentage'));
   const complete = !hasInvalid && missingIngredientIds.length === 0 && massBalanced;
   const status: ActiveMatterBoundedReport['status'] = hasInvalid
     ? 'INVALID_INPUT'
@@ -209,11 +212,15 @@ export function calculateBoundedFormulaCost(
   let subtotalLower = 0;
   let subtotalUpper = 0;
   let unknownRawPercent = 0;
+  let invalidInputCount = 0;
   const missingIngredientIds: string[] = [];
   const provenance: CostBoundedReport['provenance'] = [];
   const warnings: string[] = [];
   const errors: string[] = [];
-  if (!Array.isArray(ingredients) || ingredients.length === 0) errors.push('Formula ingredients are required.');
+  if (!Array.isArray(ingredients) || ingredients.length === 0) {
+    errors.push('Formula ingredients are required.');
+    invalidInputCount++;
+  }
   const hasBatchSize = batchSizeKg === undefined || (Number.isFinite(batchSizeKg) && batchSizeKg > 0);
   if (!hasBatchSize) errors.push('Batch size must be finite and greater than zero.');
   for (const ingredient of ingredients ?? []) {
@@ -230,6 +237,7 @@ export function calculateBoundedFormulaCost(
       unknownRawPercent += raw;
       missingIngredientIds.push(ingredient.id);
       errors.push(...resolved.errors);
+      if (!resolved.errors.some(error => error.includes('UNKNOWN_INPUT'))) invalidInputCount++;
       continue;
     }
     subtotalNominal += raw / 100 * (resolved.nominal as number);
@@ -240,7 +248,7 @@ export function calculateBoundedFormulaCost(
   const massBalanced = errors.every(error => !error.includes('raw percentage')) &&
     Math.abs(formulaTotalPercent - 100) <= 0.05;
   if (!massBalanced && errors.length === 0) warnings.push(`Formula mass balance is ${formulaTotalPercent.toFixed(3)}%, not 100.000%.`);
-  const hasInvalid = errors.some(error => error.includes('raw percentage') || error.startsWith('Batch size'));
+  const hasInvalid = invalidInputCount > 0 || errors.some(error => error.includes('raw percentage') || error.startsWith('Batch size'));
   const complete = !hasInvalid && missingIngredientIds.length === 0 && massBalanced;
   const status: CostBoundedReport['status'] = hasInvalid
     ? 'INVALID_INPUT'
