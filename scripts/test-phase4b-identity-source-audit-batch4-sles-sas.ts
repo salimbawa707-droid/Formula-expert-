@@ -4,10 +4,35 @@ import { fileURLToPath } from 'node:url';
 import { resolveFunctionalRouting } from '../src/data/ingredientFunctionalRouting';
 
 const csvPath = fileURLToPath(new URL('../evidence_vault/datasets/phase4b_identity_source_audit_batch4_sles_sas_2026-11-28.csv', import.meta.url));
+function parseCsvLine(line: string): string[] {
+  const fields: string[] = [];
+  let field = '';
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"') {
+      if (quoted && line[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === ',' && !quoted) {
+      fields.push(field);
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+  fields.push(field);
+  assert.equal(quoted, false, 'CSV line must not end inside a quoted field');
+  return fields;
+}
+
 const lines = readFileSync(csvPath, 'utf8').trim().split(/\r?\n/);
-assert.equal(lines[0].split(',').length, 18, 'batch 4 CSV must retain its 18-field schema');
+assert.equal(parseCsvLine(lines[0]).length, 18, 'batch 4 CSV must retain its 18-field schema');
 assert.equal(lines.length, 3, 'batch 4 must cover exactly two candidate groups');
-const rows = lines.slice(1).map(line => line.split(','));
+const rows = lines.slice(1).map(parseCsvLine);
 assert(rows.every(row => row.length === 18), 'every batch 4 row must have 18 fields');
 assert.deepEqual(rows.map(row => row[0]), ['MICG-073', 'MICG-085']);
 assert.equal(rows.reduce((sum, row) => sum + Number(row[3]), 0), 12);
