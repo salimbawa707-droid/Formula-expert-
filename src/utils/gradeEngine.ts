@@ -284,6 +284,23 @@ export const CATEGORY_GRADING_PROFILES: Record<ProductCategoryId, CategoryGradin
 /**
  * Authoritative Evaluation of AI Grade from Orchestrator Evaluation Context.
  */
+/**
+ * Conservative active-matter screening score over a closed interval.
+ * The scoring curve rises to a 10–35% plateau and declines above 35%;
+ * therefore its minimum over a valid interval occurs at an endpoint.
+ * This is a screening score only, not an empirical performance prediction.
+ */
+export function scoreActiveMatterInterval(lowerPct: number, upperPct: number): number | null {
+  if (!Number.isFinite(lowerPct) || !Number.isFinite(upperPct) ||
+      lowerPct < 0 || upperPct > 100 || lowerPct > upperPct) return null;
+  const scoreAt = (value: number): number => {
+    if (value < 10) return Math.min(100, Math.max(0, Math.round(value * 10)));
+    if (value > 35) return Math.max(50, Math.round(100 - (value - 35) * 2));
+    return 100;
+  };
+  return Math.min(scoreAt(lowerPct), scoreAt(upperPct));
+}
+
 export function evaluateAIGrade(
   input: any,
   phOverride?: number,
@@ -852,19 +869,9 @@ function evaluateAIGradeFromLegacyOrDraft(
     }
   }
 
-  const scoreActiveMatterAt = (value: number): number => {
-    if (value < 10) return Math.min(100, Math.max(0, Math.round(value * 10)));
-    if (value > 35) return Math.max(50, Math.round(100 - (value - 35) * 2));
-    return 100;
-  };
-  // The active-matter score is conservative over the supplied interval. The
-  // score curve is unimodal (10–35% plateau), so the minimum lies at an endpoint.
   const activeMatterLowerPct = boundedActiveMatter.totalActiveLowerPct;
   const activeMatterUpperPct = boundedActiveMatter.totalActiveUpperPct;
-  const activeMatterScore = Math.min(
-    scoreActiveMatterAt(activeMatterLowerPct),
-    scoreActiveMatterAt(activeMatterUpperPct)
-  );
+  const activeMatterScore = scoreActiveMatterInterval(activeMatterLowerPct, activeMatterUpperPct)!;
 
   // Weighted score calculation
   const profile = effectiveCategory ? CATEGORY_GRADING_PROFILES[effectiveCategory] : null;
