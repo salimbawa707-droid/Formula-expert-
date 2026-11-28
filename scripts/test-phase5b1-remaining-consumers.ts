@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildBoundedActiveMatterReport, buildBoundedCostReport } from '../src/utils/boundedFormulaAdapter';
+import { calculateActiveMatter, calculateBoundedActiveMatter, calculateBoundedFormulaCost } from '../src/utils/calculators';
 
 const completeScenario = buildBoundedActiveMatterReport([
   { id: 'sles', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'CATALOG_DEFAULT' } as any,
@@ -38,5 +39,27 @@ assert.equal(fullPrice.status, 'COMPLETE');
 assert.equal(fullPrice.totalCostNominalPerKg, 3);
 assert.equal(fullPrice.batchCostNominal, 60);
 assert.equal(fullPrice.releaseEligible, false);
+
+
+const calculatorBoundedActive = calculateBoundedActiveMatter([
+  { id: 'sles-28', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]);
+assert.equal(calculatorBoundedActive.status, 'COMPLETE');
+assert.equal(calculatorBoundedActive.totalActiveNominalPct, 2.8);
+assert.equal(calculatorBoundedActive.releaseEligible, false);
+assert.equal(calculateActiveMatter([
+  { id: 'sles-28', name: 'SLES 28%', percentage: 10, activeMatterPct: 28, activeMatterInputSource: 'USER_ENTERED' } as any,
+  { id: 'water', name: 'Deionized Water', percentage: 90 } as any,
+]), 2.8);
+
+const calculatorBoundedCost = calculateBoundedFormulaCost([
+  { id: 'priced', name: 'Priced', percentage: 90, costPerKg: 2 } as any,
+  { id: 'unpriced', name: 'Unpriced', percentage: 10 } as any,
+], 10);
+assert.equal(calculatorBoundedCost.status, 'INSUFFICIENT_DATA');
+assert.equal(calculatorBoundedCost.unknownRawPercent, 10);
+assert.equal(calculatorBoundedCost.totalCostNominalPerKg, null);
+assert.equal(calculatorBoundedCost.releaseEligible, false);
 
 console.log('PHASE 5B-1 REMAINING CONSUMER ADAPTER REGRESSIONS PASS');
