@@ -83,7 +83,7 @@ export function isDeclaredChelatorIngredient(input: {
 
   return (
     /chelat|builder|sequest/i.test(declaredRoles) ||
-    /chelat|sequest|citrate|glda|mgda|edta|dtpa|stpp|tripolyphosphate|phosphonate|hedp|zeolite|polyacrylate|polycarboxylate|gluconate/i.test(rawName)
+    /chelat|sequest|citrate|glda|mgda|edta|dtpa|stpp|tripolyphosphate|phosphonate|hedp|zeolite|polyacrylate|polycarboxylate|phosphate|gluconate/i.test(rawName)
   );
 }
 
