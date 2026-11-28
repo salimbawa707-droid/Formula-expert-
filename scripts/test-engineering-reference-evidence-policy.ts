@@ -4,7 +4,7 @@ import {
   ENGINEERING_REFERENCE_PROFILES,
   resolveEngineeringReferenceParameter,
   validateEngineeringReferenceProfile,
-} from '../src/data/engineeringReferenceEvidence';
+} from '../src/data/referenceEvidenceProfiles';
 
 assert.equal(ENGINEERING_REFERENCE_PROFILES.length, 2);
 for (const profile of ENGINEERING_REFERENCE_PROFILES) {
